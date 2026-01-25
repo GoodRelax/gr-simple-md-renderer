@@ -1,8 +1,11 @@
-# GR Simple MD Renderer
+# GRSMD — A Privacy-First Markdown Renderer That Runs in Your Browser
 
-A lightweight, privacy-first Markdown renderer with Mermaid, PlantUML, and syntax highlighting.  
-Everything runs client-side, with explicit user consent for external rendering.
+**GRSMD (GoodRelax Simple Markdown Renderer)** is a privacy-first Markdown renderer that runs entirely in the browser.
 
+- Client-side Markdown, Mermaid, and syntax highlighting
+- PlantUML rendering with explicit user consent
+- No backend, no data collection
+  
 ---
 
 ## Why
