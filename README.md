@@ -42,9 +42,11 @@ You can run this tool locally by simply opening `index.html` in your browser.
 ## Usage
 
 1. Open the application in your browser
-2. Paste Markdown text into the editor
+2. Paste Markdown text into the editor in the top-left
 3. Click **Render Light** or **Render Dark**
 4. If PlantUML is detected, you will be asked for permission before rendering
+
+No content is sent to external servers without explicit user consent.
 
 ---
 
