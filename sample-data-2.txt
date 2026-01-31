@@ -598,3 +598,166 @@ json_data
 }
 ```
 A typical JSON data structure.
+
+# Math Rendering & Diagram Test Suite
+
+This document demonstrates the rendering capabilities for mathematical formulas (KaTeX), UML diagrams (Mermaid), and code highlighting.
+
+---
+
+## 1. Classical Algebra & Number Theory
+
+### Euler's Identity
+Often cited as the most beautiful equation in mathematics.
+
+$$
+e^{i\pi} + 1 = 0
+$$
+
+### The Quadratic Formula
+The solution for the quadratic equation $ax^2 + bx + c = 0$.
+
+$$
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+
+---
+
+## 2. Calculus & Analysis
+
+### Definition of Derivative
+The derivative is defined as the limit of the difference quotient.
+
+$$
+f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}
+$$
+
+### The Gaussian Integral
+An important integral in probability theory.
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} \, dx = \sqrt{\pi}
+$$
+
+---
+
+## 3. Linear Algebra
+
+### Matrix Operations
+Here is a $3 \times 3$ matrix $A$ and a vector $\vec{v}$.
+
+$$
+A = \begin{bmatrix}
+1 & 2 & 3 \\
+4 & 5 & 6 \\
+7 & 8 & 9
+\end{bmatrix}, \quad
+\vec{v} = \begin{pmatrix}
+x \\
+y \\
+z
+\end{pmatrix}
+$$
+
+### Determinant
+$$
+\det(A) = \sum_{\sigma \in S_n} \text{sgn}(\sigma) \prod_{i=1}^n a_{i, \sigma(i)}
+$$
+
+---
+
+## 4. Physics (Maxwell's Equations)
+
+Using the `aligned` environment for multi-line equations.
+
+$$
+\begin{aligned}
+\nabla \cdot \mathbf{E} &= \frac{\rho}{\varepsilon_0} \\
+\nabla \cdot \mathbf{B} &= 0 \\
+\nabla \times \mathbf{E} &= -\frac{\partial \mathbf{B}}{\partial t} \\
+\nabla \times \mathbf{B} &= \mu_0\mathbf{J} + \mu_0\varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}
+\end{aligned}
+$$
+
+---
+
+## 5. Statistical Mechanics (Partition Function)
+
+$$
+Z = \sum_{i} e^{-\beta E_i}
+$$
+
+Where $\beta = \frac{1}{k_B T}$.
+
+---
+
+## 6. Logic & Flow
+
+Below is a visualization of how a mathematical problem is solved using a computational approach.
+
+**contents_name:**
+problem_solving_flow
+```mermaid
+flowchart LR
+    Problem_Input -->|Defines| Mathematical_Model
+    Mathematical_Model -->|Requires| Algorithm_Selection
+    Algorithm_Selection -->|Executes| Computation
+    Computation -->|Produces| Solution_Output
+    Solution_Output -->|Verifies| Problem_Input
+```
+
+This diagram illustrates the iterative process of modeling and solving problems.
+
+---
+
+## 7. Implementation Example
+
+A simple Python implementation for the quadratic formula mentioned in Section 1.
+
+**contents_name:**
+quadratic_solver_py
+```python
+import cmath
+
+def solve_quadratic(a, b, c):
+    # Calculate the discriminant
+    d = (b**2) - (4*a*c)
+
+    # Find two solutions
+    sol1 = (-b - cmath.sqrt(d)) / (2*a)
+    sol2 = (-b + cmath.sqrt(d)) / (2*a)
+
+    return sol1, sol2
+```
+
+This function handles complex roots using the `cmath` library.
+
+---
+
+## 8. Complex Relationships
+
+A class diagram representing a mathematical expression parser structure.
+
+**contents_name:**
+expression_parser_class_diagram
+```mermaid
+classDiagram
+    Expression <|-- BinaryExpression : Inherits
+    Expression <|-- Number : Inherits
+    BinaryExpression o-- Expression : Contains_Left
+    BinaryExpression o-- Expression : Contains_Right
+    
+    class Expression {
+        +evaluate() double
+    }
+    class Number {
+        +value double
+        +evaluate() double
+    }
+    class BinaryExpression {
+        +operator string
+        +evaluate() double
+    }
+```
+
+This structure allows for recursive evaluation of mathematical trees.
