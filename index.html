@@ -272,6 +272,14 @@
 				color: #ff8787;
 				border-color: #ff6b6b;
 			}
+
+			.dark .katex {
+				color: inherit;
+			}
+			
+			.katex {
+				font-size: 1.1em;
+			}
 		</style>
 		
 		<!--
@@ -281,10 +289,10 @@
             https://www.jsdelivr.com/package/npm/marked
             https://www.jsdelivr.com/package/npm/mermaid
             https://cdnjs.com/libraries/highlight.js
-
-
-            
+			https://www.jsdelivr.com/package/npm/katex
+			https://www.jsdelivr.com/package/npm/marked-katex-extension
         * Markdown: -->
+
 		
 		<script src="https://cdn.jsdelivr.net/npm/marked@17.0.1/lib/marked.umd.min.js" integrity="sha384-AkwdwVgEdZpqPMfydlmViIGgV90b6sHb/NoxnNdlecRKY3puoyKdw/pi64E32c+6" crossorigin="anonymous">
 		</script>
@@ -296,6 +304,10 @@
 		
 		<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm" integrity="sha384-0soUzyKltgTFXRsH4USkmq6FPG3emb/n2JkcG7etR4fIXjKFFJkCLqTl6sM7boxe" crossorigin="anonymous" />
 		
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.28/dist/katex.min.css" integrity="sha384-Wsr4Nh3yrvMf2KCebJchRJoVo1gTU6kcP05uRSh5NV3sj9+a8IomuJoQzf3sMq4T" crossorigin="anonymous">		
+		<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.6/+esm" integrity="sha384-sXM6dT1KwUCU7buT3pldq9hy6hhfkoUXunVhnhf+ISmpQh3ofLks2w7oMwyG24Ex" crossorigin="anonymous"></script>
+
+
 	</head>
 	
 	<body>
@@ -374,6 +386,7 @@
 			import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.esm.min.mjs';
 			import hljs from 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js';
 			import plantumlEncoder from 'https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm';
+			import markedKatex from "https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.6/+esm";
 			
 			// ========================================
 			// Extension Guide
@@ -1191,6 +1204,9 @@
 			// Initialization
 			// ========================================
 			
+
+			
+
 			const elements = {
 				editor: document.getElementById('editor'),
 				preview: document.getElementById('preview'),
@@ -1205,6 +1221,8 @@
 				copyPromptBtn: document.getElementById('copyPromptBtn')
 			};
 			
+			marked.use(markedKatex({ throwOnError: false }));
+
 			const state = new ApplicationState();
 			const scrollManager = new ScrollManager(elements.preview);
 			const markdownRenderer = new MarkdownRenderer(elements.preview, marked, hljs);
