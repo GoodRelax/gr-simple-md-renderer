@@ -1,285 +1,291 @@
 <!DOCTYPE html>
 <html lang="en">
-	
-	<head>
-		<meta charset="UTF-8">
-		
-		<!-- SEO Meta Tags -->
-		<meta name="description" content="Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer. Privacy-focused, client-side rendering tool with dark mode support. No data leaves your browser unless you explicitly allow PlantUML rendering.">
-		<meta name="keywords" content="GRSMD, markdown renderer, mermaid diagrams, plantuml online, latex renderer, katex, math preview, markdown preview, diagram tool, markdown editor, privacy markdown tool, client-side markdown">
-		<meta name="author" content="GoodRelax">
-		<meta name="robots" content="index, follow">
-		
-		<meta property="og:type" content="website">
-		<meta property="og:url" content="https://goodrelax.github.io/">
-		<meta property="og:title" content="GRSMD : Free Markdown, Math & Diagram Renderer | Privacy-Focused Online Tool">
-		<meta property="og:description" content="Privacy-focused online tool for rendering Markdown, Math (LaTeX), Mermaid, and PlantUML diagrams with syntax highlighting and dark mode.">
-		
-		<meta property="twitter:card" content="summary_large_image">
-		<meta property="twitter:title" content="GRSMD : Free Markdown, Math & Diagram Renderer | Privacy-Focused Online Tool">
-		<meta property="twitter:description" content="Privacy-focused online tool for rendering Markdown, Math (LaTeX), Mermaid, and PlantUML diagrams.">
-		
-		<title>GRSMD : Free Markdown, Math & Diagram Renderer | Privacy-Conscious Online Tool</title>
-		
-		<script type="application/ld+json">
-			{
-				"@context": "https://schema.org",
-				"@type": "SoftwareApplication",
-				"name": "GR Simple MD Renderer",
-				"applicationCategory": "DeveloperApplication",
-				"operatingSystem": "Web Browser",
-				"offers": {
-					"@type": "Offer",
-					"price": "0",
-					"priceCurrency": "USD"
-				},
-				"description": "GRSMD Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer with privacy-focused client-side rendering",
-				"author": {
-					"@type": "Organization",
-					"name": "GoodRelax",
-					"url": "https://github.com/GoodRelax"
-				}
-			}
-		</script>
-		<style>
-			body {
-				margin: 0;
-				font-family: sans-serif;
-				display: flex;
-				flex-direction: column;
-				height: 100vh;
-			}
-			
-			#topbar {
-				display: flex;
-				align-items: center;
-				padding: 8px 12px;
-				background: #f0f0f0;
-				gap: 16px;
-				border-bottom: 1px solid #ccc;
-			}
-			
-			#header-group {
-				display: flex;
-				flex-direction: column;
-				justify-content: center;
-				flex-shrink: 0;
-			}
-			
-			#title {
-				font-weight: bold;
-				font-size: 16px;
-				line-height: 1.2;
-				white-space: nowrap;
-			}
-			
-			#copyright {
-				font-size: 10px;
-				line-height: 1.2;
-				margin-top: 2px;
-			}
-			
-			#copyright a {
-				color: blue;
-				text-decoration: underline;
-			}
-			
-			#controls {
-				display: flex;
-				gap: 8px;
-				flex-shrink: 0;
-			}
-			
-			#editor {
-				flex: 1;
-				font-family: monospace;
-				font-size: 14px;
-				padding: 4px 8px;
-				border: 1px solid #ccc;
-				height: 24px;
-				min-height: 24px;
-				resize: vertical;
-				white-space: pre;
-				overflow-y: auto;
-			}
-			
-			#helpBtn {
-				flex: 0 0 24px;
-				height: 34px;
-				cursor: pointer;
-				font-weight: bold;
-				padding: 0;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				-webkit-user-select: none;
-				-moz-user-select: none;
-				user-select: none;
-			}
-			
-			#preview {
-				flex: 1;
-				overflow: auto;
-				padding: 20px;
-			}
-			
-			pre {
-				background: #f4f4f4;
-				padding: 12px;
-				border-radius: 4px;
-				overflow-x: auto;
-			}
-			
-			blockquote {
-				border-left: 4px solid #ccc;
-				margin: 0;
-				padding-left: 16px;
-				color: #666;
-			}
-			
-			.mermaid {
-				display: flex;
-				justify-content: center;
-				margin: 16px 0;
-			}
-			
-			.plantuml-error {
-				border: 2px dashed #ff6b6b;
-				padding: 12px;
-				margin: 8px 0;
-				border-radius: 4px;
-				background-color: #fff5f5;
-				color: #c92a2a;
-				font-family: monospace;
-				font-size: 13px;
-			}
-			
-			.modal {
-				display: none;
-				position: fixed;
-				z-index: 1000;
-				left: 0;
-				top: 0;
-				width: 100%;
-				height: 100%;
-				overflow: auto;
-				background-color: rgba(0, 0, 0, 0.6);
-			}
-			
-			.modal-content {
-				background-color: #fefefe;
-				margin: 5% auto;
-				padding: 20px 30px;
-				border: 1px solid #888;
-				width: 80%;
-				max-width: 700px;
-				border-radius: 8px;
-				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-				line-height: 1.6;
-			}
-			
-			.close-btn {
-				color: #aaa;
-				float: right;
-				font-size: 28px;
-				font-weight: bold;
-				cursor: pointer;
-				line-height: 1;
-			}
-			
-			.close-btn:hover,
-			.close-btn:focus {
-				color: black;
-				text-decoration: none;
-				cursor: pointer;
-			}
-			
-			.modal-section {
-				margin-bottom: 24px;
-			}
-			
-			.modal-section h3 {
-				margin-bottom: 8px;
-				border-bottom: 1px solid #ddd;
-				padding-bottom: 4px;
-			}
-			
-			.modal-section ul {
-				margin-top: 8px;
-				padding-left: 20px;
-			}
-			
-			#promptText {
-				background: #f4f4f4;
-				border: 1px solid #ccc;
-				color: #333;
-			}
-			
-			body.dark {
-				background: #222;
-				color: #ddd;
-			}
-			
-			.dark #topbar {
-				background: #333;
-				border-bottom: 1px solid #444;
-			}
-			
-			.dark #editor {
-				background: #444;
-				color: #fff;
-				border-color: #666;
-			}
-			
-			.dark pre {
-				background: #333;
-				border: 1px solid #555;
-			}
-			
-			.dark #copyright a {
-				color: #66b3ff;
-			}
-			
-			.dark .modal-content {
-				background-color: #333;
-				color: #eee;
-				border: 1px solid #555;
-			}
-			
-			.dark .close-btn {
-				color: #ddd;
-			}
-			
-			.dark .close-btn:hover {
-				color: #fff;
-			}
-			
-			.dark .modal-section h3 {
-				border-bottom-color: #555;
-			}
-			
-			.dark #promptText {
-				background: #444;
-				border: 1px solid #666;
-				color: #fff;
-			}
-			
-			.dark .plantuml-error {
-				background-color: #2d1f1f;
-				color: #ff8787;
-				border-color: #ff6b6b;
-			}
 
-			.dark .katex {
-				color: inherit;
+<head>
+<!--
+	<script src="//cdn.jsdelivr.net/npm/eruda"></script>
+	<script>
+		eruda.init();
+	</script>	
+-->
+	<meta charset="UTF-8">
+
+	<!-- SEO Meta Tags -->
+	<meta name="description" content="Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer. Privacy-focused, client-side rendering tool with dark mode support. No data leaves your browser unless you explicitly allow PlantUML rendering.">
+	<meta name="keywords" content="GRSMD, markdown renderer, mermaid diagrams, plantuml online, latex renderer, katex, math preview, markdown preview, diagram tool, markdown editor, privacy markdown tool, client-side markdown">
+	<meta name="author" content="GoodRelax">
+	<meta name="robots" content="index, follow">
+
+	<meta property="og:type" content="website">
+	<meta property="og:url" content="https://goodrelax.github.io/">
+	<meta property="og:title" content="GRSMD : Free Markdown, Math & Diagram Renderer | Privacy-Focused Online Tool">
+	<meta property="og:description" content="Privacy-focused online tool for rendering Markdown, Math (LaTeX), Mermaid, and PlantUML diagrams with syntax highlighting and dark mode.">
+
+	<meta property="twitter:card" content="summary_large_image">
+	<meta property="twitter:title" content="GRSMD : Free Markdown, Math & Diagram Renderer | Privacy-Focused Online Tool">
+	<meta property="twitter:description" content="Privacy-focused online tool for rendering Markdown, Math (LaTeX), Mermaid, and PlantUML diagrams.">
+
+	<title>GRSMD : Free Markdown, Math & Diagram Renderer | Privacy-Conscious Online Tool</title>
+
+	<script type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "SoftwareApplication",
+			"name": "GR Simple MD Renderer",
+			"applicationCategory": "DeveloperApplication",
+			"operatingSystem": "Web Browser",
+			"offers": {
+				"@type": "Offer",
+				"price": "0",
+				"priceCurrency": "USD"
+			},
+			"description": "GRSMD Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer with privacy-focused client-side rendering",
+			"author": {
+				"@type": "Organization",
+				"name": "GoodRelax",
+				"url": "https://github.com/GoodRelax"
 			}
-			
-			.katex {
-				font-size: 1.1em;
-			}
-		</style>
-		
-		<!--
+		}
+	</script>
+	<style>
+		body {
+			margin: 0;
+			font-family: sans-serif;
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+		}
+
+		#topbar {
+			display: flex;
+			align-items: center;
+			padding: 8px 12px;
+			background: #f0f0f0;
+			gap: 16px;
+			border-bottom: 1px solid #ccc;
+		}
+
+		#header-group {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			flex-shrink: 0;
+		}
+
+		#title {
+			font-weight: bold;
+			font-size: 16px;
+			line-height: 1.2;
+			white-space: nowrap;
+		}
+
+		#copyright {
+			font-size: 10px;
+			line-height: 1.2;
+			margin-top: 2px;
+		}
+
+		#copyright a {
+			color: blue;
+			text-decoration: underline;
+		}
+
+		#controls {
+			display: flex;
+			gap: 8px;
+			flex-shrink: 0;
+		}
+
+		#editor {
+			flex: 1;
+			font-family: monospace;
+			font-size: 14px;
+			padding: 4px 8px;
+			border: 1px solid #ccc;
+			height: 24px;
+			min-height: 24px;
+			resize: vertical;
+			white-space: pre;
+			overflow-y: auto;
+		}
+
+		#helpBtn {
+			flex: 0 0 24px;
+			height: 34px;
+			cursor: pointer;
+			font-weight: bold;
+			padding: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			user-select: none;
+		}
+
+		#preview {
+			flex: 1;
+			overflow: auto;
+			padding: 20px;
+		}
+
+		pre {
+			background: #f4f4f4;
+			padding: 12px;
+			border-radius: 4px;
+			overflow-x: auto;
+		}
+
+		blockquote {
+			border-left: 4px solid #ccc;
+			margin: 0;
+			padding-left: 16px;
+			color: #666;
+		}
+
+		.mermaid {
+			display: flex;
+			justify-content: center;
+			margin: 16px 0;
+		}
+
+		.plantuml-error {
+			border: 2px dashed #ff6b6b;
+			padding: 12px;
+			margin: 8px 0;
+			border-radius: 4px;
+			background-color: #fff5f5;
+			color: #c92a2a;
+			font-family: monospace;
+			font-size: 13px;
+		}
+
+		.modal {
+			display: none;
+			position: fixed;
+			z-index: 1000;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			overflow: auto;
+			background-color: rgba(0, 0, 0, 0.6);
+		}
+
+		.modal-content {
+			background-color: #fefefe;
+			margin: 5% auto;
+			padding: 20px 30px;
+			border: 1px solid #888;
+			width: 80%;
+			max-width: 700px;
+			border-radius: 8px;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+			line-height: 1.6;
+		}
+
+		.close-btn {
+			color: #aaa;
+			float: right;
+			font-size: 28px;
+			font-weight: bold;
+			cursor: pointer;
+			line-height: 1;
+		}
+
+		.close-btn:hover,
+		.close-btn:focus {
+			color: black;
+			text-decoration: none;
+			cursor: pointer;
+		}
+
+		.modal-section {
+			margin-bottom: 24px;
+		}
+
+		.modal-section h3 {
+			margin-bottom: 8px;
+			border-bottom: 1px solid #ddd;
+			padding-bottom: 4px;
+		}
+
+		.modal-section ul {
+			margin-top: 8px;
+			padding-left: 20px;
+		}
+
+		#promptText {
+			background: #f4f4f4;
+			border: 1px solid #ccc;
+			color: #333;
+		}
+
+		body.dark {
+			background: #222;
+			color: #ddd;
+		}
+
+		.dark #topbar {
+			background: #333;
+			border-bottom: 1px solid #444;
+		}
+
+		.dark #editor {
+			background: #444;
+			color: #fff;
+			border-color: #666;
+		}
+
+		.dark pre {
+			background: #333;
+			border: 1px solid #555;
+		}
+
+		.dark #copyright a {
+			color: #66b3ff;
+		}
+
+		.dark .modal-content {
+			background-color: #333;
+			color: #eee;
+			border: 1px solid #555;
+		}
+
+		.dark .close-btn {
+			color: #ddd;
+		}
+
+		.dark .close-btn:hover {
+			color: #fff;
+		}
+
+		.dark .modal-section h3 {
+			border-bottom-color: #555;
+		}
+
+		.dark #promptText {
+			background: #444;
+			border: 1px solid #666;
+			color: #fff;
+		}
+
+		.dark .plantuml-error {
+			background-color: #2d1f1f;
+			color: #ff8787;
+			border-color: #ff6b6b;
+		}
+
+		.dark .katex {
+			color: inherit;
+		}
+
+		.katex {
+			font-size: 1.1em;
+		}
+	</style>
+
+	<!--
         SRI Hash Generation Site
             https://srihash.org/
         CDN Site 
@@ -290,815 +296,823 @@
 			https://www.jsdelivr.com/package/npm/marked-katex-extension
         * Markdown: -->
 
-		
-		<script src="https://cdn.jsdelivr.net/npm/marked@17.0.1/lib/marked.umd.min.js" integrity="sha384-AkwdwVgEdZpqPMfydlmViIGgV90b6sHb/NoxnNdlecRKY3puoyKdw/pi64E32c+6" crossorigin="anonymous">
-		</script>
-		
-		<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.esm.min.mjs" integrity="sha384-bBdf+Hx1qc+N2a4poQjInyeO803gqSNqanHQiQ3DgvXaz/aeQz4mQLhIXpK9MP83" crossorigin="anonymous" />
-		
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css" integrity="sha512-mtXspRdOWHCYp+f4c7CkWGYPPRAhq9X+xCvJMUBVAb6pqA4U8pxhT3RWT3LP3bKbiolYL2CkL1bSKZZO4eeTew==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-		<link rel="modulepreload" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js" integrity="sha512-818kY2uYH1PRlHNZZL17hgbHng9LBOgA4k8TQVsXYTaKwgg5pMxBahxeHDUdAMTPUJ82CXLQmJZOl3OQUKZ18Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-		
-		<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm" integrity="sha384-0soUzyKltgTFXRsH4USkmq6FPG3emb/n2JkcG7etR4fIXjKFFJkCLqTl6sM7boxe" crossorigin="anonymous" />
-		
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.28/dist/katex.min.css" integrity="sha384-Wsr4Nh3yrvMf2KCebJchRJoVo1gTU6kcP05uRSh5NV3sj9+a8IomuJoQzf3sMq4T" crossorigin="anonymous">		
-		<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.6/+esm" integrity="sha384-sXM6dT1KwUCU7buT3pldq9hy6hhfkoUXunVhnhf+ISmpQh3ofLks2w7oMwyG24Ex" crossorigin="anonymous"></script>
+
+	<script src="https://cdn.jsdelivr.net/npm/marked@17.0.1/lib/marked.umd.min.js" integrity="sha384-AkwdwVgEdZpqPMfydlmViIGgV90b6sHb/NoxnNdlecRKY3puoyKdw/pi64E32c+6" crossorigin="anonymous">
+	</script>
+
+	<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.esm.min.mjs" integrity="sha384-bBdf+Hx1qc+N2a4poQjInyeO803gqSNqanHQiQ3DgvXaz/aeQz4mQLhIXpK9MP83" crossorigin="anonymous" />
+
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css" integrity="sha512-mtXspRdOWHCYp+f4c7CkWGYPPRAhq9X+xCvJMUBVAb6pqA4U8pxhT3RWT3LP3bKbiolYL2CkL1bSKZZO4eeTew==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link rel="modulepreload" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js" integrity="sha512-818kY2uYH1PRlHNZZL17hgbHng9LBOgA4k8TQVsXYTaKwgg5pMxBahxeHDUdAMTPUJ82CXLQmJZOl3OQUKZ18Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+	<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm" integrity="sha384-0soUzyKltgTFXRsH4USkmq6FPG3emb/n2JkcG7etR4fIXjKFFJkCLqTl6sM7boxe" crossorigin="anonymous" />
+
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.28/dist/katex.min.css" integrity="sha384-Wsr4Nh3yrvMf2KCebJchRJoVo1gTU6kcP05uRSh5NV3sj9+a8IomuJoQzf3sMq4T" crossorigin="anonymous">
+	<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.6/+esm" integrity="sha384-sXM6dT1KwUCU7buT3pldq9hy6hhfkoUXunVhnhf+ISmpQh3ofLks2w7oMwyG24Ex" crossorigin="anonymous">
+	</script>
 
 
-	</head>
-	
-	<body>
-		<div id="topbar">
-			
-			<div id="header-group">
-				<div id="title">GR Simple MD Renderer</div>
-				<div id="copyright">
-					&copy; 2026 GoodRelax. MIT License.
-					<br>
-					<a href="https://github.com/GoodRelax" target="_blank">https://github.com/GoodRelax</a>
-				</div>
-			</div>
-			
-			<div id="controls">
-				<button id="renderLight">Render Light</button>
-				<button id="renderDark">Render Dark</button>
-				<button id="newTabBtn">New Tab</button>
-				<button id="clearBtn">Clear</button>
-			</div>
-			
-			<textarea id="editor" placeholder="Paste Markdown..."></textarea>
-			<button id="helpBtn" title="Help">?</button>
-		</div>
-		
-		<div id="preview"></div>
-		
-		<div id="helpModal" class="modal">
-			<div class="modal-content">
-				<span class="close-btn">&times;</span>
-				
-				<div class="modal-section">
-					<h3>English</h3>
-					<p><strong>Intent:</strong><br>
-						This tool is a lightweight, privacy-conscious renderer for Markdown, Mermaid, and PlantUML. It runs entirely in your browser (client-side), ensuring your text remains local unless you explicitly allow external rendering of PlantUML.</p>
-					
-					<p><strong>How to Use:</strong></p>
-					<ul>
-						<li>Paste your Markdown text into the input field at the top.</li>
-						<li>Click Render Light or Render Dark to generate the preview.</li>
-						<li>Note on PlantUML: If your code contains PlantUML, you will be asked for permission to send data to the official PlantUML server. If you deny, PlantUML blocks will show "Rendering Canceled".</li>
-						<li>Press and hold the (?) icon to obtain a prompt useful for generating Markdown with AI.</li>
-					</ul>
-				</div>
-				<div class="modal-section">
-					<h3>Sample Data: </h3>
-					<a href="https://goodrelax.github.io/gr-simple-md-renderer/sample-data.txt">Copy this sample Markdown text</a>
-				</div>	
-				<div class="modal-section">
-					<h3>Japanese</h3>
-					<p><strong>意図:</strong><br>
-						本ツールは、Markdown、Mermaid、PlantUMLのための軽量かつプライバシーを重視したレンダラーです。ブラウザ上（クライアントサイド）のみで動作するため、PlantUMLの外部レンダリングを許可しない限り、テキストデータが外部に送信されることはありません。</p>
-					<p><strong>使い方:</strong></p>
-					<ul>
-						<li>上部の入力欄にMarkdownテキストを貼り付けます。</li>
-						<li>Render Light または Render Dark ボタンを押してプレビューを表示します。</li>
-						<li>PlantUMLに関する注意: PlantUMLが含まれる場合、公式サーバーへのデータ送信の許可を求められます。「キャンセル」を選択した場合、PlantUMLブロックには「Rendering Canceled」と表示されます。</li>
-						<li>(?)アイコンを長押しすると、AIでMarkdownを生成するのに役立つプロンプトを取得できます</li>
-					</ul>
-				</div>
+</head>
+
+<body>
+	<div id="topbar">
+
+		<div id="header-group">
+			<div id="title">GR Simple MD Renderer</div>
+			<div id="copyright">
+				&copy; 2026 GoodRelax. MIT License.
+				<br>
+				<a href="https://github.com/GoodRelax" target="_blank">https://github.com/GoodRelax</a>
 			</div>
 		</div>
-		
-		<div id="promptModal" class="modal">
-			<div class="modal-content">
-				<span class="close-btn prompt-close">&times;</span>
-				<div class="modal-section">
-					<h3>Prompt for AI Markdown Generation</h3>
-					<p>The prompt below improves the quality of the AI's Markdown output by reducing errors. Simply copy and paste it to use</p>
-					
-					<textarea id="promptText" readonly style="width: 100%; height: 200px; margin-bottom: 10px; resize: none; font-family: monospace; font-size: 12px; padding: 8px; box-sizing: border-box;"></textarea>
-					<button id="copyPromptBtn" style="width: 100%; padding: 10px; cursor: pointer; font-weight: bold;">Copy to Clipboard</button>
-				</div>
+
+		<div id="controls">
+			<button id="renderLight">Render Light</button>
+			<button id="renderDark">Render Dark</button>
+			<button id="newTabBtn">New Tab</button>
+			<button id="clearBtn">Clear</button>
+		</div>
+
+		<textarea id="editor" placeholder="Paste Markdown..."></textarea>
+		<button id="helpBtn" title="Help">?</button>
+	</div>
+
+	<div id="preview"></div>
+
+	<div id="helpModal" class="modal">
+		<div class="modal-content">
+			<span class="close-btn">&times;</span>
+
+			<div class="modal-section">
+				<h3>English</h3>
+				<p><strong>Intent:</strong><br>
+					This tool is a lightweight, privacy-conscious renderer for Markdown, Mermaid, and PlantUML. It runs entirely in your browser (client-side), ensuring your text remains local unless you explicitly allow external rendering of PlantUML.</p>
+
+				<p><strong>How to Use:</strong></p>
+				<ul>
+					<li>Paste your Markdown text into the input field at the top.</li>
+					<li>Click Render Light or Render Dark to generate the preview.</li>
+					<li>Note on PlantUML: If your code contains PlantUML, you will be asked for permission to send data to the official PlantUML server. If you deny, PlantUML blocks will show "Rendering Canceled".</li>
+					<li>Press and hold the (?) icon to obtain a prompt useful for generating Markdown with AI.</li>
+				</ul>
+			</div>
+			<div class="modal-section">
+				<h3>Sample Data: </h3>
+				<a href="https://goodrelax.github.io/gr-simple-md-renderer/sample-data.txt">Copy this sample Markdown text for a quick trial</a><br>
+				<a href="https://goodrelax.github.io/gr-simple-md-renderer/sample-data-2.txt">Copy this sample Markdown text for a large‑scale data trial</a>
+			</div>
+			<div class="modal-section">
+				<h3>Japanese</h3>
+				<p><strong>意図:</strong><br>
+					本ツールは、Markdown、Mermaid、PlantUMLのための軽量かつプライバシーを重視したレンダラーです。ブラウザ上（クライアントサイド）のみで動作するため、PlantUMLの外部レンダリングを許可しない限り、テキストデータが外部に送信されることはありません。</p>
+				<p><strong>使い方:</strong></p>
+				<ul>
+					<li>上部の入力欄にMarkdownテキストを貼り付けます。</li>
+					<li>Render Light または Render Dark ボタンを押してプレビューを表示します。</li>
+					<li>PlantUMLに関する注意: PlantUMLが含まれる場合、公式サーバーへのデータ送信の許可を求められます。「キャンセル」を選択した場合、PlantUMLブロックには「Rendering Canceled」と表示されます。</li>
+					<li>(?)アイコンを長押しすると、AIでMarkdownを生成するのに役立つプロンプトを取得できます</li>
+				</ul>
 			</div>
 		</div>
-		
-		
-		<script type="module">
-			import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.esm.min.mjs';
-			import hljs from 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js';
-			import plantumlEncoder from 'https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm';
-			import markedKatex from "https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.6/+esm";
-			
-			// ========================================
-			// Extension Guide
-			// ========================================
-			// To add a new diagram type:
-			// 1. Extend DiagramRenderer class
-			// 2. Implement render(theme) method
-			// 3. Add instance to diagramRenderers array in initialization
-			
-			
-			// ========================================
-			// Configuration
-			// ========================================
-			const CONFIG = {
-				rendering: {
-					stabilityTimeout: 1000,
-					stabilityDebounce: 50
-				},
+	</div>
+
+	<div id="promptModal" class="modal">
+		<div class="modal-content">
+			<span class="close-btn prompt-close">&times;</span>
+			<div class="modal-section">
+				<h3>Prompt for AI Markdown Generation</h3>
+				<p>The prompt below improves the quality of the AI's Markdown output by reducing errors. Simply copy and paste it to use</p>
+
+				<textarea id="promptText" readonly style="width: 100%; height: 200px; margin-bottom: 10px; resize: none; font-family: monospace; font-size: 12px; padding: 8px; box-sizing: border-box;"></textarea>
+				<button id="copyPromptBtn" style="width: 100%; padding: 10px; cursor: pointer; font-weight: bold;">Copy to Clipboard</button>
+			</div>
+		</div>
+	</div>
+
+
+	<script type="module">
+		import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.esm.min.mjs';
+		import hljs from 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js';
+		import plantumlEncoder from 'https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm';
+		import markedKatex from "https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.6/+esm";
+
+		// ========================================
+		// Extension Guide
+		// ========================================
+		// To add a new diagram type:
+		// 1. Extend DiagramRenderer class
+		// 2. Implement render(theme) method
+		// 3. Add instance to diagramRenderers array in initialization
+
+
+		// ========================================
+		// Configuration
+		// ========================================
+		const CONFIG = {
+			rendering: {
+				stabilityTimeout: 1000,
+				stabilityDebounce: 50
+			},
+			plantuml: {
+				imageLoadTimeout: 5000,
+				serverUrl: 'https://www.plantuml.com/plantuml/svg/',
+				darkTheme: 'cyborg' // Best contrast in dark mode
+			},
+			ui: {
+				longPressDuration: 800,
+				copyFeedbackDuration: 1000,
+				maxTextSelection: 99999 // DOM API limitation for mobile browsers
+			},
+			messages: {
 				plantuml: {
-					imageLoadTimeout: 5000,
-					serverUrl: 'https://www.plantuml.com/plantuml/svg/',
-					darkTheme: 'cyborg' // Best contrast in dark mode
+					canceled: 'Rendering Canceled',
+					encodingFailed: 'PlantUML encoding failed',
+					timeout: (seconds) => `PlantUML timeout (${seconds}s)`,
+					serverError: 'PlantUML server error'
 				},
-				ui: {
-					longPressDuration: 800,
-					copyFeedbackDuration: 1000,
-					maxTextSelection: 99999 // DOM API limitation for mobile browsers
-				},
-				messages: {
-					plantuml: {
-						canceled: 'Rendering Canceled',
-						encodingFailed: 'PlantUML encoding failed',
-						timeout: (seconds) => `PlantUML timeout (${seconds}s)`,
-						serverError: 'PlantUML server error'
-					},
-					copy: {
-						failed: 'Copy failed.',
-						blocked: 'Browser denied copy.'
-					}
+				copy: {
+					failed: 'Copy failed.',
+					blocked: 'Browser denied copy.'
 				}
-			};
-			
-			
-			// ========================================
-			// Type Definitions
-			// ========================================
-			
+			}
+		};
+
+
+		// ========================================
+		// Type Definitions
+		// ========================================
+
+		/**
+		 * @typedef {Object} UIElements
+		 * @property {HTMLTextAreaElement} editor
+		 * @property {HTMLElement} preview
+		 * @property {HTMLButtonElement} renderLightBtn
+		 * @property {HTMLButtonElement} renderDarkBtn
+		 * @property {HTMLButtonElement} newTabBtn
+		 * @property {HTMLButtonElement} clearBtn
+		 * @property {HTMLButtonElement} helpBtn
+		 * @property {HTMLElement} helpModal
+		 * @property {HTMLElement} promptModal
+		 * @property {HTMLTextAreaElement} promptText
+		 * @property {HTMLButtonElement} copyPromptBtn
+		 */
+
+
+		// ========================================
+		// Utility Functions
+		// ========================================
+
+		/**
+		 * Check if text contains PlantUML diagrams
+		 * @param {string} text
+		 * @returns {boolean}
+		 */
+		function hasPlantUML(text) {
+			return /```(plantuml|puml)/i.test(text) || /@startuml/i.test(text);
+		}
+
+		/**
+		 * Check PlantUML consent
+		 * @param {string} content
+		 * @returns {boolean|string} - true: agreed, 'skip_plantuml': denied
+		 */
+		function checkPlantUMLConsent(content) {
+			if (!hasPlantUML(content)) return true;
+
+			const agreed = window.confirm(
+				`Security & Confidentiality Warning\n\n` +
+				`Your data will be sent to an external PlantUML  rendering server.\n\n` +
+				`[OK]: data → 🌐 and render Markdown with PlantUML\n\n` +
+				`[Cancel]: Render Markdown without PlantUML`
+			);
+			return agreed ? true : 'skip_plantuml';
+		}
+
+		/**
+		 * Wait for diagrams to finish loading (prevents scroll jumps)
+		 * 
+		 * When Mermaid/PlantUML render, they resize the container.
+		 * This causes unexpected scroll position changes.
+		 * Wait until layout stabilizes before restoring scroll.
+		 * 
+		 * @param {HTMLElement} element
+		 * @param {number} timeout
+		 * @returns {Promise<boolean>}
+		 */
+		async function waitForDOMStability(element, timeout = CONFIG.rendering.stabilityTimeout) {
+			return new Promise((resolve) => {
+				let resizeTimer;
+				let timeoutTimer;
+
+				const resizeObserver = new ResizeObserver(() => {
+					clearTimeout(resizeTimer);
+					resizeTimer = setTimeout(() => {
+						cleanup();
+						resolve(true);
+					}, CONFIG.rendering.stabilityDebounce);
+				});
+
+				const cleanup = () => {
+					resizeObserver.disconnect();
+					clearTimeout(resizeTimer);
+					clearTimeout(timeoutTimer);
+				};
+
+				resizeObserver.observe(element);
+
+				timeoutTimer = setTimeout(() => {
+					cleanup();
+					console.warn('DOM stability timeout after', timeout, 'ms (continuing anyway)');
+					resolve(false);
+				}, timeout);
+			});
+		}
+
+
+		// ========================================
+		// Utility Classes
+		// ========================================
+
+		/**
+		 * Common DOM utilities
+		 */
+		class DOMUtilities {
 			/**
-			 * @typedef {Object} UIElements
-			 * @property {HTMLTextAreaElement} editor
-			 * @property {HTMLElement} preview
-			 * @property {HTMLButtonElement} renderLightBtn
-			 * @property {HTMLButtonElement} renderDarkBtn
-			 * @property {HTMLButtonElement} newTabBtn
-			 * @property {HTMLButtonElement} clearBtn
-			 * @property {HTMLButtonElement} helpBtn
-			 * @property {HTMLElement} helpModal
-			 * @property {HTMLElement} promptModal
-			 * @property {HTMLTextAreaElement} promptText
-			 * @property {HTMLButtonElement} copyPromptBtn
+			 * Replace code block with new element
+			 * @param {HTMLElement} block
+			 * @param {HTMLElement} newElement
 			 */
-			
-			
-			// ========================================
-			// Utility Functions
-			// ========================================
-			
+			static replaceCodeBlock(block, newElement) {
+				const pre = block.parentElement;
+				if (pre && pre.tagName === 'PRE') {
+					pre.replaceWith(newElement);
+				} else {
+					block.replaceWith(newElement);
+				}
+			}
+		}
+
+
+		// ========================================
+		// Class: ApplicationState
+		// ========================================
+
+		/**
+		 * Application state manager
+		 */
+		class ApplicationState {
+			constructor() {
+				this.currentTheme = 'light';
+				this.markdownText = '';
+				this.skipPlantUML = false;
+			}
+
 			/**
-			 * Check if text contains PlantUML diagrams
+			 * @param {string} theme
+			 */
+			setTheme(theme) {
+				this.currentTheme = theme;
+			}
+
+			/**
 			 * @param {string} text
-			 * @returns {boolean}
 			 */
-			function hasPlantUML(text) {
-				return /```(plantuml|puml)/i.test(text) || /@startuml/i.test(text);
+			setMarkdownText(text) {
+				this.markdownText = text;
 			}
-			
+
 			/**
-			 * Check PlantUML consent
-			 * @param {string} content
-			 * @returns {boolean|string} - true: agreed, 'skip_plantuml': denied
+			 * @param {boolean} skip
 			 */
-			function checkPlantUMLConsent(content) {
-				if (!hasPlantUML(content)) return true;
-				
-				const agreed = window.confirm(
-					`Security & Confidentiality Warning\n\n` +
-					`Your data will be sent to an external PlantUML  rendering server.\n\n` +
-					`[OK]: data → 🌐 and render Markdown with PlantUML\n\n` +
-					`[Cancel]: Render Markdown without PlantUML`
-				);
-				return agreed ? true : 'skip_plantuml';
+			setSkipPlantUML(skip) {
+				this.skipPlantUML = skip;
 			}
-			
+		}
+
+
+		// ========================================
+		// Class: ScrollManager
+		// ========================================
+
+		/**
+		 * Manages scroll position preservation
+		 */
+		class ScrollManager {
 			/**
-			 * Wait for diagrams to finish loading (prevents scroll jumps)
-			 * 
-			 * When Mermaid/PlantUML render, they resize the container.
-			 * This causes unexpected scroll position changes.
-			 * Wait until layout stabilizes before restoring scroll.
-			 * 
-			 * @param {HTMLElement} element
+			 * @param {HTMLElement} container
+			 */
+			constructor(container) {
+				this.container = container;
+			}
+
+			/**
+			 * @returns {number}
+			 */
+			save() {
+				return this.container.scrollTop;
+			}
+
+			/**
+			 * @param {number} scrollTop
+			 */
+			restore(scrollTop) {
+				this.container.scrollTop = scrollTop;
+			}
+		}
+
+
+		// ========================================
+		// Class: MarkdownRenderer
+		// ========================================
+
+		/**
+		 * Renders Markdown with syntax highlighting
+		 */
+		class MarkdownRenderer {
+			/**
+			 * @param {HTMLElement} preview
+			 * @param {object} marked
+			 * @param {object} hljs
+			 */
+			constructor(preview, marked, hljs) {
+				this.preview = preview;
+				this.marked = marked;
+				this.hljs = hljs;
+			}
+
+			/**
+			 * @param {string} markdownText
+			 * @returns {Promise<void>}
+			 */
+
+
+			async render(markdownText) {
+				try {
+					const html = this.marked.parse(markdownText);
+					this.preview.innerHTML = html;
+
+					try {
+						// Exclude diagram code blocks from syntax highlighting
+						// Mermaid/PlantUML have their own rendering pipelines
+						this.preview.querySelectorAll('pre code:not(.language-mermaid):not(.language-plantuml):not(.language-puml)').forEach((block) => {
+							this.hljs.highlightElement(block);
+						});
+					} catch (hljsError) {
+						console.error('Syntax highlighting error:', hljsError);
+					}
+
+				} catch (error) {
+					console.error('Markdown parse error:', error);
+					this.preview.innerHTML = `<pre style="color: red;">Markdown Parse Error: ${error.message}</pre>`;
+				}
+			}
+		}
+
+
+		// ========================================
+		// Class: DiagramRenderer (Interface)
+		// ========================================
+
+		/**
+		 * Base interface for diagram renderers
+		 */
+		class DiagramRenderer {
+			/**
+			 * @param {string} theme
+			 * @returns {Promise<void>}
+			 */
+			async render(theme) {
+				throw new Error('DiagramRenderer.render() must be implemented');
+			}
+		}
+
+
+		// ========================================
+		// Class: MermaidRenderer
+		// ========================================
+
+		/**
+		 * Renders Mermaid diagrams
+		 */
+		class MermaidRenderer extends DiagramRenderer {
+			/**
+			 * @param {HTMLElement} preview
+			 * @param {object} mermaid
+			 */
+			constructor(preview, mermaid) {
+				super();
+				this.preview = preview;
+				this.mermaid = mermaid;
+			}
+
+			/**
+			 * @param {string} theme
+			 * @returns {Promise<void>}
+			 */
+			async render(theme) {
+				try {
+					const mermaidBlocks = this.preview.querySelectorAll('code.language-mermaid');
+
+					if (mermaidBlocks.length === 0) {
+						return;
+					}
+
+					mermaidBlocks.forEach(block => this.convertCodeBlockToContainer(block));
+
+					this.initializeMermaid(theme);
+					await this.renderMermaid();
+
+				} catch (error) {
+					console.error('Mermaid rendering error:', error);
+				}
+			}
+
+			/**
+			 * Initialize Mermaid with theme
+			 * @param {string} theme
+			 */
+			initializeMermaid(theme) {
+				this.mermaid.initialize({
+					startOnLoad: false,
+					theme: theme === 'dark' ? 'dark' : 'default'
+				});
+			}
+
+			/**
+			 * Execute Mermaid rendering
+			 * @returns {Promise<void>}
+			 */
+			async renderMermaid() {
+				try {
+					await this.mermaid.run({
+						nodes: this.preview.querySelectorAll('.mermaid')
+					});
+				} catch (error) {
+					console.error('Mermaid execution error:', error);
+				}
+			}
+
+			/**
+			 * @param {HTMLElement} block
+			 * @returns {HTMLElement}
+			 */
+			convertCodeBlockToContainer(block) {
+				const container = document.createElement('div');
+				container.className = 'mermaid';
+				container.textContent = block.textContent;
+
+				DOMUtilities.replaceCodeBlock(block, container);
+
+				return container;
+			}
+		}
+
+
+		// ========================================
+		// Class: PlantUMLRenderer
+		// ========================================
+
+		/**
+		 * Renders PlantUML diagrams via external server
+		 */
+		class PlantUMLRenderer extends DiagramRenderer {
+			/**
+			 * @param {HTMLElement} preview
+			 * @param {object} plantumlEncoder
+			 */
+			constructor(preview, plantumlEncoder) {
+				super();
+				this.preview = preview;
+				this.encoder = plantumlEncoder;
+			}
+
+			/**
+			 * @param {string} theme
+			 * @param {boolean} skipRendering
+			 * @returns {Promise<void>}
+			 */
+			async render(theme, skipRendering = false) {
+				try {
+					const plantumlBlocks = this.preview.querySelectorAll(
+						'code.language-plantuml, code.language-puml'
+					);
+
+					if (plantumlBlocks.length === 0) {
+						return;
+					}
+
+					if (skipRendering) {
+						plantumlBlocks.forEach(block => {
+							const errorDiv = this.createErrorElement(CONFIG.messages.plantuml.canceled);
+							DOMUtilities.replaceCodeBlock(block, errorDiv);
+						});
+						return;
+					}
+
+					const imageLoadPromises = [];
+
+					plantumlBlocks.forEach(block => {
+						const promise = this.renderSingleBlock(block, theme);
+						if (promise) imageLoadPromises.push(promise);
+					});
+
+					await Promise.allSettled(imageLoadPromises);
+
+				} catch (error) {
+					console.error('PlantUML rendering error:', error);
+				}
+			}
+
+			/**
+			 * Render a single PlantUML block
+			 * @param {HTMLElement} block
+			 * @param {string} theme
+			 * @returns {Promise<boolean>|null}
+			 */
+			renderSingleBlock(block, theme) {
+				try {
+					const code = this.applyTheme(block.textContent, theme);
+					const img = this.createImage(code);
+					DOMUtilities.replaceCodeBlock(block, img);
+					return this.waitForImageLoad(img, CONFIG.plantuml.imageLoadTimeout);
+				} catch (error) {
+					console.error('PlantUML encoding error:', error);
+					const errorDiv = this.createErrorElement(CONFIG.messages.plantuml.encodingFailed);
+					DOMUtilities.replaceCodeBlock(block, errorDiv);
+					return null;
+				}
+			}
+
+			/**
+			 * Apply theme to PlantUML code
+			 * @param {string} code
+			 * @param {string} theme
+			 * @returns {string}
+			 */
+			applyTheme(code, theme) {
+				if (theme === 'dark' && !code.includes('!theme')) {
+					return code.replace(/(@start\w+.*)/i, `$1\n!theme ${CONFIG.plantuml.darkTheme}`);
+				}
+				return code;
+			}
+
+			/**
+			 * Create PlantUML image element
+			 * @param {string} code
+			 * @returns {HTMLImageElement}
+			 */
+			createImage(code) {
+				const encoded = this.encoder.encode(code);
+				const img = document.createElement('img');
+				img.src = `${CONFIG.plantuml.serverUrl}${encoded}`;
+				img.alt = "PlantUML Diagram";
+				img.style.maxWidth = "100%";
+				return img;
+			}
+
+			/**
+			 * @param {HTMLImageElement} img
 			 * @param {number} timeout
 			 * @returns {Promise<boolean>}
 			 */
-			async function waitForDOMStability(element, timeout = CONFIG.rendering.stabilityTimeout) {
+			async waitForImageLoad(img, timeout) {
 				return new Promise((resolve) => {
-					let resizeTimer;
-					let timeoutTimer;
-					
-					const resizeObserver = new ResizeObserver(() => {
-						clearTimeout(resizeTimer);
-						resizeTimer = setTimeout(() => {
-							cleanup();
-							resolve(true);
-						}, CONFIG.rendering.stabilityDebounce);
-					});
-					
-					const cleanup = () => {
-						resizeObserver.disconnect();
-						clearTimeout(resizeTimer);
-						clearTimeout(timeoutTimer);
-					};
-					
-					resizeObserver.observe(element);
-					
-					timeoutTimer = setTimeout(() => {
-						cleanup();
-						console.warn('DOM stability timeout after', timeout, 'ms (continuing anyway)');
+					const timer = setTimeout(() => {
+						const errorDiv = this.createErrorElement(CONFIG.messages.plantuml.timeout(timeout / 1000));
+						img.replaceWith(errorDiv);
 						resolve(false);
 					}, timeout);
+
+					img.onload = () => {
+						clearTimeout(timer);
+						resolve(true);
+					};
+
+					img.onerror = () => {
+						clearTimeout(timer);
+						const errorDiv = this.createErrorElement(CONFIG.messages.plantuml.serverError);
+						img.replaceWith(errorDiv);
+						resolve(false);
+					};
 				});
 			}
-			
-			
-			// ========================================
-			// Utility Classes
-			// ========================================
-			
+
 			/**
-			 * Common DOM utilities
+			 * @param {string} message
+			 * @returns {HTMLElement}
 			 */
-			class DOMUtilities {
-				/**
-				 * Replace code block with new element
-				 * @param {HTMLElement} block
-				 * @param {HTMLElement} newElement
-				 */
-				static replaceCodeBlock(block, newElement) {
-					const pre = block.parentElement;
-					if (pre && pre.tagName === 'PRE') {
-						pre.replaceWith(newElement);
-					} else {
-						block.replaceWith(newElement);
+			createErrorElement(message) {
+				const errorDiv = document.createElement('div');
+				errorDiv.className = 'plantuml-error';
+				errorDiv.textContent = message;
+				return errorDiv;
+			}
+		}
+
+
+		// ========================================
+		// Class: RendererOrchestrator
+		// ========================================
+
+		/**
+		 * Orchestrates rendering workflow
+		 */
+		class RendererOrchestrator {
+			/**
+			 * @param {ApplicationState} state
+			 * @param {MarkdownRenderer} markdownRenderer
+			 * @param {MermaidRenderer} mermaidRenderer
+			 * @param {PlantUMLRenderer} plantumlRenderer
+			 * @param {ScrollManager} scrollManager
+			 * @param {HTMLElement} preview
+			 */
+			constructor(state, markdownRenderer, mermaidRenderer, plantumlRenderer, scrollManager, preview) {
+				this.state = state;
+				this.markdownRenderer = markdownRenderer;
+				this.mermaidRenderer = mermaidRenderer;
+				this.plantumlRenderer = plantumlRenderer;
+				this.scrollManager = scrollManager;
+				this.preview = preview;
+			}
+
+			/**
+			 * @returns {Promise<void>}
+			 */
+			async renderAll() {
+				try {
+					const scrollTop = this.scrollManager.save();
+
+					await this.markdownRenderer.render(this.state.markdownText);
+
+					// Render Mermaid
+					await this.mermaidRenderer.render(this.state.currentTheme);
+
+					// Render PlantUML (with skip flag if needed)
+					await this.plantumlRenderer.render(this.state.currentTheme, this.state.skipPlantUML);
+
+					await waitForDOMStability(this.preview);
+
+					this.scrollManager.restore(scrollTop);
+
+				} catch (error) {
+					console.error('Rendering orchestration error:', error);
+				}
+			}
+		}
+
+
+		// ========================================
+		// Class: ModalController
+		// ========================================
+
+		/**
+		 * Manages modal dialogs
+		 */
+		class ModalController {
+			/**
+			 * @param {HTMLElement} modal
+			 * @param {HTMLElement[]} closeTriggers
+			 */
+			static setupModal(modal, closeTriggers) {
+				closeTriggers.forEach(trigger => {
+					trigger.onclick = () => {
+						modal.style.display = "none";
+					};
+				});
+
+				window.addEventListener('click', (event) => {
+					if (event.target === modal) {
+						modal.style.display = "none";
 					}
-				}
+				});
 			}
-			
-			
-			// ========================================
-			// Class: ApplicationState
-			// ========================================
-			
+
 			/**
-			 * Application state manager
+			 * @param {HTMLElement} modal
 			 */
-			class ApplicationState {
-				constructor() {
-					this.currentTheme = 'light';
-					this.markdownText = '';
-					this.skipPlantUML = false;
-				}
-				
-				/**
-				 * @param {string} theme
-				 */
-				setTheme(theme) {
-					this.currentTheme = theme;
-				}
-				
-				/**
-				 * @param {string} text
-				 */
-				setMarkdownText(text) {
-					this.markdownText = text;
-				}
-				
-				/**
-				 * @param {boolean} skip
-				 */
-				setSkipPlantUML(skip) {
-					this.skipPlantUML = skip;
-				}
+			static show(modal) {
+				modal.style.display = "block";
 			}
-			
-			
-			// ========================================
-			// Class: ScrollManager
-			// ========================================
-			
+
 			/**
-			 * Manages scroll position preservation
+			 * @param {HTMLElement} modal
 			 */
-			class ScrollManager {
-				/**
-				 * @param {HTMLElement} container
-				 */
-				constructor(container) {
-					this.container = container;
-				}
-				
-				/**
-				 * @returns {number}
-				 */
-				save() {
-					return this.container.scrollTop;
-				}
-				
-				/**
-				 * @param {number} scrollTop
-				 */
-				restore(scrollTop) {
-					this.container.scrollTop = scrollTop;
-				}
+			static hide(modal) {
+				modal.style.display = "none";
 			}
-			
-			
-			// ========================================
-			// Class: MarkdownRenderer
-			// ========================================
-			
+		}
+
+
+		// ========================================
+		// Class: UIController
+		// ========================================
+
+		/**
+		 * Manages UI interactions
+		 */
+		class UIController {
 			/**
-			 * Renders Markdown with syntax highlighting
+			 * @param {RendererOrchestrator} orchestrator
+			 * @param {ApplicationState} state
+			 * @param {UIElements} elements
 			 */
-			class MarkdownRenderer {
-				/**
-				 * @param {HTMLElement} preview
-				 * @param {object} marked
-				 * @param {object} hljs
-				 */
-				constructor(preview, marked, hljs) {
-					this.preview = preview;
-					this.marked = marked;
-					this.hljs = hljs;
-				}
-				
-				/**
-				 * @param {string} markdownText
-				 * @returns {Promise<void>}
-				 */
-				async render(markdownText) {
+			constructor(orchestrator, state, elements) {
+				this.orchestrator = orchestrator;
+				this.state = state;
+				this.elements = elements;
+				this.longPressTimer = null;
+				this.isLongPress = false;
+
+				this.setupEventListeners();
+				this.setupModals();
+				this.setupPromptText();
+			}
+
+			setupEventListeners() {
+				this.setupRenderButtons();
+				this.setupUtilityButtons();
+				this.setupHelpButton();
+				this.setupPromptButton();
+			}
+
+			/**
+			 * Preprocess input text to remove markdown wrapper
+			 * @param {string} rawText
+			 * @returns {string}
+			 */
+
+			preprocessInput(rawText) {
+				// Remove leading empty lines + ```markdown (3+ backticks, case-insensitive)
+				return rawText.replace(/^(?:\s*\n)*`{3,}markdown\s*\n/i, '');
+			}
+
+			setupRenderButtons() {
+				this.elements.renderLightBtn.addEventListener('click', async () => {
+					await this.handleRender('light');
+				});
+
+				this.elements.renderDarkBtn.addEventListener('click', async () => {
+					await this.handleRender('dark');
+				});
+			}
+
+			setupUtilityButtons() {
+				this.elements.newTabBtn.addEventListener('click', () => {
+					window.open(window.location.href, '_blank');
+				});
+
+				this.elements.clearBtn.addEventListener('click', () => {
+					this.elements.editor.value = '';
+					this.elements.preview.innerHTML = '';
+					document.body.classList.remove('dark');
+				});
+			}
+
+			setupHelpButton() {
+				this.elements.helpBtn.addEventListener('mousedown', (e) => this.startPress(e));
+				this.elements.helpBtn.addEventListener('mouseup', (e) => this.cancelPress(e));
+				this.elements.helpBtn.addEventListener('mouseleave', (e) => this.cancelPress(e));
+
+				this.elements.helpBtn.addEventListener('touchstart', (e) => this.startPress(e));
+				this.elements.helpBtn.addEventListener('touchend', (e) => {
+					this.cancelPress(e);
+					if (!this.isLongPress) {
+						e.preventDefault();
+						this.handleHelpClick(e);
+					}
+				});
+
+				this.elements.helpBtn.addEventListener('click', (e) => this.handleHelpClick(e));
+			}
+
+			setupPromptButton() {
+				this.elements.copyPromptBtn.addEventListener('click', () => {
+					this.elements.promptText.select();
+					this.elements.promptText.setSelectionRange(0, CONFIG.ui.maxTextSelection);
+
 					try {
-						const html = this.marked.parse(markdownText);
-						this.preview.innerHTML = html;
-						
-						try {
-							this.hljs.highlightAll();
-						} catch (hljsError) {
-							console.error('Syntax highlighting error:', hljsError);
+						const successful = document.execCommand('copy');
+						if (successful) {
+							this.showCopySuccess();
+						} else {
+							alert(CONFIG.messages.copy.failed);
 						}
-						
-					} catch (error) {
-						console.error('Markdown parse error:', error);
-						this.preview.innerHTML = `<pre style="color: red;">Markdown Parse Error: ${error.message}</pre>`;
+					} catch (err) {
+						alert(CONFIG.messages.copy.blocked);
 					}
-				}
+				});
 			}
-			
-			
-			// ========================================
-			// Class: DiagramRenderer (Interface)
-			// ========================================
-			
-			/**
-			 * Base interface for diagram renderers
-			 */
-			class DiagramRenderer {
-				/**
-				 * @param {string} theme
-				 * @returns {Promise<void>}
-				 */
-				async render(theme) {
-					throw new Error('DiagramRenderer.render() must be implemented');
-				}
+
+			setupModals() {
+				const helpCloseBtn = this.elements.helpModal.querySelector('.close-btn');
+				const promptCloseBtn = this.elements.promptModal.querySelector('.prompt-close');
+
+				ModalController.setupModal(this.elements.helpModal, [helpCloseBtn]);
+				ModalController.setupModal(this.elements.promptModal, [promptCloseBtn]);
 			}
-			
-			
-			// ========================================
-			// Class: MermaidRenderer
-			// ========================================
-			
-			/**
-			 * Renders Mermaid diagrams
-			 */
-			class MermaidRenderer extends DiagramRenderer {
-				/**
-				 * @param {HTMLElement} preview
-				 * @param {object} mermaid
-				 */
-				constructor(preview, mermaid) {
-					super();
-					this.preview = preview;
-					this.mermaid = mermaid;
-				}
-				
-				/**
-				 * @param {string} theme
-				 * @returns {Promise<void>}
-				 */
-				async render(theme) {
-					try {
-						const mermaidBlocks = this.preview.querySelectorAll('code.language-mermaid');
-						
-						if (mermaidBlocks.length === 0) {
-							return;
-						}
-						
-						mermaidBlocks.forEach(block => this.convertCodeBlockToContainer(block));
-						
-						this.initializeMermaid(theme);
-						await this.renderMermaid();
-						
-					} catch (error) {
-						console.error('Mermaid rendering error:', error);
-					}
-				}
-				
-				/**
-				 * Initialize Mermaid with theme
-				 * @param {string} theme
-				 */
-				initializeMermaid(theme) {
-					this.mermaid.initialize({
-						startOnLoad: false,
-						theme: theme === 'dark' ? 'dark' : 'default'
-					});
-				}
-				
-				/**
-				 * Execute Mermaid rendering
-				 * @returns {Promise<void>}
-				 */
-				async renderMermaid() {
-					try {
-						await this.mermaid.run({
-							nodes: this.preview.querySelectorAll('.mermaid')
-						});
-					} catch (error) {
-						console.error('Mermaid execution error:', error);
-					}
-				}
-				
-				/**
-				 * @param {HTMLElement} block
-				 * @returns {HTMLElement}
-				 */
-				convertCodeBlockToContainer(block) {
-					const container = document.createElement('div');
-					container.className = 'mermaid';
-					container.textContent = block.textContent;
-					
-					DOMUtilities.replaceCodeBlock(block, container);
-					
-					return container;
-				}
-			}
-			
-			
-			// ========================================
-			// Class: PlantUMLRenderer
-			// ========================================
-			
-			/**
-			 * Renders PlantUML diagrams via external server
-			 */
-			class PlantUMLRenderer extends DiagramRenderer {
-				/**
-				 * @param {HTMLElement} preview
-				 * @param {object} plantumlEncoder
-				 */
-				constructor(preview, plantumlEncoder) {
-					super();
-					this.preview = preview;
-					this.encoder = plantumlEncoder;
-				}
-				
-				/**
-				 * @param {string} theme
-				 * @param {boolean} skipRendering
-				 * @returns {Promise<void>}
-				 */
-				async render(theme, skipRendering = false) {
-					try {
-						const plantumlBlocks = this.preview.querySelectorAll(
-							'code.language-plantuml, code.language-puml'
-						);
-						
-						if (plantumlBlocks.length === 0) {
-							return;
-						}
-						
-						if (skipRendering) {
-							plantumlBlocks.forEach(block => {
-								const errorDiv = this.createErrorElement(CONFIG.messages.plantuml.canceled);
-								DOMUtilities.replaceCodeBlock(block, errorDiv);
-							});
-							return;
-						}
-						
-						const imageLoadPromises = [];
-						
-						plantumlBlocks.forEach(block => {
-							const promise = this.renderSingleBlock(block, theme);
-							if (promise) imageLoadPromises.push(promise);
-						});
-						
-						await Promise.allSettled(imageLoadPromises);
-						
-					} catch (error) {
-						console.error('PlantUML rendering error:', error);
-					}
-				}
-				
-				/**
-				 * Render a single PlantUML block
-				 * @param {HTMLElement} block
-				 * @param {string} theme
-				 * @returns {Promise<boolean>|null}
-				 */
-				renderSingleBlock(block, theme) {
-					try {
-						const code = this.applyTheme(block.textContent, theme);
-						const img = this.createImage(code);
-						DOMUtilities.replaceCodeBlock(block, img);
-						return this.waitForImageLoad(img, CONFIG.plantuml.imageLoadTimeout);
-					} catch (error) {
-						console.error('PlantUML encoding error:', error);
-						const errorDiv = this.createErrorElement(CONFIG.messages.plantuml.encodingFailed);
-						DOMUtilities.replaceCodeBlock(block, errorDiv);
-						return null;
-					}
-				}
-				
-				/**
-				 * Apply theme to PlantUML code
-				 * @param {string} code
-				 * @param {string} theme
-				 * @returns {string}
-				 */
-				applyTheme(code, theme) {
-					if (theme === 'dark' && !code.includes('!theme')) {
-						return code.replace(/(@start\w+.*)/i, `$1\n!theme ${CONFIG.plantuml.darkTheme}`);
-					}
-					return code;
-				}
-				
-				/**
-				 * Create PlantUML image element
-				 * @param {string} code
-				 * @returns {HTMLImageElement}
-				 */
-				createImage(code) {
-					const encoded = this.encoder.encode(code);
-					const img = document.createElement('img');
-					img.src = `${CONFIG.plantuml.serverUrl}${encoded}`;
-					img.alt = "PlantUML Diagram";
-					img.style.maxWidth = "100%";
-					return img;
-				}
-				
-				/**
-				 * @param {HTMLImageElement} img
-				 * @param {number} timeout
-				 * @returns {Promise<boolean>}
-				 */
-				async waitForImageLoad(img, timeout) {
-					return new Promise((resolve) => {
-						const timer = setTimeout(() => {
-							const errorDiv = this.createErrorElement(CONFIG.messages.plantuml.timeout(timeout / 1000));
-							img.replaceWith(errorDiv);
-							resolve(false);
-						}, timeout);
-						
-						img.onload = () => {
-							clearTimeout(timer);
-							resolve(true);
-						};
-						
-						img.onerror = () => {
-							clearTimeout(timer);
-							const errorDiv = this.createErrorElement(CONFIG.messages.plantuml.serverError);
-							img.replaceWith(errorDiv);
-							resolve(false);
-						};
-					});
-				}
-				
-				/**
-				 * @param {string} message
-				 * @returns {HTMLElement}
-				 */
-				createErrorElement(message) {
-					const errorDiv = document.createElement('div');
-					errorDiv.className = 'plantuml-error';
-					errorDiv.textContent = message;
-					return errorDiv;
-				}
-			}
-			
-			
-			// ========================================
-			// Class: RendererOrchestrator
-			// ========================================
-			
-			/**
-			 * Orchestrates rendering workflow
-			 */
-			class RendererOrchestrator {
-				/**
-				 * @param {ApplicationState} state
-				 * @param {MarkdownRenderer} markdownRenderer
-				 * @param {MermaidRenderer} mermaidRenderer
-				 * @param {PlantUMLRenderer} plantumlRenderer
-				 * @param {ScrollManager} scrollManager
-				 * @param {HTMLElement} preview
-				 */
-				constructor(state, markdownRenderer, mermaidRenderer, plantumlRenderer, scrollManager, preview) {
-					this.state = state;
-					this.markdownRenderer = markdownRenderer;
-					this.mermaidRenderer = mermaidRenderer;
-					this.plantumlRenderer = plantumlRenderer;
-					this.scrollManager = scrollManager;
-					this.preview = preview;
-				}
-				
-				/**
-				 * @returns {Promise<void>}
-				 */
-				async renderAll() {
-					try {
-						const scrollTop = this.scrollManager.save();
-						
-						await this.markdownRenderer.render(this.state.markdownText);
-						
-						// Render Mermaid
-						await this.mermaidRenderer.render(this.state.currentTheme);
-						
-						// Render PlantUML (with skip flag if needed)
-						await this.plantumlRenderer.render(this.state.currentTheme, this.state.skipPlantUML);
-						
-						await waitForDOMStability(this.preview);
-						
-						this.scrollManager.restore(scrollTop);
-						
-					} catch (error) {
-						console.error('Rendering orchestration error:', error);
-					}
-				}
-			}
-			
-			
-			// ========================================
-			// Class: ModalController
-			// ========================================
-			
-			/**
-			 * Manages modal dialogs
-			 */
-			class ModalController {
-				/**
-				 * @param {HTMLElement} modal
-				 * @param {HTMLElement[]} closeTriggers
-				 */
-				static setupModal(modal, closeTriggers) {
-					closeTriggers.forEach(trigger => {
-						trigger.onclick = () => {
-							modal.style.display = "none";
-						};
-					});
-					
-					window.addEventListener('click', (event) => {
-						if (event.target === modal) {
-							modal.style.display = "none";
-						}
-					});
-				}
-				
-				/**
-				 * @param {HTMLElement} modal
-				 */
-				static show(modal) {
-					modal.style.display = "block";
-				}
-				
-				/**
-				 * @param {HTMLElement} modal
-				 */
-				static hide(modal) {
-					modal.style.display = "none";
-				}
-			}
-			
-			
-			// ========================================
-			// Class: UIController
-			// ========================================
-			
-			/**
-			 * Manages UI interactions
-			 */
-			class UIController {
-				/**
-				 * @param {RendererOrchestrator} orchestrator
-				 * @param {ApplicationState} state
-				 * @param {UIElements} elements
-				 */
-				constructor(orchestrator, state, elements) {
-					this.orchestrator = orchestrator;
-					this.state = state;
-					this.elements = elements;
-					this.longPressTimer = null;
-					this.isLongPress = false;
-					
-					this.setupEventListeners();
-					this.setupModals();
-					this.setupPromptText();
-				}
-				
-				setupEventListeners() {
-					this.setupRenderButtons();
-					this.setupUtilityButtons();
-					this.setupHelpButton();
-					this.setupPromptButton();
-				}
-				
-				/**
-				 * Preprocess input text to remove markdown wrapper
-				 * @param {string} rawText
-				 * @returns {string}
-				 */
-				
-				preprocessInput(rawText) {
-					// Remove leading empty lines + ```markdown (3+ backticks, case-insensitive)
-					return rawText.replace(/^(?:\s*\n)*`{3,}markdown\s*\n/i, '');
-				}
-				
-				setupRenderButtons() {
-					this.elements.renderLightBtn.addEventListener('click', async () => {
-						await this.handleRender('light');
-					});
-					
-					this.elements.renderDarkBtn.addEventListener('click', async () => {
-						await this.handleRender('dark');
-					});
-				}
-				
-				setupUtilityButtons() {
-					this.elements.newTabBtn.addEventListener('click', () => {
-						window.open(window.location.href, '_blank');
-					});
-					
-					this.elements.clearBtn.addEventListener('click', () => {
-						this.elements.editor.value = '';
-						this.elements.preview.innerHTML = '';
-						document.body.classList.remove('dark');
-					});
-				}
-				
-				setupHelpButton() {
-					this.elements.helpBtn.addEventListener('mousedown', (e) => this.startPress(e));
-					this.elements.helpBtn.addEventListener('mouseup', (e) => this.cancelPress(e));
-					this.elements.helpBtn.addEventListener('mouseleave', (e) => this.cancelPress(e));
-					
-					this.elements.helpBtn.addEventListener('touchstart', (e) => this.startPress(e));
-					this.elements.helpBtn.addEventListener('touchend', (e) => {
-						this.cancelPress(e);
-						if (!this.isLongPress) {
-							e.preventDefault();
-							this.handleHelpClick(e);
-						}
-					});
-					
-					this.elements.helpBtn.addEventListener('click', (e) => this.handleHelpClick(e));
-				}
-				
-				setupPromptButton() {
-					this.elements.copyPromptBtn.addEventListener('click', () => {
-						this.elements.promptText.select();
-						this.elements.promptText.setSelectionRange(0, CONFIG.ui.maxTextSelection);
-						
-						try {
-							const successful = document.execCommand('copy');
-							if (successful) {
-								this.showCopySuccess();
-							} else {
-								alert(CONFIG.messages.copy.failed);
-							}
-						} catch (err) {
-							alert(CONFIG.messages.copy.blocked);
-						}
-					});
-				}
-				
-				setupModals() {
-					const helpCloseBtn = this.elements.helpModal.querySelector('.close-btn');
-					const promptCloseBtn = this.elements.promptModal.querySelector('.prompt-close');
-					
-					ModalController.setupModal(this.elements.helpModal, [helpCloseBtn]);
-					ModalController.setupModal(this.elements.promptModal, [promptCloseBtn]);
-				}
-				
-				setupPromptText() {
-					const COPY_PAYLOAD = `
+
+			setupPromptText() {
+				const COPY_PAYLOAD = `
 ## Output Format
 - Output the entire content as a single Markdown document so it can be copied at once.
 - Enclose the entire Markdown with six backticks \` \`\`\`\`\`\` \` at the beginning and end. Specify its language as markdown.
@@ -1122,127 +1136,127 @@
 - **Never output speculation or fabrications.** If something is unclear or requires investigation, explicitly state so. 
 - This method is called **MCBSMD** (Multiple Code Block in Single MarkDown).
 `;
-					this.elements.promptText.value = COPY_PAYLOAD;
+				this.elements.promptText.value = COPY_PAYLOAD;
+			}
+
+			/**
+			 * @param {string} theme
+			 * @returns {Promise<void>}
+			 */
+			async handleRender(theme) {
+				const rawContent = this.elements.editor.value;
+				const content = this.preprocessInput(rawContent);
+
+				const consentResult = checkPlantUMLConsent(content);
+
+				if (consentResult === 'skip_plantuml') {
+					this.state.setSkipPlantUML(true);
+				} else if (consentResult === true) {
+					this.state.setSkipPlantUML(false);
 				}
-				
-				/**
-				 * @param {string} theme
-				 * @returns {Promise<void>}
-				 */
-				async handleRender(theme) {
-					const rawContent = this.elements.editor.value;
-					const content = this.preprocessInput(rawContent);
-					
-					const consentResult = checkPlantUMLConsent(content);
-					
-					if (consentResult === 'skip_plantuml') {
-						this.state.setSkipPlantUML(true);
-					} else if (consentResult === true) {
-						this.state.setSkipPlantUML(false);
-					}
-					
-					this.state.setTheme(theme);
-					this.state.setMarkdownText(content);
-					this.applyTheme(theme);
-					
-					await this.orchestrator.renderAll();
-				}
-				
-				/**
-				 * @param {string} theme
-				 */
-				applyTheme(theme) {
-					if (theme === 'dark') {
-						document.body.classList.add('dark');
-					} else {
-						document.body.classList.remove('dark');
-					}
-				}
-				
-				/**
-				 * @param {Event} e
-				 */
-				startPress(e) {
-					if (e.type === 'mousedown' && e.button !== 0) return;
-					this.isLongPress = false;
-					this.longPressTimer = setTimeout(() => {
-						this.isLongPress = true;
-						ModalController.show(this.elements.promptModal);
-					}, CONFIG.ui.longPressDuration);
-				}
-				
-				/**
-				 * @param {Event} e
-				 */
-				cancelPress(e) {
-					clearTimeout(this.longPressTimer);
-				}
-				
-				/**
-				 * @param {Event} e
-				 */
-				handleHelpClick(e) {
-					if (this.isLongPress) {
-						e.preventDefault();
-						e.stopPropagation();
-						this.isLongPress = false;
-						return;
-					}
-					ModalController.show(this.elements.helpModal);
-				}
-				
-				showCopySuccess() {
-					const originalText = this.elements.copyPromptBtn.textContent;
-					this.elements.copyPromptBtn.textContent = "Copied!";
-					
-					setTimeout(() => {
-						this.elements.copyPromptBtn.textContent = originalText;
-						ModalController.hide(this.elements.promptModal);
-					}, CONFIG.ui.copyFeedbackDuration);
+
+				this.state.setTheme(theme);
+				this.state.setMarkdownText(content);
+				this.applyTheme(theme);
+
+				await this.orchestrator.renderAll();
+			}
+
+			/**
+			 * @param {string} theme
+			 */
+			applyTheme(theme) {
+				if (theme === 'dark') {
+					document.body.classList.add('dark');
+				} else {
+					document.body.classList.remove('dark');
 				}
 			}
-			
-			
-			// ========================================
-			// Initialization
-			// ========================================
-			
 
-			
+			/**
+			 * @param {Event} e
+			 */
+			startPress(e) {
+				if (e.type === 'mousedown' && e.button !== 0) return;
+				this.isLongPress = false;
+				this.longPressTimer = setTimeout(() => {
+					this.isLongPress = true;
+					ModalController.show(this.elements.promptModal);
+				}, CONFIG.ui.longPressDuration);
+			}
 
-			const elements = {
-				editor: document.getElementById('editor'),
-				preview: document.getElementById('preview'),
-				renderLightBtn: document.getElementById('renderLight'),
-				renderDarkBtn: document.getElementById('renderDark'),
-				newTabBtn: document.getElementById('newTabBtn'),
-				clearBtn: document.getElementById('clearBtn'),
-				helpBtn: document.getElementById('helpBtn'),
-				helpModal: document.getElementById('helpModal'),
-				promptModal: document.getElementById('promptModal'),
-				promptText: document.getElementById('promptText'),
-				copyPromptBtn: document.getElementById('copyPromptBtn')
-			};
-			
-			marked.use(markedKatex({ throwOnError: false }));
+			/**
+			 * @param {Event} e
+			 */
+			cancelPress(e) {
+				clearTimeout(this.longPressTimer);
+			}
 
-			const state = new ApplicationState();
-			const scrollManager = new ScrollManager(elements.preview);
-			const markdownRenderer = new MarkdownRenderer(elements.preview, marked, hljs);
-			const mermaidRenderer = new MermaidRenderer(elements.preview, mermaid);
-			const plantumlRenderer = new PlantUMLRenderer(elements.preview, plantumlEncoder);
-			const orchestrator = new RendererOrchestrator(
-				state,
-				markdownRenderer,
-				mermaidRenderer,
-				plantumlRenderer,
-				scrollManager,
-				elements.preview
-			);
-			
-			new UIController(orchestrator, state, elements);
-		</script>
-		
-	</body>
-	
+			/**
+			 * @param {Event} e
+			 */
+			handleHelpClick(e) {
+				if (this.isLongPress) {
+					e.preventDefault();
+					e.stopPropagation();
+					this.isLongPress = false;
+					return;
+				}
+				ModalController.show(this.elements.helpModal);
+			}
+
+			showCopySuccess() {
+				const originalText = this.elements.copyPromptBtn.textContent;
+				this.elements.copyPromptBtn.textContent = "Copied!";
+
+				setTimeout(() => {
+					this.elements.copyPromptBtn.textContent = originalText;
+					ModalController.hide(this.elements.promptModal);
+				}, CONFIG.ui.copyFeedbackDuration);
+			}
+		}
+
+
+		// ========================================
+		// Initialization
+		// ========================================
+
+
+
+
+		const elements = {
+			editor: document.getElementById('editor'),
+			preview: document.getElementById('preview'),
+			renderLightBtn: document.getElementById('renderLight'),
+			renderDarkBtn: document.getElementById('renderDark'),
+			newTabBtn: document.getElementById('newTabBtn'),
+			clearBtn: document.getElementById('clearBtn'),
+			helpBtn: document.getElementById('helpBtn'),
+			helpModal: document.getElementById('helpModal'),
+			promptModal: document.getElementById('promptModal'),
+			promptText: document.getElementById('promptText'),
+			copyPromptBtn: document.getElementById('copyPromptBtn')
+		};
+
+		marked.use(markedKatex({ throwOnError: false }));
+
+		const state = new ApplicationState();
+		const scrollManager = new ScrollManager(elements.preview);
+		const markdownRenderer = new MarkdownRenderer(elements.preview, marked, hljs);
+		const mermaidRenderer = new MermaidRenderer(elements.preview, mermaid);
+		const plantumlRenderer = new PlantUMLRenderer(elements.preview, plantumlEncoder);
+		const orchestrator = new RendererOrchestrator(
+			state,
+			markdownRenderer,
+			mermaidRenderer,
+			plantumlRenderer,
+			scrollManager,
+			elements.preview
+		);
+
+		new UIController(orchestrator, state, elements);
+	</script>
+
+</body>
+
 </html>
