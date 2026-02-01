@@ -1,0 +1,763 @@
+# Diagram Test Data (MCBSMD Format)
+
+**contents_name:**
+mermaid_flowchart
+
+```mermaid
+graph TD
+    A-->|Go|B
+    A-->|Skip|C
+    B-->|Done|D
+    C-->|Done|D
+```
+
+**contents_name:**
+mermaid_sequence
+
+```mermaid
+sequenceDiagram
+    Alice->>Bob: Hello_Bob
+    Bob-->>Alice: Hello_Alice
+```
+
+**contents_name:**
+mermaid_class
+
+```mermaid
+classDiagram
+    class Animal
+    class Duck
+    class Fish
+    Animal <|-- Duck : Inherits
+    Animal <|-- Fish : Inherits
+    Animal : +int age
+    Animal : +String gender
+```
+
+**contents_name:**
+mermaid_state
+
+```mermaid
+stateDiagram-v2
+    [*] --> Still : Init
+    Still --> Moving : Walk
+    Moving --> Still : Stop
+    Moving --> Crash : Accident
+    Crash --> [*] : End
+```
+
+**contents_name:**
+mermaid_er
+
+```mermaid
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE_ITEM : contains
+```
+
+**contents_name:**
+mermaid_gantt
+
+```mermaid
+gantt
+    title A_Gantt_Diagram
+    dateFormat  YYYY-MM-DD
+    section Section
+    A_task           :a1, 2024-01-01, 30d
+    Another_task     :after a1  , 20d
+```
+
+**contents_name:**
+mermaid_pie
+
+```mermaid
+pie
+    title Key Elements
+    "Calcium" : 42
+    "Potassium" : 50
+    "Magnesium" : 8
+```
+
+**contents_name:**
+mermaid_quadrant
+
+```mermaid
+quadrantChart
+    x-axis Low Reach --> High Reach
+    y-axis Low Engagement --> High Engagement
+    quadrant-1 We should expand
+    quadrant-2 Need to promote
+    quadrant-3 Re-evaluate
+    quadrant-4 May be improved
+    Campaign A: [0.3, 0.6]
+    Campaign B: [0.45, 0.23]
+```
+
+**contents_name:**
+mermaid_mindmap
+
+```mermaid
+mindmap
+  root((mindmap))
+    Origins
+      Long history
+      Popularisation
+    Research
+      On effectiveness
+      On automatic creation
+```
+
+**contents_name:**
+mermaid_timeline
+
+```mermaid
+timeline
+    title History_of_Social_Media
+    2002 : LinkedIn
+    2004 : Facebook
+         : Google
+    2005 : Youtube
+    2006 : Twitter
+```
+
+**contents_name:**
+mermaid_sankey
+
+```mermaid
+sankey-beta
+    Bio-conversion,Losses,26.862
+    Bio-conversion,Solid,280.322
+    Bio-conversion,Gas,81.144
+```
+
+**contents_name:**
+mermaid_journey
+
+```mermaid
+journey
+    title My_working_day
+    section Go_to_work
+      Make_tea: 5: Me
+      Go_upstairs: 3: Me
+      Do_work: 1: Me, Cat
+    section Go_home
+      Go_downstairs: 5: Me
+      Sit_down: 5: Me
+```
+
+**contents_name:**
+mermaid_xychart
+
+```mermaid
+xychart-beta
+    title "Sales Revenue"
+    x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]
+    y-axis "Revenue" 4000 --> 11000
+    bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+    line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+```
+
+**contents_name:**
+mermaid_requirement
+
+```mermaid
+requirementDiagram
+    requirement test_req {
+    id: 1
+    text: the test requirement
+    risk: high
+    verifymethod: test
+    }
+    element test_entity {
+    type: simulation
+    }
+    test_entity - satisfies -> test_req
+```
+
+**contents_name:**
+plantuml_usecase
+
+```plantuml
+@startuml
+:User: --> (Use_case_1) : Access
+:User: -> (Use_case_2) : Access
+@enduml
+```
+
+**contents_name:**
+plantuml_component
+
+```plantuml
+@startuml
+[First_Component]
+[Second_Component]
+[First_Component] --> [Second_Component] : Depends_on
+@enduml
+```
+
+**contents_name:**
+plantuml_object
+
+```plantuml
+@startuml
+object user {
+  name = "Dummy"
+  id = 123
+}
+object group {
+  name = "Admins"
+}
+user --> group : Belongs_to
+@enduml
+```
+
+**contents_name:**
+plantuml_deployment
+
+```plantuml
+@startuml
+node "Web_Server" {
+  [Apache]
+}
+database "DB" {
+  [MySQL]
+}
+[Apache] --> [MySQL] : Reads_Writes
+@enduml
+```
+
+**contents_name:**
+plantuml_timing
+
+```plantuml
+@startuml
+robust "Web_Browser" as WB
+concise "Web_User" as WU
+
+@0
+WU is Idle
+WB is Idle
+
+@100
+WU is Waiting
+WB is Processing
+
+@300
+WB is Waiting
+@enduml
+```
+
+**contents_name:**
+plantuml_wbs
+
+```plantuml
+@startwbs
+* Project_WBS
+** Launch_phase
+*** Research
+*** Plan
+** Design_Phase
+*** Model_AsIs
+*** Model_ToBe
+@endwbs
+```
+
+**contents_name:**
+plantuml_json
+
+```plantuml
+@startjson
+{
+   "fruit":"Apple",
+   "size":"Large",
+   "color": ["Red", "Green"]
+}
+@endjson
+```
+
+**contents_name:**
+plantuml_yaml
+
+```plantuml
+@startyaml
+fruit: Apple
+size: Large
+color:
+  - Red
+  - Green
+@endyaml
+```
+
+# Sample Code Data (MCBSMD Format)
+
+**contents_name:**
+python_code
+
+```python
+def fibonacci(n):
+    if n <= 1:
+        return n
+    else:
+        return fibonacci(n-1) + fibonacci(n-2)
+
+print([fibonacci(i) for i in range(10)])
+```
+A recursive function to calculate Fibonacci numbers and a list comprehension to print the first 10.
+
+**contents_name:**
+javascript_code
+
+```javascript
+const greet = (name) => {
+    const message = `Hello, ${name}!`;
+    console.log(message);
+};
+
+const users = ['Alice', 'Bob', 'Charlie'];
+users.forEach(user => greet(user));
+```
+Arrow functions, template literals, and array iteration in JavaScript.
+
+**contents_name:**
+typescript_code
+
+```typescript
+interface User {
+    id: number;
+    username: string;
+}
+
+function printUser(user: User): void {
+    console.log(`User ${user.id}: ${user.username}`);
+}
+
+const admin: User = { id: 1, username: "admin_user" };
+printUser(admin);
+```
+TypeScript example showing interface definition and type annotations.
+
+**contents_name:**
+go_code
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    c := make(chan string)
+    go func() {
+        c <- "Hello from Goroutine"
+    }()
+    msg := <-c
+    fmt.Println(msg)
+}
+```
+A basic Go program demonstrating channels and Goroutines for concurrency.
+
+**contents_name:**
+rust_code
+
+```rust
+fn main() {
+    let numbers = vec![1, 2, 3, 4, 5];
+    let doubled: Vec<i32> = numbers.iter()
+        .map(|&x| x * 2)
+        .collect();
+    
+    println!("Doubled: {:?}", doubled);
+}
+```
+Rust example using vectors, iterators, and closures for functional-style processing.
+
+**contents_name:**
+java_code
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+public class Main {
+    public static void main(String[] args) {
+        List<String> items = new ArrayList<>();
+        items.add("Apple");
+        items.add("Banana");
+        
+        for (String item : items) {
+            System.out.println("Item: " + item);
+        }
+    }
+}
+```
+Standard Java class structure using generic Lists and an enhanced for-loop.
+
+**contents_name:**
+c_code
+
+```c
+#include <stdio.h>
+
+int main() {
+    int arr[] = {10, 20, 30, 40, 50};
+    int len = sizeof(arr) / sizeof(arr[0]);
+    
+    for(int i = 0; i < len; i++) {
+        printf("Element %d: %d\n", i, arr[i]);
+    }
+    return 0;
+}
+```
+Classic C program iterating over an integer array with pointer arithmetic logic.
+
+**contents_name:**
+cpp_code
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> v = {1, 2, 3, 4, 5};
+    for(const auto& val : v) {
+        std::cout << val << " ";
+    }
+    std::cout << std::endl;
+    return 0;
+}
+```
+Modern C++ using `std::vector` and range-based for loops.
+
+**contents_name:**
+csharp_code
+
+```csharp
+using System;
+using System.Linq;
+
+class Program {
+    static void Main() {
+        int[] numbers = { 5, 10, 8, 3, 6, 12 };
+        var query = from num in numbers
+                    where num % 2 == 0
+                    orderby num
+                    select num;
+
+        foreach (var n in query) {
+            Console.WriteLine(n);
+        }
+    }
+}
+```
+C# example demonstrating LINQ query syntax to filter and sort an array.
+
+**contents_name:**
+ruby_code
+
+```ruby
+class Greeter
+  def initialize(name = "World")
+    @name = name
+  end
+  
+  def say_hi
+    puts "Hi #{@name}!"
+  end
+end
+
+g = Greeter.new("Rubyist")
+g.say_hi
+```
+Ruby class definition, instance variables, and method invocation.
+
+**contents_name:**
+php_code
+
+```php
+<?php
+function sum(...$numbers) {
+    $acc = 0;
+    foreach ($numbers as $n) {
+        $acc += $n;
+    }
+    return $acc;
+}
+
+echo "Sum: " . sum(1, 2, 3, 4);
+?>
+```
+PHP script showing variadic functions and variable iteration.
+
+**contents_name:**
+swift_code
+
+```swift
+let names = ["Anna", "Alex", "Brian", "Jack"]
+let count = names.count
+
+for (index, name) in names.enumerated() {
+    print("Item \(index + 1): \(name)")
+}
+```
+Swift example using array properties and the `enumerated()` method for loops.
+
+**contents_name:**
+kotlin_code
+
+```kotlin
+fun main() {
+    val items = listOf("apple", "banana", "kiwifruit")
+    items.filter { it.startsWith("a") }
+         .sortedBy { it }
+         .map { it.uppercase() }
+         .forEach { println(it) }
+}
+```
+Kotlin code using collection extension functions for functional processing.
+
+**contents_name:**
+bash_code
+
+```bash
+#!/bin/bash
+count=1
+while [ $count -le 5 ]
+do
+    echo "Count is $count"
+    ((count++))
+done
+```
+A simple Bash shell script demonstrating a while loop and arithmetic expansion.
+
+**contents_name:**
+sql_code
+
+```sql
+SELECT 
+    u.username, 
+    COUNT(o.order_id) as order_count
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE u.active = 1
+GROUP BY u.username
+ORDER BY order_count DESC;
+```
+Standard SQL query involving JOINs, aggregation, filtering, and sorting.
+
+**contents_name:**
+html_code
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sample Page</title>
+</head>
+<body>
+    <div id="container">
+        <h1>Hello World</h1>
+        <p>This is a paragraph.</p>
+    </div>
+</body>
+</html>
+```
+Basic HTML5 document structure.
+
+**contents_name:**
+css_code
+
+```css
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+```
+CSS sample showing Flexbox layout properties.
+
+**contents_name:**
+json_data
+
+```json
+{
+  "project": "MCBSMD",
+  "version": 1.0,
+  "supported_languages": [
+    "Python",
+    "JavaScript",
+    "Go",
+    "Rust"
+  ],
+  "active": true
+}
+```
+A typical JSON data structure.
+
+# Math Rendering & Diagram Test Suite
+
+This document demonstrates the rendering capabilities for mathematical formulas (KaTeX), UML diagrams (Mermaid), and code highlighting.
+
+---
+
+## 1. Classical Algebra & Number Theory
+
+### Euler's Identity
+Often cited as the most beautiful equation in mathematics.
+
+$$
+e^{i\pi} + 1 = 0
+$$
+
+### The Quadratic Formula
+The solution for the quadratic equation $ax^2 + bx + c = 0$.
+
+$$
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+
+---
+
+## 2. Calculus & Analysis
+
+### Definition of Derivative
+The derivative is defined as the limit of the difference quotient.
+
+$$
+f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}
+$$
+
+### The Gaussian Integral
+An important integral in probability theory.
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} \, dx = \sqrt{\pi}
+$$
+
+---
+
+## 3. Linear Algebra
+
+### Matrix Operations
+Here is a $3 \times 3$ matrix $A$ and a vector $\vec{v}$.
+
+$$
+A = \begin{bmatrix}
+1 & 2 & 3 \\
+4 & 5 & 6 \\
+7 & 8 & 9
+\end{bmatrix}, \quad
+\vec{v} = \begin{pmatrix}
+x \\
+y \\
+z
+\end{pmatrix}
+$$
+
+### Determinant
+$$
+\det(A) = \sum_{\sigma \in S_n} \text{sgn}(\sigma) \prod_{i=1}^n a_{i, \sigma(i)}
+$$
+
+---
+
+## 4. Physics (Maxwell's Equations)
+
+Using the `aligned` environment for multi-line equations.
+
+$$
+\begin{aligned}
+\nabla \cdot \mathbf{E} &= \frac{\rho}{\varepsilon_0} \\
+\nabla \cdot \mathbf{B} &= 0 \\
+\nabla \times \mathbf{E} &= -\frac{\partial \mathbf{B}}{\partial t} \\
+\nabla \times \mathbf{B} &= \mu_0\mathbf{J} + \mu_0\varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}
+\end{aligned}
+$$
+
+---
+
+## 5. Statistical Mechanics (Partition Function)
+
+$$
+Z = \sum_{i} e^{-\beta E_i}
+$$
+
+Where $\beta = \frac{1}{k_B T}$.
+
+---
+
+## 6. Logic & Flow
+
+Below is a visualization of how a mathematical problem is solved using a computational approach.
+
+**contents_name:**
+problem_solving_flow
+```mermaid
+flowchart LR
+    Problem_Input -->|Defines| Mathematical_Model
+    Mathematical_Model -->|Requires| Algorithm_Selection
+    Algorithm_Selection -->|Executes| Computation
+    Computation -->|Produces| Solution_Output
+    Solution_Output -->|Verifies| Problem_Input
+```
+
+This diagram illustrates the iterative process of modeling and solving problems.
+
+---
+
+## 7. Implementation Example
+
+A simple Python implementation for the quadratic formula mentioned in Section 1.
+
+**contents_name:**
+quadratic_solver_py
+```python
+import cmath
+
+def solve_quadratic(a, b, c):
+    # Calculate the discriminant
+    d = (b**2) - (4*a*c)
+
+    # Find two solutions
+    sol1 = (-b - cmath.sqrt(d)) / (2*a)
+    sol2 = (-b + cmath.sqrt(d)) / (2*a)
+
+    return sol1, sol2
+```
+
+This function handles complex roots using the `cmath` library.
+
+---
+
+## 8. Complex Relationships
+
+A class diagram representing a mathematical expression parser structure.
+
+**contents_name:**
+expression_parser_class_diagram
+```mermaid
+classDiagram
+    Expression <|-- BinaryExpression : Inherits
+    Expression <|-- Number : Inherits
+    BinaryExpression o-- Expression : Contains_Left
+    BinaryExpression o-- Expression : Contains_Right
+    
+    class Expression {
+        +evaluate() double
+    }
+    class Number {
+        +value double
+        +evaluate() double
+    }
+    class BinaryExpression {
+        +operator string
+        +evaluate() double
+    }
+```
+
+This structure allows for recursive evaluation of mathematical trees.
