@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-<!--
+	<!--
 	<script src="//cdn.jsdelivr.net/npm/eruda"></script>
 	<script>
 		eruda.init();
@@ -11,27 +11,27 @@
 	<meta charset="UTF-8">
 
 	<!-- SEO Meta Tags -->
-	<meta name="description" content="Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer. Privacy-focused, client-side rendering tool with dark mode support. No data leaves your browser unless you explicitly allow PlantUML rendering.">
-	<meta name="keywords" content="GRSMD, markdown renderer, mermaid diagrams, plantuml online, latex renderer, katex, math preview, markdown preview, diagram tool, markdown editor, privacy markdown tool, client-side markdown">
+	<meta name="description" content="Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer and viewer in your browser. Privacy-focused, client-side rendering tool with dark mode support. No data leaves your browser unless you explicitly allow PlantUML rendering.">
+	<meta name="keywords" content="GRSMD, markdown viewer, markdown renderer, markdown preview, mermaid viewer, mermaid diagrams, plantuml viewer, plantuml online, latex viewer, latex renderer, katex, diagram tool, markdown editor, privacy markdown tool, client-side markdown">
 	<meta name="author" content="GoodRelax">
 	<meta name="robots" content="index, follow">
 
 	<meta property="og:type" content="website">
 	<meta property="og:url" content="https://goodrelax.github.io/">
-	<meta property="og:title" content="GRSMD : Free Markdown, Math & Diagram Renderer | Privacy-Focused Online Tool">
+	<meta property="og:title" content="GRSMD : Free Markdown, Math & Diagram Renderer and Viewer | Privacy-Focused Online Tool">
 	<meta property="og:description" content="Privacy-focused online tool for rendering Markdown, Math (LaTeX), Mermaid, and PlantUML diagrams with syntax highlighting and dark mode.">
 
 	<meta property="twitter:card" content="summary_large_image">
-	<meta property="twitter:title" content="GRSMD : Free Markdown, Math & Diagram Renderer | Privacy-Focused Online Tool">
+	<meta property="twitter:title" content="GRSMD : Free Markdown, Math & Diagram Renderer and Viewer | Privacy-Focused Online Tool">
 	<meta property="twitter:description" content="Privacy-focused online tool for rendering Markdown, Math (LaTeX), Mermaid, and PlantUML diagrams.">
 
-	<title>GRSMD : Free Markdown, Math & Diagram Renderer | Privacy-Conscious Online Tool</title>
+	<title>GRSMD : Free Markdown, Math & Diagram Renderer and Viewer | Privacy-Conscious Online Tool</title>
 
 	<script type="application/ld+json">
 		{
 			"@context": "https://schema.org",
 			"@type": "SoftwareApplication",
-			"name": "GR Simple MD Renderer",
+			"name": "GR Simple MD Renderer & Viewer",
 			"applicationCategory": "DeveloperApplication",
 			"operatingSystem": "Web Browser",
 			"offers": {
@@ -39,7 +39,7 @@
 				"price": "0",
 				"priceCurrency": "USD"
 			},
-			"description": "GRSMD Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer with privacy-focused client-side rendering",
+			"description": "GRSMD Free online viewer and renderer for Markdown, Math (LaTeX), Mermaid, and PlantUML. Features privacy-focused client-side rendering.",
 			"author": {
 				"@type": "Organization",
 				"name": "GoodRelax",
@@ -318,7 +318,7 @@
 	<div id="topbar">
 
 		<div id="header-group">
-			<div id="title">GR Simple MD Renderer</div>
+			<div id="title">GR Simple MD Renderer & Viewer</div>
 			<div id="copyright">
 				&copy; 2026 GoodRelax. MIT License.
 				<br>
@@ -1114,9 +1114,9 @@
 			setupPromptText() {
 				const COPY_PAYLOAD = `
 ## Output Format
-- Output the entire content as a single Markdown document so it can be copied at once.
-- Enclose the entire Markdown with six backticks \` \`\`\`\`\`\` \` at the beginning and end. Specify its language as markdown.
-- Use the six backticks only once as the outermost enclosure.
+- Output the entire content **as a single Markdown code block** so it can be copied in one go.
+- **Enclose the entire Markdown with six backticks \` \`\`\`\`\`\` \` at the beginning and end to prevent Markdown splitting.** Specify its language as markdown.
+- **Use the six backticks only once as the outermost enclosure.**
 - Any UML diagrams or software code inside the Markdown must each be enclosed in their own code blocks using three backticks \` \`\`\` \`.
   This creates a structure where multiple three backticks blocks are nested inside the outer six backticks block to prevent Markdown splitting.
 - For each UML diagram or source code block, output the following line exactly two lines above it:
@@ -1131,8 +1131,8 @@
      (example: \`A -->|Label| B\`)
   2. For all other Mermaid diagrams and all PlantUML diagrams: include the label at the end using a colon  
      (example: \`A --> B : Label\`)
-- Use standard LaTeX for mathematical formulas.
-- Always enclose inline math in single dollar signs \`$\` (e.g., \`$E=mc^2$\`) and block math in double dollar signs \`$$\`.h
+- Use standard LaTeX notation for mathematical formulas.
+- Always enclose inline math in single dollar signs `$` (e.g., `$E=mc^2$`) and display math (block equations) in double dollar signs `$$`.
 - **Never output speculation or fabrications.** If something is unclear or requires investigation, explicitly state so. 
 - This method is called **MCBSMD** (Multiple Code Block in Single MarkDown).
 `;
