@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Tool Output (Intermediate files)
+output/
+temp/
+*.log
+
+# Archives / Deprecated (User specific)
+old/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Prompt
+prompt/
+
+
+
