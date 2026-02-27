@@ -4,16 +4,22 @@ node_modules/
 # Tool Output (Intermediate files)
 output/
 temp/
+py/
 *.log
 
 # Archives / Deprecated (User specific)
 old/
+
+# trial
+try*.*
+trial*.*
 
 # System files
 .DS_Store
 Thumbs.db
 
 # Prompt
+CLAUDE.md
 prompt/
 
 
