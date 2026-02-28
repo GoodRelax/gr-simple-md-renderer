@@ -1,7 +1,6 @@
 # Diagram Test Data (MCBSMD Format)
 
-**contents_name:**
-mermaid_flowchart
+**mermaid_flowchart:**
 
 ```mermaid
 graph TD
@@ -11,8 +10,7 @@ graph TD
     C-->|Done|D
 ```
 
-**contents_name:**
-mermaid_sequence
+**mermaid_sequence:**
 
 ```mermaid
 sequenceDiagram
@@ -20,8 +18,137 @@ sequenceDiagram
     Bob-->>Alice: Hello_Alice
 ```
 
-**contents_name:**
-mermaid_class
+**Super Big Sequence Diagram in Mermaid:**
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CDN
+    participant LB as LoadBalancer
+    participant WAF
+    participant API as APIGateway
+    participant Auth as AuthServer
+    participant UDB as UserDB
+    participant Sess as SessionMgr
+    participant Main as main.js
+    participant Scan as VirusScanner
+    participant Chk as FormatChecker
+    participant Meta as MetaDataParser
+    participant Mon as ResourceMonitor
+    participant Log as LogServer
+    participant Met as MetricsCollector
+    participant Cfg as ConfigDB
+    participant Encode as EncodeUseCase
+    participant Tmp as TmpStorage
+    participant Audit as AuditDB
+    participant Comp as CompressorAdapter
+    participant Cap as CapacityCalc
+    participant Img as ImageAdapter
+    participant Pack as MatryoshkaPacker
+    participant KMS as KeyManagement
+    participant Crypto as CryptoAdapter
+    participant Stripe as StripingEngine
+    participant Lsb as LsbEngine
+    participant Analyt as Analytics
+    participant Clean as CleanupService
+    participant Notif as Notifier
+
+    User ->> CDN: drop(TreasureMapFile, OriginalCat, OriginalDog)
+    CDN ->> LB: forward request
+    LB ->> WAF: inspect payload
+    WAF -->> LB: payload clean
+    LB ->> API: route request
+    API ->> Main: init encode process
+    Main ->> Auth: validate token
+    Auth ->> UDB: query user status
+    UDB -->> Auth: user active
+    Auth -->> Main: token valid
+    Main ->> Sess: update session heartbeat
+    Sess -->> Main: session updated
+    Main ->> Scan: scan files for malware
+    Scan -->> Main: files safe
+    Main ->> Chk: verify file formats
+    Chk -->> Main: formats supported
+    Main ->> Meta: extract metadata
+    Meta -->> Main: metadata parsed
+    Main ->> Mon: check memory availability
+    Mon -->> Main: memory sufficient
+    Main ->> Log: log process start
+    Log -->> Main: logged
+    Main ->> Met: increment request counter
+    Met -->> Main: metrics updated
+    Main ->> Cfg: fetch encode parameters
+    Cfg -->> Main: params loaded
+
+    Main ->> Encode: execute(tmBytes, fileName, catRaw, dogRaw, ...)
+    Encode ->> Tmp: store raw inputs temporarily
+    Tmp -->> Encode: stored
+    Encode ->> Audit: log encode initialization
+    Audit -->> Encode: logged
+
+    Encode ->> Comp: compress(tmBytes)
+    Comp -->> Encode: return compressedTM
+    Encode ->> Log: log compression ratio
+    Log -->> Encode: logged
+
+    Encode ->> Cap: selectResolution(compressedTM.length, ...)
+    Cap -->> Encode: return {newWidth, newHeight, capacity}
+
+    Encode ->> Img: resizeStretch(catRaw, newWidth, newHeight)
+    Img -->> Encode: return resizedCatPixels
+    Encode ->> Img: resizeStretch(dogRaw, newWidth, newHeight)
+    Img -->> Encode: return resizedDogPixels
+
+    Encode ->> Pack: packLayer3(compressedTM, fileName)
+    Pack -->> Encode: return plaintext
+
+    Encode ->> KMS: request encryption key
+    KMS -->> Encode: return key and iv
+    Encode ->> Crypto: encrypt(plaintext, key, iv)
+    Crypto -->> Encode: return ciphertext
+    Encode ->> Audit: log encryption success
+    Audit -->> Encode: logged
+
+    Encode ->> Pack: packLayer2(key, iv, ciphertext)
+    Pack -->> Encode: return encryptedStream
+
+    Encode ->> Stripe: stripe(encryptedStream)
+    Stripe -->> Encode: return {evenBytes, oddBytes}
+
+    Encode ->> Pack: packLayer1(evenBytes, isEven_true)
+    Pack -->> Encode: return catPayload
+    Encode ->> Pack: packLayer1(oddBytes, isEven_false)
+    Pack -->> Encode: return dogPayload
+
+    Encode ->> Lsb: lsbInterleave(resizedCatPixels, catPayload, 3)
+    Lsb -->> Encode: return catStegoPixels
+    Encode ->> Lsb: lsbInterleave(resizedDogPixels, dogPayload, 3)
+    Lsb -->> Encode: return dogStegoPixels
+
+    Encode ->> Tmp: store stego outputs temporarily
+    Tmp -->> Encode: stored
+    Encode ->> Analyt: record generation metrics
+    Analyt -->> Encode: recorded
+
+    Encode -->> Main: return {catStegoPixels, dogStegoPixels, ...}
+
+    Main ->> Img: toBlob(catStegoPixels, width, height)
+    Img -->> Main: return catBlob
+    Main ->> Img: toBlob(dogStegoPixels, width, height)
+    Img -->> Main: return dogBlob
+
+    Main ->> Clean: trigger temp file cleanup
+    Clean -->> Main: cleanup complete
+    Main ->> Notif: prepare download URLs
+    Notif -->> Main: URLs ready
+
+    Main -->> API: response ready
+    API -->> LB: route response
+    LB -->> CDN: forward response
+    CDN -->> User: hide spinner and enable download
+```
+
+**mermaid_class:**
 
 ```mermaid
 classDiagram
@@ -34,8 +161,7 @@ classDiagram
     Animal : +String gender
 ```
 
-**contents_name:**
-mermaid_state
+**mermaid_state:**
 
 ```mermaid
 stateDiagram-v2
@@ -46,8 +172,7 @@ stateDiagram-v2
     Crash --> [*] : End
 ```
 
-**contents_name:**
-mermaid_er
+**mermaid_er:**
 
 ```mermaid
 erDiagram
@@ -55,8 +180,7 @@ erDiagram
     ORDER ||--|{ LINE_ITEM : contains
 ```
 
-**contents_name:**
-mermaid_gantt
+**mermaid_gantt:**
 
 ```mermaid
 gantt
@@ -67,8 +191,7 @@ gantt
     Another_task     :after a1  , 20d
 ```
 
-**contents_name:**
-mermaid_pie
+**mermaid_pie:**
 
 ```mermaid
 pie
@@ -78,8 +201,7 @@ pie
     "Magnesium" : 8
 ```
 
-**contents_name:**
-mermaid_quadrant
+**mermaid_quadrant:**
 
 ```mermaid
 quadrantChart
@@ -93,8 +215,7 @@ quadrantChart
     Campaign B: [0.45, 0.23]
 ```
 
-**contents_name:**
-mermaid_mindmap
+**mermaid_mindmap:**
 
 ```mermaid
 mindmap
@@ -107,8 +228,7 @@ mindmap
       On automatic creation
 ```
 
-**contents_name:**
-mermaid_timeline
+**mermaid_timeline:**
 
 ```mermaid
 timeline
@@ -120,8 +240,7 @@ timeline
     2006 : Twitter
 ```
 
-**contents_name:**
-mermaid_sankey
+**mermaid_sankey:**
 
 ```mermaid
 sankey-beta
@@ -130,8 +249,7 @@ sankey-beta
     Bio-conversion,Gas,81.144
 ```
 
-**contents_name:**
-mermaid_journey
+**mermaid_journey:**
 
 ```mermaid
 journey
@@ -145,8 +263,7 @@ journey
       Sit_down: 5: Me
 ```
 
-**contents_name:**
-mermaid_xychart
+**mermaid_xychart:**
 
 ```mermaid
 xychart-beta
@@ -157,8 +274,7 @@ xychart-beta
     line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
 ```
 
-**contents_name:**
-mermaid_requirement
+**mermaid_requirement:**
 
 ```mermaid
 requirementDiagram
@@ -174,8 +290,7 @@ requirementDiagram
     test_entity - satisfies -> test_req
 ```
 
-**contents_name:**
-plantuml_usecase
+**plantuml_usecase:**
 
 ```plantuml
 @startuml
@@ -184,8 +299,7 @@ plantuml_usecase
 @enduml
 ```
 
-**contents_name:**
-plantuml_component
+**plantuml_component:**
 
 ```plantuml
 @startuml
@@ -195,8 +309,7 @@ plantuml_component
 @enduml
 ```
 
-**contents_name:**
-plantuml_object
+**plantuml_object:**
 
 ```plantuml
 @startuml
@@ -211,8 +324,7 @@ user --> group : Belongs_to
 @enduml
 ```
 
-**contents_name:**
-plantuml_deployment
+**plantuml_deployment:**
 
 ```plantuml
 @startuml
@@ -226,8 +338,7 @@ database "DB" {
 @enduml
 ```
 
-**contents_name:**
-plantuml_timing
+**plantuml_timing:**
 
 ```plantuml
 @startuml
@@ -247,8 +358,7 @@ WB is Waiting
 @enduml
 ```
 
-**contents_name:**
-plantuml_wbs
+**plantuml_wbs:**
 
 ```plantuml
 @startwbs
@@ -262,8 +372,7 @@ plantuml_wbs
 @endwbs
 ```
 
-**contents_name:**
-plantuml_json
+**plantuml_json:**
 
 ```plantuml
 @startjson
@@ -275,8 +384,7 @@ plantuml_json
 @endjson
 ```
 
-**contents_name:**
-plantuml_yaml
+**plantuml_yaml:**
 
 ```plantuml
 @startyaml
@@ -288,10 +396,7 @@ color:
 @endyaml
 ```
 
-# Sample Code Data (MCBSMD Format)
-
-**contents_name:**
-python_code
+**python_code:**
 
 ```python
 def fibonacci(n):
@@ -302,20 +407,21 @@ def fibonacci(n):
 
 print([fibonacci(i) for i in range(10)])
 ```
+
 A recursive function to calculate Fibonacci numbers and a list comprehension to print the first 10.
 
-**contents_name:**
-javascript_code
+**javascript_code:**
 
 ```javascript
 const greet = (name) => {
-    const message = `Hello, ${name}!`;
-    console.log(message);
+  const message = `Hello, ${name}!`;
+  console.log(message);
 };
 
-const users = ['Alice', 'Bob', 'Charlie'];
-users.forEach(user => greet(user));
+const users = ["Alice", "Bob", "Charlie"];
+users.forEach((user) => greet(user));
 ```
+
 Arrow functions, template literals, and array iteration in JavaScript.
 
 **contents_name:**
@@ -323,17 +429,18 @@ typescript_code
 
 ```typescript
 interface User {
-    id: number;
-    username: string;
+  id: number;
+  username: string;
 }
 
 function printUser(user: User): void {
-    console.log(`User ${user.id}: ${user.username}`);
+  console.log(`User ${user.id}: ${user.username}`);
 }
 
 const admin: User = { id: 1, username: "admin_user" };
 printUser(admin);
 ```
+
 TypeScript example showing interface definition and type annotations.
 
 **contents_name:**
@@ -353,6 +460,7 @@ func main() {
     fmt.Println(msg)
 }
 ```
+
 A basic Go program demonstrating channels and Goroutines for concurrency.
 
 **contents_name:**
@@ -364,10 +472,11 @@ fn main() {
     let doubled: Vec<i32> = numbers.iter()
         .map(|&x| x * 2)
         .collect();
-    
+
     println!("Doubled: {:?}", doubled);
 }
 ```
+
 Rust example using vectors, iterators, and closures for functional-style processing.
 
 **contents_name:**
@@ -382,17 +491,17 @@ public class Main {
         List<String> items = new ArrayList<>();
         items.add("Apple");
         items.add("Banana");
-        
+
         for (String item : items) {
             System.out.println("Item: " + item);
         }
     }
 }
 ```
+
 Standard Java class structure using generic Lists and an enhanced for-loop.
 
-**contents_name:**
-c_code
+**c_code:**
 
 ```c
 #include <stdio.h>
@@ -400,13 +509,14 @@ c_code
 int main() {
     int arr[] = {10, 20, 30, 40, 50};
     int len = sizeof(arr) / sizeof(arr[0]);
-    
+
     for(int i = 0; i < len; i++) {
         printf("Element %d: %d\n", i, arr[i]);
     }
     return 0;
 }
 ```
+
 Classic C program iterating over an integer array with pointer arithmetic logic.
 
 **contents_name:**
@@ -425,6 +535,7 @@ int main() {
     return 0;
 }
 ```
+
 Modern C++ using `std::vector` and range-based for loops.
 
 **contents_name:**
@@ -448,6 +559,7 @@ class Program {
     }
 }
 ```
+
 C# example demonstrating LINQ query syntax to filter and sort an array.
 
 **contents_name:**
@@ -458,7 +570,7 @@ class Greeter
   def initialize(name = "World")
     @name = name
   end
-  
+
   def say_hi
     puts "Hi #{@name}!"
   end
@@ -467,10 +579,10 @@ end
 g = Greeter.new("Rubyist")
 g.say_hi
 ```
+
 Ruby class definition, instance variables, and method invocation.
 
-**contents_name:**
-php_code
+**php_code:**
 
 ```php
 <?php
@@ -485,10 +597,10 @@ function sum(...$numbers) {
 echo "Sum: " . sum(1, 2, 3, 4);
 ?>
 ```
+
 PHP script showing variadic functions and variable iteration.
 
-**contents_name:**
-swift_code
+**swift_code:**
 
 ```swift
 let names = ["Anna", "Alex", "Brian", "Jack"]
@@ -498,10 +610,10 @@ for (index, name) in names.enumerated() {
     print("Item \(index + 1): \(name)")
 }
 ```
+
 Swift example using array properties and the `enumerated()` method for loops.
 
-**contents_name:**
-kotlin_code
+**kotlin_code:**
 
 ```kotlin
 fun main() {
@@ -512,10 +624,10 @@ fun main() {
          .forEach { println(it) }
 }
 ```
+
 Kotlin code using collection extension functions for functional processing.
 
-**contents_name:**
-bash_code
+**bash_code:**
 
 ```bash
 #!/bin/bash
@@ -526,14 +638,14 @@ do
     ((count++))
 done
 ```
+
 A simple Bash shell script demonstrating a while loop and arithmetic expansion.
 
-**contents_name:**
-sql_code
+**sql_code:**
 
 ```sql
-SELECT 
-    u.username, 
+SELECT
+    u.username,
     COUNT(o.order_id) as order_count
 FROM users u
 LEFT JOIN orders o ON u.id = o.user_id
@@ -541,62 +653,58 @@ WHERE u.active = 1
 GROUP BY u.username
 ORDER BY order_count DESC;
 ```
+
 Standard SQL query involving JOINs, aggregation, filtering, and sorting.
 
-**contents_name:**
-html_code
+**html_code:**
 
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Sample Page</title>
-</head>
-<body>
+  </head>
+  <body>
     <div id="container">
-        <h1>Hello World</h1>
-        <p>This is a paragraph.</p>
+      <h1>Hello World</h1>
+      <p>This is a paragraph.</p>
     </div>
-</body>
+  </body>
 </html>
 ```
+
 Basic HTML5 document structure.
 
-**contents_name:**
-css_code
+**css_code:**
 
 ```css
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
 }
 
 .container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 ```
+
 CSS sample showing Flexbox layout properties.
 
-**contents_name:**
-json_data
+**json_data:**
 
 ```json
 {
   "project": "MCBSMD",
   "version": 1.0,
-  "supported_languages": [
-    "Python",
-    "JavaScript",
-    "Go",
-    "Rust"
-  ],
+  "supported_languages": ["Python", "JavaScript", "Go", "Rust"],
   "active": true
 }
 ```
+
 A typical JSON data structure.
 
 # Math Rendering & Diagram Test Suite
@@ -608,6 +716,7 @@ This document demonstrates the rendering capabilities for mathematical formulas 
 ## 1. Classical Algebra & Number Theory
 
 ### Euler's Identity
+
 Often cited as the most beautiful equation in mathematics.
 
 $$
@@ -615,6 +724,7 @@ e^{i\pi} + 1 = 0
 $$
 
 ### The Quadratic Formula
+
 The solution for the quadratic equation $ax^2 + bx + c = 0$.
 
 $$
@@ -626,6 +736,7 @@ $$
 ## 2. Calculus & Analysis
 
 ### Definition of Derivative
+
 The derivative is defined as the limit of the difference quotient.
 
 $$
@@ -633,6 +744,7 @@ f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}
 $$
 
 ### The Gaussian Integral
+
 An important integral in probability theory.
 
 $$
@@ -644,6 +756,7 @@ $$
 ## 3. Linear Algebra
 
 ### Matrix Operations
+
 Here is a $3 \times 3$ matrix $A$ and a vector $\vec{v}$.
 
 $$
@@ -660,6 +773,7 @@ z
 $$
 
 ### Determinant
+
 $$
 \det(A) = \sum_{\sigma \in S_n} \text{sgn}(\sigma) \prod_{i=1}^n a_{i, \sigma(i)}
 $$
@@ -695,8 +809,8 @@ Where $\beta = \frac{1}{k_B T}$.
 
 Below is a visualization of how a mathematical problem is solved using a computational approach.
 
-**contents_name:**
-problem_solving_flow
+**problem_solving_flow:**
+
 ```mermaid
 flowchart LR
     Problem_Input -->|Defines| Mathematical_Model
@@ -714,8 +828,8 @@ This diagram illustrates the iterative process of modeling and solving problems.
 
 A simple Python implementation for the quadratic formula mentioned in Section 1.
 
-**contents_name:**
-quadratic_solver_py
+**quadratic_solver_py:**
+
 ```python
 import cmath
 
@@ -738,15 +852,15 @@ This function handles complex roots using the `cmath` library.
 
 A class diagram representing a mathematical expression parser structure.
 
-**contents_name:**
-expression_parser_class_diagram
+**expression_parser_class_diagram:**
+
 ```mermaid
 classDiagram
     Expression <|-- BinaryExpression : Inherits
     Expression <|-- Number : Inherits
     BinaryExpression o-- Expression : Contains_Left
     BinaryExpression o-- Expression : Contains_Right
-    
+
     class Expression {
         +evaluate() double
     }

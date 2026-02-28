@@ -1,6 +1,6 @@
 # Diagram Test Data (MCBSMD Format)
 
-**contents_name:** mermaid_flowchart
+**mermaid_flowchart:**
 
 ```mermaid
 graph TD
@@ -10,7 +10,7 @@ graph TD
     C-->|Done|D
 ```
 
-**contents_name:** mermaid_sequence
+**mermaid_sequence:**
 
 ```mermaid
 sequenceDiagram
@@ -18,7 +18,7 @@ sequenceDiagram
     Bob-->>Alice: Hello_Alice
 ```
 
-**contents_name:** Super Big Sequence Diagram in Mermaid
+**Super Big Sequence Diagram in Mermaid:**
 
 ```mermaid
 sequenceDiagram
@@ -148,7 +148,7 @@ sequenceDiagram
     CDN -->> User: hide spinner and enable download
 ```
 
-**contents_name:** mermaid_class
+**mermaid_class:**
 
 ```mermaid
 classDiagram
@@ -161,7 +161,7 @@ classDiagram
     Animal : +String gender
 ```
 
-**contents_name:** mermaid_state
+**mermaid_state:**
 
 ```mermaid
 stateDiagram-v2
@@ -172,7 +172,7 @@ stateDiagram-v2
     Crash --> [*] : End
 ```
 
-**contents_name:** mermaid_er
+**mermaid_er:**
 
 ```mermaid
 erDiagram
@@ -180,7 +180,7 @@ erDiagram
     ORDER ||--|{ LINE_ITEM : contains
 ```
 
-**contents_name:** mermaid_gantt
+**mermaid_gantt:**
 
 ```mermaid
 gantt
@@ -191,7 +191,7 @@ gantt
     Another_task     :after a1  , 20d
 ```
 
-**contents_name:** mermaid_pie
+**mermaid_pie:**
 
 ```mermaid
 pie
@@ -201,7 +201,7 @@ pie
     "Magnesium" : 8
 ```
 
-**contents_name:** mermaid_quadrant
+**mermaid_quadrant:**
 
 ```mermaid
 quadrantChart
@@ -215,7 +215,7 @@ quadrantChart
     Campaign B: [0.45, 0.23]
 ```
 
-**contents_name:** mermaid_mindmap
+**mermaid_mindmap:**
 
 ```mermaid
 mindmap
@@ -228,7 +228,7 @@ mindmap
       On automatic creation
 ```
 
-**contents_name:** mermaid_timeline
+**mermaid_timeline:**
 
 ```mermaid
 timeline
@@ -240,7 +240,7 @@ timeline
     2006 : Twitter
 ```
 
-**contents_name:** mermaid_sankey
+**mermaid_sankey:**
 
 ```mermaid
 sankey-beta
@@ -249,7 +249,7 @@ sankey-beta
     Bio-conversion,Gas,81.144
 ```
 
-**contents_name:** mermaid_journey
+**mermaid_journey:**
 
 ```mermaid
 journey
@@ -263,7 +263,7 @@ journey
       Sit_down: 5: Me
 ```
 
-**contents_name:** mermaid_xychart
+**mermaid_xychart:**
 
 ```mermaid
 xychart-beta
@@ -274,7 +274,7 @@ xychart-beta
     line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
 ```
 
-**contents_name:** mermaid_requirement
+**mermaid_requirement:**
 
 ```mermaid
 requirementDiagram
@@ -290,7 +290,7 @@ requirementDiagram
     test_entity - satisfies -> test_req
 ```
 
-**contents_name:** plantuml_usecase
+**plantuml_usecase:**
 
 ```plantuml
 @startuml
@@ -299,7 +299,7 @@ requirementDiagram
 @enduml
 ```
 
-**contents_name:** plantuml_component
+**plantuml_component:**
 
 ```plantuml
 @startuml
@@ -309,7 +309,7 @@ requirementDiagram
 @enduml
 ```
 
-**contents_name:** plantuml_object
+**plantuml_object:**
 
 ```plantuml
 @startuml
@@ -324,7 +324,7 @@ user --> group : Belongs_to
 @enduml
 ```
 
-**contents_name:** plantuml_deployment
+**plantuml_deployment:**
 
 ```plantuml
 @startuml
@@ -338,7 +338,7 @@ database "DB" {
 @enduml
 ```
 
-**contents_name:** plantuml_timing
+**plantuml_timing:**
 
 ```plantuml
 @startuml
@@ -358,7 +358,7 @@ WB is Waiting
 @enduml
 ```
 
-**contents_name:** plantuml_wbs
+**plantuml_wbs:**
 
 ```plantuml
 @startwbs
@@ -372,7 +372,7 @@ WB is Waiting
 @endwbs
 ```
 
-**contents_name:** plantuml_json
+**plantuml_json:**
 
 ```plantuml
 @startjson
@@ -384,7 +384,7 @@ WB is Waiting
 @endjson
 ```
 
-**contents_name:** plantuml_yaml
+**plantuml_yaml:**
 
 ```plantuml
 @startyaml
@@ -396,7 +396,7 @@ color:
 @endyaml
 ```
 
-**contents_name:** python_code
+**python_code:**
 
 ```python
 def fibonacci(n):
@@ -410,7 +410,7 @@ print([fibonacci(i) for i in range(10)])
 
 A recursive function to calculate Fibonacci numbers and a list comprehension to print the first 10.
 
-**contents_name:** javascript_code
+**javascript_code:**
 
 ```javascript
 const greet = (name) => {
@@ -501,7 +501,7 @@ public class Main {
 
 Standard Java class structure using generic Lists and an enhanced for-loop.
 
-**contents_name:** c_code
+**c_code:**
 
 ```c
 #include <stdio.h>
@@ -582,7 +582,7 @@ g.say_hi
 
 Ruby class definition, instance variables, and method invocation.
 
-**contents_name:** php_code
+**php_code:**
 
 ```php
 <?php
@@ -600,7 +600,7 @@ echo "Sum: " . sum(1, 2, 3, 4);
 
 PHP script showing variadic functions and variable iteration.
 
-**contents_name:** swift_code
+**swift_code:**
 
 ```swift
 let names = ["Anna", "Alex", "Brian", "Jack"]
@@ -613,7 +613,7 @@ for (index, name) in names.enumerated() {
 
 Swift example using array properties and the `enumerated()` method for loops.
 
-**contents_name:** kotlin_code
+**kotlin_code:**
 
 ```kotlin
 fun main() {
@@ -627,7 +627,7 @@ fun main() {
 
 Kotlin code using collection extension functions for functional processing.
 
-**contents_name:** bash_code
+**bash_code:**
 
 ```bash
 #!/bin/bash
@@ -641,7 +641,7 @@ done
 
 A simple Bash shell script demonstrating a while loop and arithmetic expansion.
 
-**contents_name:** sql_code
+**sql_code:**
 
 ```sql
 SELECT
@@ -656,7 +656,7 @@ ORDER BY order_count DESC;
 
 Standard SQL query involving JOINs, aggregation, filtering, and sorting.
 
-**contents_name:** html_code
+**html_code:**
 
 ```html
 <!DOCTYPE html>
@@ -676,7 +676,7 @@ Standard SQL query involving JOINs, aggregation, filtering, and sorting.
 
 Basic HTML5 document structure.
 
-**contents_name:** css_code
+**css_code:**
 
 ```css
 body {
@@ -694,7 +694,7 @@ body {
 
 CSS sample showing Flexbox layout properties.
 
-**contents_name:** json_data
+**json_data:**
 
 ```json
 {
@@ -809,7 +809,7 @@ Where $\beta = \frac{1}{k_B T}$.
 
 Below is a visualization of how a mathematical problem is solved using a computational approach.
 
-**contents_name:** problem_solving_flow
+**problem_solving_flow:**
 
 ```mermaid
 flowchart LR
@@ -828,7 +828,7 @@ This diagram illustrates the iterative process of modeling and solving problems.
 
 A simple Python implementation for the quadratic formula mentioned in Section 1.
 
-**contents_name:** quadratic_solver_py
+**quadratic_solver_py:**
 
 ```python
 import cmath
@@ -852,7 +852,7 @@ This function handles complex roots using the `cmath` library.
 
 A class diagram representing a mathematical expression parser structure.
 
-**contents_name:** expression_parser_class_diagram
+**expression_parser_class_diagram:**
 
 ```mermaid
 classDiagram
