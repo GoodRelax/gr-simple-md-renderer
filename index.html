@@ -228,17 +228,24 @@
         }
       }
 
-      /* Touch devices (iPad/iPhone):
+      /* Touch-capable devices (iPhone, iPad, iPad + Magic Keyboard, touchscreen PCs):
 		   Switch from the "app shell" layout (body fixed at 100vh, #preview scrolls)
-		   to natural document-level scrolling. This resolves an iOS Safari issue where
-		   the inner overflow scroll container (#preview) cannot be scrolled after the
-		   user performs a pinch-zoom, because iOS repurposes swipe gestures for visual
-		   viewport panning when the viewport is zoomed.
-		   With document-level scroll, iOS pinch-zoom + pan navigates the full page
-		   naturally without any JS workaround. */
-      @media (pointer: coarse) {
+		   to natural document-level scrolling.
+		   - "pointer: coarse" only matches when the PRIMARY pointer is touch (plain
+		     iPhone/iPad without keyboard). It misses iPad + Magic Keyboard, where the
+		     trackpad becomes the primary (fine) pointer while the touchscreen is still
+		     present as a secondary coarse pointer.
+		   - "any-pointer: coarse" matches whenever ANY pointer is touch, covering both
+		     cases correctly.
+		   After iOS pinch-zoom, visual-viewport panning (1-finger swipe) moves the
+		   visual viewport over the document. With document-level scroll this IS
+		   document scrolling (window.scrollY changes). With an overflow element
+		   (#preview overflow:auto), viewport panning does not update
+		   element.scrollTop, so the user cannot scroll past the zoomed area. */
+      @media (any-pointer: coarse) {
         body {
           height: auto;
+          overflow: auto;
         }
 
         #topbar {
@@ -851,7 +858,7 @@
         constructor(container) {
           this.container = container;
           this.useDocumentScroll =
-            window.matchMedia("(pointer: coarse)").matches;
+            window.matchMedia("(any-pointer: coarse)").matches;
         }
 
         /** @returns {number} */
@@ -1903,13 +1910,18 @@
 
       new UIController(orchestrator, state, elements);
 
-      // DiagramZoomController and DiagramPanController are only activated on
-      // fine-pointer devices (mouse/trackpad).
-      // Touch devices (iOS/Android) use native viewport pinch-zoom and need no JS zoom.
-      // Touch scroll is handled natively by the document-level scroll on those devices.
+      // DiagramZoomController: activated on any fine-pointer device (mouse/trackpad),
+      // including iPad + Magic Keyboard. Ctrl+scroll zoom works via the trackpad.
+      //
+      // DiagramPanController: activated only on pure fine-pointer devices (no
+      // touchscreen). On touch-capable devices the document-level scroll layout is
+      // used; mouse-drag pan conflicts with touch scroll there and is not needed.
+      const isTouchCapable = window.matchMedia("(any-pointer: coarse)").matches;
       if (window.matchMedia("(pointer: fine)").matches) {
         new DiagramZoomController(elements.preview);
-        new DiagramPanController(elements.preview);
+        if (!isTouchCapable) {
+          new DiagramPanController(elements.preview);
+        }
       }
     </script>
   </body>
