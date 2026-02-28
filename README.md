@@ -1,6 +1,6 @@
-# GRSMD — A Privacy-First Markdown Renderer That Runs in Your Browser
+# GRSMD — A Privacy-First Markdown Renderer & Viewer That Runs in Your Browser
 
-**GRSMD (GoodRelax Simple Markdown Renderer)** is a privacy-first Markdown renderer that runs entirely in the browser.
+**GRSMD (GoodRelax Simple Markdown Renderer & Viewer)** is a privacy-first Markdown renderer and viewer that runs entirely in the browser.
 
 - Client-side Markdown, Mermaid, and syntax highlighting
 - PlantUML rendering with explicit user consent
@@ -22,10 +22,13 @@ This tool was built to provide a **transparent, minimal, and privacy-respecting 
 ## Features
 
 - 100% client-side Markdown rendering
+- Auto-render on paste (Ctrl+V / Cmd+V anywhere on the page)
+- File drag-and-drop support (.md / .txt)
 - Mermaid diagram support
 - PlantUML support with explicit consent prompt
 - Syntax highlighting for code blocks
 - Dark / Light theme rendering
+- Diagram zoom (Ctrl+Scroll) and pan (drag) on PC
 - Scroll position preservation during re-rendering
 - Designed for extensibility (renderer-based architecture)
 
@@ -42,9 +45,12 @@ You can run this tool locally by simply opening `index.html` in your browser.
 ## Usage
 
 1. Open the application in your browser
-2. Paste Markdown text into the editor in the top-left
-3. Click **Render Light** or **Render Dark**
-4. If PlantUML is detected, you will be asked for permission before rendering
+2. Any of the following triggers an automatic preview:
+   - Paste text anywhere on the page (Ctrl+V / Cmd+V)
+   - Drop a `.md` / `.txt` file anywhere on the page
+   - Type or paste directly into the `[Paste Markdown...]` box at the top
+3. To switch themes, click **Render Light** or **Render Dark**
+4. If your Markdown contains PlantUML blocks, you will be asked for permission before they are sent to the external server
 
 No content is sent to external servers without explicit user consent.
 
@@ -66,10 +72,10 @@ MIT License
 
 ---
 ---
-# GR Simple MD Renderer
+# GR Simple MD Renderer & Viewer
 
-Mermaid・PlantUML・シンタックスハイライトに対応した、  
-軽量でプライバシー重視の Markdown レンダラーです。  
+Mermaid・PlantUML・シンタックスハイライトに対応した、
+軽量でプライバシー重視の Markdown レンダラー＆ビューワーです。
 基本的にすべてクライアントサイドで動作し、外部通信は明示的な許可がある場合のみ行われます。
 
 ---
@@ -88,10 +94,13 @@ Mermaid・PlantUML・シンタックスハイライトに対応した、
 ## 特徴
 
 - 100% クライアントサイド Markdown レンダリング
+- ページ上どこでも貼り付け（Ctrl+V / Cmd+V）→ 自動プレビュー
+- `.md` / `.txt` ファイルのドラッグ＆ドロップ → 自動プレビュー
 - Mermaid 図のサポート
 - 明示的な許可確認付き PlantUML レンダリング
 - コードブロックのシンタックスハイライト対応
 - ダーク / ライトテーマ対応
+- PC: ダイアグラムの Zoom（Ctrl+Scroll）/ Pan（ドラッグ）対応
 - 再レンダリング時のスクロール位置保持
 - 拡張を前提とした renderer ベース設計
 
@@ -108,9 +117,12 @@ Mermaid・PlantUML・シンタックスハイライトに対応した、
 ## 使い方
 
 1. ブラウザでアプリケーションを開く
-2. エディタに Markdown を貼り付ける
-3. **Render Light** または **Render Dark** をクリック
-4. PlantUML が検出された場合、レンダリング前に許可確認が表示されます
+2. 以下のいずれかで自動プレビューが開始されます:
+   - ページ上どこでも貼り付け（Ctrl+V / Cmd+V）
+   - `.md` / `.txt` ファイルをページ上にドロップ
+   - 画面上部の `[Paste Markdown...]` に直接ペースト
+3. テーマを切り替えるには **Render Light** / **Render Dark** をクリック
+4. Markdown に PlantUML ブロックが含まれる場合、外部サーバーへ送信する前に許可確認が表示されます
 
 ---
 
