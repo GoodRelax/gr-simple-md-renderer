@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<!--
+	<script src="//cdn.jsdelivr.net/npm/eruda"></script>
+	<script>
+		eruda.init();
+	</script>
+-->
+	<meta charset="UTF-8">
+
+	<meta name="description" content="Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer and viewer in your browser. Privacy-focused, client-side rendering tool with dark mode support. No data leaves your browser unless you explicitly allow PlantUML rendering.">
+	<meta name="keywords" content="GRSMD, markdown viewer, markdown renderer, markdown preview, mermaid viewer, mermaid diagrams, plantuml viewer, plantuml online, latex viewer, latex renderer, katex, diagram tool, markdown editor, privacy markdown tool, client-side markdown">
+	<meta name="author" content="GoodRelax">
+	<meta name="robots" content="index, follow">
+
+	<meta property="og:type" content="website">
+	<meta property="og:url" content="https://goodrelax.github.io/gr-simple-md-renderer/">
+	<meta property="og:title" content="GRSMD | Free Markdown Viewer – Mermaid, PlantUML & Math">
+	<meta property="og:description" content="Privacy-focused online tool for rendering Markdown, Math (LaTeX), Mermaid, and PlantUML diagrams with syntax highlighting and dark mode.">
+
+	<meta property="twitter:card" content="summary_large_image">
+	<meta property="twitter:title" content="GRSMD | Free Markdown Viewer – Mermaid, PlantUML & Math">
+	<meta property="twitter:description" content="Privacy-focused online tool for rendering Markdown, Math (LaTeX), Mermaid, and PlantUML diagrams.">
+
+	<title>GRSMD | Free Markdown Viewer – Mermaid, PlantUML & Math</title>
+
+	<script type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "SoftwareApplication",
+			"name": "GR Simple MD Renderer & Viewer",
+			"applicationCategory": "DeveloperApplication",
+			"operatingSystem": "Web Browser",
+			"offers": {
+				"@type": "Offer",
+				"price": "0",
+				"priceCurrency": "USD"
+			},
+			"description": "GRSMD Free online viewer and renderer for Markdown, Math (LaTeX), Mermaid, and PlantUML. Features privacy-focused client-side rendering.",
+			"author": {
+				"@type": "Organization",
+				"name": "GoodRelax",
+				"url": "https://github.com/GoodRelax"
+			}
+		}
+	</script>
+
+	<style>
+		body {
+			margin: 0;
+			font-family: sans-serif;
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+			overflow: hidden;
+		}
+
+		#topbar {
+			display: flex;
+			align-items: center;
+			padding: 8px 12px;
+			background: #f0f0f0;
+			gap: 16px;
+			border-bottom: 1px solid #ccc;
+		}
+
+		#header-group {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			flex-shrink: 0;
+		}
+
+		#title {
+			font-weight: bold;
+			font-size: 14px;
+			font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+			font-stretch: condensed;
+			line-height: 1.2;
+			white-space: nowrap;
+		}
+
+		#copyright {
+			font-size: 10px;
+			line-height: 1.2;
+			margin-top: 2px;
+		}
+
+		#copyright a {
+			color: blue;
+			text-decoration: underline;
+		}
+
+		#controls {
+			display: flex;
+			gap: 8px;
+			flex-shrink: 0;
+		}
+
+		#controls button {
+			white-space: normal;
+			text-align: center;
+			line-height: 1.3;
+			padding: 2px 8px;
+			font-size: 12px;
+		}
+
+		#editor {
+			flex: 1;
+			font-family: monospace;
+			font-size: 14px;
+			padding: 4px 8px;
+			border: 1px solid #ccc;
+			height: 24px;
+			min-height: 24px;
+			resize: vertical;
+			white-space: pre;
+			overflow-y: auto;
+		}
+
+		#helpBtn {
+			flex: 0 0 24px;
+			align-self: center;
+			cursor: pointer;
+			font-weight: bold;
+			padding: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			user-select: none;
+		}
+
+		#preview {
+			flex: 1;
+			overflow: auto;
+			padding: 20px;
+		}
+
+		pre {
+			background: #f4f4f4;
+			padding: 12px;
+			border-radius: 4px;
+			overflow-x: auto;
+		}
+
+		blockquote {
+			border-left: 4px solid #ccc;
+			margin: 0;
+			padding-left: 16px;
+			color: #666;
+		}
+
+		/* Mermaid diagram container.
+		   overflow:auto and drag-scroll styles are added for fine-pointer (PC) devices
+		   only via the media query below, giving each diagram its own independent
+		   scroll area when zoomed.
+		   On touch devices the container stays clip-free so native pinch-zoom is unaffected. */
+		.mermaid {
+			display: flex;
+			justify-content: flex-start;
+			margin: 16px 0;
+		}
+
+		/* Center the SVG inside .mermaid via auto margins.
+		   When the SVG is narrower than the container, margin:auto absorbs the
+		   free space and the diagram appears centered.
+		   When the SVG overflows (large zoom), auto margins resolve to 0 and
+		   flex-start takes over, putting the left edge at the scroll origin
+		   so the full content is reachable. */
+		.mermaid > svg {
+			margin: auto;
+		}
+
+		/* Wrapper injected around every PlantUML <img> at render time.
+		   Mirrors the per-diagram scroll strategy used for .mermaid. */
+		.plantuml-wrapper {
+			display: flex;
+			justify-content: flex-start;
+			margin: 16px 0;
+		}
+		.plantuml-wrapper > img {
+			margin: auto;
+		}
+
+		/* PC (fine pointer = mouse/trackpad):
+		   - overflow:auto  gives each diagram its own independent scroll area.
+		   - cursor:grab    signals that the diagram can be panned by dragging.
+		   - user-select:none prevents accidental text selection during drag;
+		     SVG label text is rarely needed to copy in a diagram viewer context. */
+		@media (pointer: fine) {
+			.mermaid {
+				overflow: auto;
+				cursor: grab;
+				user-select: none;
+			}
+
+			.plantuml-wrapper {
+				overflow: auto;
+				cursor: grab;
+				user-select: none;
+			}
+		}
+
+		/* Touch devices (iPad/iPhone):
+		   Switch from the "app shell" layout (body fixed at 100vh, #preview scrolls)
+		   to natural document-level scrolling. This resolves an iOS Safari issue where
+		   the inner overflow scroll container (#preview) cannot be scrolled after the
+		   user performs a pinch-zoom, because iOS repurposes swipe gestures for visual
+		   viewport panning when the viewport is zoomed.
+		   With document-level scroll, iOS pinch-zoom + pan navigates the full page
+		   naturally without any JS workaround. */
+		@media (pointer: coarse) {
+			body {
+				height: auto;
+			}
+
+			#topbar {
+				position: sticky;
+				top: 0;
+				z-index: 100;
+			}
+
+			#preview {
+				flex: none;
+				overflow: visible;
+			}
+		}
+
+		.plantuml-error {
+			border: 2px dashed #ff6b6b;
+			padding: 12px;
+			margin: 8px 0;
+			border-radius: 4px;
+			background-color: #fff5f5;
+			color: #c92a2a;
+			font-family: monospace;
+			font-size: 13px;
+		}
+
+		.modal {
+			display: none;
+			position: fixed;
+			z-index: 1000;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			overflow: auto;
+			background-color: rgba(0, 0, 0, 0.6);
+		}
+
+		.modal-content {
+			background-color: #fefefe;
+			margin: 5% auto;
+			padding: 20px 30px;
+			border: 1px solid #888;
+			width: 80%;
+			max-width: 700px;
+			border-radius: 8px;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+			line-height: 1.6;
+		}
+
+		.close-btn {
+			color: #aaa;
+			float: right;
+			font-size: 28px;
+			font-weight: bold;
+			cursor: pointer;
+			line-height: 1;
+		}
+
+		.close-btn:hover,
+		.close-btn:focus {
+			color: black;
+			text-decoration: none;
+			cursor: pointer;
+		}
+
+		.modal-section {
+			margin-bottom: 24px;
+		}
+
+		.modal-section h3 {
+			margin-bottom: 8px;
+			border-bottom: 1px solid #ddd;
+			padding-bottom: 4px;
+		}
+
+		.modal-section ul {
+			margin-top: 8px;
+			padding-left: 20px;
+		}
+
+		#promptText {
+			background: #f4f4f4;
+			border: 1px solid #ccc;
+			color: #333;
+		}
+
+		body.dark {
+			background: #222;
+			color: #ddd;
+		}
+
+		.dark #topbar {
+			background: #333;
+			border-bottom: 1px solid #444;
+		}
+
+		.dark #editor {
+			background: #444;
+			color: #fff;
+			border-color: #666;
+		}
+
+		.dark pre {
+			background: #333;
+			border: 1px solid #555;
+		}
+
+		.dark #copyright a {
+			color: #66b3ff;
+		}
+
+		.dark .modal-content {
+			background-color: #333;
+			color: #eee;
+			border: 1px solid #555;
+		}
+
+		.dark .close-btn {
+			color: #ddd;
+		}
+
+		.dark .close-btn:hover {
+			color: #fff;
+		}
+
+		.dark .modal-section h3 {
+			border-bottom-color: #555;
+		}
+
+		.dark #promptText {
+			background: #444;
+			border: 1px solid #666;
+			color: #fff;
+		}
+
+		.dark .plantuml-error {
+			background-color: #2d1f1f;
+			color: #ff8787;
+			border-color: #ff6b6b;
+		}
+
+		.dark .katex {
+			color: inherit;
+		}
+
+		.katex {
+			font-size: 1.1em;
+		}
+	</style>
+
+	<!--
+        SRI Hash Generation Site
+            https://srihash.org/
+        CDN sites
+            https://www.jsdelivr.com/package/npm/marked
+            https://www.jsdelivr.com/package/npm/mermaid
+            https://cdnjs.com/libraries/highlight.js
+            https://www.jsdelivr.com/package/npm/katex
+            https://www.jsdelivr.com/package/npm/marked-katex-extension
+    -->
+
+	<script src="https://cdn.jsdelivr.net/npm/marked@17.0.1/lib/marked.umd.min.js" integrity="sha384-AkwdwVgEdZpqPMfydlmViIGgV90b6sHb/NoxnNdlecRKY3puoyKdw/pi64E32c+6" crossorigin="anonymous">
+	</script>
+
+	<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.esm.min.mjs" integrity="sha384-bBdf+Hx1qc+N2a4poQjInyeO803gqSNqanHQiQ3DgvXaz/aeQz4mQLhIXpK9MP83" crossorigin="anonymous" />
+
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css" integrity="sha512-mtXspRdOWHCYp+f4c7CkWGYPPRAhq9X+xCvJMUBVAb6pqA4U8pxhT3RWT3LP3bKbiolYL2CkL1bSKZZO4eeTew==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link rel="modulepreload" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js" integrity="sha512-818kY2uYH1PRlHNZZL17hgbHng9LBOgA4k8TQVsXYTaKwgg5pMxBahxeHDUdAMTPUJ82CXLQmJZOl3OQUKZ18Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+	<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm" integrity="sha384-0soUzyKltgTFXRsH4USkmq6FPG3emb/n2JkcG7etR4fIXjKFFJkCLqTl6sM7boxe" crossorigin="anonymous" />
+
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.28/dist/katex.min.css" integrity="sha384-Wsr4Nh3yrvMf2KCebJchRJoVo1gTU6kcP05uRSh5NV3sj9+a8IomuJoQzf3sMq4T" crossorigin="anonymous">
+	<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.6/+esm" integrity="sha384-sXM6dT1KwUCU7buT3pldq9hy6hhfkoUXunVhnhf+ISmpQh3ofLks2w7oMwyG24Ex" crossorigin="anonymous">
+	</script>
+
+</head>
+
+<body>
+	<div id="topbar">
+
+		<div id="header-group">
+			<div id="title">GR Simple MD Renderer &amp; Viewer</div>
+			<div id="copyright">
+				<a href="https://github.com/GoodRelax" target="_blank">&copy; 2026 GoodRelax. MIT License.</a>
+			</div>
+		</div>
+
+		<textarea id="editor" placeholder="Paste Markdown..."></textarea>
+
+		<div id="controls">
+			<button id="renderLight">Render<br>Light</button>
+			<button id="renderDark">Render<br>Dark</button>
+			<button id="newTabBtn">New<br>Tab</button>
+			<button id="clearBtn">Clear</button>
+		</div>
+
+		<button id="helpBtn" title="Help">?</button>
+	</div>
+
+	<div id="preview"></div>
+
+	<div id="helpModal" class="modal">
+		<div class="modal-content">
+			<span class="close-btn">&times;</span>
+
+			<div class="modal-section">
+				<h3>English</h3>
+				<p><strong>Intent:</strong><br>
+					This tool is a lightweight, privacy-conscious renderer for Markdown, Mermaid, and PlantUML. It runs entirely in your browser (client-side), ensuring your text remains local unless you explicitly allow external rendering of PlantUML.</p>
+
+				<p><strong>How to Use:</strong></p>
+				<ul>
+					<li>Paste your Markdown text into the input field at the top.</li>
+					<li>Click Render Light or Render Dark to generate the preview.</li>
+					<li>Note on PlantUML: If your code contains PlantUML, you will be asked for permission to send data to the official PlantUML server. If you deny, PlantUML blocks will show "Rendering Canceled".</li>
+					<li>Press and hold the (?) icon to obtain a prompt useful for generating Markdown with AI.</li>
+					<li><strong>Zoom diagrams (PC):</strong> Hold Ctrl and scroll the mouse wheel over a Mermaid or PlantUML diagram to zoom in/out. Double-click the diagram to reset zoom. Mac trackpad pinch also works.</li>
+					<li><strong>Pan diagrams (PC):</strong> Click and drag inside a diagram to scroll it.</li>
+				</ul>
+			</div>
+			<div class="modal-section">
+				<h3>Sample Data: </h3>
+				<a href="https://goodrelax.github.io/gr-simple-md-renderer/sample-data.txt">Copy this sample Markdown text for a quick trial</a><br>
+				<a href="https://goodrelax.github.io/gr-simple-md-renderer/sample-data-2.txt">Copy this sample Markdown text for a large-scale data trial</a>
+			</div>
+			<div class="modal-section">
+				<h3>Japanese</h3>
+				<p><strong>意図:</strong><br>
+					本ツールは、Markdown、Mermaid、PlantUMLのための軽量かつプライバシーを重視したレンダラーです。ブラウザ上（クライアントサイド）のみで動作するため、PlantUMLの外部レンダリングを許可しない限り、テキストデータが外部に送信されることはありません。</p>
+				<p><strong>使い方:</strong></p>
+				<ul>
+					<li>上部の入力欄にMarkdownテキストを貼り付けます。</li>
+					<li>Render Light または Render Dark ボタンを押してプレビューを表示します。</li>
+					<li>PlantUMLに関する注意: PlantUMLが含まれる場合、公式サーバーへのデータ送信の許可を求められます。「キャンセル」を選択した場合、PlantUMLブロックには「Rendering Canceled」と表示されます。</li>
+					<li>(?)アイコンを長押しすると、AIでMarkdownを生成するのに役立つプロンプトを取得できます。</li>
+					<li><strong>図の拡大 (PC):</strong> Mermaid・PlantUML図の上でCtrlキーを押しながらマウスホイールをスクロールすると拡大・縮小できます。図をダブルクリックするとズームがリセットされます。Macのトラックパッドピンチも動作します。</li>
+					<li><strong>図のパン (PC):</strong> 図の上でクリック＆ドラッグするとスクロールできます。</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<div id="promptModal" class="modal">
+		<div class="modal-content">
+			<span class="close-btn prompt-close">&times;</span>
+			<div class="modal-section">
+				<h3>Prompt for AI Markdown Generation</h3>
+				<p>The prompt below improves the quality of the AI's Markdown output by reducing errors. Simply copy and paste it to use</p>
+
+				<textarea id="promptText" readonly style="width: 100%; height: 200px; margin-bottom: 10px; resize: none; font-family: monospace; font-size: 12px; padding: 8px; box-sizing: border-box;"></textarea>
+				<button id="copyPromptBtn" style="width: 100%; padding: 10px; cursor: pointer; font-weight: bold;">Copy to Clipboard</button>
+			</div>
+		</div>
+	</div>
+
+
+	<script type="module">
+		import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.esm.min.mjs';
+		import hljs from 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js';
+		import plantumlEncoder from 'https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm';
+		import markedKatex from "https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.6/+esm";
+
+		// ========================================
+		// Extension Guide
+		// ========================================
+		// To add a new diagram type:
+		// 1. Extend DiagramRenderer class
+		// 2. Implement render(theme) method
+		// 3. Add instance to the initialization block
+
+
+		// ========================================
+		// Configuration
+		// ========================================
+		const CONFIG = {
+			rendering: {
+				stabilityTimeout: 1000,
+				stabilityDebounce: 50
+			},
+			plantuml: {
+				imageLoadTimeout: 5000,
+				serverUrl: 'https://www.plantuml.com/plantuml/svg/',
+				darkTheme: 'cyborg'
+			},
+			ui: {
+				longPressDuration: 800,
+				copyFeedbackDuration: 1000,
+				maxTextSelection: 99999
+			},
+			zoom: {
+				min: 0.5,
+				max: 5.0,
+				step: 0.1
+			},
+			pan: {
+				activationThresholdPx: 5
+			},
+			fileDrop: {
+				maxBytes: 5 * 1024 * 1024,
+				allowedExtensions: ['.md', '.txt']
+			},
+			messages: {
+				plantuml: {
+					canceled: 'Rendering Canceled',
+					encodingFailed: 'PlantUML encoding failed',
+					timeout: (seconds) => `PlantUML timeout (${seconds}s)`,
+					serverError: 'PlantUML server error'
+				},
+				copy: {
+					failed: 'Copy failed.',
+					blocked: 'Browser denied copy.'
+				},
+				fileDrop: {
+					invalidType: 'Acceptable file types are .md and .txt only.',
+					tooLarge:    'Dropped file is too large. Acceptable file size is maximum 5 MB.',
+					readError:   'Failed to read file.'
+				}
+			}
+		};
+
+
+		// ========================================
+		// Type Definitions
+		// ========================================
+
+		/**
+		 * @typedef {Object} UIElements
+		 * @property {HTMLTextAreaElement} editor
+		 * @property {HTMLElement} preview
+		 * @property {HTMLButtonElement} renderLightBtn
+		 * @property {HTMLButtonElement} renderDarkBtn
+		 * @property {HTMLButtonElement} newTabBtn
+		 * @property {HTMLButtonElement} clearBtn
+		 * @property {HTMLButtonElement} helpBtn
+		 * @property {HTMLElement} helpModal
+		 * @property {HTMLElement} promptModal
+		 * @property {HTMLTextAreaElement} promptText
+		 * @property {HTMLButtonElement} copyPromptBtn
+		 */
+
+
+		// ========================================
+		// Utility Functions
+		// ========================================
+
+		/**
+		 * Check if text contains PlantUML diagrams.
+		 * @param {string} text
+		 * @returns {boolean}
+		 */
+		function hasPlantUML(text) {
+			return /```(plantuml|puml)/i.test(text) || /@startuml/i.test(text);
+		}
+
+		/**
+		 * Ask the user for permission to send PlantUML data to the external server.
+		 * @param {string} content
+		 * @returns {boolean|string} true = agreed, 'skip_plantuml' = denied
+		 */
+		function checkPlantUMLConsent(content) {
+			if (!hasPlantUML(content)) return true;
+
+			const agreed = window.confirm(
+				`Security & Confidentiality Warning\n\n` +
+				`Your data will be sent to an external PlantUML rendering server.\n\n` +
+				`[OK]: data -> send to server and render Markdown with PlantUML\n\n` +
+				`[Cancel]: Render Markdown without PlantUML`
+			);
+			return agreed ? true : 'skip_plantuml';
+		}
+
+		/**
+		 * Wait until the element's size stops changing before restoring scroll position.
+		 * Mermaid and PlantUML resize their containers after rendering, which would
+		 * otherwise cause unexpected scroll jumps.
+		 * @param {HTMLElement} element
+		 * @param {number} timeout
+		 * @returns {Promise<boolean>}
+		 */
+		async function waitForDOMStability(element, timeout = CONFIG.rendering.stabilityTimeout) {
+			return new Promise((resolve) => {
+				let resizeTimer;
+				let timeoutTimer;
+
+				const resizeObserver = new ResizeObserver(() => {
+					clearTimeout(resizeTimer);
+					resizeTimer = setTimeout(() => {
+						cleanup();
+						resolve(true);
+					}, CONFIG.rendering.stabilityDebounce);
+				});
+
+				const cleanup = () => {
+					resizeObserver.disconnect();
+					clearTimeout(resizeTimer);
+					clearTimeout(timeoutTimer);
+				};
+
+				resizeObserver.observe(element);
+
+				timeoutTimer = setTimeout(() => {
+					cleanup();
+					console.warn('DOM stability timeout after', timeout, 'ms (continuing anyway)');
+					resolve(false);
+				}, timeout);
+			});
+		}
+
+
+		// ========================================
+		// Utility Classes
+		// ========================================
+
+		/**
+		 * Common DOM utilities.
+		 */
+		class DOMUtilities {
+			/**
+			 * Replace a code block element (and its <pre> parent if present) with newElement.
+			 * @param {HTMLElement} block
+			 * @param {HTMLElement} newElement
+			 */
+			static replaceCodeBlock(block, newElement) {
+				const pre = block.parentElement;
+				if (pre && pre.tagName === 'PRE') {
+					pre.replaceWith(newElement);
+				} else {
+					block.replaceWith(newElement);
+				}
+			}
+		}
+
+
+		// ========================================
+		// Class: ApplicationState
+		// ========================================
+
+		/**
+		 * Holds mutable application-level state.
+		 */
+		class ApplicationState {
+			constructor() {
+				this.currentTheme = 'light';
+				this.markdownText = '';
+				this.skipPlantUML = false;
+			}
+
+			/** @param {string} theme */
+			setTheme(theme) {
+				this.currentTheme = theme;
+			}
+
+			/** @param {string} text */
+			setMarkdownText(text) {
+				this.markdownText = text;
+			}
+
+			/** @param {boolean} skip */
+			setSkipPlantUML(skip) {
+				this.skipPlantUML = skip;
+			}
+		}
+
+
+		// ========================================
+		// Class: ScrollManager
+		// ========================================
+
+		/**
+		 * Saves and restores the scroll position of a container element.
+		 *
+		 * On touch devices (pointer:coarse) the app uses document-level scroll
+		 * instead of #preview overflow scroll (see CSS @media pointer:coarse).
+		 * In that mode, window.scrollY / window.scrollTo() are used so that the
+		 * same "scroll position restore after re-render" behaviour is available
+		 * on iPad/iPhone as on PC.
+		 */
+		class ScrollManager {
+			/** @param {HTMLElement} container */
+			constructor(container) {
+				this.container = container;
+				this.useDocumentScroll = window.matchMedia('(pointer: coarse)').matches;
+			}
+
+			/** @returns {number} */
+			save() {
+				return this.useDocumentScroll ? window.scrollY : this.container.scrollTop;
+			}
+
+			/** @param {number} pos */
+			restore(pos) {
+				if (this.useDocumentScroll) {
+					window.scrollTo(0, pos);
+				} else {
+					this.container.scrollTop = pos;
+				}
+			}
+		}
+
+
+		// ========================================
+		// Class: MarkdownRenderer
+		// ========================================
+
+		/**
+		 * Parses Markdown and applies syntax highlighting to code blocks.
+		 */
+		class MarkdownRenderer {
+			/**
+			 * @param {HTMLElement} preview
+			 * @param {object} marked
+			 * @param {object} hljs
+			 */
+			constructor(preview, marked, hljs) {
+				this.preview = preview;
+				this.marked = marked;
+				this.hljs = hljs;
+			}
+
+			/** @param {string} markdownText */
+			async render(markdownText) {
+				try {
+					const html = this.marked.parse(markdownText);
+					this.preview.innerHTML = html;
+
+					try {
+						// Skip diagram blocks; they have their own rendering pipelines.
+						this.preview.querySelectorAll(
+							'pre code:not(.language-mermaid):not(.language-plantuml):not(.language-puml)'
+						).forEach((block) => {
+							this.hljs.highlightElement(block);
+						});
+					} catch (hljsError) {
+						console.error('Syntax highlighting error:', hljsError);
+					}
+
+				} catch (error) {
+					console.error('Markdown parse error:', error);
+					this.preview.innerHTML =
+						`<pre style="color:red;">Markdown Parse Error: ${error.message}</pre>`;
+				}
+			}
+		}
+
+
+		// ========================================
+		// Class: DiagramRenderer (abstract base)
+		// ========================================
+
+		/**
+		 * Base interface for diagram renderers.
+		 * Subclasses must implement render(theme).
+		 */
+		class DiagramRenderer {
+			/** @param {string} theme */
+			async render(theme) {
+				throw new Error('DiagramRenderer.render() must be implemented');
+			}
+		}
+
+
+		// ========================================
+		// Class: MermaidRenderer
+		// ========================================
+
+		/**
+		 * Renders Mermaid diagram code blocks as SVG.
+		 */
+		class MermaidRenderer extends DiagramRenderer {
+			/**
+			 * @param {HTMLElement} preview
+			 * @param {object} mermaid
+			 */
+			constructor(preview, mermaid) {
+				super();
+				this.preview = preview;
+				this.mermaid = mermaid;
+			}
+
+			/** @param {string} theme */
+			async render(theme) {
+				try {
+					const blocks = this.preview.querySelectorAll('code.language-mermaid');
+					if (blocks.length === 0) return;
+
+					blocks.forEach(block => this.convertCodeBlockToContainer(block));
+					this.initializeMermaid(theme);
+					await this.renderMermaid();
+
+				} catch (error) {
+					console.error('Mermaid rendering error:', error);
+				}
+			}
+
+			/** @param {string} theme */
+			initializeMermaid(theme) {
+				this.mermaid.initialize({
+					startOnLoad: false,
+					theme: theme === 'dark' ? 'dark' : 'default'
+				});
+			}
+
+			async renderMermaid() {
+				try {
+					await this.mermaid.run({
+						nodes: this.preview.querySelectorAll('.mermaid')
+					});
+				} catch (error) {
+					console.error('Mermaid execution error:', error);
+				}
+			}
+
+			/**
+			 * Replace a <code class="language-mermaid"> block with a .mermaid container div.
+			 * @param {HTMLElement} block
+			 * @returns {HTMLElement}
+			 */
+			convertCodeBlockToContainer(block) {
+				const container = document.createElement('div');
+				container.className = 'mermaid';
+				container.textContent = block.textContent;
+				container.title = 'Ctrl+Scroll: zoom | Double-click: reset | Drag: pan';
+
+				DOMUtilities.replaceCodeBlock(block, container);
+				return container;
+			}
+		}
+
+
+		// ========================================
+		// Class: PlantUMLRenderer
+		// ========================================
+
+		/**
+		 * Renders PlantUML diagram code blocks as <img> elements via the external server.
+		 * Each image is wrapped in a .plantuml-wrapper div to provide an independent
+		 * per-diagram scroll area when zoomed on PC.
+		 */
+		class PlantUMLRenderer extends DiagramRenderer {
+			/**
+			 * @param {HTMLElement} preview
+			 * @param {object} plantumlEncoder
+			 */
+			constructor(preview, plantumlEncoder) {
+				super();
+				this.preview = preview;
+				this.encoder = plantumlEncoder;
+			}
+
+			/**
+			 * @param {string} theme
+			 * @param {boolean} skipRendering
+			 */
+			async render(theme, skipRendering = false) {
+				try {
+					const blocks = this.preview.querySelectorAll(
+						'code.language-plantuml, code.language-puml'
+					);
+					if (blocks.length === 0) return;
+
+					if (skipRendering) {
+						blocks.forEach(block => {
+							const errorDiv = this.createErrorElement(
+								CONFIG.messages.plantuml.canceled
+							);
+							DOMUtilities.replaceCodeBlock(block, errorDiv);
+						});
+						return;
+					}
+
+					const promises = [];
+					blocks.forEach(block => {
+						const promise = this.renderSingleBlock(block, theme);
+						if (promise) promises.push(promise);
+					});
+					await Promise.allSettled(promises);
+
+				} catch (error) {
+					console.error('PlantUML rendering error:', error);
+				}
+			}
+
+			/**
+			 * Render one PlantUML block.
+			 * The <img> is placed inside a .plantuml-wrapper div so that on PC the diagram
+			 * gets its own horizontal scroll area instead of overflowing #preview.
+			 * @param {HTMLElement} block
+			 * @param {string} theme
+			 * @returns {Promise<boolean>|null}
+			 */
+			renderSingleBlock(block, theme) {
+				try {
+					const code = this.applyTheme(block.textContent, theme);
+					const img = this.createImage(code);
+					const wrapper = this.createWrapper(img);
+					DOMUtilities.replaceCodeBlock(block, wrapper);
+					return this.waitForImageLoad(img, CONFIG.plantuml.imageLoadTimeout);
+				} catch (error) {
+					console.error('PlantUML encoding error:', error);
+					const errorDiv = this.createErrorElement(
+						CONFIG.messages.plantuml.encodingFailed
+					);
+					DOMUtilities.replaceCodeBlock(block, errorDiv);
+					return null;
+				}
+			}
+
+			/**
+			 * Inject the dark theme directive if not already present.
+			 * @param {string} code
+			 * @param {string} theme
+			 * @returns {string}
+			 */
+			applyTheme(code, theme) {
+				if (theme === 'dark' && !code.includes('!theme')) {
+					return code.replace(
+						/(@start\w+.*)/i,
+						`$1\n!theme ${CONFIG.plantuml.darkTheme}`
+					);
+				}
+				return code;
+			}
+
+			/**
+			 * Build the <img> element pointing to the PlantUML server.
+			 * @param {string} code
+			 * @returns {HTMLImageElement}
+			 */
+			createImage(code) {
+				const encoded = this.encoder.encode(code);
+				const img = document.createElement('img');
+				img.src = `${CONFIG.plantuml.serverUrl}${encoded}`;
+				img.alt = 'PlantUML Diagram';
+				img.className = 'plantuml-diagram';
+				img.title = 'Ctrl+Scroll: zoom | Double-click: reset | Drag: pan';
+				img.style.maxWidth = '100%';
+				return img;
+			}
+
+			/**
+			 * Wrap an <img> in a .plantuml-wrapper div.
+			 * The wrapper is the independent scroll container for the diagram.
+			 * @param {HTMLImageElement} img
+			 * @returns {HTMLDivElement}
+			 */
+			createWrapper(img) {
+				const wrapper = document.createElement('div');
+				wrapper.className = 'plantuml-wrapper';
+				wrapper.appendChild(img);
+				return wrapper;
+			}
+
+			/**
+			 * @param {HTMLImageElement} img
+			 * @param {number} timeout ms
+			 * @returns {Promise<boolean>}
+			 */
+			async waitForImageLoad(img, timeout) {
+				return new Promise((resolve) => {
+					const timer = setTimeout(() => {
+						const errorDiv = this.createErrorElement(
+							CONFIG.messages.plantuml.timeout(timeout / 1000)
+						);
+						img.replaceWith(errorDiv);
+						resolve(false);
+					}, timeout);
+
+					img.onload = () => {
+						clearTimeout(timer);
+						resolve(true);
+					};
+
+					img.onerror = () => {
+						clearTimeout(timer);
+						const errorDiv = this.createErrorElement(
+							CONFIG.messages.plantuml.serverError
+						);
+						img.replaceWith(errorDiv);
+						resolve(false);
+					};
+				});
+			}
+
+			/**
+			 * @param {string} message
+			 * @returns {HTMLDivElement}
+			 */
+			createErrorElement(message) {
+				const div = document.createElement('div');
+				div.className = 'plantuml-error';
+				div.textContent = message;
+				return div;
+			}
+		}
+
+
+		// ========================================
+		// Class: RendererOrchestrator
+		// ========================================
+
+		/**
+		 * Coordinates the full rendering pipeline:
+		 * Markdown -> Mermaid -> PlantUML -> DOM stability -> scroll restore.
+		 */
+		class RendererOrchestrator {
+			/**
+			 * @param {ApplicationState} state
+			 * @param {MarkdownRenderer} markdownRenderer
+			 * @param {MermaidRenderer} mermaidRenderer
+			 * @param {PlantUMLRenderer} plantumlRenderer
+			 * @param {ScrollManager} scrollManager
+			 * @param {HTMLElement} preview
+			 */
+			constructor(
+				state,
+				markdownRenderer,
+				mermaidRenderer,
+				plantumlRenderer,
+				scrollManager,
+				preview
+			) {
+				this.state = state;
+				this.markdownRenderer = markdownRenderer;
+				this.mermaidRenderer = mermaidRenderer;
+				this.plantumlRenderer = plantumlRenderer;
+				this.scrollManager = scrollManager;
+				this.preview = preview;
+			}
+
+			async renderAll() {
+				try {
+					const scrollTop = this.scrollManager.save();
+
+					await this.markdownRenderer.render(this.state.markdownText);
+					await this.mermaidRenderer.render(this.state.currentTheme);
+					await this.plantumlRenderer.render(
+						this.state.currentTheme,
+						this.state.skipPlantUML
+					);
+
+					await waitForDOMStability(this.preview);
+					this.scrollManager.restore(scrollTop);
+
+				} catch (error) {
+					console.error('Rendering orchestration error:', error);
+				}
+			}
+		}
+
+
+		// ========================================
+		// Class: ModalController
+		// ========================================
+
+		/**
+		 * Static helpers for showing and closing modal dialogs.
+		 */
+		class ModalController {
+			/**
+			 * Wire up close buttons and backdrop click for a modal.
+			 * @param {HTMLElement} modal
+			 * @param {HTMLElement[]} closeTriggers
+			 */
+			static setupModal(modal, closeTriggers) {
+				closeTriggers.forEach(trigger => {
+					trigger.onclick = () => { modal.style.display = 'none'; };
+				});
+				window.addEventListener('click', (event) => {
+					if (event.target === modal) modal.style.display = 'none';
+				});
+			}
+
+			/** @param {HTMLElement} modal */
+			static show(modal) { modal.style.display = 'block'; }
+
+			/** @param {HTMLElement} modal */
+			static hide(modal) { modal.style.display = 'none'; }
+		}
+
+
+		// ========================================
+		// Class: DiagramZoomController
+		// ========================================
+
+		// Root causes addressed in this implementation vs trial_v1:
+		//
+		// PROBLEM 1 - zoom target was the .mermaid container, not the inner element.
+		//   Applying zoom to a flex container rescales its internal coordinate system,
+		//   so child elements (SVG with max-width, img with max-width:100%) recalculate
+		//   their sizes relative to the shrunken coordinate space and end up the same
+		//   visual size. No effective enlargement occurs.
+		//   FIX: zoom is applied to the <svg> element (Mermaid) or <img> (PlantUML).
+		//
+		// PROBLEM 2 - CSS zoom property interacts unpredictably with SVG max-width.
+		//   FIX: use explicit width scaling (measured base width * scale factor) instead
+		//   of the CSS zoom property. SVG preserves aspect ratio via viewBox when only
+		//   width is set explicitly.
+		//
+		// PROBLEM 3 - justify-content:center caused left-side overflow (inaccessible).
+		//   When a flex item exceeds the container width, overflow is symmetric; the
+		//   negative-direction overflow cannot be reached by scrolling.
+		//   FIX: switch .mermaid to justify-content:flex-start when scale > 1 so that
+		//   overflow goes entirely rightward (into the scrollable area).
+		//
+		// PROBLEM 4 - double vertical scrollbars and outer horizontal scrollbar.
+		//   Zooming the .mermaid container propagated overflow outside #preview,
+		//   triggering both #preview's scrollbar and the browser window scrollbar.
+		//   FIX: zooming the inner element (SVG/img) overflows only into its parent
+		//   container (.mermaid or .plantuml-wrapper, both overflow:auto on PC), so
+		//   each diagram has its own independent scroll area and #preview is unaffected.
+		//
+		// PROBLEM 5 - diagram stopped growing at viewport width; no scrollbar appeared.
+		//   The <svg> is a flex item inside .mermaid (display:flex). Flex items have
+		//   flex-shrink:1 by default. When style.width is set to a value larger than
+		//   the flex container's width, the flex shrink algorithm reduces the rendered
+		//   width back to the container's width, preventing any overflow. Result: the
+		//   diagram could grow from its initial size up to the container width (= viewport
+		//   width), but no further, and no scrollbar appeared.
+		//   FIX: set flex-shrink:0 on the zoom target while scale > 1 so the explicit
+		//   width is honored in full. Restore the default on reset.
+		//
+		// POINTER GUARD: only activated on fine-pointer devices (mouse/trackpad).
+		//   Touch devices use native viewport pinch-zoom; wheel+ctrlKey is not fired
+		//   by touch pinch, so there is no conflict even without the guard.
+
+		/**
+		 * Per-diagram zoom for PC (Ctrl+scroll or trackpad pinch).
+		 * Double-click resets a diagram to 100%.
+		 * Only instantiated when the device has a fine pointer (mouse/trackpad).
+		 */
+		class DiagramZoomController {
+			/** @param {HTMLElement} preview */
+			constructor(preview) {
+				this.preview = preview;
+				this.scales = new WeakMap();        // Element -> current scale factor
+				this.baseWidths = new WeakMap();    // Element -> rendered width at scale 1.0
+				this.origMaxWidths = new WeakMap(); // Element -> original inline max-width value
+				this.setupListeners();
+			}
+
+			setupListeners() {
+				// passive:false is required so we can call preventDefault() to suppress
+				// the browser's own Ctrl+scroll page zoom when the cursor is over a diagram.
+				this.preview.addEventListener('wheel', (e) => {
+					if (!e.ctrlKey) return;
+					const diagram = this.findDiagramAt(e.target);
+					if (!diagram) return;
+					e.preventDefault();
+					this.zoom(diagram, e.deltaY < 0 ? 1 : -1);
+				}, { passive: false });
+
+				this.preview.addEventListener('dblclick', (e) => {
+					const diagram = this.findDiagramAt(e.target);
+					if (!diagram) return;
+					this.resetZoom(diagram);
+				});
+			}
+
+			/**
+			 * Return the zoomable element for the given event target.
+			 *
+			 * For Mermaid: return the <svg> inside the .mermaid container.
+			 *   Zooming the <svg> directly (not .mermaid) lets the element's layout size
+			 *   grow beyond the flex container, which then overflows into .mermaid's
+			 *   own scroll area (overflow:auto on PC).
+			 *
+			 * For PlantUML: return the .plantuml-diagram <img>.
+			 *   The img sits inside .plantuml-wrapper (overflow:auto on PC).
+			 *
+			 * @param {EventTarget} target
+			 * @returns {SVGSVGElement|HTMLImageElement|HTMLElement|null}
+			 */
+			findDiagramAt(target) {
+				const mermaidContainer = target.closest('.mermaid');
+				if (mermaidContainer) {
+					// Fallback to container if Mermaid has not rendered the SVG yet.
+					return mermaidContainer.querySelector('svg') ?? mermaidContainer;
+				}
+				return target.closest('.plantuml-diagram');
+			}
+
+			/**
+			 * Increase or decrease scale by one step and apply.
+			 * Captures the element's rendered width the first time it is zoomed.
+			 * @param {Element} el
+			 * @param {number} direction +1 = zoom in, -1 = zoom out
+			 */
+			zoom(el, direction) {
+				if (!this.baseWidths.has(el)) {
+					this.baseWidths.set(el, el.getBoundingClientRect().width);
+					this.origMaxWidths.set(el, el.style.maxWidth);
+				}
+
+				const current = this.scales.get(el) ?? 1.0;
+				const raw = current + direction * CONFIG.zoom.step;
+				const next = Math.round(
+					Math.max(CONFIG.zoom.min, Math.min(CONFIG.zoom.max, raw)) * 100
+				) / 100;
+
+				this.scales.set(el, next);
+				this.applyScale(el, next);
+			}
+
+			/**
+			 * Restore the element to 100% and clear all stored state for it.
+			 * applyScale must run before the WeakMap entries are deleted so that it
+			 * can still read origMaxWidths.
+			 * @param {Element} el
+			 */
+			resetZoom(el) {
+				this.applyScale(el, 1.0);
+				this.scales.delete(el);
+				this.baseWidths.delete(el);
+				this.origMaxWidths.delete(el);
+			}
+
+			/**
+			 * Apply the given scale factor to el by setting an explicit pixel width.
+			 *
+			 * Why explicit width instead of CSS zoom:
+			 *   - For <svg>: viewBox preserves aspect ratio when only width is set.
+			 *   - For <img>: height adjusts automatically (browser default).
+			 *   - Avoids the CSS zoom / max-width interaction ambiguity.
+			 *
+			 * justify-content on .mermaid is switched to flex-start when scale > 1
+			 * so that overflow extends rightward (scrollable) instead of left+right
+			 * (symmetric, with the left side inaccessible).
+			 *
+			 * flex-shrink is set to 0 when scale > 1 to prevent the flex shrink
+			 * algorithm from collapsing the explicitly-set width back to the container
+			 * width, which would suppress overflow and hide the scrollbar.
+			 *
+			 * @param {Element} el
+			 * @param {number} scale
+			 */
+			applyScale(el, scale) {
+				const mermaidContainer = el.closest('.mermaid');
+
+				if (scale === 1.0) {
+					el.style.width = '';
+					el.style.height = '';
+					el.style.flexShrink = '';
+					// Restore original max-width (e.g. Mermaid's inline 'NNNpx', or '100%' for img).
+					el.style.maxWidth = this.origMaxWidths.get(el)
+						?? (el.tagName === 'IMG' ? '100%' : '');
+				} else {
+					const baseWidth = this.baseWidths.get(el);
+					if (baseWidth === undefined) return;
+					// Clear max-width so it cannot clamp our explicit width.
+					el.style.maxWidth = 'none';
+					el.style.height = 'auto';
+					el.style.width = `${Math.round(baseWidth * scale)}px`;
+					// Disable flex shrink so the explicit width is not reduced back to
+					// the container width by the flex layout algorithm.
+					el.style.flexShrink = '0';
+				}
+			}
+		}
+
+
+		// ========================================
+		// Class: DiagramPanController
+		// ========================================
+
+		// Drag-to-pan (grab scroll) for per-diagram scroll containers on PC.
+		// The user holds the left mouse button and drags within a diagram to scroll it,
+		// similar to panning in map and PDF viewers.
+		//
+		// ACTIVATION THRESHOLD: A 5px movement threshold (CONFIG.pan.activationThresholdPx)
+		//   prevents accidental panning during normal clicks. This also protects the
+		//   dblclick zoom-reset in DiagramZoomController: a double-click involves two
+		//   rapid mousedowns with negligible movement, so the threshold is never crossed
+		//   and dblclick fires normally.
+		//
+		// TEXT SELECTION: Prevented by e.preventDefault() on mousedown. In a diagram
+		//   viewer context, selecting SVG label text is rarely useful and conflicts with
+		//   the drag gesture. CSS user-select:none on the containers (pointer:fine media
+		//   query) provides belt-and-suspenders coverage.
+		//
+		// DOCUMENT-LEVEL LISTENERS: mousemove and mouseup are attached to document so
+		//   that panning continues correctly when the cursor leaves the diagram container
+		//   during a fast drag. These listeners are registered once and persist for the
+		//   page lifetime; they return immediately when panState is null (no drag active).
+		//
+		// CURSOR: 'grab' at rest (CSS on .mermaid / .plantuml-wrapper), 'grabbing' while
+		//   dragging. document.body cursor is also set to 'grabbing' during drag to
+		//   prevent the default cursor from appearing when the pointer briefly leaves
+		//   the container.
+		//
+		// POINTER GUARD: only instantiated on fine-pointer devices (mouse/trackpad).
+
+		/**
+		 * Per-diagram drag-to-pan for PC.
+		 * Left-click and drag scrolls the diagram's independent scroll container.
+		 * Only instantiated when the device has a fine pointer (mouse/trackpad).
+		 */
+		class DiagramPanController {
+			/** @param {HTMLElement} preview */
+			constructor(preview) {
+				this.preview = preview;
+				this.panState = null;
+				this.setupListeners();
+			}
+
+			setupListeners() {
+				this.preview.addEventListener('mousedown', (e) => {
+					if (e.button !== 0) return;
+					const container = this.findScrollContainerAt(e.target);
+					if (!container) return;
+					e.preventDefault();
+					this.panState = {
+						container,
+						startX: e.clientX,
+						startY: e.clientY,
+						lastX:  e.clientX,
+						lastY:  e.clientY,
+						active: false
+					};
+				});
+
+				document.addEventListener('mousemove', (e) => {
+					const s = this.panState;
+					if (!s) return;
+					if (!s.active) {
+						const dx = e.clientX - s.startX;
+						const dy = e.clientY - s.startY;
+						const t  = CONFIG.pan.activationThresholdPx;
+						if (dx * dx + dy * dy < t * t) return;
+						s.active = true;
+						s.container.style.cursor  = 'grabbing';
+						document.body.style.cursor = 'grabbing';
+					}
+					s.container.scrollLeft -= e.clientX - s.lastX;
+					// Scroll the diagram container vertically if it has vertical overflow
+					// (e.g. a wide diagram where the container itself clips). Otherwise
+					// fall back to scrolling #preview so vertical drag works when the
+					// container grows with the zoomed content.
+					const dy = e.clientY - s.lastY;
+					if (s.container.scrollHeight > s.container.clientHeight) {
+						s.container.scrollTop -= dy;
+					} else {
+						this.preview.scrollTop -= dy;
+					}
+					s.lastX = e.clientX;
+					s.lastY = e.clientY;
+				});
+
+				document.addEventListener('mouseup', () => {
+					if (!this.panState) return;
+					if (this.panState.active) {
+						this.panState.container.style.cursor = '';
+						document.body.style.cursor            = '';
+					}
+					this.panState = null;
+				});
+			}
+
+			/**
+			 * Return the diagram scroll container (.mermaid or .plantuml-wrapper)
+			 * that contains the given event target, or null if none.
+			 * @param {EventTarget} target
+			 * @returns {HTMLElement|null}
+			 */
+			findScrollContainerAt(target) {
+				return target.closest('.mermaid') ?? target.closest('.plantuml-wrapper');
+			}
+		}
+
+
+		// ========================================
+		// Class: UIController
+		// ========================================
+
+		/**
+		 * Wires up all user-facing interactions:
+		 * render buttons, utility buttons, help/prompt modals, long-press, and
+		 * initial theme detection from the OS color-scheme preference.
+		 */
+		class UIController {
+			/**
+			 * @param {RendererOrchestrator} orchestrator
+			 * @param {ApplicationState} state
+			 * @param {UIElements} elements
+			 */
+			constructor(orchestrator, state, elements) {
+				this.orchestrator = orchestrator;
+				this.state = state;
+				this.elements = elements;
+				this.longPressTimer = null;
+				this.isLongPress = false;
+
+				this.setupEventListeners();
+				this.setupModals();
+				this.setupPromptText();
+			}
+
+			setupEventListeners() {
+				this.setupRenderButtons();
+				this.setupUtilityButtons();
+				this.setupHelpButton();
+				this.setupPromptButton();
+				this.setupFileDrop();
+				this.setupAutoRenderOnPaste();
+				// Apply OS color-scheme preference on first load.
+				this.applySystemTheme();
+			}
+
+			/**
+			 * Strip an optional ```markdown fenced wrapper that AI tools sometimes add.
+			 * @param {string} rawText
+			 * @returns {string}
+			 */
+			preprocessInput(rawText) {
+				return rawText.replace(/^(?:\s*\n)*`{3,}markdown\s*\n/i, '');
+			}
+
+			setupRenderButtons() {
+				this.elements.renderLightBtn.addEventListener('click', async () => {
+					await this.handleRender('light');
+				});
+				this.elements.renderDarkBtn.addEventListener('click', async () => {
+					await this.handleRender('dark');
+				});
+			}
+
+			setupUtilityButtons() {
+				this.elements.newTabBtn.addEventListener('click', () => {
+					window.open(window.location.href, '_blank');
+				});
+				this.elements.clearBtn.addEventListener('click', () => {
+					this.elements.editor.value = '';
+					this.elements.preview.innerHTML = '';
+					// Restore the OS color-scheme preference instead of forcing light mode.
+					this.applySystemTheme();
+				});
+			}
+
+			/**
+			 * Validate a dropped file and load its text into the editor textarea.
+			 * Resolves on success, rejects (after alert) on validation / read failure.
+			 * No external communication occurs; FileReader is entirely client-side.
+			 * @param {File} file
+			 * @returns {Promise<void>}
+			 */
+			loadFileIntoEditor(file) {
+				const name = file.name.toLowerCase();
+				const allowed = CONFIG.fileDrop.allowedExtensions.some(ext => name.endsWith(ext));
+				if (!allowed) {
+					alert(CONFIG.messages.fileDrop.invalidType);
+					return Promise.reject();
+				}
+				if (file.size > CONFIG.fileDrop.maxBytes) {
+					alert(CONFIG.messages.fileDrop.tooLarge);
+					return Promise.reject();
+				}
+				return new Promise((resolve, reject) => {
+					const reader = new FileReader();
+					reader.onload = (e) => {
+						this.elements.editor.value = e.target.result;
+						resolve();
+					};
+					reader.onerror = () => {
+						alert(CONFIG.messages.fileDrop.readError);
+						reject();
+					};
+					reader.readAsText(file);
+				});
+			}
+
+			/**
+			 * Enable drag-and-drop of .md/.txt files onto the editor and the preview area.
+			 * In pre-render state, a successful drop also triggers auto-render.
+			 * The preview area only accepts drops in pre-render state.
+			 */
+			setupFileDrop() {
+				const { editor, preview } = this.elements;
+
+				// Editor: always accept drops; auto-render only in pre-render state.
+				editor.addEventListener('dragover', (e) => {
+					e.preventDefault();
+					e.dataTransfer.dropEffect = 'copy';
+				});
+				editor.addEventListener('drop', async (e) => {
+					e.preventDefault();
+					const file = e.dataTransfer.files[0];
+					if (!file) return;
+					const wasPreRender = this.isPreRenderState();
+					try {
+						await this.loadFileIntoEditor(file);
+						if (wasPreRender) await this.handleRender(this.systemTheme());
+					} catch { /* validation error already shown via alert */ }
+				});
+
+				// Preview area: accept drops only in pre-render state; always auto-render.
+				preview.addEventListener('dragover', (e) => {
+					if (!this.isPreRenderState()) return;
+					e.preventDefault();
+					e.dataTransfer.dropEffect = 'copy';
+				});
+				preview.addEventListener('drop', async (e) => {
+					if (!this.isPreRenderState()) return;
+					e.preventDefault();
+					const file = e.dataTransfer.files[0];
+					if (!file) return;
+					try {
+						await this.loadFileIntoEditor(file);
+						await this.handleRender(this.systemTheme());
+					} catch { /* validation error already shown via alert */ }
+				});
+			}
+
+/**
+			 * In pre-render state, a Ctrl+V anywhere on the page (except other inputs)
+			 * populates the editor and immediately renders using the system color scheme.
+			 */
+			setupAutoRenderOnPaste() {
+				document.addEventListener('paste', async (e) => {
+					// Do not intercept paste into other inputs (e.g. the prompt textarea).
+					const target = e.target;
+					const isOtherInput = (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT')
+						&& target !== this.elements.editor;
+					if (isOtherInput) return;
+					if (!this.isPreRenderState()) return;
+					const text = e.clipboardData.getData('text/plain');
+					if (!text) return;
+					e.preventDefault();
+					this.elements.editor.value = text;
+					await this.handleRender(this.systemTheme());
+				});
+			}
+
+			setupHelpButton() {
+				this.elements.helpBtn.addEventListener('mousedown', (e) => this.startPress(e));
+				this.elements.helpBtn.addEventListener('mouseup',   (e) => this.cancelPress(e));
+				this.elements.helpBtn.addEventListener('mouseleave',(e) => this.cancelPress(e));
+
+				this.elements.helpBtn.addEventListener('touchstart', (e) => this.startPress(e));
+				this.elements.helpBtn.addEventListener('touchend', (e) => {
+					this.cancelPress(e);
+					if (!this.isLongPress) {
+						e.preventDefault();
+						this.handleHelpClick(e);
+					}
+				});
+
+				this.elements.helpBtn.addEventListener('click', (e) => this.handleHelpClick(e));
+			}
+
+			setupPromptButton() {
+				this.elements.copyPromptBtn.addEventListener('click', () => {
+					this.elements.promptText.select();
+					this.elements.promptText.setSelectionRange(0, CONFIG.ui.maxTextSelection);
+					try {
+						const ok = document.execCommand('copy');
+						if (ok) {
+							this.showCopySuccess();
+						} else {
+							alert(CONFIG.messages.copy.failed);
+						}
+					} catch (err) {
+						alert(CONFIG.messages.copy.blocked);
+					}
+				});
+			}
+
+			setupModals() {
+				const helpCloseBtn   = this.elements.helpModal.querySelector('.close-btn');
+				const promptCloseBtn = this.elements.promptModal.querySelector('.prompt-close');
+				ModalController.setupModal(this.elements.helpModal,   [helpCloseBtn]);
+				ModalController.setupModal(this.elements.promptModal, [promptCloseBtn]);
+			}
+
+			setupPromptText() {
+				const COPY_PAYLOAD = `
+## Output Format
+- Output the entire content **as a single Markdown code block** so it can be copied in one go.
+- **Enclose the entire Markdown with six backticks \` \`\`\`\`\`\` \` at the beginning and end to prevent Markdown splitting.** Specify its language as markdown.
+- **Use the six backticks only once as the outermost enclosure.**
+- Any UML diagrams or software code inside the Markdown must each be enclosed in their own code blocks using three backticks \` \`\`\` \`.
+  This creates a structure where multiple three backticks blocks are nested inside the outer six backticks block to prevent Markdown splitting.
+- For each UML diagram or source code block, output the following line exactly two lines above it:
+  **[contents name]:**
+- Prefix each inner code block with a language or file type, for example: \` \`\`\`python \`
+- As a rule, use Mermaid for UML diagrams. Use PlantUML only when Mermaid cannot represent the diagram.
+- Use only alphanumeric characters and underscores \`_\` in UML.
+- Write explanations only outside UML blocks, and placed immediately after the corresponding UML but within the Markdown.
+- Output all required UML contents completely, without omission.
+- Never truncate or abbreviate code or UML content using \`...\` or similar shortcuts.
+- All arrows and relationship lines in UML diagrams (including dashed lines and bidirectional links) must have labels, and the following notation rules must be strictly followed:
+  1. For Mermaid \`flowchart\` and \`graph\`: include the label inside the arrow definition using pipes
+     (example: \`A -->|Label| B\`)
+  2. For all other Mermaid diagrams and all PlantUML diagrams: include the label at the end using a colon
+     (example: \`A --> B : Label\`)
+- Use standard LaTeX notation for mathematical formulas.
+- Always enclose inline math in single dollar signs \`$\` (e.g., \`$E=mc^2$\`) and display math (block equations) in double signs \`$$\`.
+- **Never output speculation or fabrications.** If something is unclear or requires investigation, explicitly state so.
+- This method is called **MCBSMD** (Multiple Code Block in Single MarkDown).
+`;
+				this.elements.promptText.value = COPY_PAYLOAD;
+			}
+
+			/** @param {string} theme */
+			async handleRender(theme) {
+				const rawContent = this.elements.editor.value;
+				const content = this.preprocessInput(rawContent);
+
+				const consentResult = checkPlantUMLConsent(content);
+				if (consentResult === 'skip_plantuml') {
+					this.state.setSkipPlantUML(true);
+				} else if (consentResult === true) {
+					this.state.setSkipPlantUML(false);
+				}
+
+				this.state.setTheme(theme);
+				this.state.setMarkdownText(content);
+				this.applyTheme(theme);
+
+				await this.orchestrator.renderAll();
+			}
+
+			/** @param {string} theme */
+			applyTheme(theme) {
+				if (theme === 'dark') {
+					document.body.classList.add('dark');
+				} else {
+					document.body.classList.remove('dark');
+				}
+			}
+
+			/**
+			 * Returns 'dark' or 'light' based on the OS/browser color-scheme preference.
+			 * @returns {'dark'|'light'}
+			 */
+			systemTheme() {
+				return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+			}
+
+			/**
+			 * True only when both the editor and preview are empty (nothing typed or rendered yet).
+			 * Used to gate auto-render on paste and drag-and-drop.
+			 * @returns {boolean}
+			 */
+			isPreRenderState() {
+				return this.elements.preview.children.length === 0
+					&& this.elements.editor.value.trim() === '';
+			}
+
+			/**
+			 * Read the OS/browser color-scheme preference and apply it as the initial theme.
+			 * Called once at construction time and also by the Clear button to restore
+			 * the OS preference after clearing the preview.
+			 */
+			applySystemTheme() {
+				const theme = this.systemTheme();
+				this.state.setTheme(theme);
+				this.applyTheme(theme);
+			}
+
+			/** @param {Event} e */
+			startPress(e) {
+				if (e.type === 'mousedown' && e.button !== 0) return;
+				this.isLongPress = false;
+				this.longPressTimer = setTimeout(() => {
+					this.isLongPress = true;
+					ModalController.show(this.elements.promptModal);
+				}, CONFIG.ui.longPressDuration);
+			}
+
+			/** @param {Event} e */
+			cancelPress(e) {
+				clearTimeout(this.longPressTimer);
+			}
+
+			/** @param {Event} e */
+			handleHelpClick(e) {
+				if (this.isLongPress) {
+					e.preventDefault();
+					e.stopPropagation();
+					this.isLongPress = false;
+					return;
+				}
+				ModalController.show(this.elements.helpModal);
+			}
+
+			showCopySuccess() {
+				const original = this.elements.copyPromptBtn.textContent;
+				this.elements.copyPromptBtn.textContent = 'Copied!';
+				setTimeout(() => {
+					this.elements.copyPromptBtn.textContent = original;
+					ModalController.hide(this.elements.promptModal);
+				}, CONFIG.ui.copyFeedbackDuration);
+			}
+		}
+
+
+		// ========================================
+		// Initialization
+		// ========================================
+
+		const elements = {
+			editor:         document.getElementById('editor'),
+			preview:        document.getElementById('preview'),
+			renderLightBtn: document.getElementById('renderLight'),
+			renderDarkBtn:  document.getElementById('renderDark'),
+			newTabBtn:      document.getElementById('newTabBtn'),
+			clearBtn:       document.getElementById('clearBtn'),
+			helpBtn:        document.getElementById('helpBtn'),
+			helpModal:      document.getElementById('helpModal'),
+			promptModal:    document.getElementById('promptModal'),
+			promptText:     document.getElementById('promptText'),
+			copyPromptBtn:  document.getElementById('copyPromptBtn')
+		};
+
+		marked.use(markedKatex({ throwOnError: false }));
+
+		const state            = new ApplicationState();
+		const scrollManager    = new ScrollManager(elements.preview);
+		const markdownRenderer = new MarkdownRenderer(elements.preview, marked, hljs);
+		const mermaidRenderer  = new MermaidRenderer(elements.preview, mermaid);
+		const plantumlRenderer = new PlantUMLRenderer(elements.preview, plantumlEncoder);
+		const orchestrator     = new RendererOrchestrator(
+			state,
+			markdownRenderer,
+			mermaidRenderer,
+			plantumlRenderer,
+			scrollManager,
+			elements.preview
+		);
+
+		new UIController(orchestrator, state, elements);
+
+		// DiagramZoomController and DiagramPanController are only activated on
+		// fine-pointer devices (mouse/trackpad).
+		// Touch devices (iOS/Android) use native viewport pinch-zoom and need no JS zoom.
+		// Touch scroll is handled natively by the document-level scroll on those devices.
+		if (window.matchMedia('(pointer: fine)').matches) {
+			new DiagramZoomController(elements.preview);
+			new DiagramPanController(elements.preview);
+		}
+	</script>
+
+</body>
+
+</html>
