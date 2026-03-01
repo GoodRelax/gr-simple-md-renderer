@@ -753,7 +753,6 @@
       // Utility Functions
       // ========================================
 
-
       /**
        * Wait until the element's size stops changing before restoring scroll position.
        * Mermaid and PlantUML resize their containers after rendering, which would
@@ -857,8 +856,9 @@
         /** @param {HTMLElement} container */
         constructor(container) {
           this.container = container;
-          this.useDocumentScroll =
-            window.matchMedia("(any-pointer: coarse)").matches;
+          this.useDocumentScroll = window.matchMedia(
+            "(any-pointer: coarse)",
+          ).matches;
         }
 
         /** @returns {number} */
@@ -1762,10 +1762,11 @@
 - As a rule, use Mermaid for diagrams. Use PlantUML only when the diagram cannot be expressed in Mermaid.
 - Any diagrams or software code inside the Markdown must each be enclosed in their own code blocks using triple backticks \` \`\`\` \`.
 - Each code block must specify a language or file type (e.g., \` \`\`\`python \` or \` \`\`\`mermaid \`).
-- Each code or diagram block must be preceded by a descriptive title in the format **«title»:**
+- Each code or diagram block must be preceded by a descriptive title in the format **title:**
+  (e.g., \`**System Architecture:**\`, \`**Login Flow:**\`)
 - Always follow the structure below for every code or diagram block:
 
-  > **«title»:**
+  > **title:**
   >
   > \`\`\`language
   > (code or diagram content here without truncation or abbreviation)
