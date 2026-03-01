@@ -2,6 +2,20 @@
 
 The following diagrams demonstrate how GRSMD renders Markdown and diagrams from user input.
 
+## Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant GRSMD
+
+    User->>GRSMD: Paste or D&D Markdown
+    Note over GRSMD: All local. No server.
+    GRSMD-->>User: Rendered instantly
+
+```
+
 ## Class Diagram
 
 **class_grsmd_rendering:**
@@ -26,30 +40,10 @@ classDiagram
     Renderer --> DiagramRenderer : delegates
 ```
 
-## Sequence Diagram
-
-**sequence_grsmd_rendering:**
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User
-    participant UI
-    participant Renderer
-    participant DiagramRenderer
-
-    User->>UI: Paste Markdown
-    User->>UI: Click Render
-    UI->>Renderer: render(markdown)
-    Renderer->>DiagramRenderer: detect and render diagrams
-    DiagramRenderer-->>Renderer: rendered output
-    Renderer-->>UI: final HTML
-    UI-->>User: Display result
-```
-
 ## Code Block
 
 **code_image.py:**
+
 ```python
 # User action
 markdown = "...markdown with mermaid..."
@@ -69,7 +63,6 @@ def render_diagrams(markdown):
     if has_plantuml(markdown) and user_consented():
         render_plantuml()
 ```
-
 
 ## Math (LaTeX)
 
