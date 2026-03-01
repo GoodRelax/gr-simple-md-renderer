@@ -694,8 +694,8 @@
           darkTheme: "cyborg",
         },
         ui: {
-          longPressDuration: 800,
-          copyFeedbackDuration: 1000,
+          longPressDuration: 300,
+          copyFeedbackDuration: 250,
           maxTextSelection: 99999,
         },
         zoom: {
@@ -1762,9 +1762,10 @@
 - As a rule, use Mermaid for diagrams. Use PlantUML only when the diagram cannot be expressed in Mermaid.
 - Any diagrams or software code inside the Markdown must each be enclosed in their own code blocks using triple backticks \` \`\`\` \`.
 - Each code block must specify a language or file type (e.g., \` \`\`\`python \` or \` \`\`\`mermaid \`).
+- Each code or diagram block must be preceded by a descriptive title in the format **«title»:**
 - Always follow the structure below for every code or diagram block:
 
-  > **Title:**
+  > **«title»:**
   >
   > \`\`\`language
   > (code or diagram content here without truncation or abbreviation)
