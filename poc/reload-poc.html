@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>GRSMD Reload PoC</title>
+    <style>
+      body {
+        font-family: monospace;
+        margin: 0;
+        padding: 16px;
+        background: #1e1e1e;
+        color: #d4d4d4;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+
+      #support-banner {
+        padding: 6px 12px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        font-size: 13px;
+      }
+
+      .supported {
+        background: #1a3a1a;
+        border: 1px solid #4caf50;
+        color: #81c784;
+      }
+
+      .not-supported {
+        background: #3a1a1a;
+        border: 1px solid #e57373;
+        color: #ef9a9a;
+      }
+
+      #drop-zone {
+        border: 2px dashed #555;
+        border-radius: 6px;
+        padding: 40px;
+        text-align: center;
+        color: #888;
+        margin-bottom: 16px;
+        font-size: 15px;
+        transition: border-color 0.15s, background 0.15s, color 0.15s;
+      }
+
+      #drop-zone.drag-over {
+        border-color: #4fc3f7;
+        background: #0a1a2a;
+        color: #4fc3f7;
+      }
+
+      #file-info {
+        display: none;
+        margin-bottom: 12px;
+        font-size: 13px;
+        color: #aaa;
+      }
+
+      #file-info .value {
+        color: #e0e0e0;
+      }
+
+      #reload-btn {
+        margin-left: 14px;
+        padding: 2px 10px;
+        background: #2a2a2a;
+        border: 1px solid #555;
+        color: #ccc;
+        border-radius: 3px;
+        cursor: pointer;
+        font-family: monospace;
+        font-size: 12px;
+      }
+
+      #reload-btn:hover {
+        border-color: #4fc3f7;
+        color: #4fc3f7;
+      }
+
+      #error-msg {
+        display: none;
+        color: #ef9a9a;
+        font-size: 13px;
+        margin-bottom: 10px;
+        padding: 6px 10px;
+        border: 1px solid #e57373;
+        border-radius: 4px;
+        background: #2a1a1a;
+      }
+
+      pre {
+        background: #2d2d2d;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 16px;
+        overflow: auto;
+        font-size: 13px;
+        line-height: 1.6;
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="support-banner"></div>
+    <div id="drop-zone">Drop any file here</div>
+    <div id="file-info">
+      File: <span id="file-name" class="value"></span>
+      &nbsp;|&nbsp;
+      Loaded: <span id="load-time" class="value"></span>
+      <button id="reload-btn">Reload [r]</button>
+    </div>
+    <div id="error-msg"></div>
+    <pre id="content"></pre>
+
+    <script>
+      // ----------------------------------------
+      // Browser capability check
+      // ----------------------------------------
+      const isSupported =
+        typeof DataTransferItem !== "undefined" &&
+        typeof DataTransferItem.prototype.getAsFileSystemHandle === "function";
+
+      const banner = document.getElementById("support-banner");
+      banner.className = isSupported ? "supported" : "not-supported";
+      banner.textContent = isSupported
+        ? "FileSystemFileHandle: SUPPORTED -- reload is available"
+        : "FileSystemFileHandle: NOT SUPPORTED (Chrome/Edge 86+ required) -- reload unavailable";
+
+      // ----------------------------------------
+      // State
+      // ----------------------------------------
+      let fileHandle = null;
+
+      // ----------------------------------------
+      // Helpers
+      // ----------------------------------------
+      function showError(msg) {
+        const el = document.getElementById("error-msg");
+        el.textContent = msg;
+        el.style.display = "block";
+        setTimeout(() => {
+          el.style.display = "none";
+        }, 5000);
+      }
+
+      function displayContent(name, text) {
+        document.getElementById("file-name").textContent = name;
+        document.getElementById("load-time").textContent =
+          new Date().toLocaleString();
+        document.getElementById("content").textContent = text;
+        document.getElementById("file-info").style.display = "block";
+        document.getElementById("error-msg").style.display = "none";
+      }
+
+      // ----------------------------------------
+      // Reload
+      // ----------------------------------------
+      async function reload() {
+        if (!fileHandle) return;
+        try {
+          const file = await fileHandle.getFile();
+          const text = await file.text();
+          displayContent(file.name, text);
+        } catch (err) {
+          showError("Reload failed: " + err.message);
+        }
+      }
+
+      // ----------------------------------------
+      // Drag and Drop
+      // ----------------------------------------
+      const dropZone = document.getElementById("drop-zone");
+
+      document.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("drag-over");
+      });
+
+      document.addEventListener("dragleave", (e) => {
+        if (e.relatedTarget === null) {
+          dropZone.classList.remove("drag-over");
+        }
+      });
+
+      document.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+
+        // getAsFileSystemHandle() must be called synchronously
+        // in the same tick as the drop event -- before any await.
+        const item = e.dataTransfer.items?.[0];
+        const handlePromise = isSupported
+          ? item?.getAsFileSystemHandle?.()
+          : null;
+
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+
+        fileHandle = handlePromise ? await handlePromise : null;
+
+        try {
+          const text = await file.text();
+          displayContent(file.name, text);
+        } catch (err) {
+          showError("Failed to read file: " + err.message);
+        }
+      });
+
+      // ----------------------------------------
+      // Keyboard shortcut: r = reload
+      // ----------------------------------------
+      document.addEventListener("keydown", (e) => {
+        const tag = document.activeElement?.tagName;
+        if (e.key === "r" && tag !== "INPUT" && tag !== "TEXTAREA") {
+          reload();
+        }
+      });
+
+      document.getElementById("reload-btn").addEventListener("click", reload);
+    </script>
+  </body>
+</html>
