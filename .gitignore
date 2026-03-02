@@ -21,6 +21,7 @@ Thumbs.db
 # Prompt
 CLAUDE.md
 prompt/
+.claude/
 
 # Announce
 announce/
