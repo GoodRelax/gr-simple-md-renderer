@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Smooth Scroll PoC</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #1e1e1e;
+        color: #d4d4d4;
+        font-family: monospace;
+        font-size: 13px;
+      }
+
+      /* ---- Fixed control panel ---- */
+      #panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 230px;
+        background: #252526;
+        border-left: 1px solid #3c3c3c;
+        border-bottom: 1px solid #3c3c3c;
+        padding: 12px 14px;
+        z-index: 100;
+      }
+
+      #panel h3 {
+        margin: 0 0 4px 0;
+        font-size: 13px;
+        color: #ccc;
+      }
+
+      #panel .hint {
+        color: #666;
+        font-size: 11px;
+        margin-bottom: 10px;
+      }
+
+      .param {
+        margin-bottom: 8px;
+      }
+
+      .param-label {
+        display: flex;
+        justify-content: space-between;
+        color: #aaa;
+        margin-bottom: 2px;
+      }
+
+      .param-label span {
+        color: #4fc3f7;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        accent-color: #4fc3f7;
+      }
+
+      #meter {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #3c3c3c;
+        color: #aaa;
+        line-height: 1.8;
+      }
+
+      #meter .val {
+        color: #81c784;
+        font-size: 14px;
+      }
+
+      /* ---- Drop zone ---- */
+      #drop-zone {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin-right: 230px;
+        border: 2px dashed #3c3c3c;
+        color: #555;
+        font-size: 15px;
+        transition:
+          border-color 0.15s,
+          color 0.15s;
+      }
+
+      #drop-zone.drag-over {
+        border-color: #4fc3f7;
+        color: #4fc3f7;
+      }
+
+      /* ---- Content area ---- */
+      #content {
+        display: none;
+        padding: 12px 16px;
+        padding-right: 246px;
+        line-height: 1.7;
+      }
+
+      .line {
+        white-space: pre;
+        border-bottom: 1px solid #252526;
+        padding: 1px 0;
+      }
+
+      .ln {
+        display: inline-block;
+        width: 4em;
+        text-align: right;
+        margin-right: 1.5em;
+        color: #4a4a4a;
+        user-select: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="panel">
+      <h3>Smooth Scroll PoC</h3>
+      <div class="hint">Drop a file, then use ↑ / ↓</div>
+
+      <div class="param">
+        <div class="param-label">
+          maxSpeed <span id="lblMax">1.50</span> px/ms
+        </div>
+        <input
+          type="range"
+          id="sldMax"
+          min="0.2"
+          max="10.0"
+          step="0.1"
+          value="1.5"
+        />
+      </div>
+
+      <div class="param">
+        <div class="param-label">
+          acceleration <span id="lblAccel">0.0040</span> px/ms²
+        </div>
+        <input
+          type="range"
+          id="sldAccel"
+          min="0.0005"
+          max="0.020"
+          step="0.0005"
+          value="0.004"
+        />
+      </div>
+
+      <div class="param">
+        <div class="param-label">
+          friction <span id="lblFriction">0.88</span> /frame
+        </div>
+        <input
+          type="range"
+          id="sldFriction"
+          min="0.00"
+          max="0.99"
+          step="0.01"
+          value="0.88"
+        />
+      </div>
+
+      <div id="meter">
+        velocity&nbsp;&nbsp;:
+        <span class="val" id="mVel">0.000</span> px/ms<br />
+        @60fps&nbsp;&nbsp;&nbsp;:
+        <span class="val" id="mPpf">0</span> px/frame<br />
+        direction: <span class="val" id="mDir">--</span>
+      </div>
+    </div>
+
+    <div id="drop-zone">Drop any text file here</div>
+    <div id="content"></div>
+
+    <script>
+      // ----------------------------------------
+      // Config (live-bound to sliders)
+      // ----------------------------------------
+      const cfg = { maxSpeed: 1.5, acceleration: 0.004, friction: 0.88 };
+
+      function bindSlider(id, lblId, key, fmt) {
+        const slider = document.getElementById(id);
+        const lbl = document.getElementById(lblId);
+        slider.addEventListener("input", () => {
+          cfg[key] = parseFloat(slider.value);
+          lbl.textContent = cfg[key].toFixed(fmt);
+        });
+      }
+      bindSlider("sldMax", "lblMax", "maxSpeed", 2);
+      bindSlider("sldAccel", "lblAccel", "acceleration", 4);
+      bindSlider("sldFriction", "lblFriction", "friction", 2);
+
+      // ----------------------------------------
+      // Scroll engine: velocity + friction model
+      // ----------------------------------------
+      let velocity = 0;
+      let direction = 0; // +1 = down, -1 = up
+      let keyHeld = false;
+      let rafId = null;
+      let lastTs = null;
+
+      const mVel = document.getElementById("mVel");
+      const mPpf = document.getElementById("mPpf");
+      const mDir = document.getElementById("mDir");
+
+      function loop(ts) {
+        if (lastTs !== null) {
+          // Cap dt to avoid huge jump after tab switch / sleep
+          const dt = Math.min(ts - lastTs, 50);
+
+          if (keyHeld) {
+            velocity = Math.min(velocity + cfg.acceleration * dt, cfg.maxSpeed);
+          } else {
+            // Normalize friction to 60 fps (16.67 ms/frame) so
+            // deceleration feel is consistent across refresh rates.
+            velocity *= Math.pow(cfg.friction, dt / 16.67);
+          }
+
+          if (velocity > 0.005) {
+            window.scrollBy(0, direction * velocity * dt);
+            mVel.textContent = velocity.toFixed(3);
+            mPpf.textContent = Math.round(velocity * 16.67);
+            mDir.textContent = direction > 0 ? "down" : "up";
+          } else {
+            // Come to a full stop
+            velocity = 0;
+            mVel.textContent = "0.000";
+            mPpf.textContent = "0";
+            mDir.textContent = "--";
+            rafId = null;
+            lastTs = null;
+            return;
+          }
+        }
+
+        lastTs = ts;
+        rafId = requestAnimationFrame(loop);
+      }
+
+      function startScroll(dir) {
+        direction = dir;
+        keyHeld = true;
+        if (!rafId) {
+          lastTs = null;
+          rafId = requestAnimationFrame(loop);
+        }
+      }
+
+      function stopScroll() {
+        keyHeld = false; // let momentum decay naturally in loop()
+      }
+
+      // ----------------------------------------
+      // Keyboard
+      // ----------------------------------------
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          startScroll(-1);
+        }
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          startScroll(+1);
+        }
+      });
+
+      document.addEventListener("keyup", (e) => {
+        if (e.key === "ArrowUp" || e.key === "ArrowDown") stopScroll();
+      });
+
+      // ----------------------------------------
+      // Drag and Drop
+      // ----------------------------------------
+      const dropZone = document.getElementById("drop-zone");
+      const contentEl = document.getElementById("content");
+
+      document.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("drag-over");
+      });
+
+      document.addEventListener("dragleave", (e) => {
+        if (e.relatedTarget === null) dropZone.classList.remove("drag-over");
+      });
+
+      document.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+
+        const text = await file.text();
+        renderLines(text);
+      });
+
+      function renderLines(text) {
+        const lines = text.split("\n");
+        contentEl.innerHTML = "";
+
+        const frag = document.createDocumentFragment();
+        lines.forEach((line, i) => {
+          const div = document.createElement("div");
+          div.className = "line";
+          div.innerHTML =
+            `<span class="ln">${String(i + 1).padStart(4, " ")}</span>` +
+            escapeHtml(line);
+          frag.appendChild(div);
+        });
+        contentEl.appendChild(frag);
+
+        dropZone.style.display = "none";
+        contentEl.style.display = "block";
+        window.scrollTo(0, 0);
+      }
+
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+    </script>
+  </body>
+</html>

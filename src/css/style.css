@@ -1,0 +1,535 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#topbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f0f0f0;
+  gap: 16px;
+  border-bottom: 1px solid #ccc;
+}
+
+#header-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#title {
+  font-weight: bold;
+  font-size: 14px;
+  font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-stretch: condensed;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+#copyright {
+  font-size: 10px;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+#copyright a {
+  color: blue;
+  text-decoration: underline;
+}
+
+#controls {
+  display: flex;
+  align-self: stretch;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#controls button {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.3;
+  padding: 2px 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#editor {
+  flex: 1;
+  font-family: monospace;
+  font-size: 14px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  height: 24px;
+  min-height: 24px;
+  resize: vertical;
+  white-space: pre;
+  overflow-y: auto;
+}
+
+#helpBtn {
+  flex: 0 0 24px;
+  align-self: stretch;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+#preview {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+  position: relative;
+}
+
+/* Code view: remove padding so header sticks to top edge */
+#preview.code-view {
+  padding: 0;
+}
+
+pre {
+  background: #f4f4f4;
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+blockquote {
+  border-left: 4px solid #ccc;
+  margin: 0;
+  padding-left: 16px;
+  color: #666;
+}
+
+.mermaid {
+  display: flex;
+  justify-content: flex-start;
+  margin: 16px 0;
+  position: relative;
+}
+
+.mermaid > svg {
+  margin: auto;
+}
+
+.plantuml-wrapper {
+  display: flex;
+  justify-content: flex-start;
+  margin: 16px 0;
+  position: relative;
+}
+.plantuml-wrapper > img {
+  margin: auto;
+}
+
+.diagram-copy-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.diagram-copy-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #aaa;
+  border-radius: 3px;
+  user-select: none;
+}
+
+.dark .diagram-copy-btn {
+  background: rgba(50, 50, 50, 0.9);
+  border-color: #666;
+  color: #eee;
+}
+
+@media (pointer: fine) {
+  .mermaid {
+    overflow: auto;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .plantuml-wrapper {
+    overflow: auto;
+    cursor: grab;
+    user-select: none;
+  }
+}
+
+@media (any-pointer: coarse) {
+  body {
+    height: auto;
+    overflow: auto;
+  }
+
+  #topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  #preview {
+    flex: none;
+    overflow: visible;
+  }
+}
+
+@media print {
+  body {
+    height: auto;
+    overflow: visible;
+  }
+
+  #topbar {
+    display: none;
+  }
+
+  #editor {
+    display: none;
+  }
+
+  #preview {
+    overflow: visible;
+    height: auto;
+    flex: none;
+  }
+}
+
+.plantuml-error {
+  border: 2px dashed #ff6b6b;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 4px;
+  background-color: #fff5f5;
+  color: #c92a2a;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 20px 30px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 700px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  line-height: 1.6;
+}
+
+.close-btn {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.modal-section {
+  margin-bottom: 24px;
+}
+
+.modal-section h3 {
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+}
+
+.modal-section ul {
+  margin-top: 8px;
+  padding-left: 20px;
+}
+
+#promptText {
+  width: 100%;
+  height: 200px;
+  margin-bottom: 10px;
+  resize: none;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 8px;
+  box-sizing: border-box;
+  background: #f4f4f4;
+  border: 1px solid #ccc;
+  color: #333;
+}
+
+#copyPromptBtn {
+  width: 100%;
+  padding: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+body.dark {
+  background: #222;
+  color: #ddd;
+}
+
+.dark #topbar {
+  background: #333;
+  border-bottom: 1px solid #444;
+}
+
+.dark #editor {
+  background: #444;
+  color: #fff;
+  border-color: #666;
+}
+
+.dark pre {
+  background: #333;
+  border: 1px solid #555;
+}
+
+.dark #copyright a {
+  color: #66b3ff;
+}
+
+.dark .modal-content {
+  background-color: #333;
+  color: #eee;
+  border: 1px solid #555;
+}
+
+.dark .close-btn {
+  color: #ddd;
+}
+
+.dark .close-btn:hover {
+  color: #fff;
+}
+
+.dark .modal-section h3 {
+  border-bottom-color: #555;
+}
+
+.dark #promptText {
+  background: #444;
+  border: 1px solid #666;
+  color: #fff;
+}
+
+.dark .plantuml-error {
+  background-color: #2d1f1f;
+  color: #ff8787;
+  border-color: #ff6b6b;
+}
+
+.dark .katex {
+  color: inherit;
+}
+
+.katex {
+  font-size: 1.5em;
+}
+
+/* ============================================================
+   Affordance Text (initial state hint)
+   ============================================================ */
+#affordanceText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: pre;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 2;
+  color: #555;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dark #affordanceText {
+  color: #888;
+}
+
+/* ============================================================
+   Code View: Header bar (sticky inside #preview)
+   ============================================================ */
+#codeViewHeader {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #252526;
+  color: #cccccc;
+  padding: 5px 16px;
+  font-family: monospace;
+  font-size: 12px;
+  border-bottom: 1px solid #3c3c3c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body:not(.dark) #codeViewHeader {
+  background: #f3f3f3;
+  color: #333333;
+  border-bottom-color: #e0e0e0;
+}
+
+/* ============================================================
+   Code View: Body with line numbers via CSS counter
+   ============================================================ */
+#codeViewBody {
+  counter-reset: line;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 8px 0 36px 0;
+  min-height: 100%;
+  tab-size: 4;
+}
+
+body:not(.dark) #codeViewBody {
+  background: #ffffff;
+  color: #1e1e1e;
+}
+
+.code-line {
+  display: block;
+  counter-increment: line;
+  padding-right: 16px;
+}
+
+.code-line:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body:not(.dark) .code-line:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.code-line::before {
+  content: counter(line);
+  display: inline-block;
+  width: 4em;
+  text-align: right;
+  margin-right: 1.5em;
+  color: #5a5a5a;
+  user-select: none;
+  -webkit-user-select: none;
+  flex-shrink: 0;
+}
+
+body:not(.dark) .code-line::before {
+  color: #aaaaaa;
+}
+
+/* ============================================================
+   Code View: Status bar (fixed at viewport bottom)
+   ============================================================ */
+#codeViewStatusBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #007acc;
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 3px 16px;
+  box-sizing: border-box;
+  z-index: 200;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body:not(.dark) #codeViewStatusBar {
+  background: #005f9e;
+  color: #ffffff;
+}
+
+/* ============================================================
+   Code View: Keyboard hint overlay (sticky bottom of content)
+   ============================================================ */
+#codeViewKeyHint {
+  position: sticky;
+  bottom: 28px;
+  display: block;
+  width: fit-content;
+  margin: 16px auto;
+  background: rgba(0, 0, 0, 0.75);
+  color: #eeeeee;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 6px 16px;
+  border-radius: 4px;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+body:not(.dark) #codeViewKeyHint {
+  background: rgba(40, 40, 40, 0.8);
+}
+
+/* ============================================================
+   Toast notification
+   ============================================================ */
+#toastContainer {
+  position: fixed;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.toast {
+  background: rgba(50, 50, 50, 0.92);
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 13px;
+  padding: 8px 18px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}

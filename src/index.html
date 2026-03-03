@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- [DEBUG] Eruda: in-browser devtools for iPad/iPhone debugging.
+	     Uncomment when debugging on touch devices that lack native devtools.
+	<script src="//cdn.jsdelivr.net/npm/eruda"></script>
+	<script>eruda.init();</script>
+	-->
+    <meta charset="UTF-8" />
+
+    <meta
+      name="description"
+      content="Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer and viewer in your browser. Privacy-focused, client-side rendering tool with dark mode support. No data leaves your browser unless you explicitly allow PlantUML rendering."
+    />
+    <meta
+      name="keywords"
+      content="GRSMD, markdown viewer, markdown renderer, markdown preview, mermaid viewer, mermaid diagrams, plantuml viewer, plantuml online, latex viewer, latex renderer, katex, diagram tool, markdown editor, privacy markdown tool, client-side markdown"
+    />
+    <meta name="author" content="GoodRelax" />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://goodrelax.github.io/gr-simple-md-renderer/"
+    />
+    <meta
+      property="og:title"
+      content="GRSMD | Free Markdown Viewer – Mermaid, PlantUML & Math"
+    />
+    <meta
+      property="og:description"
+      content="Privacy-focused online tool for rendering Markdown, Math (LaTeX), Mermaid, and PlantUML diagrams with syntax highlighting and dark mode."
+    />
+
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta
+      property="twitter:title"
+      content="GRSMD | Free Markdown Viewer – Mermaid, PlantUML & Math"
+    />
+    <meta
+      property="twitter:description"
+      content="Privacy-focused online tool for rendering Markdown, Math (LaTeX), Mermaid, and PlantUML diagrams."
+    />
+
+    <title>GRSMD | Free Markdown Viewer – Mermaid, PlantUML & Math</title>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "GR Simple MD Renderer & Viewer",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "GRSMD Free online viewer and renderer for Markdown, Math (LaTeX), Mermaid, and PlantUML. Features privacy-focused client-side rendering.",
+        "author": {
+          "@type": "Organization",
+          "name": "GoodRelax",
+          "url": "https://github.com/GoodRelax"
+        }
+      }
+    </script>
+
+    <link rel="stylesheet" href="/css/style.css" />
+
+    <!--
+        SRI Hash Generation Site
+            https://srihash.org/
+        CDN sites
+            https://www.jsdelivr.com/package/npm/marked
+            https://www.jsdelivr.com/package/npm/mermaid
+            https://cdnjs.com/libraries/highlight.js
+            https://www.jsdelivr.com/package/npm/katex
+            https://www.jsdelivr.com/package/npm/marked-katex-extension
+    -->
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/marked@17.0.1/lib/marked.umd.min.js"
+      integrity="sha384-AkwdwVgEdZpqPMfydlmViIGgV90b6sHb/NoxnNdlecRKY3puoyKdw/pi64E32c+6"
+      crossorigin="anonymous"
+    ></script>
+
+    <link
+      rel="modulepreload"
+      href="https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.esm.min.mjs"
+      integrity="sha384-bBdf+Hx1qc+N2a4poQjInyeO803gqSNqanHQiQ3DgvXaz/aeQz4mQLhIXpK9MP83"
+      crossorigin="anonymous"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css"
+      integrity="sha512-mtXspRdOWHCYp+f4c7CkWGYPPRAhq9X+xCvJMUBVAb6pqA4U8pxhT3RWT3LP3bKbiolYL2CkL1bSKZZO4eeTew=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="modulepreload"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js"
+      integrity="sha512-818kY2uYH1PRlHNZZL17hgbHng9LBOgA4k8TQVsXYTaKwgg5pMxBahxeHDUdAMTPUJ82CXLQmJZOl3OQUKZ18Q=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <link
+      rel="modulepreload"
+      href="https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm"
+      integrity="sha384-0soUzyKltgTFXRsH4USkmq6FPG3emb/n2JkcG7etR4fIXjKFFJkCLqTl6sM7boxe"
+      crossorigin="anonymous"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.28/dist/katex.min.css"
+      integrity="sha384-Wsr4Nh3yrvMf2KCebJchRJoVo1gTU6kcP05uRSh5NV3sj9+a8IomuJoQzf3sMq4T"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="modulepreload"
+      href="https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.6/+esm"
+      integrity="sha384-sXM6dT1KwUCU7buT3pldq9hy6hhfkoUXunVhnhf+ISmpQh3ofLks2w7oMwyG24Ex"
+      crossorigin="anonymous"
+    />
+  </head>
+
+  <body>
+    <div id="topbar">
+      <div id="header-group">
+        <div id="title">GR Simple MD Renderer &amp; Viewer</div>
+        <div id="copyright">
+          <a href="https://github.com/GoodRelax" target="_blank"
+            >&copy; 2026 GoodRelax. MIT License.</a
+          >
+        </div>
+      </div>
+
+      <textarea id="editor" placeholder="Paste Markdown..."></textarea>
+
+      <div id="controls">
+        <button id="renderLight">Render<br />Light</button>
+        <button id="renderDark">Render<br />Dark</button>
+        <button id="newTabBtn">New<br />Tab</button>
+        <button id="clearBtn">Clear</button>
+      </div>
+
+      <button id="helpBtn" title="Help">?</button>
+    </div>
+
+    <div id="preview"></div>
+
+    <div id="toastContainer"></div>
+
+    <div id="helpModal" class="modal">
+      <div class="modal-content">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+          "
+        >
+          <h2 style="margin: 0">
+            GoodRelax Simple Markdown Renderer &amp; Viewer
+          </h2>
+          <span class="close-btn">&times;</span>
+        </div>
+
+        <div class="modal-section">
+          <h3>About GRSMD</h3>
+          <p>
+            GRSMD is a lightweight, privacy-first Markdown viewer that runs
+            entirely in your browser.<br />
+            It supports Markdown, Mermaid diagrams, and PlantUML &mdash; no
+            backend, no data sent anywhere without your explicit consent.
+          </p>
+        </div>
+
+        <div class="modal-section">
+          <h3>Basic Usage</h3>
+          <p>Any of the following triggers an automatic preview:</p>
+          <ol>
+            <li>Paste text anywhere on the page (Ctrl+V / Cmd+V)</li>
+            <li>Drop a <code>.md</code> file anywhere on the page</li>
+            <li>
+              Drop any text-based file (<code>.py</code>, <code>.js</code>,
+              <code>.c</code>, etc.) for Code View
+            </li>
+            <li>
+              Paste text directly into the <code>[Paste Markdown...]</code> box
+              at the top
+            </li>
+          </ol>
+        </div>
+
+        <div class="modal-section">
+          <h3>Details</h3>
+          <ul>
+            <li><code>[Render Light]</code> / <code>l</code> : Render / reload in light mode</li>
+            <li><code>[Render Dark]</code> / <code>d</code> : Render / reload in dark mode</li>
+            <li><code>[New Tab]</code> / <code>n</code> : Open GRSMD in a new tab</li>
+            <li><code>[Clear]</code> / <code>c</code> : Clear and reset</li>
+            <li><code>[?]</code> : Show this help</li>
+            <li>
+              <code>[?]</code> (long press) : Display a prompt template for
+              generating clean Markdown with AI.
+            </li>
+            <li>
+              <code>Up</code> / <code>Down</code> arrow keys: Smooth scroll (Markdown &amp; Code View)
+            </li>
+            <li>
+              Zoom (PC): Ctrl + mouse wheel over a diagram. Double-click to
+              reset. Mac pinch also works.
+            </li>
+            <li>Pan (PC): Click and drag inside a diagram.</li>
+          </ul>
+        </div>
+
+        <div class="modal-section">
+          <h3>Privacy &amp; Security</h3>
+          <ul>
+            <li>
+              PlantUML is the only exception to client-side-only operation. This
+              tool shows a confirmation dialog before sending any PlantUML data
+              to the official server.
+            </li>
+            <li>
+              HTML embedded in Markdown is not sanitized. Paste only content you
+              trust.
+            </li>
+          </ul>
+        </div>
+
+        <div class="modal-section">
+          <h3>Sample Data</h3>
+          <a
+            href="https://goodrelax.github.io/gr-simple-md-renderer/sample-data.txt"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Copy this sample Markdown text for a quick trial</a
+          ><br />
+          <a
+            href="https://goodrelax.github.io/gr-simple-md-renderer/sample-data-2.txt"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Copy this sample Markdown text for a large-scale data trial</a
+          >
+        </div>
+
+        <div class="modal-section">
+          <h3>概要 (Japanese)</h3>
+          <p>
+            GRSMDは、すべての処理をブラウザ内で完結させる軽量・プライバシー優先のMarkdownビューワーです。<br />
+            Markdown、Mermaidダイアグラム、PlantUMLに対応し、明示的な同意なしにデータが外部へ送信されることはありません。
+          </p>
+        </div>
+
+        <div class="modal-section">
+          <h3>基本的な使い方 (Japanese)</h3>
+          <p>以下のいずれかにより自動的にプレビュー表示されます。</p>
+          <ol>
+            <li>ページ上のどこかにテキストをペースト（Ctrl+V / Cmd+V）</li>
+            <li>
+              <code>.md</code> ファイルをページ上のどこかにドラッグ＆ドロップ
+            </li>
+            <li>
+              テキスト系ファイル（<code>.py</code>、<code>.js</code>、<code>.c</code> 等）をドロップするとコードビューで表示
+            </li>
+          </ol>
+        </div>
+
+        <div class="modal-section">
+          <h3>詳細 (Japanese)</h3>
+          <ul>
+            <li><code>[Render Light]</code> / <code>l</code> : ライトモードでレンダリング/リロード</li>
+            <li><code>[Render Dark]</code> / <code>d</code> : ダークモードでレンダリング/リロード</li>
+            <li><code>[New Tab]</code> / <code>n</code> : 新しいタブでGRSMDを開く</li>
+            <li><code>[Clear]</code> / <code>c</code> : 初期化</li>
+            <li><code>[?]</code> : 本ヘルプを表示</li>
+            <li>
+              <code>[?]</code> 長押し :
+              AIに綺麗なMarkdownを生成させるためのプロンプトテンプレートを表示。
+            </li>
+            <li>
+              上下矢印キー: スムーズスクロール（Markdownプレビュー・コードビュー共通）
+            </li>
+            <li>
+              図の拡大 (PC): Ctrl +
+              マウスホイール。ダブルクリックでリセット。Macピンチも可。
+            </li>
+            <li>図の表示位置を移動 (PC): 図の上でクリック＆ドラッグ。</li>
+          </ul>
+        </div>
+
+        <div class="modal-section">
+          <h3>プライバシーとセキュリティ (Japanese)</h3>
+          <ul>
+            <li>
+              PlantUML:
+              クライアントサイド動作の唯一の例外。公式サーバーにPlantUMLデータを送信する前に、このツールが確認ダイアログを表示します。
+            </li>
+            <li>
+              Markdown内のHTMLはサニタイズされません。信頼できるコンテンツのみ貼り付けること。
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="promptModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn prompt-close">&times;</span>
+        <div class="modal-section">
+          <h3>Prompt for AI Markdown Generation</h3>
+          <p>
+            The prompt below improves the quality of the AI's Markdown output by
+            reducing errors.<br />
+            Copy this prompt and instruct your AI to output in MCBSMD format.
+          </p>
+
+          <textarea id="promptText" readonly></textarea>
+          <button id="copyPromptBtn">Copy to Clipboard</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/main.js"></script>
+  </body>
+</html>

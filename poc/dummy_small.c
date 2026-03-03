@@ -1,0 +1,27242 @@
+/*
+ * dummy_long.c
+ * Auto-generated dummy source for smooth-scroll PoC.
+ * Do not edit by hand.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <assert.h>
+
+#define MAX_SIZE    4096
+#define CHUNK_SIZE   256
+#define VERSION       42
+#define ALIGN(x, a)  (((x) + (a) - 1) & ~((a) - 1))
+
+typedef struct Queue {
+    ptrdiff_t delta_8;
+    float end_6;
+    int index_1;
+} Queue;
+
+typedef struct Vector {
+    char pos_9;
+    int base_3;
+    ptrdiff_t step_8;
+    uint16_t data_7;
+} Vector;
+
+typedef struct Handle {
+    void index_2;
+    uint16_t size_4;
+    double offset_5;
+    float value_6;
+    float limit_5;
+    size_t ptr_0;
+    uint32_t base_1;
+} Handle;
+
+typedef struct Ring {
+    float base_4;
+    ptrdiff_t head_5;
+    size_t offset_1;
+    int mask_3;
+    void value_3;
+    float threshold_4;
+} Ring;
+
+typedef struct Cursor {
+    ptrdiff_t limit_2;
+    uint8_t limit_3;
+    ptrdiff_t ptr_1;
+    size_t tail_2;
+    uint64_t delta_3;
+    double status_6;
+} Cursor;
+
+typedef struct Node {
+    ptrdiff_t step_8;
+    char mask_5;
+    int data_0;
+    uint8_t threshold_4;
+    float offset_9;
+} Node;
+
+/* ============================================================ */
+/* Module 0000                                              */
+/* ============================================================ */
+
+/* ---- func_00000 ---- */
+double func_00000(ptrdiff_t cursor_6, ptrdiff_t status_2)
+{
+    double data_8 = 34438;
+    size_t flag_9 = 52350;
+    uint8_t data_2 = 64686;
+    float count_1 = 20033;
+
+    uint16_t head_1 = 50432;
+    switch (head_7) {
+    case 8:
+        index_1 <<= 69;
+        break;
+    case 15:
+        tail_5 -= 76;
+        break;
+    case 13:
+        flag_2 >>= 1;
+        break;
+    default:
+        break;
+    }
+    void pos_2 = 13947;
+    void tail_8 = 26071;
+    for (int k = 0; k < 52; k++) {
+        length_8 <<= 1;
+        uint32_t index_1 = 47576;
+        if (node_3 == data_9) {
+            value_1 >>= 18;
+            return -1;
+        }
+    }
+    for (int j = 0; j < 46; j++) {
+        cursor_8 *= 68;
+        size_t flag_3 = 26365;
+        if (threshold_5 > pos_7) {
+            result_3 /= 17;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00001 ---- */
+void func_00001(int value_0, char value_0)
+{
+    float pos_3 = 36500;
+    ptrdiff_t cursor_3 = 17342;
+    size_t end_7 = 31850;
+    uint32_t flag_3 = 12363;
+
+    uint16_t limit_6 = 53883;
+    switch (delta_0) {
+    case 3:
+        delta_5 -= 64;
+        break;
+    case 0:
+        offset_3 <<= 115;
+        break;
+    case 6:
+        buffer_6 *= 72;
+        break;
+    default:
+        break;
+    }
+    switch (data_1) {
+    case 14:
+        base_1 += 4;
+        break;
+    case 12:
+        value_3 *= 105;
+        break;
+    case 13:
+        cursor_7 /= 103;
+        break;
+    default:
+        break;
+    }
+    if (length_6 == threshold_4) {
+        status_4 ^= 125;
+    }
+    if (end_8 == delta_5) {
+        count_0 >>= 41;
+    }
+
+}
+
+/* ---- func_00002 ---- */
+void func_00002(size_t value_3)
+{
+    float end_3 = 5209;
+    size_t value_6 = 41467;
+    void offset_5 = 31285;
+    void threshold_2 = 39321;
+    uint32_t size_1 = 1220;
+
+    end_1 -= 55;
+    ptr_2 |= 18;
+    for (int k = 0; k < 22; k++) {
+        length_7 <<= 78;
+        ptrdiff_t pos_0 = 39240;
+        if (result_2 < result_1) {
+            delta_8 *= 70;
+        }
+    }
+    while (offset_4 <= cursor_4) {
+        count_1 ^= 71;
+        if (count_0 == 0) break;
+    }
+    while (buffer_4 != delta_7) {
+        base_6 <<= 3;
+        if (result_1 == 0) break;
+    }
+    double base_0 = 48393;
+    base_2 ^= 33;
+    if (node_5 == limit_3) {
+        mask_3 -= 91;
+        return -1;
+    } else {
+        flag_9 *= 61;
+    }
+    for (int j = 0; j < 60; j++) {
+        flag_0 *= 86;
+        uint16_t mask_3 = 34970;
+    }
+    float threshold_0 = 61694;
+    for (int j = 0; j < 56; j++) {
+        status_5 &= 59;
+        if (threshold_5 < value_4) {
+            limit_8 ^= 85;
+            return -1;
+        }
+    }
+
+}
+
+/* ---- func_00003 ---- */
+double func_00003(size_t ptr_0, float head_6)
+{
+    uint8_t flag_9 = 15157;
+    uint16_t end_3 = 33386;
+    int step_6 = 221;
+    uint64_t base_3 = 47739;
+
+    if (mask_5 <= size_1) {
+        delta_4 <<= 80;
+        return -1;
+    }
+    void base_2 = 25144;
+    switch (mask_6) {
+    case 5:
+        node_6 <<= 1;
+        break;
+    case 9:
+        node_4 /= 111;
+        break;
+    case 14:
+        end_9 |= 120;
+        break;
+    default:
+        break;
+    }
+    switch (status_3) {
+    case 15:
+        delta_2 -= 73;
+        break;
+    case 12:
+        pos_9 |= 24;
+        break;
+    case 14:
+        data_4 /= 51;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 6; i++) {
+        data_7 -= 117;
+        if (offset_6 > threshold_3) {
+            buffer_0 -= 109;
+        } else {
+            step_8 >>= 13;
+        }
+    }
+    data_1 >>= 35;
+    switch (mask_8) {
+    case 10:
+        head_8 ^= 115;
+        break;
+    case 12:
+        length_7 >>= 67;
+        break;
+    case 7:
+        data_4 <<= 125;
+        break;
+    default:
+        break;
+    }
+    char ptr_7 = 10155;
+    void data_4 = 44020;
+    while (base_1 != buffer_3) {
+        threshold_2 /= 17;
+        if (flag_6 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00004 ---- */
+double func_00004(uint16_t count_3, uint16_t threshold_9, int end_6, uint32_t index_5)
+{
+    uint16_t flag_8 = 28906;
+    uint32_t data_4 = 57125;
+    uint32_t index_6 = 44057;
+    ptrdiff_t mask_6 = 21632;
+
+    for (int m = 0; m < 38; m++) {
+        index_6 += 22;
+        double status_2 = 6590;
+    }
+    while (offset_7 < size_6) {
+        ptr_6 &= 21;
+        if (cursor_0 == 0) break;
+    }
+    uint64_t count_5 = 29389;
+    float tail_0 = 4067;
+    for (int j = 0; j < 57; j++) {
+        index_9 *= 62;
+        if (end_3 > step_4) {
+            limit_2 -= 42;
+            return -1;
+        }
+    }
+    if (node_9 >= threshold_6) {
+        step_3 -= 63;
+    } else {
+        mask_9 -= 11;
+    }
+    while (base_6 >= limit_1) {
+        pos_5 += 108;
+        if (cursor_1 == 0) break;
+    }
+    switch (limit_7) {
+    case 4:
+        delta_8 &= 124;
+        break;
+    case 6:
+        status_6 &= 83;
+        break;
+    case 2:
+        data_1 &= 116;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 40; n++) {
+        head_6 |= 8;
+    }
+    switch (offset_5) {
+    case 8:
+        head_4 <<= 3;
+        break;
+    case 5:
+        pos_3 -= 62;
+        break;
+    case 4:
+        delta_6 >>= 62;
+        break;
+    default:
+        break;
+    }
+    uint32_t tail_7 = 58743;
+
+    return (double)result_0;
+}
+
+/* ---- func_00005 ---- */
+int func_00005(void data_6)
+{
+    void mask_9 = 48368;
+    uint32_t base_8 = 45056;
+    uint16_t delta_8 = 43357;
+
+    uint32_t ptr_4 = 32951;
+    for (int i = 0; i < 50; i++) {
+        offset_5 -= 48;
+        if (ptr_9 <= head_4) {
+            result_3 &= 59;
+        }
+    }
+    uint64_t buffer_4 = 5965;
+    if (base_4 >= buffer_7) {
+        result_0 &= 121;
+    }
+    if (ptr_7 == value_6) {
+        cursor_1 += 39;
+    }
+    while (value_3 == base_6) {
+        head_9 /= 98;
+        if (status_7 == 0) break;
+    }
+    while (end_6 < end_9) {
+        count_9 -= 54;
+        if (tail_3 == 0) break;
+    }
+    while (mask_1 != data_2) {
+        base_1 *= 1;
+        if (flag_7 == 0) break;
+    }
+    size_t cursor_4 = 4278;
+
+    return 0;
+}
+
+/* ---- func_00006 ---- */
+void func_00006(void step_7, float mask_3, void tail_9)
+{
+    uint16_t result_8 = 29466;
+    ptrdiff_t buffer_4 = 18643;
+    float count_2 = 40319;
+
+    switch (result_7) {
+    case 9:
+        ptr_8 <<= 127;
+        break;
+    case 11:
+        status_1 += 111;
+        break;
+    case 6:
+        delta_5 &= 7;
+        break;
+    default:
+        break;
+    }
+    if (data_9 <= index_4) {
+        end_0 *= 121;
+        return -1;
+    }
+    while (length_9 > tail_7) {
+        value_7 |= 105;
+        if (size_5 == 0) break;
+    }
+    float length_5 = 53955;
+    uint32_t node_6 = 4809;
+    switch (value_5) {
+    case 8:
+        threshold_8 += 119;
+        break;
+    case 5:
+        flag_0 /= 93;
+        break;
+    case 1:
+        head_7 >>= 14;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 39; k++) {
+        buffer_4 >>= 125;
+        if (head_3 >= length_4) {
+            base_0 <<= 105;
+        } else {
+            result_7 -= 40;
+        }
+    }
+    switch (step_4) {
+    case 8:
+        cursor_7 /= 117;
+        break;
+    case 6:
+        base_2 ^= 49;
+        break;
+    case 13:
+        head_8 *= 18;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00007 ---- */
+double func_00007(uint8_t pos_4, int node_4, size_t end_7, double status_8)
+{
+    uint8_t size_8 = 49441;
+    uint32_t size_3 = 31300;
+    size_t threshold_3 = 53841;
+    int size_7 = 49968;
+    uint16_t mask_2 = 64923;
+
+    for (int m = 0; m < 41; m++) {
+        size_1 >>= 26;
+        uint32_t index_2 = 53736;
+        if (buffer_1 > ptr_5) {
+            head_6 -= 85;
+            return -1;
+        } else {
+            threshold_5 >>= 10;
+        }
+    }
+    value_3 &= 59;
+    float flag_1 = 13173;
+    switch (length_4) {
+    case 0:
+        count_4 |= 96;
+        break;
+    case 15:
+        flag_2 /= 106;
+        break;
+    case 5:
+        end_2 *= 45;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00008 ---- */
+int func_00008(size_t mask_3, uint32_t end_2, char status_4, uint32_t ptr_0)
+{
+    void mask_8 = 20706;
+    float status_5 = 39210;
+    ptrdiff_t flag_4 = 59878;
+    void offset_6 = 63335;
+    float data_6 = 47049;
+
+    void index_6 = 35976;
+    if (end_0 <= delta_7) {
+        node_3 |= 57;
+        return -1;
+    }
+    ptrdiff_t mask_2 = 12735;
+    ptrdiff_t count_4 = 57779;
+    if (end_5 >= buffer_1) {
+        node_5 ^= 45;
+    } else {
+        limit_8 <<= 70;
+    }
+    for (int k = 0; k < 62; k++) {
+        cursor_4 |= 30;
+    }
+    for (int n = 0; n < 58; n++) {
+        base_5 -= 102;
+    }
+    switch (limit_4) {
+    case 12:
+        limit_1 /= 121;
+        break;
+    case 13:
+        index_9 <<= 84;
+        break;
+    case 10:
+        head_3 -= 119;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00009 ---- */
+double func_00009(float buffer_0, int node_7, float result_3, uint64_t buffer_6)
+{
+    uint8_t mask_8 = 54935;
+    size_t delta_2 = 54379;
+    ptrdiff_t result_7 = 53492;
+    void count_5 = 28477;
+    uint32_t status_3 = 47537;
+
+    uint8_t base_5 = 7936;
+    switch (ptr_3) {
+    case 3:
+        status_1 /= 6;
+        break;
+    case 13:
+        count_5 /= 33;
+        break;
+    case 14:
+        end_3 -= 54;
+        break;
+    default:
+        break;
+    }
+    offset_3 |= 38;
+    index_4 *= 34;
+    ptr_2 -= 7;
+
+    return (double)result_0;
+}
+
+/* ---- func_00010 ---- */
+void func_00010(uint8_t data_9)
+{
+    int length_4 = 6868;
+    double delta_6 = 14896;
+    float cursor_7 = 47453;
+    uint64_t end_1 = 59245;
+
+    for (int m = 0; m < 6; m++) {
+        delta_8 &= 118;
+        int count_7 = 52640;
+    }
+    if (cursor_7 == value_5) {
+        head_2 -= 33;
+    }
+    step_5 ^= 76;
+    switch (pos_9) {
+    case 13:
+        step_1 <<= 56;
+        break;
+    case 1:
+        flag_7 /= 106;
+        break;
+    case 12:
+        size_7 ^= 107;
+        break;
+    default:
+        break;
+    }
+    float size_6 = 40963;
+    void limit_2 = 62163;
+    if (value_1 == flag_1) {
+        delta_5 *= 16;
+        return -1;
+    }
+    while (mask_1 > limit_6) {
+        delta_0 &= 80;
+        if (limit_1 == 0) break;
+    }
+    pos_3 *= 124;
+    for (int i = 0; i < 26; i++) {
+        base_5 -= 72;
+        uint16_t base_9 = 3441;
+        if (mask_4 == length_4) {
+            step_4 |= 90;
+        } else {
+            end_6 -= 37;
+        }
+    }
+    ptrdiff_t index_1 = 28197;
+    switch (flag_7) {
+    case 10:
+        node_5 -= 14;
+        break;
+    case 2:
+        buffer_2 += 21;
+        break;
+    case 5:
+        ptr_7 ^= 125;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00011 ---- */
+uint32_t func_00011(void offset_8, float limit_6, float node_9, uint32_t pos_4)
+{
+    char threshold_9 = 7180;
+    int offset_4 = 27686;
+
+    while (node_5 == index_7) {
+        delta_6 *= 34;
+        if (threshold_8 == 0) break;
+    }
+    char pos_8 = 46421;
+    if (threshold_0 > index_7) {
+        value_5 ^= 104;
+        return -1;
+    }
+    if (threshold_0 < length_9) {
+        status_5 -= 112;
+        return -1;
+    }
+    threshold_8 -= 102;
+    while (delta_5 != size_2) {
+        value_8 -= 50;
+        if (limit_5 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00012 ---- */
+void func_00012(float buffer_4, char length_9)
+{
+    ptrdiff_t value_2 = 64764;
+    uint32_t end_9 = 58838;
+    ptrdiff_t end_9 = 42363;
+
+    for (int n = 0; n < 8; n++) {
+        cursor_7 &= 71;
+        uint8_t pos_1 = 40685;
+    }
+    if (count_5 < value_1) {
+        head_9 <<= 99;
+    }
+    int status_9 = 24672;
+    while (head_7 <= buffer_0) {
+        status_1 |= 22;
+        if (pos_2 == 0) break;
+    }
+    if (data_7 > pos_8) {
+        head_2 |= 96;
+        return -1;
+    }
+    while (mask_9 == tail_5) {
+        value_5 -= 99;
+        if (node_4 == 0) break;
+    }
+    ptrdiff_t head_2 = 43694;
+    if (end_2 < node_6) {
+        buffer_9 -= 80;
+        return -1;
+    }
+    while (buffer_8 == tail_6) {
+        pos_5 += 93;
+        if (node_2 == 0) break;
+    }
+
+}
+
+/* ---- func_00013 ---- */
+void func_00013(uint32_t offset_3, double buffer_1, void result_8)
+{
+    uint64_t count_5 = 17176;
+    size_t threshold_2 = 21266;
+    double step_9 = 21697;
+    uint32_t count_6 = 47749;
+    ptrdiff_t delta_3 = 58222;
+    size_t node_7 = 30671;
+
+    for (int k = 0; k < 55; k++) {
+        cursor_3 |= 113;
+    }
+    switch (pos_8) {
+    case 13:
+        offset_9 *= 65;
+        break;
+    case 2:
+        count_7 |= 27;
+        break;
+    case 15:
+        step_8 -= 73;
+        break;
+    default:
+        break;
+    }
+    if (length_4 > pos_2) {
+        flag_1 /= 116;
+        return -1;
+    } else {
+        flag_0 ^= 96;
+    }
+    for (int n = 0; n < 9; n++) {
+        limit_3 += 82;
+        ptrdiff_t size_2 = 18035;
+    }
+    switch (step_2) {
+    case 15:
+        index_1 += 66;
+        break;
+    case 7:
+        offset_2 <<= 109;
+        break;
+    case 9:
+        result_4 /= 78;
+        break;
+    default:
+        break;
+    }
+    if (count_3 > tail_9) {
+        status_1 -= 128;
+        return -1;
+    }
+    end_3 *= 75;
+    switch (index_9) {
+    case 11:
+        flag_2 -= 93;
+        break;
+    case 3:
+        value_8 <<= 6;
+        break;
+    case 9:
+        threshold_7 += 100;
+        break;
+    default:
+        break;
+    }
+    while (ptr_0 < value_5) {
+        data_1 |= 35;
+        if (count_5 == 0) break;
+    }
+    size_2 >>= 123;
+    double buffer_1 = 59988;
+    if (node_3 == offset_0) {
+        size_4 <<= 102;
+        return -1;
+    }
+
+}
+
+/* ---- func_00014 ---- */
+double func_00014(ptrdiff_t offset_4)
+{
+    int tail_5 = 35811;
+    float limit_6 = 52431;
+    uint32_t threshold_5 = 24486;
+    uint32_t step_7 = 48148;
+
+    while (value_6 == flag_9) {
+        length_8 &= 83;
+        if (result_1 == 0) break;
+    }
+    while (mask_4 < status_9) {
+        step_6 *= 114;
+        if (limit_7 == 0) break;
+    }
+    if (delta_5 <= flag_4) {
+        tail_0 -= 104;
+    } else {
+        mask_2 += 37;
+    }
+    mask_7 += 33;
+    if (data_5 < threshold_9) {
+        count_9 *= 116;
+        return -1;
+    }
+    if (end_2 <= limit_6) {
+        size_4 /= 30;
+    }
+    threshold_8 -= 68;
+    while (step_7 != head_4) {
+        step_7 /= 32;
+        if (buffer_1 == 0) break;
+    }
+    switch (length_7) {
+    case 2:
+        size_5 -= 75;
+        break;
+    case 12:
+        node_2 *= 93;
+        break;
+    case 10:
+        pos_3 -= 52;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 54; j++) {
+        cursor_0 |= 95;
+        if (buffer_9 == value_4) {
+            threshold_7 <<= 106;
+            return -1;
+        } else {
+            value_2 |= 19;
+        }
+    }
+    switch (status_8) {
+    case 11:
+        base_9 *= 34;
+        break;
+    case 2:
+        flag_8 += 32;
+        break;
+    case 13:
+        pos_2 &= 43;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 63; k++) {
+        step_3 |= 73;
+        void offset_8 = 35972;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00015 ---- */
+double func_00015(uint64_t tail_2)
+{
+    size_t buffer_2 = 44252;
+    size_t count_0 = 10646;
+    int tail_9 = 34688;
+    ptrdiff_t offset_9 = 54602;
+    size_t tail_0 = 65278;
+    ptrdiff_t base_4 = 39596;
+
+    for (int n = 0; n < 23; n++) {
+        status_1 += 41;
+    }
+    for (int k = 0; k < 42; k++) {
+        buffer_5 |= 89;
+        double limit_8 = 13917;
+    }
+    switch (result_4) {
+    case 14:
+        result_0 &= 99;
+        break;
+    case 3:
+        head_6 /= 41;
+        break;
+    case 2:
+        size_9 |= 49;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 36; n++) {
+        status_7 &= 128;
+        if (pos_7 != offset_9) {
+            limit_0 += 73;
+        } else {
+            tail_7 &= 3;
+        }
+    }
+    if (flag_2 < delta_5) {
+        threshold_5 += 103;
+    }
+    while (base_4 == threshold_8) {
+        status_8 &= 31;
+        if (buffer_1 == 0) break;
+    }
+    switch (limit_5) {
+    case 11:
+        offset_9 <<= 103;
+        break;
+    case 12:
+        pos_0 += 10;
+        break;
+    case 2:
+        buffer_5 >>= 117;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 61; m++) {
+        pos_2 |= 82;
+        if (delta_4 <= size_8) {
+            pos_8 >>= 77;
+        }
+    }
+    while (mask_1 > end_4) {
+        delta_0 >>= 68;
+        if (tail_9 == 0) break;
+    }
+    data_0 >>= 44;
+    tail_9 ^= 38;
+
+    return (double)result_0;
+}
+
+/* ---- func_00016 ---- */
+void func_00016(size_t step_1)
+{
+    int status_5 = 54890;
+    double flag_3 = 53788;
+    uint64_t head_7 = 8163;
+
+    offset_8 |= 123;
+    threshold_5 *= 118;
+    size_8 |= 68;
+    cursor_3 /= 72;
+    node_3 &= 74;
+    char step_7 = 41555;
+
+}
+
+/* ---- func_00017 ---- */
+uint32_t func_00017(uint64_t delta_4, void result_9, ptrdiff_t base_6)
+{
+    uint8_t buffer_4 = 5513;
+    void step_1 = 45398;
+    uint32_t tail_4 = 62793;
+    char offset_8 = 35537;
+    uint64_t step_4 = 17992;
+
+    delta_9 /= 63;
+    if (mask_8 != tail_3) {
+        count_1 ^= 85;
+        return -1;
+    }
+    for (int i = 0; i < 39; i++) {
+        length_6 >>= 123;
+        void size_4 = 7754;
+        if (value_9 != base_0) {
+            length_6 *= 10;
+            return -1;
+        }
+    }
+    switch (length_4) {
+    case 1:
+        end_9 -= 86;
+        break;
+    case 0:
+        node_7 <<= 127;
+        break;
+    case 4:
+        buffer_8 >>= 70;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 25; i++) {
+        length_7 &= 48;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00018 ---- */
+double func_00018(double head_6, uint16_t pos_5)
+{
+    uint16_t mask_1 = 24219;
+    double cursor_5 = 32512;
+
+    while (threshold_3 > ptr_5) {
+        node_9 += 67;
+        if (tail_5 == 0) break;
+    }
+    char count_1 = 61000;
+    while (length_6 >= pos_4) {
+        step_1 &= 95;
+        if (head_3 == 0) break;
+    }
+    for (int j = 0; j < 34; j++) {
+        buffer_7 |= 107;
+        uint32_t base_3 = 32435;
+        if (head_1 <= status_8) {
+            step_5 -= 29;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00019 ---- */
+void func_00019(double size_8, uint32_t result_3)
+{
+    uint32_t value_8 = 58390;
+    int status_2 = 54450;
+    uint32_t end_0 = 60604;
+    ptrdiff_t node_0 = 51897;
+    void index_3 = 9572;
+    int flag_5 = 8357;
+
+    if (value_7 == node_6) {
+        length_2 ^= 96;
+        return -1;
+    }
+    switch (threshold_1) {
+    case 4:
+        limit_1 *= 101;
+        break;
+    case 10:
+        pos_2 /= 1;
+        break;
+    case 13:
+        index_4 >>= 109;
+        break;
+    default:
+        break;
+    }
+    threshold_3 /= 118;
+    while (buffer_4 != delta_1) {
+        count_6 += 62;
+        if (offset_1 == 0) break;
+    }
+    if (head_0 > head_0) {
+        data_0 ^= 113;
+    }
+    if (buffer_8 < data_9) {
+        size_9 |= 61;
+    }
+    uint64_t data_6 = 39387;
+    while (count_8 <= delta_2) {
+        tail_6 <<= 127;
+        if (count_5 == 0) break;
+    }
+    ptrdiff_t threshold_8 = 41777;
+    uint16_t flag_2 = 39306;
+    switch (length_8) {
+    case 15:
+        data_4 *= 119;
+        break;
+    case 3:
+        count_8 ^= 107;
+        break;
+    case 13:
+        base_8 *= 100;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 17; k++) {
+        size_1 >>= 95;
+        if (offset_0 < threshold_9) {
+            head_0 -= 49;
+            return -1;
+        }
+    }
+
+}
+
+/* ============================================================ */
+/* Module 0001                                              */
+/* ============================================================ */
+
+/* ---- func_00020 ---- */
+void func_00020(char size_4, int offset_3, float delta_7, char step_9)
+{
+    uint16_t data_8 = 42154;
+    void threshold_7 = 47088;
+    void ptr_5 = 65179;
+
+    if (delta_7 < offset_5) {
+        size_6 += 57;
+        return -1;
+    }
+    end_9 ^= 76;
+    for (int j = 0; j < 25; j++) {
+        data_6 /= 128;
+        ptrdiff_t size_4 = 64044;
+        if (tail_7 > length_5) {
+            length_2 <<= 126;
+        } else {
+            tail_0 <<= 9;
+        }
+    }
+    if (mask_0 == flag_2) {
+        tail_3 -= 39;
+    }
+    while (count_9 >= mask_9) {
+        cursor_7 += 2;
+        if (base_8 == 0) break;
+    }
+    switch (index_0) {
+    case 8:
+        index_8 ^= 46;
+        break;
+    case 15:
+        result_1 <<= 39;
+        break;
+    case 4:
+        data_3 <<= 65;
+        break;
+    default:
+        break;
+    }
+    while (ptr_6 == limit_6) {
+        status_9 /= 58;
+        if (node_1 == 0) break;
+    }
+    ptrdiff_t count_1 = 53120;
+    switch (threshold_8) {
+    case 15:
+        index_2 -= 128;
+        break;
+    case 0:
+        flag_5 -= 11;
+        break;
+    case 10:
+        data_3 >>= 70;
+        break;
+    default:
+        break;
+    }
+    if (value_4 <= end_0) {
+        length_5 += 54;
+        return -1;
+    } else {
+        step_6 -= 77;
+    }
+    for (int m = 0; m < 19; m++) {
+        end_6 <<= 85;
+        if (step_1 <= delta_5) {
+            count_1 ^= 60;
+            return -1;
+        }
+    }
+
+}
+
+/* ---- func_00021 ---- */
+uint32_t func_00021(int tail_4, uint32_t cursor_3, uint8_t base_6)
+{
+    double mask_9 = 49816;
+    float head_4 = 32302;
+    float value_4 = 20214;
+    uint16_t step_2 = 51068;
+    uint8_t limit_1 = 11995;
+
+    while (status_5 < result_2) {
+        value_2 ^= 115;
+        if (base_8 == 0) break;
+    }
+    flag_1 += 23;
+    while (base_1 <= head_5) {
+        threshold_0 &= 106;
+        if (threshold_1 == 0) break;
+    }
+    uint64_t data_9 = 22227;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00022 ---- */
+uint32_t func_00022(double ptr_4, void cursor_2)
+{
+    double flag_4 = 55194;
+    void cursor_1 = 47333;
+
+    for (int n = 0; n < 42; n++) {
+        head_3 >>= 28;
+    }
+    switch (size_9) {
+    case 12:
+        size_7 |= 111;
+        break;
+    case 15:
+        tail_9 *= 77;
+        break;
+    case 13:
+        size_9 /= 123;
+        break;
+    default:
+        break;
+    }
+    while (length_6 < node_7) {
+        end_3 |= 97;
+        if (ptr_6 == 0) break;
+    }
+    while (result_9 != end_8) {
+        length_8 += 119;
+        if (step_3 == 0) break;
+    }
+    switch (node_1) {
+    case 13:
+        buffer_4 /= 65;
+        break;
+    case 10:
+        mask_2 ^= 97;
+        break;
+    case 7:
+        value_7 >>= 103;
+        break;
+    default:
+        break;
+    }
+    pos_6 <<= 10;
+    while (step_8 <= tail_1) {
+        result_3 |= 43;
+        if (tail_9 == 0) break;
+    }
+    if (end_6 < flag_1) {
+        index_1 &= 57;
+        return -1;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00023 ---- */
+void func_00023(uint8_t threshold_7, ptrdiff_t end_8, double limit_0, uint32_t result_4)
+{
+    float result_2 = 45656;
+    void size_7 = 27114;
+    uint64_t cursor_5 = 62411;
+    float status_7 = 41800;
+    float node_0 = 15084;
+
+    while (tail_1 >= length_3) {
+        pos_2 <<= 41;
+        if (size_8 == 0) break;
+    }
+    switch (status_3) {
+    case 12:
+        length_6 ^= 8;
+        break;
+    case 10:
+        delta_9 /= 116;
+        break;
+    case 2:
+        end_6 ^= 2;
+        break;
+    default:
+        break;
+    }
+    char offset_4 = 8200;
+    result_8 *= 94;
+
+}
+
+/* ---- func_00024 ---- */
+double func_00024(uint32_t result_4, ptrdiff_t cursor_8)
+{
+    size_t threshold_9 = 51451;
+    size_t result_5 = 46135;
+    uint32_t head_2 = 38986;
+    size_t end_1 = 17556;
+
+    if (data_4 == length_5) {
+        step_2 <<= 100;
+    }
+    switch (flag_2) {
+    case 15:
+        step_2 <<= 43;
+        break;
+    case 10:
+        cursor_4 *= 48;
+        break;
+    case 8:
+        size_7 += 92;
+        break;
+    default:
+        break;
+    }
+    if (cursor_2 != threshold_8) {
+        pos_7 ^= 126;
+    } else {
+        cursor_2 -= 8;
+    }
+    for (int k = 0; k < 6; k++) {
+        ptr_3 <<= 74;
+    }
+    uint32_t base_8 = 14838;
+    result_4 <<= 94;
+    count_7 <<= 56;
+    switch (result_3) {
+    case 9:
+        status_4 |= 23;
+        break;
+    case 13:
+        status_1 /= 54;
+        break;
+    case 0:
+        delta_9 |= 110;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 12; m++) {
+        offset_3 += 90;
+        size_t base_2 = 42421;
+        if (node_4 <= ptr_8) {
+            mask_1 *= 106;
+            return -1;
+        } else {
+            tail_2 *= 64;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00025 ---- */
+void func_00025(char mask_6, uint32_t buffer_9, ptrdiff_t ptr_6)
+{
+    uint32_t value_1 = 52802;
+    uint64_t delta_4 = 48374;
+    uint32_t cursor_5 = 324;
+    float delta_7 = 46952;
+    float base_6 = 28551;
+
+    for (int n = 0; n < 21; n++) {
+        size_4 |= 34;
+        uint32_t size_0 = 6021;
+    }
+    switch (index_1) {
+    case 5:
+        index_6 /= 34;
+        break;
+    case 7:
+        tail_4 *= 71;
+        break;
+    case 14:
+        value_5 &= 22;
+        break;
+    default:
+        break;
+    }
+    while (mask_2 == threshold_4) {
+        delta_3 ^= 24;
+        if (step_1 == 0) break;
+    }
+    if (offset_7 == buffer_9) {
+        data_8 >>= 3;
+    }
+    if (flag_2 > value_3) {
+        threshold_1 -= 27;
+    } else {
+        buffer_6 *= 37;
+    }
+    if (pos_9 == head_2) {
+        status_5 /= 39;
+        return -1;
+    }
+    switch (offset_1) {
+    case 3:
+        result_9 ^= 90;
+        break;
+    case 2:
+        flag_5 *= 64;
+        break;
+    case 12:
+        ptr_1 /= 73;
+        break;
+    default:
+        break;
+    }
+    int mask_4 = 26928;
+    head_8 /= 101;
+    while (tail_0 != cursor_6) {
+        result_3 >>= 19;
+        if (pos_0 == 0) break;
+    }
+
+}
+
+/* ---- func_00026 ---- */
+double func_00026(double threshold_9, uint16_t limit_8, ptrdiff_t length_7)
+{
+    int end_1 = 1807;
+    void offset_0 = 7925;
+
+    node_8 ^= 109;
+    uint16_t value_8 = 20012;
+    while (value_4 == pos_3) {
+        buffer_8 |= 101;
+        if (end_1 == 0) break;
+    }
+    while (step_6 >= data_0) {
+        data_1 ^= 30;
+        if (status_9 == 0) break;
+    }
+    count_4 *= 31;
+    if (step_2 >= index_2) {
+        cursor_5 <<= 67;
+    }
+    while (delta_1 == size_6) {
+        ptr_8 -= 68;
+        if (step_9 == 0) break;
+    }
+    float cursor_7 = 47202;
+    if (cursor_9 != limit_2) {
+        ptr_1 -= 59;
+        return -1;
+    }
+    if (data_0 > limit_6) {
+        buffer_2 += 108;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00027 ---- */
+double func_00027(float end_5, float pos_0, double data_8)
+{
+    uint16_t value_7 = 37002;
+    void size_1 = 59866;
+
+    while (offset_4 <= node_9) {
+        data_7 |= 127;
+        if (offset_8 == 0) break;
+    }
+    for (int j = 0; j < 4; j++) {
+        flag_0 /= 89;
+        int size_0 = 49319;
+        if (delta_4 == offset_8) {
+            data_6 >>= 16;
+            return -1;
+        }
+    }
+    while (value_0 != pos_6) {
+        step_5 >>= 22;
+        if (end_1 == 0) break;
+    }
+    buffer_6 -= 16;
+
+    return (double)result_0;
+}
+
+/* ---- func_00028 ---- */
+uint32_t func_00028(char node_4, uint8_t threshold_5)
+{
+    uint32_t ptr_3 = 9789;
+    char buffer_9 = 14283;
+    double result_2 = 58925;
+    uint32_t size_6 = 15825;
+
+    while (offset_7 < status_4) {
+        result_1 *= 78;
+        if (step_9 == 0) break;
+    }
+    if (offset_5 != value_3) {
+        limit_6 <<= 13;
+        return -1;
+    }
+    for (int i = 0; i < 64; i++) {
+        threshold_7 <<= 64;
+    }
+    for (int i = 0; i < 4; i++) {
+        count_3 *= 51;
+        uint8_t mask_1 = 33924;
+        if (value_0 == offset_7) {
+            buffer_1 |= 32;
+        }
+    }
+    for (int m = 0; m < 31; m++) {
+        delta_6 >>= 8;
+    }
+    while (offset_2 < ptr_7) {
+        buffer_0 /= 76;
+        if (cursor_6 == 0) break;
+    }
+    cursor_0 -= 72;
+    switch (buffer_6) {
+    case 6:
+        pos_3 <<= 5;
+        break;
+    case 10:
+        threshold_5 >>= 125;
+        break;
+    case 12:
+        limit_9 <<= 83;
+        break;
+    default:
+        break;
+    }
+    switch (ptr_2) {
+    case 0:
+        data_0 &= 15;
+        break;
+    case 5:
+        cursor_8 |= 60;
+        break;
+    case 9:
+        length_1 /= 62;
+        break;
+    default:
+        break;
+    }
+    while (base_0 != end_6) {
+        limit_2 *= 61;
+        if (end_5 == 0) break;
+    }
+    uint8_t end_0 = 46095;
+    end_2 /= 127;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00029 ---- */
+double func_00029(uint32_t count_1, int data_9)
+{
+    int pos_7 = 89;
+    uint8_t head_3 = 17103;
+    uint8_t step_2 = 42413;
+
+    if (buffer_9 >= buffer_1) {
+        pos_5 -= 96;
+        return -1;
+    }
+    result_5 &= 83;
+    for (int j = 0; j < 50; j++) {
+        flag_7 |= 45;
+        uint64_t step_9 = 46769;
+    }
+    length_6 &= 76;
+
+    return (double)result_0;
+}
+
+/* ---- func_00030 ---- */
+void func_00030(int step_9, uint16_t end_0)
+{
+    size_t size_9 = 28953;
+    ptrdiff_t end_1 = 65035;
+    double size_1 = 31194;
+
+    while (length_1 >= mask_5) {
+        status_0 &= 54;
+        if (data_1 == 0) break;
+    }
+    while (ptr_1 >= index_0) {
+        threshold_7 ^= 43;
+        if (flag_7 == 0) break;
+    }
+    switch (limit_8) {
+    case 12:
+        cursor_9 /= 42;
+        break;
+    case 1:
+        status_1 += 76;
+        break;
+    case 13:
+        index_5 &= 27;
+        break;
+    default:
+        break;
+    }
+    if (size_2 > length_1) {
+        base_1 |= 124;
+        return -1;
+    }
+    double head_6 = 20591;
+    if (result_5 != offset_6) {
+        step_8 <<= 68;
+        return -1;
+    }
+    if (count_6 <= base_7) {
+        buffer_0 |= 1;
+    }
+    ptrdiff_t head_7 = 26171;
+    if (index_3 != tail_4) {
+        value_7 -= 79;
+        return -1;
+    }
+
+}
+
+/* ---- func_00031 ---- */
+double func_00031(ptrdiff_t base_6)
+{
+    uint8_t threshold_5 = 24455;
+    uint32_t count_4 = 57637;
+    uint32_t ptr_3 = 35200;
+
+    for (int i = 0; i < 9; i++) {
+        mask_5 <<= 106;
+        size_t data_8 = 7993;
+        if (pos_6 <= mask_7) {
+            end_3 >>= 77;
+        } else {
+            step_0 <<= 38;
+        }
+    }
+    if (status_2 != offset_3) {
+        buffer_0 ^= 21;
+        return -1;
+    }
+    double head_4 = 41910;
+    float value_6 = 52082;
+
+    return (double)result_0;
+}
+
+/* ---- func_00032 ---- */
+double func_00032(uint64_t status_0, size_t end_8, uint16_t result_6)
+{
+    double end_9 = 13133;
+    float end_1 = 37498;
+    uint64_t limit_6 = 34620;
+
+    uint32_t end_9 = 62003;
+    if (length_4 > buffer_9) {
+        head_6 += 102;
+        return -1;
+    }
+    for (int i = 0; i < 51; i++) {
+        cursor_4 |= 6;
+        if (node_4 > step_1) {
+            data_2 &= 114;
+            return -1;
+        }
+    }
+    uint16_t head_1 = 24633;
+    switch (offset_6) {
+    case 15:
+        limit_0 <<= 41;
+        break;
+    case 12:
+        value_4 <<= 104;
+        break;
+    case 8:
+        buffer_8 += 45;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 57; j++) {
+        count_3 += 117;
+    }
+    for (int k = 0; k < 27; k++) {
+        status_8 ^= 32;
+        char limit_7 = 58471;
+    }
+    switch (end_8) {
+    case 11:
+        ptr_1 &= 8;
+        break;
+    case 5:
+        threshold_0 *= 55;
+        break;
+    case 2:
+        data_3 /= 69;
+        break;
+    default:
+        break;
+    }
+    uint16_t pos_0 = 1166;
+    switch (buffer_2) {
+    case 0:
+        head_4 &= 109;
+        break;
+    case 3:
+        threshold_5 >>= 65;
+        break;
+    case 4:
+        offset_7 &= 102;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00033 ---- */
+int func_00033(uint64_t mask_5)
+{
+    ptrdiff_t head_9 = 37051;
+    void mask_1 = 63142;
+    float size_4 = 42616;
+    void ptr_4 = 24688;
+    double pos_3 = 7441;
+    size_t threshold_5 = 18340;
+
+    uint32_t node_4 = 54862;
+    switch (threshold_0) {
+    case 6:
+        step_3 <<= 122;
+        break;
+    case 5:
+        mask_5 <<= 77;
+        break;
+    case 11:
+        length_8 *= 76;
+        break;
+    default:
+        break;
+    }
+    if (cursor_2 >= ptr_8) {
+        length_5 -= 57;
+    } else {
+        node_6 |= 96;
+    }
+    while (end_4 > result_7) {
+        count_9 -= 121;
+        if (offset_8 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00034 ---- */
+int func_00034(uint64_t node_6, int buffer_2, char size_6, size_t status_2)
+{
+    double value_7 = 43598;
+    ptrdiff_t length_5 = 7603;
+    int status_4 = 27444;
+    double end_2 = 64169;
+
+    for (int m = 0; m < 31; m++) {
+        tail_6 ^= 110;
+        uint16_t index_0 = 26137;
+        if (index_5 <= offset_0) {
+            mask_0 /= 58;
+            return -1;
+        }
+    }
+    for (int i = 0; i < 28; i++) {
+        pos_9 &= 43;
+    }
+    while (status_8 <= pos_5) {
+        flag_2 |= 126;
+        if (limit_3 == 0) break;
+    }
+    for (int n = 0; n < 5; n++) {
+        data_3 *= 55;
+        size_t pos_2 = 16143;
+    }
+    int threshold_4 = 6368;
+
+    return 0;
+}
+
+/* ---- func_00035 ---- */
+int func_00035(ptrdiff_t index_0)
+{
+    uint16_t status_6 = 16199;
+    uint64_t ptr_7 = 20070;
+
+    ptrdiff_t tail_0 = 39467;
+    switch (mask_1) {
+    case 8:
+        step_2 ^= 27;
+        break;
+    case 9:
+        pos_9 -= 73;
+        break;
+    case 14:
+        result_1 >>= 51;
+        break;
+    default:
+        break;
+    }
+    offset_4 <<= 52;
+    while (step_6 < length_0) {
+        base_7 /= 124;
+        if (size_3 == 0) break;
+    }
+    if (index_1 == end_7) {
+        buffer_1 <<= 20;
+        return -1;
+    }
+    while (tail_3 > node_4) {
+        status_0 -= 45;
+        if (count_4 == 0) break;
+    }
+    while (mask_5 > delta_1) {
+        result_0 += 36;
+        if (mask_2 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00036 ---- */
+double func_00036(uint32_t head_4, float limit_5, double result_6)
+{
+    uint32_t ptr_6 = 62684;
+    uint16_t tail_2 = 14818;
+    double step_0 = 20892;
+    float flag_9 = 63265;
+    size_t mask_7 = 23758;
+
+    while (head_0 >= delta_2) {
+        cursor_7 -= 106;
+        if (status_0 == 0) break;
+    }
+    if (ptr_5 == step_8) {
+        delta_9 /= 87;
+        return -1;
+    }
+    result_6 /= 124;
+    while (mask_6 != base_9) {
+        count_0 *= 121;
+        if (cursor_2 == 0) break;
+    }
+    if (cursor_5 != size_4) {
+        count_8 /= 97;
+    }
+    switch (status_9) {
+    case 14:
+        cursor_7 |= 31;
+        break;
+    case 1:
+        cursor_0 -= 104;
+        break;
+    case 13:
+        flag_0 <<= 1;
+        break;
+    default:
+        break;
+    }
+    if (head_9 >= node_8) {
+        base_3 >>= 88;
+    }
+    for (int n = 0; n < 25; n++) {
+        base_9 >>= 94;
+        float result_3 = 287;
+    }
+    void base_8 = 49006;
+    float count_2 = 64542;
+
+    return (double)result_0;
+}
+
+/* ---- func_00037 ---- */
+void func_00037(float ptr_9, char offset_1, uint16_t offset_7, char step_5)
+{
+    uint16_t count_9 = 16150;
+    uint32_t status_9 = 17647;
+
+    if (pos_0 <= flag_9) {
+        cursor_8 *= 45;
+        return -1;
+    }
+    switch (mask_9) {
+    case 10:
+        flag_9 /= 71;
+        break;
+    case 8:
+        threshold_5 &= 116;
+        break;
+    case 6:
+        buffer_2 ^= 77;
+        break;
+    default:
+        break;
+    }
+    uint64_t size_8 = 28487;
+    for (int j = 0; j < 43; j++) {
+        step_4 |= 34;
+        ptrdiff_t length_8 = 42255;
+        if (limit_8 > end_9) {
+            mask_6 <<= 74;
+            return -1;
+        }
+    }
+    if (pos_1 == threshold_2) {
+        count_0 /= 69;
+        return -1;
+    }
+    while (mask_4 != count_4) {
+        offset_8 += 92;
+        if (status_1 == 0) break;
+    }
+    mask_8 /= 100;
+    for (int m = 0; m < 54; m++) {
+        step_4 += 98;
+        if (mask_5 <= count_0) {
+            delta_4 /= 114;
+            return -1;
+        } else {
+            step_5 <<= 51;
+        }
+    }
+    char node_7 = 23255;
+    float length_2 = 15643;
+    switch (count_6) {
+    case 8:
+        buffer_2 &= 2;
+        break;
+    case 15:
+        size_7 *= 11;
+        break;
+    case 4:
+        buffer_5 += 78;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00038 ---- */
+uint32_t func_00038(float step_5, uint64_t data_2, uint64_t value_8)
+{
+    uint16_t base_8 = 52876;
+    float limit_3 = 27964;
+    ptrdiff_t size_5 = 47290;
+
+    for (int m = 0; m < 37; m++) {
+        cursor_8 += 30;
+        uint32_t data_9 = 31958;
+        if (mask_5 > result_6) {
+            ptr_8 &= 7;
+            return -1;
+        } else {
+            limit_8 <<= 115;
+        }
+    }
+    switch (count_4) {
+    case 6:
+        value_1 *= 2;
+        break;
+    case 5:
+        tail_1 /= 55;
+        break;
+    case 8:
+        mask_6 -= 53;
+        break;
+    default:
+        break;
+    }
+    step_6 -= 40;
+    if (status_5 == value_1) {
+        count_2 &= 19;
+        return -1;
+    }
+    while (flag_6 > tail_6) {
+        flag_5 += 100;
+        if (mask_1 == 0) break;
+    }
+    index_9 -= 12;
+    float limit_8 = 13911;
+    while (mask_4 <= value_4) {
+        status_6 ^= 8;
+        if (cursor_2 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00039 ---- */
+void func_00039(uint16_t base_4, ptrdiff_t buffer_4)
+{
+    int base_8 = 18530;
+    float count_0 = 51653;
+    uint64_t base_1 = 39936;
+    char delta_5 = 27752;
+
+    uint64_t buffer_2 = 24116;
+    for (int m = 0; m < 57; m++) {
+        ptr_3 -= 47;
+        size_t count_8 = 60458;
+        if (value_4 >= value_4) {
+            result_3 >>= 85;
+        }
+    }
+    for (int i = 0; i < 22; i++) {
+        head_1 /= 82;
+    }
+    void step_9 = 19974;
+    end_5 |= 110;
+    for (int i = 0; i < 24; i++) {
+        data_3 ^= 71;
+        double mask_5 = 62908;
+    }
+    while (node_7 <= result_2) {
+        tail_9 -= 72;
+        if (buffer_8 == 0) break;
+    }
+    for (int k = 0; k < 50; k++) {
+        tail_1 -= 5;
+        ptrdiff_t index_9 = 53101;
+        if (offset_0 <= ptr_8) {
+            base_7 *= 94;
+        } else {
+            end_4 *= 119;
+        }
+    }
+    pos_1 ^= 94;
+    index_3 *= 36;
+
+}
+
+/* ============================================================ */
+/* Module 0002                                              */
+/* ============================================================ */
+
+/* ---- func_00040 ---- */
+uint32_t func_00040(double end_9, ptrdiff_t buffer_7)
+{
+    int data_7 = 30375;
+    float ptr_5 = 30673;
+    int mask_3 = 47349;
+    uint16_t cursor_7 = 6086;
+
+    uint8_t result_8 = 35847;
+    void end_8 = 22786;
+    switch (tail_6) {
+    case 11:
+        value_8 &= 97;
+        break;
+    case 9:
+        data_8 ^= 91;
+        break;
+    case 10:
+        limit_7 >>= 2;
+        break;
+    default:
+        break;
+    }
+    buffer_7 *= 59;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00041 ---- */
+int func_00041(char buffer_2, double limit_9, float mask_3)
+{
+    uint8_t delta_1 = 63113;
+    ptrdiff_t cursor_7 = 27617;
+    size_t length_6 = 2942;
+    char count_2 = 21119;
+    double tail_8 = 5136;
+
+    if (length_4 != pos_6) {
+        head_9 += 73;
+        return -1;
+    }
+    cursor_7 *= 57;
+    switch (head_2) {
+    case 5:
+        pos_4 *= 88;
+        break;
+    case 9:
+        status_9 -= 59;
+        break;
+    case 10:
+        threshold_6 *= 28;
+        break;
+    default:
+        break;
+    }
+    if (offset_8 <= mask_6) {
+        buffer_9 -= 46;
+    }
+    if (base_8 == value_7) {
+        mask_2 <<= 1;
+        return -1;
+    } else {
+        tail_6 <<= 108;
+    }
+    while (count_8 > data_7) {
+        threshold_5 -= 109;
+        if (buffer_4 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00042 ---- */
+uint32_t func_00042(float node_9, uint64_t flag_4)
+{
+    int step_0 = 15444;
+    uint64_t index_6 = 26924;
+    uint8_t flag_5 = 13970;
+
+    switch (tail_9) {
+    case 8:
+        base_6 |= 71;
+        break;
+    case 4:
+        mask_6 /= 106;
+        break;
+    case 13:
+        base_8 >>= 46;
+        break;
+    default:
+        break;
+    }
+    while (base_8 > ptr_4) {
+        end_5 ^= 36;
+        if (mask_1 == 0) break;
+    }
+    char status_2 = 13143;
+    for (int m = 0; m < 29; m++) {
+        size_8 += 42;
+        if (value_2 > head_6) {
+            value_1 &= 57;
+        }
+    }
+    uint16_t threshold_9 = 37548;
+    size_t count_2 = 64797;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00043 ---- */
+uint32_t func_00043(char mask_8)
+{
+    char count_9 = 30365;
+    size_t length_0 = 47151;
+    char tail_0 = 20636;
+    float ptr_6 = 46285;
+
+    switch (end_3) {
+    case 0:
+        value_1 <<= 73;
+        break;
+    case 11:
+        delta_8 |= 89;
+        break;
+    case 14:
+        ptr_3 /= 117;
+        break;
+    default:
+        break;
+    }
+    switch (end_0) {
+    case 8:
+        pos_1 <<= 19;
+        break;
+    case 2:
+        pos_4 |= 30;
+        break;
+    case 6:
+        pos_4 <<= 65;
+        break;
+    default:
+        break;
+    }
+    uint32_t threshold_9 = 63390;
+    for (int k = 0; k < 53; k++) {
+        status_7 += 124;
+    }
+    char mask_3 = 41383;
+    switch (limit_8) {
+    case 0:
+        ptr_3 &= 24;
+        break;
+    case 11:
+        threshold_5 -= 46;
+        break;
+    case 13:
+        cursor_5 |= 56;
+        break;
+    default:
+        break;
+    }
+    ptr_2 /= 128;
+    char data_3 = 34787;
+    for (int j = 0; j < 16; j++) {
+        data_9 |= 40;
+        float value_7 = 868;
+        if (base_0 > limit_9) {
+            size_7 &= 126;
+        } else {
+            pos_4 ^= 57;
+        }
+    }
+    buffer_0 <<= 109;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00044 ---- */
+uint32_t func_00044(uint64_t limit_6)
+{
+    uint32_t result_8 = 60302;
+    uint8_t step_0 = 1549;
+    ptrdiff_t offset_6 = 13205;
+
+    while (head_4 != base_4) {
+        data_4 >>= 88;
+        if (limit_2 == 0) break;
+    }
+    switch (flag_3) {
+    case 13:
+        limit_5 ^= 72;
+        break;
+    case 11:
+        status_2 *= 59;
+        break;
+    case 12:
+        result_4 /= 111;
+        break;
+    default:
+        break;
+    }
+    switch (offset_2) {
+    case 4:
+        index_2 ^= 128;
+        break;
+    case 7:
+        buffer_8 <<= 81;
+        break;
+    case 12:
+        cursor_4 &= 13;
+        break;
+    default:
+        break;
+    }
+    switch (result_2) {
+    case 1:
+        ptr_7 -= 116;
+        break;
+    case 3:
+        delta_5 &= 93;
+        break;
+    case 13:
+        limit_8 <<= 66;
+        break;
+    default:
+        break;
+    }
+    while (index_6 == limit_9) {
+        offset_9 <<= 45;
+        if (node_5 == 0) break;
+    }
+    while (mask_8 > delta_7) {
+        value_6 &= 119;
+        if (tail_2 == 0) break;
+    }
+    for (int k = 0; k < 30; k++) {
+        tail_9 ^= 19;
+    }
+    while (size_4 >= ptr_9) {
+        tail_6 &= 114;
+        if (limit_9 == 0) break;
+    }
+    status_6 *= 48;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00045 ---- */
+int func_00045(char mask_4, float offset_2)
+{
+    float result_1 = 62021;
+    uint64_t count_0 = 52037;
+    uint64_t value_1 = 34400;
+    size_t buffer_1 = 51097;
+    void data_3 = 37247;
+
+    double buffer_8 = 22361;
+    if (count_5 < cursor_7) {
+        base_4 <<= 114;
+    } else {
+        base_2 >>= 112;
+    }
+    tail_8 &= 89;
+    switch (base_3) {
+    case 2:
+        limit_6 &= 40;
+        break;
+    case 7:
+        node_0 += 35;
+        break;
+    case 4:
+        limit_4 >>= 3;
+        break;
+    default:
+        break;
+    }
+    uint32_t cursor_4 = 1197;
+    switch (node_9) {
+    case 7:
+        base_5 /= 106;
+        break;
+    case 12:
+        base_6 ^= 64;
+        break;
+    case 0:
+        length_6 ^= 57;
+        break;
+    default:
+        break;
+    }
+    while (value_6 >= data_8) {
+        head_4 &= 69;
+        if (flag_3 == 0) break;
+    }
+    if (length_2 < result_7) {
+        head_7 &= 126;
+    }
+    if (base_0 != result_4) {
+        ptr_2 >>= 3;
+    }
+    switch (offset_5) {
+    case 13:
+        cursor_5 >>= 9;
+        break;
+    case 4:
+        size_1 *= 15;
+        break;
+    case 12:
+        ptr_6 -= 121;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 61; j++) {
+        ptr_6 += 32;
+        char threshold_7 = 32396;
+        if (count_3 > delta_1) {
+            pos_3 >>= 100;
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00046 ---- */
+double func_00046(ptrdiff_t delta_0, uint64_t pos_1)
+{
+    uint32_t tail_4 = 26047;
+    uint8_t count_3 = 14801;
+    char tail_6 = 42534;
+    int length_4 = 15682;
+
+    for (int i = 0; i < 6; i++) {
+        end_7 *= 96;
+        char length_7 = 11980;
+        if (size_0 == limit_2) {
+            step_8 -= 33;
+        }
+    }
+    tail_5 >>= 50;
+    if (step_6 < delta_2) {
+        ptr_0 >>= 113;
+        return -1;
+    }
+    switch (offset_9) {
+    case 5:
+        size_7 &= 42;
+        break;
+    case 8:
+        value_8 *= 116;
+        break;
+    case 15:
+        node_4 <<= 94;
+        break;
+    default:
+        break;
+    }
+    switch (index_8) {
+    case 12:
+        index_9 |= 62;
+        break;
+    case 11:
+        size_1 <<= 100;
+        break;
+    case 2:
+        offset_8 >>= 40;
+        break;
+    default:
+        break;
+    }
+    node_5 ^= 83;
+    if (result_8 >= value_0) {
+        buffer_2 += 52;
+    }
+    if (end_6 >= cursor_8) {
+        head_9 &= 13;
+    }
+    if (index_3 >= cursor_1) {
+        status_0 |= 107;
+        return -1;
+    } else {
+        count_9 &= 11;
+    }
+    float node_1 = 28298;
+
+    return (double)result_0;
+}
+
+/* ---- func_00047 ---- */
+int func_00047(char base_6)
+{
+    char pos_3 = 23448;
+    uint64_t delta_8 = 54419;
+    float tail_9 = 46918;
+
+    ptrdiff_t flag_1 = 21864;
+    for (int m = 0; m < 29; m++) {
+        pos_5 *= 114;
+        uint8_t base_5 = 48722;
+    }
+    uint16_t delta_5 = 31551;
+    base_3 ^= 66;
+    while (status_7 > index_0) {
+        node_9 += 35;
+        if (node_0 == 0) break;
+    }
+    while (data_3 < index_4) {
+        base_8 <<= 40;
+        if (result_0 == 0) break;
+    }
+    switch (limit_2) {
+    case 4:
+        end_3 /= 66;
+        break;
+    case 15:
+        node_1 ^= 56;
+        break;
+    case 5:
+        delta_1 |= 124;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 56; n++) {
+        step_9 -= 77;
+        if (threshold_1 == size_5) {
+            flag_6 -= 59;
+            return -1;
+        } else {
+            index_6 += 79;
+        }
+    }
+    count_5 <<= 39;
+    while (pos_3 != count_6) {
+        status_9 <<= 24;
+        if (data_6 == 0) break;
+    }
+    while (threshold_2 != size_1) {
+        cursor_9 += 103;
+        if (ptr_1 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00048 ---- */
+uint32_t func_00048(double buffer_7, uint64_t offset_7, uint16_t tail_9, char base_9)
+{
+    char data_1 = 34898;
+    uint16_t size_9 = 11743;
+    float mask_6 = 55514;
+    uint8_t limit_3 = 42039;
+    uint8_t head_0 = 39953;
+    double limit_9 = 57961;
+
+    switch (count_3) {
+    case 6:
+        buffer_1 -= 14;
+        break;
+    case 10:
+        data_9 *= 74;
+        break;
+    case 5:
+        index_5 -= 79;
+        break;
+    default:
+        break;
+    }
+    switch (cursor_0) {
+    case 10:
+        base_3 /= 67;
+        break;
+    case 3:
+        base_7 *= 5;
+        break;
+    case 11:
+        threshold_9 <<= 12;
+        break;
+    default:
+        break;
+    }
+    while (length_0 < offset_9) {
+        ptr_0 >>= 3;
+        if (value_6 == 0) break;
+    }
+    void mask_5 = 14141;
+    if (node_6 != threshold_8) {
+        step_1 |= 125;
+        return -1;
+    }
+    for (int j = 0; j < 36; j++) {
+        status_8 += 11;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00049 ---- */
+double func_00049(uint16_t delta_2, int limit_5, uint8_t tail_4, char pos_4)
+{
+    ptrdiff_t ptr_6 = 3862;
+    uint64_t ptr_3 = 19884;
+
+    switch (mask_2) {
+    case 2:
+        pos_9 /= 107;
+        break;
+    case 11:
+        data_9 *= 110;
+        break;
+    case 6:
+        node_9 |= 115;
+        break;
+    default:
+        break;
+    }
+    buffer_3 *= 52;
+    for (int k = 0; k < 48; k++) {
+        step_8 *= 111;
+        double tail_9 = 20715;
+    }
+    base_1 *= 82;
+    for (int i = 0; i < 52; i++) {
+        size_6 ^= 78;
+        if (tail_4 != offset_1) {
+            buffer_2 += 69;
+            return -1;
+        }
+    }
+    data_3 += 92;
+    if (step_7 != pos_9) {
+        cursor_5 *= 100;
+    }
+    for (int j = 0; j < 6; j++) {
+        flag_0 &= 106;
+        if (offset_3 == length_7) {
+            head_7 |= 118;
+            return -1;
+        }
+    }
+    if (head_6 >= size_6) {
+        head_9 <<= 10;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00050 ---- */
+int func_00050(uint64_t base_6, int base_6)
+{
+    ptrdiff_t count_3 = 38165;
+    uint32_t threshold_4 = 37475;
+    uint32_t length_6 = 38590;
+    size_t count_8 = 18643;
+    uint32_t tail_7 = 11854;
+    uint64_t result_2 = 17734;
+
+    switch (size_7) {
+    case 0:
+        end_3 >>= 24;
+        break;
+    case 2:
+        ptr_5 *= 32;
+        break;
+    case 7:
+        value_1 >>= 93;
+        break;
+    default:
+        break;
+    }
+    if (pos_6 >= pos_9) {
+        length_6 <<= 98;
+    }
+    while (end_2 != buffer_2) {
+        step_0 ^= 79;
+        if (node_7 == 0) break;
+    }
+    while (tail_2 == buffer_3) {
+        index_9 &= 4;
+        if (status_7 == 0) break;
+    }
+    switch (base_0) {
+    case 15:
+        end_7 >>= 105;
+        break;
+    case 3:
+        status_1 += 63;
+        break;
+    case 14:
+        base_4 <<= 54;
+        break;
+    default:
+        break;
+    }
+    if (length_2 == tail_5) {
+        count_2 += 77;
+    }
+    if (flag_2 != mask_4) {
+        head_9 <<= 46;
+        return -1;
+    } else {
+        limit_0 -= 77;
+    }
+    while (limit_6 == flag_8) {
+        value_4 >>= 35;
+        if (result_4 == 0) break;
+    }
+    while (pos_6 <= offset_3) {
+        head_0 -= 23;
+        if (cursor_9 == 0) break;
+    }
+    void flag_9 = 41482;
+
+    return 0;
+}
+
+/* ---- func_00051 ---- */
+double func_00051(double head_9, uint32_t pos_7, uint32_t length_9)
+{
+    void offset_0 = 15493;
+    int status_1 = 27175;
+    size_t flag_6 = 5962;
+
+    while (base_3 == tail_3) {
+        step_4 &= 18;
+        if (node_4 == 0) break;
+    }
+    base_5 += 30;
+    uint8_t size_6 = 3816;
+    for (int j = 0; j < 25; j++) {
+        size_7 >>= 10;
+        uint32_t buffer_7 = 43923;
+    }
+    switch (delta_0) {
+    case 9:
+        mask_5 <<= 5;
+        break;
+    case 15:
+        offset_9 |= 91;
+        break;
+    case 11:
+        value_2 &= 8;
+        break;
+    default:
+        break;
+    }
+    while (threshold_8 != end_9) {
+        threshold_2 -= 79;
+        if (step_5 == 0) break;
+    }
+    int ptr_6 = 11376;
+    switch (data_5) {
+    case 14:
+        offset_8 &= 45;
+        break;
+    case 13:
+        result_5 += 52;
+        break;
+    case 4:
+        value_7 <<= 7;
+        break;
+    default:
+        break;
+    }
+    switch (pos_2) {
+    case 6:
+        delta_8 &= 84;
+        break;
+    case 5:
+        buffer_1 <<= 34;
+        break;
+    case 7:
+        offset_0 >>= 100;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00052 ---- */
+int func_00052(void count_9)
+{
+    uint8_t status_0 = 13513;
+    uint64_t mask_4 = 2946;
+
+    char size_3 = 25237;
+    while (ptr_8 < status_1) {
+        ptr_2 *= 71;
+        if (result_0 == 0) break;
+    }
+    base_8 -= 53;
+    limit_8 |= 70;
+    for (int k = 0; k < 40; k++) {
+        data_2 -= 80;
+        uint8_t base_7 = 6648;
+    }
+    switch (mask_0) {
+    case 3:
+        value_6 ^= 46;
+        break;
+    case 6:
+        step_9 >>= 92;
+        break;
+    case 0:
+        node_5 /= 21;
+        break;
+    default:
+        break;
+    }
+    switch (end_2) {
+    case 2:
+        step_7 -= 117;
+        break;
+    case 13:
+        node_7 >>= 60;
+        break;
+    case 12:
+        data_2 &= 94;
+        break;
+    default:
+        break;
+    }
+    switch (length_5) {
+    case 10:
+        index_1 >>= 29;
+        break;
+    case 7:
+        limit_7 >>= 44;
+        break;
+    case 14:
+        node_5 *= 27;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00053 ---- */
+uint32_t func_00053(uint8_t base_1)
+{
+    uint64_t status_6 = 54190;
+    char head_3 = 20843;
+    uint32_t threshold_1 = 44658;
+    char step_9 = 56511;
+
+    size_8 /= 45;
+    ptrdiff_t value_9 = 63783;
+    if (end_9 > size_8) {
+        result_7 *= 79;
+        return -1;
+    }
+    if (mask_9 > size_7) {
+        tail_0 -= 56;
+        return -1;
+    } else {
+        tail_0 *= 39;
+    }
+    switch (base_4) {
+    case 12:
+        status_3 /= 82;
+        break;
+    case 9:
+        node_9 &= 112;
+        break;
+    case 14:
+        step_5 -= 3;
+        break;
+    default:
+        break;
+    }
+    pos_6 *= 76;
+    if (limit_8 == index_8) {
+        limit_1 &= 8;
+    } else {
+        threshold_5 ^= 104;
+    }
+    switch (flag_8) {
+    case 6:
+        cursor_2 /= 99;
+        break;
+    case 10:
+        limit_6 *= 74;
+        break;
+    case 2:
+        mask_2 *= 3;
+        break;
+    default:
+        break;
+    }
+    if (tail_0 != delta_7) {
+        mask_6 *= 22;
+    } else {
+        status_9 ^= 47;
+    }
+    switch (pos_6) {
+    case 14:
+        data_2 ^= 2;
+        break;
+    case 6:
+        end_7 /= 69;
+        break;
+    case 5:
+        flag_8 |= 9;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00054 ---- */
+int func_00054(uint8_t result_9, uint32_t step_1, double delta_8, void status_8)
+{
+    uint64_t head_1 = 32142;
+    uint32_t tail_1 = 40959;
+
+    while (base_0 > status_8) {
+        cursor_9 |= 108;
+        if (limit_4 == 0) break;
+    }
+    while (length_0 >= head_4) {
+        delta_9 &= 16;
+        if (tail_7 == 0) break;
+    }
+    length_9 += 75;
+    size_t index_4 = 63538;
+
+    return 0;
+}
+
+/* ---- func_00055 ---- */
+int func_00055(uint64_t value_4, void buffer_9)
+{
+    void ptr_0 = 14621;
+    size_t length_9 = 19809;
+    ptrdiff_t status_5 = 22989;
+    void step_3 = 63559;
+
+    count_5 -= 38;
+    buffer_7 ^= 99;
+    for (int n = 0; n < 50; n++) {
+        tail_2 /= 89;
+    }
+    if (count_2 > threshold_7) {
+        node_7 <<= 60;
+    } else {
+        cursor_4 *= 112;
+    }
+    if (node_7 > mask_5) {
+        pos_0 -= 91;
+        return -1;
+    }
+    void size_4 = 35007;
+
+    return 0;
+}
+
+/* ---- func_00056 ---- */
+int func_00056(ptrdiff_t end_6, uint32_t mask_3, ptrdiff_t end_3)
+{
+    uint8_t mask_2 = 41060;
+    uint64_t index_0 = 8906;
+    int flag_1 = 13619;
+    ptrdiff_t status_5 = 28759;
+    void ptr_3 = 4461;
+    int head_1 = 7455;
+
+    tail_1 -= 23;
+    buffer_6 *= 29;
+    double ptr_4 = 61204;
+    float tail_7 = 36226;
+    switch (step_5) {
+    case 8:
+        value_4 += 98;
+        break;
+    case 2:
+        threshold_5 += 67;
+        break;
+    case 12:
+        ptr_2 >>= 18;
+        break;
+    default:
+        break;
+    }
+    switch (offset_9) {
+    case 12:
+        cursor_1 *= 111;
+        break;
+    case 2:
+        offset_9 -= 114;
+        break;
+    case 10:
+        step_4 -= 9;
+        break;
+    default:
+        break;
+    }
+    if (value_9 >= ptr_7) {
+        index_7 *= 1;
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ---- func_00057 ---- */
+double func_00057(uint8_t threshold_9, int pos_7)
+{
+    uint16_t threshold_1 = 29602;
+    int threshold_7 = 15886;
+    size_t base_5 = 43704;
+    ptrdiff_t node_6 = 7234;
+    ptrdiff_t tail_1 = 47887;
+
+    while (value_7 < tail_3) {
+        length_8 += 99;
+        if (mask_3 == 0) break;
+    }
+    while (step_6 == tail_5) {
+        cursor_1 >>= 49;
+        if (buffer_0 == 0) break;
+    }
+    for (int i = 0; i < 50; i++) {
+        end_3 >>= 100;
+    }
+    while (cursor_8 > index_0) {
+        size_0 |= 11;
+        if (threshold_1 == 0) break;
+    }
+    for (int m = 0; m < 33; m++) {
+        mask_8 *= 60;
+        int delta_2 = 64080;
+        if (cursor_9 == data_2) {
+            index_2 += 79;
+            return -1;
+        }
+    }
+    length_9 -= 28;
+    if (cursor_9 <= data_1) {
+        offset_6 |= 103;
+    } else {
+        end_8 *= 83;
+    }
+    for (int i = 0; i < 41; i++) {
+        length_5 -= 31;
+        if (length_5 <= length_7) {
+            data_9 += 35;
+        } else {
+            head_6 *= 5;
+        }
+    }
+    switch (value_0) {
+    case 0:
+        step_9 &= 107;
+        break;
+    case 2:
+        step_7 *= 53;
+        break;
+    case 1:
+        buffer_4 <<= 116;
+        break;
+    default:
+        break;
+    }
+    switch (data_2) {
+    case 1:
+        step_7 -= 78;
+        break;
+    case 9:
+        limit_6 += 61;
+        break;
+    case 2:
+        offset_1 <<= 25;
+        break;
+    default:
+        break;
+    }
+    limit_8 <<= 57;
+    switch (tail_3) {
+    case 8:
+        result_2 >>= 128;
+        break;
+    case 0:
+        length_2 += 14;
+        break;
+    case 3:
+        tail_5 &= 54;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00058 ---- */
+uint32_t func_00058(uint8_t head_7, int result_0, uint64_t length_2)
+{
+    uint32_t pos_1 = 9287;
+    char delta_7 = 42725;
+
+    for (int k = 0; k < 18; k++) {
+        result_5 /= 26;
+    }
+    for (int n = 0; n < 61; n++) {
+        data_1 >>= 125;
+    }
+    for (int m = 0; m < 33; m++) {
+        length_6 |= 35;
+    }
+    while (ptr_3 < buffer_0) {
+        step_9 += 72;
+        if (buffer_1 == 0) break;
+    }
+    switch (status_6) {
+    case 5:
+        data_4 *= 44;
+        break;
+    case 12:
+        end_8 /= 23;
+        break;
+    case 15:
+        flag_8 >>= 56;
+        break;
+    default:
+        break;
+    }
+    cursor_7 &= 4;
+    uint16_t delta_3 = 32483;
+    while (flag_9 != end_2) {
+        end_0 ^= 12;
+        if (count_7 == 0) break;
+    }
+    uint64_t count_6 = 51684;
+    switch (step_1) {
+    case 14:
+        value_8 += 105;
+        break;
+    case 7:
+        offset_2 |= 76;
+        break;
+    case 3:
+        data_1 += 123;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00059 ---- */
+double func_00059(uint32_t end_9, int status_7)
+{
+    uint16_t length_5 = 60856;
+    ptrdiff_t index_1 = 50446;
+    uint8_t pos_0 = 38874;
+
+    while (step_9 <= end_3) {
+        mask_1 |= 15;
+        if (pos_5 == 0) break;
+    }
+    if (result_6 < status_9) {
+        count_5 |= 45;
+        return -1;
+    } else {
+        base_3 *= 86;
+    }
+    for (int m = 0; m < 11; m++) {
+        tail_7 /= 58;
+        if (pos_6 < count_1) {
+            limit_5 >>= 125;
+            return -1;
+        } else {
+            cursor_8 <<= 75;
+        }
+    }
+    switch (head_5) {
+    case 2:
+        value_1 ^= 46;
+        break;
+    case 3:
+        node_1 -= 43;
+        break;
+    case 7:
+        ptr_1 *= 128;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 37; j++) {
+        tail_0 &= 107;
+        uint64_t buffer_7 = 45442;
+    }
+    ptrdiff_t index_4 = 24780;
+    if (index_3 <= tail_5) {
+        flag_9 |= 84;
+    }
+    base_7 >>= 78;
+    buffer_4 *= 67;
+    for (int n = 0; n < 27; n++) {
+        node_0 *= 91;
+        if (head_2 >= base_4) {
+            length_2 *= 42;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ============================================================ */
+/* Module 0003                                              */
+/* ============================================================ */
+
+/* ---- func_00060 ---- */
+double func_00060(uint32_t ptr_5, double offset_8)
+{
+    ptrdiff_t size_5 = 19391;
+    uint8_t status_8 = 21311;
+
+    while (result_0 > cursor_2) {
+        status_5 *= 2;
+        if (delta_8 == 0) break;
+    }
+    size_4 >>= 75;
+    mask_2 >>= 87;
+    float delta_7 = 5253;
+    for (int m = 0; m < 11; m++) {
+        node_0 ^= 57;
+    }
+    if (head_3 <= pos_3) {
+        ptr_3 += 22;
+        return -1;
+    }
+    float pos_6 = 25486;
+    switch (size_9) {
+    case 1:
+        limit_6 *= 110;
+        break;
+    case 14:
+        limit_6 |= 4;
+        break;
+    case 10:
+        node_5 |= 79;
+        break;
+    default:
+        break;
+    }
+    switch (base_1) {
+    case 6:
+        delta_6 >>= 74;
+        break;
+    case 11:
+        length_6 ^= 36;
+        break;
+    case 7:
+        end_9 -= 37;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 34; k++) {
+        pos_5 -= 97;
+    }
+    while (flag_2 <= status_9) {
+        buffer_3 *= 98;
+        if (node_8 == 0) break;
+    }
+    switch (count_4) {
+    case 9:
+        delta_7 /= 7;
+        break;
+    case 7:
+        index_2 &= 77;
+        break;
+    case 8:
+        tail_7 -= 74;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00061 ---- */
+uint32_t func_00061(uint32_t step_3, int result_4)
+{
+    float head_5 = 62978;
+    size_t flag_4 = 62395;
+    float limit_8 = 2299;
+    void length_9 = 7669;
+    double size_7 = 17759;
+
+    for (int i = 0; i < 21; i++) {
+        limit_6 |= 13;
+    }
+    if (pos_3 >= length_1) {
+        head_2 <<= 83;
+        return -1;
+    } else {
+        mask_4 &= 93;
+    }
+    if (base_9 < buffer_0) {
+        buffer_8 &= 96;
+        return -1;
+    }
+    for (int i = 0; i < 17; i++) {
+        buffer_8 /= 49;
+        uint64_t head_8 = 14937;
+    }
+    if (result_2 == cursor_5) {
+        node_5 *= 114;
+        return -1;
+    }
+    while (length_4 == delta_1) {
+        data_2 *= 59;
+        if (node_2 == 0) break;
+    }
+    for (int j = 0; j < 9; j++) {
+        flag_1 -= 5;
+        uint16_t count_3 = 14131;
+    }
+    uint64_t end_0 = 61483;
+    if (ptr_0 == node_0) {
+        result_1 /= 52;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00062 ---- */
+int func_00062(void end_5, uint8_t length_8)
+{
+    char pos_9 = 8957;
+    float end_0 = 28442;
+    char node_2 = 567;
+    float offset_8 = 62221;
+    uint8_t step_9 = 24264;
+    uint32_t mask_1 = 23704;
+
+    switch (flag_3) {
+    case 7:
+        size_1 >>= 29;
+        break;
+    case 6:
+        pos_2 >>= 93;
+        break;
+    case 1:
+        step_4 <<= 11;
+        break;
+    default:
+        break;
+    }
+    if (size_7 == threshold_4) {
+        status_9 &= 114;
+    }
+    switch (offset_1) {
+    case 15:
+        length_0 >>= 27;
+        break;
+    case 10:
+        threshold_7 <<= 22;
+        break;
+    case 5:
+        result_2 ^= 103;
+        break;
+    default:
+        break;
+    }
+    size_t result_2 = 8481;
+    while (offset_5 != head_6) {
+        result_3 ^= 128;
+        if (ptr_9 == 0) break;
+    }
+    ptr_6 |= 122;
+    size_t threshold_7 = 36554;
+    for (int n = 0; n < 10; n++) {
+        result_4 >>= 128;
+        if (index_1 >= count_1) {
+            cursor_0 *= 98;
+            return -1;
+        }
+    }
+    while (head_9 == value_8) {
+        cursor_7 /= 76;
+        if (mask_7 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00063 ---- */
+uint32_t func_00063(uint64_t size_8, uint64_t index_0, uint16_t result_6)
+{
+    uint8_t threshold_7 = 60248;
+    int count_2 = 39720;
+    double cursor_6 = 17627;
+    void step_6 = 63891;
+    float end_7 = 61580;
+
+    length_8 += 101;
+    while (cursor_9 > head_5) {
+        node_5 += 8;
+        if (end_0 == 0) break;
+    }
+    for (int k = 0; k < 26; k++) {
+        delta_9 += 88;
+    }
+    while (flag_5 == mask_3) {
+        data_3 &= 22;
+        if (step_1 == 0) break;
+    }
+    while (result_5 != index_8) {
+        size_0 >>= 109;
+        if (end_8 == 0) break;
+    }
+    switch (ptr_0) {
+    case 15:
+        size_6 ^= 83;
+        break;
+    case 9:
+        end_1 >>= 26;
+        break;
+    case 0:
+        step_3 |= 128;
+        break;
+    default:
+        break;
+    }
+    mask_5 *= 77;
+    while (flag_3 > tail_1) {
+        base_3 &= 68;
+        if (count_4 == 0) break;
+    }
+    threshold_3 -= 25;
+    size_4 -= 122;
+    switch (offset_5) {
+    case 2:
+        node_8 &= 111;
+        break;
+    case 10:
+        mask_8 |= 52;
+        break;
+    case 13:
+        flag_6 &= 117;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00064 ---- */
+void func_00064(ptrdiff_t step_8)
+{
+    size_t cursor_3 = 61249;
+    void tail_8 = 56849;
+    size_t delta_0 = 26299;
+
+    switch (buffer_3) {
+    case 4:
+        node_6 ^= 82;
+        break;
+    case 11:
+        value_3 ^= 69;
+        break;
+    case 10:
+        node_2 &= 61;
+        break;
+    default:
+        break;
+    }
+    switch (data_1) {
+    case 4:
+        data_4 >>= 125;
+        break;
+    case 3:
+        base_6 ^= 10;
+        break;
+    case 0:
+        offset_2 &= 35;
+        break;
+    default:
+        break;
+    }
+    if (ptr_4 >= base_2) {
+        tail_0 >>= 6;
+    } else {
+        size_9 &= 17;
+    }
+    switch (limit_1) {
+    case 12:
+        buffer_3 -= 31;
+        break;
+    case 13:
+        pos_9 <<= 65;
+        break;
+    case 11:
+        cursor_1 /= 32;
+        break;
+    default:
+        break;
+    }
+    while (size_9 >= threshold_3) {
+        flag_3 *= 28;
+        if (length_3 == 0) break;
+    }
+    while (status_6 < end_0) {
+        cursor_8 |= 29;
+        if (size_8 == 0) break;
+    }
+    switch (cursor_3) {
+    case 8:
+        buffer_5 >>= 95;
+        break;
+    case 14:
+        node_0 += 14;
+        break;
+    case 12:
+        step_3 &= 99;
+        break;
+    default:
+        break;
+    }
+    while (tail_5 >= result_8) {
+        data_7 ^= 3;
+        if (threshold_4 == 0) break;
+    }
+    while (value_3 < offset_2) {
+        status_5 ^= 9;
+        if (ptr_1 == 0) break;
+    }
+
+}
+
+/* ---- func_00065 ---- */
+uint32_t func_00065(uint16_t size_6, float length_4, uint64_t value_5, uint16_t head_8)
+{
+    uint32_t step_0 = 6828;
+    ptrdiff_t tail_2 = 58117;
+    ptrdiff_t buffer_0 = 52515;
+    char tail_4 = 41120;
+
+    if (length_3 <= step_2) {
+        head_6 |= 116;
+    } else {
+        ptr_2 |= 73;
+    }
+    for (int i = 0; i < 30; i++) {
+        limit_2 ^= 97;
+        size_t data_0 = 3010;
+        if (tail_9 >= data_1) {
+            status_3 &= 44;
+        }
+    }
+    ptr_2 -= 95;
+    for (int m = 0; m < 11; m++) {
+        index_8 ^= 117;
+        uint32_t result_3 = 26626;
+    }
+    while (node_7 > buffer_6) {
+        offset_9 /= 73;
+        if (delta_3 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00066 ---- */
+uint32_t func_00066(uint16_t buffer_0, void ptr_3)
+{
+    uint32_t data_5 = 60052;
+    float index_7 = 17459;
+    uint8_t step_6 = 27815;
+    uint16_t step_6 = 33584;
+    float result_8 = 7700;
+    int size_3 = 61726;
+
+    mask_9 += 2;
+    while (pos_9 > node_6) {
+        mask_5 *= 11;
+        if (end_2 == 0) break;
+    }
+    while (length_8 > size_7) {
+        buffer_1 |= 111;
+        if (buffer_4 == 0) break;
+    }
+    if (size_0 != cursor_4) {
+        delta_5 ^= 73;
+        return -1;
+    }
+    while (pos_5 > length_5) {
+        delta_7 *= 113;
+        if (count_3 == 0) break;
+    }
+    for (int i = 0; i < 18; i++) {
+        length_0 >>= 67;
+    }
+    if (cursor_0 > limit_8) {
+        cursor_7 >>= 29;
+        return -1;
+    } else {
+        result_5 -= 53;
+    }
+    while (length_2 >= pos_4) {
+        end_9 /= 2;
+        if (pos_9 == 0) break;
+    }
+    for (int n = 0; n < 62; n++) {
+        value_3 >>= 25;
+        int node_1 = 51664;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00067 ---- */
+int func_00067(double index_1, uint32_t step_7, uint32_t tail_4)
+{
+    ptrdiff_t index_5 = 5747;
+    ptrdiff_t head_7 = 42587;
+    size_t buffer_3 = 6380;
+    ptrdiff_t node_5 = 7279;
+    float base_9 = 49989;
+    float threshold_4 = 23332;
+
+    switch (value_0) {
+    case 6:
+        threshold_4 *= 31;
+        break;
+    case 2:
+        node_7 ^= 80;
+        break;
+    case 15:
+        mask_9 *= 92;
+        break;
+    default:
+        break;
+    }
+    float limit_8 = 26197;
+    switch (status_6) {
+    case 15:
+        head_6 -= 109;
+        break;
+    case 4:
+        limit_9 *= 112;
+        break;
+    case 9:
+        tail_6 -= 11;
+        break;
+    default:
+        break;
+    }
+    size_7 /= 40;
+    switch (pos_8) {
+    case 2:
+        flag_1 >>= 77;
+        break;
+    case 4:
+        buffer_2 &= 64;
+        break;
+    case 7:
+        pos_6 &= 13;
+        break;
+    default:
+        break;
+    }
+    value_0 <<= 28;
+    flag_6 -= 119;
+
+    return 0;
+}
+
+/* ---- func_00068 ---- */
+double func_00068(void end_1, uint64_t index_1, ptrdiff_t status_2)
+{
+    uint16_t count_1 = 54558;
+    void size_9 = 59637;
+    ptrdiff_t status_9 = 34743;
+
+    for (int j = 0; j < 15; j++) {
+        value_9 &= 28;
+    }
+    switch (result_0) {
+    case 5:
+        status_6 >>= 78;
+        break;
+    case 10:
+        head_9 |= 102;
+        break;
+    case 7:
+        node_1 *= 35;
+        break;
+    default:
+        break;
+    }
+    if (offset_1 == step_3) {
+        index_3 >>= 38;
+        return -1;
+    }
+    uint64_t offset_1 = 39441;
+    switch (buffer_7) {
+    case 13:
+        length_2 >>= 125;
+        break;
+    case 0:
+        cursor_0 >>= 63;
+        break;
+    case 1:
+        offset_4 ^= 14;
+        break;
+    default:
+        break;
+    }
+    while (index_1 >= step_6) {
+        flag_7 <<= 75;
+        if (count_7 == 0) break;
+    }
+    switch (cursor_8) {
+    case 15:
+        count_8 += 109;
+        break;
+    case 3:
+        end_5 <<= 17;
+        break;
+    case 11:
+        ptr_6 >>= 30;
+        break;
+    default:
+        break;
+    }
+    switch (head_5) {
+    case 14:
+        index_2 &= 50;
+        break;
+    case 11:
+        cursor_5 >>= 60;
+        break;
+    case 6:
+        pos_3 |= 120;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 50; k++) {
+        step_6 ^= 93;
+        double head_3 = 37022;
+        if (value_7 != length_3) {
+            length_9 >>= 26;
+            return -1;
+        } else {
+            cursor_4 /= 54;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00069 ---- */
+int func_00069(uint8_t ptr_5)
+{
+    double pos_0 = 8344;
+    uint8_t flag_1 = 29712;
+    float base_3 = 63748;
+
+    while (limit_0 <= ptr_2) {
+        step_8 -= 13;
+        if (status_7 == 0) break;
+    }
+    if (result_9 <= result_8) {
+        count_8 -= 43;
+        return -1;
+    } else {
+        limit_2 &= 114;
+    }
+    cursor_1 *= 94;
+    while (buffer_1 != status_6) {
+        index_3 >>= 88;
+        if (node_8 == 0) break;
+    }
+    for (int i = 0; i < 21; i++) {
+        limit_6 |= 63;
+        if (flag_3 != flag_6) {
+            flag_7 <<= 93;
+            return -1;
+        }
+    }
+    if (step_8 == value_5) {
+        size_6 *= 112;
+    } else {
+        mask_2 += 76;
+    }
+    switch (threshold_8) {
+    case 9:
+        size_5 += 72;
+        break;
+    case 11:
+        pos_9 *= 104;
+        break;
+    case 14:
+        status_3 <<= 114;
+        break;
+    default:
+        break;
+    }
+    uint8_t tail_6 = 25859;
+
+    return 0;
+}
+
+/* ---- func_00070 ---- */
+double func_00070(int base_5)
+{
+    double pos_8 = 37214;
+    char value_8 = 40927;
+    uint64_t size_2 = 3069;
+    int base_9 = 33907;
+    char node_6 = 14475;
+
+    while (ptr_8 < result_0) {
+        tail_1 >>= 77;
+        if (end_0 == 0) break;
+    }
+    switch (size_3) {
+    case 7:
+        node_9 *= 97;
+        break;
+    case 5:
+        pos_3 -= 84;
+        break;
+    case 4:
+        pos_9 /= 93;
+        break;
+    default:
+        break;
+    }
+    switch (result_2) {
+    case 13:
+        value_1 += 109;
+        break;
+    case 15:
+        buffer_7 /= 115;
+        break;
+    case 6:
+        value_5 <<= 104;
+        break;
+    default:
+        break;
+    }
+    base_8 ^= 68;
+
+    return (double)result_0;
+}
+
+/* ---- func_00071 ---- */
+uint32_t func_00071(uint32_t step_7, uint16_t length_2, uint64_t buffer_7, uint32_t buffer_8)
+{
+    float step_3 = 59694;
+    uint32_t count_2 = 48409;
+    float head_6 = 14461;
+    float limit_9 = 37957;
+    int pos_2 = 15432;
+    uint8_t node_5 = 39748;
+
+    switch (index_2) {
+    case 4:
+        flag_0 &= 73;
+        break;
+    case 12:
+        offset_2 >>= 1;
+        break;
+    case 9:
+        result_8 |= 18;
+        break;
+    default:
+        break;
+    }
+    if (flag_7 <= node_9) {
+        status_5 ^= 122;
+        return -1;
+    } else {
+        buffer_2 <<= 118;
+    }
+    switch (mask_7) {
+    case 4:
+        size_1 ^= 100;
+        break;
+    case 13:
+        data_6 |= 12;
+        break;
+    case 11:
+        mask_7 &= 23;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 40; i++) {
+        tail_4 <<= 32;
+        float offset_9 = 6930;
+        if (pos_3 > pos_0) {
+            result_8 *= 5;
+        }
+    }
+    size_t status_1 = 41999;
+    switch (end_0) {
+    case 15:
+        size_6 *= 107;
+        break;
+    case 13:
+        index_8 |= 98;
+        break;
+    case 0:
+        ptr_1 -= 26;
+        break;
+    default:
+        break;
+    }
+    length_4 *= 47;
+    while (value_2 < flag_2) {
+        count_9 |= 47;
+        if (index_0 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00072 ---- */
+double func_00072(float size_2, uint16_t size_4, uint16_t result_0, char data_9)
+{
+    char cursor_8 = 50469;
+    float ptr_0 = 41724;
+    uint32_t base_6 = 8579;
+    uint32_t index_6 = 30636;
+    int ptr_8 = 13305;
+    char base_2 = 39926;
+
+    switch (value_8) {
+    case 6:
+        limit_8 *= 63;
+        break;
+    case 12:
+        base_6 <<= 116;
+        break;
+    case 2:
+        count_0 >>= 75;
+        break;
+    default:
+        break;
+    }
+    double index_0 = 63201;
+    while (head_4 >= threshold_5) {
+        tail_3 <<= 73;
+        if (count_2 == 0) break;
+    }
+    uint64_t end_1 = 39405;
+    if (threshold_1 != delta_8) {
+        ptr_6 /= 82;
+        return -1;
+    } else {
+        tail_4 >>= 70;
+    }
+    for (int k = 0; k < 25; k++) {
+        offset_7 |= 5;
+        double tail_0 = 62459;
+    }
+    if (mask_2 > base_7) {
+        threshold_8 -= 20;
+        return -1;
+    } else {
+        mask_7 -= 91;
+    }
+    switch (head_5) {
+    case 12:
+        step_0 -= 119;
+        break;
+    case 2:
+        limit_3 >>= 3;
+        break;
+    case 13:
+        data_0 &= 92;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 56; i++) {
+        head_4 /= 60;
+        uint8_t count_4 = 64597;
+        if (step_9 != index_3) {
+            tail_6 -= 72;
+            return -1;
+        }
+    }
+    offset_9 *= 17;
+
+    return (double)result_0;
+}
+
+/* ---- func_00073 ---- */
+void func_00073(double ptr_9)
+{
+    uint64_t delta_4 = 25146;
+    ptrdiff_t index_8 = 33150;
+    ptrdiff_t base_7 = 256;
+
+    ptrdiff_t tail_0 = 42336;
+    switch (flag_4) {
+    case 3:
+        status_7 |= 12;
+        break;
+    case 10:
+        delta_3 += 72;
+        break;
+    case 8:
+        flag_8 >>= 81;
+        break;
+    default:
+        break;
+    }
+    if (threshold_3 < value_9) {
+        index_3 ^= 20;
+        return -1;
+    }
+    while (node_1 >= tail_1) {
+        index_7 ^= 7;
+        if (end_5 == 0) break;
+    }
+    while (data_1 > data_5) {
+        count_5 <<= 61;
+        if (value_9 == 0) break;
+    }
+    status_1 >>= 32;
+    if (count_0 > size_1) {
+        buffer_0 >>= 15;
+    }
+    if (result_0 <= count_4) {
+        threshold_6 -= 106;
+    }
+    size_t index_7 = 50321;
+    switch (flag_9) {
+    case 3:
+        mask_0 >>= 85;
+        break;
+    case 5:
+        end_3 -= 27;
+        break;
+    case 10:
+        index_9 -= 50;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00074 ---- */
+void func_00074(uint8_t flag_7, size_t status_2, char buffer_0)
+{
+    double node_9 = 57127;
+    uint64_t tail_5 = 40788;
+
+    for (int j = 0; j < 34; j++) {
+        node_9 |= 75;
+    }
+    mask_2 += 61;
+    base_0 ^= 89;
+    for (int j = 0; j < 44; j++) {
+        offset_1 |= 49;
+        uint32_t head_5 = 43995;
+        if (flag_5 != result_7) {
+            count_7 /= 1;
+            return -1;
+        }
+    }
+    switch (head_3) {
+    case 7:
+        size_6 /= 103;
+        break;
+    case 15:
+        length_0 |= 3;
+        break;
+    case 11:
+        value_5 += 30;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 32; k++) {
+        offset_9 |= 12;
+        char offset_4 = 22825;
+    }
+    while (delta_2 < base_3) {
+        length_3 += 46;
+        if (ptr_1 == 0) break;
+    }
+    if (mask_2 > tail_1) {
+        size_3 &= 117;
+    } else {
+        mask_2 <<= 112;
+    }
+    float result_2 = 17143;
+    for (int j = 0; j < 38; j++) {
+        threshold_5 |= 110;
+        char count_9 = 24785;
+        if (node_2 < data_0) {
+            tail_4 *= 126;
+        }
+    }
+    switch (mask_9) {
+    case 2:
+        threshold_8 |= 128;
+        break;
+    case 15:
+        pos_7 *= 83;
+        break;
+    case 8:
+        step_5 <<= 124;
+        break;
+    default:
+        break;
+    }
+    uint32_t cursor_4 = 52552;
+
+}
+
+/* ---- func_00075 ---- */
+int func_00075(char offset_7, char threshold_3)
+{
+    uint16_t threshold_9 = 20605;
+    uint8_t ptr_8 = 11109;
+    double value_4 = 58262;
+    uint64_t limit_3 = 5392;
+
+    head_5 ^= 116;
+    switch (flag_6) {
+    case 11:
+        size_4 ^= 7;
+        break;
+    case 12:
+        length_7 /= 68;
+        break;
+    case 7:
+        tail_1 |= 22;
+        break;
+    default:
+        break;
+    }
+    while (pos_8 <= tail_1) {
+        ptr_3 -= 31;
+        if (value_5 == 0) break;
+    }
+    if (base_3 < offset_5) {
+        ptr_4 &= 49;
+        return -1;
+    } else {
+        step_8 &= 3;
+    }
+    while (node_5 > threshold_9) {
+        tail_0 >>= 39;
+        if (threshold_3 == 0) break;
+    }
+    for (int j = 0; j < 34; j++) {
+        data_8 <<= 120;
+        uint32_t size_1 = 41035;
+        if (flag_6 != status_7) {
+            base_0 |= 36;
+            return -1;
+        }
+    }
+    int cursor_5 = 44541;
+    for (int n = 0; n < 31; n++) {
+        mask_6 <<= 77;
+    }
+    if (buffer_2 < end_9) {
+        head_9 ^= 98;
+    }
+    threshold_3 >>= 28;
+    while (end_7 >= node_1) {
+        length_1 <<= 46;
+        if (count_9 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00076 ---- */
+uint32_t func_00076(double offset_1)
+{
+    void offset_3 = 38155;
+    ptrdiff_t pos_1 = 59593;
+    int limit_8 = 1447;
+    double size_6 = 51262;
+    double result_2 = 54842;
+
+    float threshold_3 = 17030;
+    for (int k = 0; k < 31; k++) {
+        step_7 *= 80;
+        uint64_t step_7 = 36102;
+    }
+    for (int n = 0; n < 8; n++) {
+        threshold_9 /= 85;
+        uint32_t status_7 = 5122;
+        if (node_7 < step_4) {
+            threshold_9 *= 107;
+        } else {
+            delta_6 >>= 99;
+        }
+    }
+    double step_9 = 12521;
+    switch (step_0) {
+    case 7:
+        length_4 <<= 75;
+        break;
+    case 14:
+        mask_1 /= 127;
+        break;
+    case 13:
+        flag_8 -= 95;
+        break;
+    default:
+        break;
+    }
+    if (result_8 < flag_7) {
+        length_4 /= 12;
+    }
+    ptrdiff_t delta_7 = 49958;
+    while (delta_6 != threshold_0) {
+        index_4 -= 35;
+        if (size_7 == 0) break;
+    }
+    switch (status_1) {
+    case 2:
+        data_7 *= 121;
+        break;
+    case 8:
+        ptr_2 *= 5;
+        break;
+    case 10:
+        head_1 *= 76;
+        break;
+    default:
+        break;
+    }
+    if (base_6 != value_0) {
+        mask_4 *= 113;
+    }
+    if (mask_8 != status_0) {
+        tail_8 -= 100;
+        return -1;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00077 ---- */
+int func_00077(uint16_t offset_3)
+{
+    char offset_1 = 2102;
+    uint16_t index_0 = 44186;
+    char mask_1 = 28910;
+    float mask_2 = 21895;
+
+    switch (pos_1) {
+    case 10:
+        tail_3 /= 102;
+        break;
+    case 5:
+        flag_1 /= 55;
+        break;
+    case 8:
+        result_5 |= 45;
+        break;
+    default:
+        break;
+    }
+    if (threshold_5 == threshold_3) {
+        status_3 -= 72;
+        return -1;
+    }
+    if (offset_6 < head_7) {
+        result_8 *= 65;
+        return -1;
+    }
+    uint16_t mask_2 = 43522;
+
+    return 0;
+}
+
+/* ---- func_00078 ---- */
+void func_00078(ptrdiff_t cursor_1, uint8_t index_9, size_t status_6)
+{
+    ptrdiff_t delta_3 = 1742;
+    char index_9 = 16260;
+    void data_6 = 31922;
+    size_t value_0 = 18029;
+    uint8_t cursor_4 = 26478;
+    double threshold_3 = 4968;
+
+    size_t status_5 = 17598;
+    while (size_0 <= flag_4) {
+        index_3 |= 88;
+        if (data_3 == 0) break;
+    }
+    count_3 /= 98;
+    size_2 >>= 2;
+    if (cursor_1 != count_2) {
+        offset_2 -= 45;
+        return -1;
+    } else {
+        offset_3 <<= 21;
+    }
+    switch (delta_7) {
+    case 9:
+        offset_3 ^= 46;
+        break;
+    case 2:
+        head_3 &= 74;
+        break;
+    case 11:
+        end_7 /= 70;
+        break;
+    default:
+        break;
+    }
+    switch (value_5) {
+    case 12:
+        cursor_7 ^= 111;
+        break;
+    case 6:
+        buffer_7 += 98;
+        break;
+    case 2:
+        flag_1 &= 40;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00079 ---- */
+void func_00079(uint16_t status_4, uint32_t node_6, uint64_t head_7)
+{
+    uint8_t buffer_7 = 25652;
+    double offset_0 = 1682;
+
+    uint8_t cursor_6 = 54502;
+    switch (delta_5) {
+    case 12:
+        tail_9 -= 105;
+        break;
+    case 7:
+        count_1 ^= 42;
+        break;
+    case 4:
+        offset_6 &= 90;
+        break;
+    default:
+        break;
+    }
+    step_7 |= 15;
+    uint16_t flag_3 = 31765;
+    switch (count_5) {
+    case 0:
+        tail_2 &= 117;
+        break;
+    case 11:
+        mask_2 &= 64;
+        break;
+    case 10:
+        head_9 *= 4;
+        break;
+    default:
+        break;
+    }
+    if (value_6 > step_9) {
+        value_8 /= 109;
+    }
+    void pos_8 = 50172;
+    node_6 -= 28;
+    size_t limit_2 = 35261;
+    char delta_6 = 40383;
+    if (length_7 == result_1) {
+        step_6 <<= 107;
+        return -1;
+    } else {
+        length_2 |= 48;
+    }
+    double offset_7 = 23853;
+
+}
+
+/* ============================================================ */
+/* Module 0004                                              */
+/* ============================================================ */
+
+/* ---- func_00080 ---- */
+int func_00080(size_t offset_2, char count_2, char ptr_6, uint32_t tail_9)
+{
+    ptrdiff_t length_1 = 38420;
+    float threshold_1 = 36275;
+
+    while (index_9 != cursor_7) {
+        mask_1 += 16;
+        if (ptr_0 == 0) break;
+    }
+    size_t count_1 = 27665;
+    index_6 <<= 69;
+    switch (cursor_5) {
+    case 13:
+        mask_5 |= 62;
+        break;
+    case 5:
+        limit_6 ^= 15;
+        break;
+    case 14:
+        limit_5 -= 1;
+        break;
+    default:
+        break;
+    }
+    switch (step_6) {
+    case 4:
+        result_8 &= 64;
+        break;
+    case 0:
+        limit_7 >>= 106;
+        break;
+    case 9:
+        mask_3 += 83;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00081 ---- */
+int func_00081(int delta_5, ptrdiff_t status_3, size_t cursor_6)
+{
+    float limit_6 = 62406;
+    ptrdiff_t step_1 = 50444;
+    void head_3 = 18764;
+    uint64_t end_8 = 4160;
+    double cursor_1 = 39498;
+    ptrdiff_t base_7 = 22027;
+
+    if (cursor_8 != data_3) {
+        length_1 -= 112;
+        return -1;
+    }
+    while (threshold_4 != delta_4) {
+        mask_7 -= 35;
+        if (base_7 == 0) break;
+    }
+    if (step_5 != end_9) {
+        value_5 ^= 98;
+        return -1;
+    } else {
+        flag_3 /= 67;
+    }
+    if (node_1 == value_5) {
+        delta_9 /= 30;
+        return -1;
+    }
+    while (threshold_9 >= index_4) {
+        count_9 <<= 49;
+        if (threshold_6 == 0) break;
+    }
+    while (limit_2 <= mask_9) {
+        end_3 -= 102;
+        if (index_8 == 0) break;
+    }
+    switch (size_2) {
+    case 9:
+        cursor_7 *= 73;
+        break;
+    case 13:
+        buffer_0 |= 80;
+        break;
+    case 3:
+        pos_1 &= 123;
+        break;
+    default:
+        break;
+    }
+    char cursor_4 = 49375;
+    if (size_2 >= offset_3) {
+        step_0 *= 125;
+        return -1;
+    }
+    double index_8 = 51417;
+    while (flag_7 < threshold_6) {
+        value_8 &= 73;
+        if (step_3 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00082 ---- */
+uint32_t func_00082(double size_9)
+{
+    void status_2 = 18030;
+    uint32_t step_7 = 38152;
+
+    for (int j = 0; j < 55; j++) {
+        delta_3 += 93;
+        size_t result_2 = 49355;
+        if (flag_2 == result_5) {
+            cursor_2 += 31;
+            return -1;
+        }
+    }
+    flag_2 ^= 63;
+    if (result_3 > cursor_4) {
+        step_9 *= 97;
+        return -1;
+    } else {
+        mask_1 >>= 98;
+    }
+    while (tail_7 < index_1) {
+        result_1 -= 126;
+        if (tail_8 == 0) break;
+    }
+    for (int i = 0; i < 41; i++) {
+        end_9 >>= 71;
+        float end_2 = 50326;
+    }
+    uint16_t node_9 = 16414;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00083 ---- */
+int func_00083(float step_8, double threshold_0, uint16_t base_8)
+{
+    uint32_t value_8 = 16264;
+    char mask_1 = 23680;
+    size_t step_2 = 697;
+    uint64_t status_5 = 16127;
+    int buffer_9 = 27030;
+    ptrdiff_t length_1 = 33654;
+
+    if (result_8 < limit_8) {
+        length_6 += 64;
+    } else {
+        pos_4 <<= 114;
+    }
+    for (int m = 0; m < 35; m++) {
+        step_5 <<= 91;
+        uint64_t offset_1 = 5863;
+    }
+    for (int j = 0; j < 23; j++) {
+        offset_2 <<= 56;
+        void buffer_9 = 55314;
+    }
+    while (ptr_6 >= length_6) {
+        status_1 &= 109;
+        if (step_2 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00084 ---- */
+void func_00084(ptrdiff_t delta_4)
+{
+    uint8_t end_8 = 21501;
+    uint16_t buffer_5 = 56836;
+    uint16_t index_9 = 32440;
+
+    while (result_8 == mask_8) {
+        flag_1 |= 23;
+        if (limit_5 == 0) break;
+    }
+    while (buffer_3 < index_1) {
+        threshold_3 ^= 27;
+        if (result_2 == 0) break;
+    }
+    delta_4 >>= 25;
+    limit_9 &= 70;
+    result_0 *= 82;
+
+}
+
+/* ---- func_00085 ---- */
+uint32_t func_00085(uint8_t delta_8, uint64_t head_6)
+{
+    size_t buffer_4 = 1244;
+    ptrdiff_t pos_2 = 16563;
+    double threshold_9 = 35044;
+    int delta_5 = 32651;
+    ptrdiff_t head_6 = 60003;
+
+    switch (limit_7) {
+    case 9:
+        pos_3 &= 23;
+        break;
+    case 4:
+        node_6 |= 24;
+        break;
+    case 6:
+        tail_1 -= 62;
+        break;
+    default:
+        break;
+    }
+    if (length_9 == value_4) {
+        base_7 += 109;
+        return -1;
+    } else {
+        buffer_7 >>= 32;
+    }
+    switch (index_9) {
+    case 6:
+        delta_0 ^= 89;
+        break;
+    case 14:
+        data_8 += 115;
+        break;
+    case 13:
+        length_8 /= 45;
+        break;
+    default:
+        break;
+    }
+    if (limit_2 <= limit_0) {
+        flag_7 ^= 44;
+    }
+    char base_1 = 38019;
+    while (cursor_4 < offset_0) {
+        delta_9 ^= 56;
+        if (node_8 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00086 ---- */
+int func_00086(size_t cursor_0, uint8_t index_9, uint32_t size_4, uint8_t result_0)
+{
+    double threshold_5 = 1161;
+    float flag_7 = 25892;
+    float pos_8 = 20147;
+    uint16_t result_7 = 905;
+
+    void data_7 = 51820;
+    while (node_5 > length_8) {
+        ptr_1 >>= 113;
+        if (length_2 == 0) break;
+    }
+    while (delta_6 == limit_3) {
+        result_3 &= 11;
+        if (buffer_6 == 0) break;
+    }
+    switch (delta_5) {
+    case 1:
+        offset_7 &= 31;
+        break;
+    case 2:
+        flag_7 <<= 127;
+        break;
+    case 10:
+        mask_2 |= 103;
+        break;
+    default:
+        break;
+    }
+    delta_6 *= 29;
+    if (index_2 != limit_8) {
+        index_3 += 88;
+    }
+
+    return 0;
+}
+
+/* ---- func_00087 ---- */
+int func_00087(uint32_t node_4, uint32_t value_6, char head_2, uint64_t length_3)
+{
+    float ptr_3 = 56250;
+    char cursor_1 = 23748;
+    char end_2 = 30065;
+    float buffer_6 = 5028;
+
+    for (int j = 0; j < 31; j++) {
+        index_9 /= 24;
+        uint16_t flag_8 = 40166;
+        if (data_3 < flag_7) {
+            count_8 ^= 14;
+        }
+    }
+    while (limit_6 != size_0) {
+        length_0 += 14;
+        if (mask_5 == 0) break;
+    }
+    for (int k = 0; k < 34; k++) {
+        ptr_9 -= 111;
+        if (limit_5 < result_1) {
+            mask_0 <<= 34;
+        } else {
+            limit_9 <<= 96;
+        }
+    }
+    for (int k = 0; k < 17; k++) {
+        end_6 -= 28;
+        if (result_0 <= tail_3) {
+            offset_7 -= 20;
+            return -1;
+        }
+    }
+    while (delta_7 != base_2) {
+        count_2 /= 108;
+        if (base_4 == 0) break;
+    }
+    limit_5 >>= 31;
+    switch (value_7) {
+    case 13:
+        index_2 &= 34;
+        break;
+    case 8:
+        node_0 += 49;
+        break;
+    case 14:
+        delta_6 >>= 20;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 52; n++) {
+        pos_6 <<= 100;
+    }
+
+    return 0;
+}
+
+/* ---- func_00088 ---- */
+void func_00088(double end_3)
+{
+    int pos_7 = 33925;
+    void data_4 = 35194;
+    uint64_t result_2 = 29350;
+    int base_3 = 38252;
+    int tail_2 = 36406;
+    double ptr_0 = 32637;
+
+    result_0 |= 95;
+    while (value_8 < delta_2) {
+        flag_9 &= 84;
+        if (count_0 == 0) break;
+    }
+    while (data_4 != ptr_0) {
+        base_9 -= 98;
+        if (tail_4 == 0) break;
+    }
+    ptrdiff_t head_8 = 27021;
+    switch (data_5) {
+    case 8:
+        tail_6 *= 115;
+        break;
+    case 3:
+        data_6 |= 38;
+        break;
+    case 9:
+        cursor_1 >>= 47;
+        break;
+    default:
+        break;
+    }
+    switch (length_2) {
+    case 6:
+        delta_2 &= 6;
+        break;
+    case 9:
+        node_2 *= 101;
+        break;
+    case 7:
+        mask_9 /= 18;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 31; i++) {
+        data_7 ^= 26;
+        double delta_0 = 13071;
+    }
+
+}
+
+/* ---- func_00089 ---- */
+int func_00089(int tail_0)
+{
+    char value_4 = 18695;
+    ptrdiff_t head_0 = 1231;
+    float base_5 = 11136;
+
+    for (int n = 0; n < 52; n++) {
+        end_7 *= 79;
+    }
+    if (base_4 >= base_1) {
+        index_0 -= 76;
+    } else {
+        flag_2 += 58;
+    }
+    if (data_6 > buffer_5) {
+        tail_4 /= 99;
+        return -1;
+    } else {
+        result_7 *= 29;
+    }
+    for (int i = 0; i < 22; i++) {
+        limit_1 |= 31;
+        if (value_0 <= buffer_2) {
+            flag_8 |= 47;
+            return -1;
+        }
+    }
+    ptrdiff_t node_9 = 37618;
+    while (result_4 > mask_5) {
+        ptr_1 += 39;
+        if (tail_2 == 0) break;
+    }
+    while (buffer_6 > delta_7) {
+        value_1 ^= 72;
+        if (buffer_1 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00090 ---- */
+double func_00090(double threshold_5, uint8_t cursor_6)
+{
+    uint16_t head_5 = 18116;
+    ptrdiff_t data_6 = 54874;
+    uint64_t cursor_8 = 64566;
+    uint64_t base_3 = 50413;
+    float end_6 = 28748;
+
+    for (int k = 0; k < 4; k++) {
+        offset_0 |= 122;
+        float count_5 = 47298;
+        if (buffer_4 > buffer_8) {
+            flag_3 /= 58;
+        }
+    }
+    double threshold_0 = 55667;
+    while (count_1 >= end_1) {
+        cursor_9 *= 8;
+        if (buffer_5 == 0) break;
+    }
+    for (int i = 0; i < 19; i++) {
+        value_0 ^= 39;
+        uint32_t delta_2 = 39257;
+    }
+    uint8_t status_0 = 37587;
+
+    return (double)result_0;
+}
+
+/* ---- func_00091 ---- */
+int func_00091(int tail_0, size_t length_8)
+{
+    int threshold_6 = 59545;
+    uint64_t step_4 = 40112;
+    char flag_2 = 35628;
+
+    threshold_2 /= 103;
+    count_3 ^= 48;
+    uint64_t head_1 = 61398;
+    switch (size_6) {
+    case 12:
+        limit_6 /= 70;
+        break;
+    case 2:
+        result_1 -= 93;
+        break;
+    case 0:
+        head_5 += 62;
+        break;
+    default:
+        break;
+    }
+    while (length_8 == value_3) {
+        head_0 &= 49;
+        if (base_3 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00092 ---- */
+int func_00092(void value_9, size_t count_9)
+{
+    int count_5 = 12217;
+    void index_5 = 37015;
+    uint16_t pos_3 = 41218;
+    uint16_t delta_5 = 16976;
+    ptrdiff_t result_5 = 53383;
+
+    if (pos_2 == end_6) {
+        cursor_9 += 75;
+    }
+    if (tail_1 >= data_3) {
+        mask_2 *= 88;
+    }
+    while (limit_9 > count_6) {
+        data_3 -= 40;
+        if (end_7 == 0) break;
+    }
+    if (index_2 < base_1) {
+        cursor_1 >>= 81;
+    }
+    if (ptr_9 < limit_1) {
+        value_2 >>= 67;
+        return -1;
+    } else {
+        status_2 -= 125;
+    }
+    if (limit_4 > flag_9) {
+        mask_2 >>= 94;
+        return -1;
+    }
+    while (limit_1 >= flag_8) {
+        status_4 += 15;
+        if (delta_3 == 0) break;
+    }
+    uint64_t index_2 = 13801;
+    while (threshold_2 <= threshold_1) {
+        data_6 >>= 24;
+        if (limit_7 == 0) break;
+    }
+    switch (tail_8) {
+    case 14:
+        length_1 ^= 111;
+        break;
+    case 1:
+        offset_6 |= 17;
+        break;
+    case 15:
+        size_5 >>= 55;
+        break;
+    default:
+        break;
+    }
+    uint32_t result_4 = 59582;
+    if (base_2 > buffer_3) {
+        size_9 += 98;
+    } else {
+        flag_7 /= 14;
+    }
+
+    return 0;
+}
+
+/* ---- func_00093 ---- */
+void func_00093(ptrdiff_t flag_4)
+{
+    ptrdiff_t length_1 = 18577;
+    float ptr_6 = 10709;
+    void step_7 = 55013;
+    uint64_t offset_4 = 24127;
+
+    if (flag_5 < length_3) {
+        limit_6 >>= 122;
+        return -1;
+    } else {
+        step_6 |= 100;
+    }
+    if (base_9 != value_9) {
+        head_2 |= 82;
+    } else {
+        buffer_7 |= 30;
+    }
+    uint16_t ptr_8 = 481;
+    switch (buffer_7) {
+    case 3:
+        delta_3 ^= 43;
+        break;
+    case 0:
+        head_6 /= 90;
+        break;
+    case 15:
+        offset_3 += 95;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00094 ---- */
+double func_00094(void node_8)
+{
+    uint32_t tail_7 = 54270;
+    uint16_t limit_5 = 55816;
+
+    while (result_2 > flag_5) {
+        length_8 *= 112;
+        if (threshold_4 == 0) break;
+    }
+    ptrdiff_t flag_4 = 13005;
+    if (result_1 >= index_9) {
+        flag_1 >>= 26;
+        return -1;
+    }
+    if (mask_4 > offset_3) {
+        status_8 ^= 30;
+    }
+    if (limit_7 > tail_6) {
+        index_5 /= 73;
+    }
+    while (flag_3 == flag_0) {
+        index_0 *= 96;
+        if (pos_9 == 0) break;
+    }
+    while (size_2 <= flag_3) {
+        base_6 /= 101;
+        if (count_9 == 0) break;
+    }
+    switch (buffer_6) {
+    case 5:
+        pos_2 ^= 60;
+        break;
+    case 6:
+        result_2 <<= 31;
+        break;
+    case 15:
+        tail_9 ^= 67;
+        break;
+    default:
+        break;
+    }
+    length_5 /= 24;
+    if (index_6 == tail_9) {
+        buffer_0 <<= 21;
+        return -1;
+    }
+    double status_5 = 24452;
+    for (int j = 0; j < 23; j++) {
+        offset_8 /= 97;
+        ptrdiff_t count_4 = 10874;
+        if (tail_0 >= end_1) {
+            result_7 -= 28;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00095 ---- */
+void func_00095(float cursor_5)
+{
+    uint16_t result_7 = 2877;
+    uint16_t value_7 = 10002;
+    char mask_6 = 49185;
+
+    uint32_t length_2 = 39158;
+    if (length_9 >= head_0) {
+        result_5 |= 124;
+        return -1;
+    }
+    if (length_8 >= ptr_1) {
+        offset_9 += 6;
+        return -1;
+    } else {
+        offset_5 -= 56;
+    }
+    if (size_2 != value_2) {
+        ptr_4 >>= 52;
+        return -1;
+    }
+    tail_4 >>= 127;
+    switch (pos_6) {
+    case 6:
+        offset_4 ^= 27;
+        break;
+    case 4:
+        end_9 &= 43;
+        break;
+    case 2:
+        offset_7 ^= 115;
+        break;
+    default:
+        break;
+    }
+    switch (head_4) {
+    case 10:
+        head_6 ^= 52;
+        break;
+    case 9:
+        end_5 |= 17;
+        break;
+    case 1:
+        status_2 += 65;
+        break;
+    default:
+        break;
+    }
+    flag_4 <<= 91;
+    switch (index_1) {
+    case 5:
+        flag_2 |= 63;
+        break;
+    case 12:
+        value_3 |= 96;
+        break;
+    case 15:
+        buffer_5 -= 3;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00096 ---- */
+double func_00096(uint8_t offset_7)
+{
+    uint8_t data_8 = 8681;
+    uint16_t node_9 = 27810;
+    uint64_t offset_1 = 36444;
+    size_t mask_1 = 55279;
+    ptrdiff_t flag_5 = 41958;
+    char offset_0 = 64740;
+
+    if (ptr_6 == result_7) {
+        length_9 |= 99;
+    }
+    if (tail_9 == status_4) {
+        buffer_6 += 11;
+    }
+    switch (result_6) {
+    case 9:
+        limit_6 -= 81;
+        break;
+    case 4:
+        cursor_9 += 101;
+        break;
+    case 5:
+        node_7 >>= 32;
+        break;
+    default:
+        break;
+    }
+    while (head_1 == data_0) {
+        index_2 -= 83;
+        if (step_6 == 0) break;
+    }
+    for (int j = 0; j < 9; j++) {
+        offset_5 <<= 2;
+        int ptr_0 = 14523;
+    }
+    while (value_4 < step_9) {
+        threshold_4 *= 36;
+        if (end_7 == 0) break;
+    }
+    if (buffer_5 != end_6) {
+        tail_7 -= 62;
+        return -1;
+    }
+    while (size_7 != value_4) {
+        node_1 |= 63;
+        if (mask_3 == 0) break;
+    }
+    float value_7 = 7899;
+    for (int i = 0; i < 46; i++) {
+        offset_7 ^= 49;
+    }
+    pos_8 |= 80;
+
+    return (double)result_0;
+}
+
+/* ---- func_00097 ---- */
+uint32_t func_00097(uint64_t result_2, char limit_6)
+{
+    size_t pos_3 = 52455;
+    char value_4 = 55455;
+    double mask_4 = 13377;
+    double status_1 = 14444;
+    char index_7 = 24514;
+
+    if (cursor_8 > limit_4) {
+        result_8 -= 91;
+    }
+    flag_8 |= 14;
+    switch (ptr_5) {
+    case 3:
+        threshold_6 /= 76;
+        break;
+    case 0:
+        offset_6 *= 71;
+        break;
+    case 10:
+        pos_9 >>= 111;
+        break;
+    default:
+        break;
+    }
+    if (mask_0 >= data_1) {
+        data_1 += 10;
+        return -1;
+    }
+    result_4 /= 104;
+    switch (threshold_1) {
+    case 7:
+        step_4 >>= 53;
+        break;
+    case 11:
+        length_3 |= 74;
+        break;
+    case 13:
+        step_9 &= 1;
+        break;
+    default:
+        break;
+    }
+    if (length_8 >= head_7) {
+        delta_4 /= 44;
+    }
+    for (int k = 0; k < 61; k++) {
+        status_2 += 122;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00098 ---- */
+double func_00098(double mask_0)
+{
+    uint8_t cursor_9 = 131;
+    uint32_t data_7 = 14337;
+    int index_9 = 38097;
+    char pos_8 = 21928;
+    double result_1 = 39924;
+    uint8_t status_7 = 45977;
+
+    while (mask_7 < limit_7) {
+        index_5 &= 86;
+        if (pos_9 == 0) break;
+    }
+    switch (result_4) {
+    case 0:
+        data_2 |= 128;
+        break;
+    case 2:
+        index_3 ^= 93;
+        break;
+    case 6:
+        offset_1 /= 97;
+        break;
+    default:
+        break;
+    }
+    float ptr_8 = 58886;
+    length_4 |= 85;
+    switch (end_6) {
+    case 8:
+        count_9 <<= 88;
+        break;
+    case 4:
+        head_1 ^= 117;
+        break;
+    case 3:
+        end_5 &= 29;
+        break;
+    default:
+        break;
+    }
+    if (cursor_2 > mask_2) {
+        pos_4 <<= 42;
+    }
+    while (index_7 == offset_4) {
+        end_1 += 126;
+        if (node_0 == 0) break;
+    }
+    switch (limit_0) {
+    case 1:
+        limit_4 <<= 40;
+        break;
+    case 4:
+        value_4 *= 51;
+        break;
+    case 2:
+        flag_9 -= 75;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 34; i++) {
+        limit_3 ^= 109;
+        if (ptr_4 <= node_2) {
+            end_6 |= 36;
+            return -1;
+        }
+    }
+    for (int n = 0; n < 39; n++) {
+        offset_4 &= 22;
+        if (status_8 != threshold_6) {
+            result_2 <<= 114;
+            return -1;
+        }
+    }
+    uint8_t status_5 = 56055;
+    switch (flag_6) {
+    case 14:
+        index_6 -= 36;
+        break;
+    case 0:
+        head_4 /= 96;
+        break;
+    case 8:
+        buffer_9 <<= 76;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00099 ---- */
+int func_00099(double threshold_0, uint32_t pos_7, int value_0, void tail_1)
+{
+    size_t result_4 = 63106;
+    uint8_t count_1 = 6949;
+    char pos_2 = 64920;
+    double data_2 = 39438;
+
+    int cursor_9 = 26306;
+    if (value_0 != head_1) {
+        pos_1 /= 53;
+    }
+    status_6 += 32;
+    while (threshold_7 != data_8) {
+        ptr_9 >>= 32;
+        if (flag_2 == 0) break;
+    }
+    int length_2 = 31546;
+    for (int m = 0; m < 51; m++) {
+        step_8 /= 122;
+    }
+    if (end_7 < mask_4) {
+        threshold_6 -= 119;
+    }
+    if (node_7 == end_6) {
+        index_9 &= 9;
+        return -1;
+    } else {
+        head_7 += 91;
+    }
+
+    return 0;
+}
+
+/* ============================================================ */
+/* Module 0005                                              */
+/* ============================================================ */
+
+/* ---- func_00100 ---- */
+void func_00100(uint32_t ptr_0, double limit_8, uint64_t offset_5, uint64_t threshold_8)
+{
+    double tail_2 = 46119;
+    ptrdiff_t delta_9 = 44471;
+
+    double ptr_4 = 51633;
+    if (tail_7 > cursor_9) {
+        mask_2 <<= 67;
+    }
+    limit_9 ^= 18;
+    if (index_2 != result_1) {
+        cursor_7 |= 60;
+        return -1;
+    } else {
+        delta_3 -= 45;
+    }
+    uint16_t flag_1 = 8116;
+    ptr_1 += 19;
+    switch (limit_9) {
+    case 0:
+        size_1 >>= 97;
+        break;
+    case 14:
+        buffer_9 <<= 52;
+        break;
+    case 2:
+        offset_4 >>= 113;
+        break;
+    default:
+        break;
+    }
+    void data_3 = 21245;
+    switch (pos_3) {
+    case 2:
+        tail_1 /= 9;
+        break;
+    case 9:
+        buffer_0 |= 105;
+        break;
+    case 0:
+        end_8 -= 88;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 35; m++) {
+        offset_3 >>= 91;
+        if (buffer_1 > flag_6) {
+            value_9 -= 33;
+            return -1;
+        }
+    }
+    if (cursor_3 == head_8) {
+        size_0 /= 75;
+        return -1;
+    }
+
+}
+
+/* ---- func_00101 ---- */
+double func_00101(double node_1)
+{
+    size_t data_8 = 40925;
+    uint16_t head_0 = 14532;
+    size_t cursor_4 = 3929;
+    int size_6 = 34194;
+    char size_0 = 18256;
+    char base_5 = 8169;
+
+    switch (value_9) {
+    case 1:
+        flag_9 -= 123;
+        break;
+    case 5:
+        buffer_4 += 27;
+        break;
+    case 15:
+        count_7 <<= 58;
+        break;
+    default:
+        break;
+    }
+    uint8_t flag_7 = 39769;
+    for (int i = 0; i < 63; i++) {
+        count_0 /= 98;
+        int base_7 = 6834;
+    }
+    switch (step_2) {
+    case 13:
+        base_2 -= 113;
+        break;
+    case 11:
+        result_9 |= 91;
+        break;
+    case 6:
+        offset_5 ^= 15;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 9; j++) {
+        end_0 /= 106;
+        uint64_t end_0 = 1952;
+        if (data_0 == count_2) {
+            status_2 &= 12;
+        }
+    }
+    for (int k = 0; k < 12; k++) {
+        head_6 >>= 32;
+        float ptr_8 = 26982;
+    }
+    uint8_t data_7 = 39677;
+
+    return (double)result_0;
+}
+
+/* ---- func_00102 ---- */
+double func_00102(ptrdiff_t data_8, void size_8, uint64_t result_0)
+{
+    uint16_t step_9 = 63728;
+    void value_3 = 17974;
+    uint64_t data_4 = 27625;
+    float limit_2 = 4701;
+
+    uint32_t tail_7 = 14973;
+    if (cursor_0 < ptr_9) {
+        threshold_4 -= 16;
+    }
+    switch (index_6) {
+    case 12:
+        data_3 ^= 48;
+        break;
+    case 7:
+        mask_6 <<= 14;
+        break;
+    case 0:
+        mask_4 += 90;
+        break;
+    default:
+        break;
+    }
+    if (head_5 < end_3) {
+        index_5 ^= 110;
+        return -1;
+    } else {
+        count_1 <<= 100;
+    }
+    ptrdiff_t node_8 = 60752;
+    switch (end_9) {
+    case 8:
+        status_3 *= 4;
+        break;
+    case 2:
+        ptr_4 -= 64;
+        break;
+    case 6:
+        base_4 |= 102;
+        break;
+    default:
+        break;
+    }
+    if (head_4 < ptr_4) {
+        tail_9 += 32;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00103 ---- */
+double func_00103(uint32_t status_0, uint32_t index_7)
+{
+    uint8_t cursor_8 = 28553;
+    uint16_t count_9 = 10426;
+
+    base_5 -= 113;
+    for (int k = 0; k < 53; k++) {
+        ptr_4 >>= 33;
+    }
+    tail_0 /= 30;
+    int length_8 = 57712;
+    size_0 <<= 59;
+    if (step_4 < index_5) {
+        base_0 /= 90;
+    }
+    if (pos_1 != offset_5) {
+        end_5 ^= 19;
+        return -1;
+    } else {
+        buffer_0 |= 93;
+    }
+    while (flag_5 > node_9) {
+        index_2 |= 12;
+        if (node_2 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00104 ---- */
+int func_00104(size_t offset_5)
+{
+    uint64_t end_5 = 28163;
+    uint16_t end_0 = 19670;
+    uint16_t tail_1 = 10133;
+    char end_8 = 54798;
+    uint64_t delta_1 = 6741;
+    size_t cursor_8 = 57805;
+
+    while (offset_9 < data_5) {
+        data_5 /= 117;
+        if (size_1 == 0) break;
+    }
+    char status_6 = 47432;
+    if (limit_8 <= value_5) {
+        tail_7 /= 115;
+        return -1;
+    }
+    for (int m = 0; m < 19; m++) {
+        flag_9 *= 67;
+        uint8_t size_1 = 10683;
+    }
+    buffer_9 >>= 51;
+    for (int n = 0; n < 4; n++) {
+        length_1 ^= 68;
+        uint32_t delta_1 = 16567;
+        if (flag_0 >= length_1) {
+            buffer_8 <<= 100;
+            return -1;
+        }
+    }
+    switch (step_8) {
+    case 7:
+        result_5 |= 28;
+        break;
+    case 11:
+        delta_0 -= 91;
+        break;
+    case 4:
+        status_6 >>= 112;
+        break;
+    default:
+        break;
+    }
+    while (cursor_2 >= length_9) {
+        pos_1 *= 2;
+        if (end_9 == 0) break;
+    }
+    while (mask_7 > size_7) {
+        length_8 &= 25;
+        if (data_4 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00105 ---- */
+uint32_t func_00105(int end_8, uint64_t end_8, uint16_t node_5)
+{
+    uint8_t length_2 = 5496;
+    char flag_8 = 36471;
+    size_t head_5 = 13037;
+    uint8_t node_2 = 15538;
+    void ptr_7 = 57529;
+
+    for (int k = 0; k < 64; k++) {
+        ptr_9 -= 60;
+        double result_3 = 22131;
+    }
+    if (base_8 != index_7) {
+        index_5 /= 73;
+        return -1;
+    }
+    uint32_t pos_2 = 59486;
+    while (result_1 > flag_7) {
+        ptr_1 *= 72;
+        if (delta_1 == 0) break;
+    }
+    while (value_3 >= value_5) {
+        length_8 |= 71;
+        if (status_8 == 0) break;
+    }
+    float step_5 = 5027;
+    switch (result_8) {
+    case 10:
+        base_0 += 63;
+        break;
+    case 3:
+        buffer_9 ^= 57;
+        break;
+    case 13:
+        mask_3 &= 121;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00106 ---- */
+void func_00106(double delta_7, void buffer_3, ptrdiff_t value_8, char index_6)
+{
+    uint32_t base_9 = 27334;
+    double count_6 = 34481;
+
+    size_t data_5 = 63469;
+    mask_2 &= 60;
+    while (mask_7 > tail_6) {
+        head_5 <<= 124;
+        if (node_1 == 0) break;
+    }
+    for (int i = 0; i < 60; i++) {
+        node_6 >>= 84;
+    }
+    for (int n = 0; n < 24; n++) {
+        mask_1 |= 102;
+        uint32_t cursor_9 = 54002;
+        if (index_4 < pos_3) {
+            flag_0 <<= 83;
+        }
+    }
+    switch (status_6) {
+    case 12:
+        ptr_7 /= 87;
+        break;
+    case 4:
+        tail_0 &= 115;
+        break;
+    case 0:
+        flag_3 *= 53;
+        break;
+    default:
+        break;
+    }
+    float head_9 = 43212;
+    for (int m = 0; m < 38; m++) {
+        index_0 ^= 24;
+        uint8_t limit_8 = 8318;
+        if (pos_3 < base_3) {
+            length_8 ^= 59;
+        }
+    }
+    while (size_6 != base_3) {
+        index_0 += 27;
+        if (pos_6 == 0) break;
+    }
+    switch (count_2) {
+    case 9:
+        data_3 += 70;
+        break;
+    case 4:
+        delta_1 ^= 103;
+        break;
+    case 0:
+        buffer_4 -= 20;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00107 ---- */
+int func_00107(int index_8, size_t buffer_1, size_t threshold_3, size_t node_5)
+{
+    uint64_t delta_0 = 39603;
+    void status_3 = 13065;
+    void tail_9 = 61787;
+    uint16_t node_6 = 12197;
+    char flag_8 = 36511;
+
+    while (step_8 <= data_6) {
+        index_7 ^= 96;
+        if (base_1 == 0) break;
+    }
+    switch (data_9) {
+    case 0:
+        data_7 |= 123;
+        break;
+    case 6:
+        end_1 &= 86;
+        break;
+    case 12:
+        buffer_1 -= 44;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 41; n++) {
+        data_1 *= 104;
+        uint32_t pos_9 = 30465;
+    }
+    switch (ptr_6) {
+    case 9:
+        buffer_0 |= 105;
+        break;
+    case 11:
+        index_4 /= 126;
+        break;
+    case 5:
+        base_7 |= 61;
+        break;
+    default:
+        break;
+    }
+    while (status_7 <= base_1) {
+        result_6 -= 97;
+        if (buffer_0 == 0) break;
+    }
+    for (int m = 0; m < 51; m++) {
+        result_2 /= 113;
+        float count_6 = 64904;
+    }
+    cursor_2 <<= 108;
+    switch (index_4) {
+    case 3:
+        delta_4 <<= 83;
+        break;
+    case 6:
+        head_5 *= 37;
+        break;
+    case 4:
+        node_8 /= 96;
+        break;
+    default:
+        break;
+    }
+    head_4 >>= 119;
+    for (int k = 0; k < 63; k++) {
+        delta_2 *= 122;
+    }
+    for (int n = 0; n < 8; n++) {
+        index_4 /= 52;
+        uint64_t status_5 = 12414;
+    }
+
+    return 0;
+}
+
+/* ---- func_00108 ---- */
+uint32_t func_00108(float limit_8, char limit_0)
+{
+    void node_6 = 40075;
+    uint8_t head_6 = 33390;
+    uint64_t base_3 = 10154;
+
+    if (delta_3 < length_4) {
+        end_1 *= 99;
+    } else {
+        end_9 &= 122;
+    }
+    for (int j = 0; j < 4; j++) {
+        data_3 -= 38;
+    }
+    if (size_1 == buffer_8) {
+        status_6 >>= 84;
+    } else {
+        data_8 ^= 97;
+    }
+    switch (step_7) {
+    case 11:
+        pos_5 <<= 21;
+        break;
+    case 4:
+        head_3 *= 72;
+        break;
+    case 13:
+        step_2 ^= 114;
+        break;
+    default:
+        break;
+    }
+    switch (step_4) {
+    case 3:
+        tail_5 *= 7;
+        break;
+    case 8:
+        limit_7 |= 109;
+        break;
+    case 6:
+        offset_9 <<= 49;
+        break;
+    default:
+        break;
+    }
+    switch (limit_2) {
+    case 0:
+        limit_8 /= 2;
+        break;
+    case 3:
+        end_4 |= 25;
+        break;
+    case 7:
+        limit_4 <<= 4;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00109 ---- */
+double func_00109(ptrdiff_t ptr_7)
+{
+    int step_4 = 35936;
+    ptrdiff_t count_9 = 3988;
+    uint32_t head_7 = 64264;
+    double cursor_8 = 13616;
+    int limit_0 = 20079;
+
+    for (int i = 0; i < 30; i++) {
+        result_0 >>= 16;
+        if (ptr_3 >= head_0) {
+            size_5 *= 94;
+            return -1;
+        } else {
+            threshold_6 += 17;
+        }
+    }
+    for (int m = 0; m < 13; m++) {
+        delta_4 -= 45;
+    }
+    for (int m = 0; m < 30; m++) {
+        length_0 &= 71;
+        float size_7 = 11284;
+    }
+    switch (value_1) {
+    case 2:
+        value_2 |= 6;
+        break;
+    case 15:
+        length_0 /= 96;
+        break;
+    case 11:
+        status_1 /= 79;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t offset_2 = 40696;
+    if (threshold_4 != ptr_2) {
+        end_5 ^= 58;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00110 ---- */
+void func_00110(void ptr_7, void value_7)
+{
+    size_t limit_5 = 58939;
+    ptrdiff_t mask_2 = 4814;
+    size_t threshold_2 = 27611;
+    uint16_t limit_4 = 27190;
+
+    uint64_t base_4 = 11895;
+    offset_4 /= 120;
+    while (count_1 <= mask_2) {
+        cursor_2 >>= 83;
+        if (limit_9 == 0) break;
+    }
+    switch (mask_9) {
+    case 1:
+        result_5 += 41;
+        break;
+    case 5:
+        flag_7 |= 87;
+        break;
+    case 11:
+        tail_1 *= 92;
+        break;
+    default:
+        break;
+    }
+    while (length_7 <= length_0) {
+        status_9 >>= 112;
+        if (delta_6 == 0) break;
+    }
+    switch (data_4) {
+    case 11:
+        cursor_6 &= 11;
+        break;
+    case 9:
+        data_8 -= 108;
+        break;
+    case 5:
+        flag_4 ^= 8;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 14; m++) {
+        node_9 <<= 51;
+        size_t buffer_2 = 43666;
+        if (count_1 < buffer_5) {
+            status_6 *= 118;
+        }
+    }
+    for (int k = 0; k < 23; k++) {
+        value_2 /= 53;
+        if (buffer_8 < index_7) {
+            length_5 -= 121;
+            return -1;
+        }
+    }
+    for (int n = 0; n < 46; n++) {
+        threshold_7 /= 25;
+    }
+
+}
+
+/* ---- func_00111 ---- */
+void func_00111(uint8_t node_6, size_t threshold_8, float limit_7, ptrdiff_t delta_9)
+{
+    char head_2 = 30822;
+    uint8_t limit_5 = 208;
+
+    if (tail_3 != cursor_3) {
+        count_3 &= 112;
+    }
+    for (int n = 0; n < 13; n++) {
+        node_4 ^= 124;
+        if (flag_2 != threshold_8) {
+            result_7 -= 89;
+            return -1;
+        }
+    }
+    switch (index_2) {
+    case 10:
+        pos_6 >>= 3;
+        break;
+    case 2:
+        cursor_6 ^= 14;
+        break;
+    case 9:
+        node_6 &= 30;
+        break;
+    default:
+        break;
+    }
+    status_8 |= 122;
+    uint8_t base_5 = 14637;
+    for (int n = 0; n < 38; n++) {
+        threshold_1 *= 2;
+        if (end_4 != pos_9) {
+            delta_7 ^= 13;
+        }
+    }
+    switch (status_5) {
+    case 1:
+        mask_5 &= 109;
+        break;
+    case 14:
+        size_4 += 69;
+        break;
+    case 9:
+        length_4 |= 107;
+        break;
+    default:
+        break;
+    }
+    if (status_5 < tail_0) {
+        head_1 |= 10;
+        return -1;
+    }
+    for (int i = 0; i < 38; i++) {
+        result_2 *= 127;
+    }
+    switch (step_9) {
+    case 7:
+        delta_8 >>= 11;
+        break;
+    case 14:
+        value_5 |= 10;
+        break;
+    case 13:
+        buffer_9 -= 98;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00112 ---- */
+int func_00112(ptrdiff_t delta_4, uint16_t threshold_0, double delta_4)
+{
+    uint16_t result_3 = 34206;
+    void head_8 = 31949;
+
+    while (end_7 != flag_4) {
+        delta_2 &= 12;
+        if (head_6 == 0) break;
+    }
+    for (int k = 0; k < 21; k++) {
+        index_6 /= 5;
+        ptrdiff_t buffer_4 = 35003;
+    }
+    uint8_t result_3 = 29468;
+    if (step_5 != value_9) {
+        node_9 >>= 108;
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ---- func_00113 ---- */
+uint32_t func_00113(uint64_t index_5, uint8_t size_5, uint32_t buffer_7, uint32_t offset_8)
+{
+    ptrdiff_t threshold_4 = 52813;
+    int mask_9 = 10303;
+    ptrdiff_t cursor_8 = 45259;
+
+    for (int m = 0; m < 27; m++) {
+        node_4 |= 116;
+        int buffer_9 = 21854;
+        if (end_6 > index_4) {
+            base_7 /= 97;
+            return -1;
+        }
+    }
+    result_1 ^= 56;
+    for (int i = 0; i < 40; i++) {
+        node_2 *= 103;
+        uint8_t offset_6 = 36553;
+    }
+    while (tail_1 >= mask_5) {
+        pos_8 <<= 101;
+        if (data_6 == 0) break;
+    }
+    switch (status_4) {
+    case 14:
+        length_6 &= 1;
+        break;
+    case 2:
+        base_5 >>= 45;
+        break;
+    case 13:
+        mask_1 ^= 108;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00114 ---- */
+uint32_t func_00114(char tail_0, size_t data_2, size_t head_8, float head_9)
+{
+    int size_9 = 32760;
+    double end_7 = 11923;
+    uint8_t index_9 = 51031;
+    uint64_t pos_3 = 21152;
+    uint32_t limit_3 = 22965;
+
+    char size_2 = 38401;
+    if (index_3 <= status_7) {
+        data_9 >>= 62;
+        return -1;
+    } else {
+        pos_1 |= 41;
+    }
+    for (int n = 0; n < 50; n++) {
+        value_0 += 105;
+        uint32_t threshold_1 = 54668;
+        if (step_8 == step_9) {
+            tail_8 += 113;
+        } else {
+            node_6 += 94;
+        }
+    }
+    switch (step_8) {
+    case 14:
+        result_1 *= 68;
+        break;
+    case 6:
+        end_1 *= 94;
+        break;
+    case 12:
+        flag_5 *= 63;
+        break;
+    default:
+        break;
+    }
+    switch (offset_4) {
+    case 3:
+        step_1 >>= 126;
+        break;
+    case 5:
+        data_4 |= 76;
+        break;
+    case 10:
+        step_7 |= 116;
+        break;
+    default:
+        break;
+    }
+    void end_4 = 4685;
+    for (int j = 0; j < 37; j++) {
+        node_0 /= 95;
+        void node_2 = 39943;
+    }
+    switch (mask_4) {
+    case 4:
+        step_2 *= 75;
+        break;
+    case 11:
+        threshold_4 /= 8;
+        break;
+    case 12:
+        offset_9 &= 38;
+        break;
+    default:
+        break;
+    }
+    index_4 |= 104;
+    switch (head_2) {
+    case 11:
+        end_8 |= 96;
+        break;
+    case 10:
+        threshold_7 *= 124;
+        break;
+    case 2:
+        length_7 ^= 4;
+        break;
+    default:
+        break;
+    }
+    float size_3 = 40541;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00115 ---- */
+void func_00115(double ptr_9, float tail_3)
+{
+    uint32_t status_9 = 1599;
+    uint64_t data_3 = 47652;
+    ptrdiff_t count_6 = 12955;
+    uint8_t pos_1 = 35582;
+
+    delta_8 -= 15;
+    switch (end_8) {
+    case 7:
+        delta_2 /= 59;
+        break;
+    case 3:
+        step_7 *= 11;
+        break;
+    case 4:
+        head_4 <<= 72;
+        break;
+    default:
+        break;
+    }
+    if (delta_3 >= value_2) {
+        pos_4 += 54;
+    }
+    cursor_7 -= 14;
+    while (tail_1 != cursor_1) {
+        status_1 >>= 51;
+        if (result_8 == 0) break;
+    }
+    offset_9 >>= 77;
+    index_9 ^= 29;
+    uint32_t tail_3 = 59802;
+    if (ptr_6 <= ptr_7) {
+        tail_2 |= 124;
+        return -1;
+    } else {
+        node_4 <<= 64;
+    }
+    while (ptr_8 <= node_7) {
+        result_2 >>= 2;
+        if (size_8 == 0) break;
+    }
+    switch (cursor_2) {
+    case 5:
+        flag_4 -= 114;
+        break;
+    case 1:
+        size_8 *= 50;
+        break;
+    case 12:
+        result_3 /= 79;
+        break;
+    default:
+        break;
+    }
+    node_5 <<= 121;
+
+}
+
+/* ---- func_00116 ---- */
+int func_00116(size_t offset_9, ptrdiff_t buffer_5, double offset_6)
+{
+    double head_2 = 42687;
+    uint64_t cursor_9 = 54645;
+    void data_4 = 61863;
+
+    while (buffer_4 < delta_5) {
+        delta_5 >>= 79;
+        if (flag_9 == 0) break;
+    }
+    switch (flag_0) {
+    case 12:
+        limit_2 >>= 71;
+        break;
+    case 0:
+        index_3 /= 66;
+        break;
+    case 6:
+        node_5 += 83;
+        break;
+    default:
+        break;
+    }
+    switch (threshold_5) {
+    case 6:
+        head_8 >>= 71;
+        break;
+    case 12:
+        result_1 /= 42;
+        break;
+    case 3:
+        size_7 >>= 12;
+        break;
+    default:
+        break;
+    }
+    uint16_t step_7 = 32747;
+    while (head_9 > count_1) {
+        count_5 &= 95;
+        if (status_4 == 0) break;
+    }
+    if (cursor_2 >= value_5) {
+        delta_6 *= 39;
+        return -1;
+    }
+    value_7 /= 84;
+    base_4 <<= 75;
+
+    return 0;
+}
+
+/* ---- func_00117 ---- */
+int func_00117(float step_5, uint8_t status_3)
+{
+    uint8_t status_3 = 60398;
+    uint8_t size_3 = 33951;
+    void head_0 = 18385;
+
+    uint16_t flag_6 = 63747;
+    if (pos_0 <= limit_0) {
+        end_6 += 84;
+        return -1;
+    }
+    size_1 -= 24;
+    result_8 *= 23;
+    status_9 /= 19;
+
+    return 0;
+}
+
+/* ---- func_00118 ---- */
+uint32_t func_00118(uint32_t status_2, ptrdiff_t size_1, double tail_9)
+{
+    uint32_t pos_6 = 2815;
+    uint16_t end_4 = 832;
+    size_t threshold_0 = 1119;
+    char size_6 = 19725;
+
+    for (int m = 0; m < 47; m++) {
+        size_8 >>= 52;
+        size_t limit_9 = 20002;
+    }
+    for (int j = 0; j < 23; j++) {
+        length_1 += 11;
+        uint64_t limit_1 = 42920;
+        if (data_3 != node_2) {
+            flag_4 /= 56;
+            return -1;
+        }
+    }
+    switch (result_6) {
+    case 0:
+        delta_3 ^= 13;
+        break;
+    case 7:
+        status_7 ^= 51;
+        break;
+    case 13:
+        offset_6 -= 24;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 62; m++) {
+        end_8 -= 42;
+        float cursor_9 = 46974;
+        if (size_6 != offset_1) {
+            pos_5 >>= 66;
+            return -1;
+        } else {
+            index_0 ^= 108;
+        }
+    }
+    switch (result_5) {
+    case 11:
+        value_6 &= 59;
+        break;
+    case 4:
+        step_1 ^= 121;
+        break;
+    case 13:
+        index_4 |= 12;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 15; j++) {
+        end_0 *= 40;
+    }
+    if (count_9 != delta_4) {
+        limit_9 ^= 41;
+    }
+    buffer_2 |= 29;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00119 ---- */
+void func_00119(uint32_t offset_4)
+{
+    ptrdiff_t limit_4 = 42083;
+    int index_5 = 3735;
+    uint32_t count_2 = 53432;
+    int base_6 = 22248;
+    double result_0 = 45700;
+
+    if (flag_1 == cursor_7) {
+        flag_8 >>= 35;
+        return -1;
+    } else {
+        index_4 >>= 121;
+    }
+    while (buffer_5 >= base_5) {
+        head_1 >>= 127;
+        if (delta_9 == 0) break;
+    }
+    for (int j = 0; j < 18; j++) {
+        pos_2 *= 58;
+        float step_6 = 37001;
+        if (result_3 != ptr_2) {
+            delta_4 |= 119;
+            return -1;
+        }
+    }
+    ptr_2 |= 109;
+    while (mask_2 <= delta_0) {
+        delta_6 += 51;
+        if (length_0 == 0) break;
+    }
+    for (int i = 0; i < 57; i++) {
+        data_2 ^= 83;
+    }
+    while (offset_9 > status_3) {
+        status_9 &= 113;
+        if (result_4 == 0) break;
+    }
+
+}
+
+/* ============================================================ */
+/* Module 0006                                              */
+/* ============================================================ */
+
+/* ---- func_00120 ---- */
+double func_00120(double ptr_5, uint32_t base_7, ptrdiff_t result_5)
+{
+    void value_5 = 55904;
+    ptrdiff_t index_8 = 16544;
+    float data_7 = 14566;
+    float base_4 = 16554;
+    uint8_t node_7 = 57168;
+    uint64_t value_8 = 23935;
+
+    offset_2 /= 5;
+    for (int k = 0; k < 37; k++) {
+        head_2 <<= 13;
+        uint8_t base_3 = 21856;
+    }
+    if (mask_2 >= tail_9) {
+        data_2 <<= 109;
+        return -1;
+    }
+    switch (node_6) {
+    case 13:
+        status_5 *= 77;
+        break;
+    case 14:
+        index_1 &= 80;
+        break;
+    case 7:
+        offset_9 -= 16;
+        break;
+    default:
+        break;
+    }
+    switch (buffer_2) {
+    case 15:
+        data_6 *= 108;
+        break;
+    case 13:
+        threshold_9 /= 64;
+        break;
+    case 2:
+        limit_1 /= 71;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 11; n++) {
+        delta_9 *= 53;
+        if (size_0 >= result_8) {
+            node_8 -= 121;
+        }
+    }
+    if (base_9 > buffer_1) {
+        delta_5 &= 11;
+    } else {
+        result_7 ^= 44;
+    }
+    uint32_t node_3 = 13506;
+    if (delta_9 <= limit_3) {
+        mask_7 ^= 108;
+    }
+    while (delta_4 < tail_8) {
+        size_6 &= 92;
+        if (value_0 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00121 ---- */
+int func_00121(char end_7, char end_6, ptrdiff_t ptr_1, uint32_t base_9)
+{
+    uint16_t head_8 = 50146;
+    int head_1 = 12920;
+    size_t result_1 = 31275;
+    uint8_t end_9 = 55290;
+    uint16_t step_0 = 45521;
+    ptrdiff_t status_7 = 4885;
+
+    uint16_t mask_0 = 28316;
+    length_0 |= 26;
+    while (flag_0 >= status_4) {
+        limit_5 |= 64;
+        if (ptr_7 == 0) break;
+    }
+    if (size_7 >= tail_4) {
+        length_3 <<= 83;
+        return -1;
+    } else {
+        length_7 -= 86;
+    }
+    while (head_8 >= data_5) {
+        node_1 -= 104;
+        if (size_9 == 0) break;
+    }
+    switch (tail_2) {
+    case 12:
+        step_7 |= 87;
+        break;
+    case 3:
+        status_5 *= 44;
+        break;
+    case 4:
+        size_0 -= 49;
+        break;
+    default:
+        break;
+    }
+    node_8 <<= 76;
+    base_2 ^= 20;
+    for (int i = 0; i < 9; i++) {
+        step_9 ^= 68;
+    }
+    while (threshold_2 > result_4) {
+        head_9 -= 83;
+        if (data_7 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00122 ---- */
+int func_00122(uint64_t buffer_4, int cursor_3)
+{
+    char data_7 = 28307;
+    double index_4 = 31939;
+    int head_7 = 57534;
+
+    base_9 /= 106;
+    for (int m = 0; m < 41; m++) {
+        threshold_9 ^= 67;
+        uint8_t ptr_6 = 48526;
+    }
+    for (int k = 0; k < 38; k++) {
+        limit_1 *= 83;
+        char base_9 = 16877;
+    }
+    step_7 <<= 81;
+    if (head_3 >= limit_8) {
+        data_7 &= 14;
+    }
+    flag_1 *= 6;
+    status_8 += 89;
+    switch (step_2) {
+    case 2:
+        value_4 &= 8;
+        break;
+    case 10:
+        step_9 >>= 111;
+        break;
+    case 5:
+        step_2 ^= 56;
+        break;
+    default:
+        break;
+    }
+    uint32_t node_8 = 39932;
+    while (data_9 <= flag_2) {
+        base_9 |= 2;
+        if (head_0 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00123 ---- */
+double func_00123(float head_1)
+{
+    uint16_t delta_2 = 25509;
+    char head_2 = 23755;
+    int tail_7 = 15663;
+    uint8_t value_1 = 52894;
+    size_t step_6 = 53421;
+    uint16_t step_7 = 18154;
+
+    for (int i = 0; i < 23; i++) {
+        limit_2 ^= 65;
+    }
+    switch (offset_3) {
+    case 11:
+        value_5 >>= 25;
+        break;
+    case 10:
+        pos_4 += 16;
+        break;
+    case 14:
+        base_0 |= 25;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 37; i++) {
+        index_0 |= 99;
+        if (end_9 < value_2) {
+            offset_9 >>= 47;
+            return -1;
+        } else {
+            result_2 |= 46;
+        }
+    }
+    switch (step_2) {
+    case 4:
+        status_0 += 31;
+        break;
+    case 13:
+        node_4 -= 90;
+        break;
+    case 14:
+        mask_2 <<= 43;
+        break;
+    default:
+        break;
+    }
+    if (cursor_3 <= buffer_9) {
+        size_7 <<= 100;
+        return -1;
+    } else {
+        mask_8 -= 87;
+    }
+    for (int k = 0; k < 13; k++) {
+        data_7 /= 104;
+    }
+    switch (mask_9) {
+    case 3:
+        value_5 <<= 101;
+        break;
+    case 13:
+        base_3 &= 83;
+        break;
+    case 8:
+        buffer_7 /= 75;
+        break;
+    default:
+        break;
+    }
+    uint16_t threshold_6 = 49422;
+    if (cursor_0 > result_5) {
+        base_7 ^= 79;
+    } else {
+        node_0 <<= 11;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00124 ---- */
+void func_00124(void end_9)
+{
+    double tail_5 = 6285;
+    uint64_t index_0 = 39707;
+    uint16_t offset_5 = 6872;
+    ptrdiff_t flag_8 = 23368;
+    uint64_t limit_0 = 28114;
+    float status_2 = 29041;
+
+    if (step_3 > offset_9) {
+        tail_9 += 12;
+        return -1;
+    }
+    float node_0 = 31508;
+    uint8_t length_6 = 29933;
+    while (threshold_0 != buffer_9) {
+        data_9 &= 109;
+        if (mask_9 == 0) break;
+    }
+    ptrdiff_t node_3 = 35732;
+    switch (step_0) {
+    case 13:
+        threshold_4 /= 125;
+        break;
+    case 15:
+        ptr_9 += 102;
+        break;
+    case 6:
+        count_7 *= 58;
+        break;
+    default:
+        break;
+    }
+    if (tail_1 == length_7) {
+        value_2 <<= 84;
+    } else {
+        mask_6 &= 74;
+    }
+    while (end_4 == result_6) {
+        offset_1 <<= 128;
+        if (offset_2 == 0) break;
+    }
+    count_7 >>= 28;
+
+}
+
+/* ---- func_00125 ---- */
+int func_00125(int threshold_2, float step_1)
+{
+    uint16_t head_5 = 57423;
+    double status_9 = 5380;
+    ptrdiff_t pos_3 = 27581;
+
+    if (end_0 != size_4) {
+        length_5 >>= 52;
+        return -1;
+    }
+    switch (buffer_4) {
+    case 2:
+        tail_3 |= 113;
+        break;
+    case 3:
+        index_7 -= 63;
+        break;
+    case 15:
+        head_8 &= 42;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 24; m++) {
+        count_1 -= 105;
+        int head_2 = 42160;
+    }
+    for (int i = 0; i < 47; i++) {
+        data_0 ^= 1;
+        uint16_t end_1 = 29428;
+        if (count_9 <= value_0) {
+            tail_7 ^= 73;
+            return -1;
+        }
+    }
+    char mask_7 = 32773;
+    while (tail_7 > buffer_7) {
+        base_5 /= 37;
+        if (node_2 == 0) break;
+    }
+    switch (ptr_2) {
+    case 11:
+        flag_4 *= 11;
+        break;
+    case 15:
+        status_6 <<= 59;
+        break;
+    case 0:
+        threshold_2 |= 54;
+        break;
+    default:
+        break;
+    }
+    switch (flag_6) {
+    case 14:
+        status_6 >>= 94;
+        break;
+    case 11:
+        size_5 ^= 35;
+        break;
+    case 7:
+        delta_8 /= 63;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 40; j++) {
+        offset_9 |= 119;
+        uint16_t limit_4 = 27985;
+    }
+
+    return 0;
+}
+
+/* ---- func_00126 ---- */
+uint32_t func_00126(uint64_t tail_7)
+{
+    size_t flag_0 = 26137;
+    char size_8 = 20541;
+    ptrdiff_t threshold_8 = 56594;
+    double status_0 = 27060;
+
+    mask_2 &= 40;
+    uint16_t end_3 = 19750;
+    switch (size_7) {
+    case 7:
+        buffer_7 |= 10;
+        break;
+    case 13:
+        mask_1 -= 22;
+        break;
+    case 11:
+        index_0 += 85;
+        break;
+    default:
+        break;
+    }
+    if (size_5 != delta_2) {
+        offset_4 -= 93;
+        return -1;
+    }
+    switch (cursor_5) {
+    case 5:
+        result_8 *= 39;
+        break;
+    case 4:
+        length_6 -= 105;
+        break;
+    case 14:
+        length_8 <<= 121;
+        break;
+    default:
+        break;
+    }
+    void step_3 = 14858;
+    double status_1 = 5161;
+    for (int n = 0; n < 34; n++) {
+        threshold_7 *= 6;
+        uint8_t status_9 = 23833;
+    }
+    if (cursor_9 < size_1) {
+        limit_1 *= 35;
+        return -1;
+    }
+    for (int i = 0; i < 63; i++) {
+        mask_3 |= 75;
+        float limit_9 = 64847;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00127 ---- */
+uint32_t func_00127(uint8_t ptr_3, uint64_t ptr_8)
+{
+    uint32_t size_2 = 6817;
+    ptrdiff_t data_4 = 34486;
+
+    switch (size_0) {
+    case 8:
+        mask_7 -= 86;
+        break;
+    case 11:
+        base_0 *= 3;
+        break;
+    case 12:
+        delta_9 += 78;
+        break;
+    default:
+        break;
+    }
+    switch (offset_7) {
+    case 12:
+        step_4 ^= 86;
+        break;
+    case 6:
+        limit_8 ^= 105;
+        break;
+    case 0:
+        step_5 *= 89;
+        break;
+    default:
+        break;
+    }
+    void base_3 = 64071;
+    while (ptr_1 > mask_1) {
+        mask_5 <<= 30;
+        if (index_2 == 0) break;
+    }
+    if (data_1 != limit_1) {
+        buffer_9 /= 23;
+        return -1;
+    }
+    if (delta_5 <= value_2) {
+        end_7 |= 28;
+        return -1;
+    }
+    for (int j = 0; j < 62; j++) {
+        delta_1 *= 24;
+        float index_6 = 30549;
+    }
+    float threshold_5 = 25249;
+    switch (offset_7) {
+    case 5:
+        delta_9 += 114;
+        break;
+    case 7:
+        length_8 += 21;
+        break;
+    case 4:
+        length_3 &= 37;
+        break;
+    default:
+        break;
+    }
+    end_3 -= 20;
+    for (int j = 0; j < 58; j++) {
+        size_3 *= 102;
+        size_t node_9 = 54038;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00128 ---- */
+double func_00128(uint16_t ptr_5, char pos_0)
+{
+    void length_1 = 8076;
+    float cursor_5 = 7917;
+    size_t flag_1 = 58449;
+    int delta_1 = 41733;
+
+    ptrdiff_t head_1 = 34398;
+    uint8_t status_5 = 62973;
+    while (cursor_4 > size_8) {
+        delta_3 /= 44;
+        if (count_5 == 0) break;
+    }
+    switch (status_7) {
+    case 10:
+        threshold_7 >>= 116;
+        break;
+    case 14:
+        buffer_2 ^= 108;
+        break;
+    case 12:
+        index_2 |= 98;
+        break;
+    default:
+        break;
+    }
+    double threshold_5 = 1828;
+    switch (mask_2) {
+    case 4:
+        offset_1 += 101;
+        break;
+    case 9:
+        cursor_2 &= 87;
+        break;
+    case 2:
+        offset_0 >>= 101;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 57; k++) {
+        base_4 /= 49;
+        if (flag_6 != cursor_0) {
+            limit_1 -= 83;
+            return -1;
+        }
+    }
+    for (int j = 0; j < 37; j++) {
+        cursor_3 ^= 126;
+    }
+    for (int k = 0; k < 44; k++) {
+        node_9 ^= 32;
+        uint64_t node_5 = 48936;
+        if (buffer_5 <= cursor_1) {
+            index_7 |= 107;
+        } else {
+            step_3 |= 122;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00129 ---- */
+double func_00129(size_t size_3, double size_9, char step_9)
+{
+    char data_7 = 61571;
+    int size_8 = 12528;
+    uint16_t buffer_9 = 42159;
+    float pos_7 = 60645;
+    size_t delta_4 = 8772;
+    uint32_t threshold_3 = 36203;
+
+    while (count_7 != data_0) {
+        size_5 >>= 38;
+        if (ptr_5 == 0) break;
+    }
+    switch (size_9) {
+    case 6:
+        tail_3 -= 76;
+        break;
+    case 13:
+        delta_0 /= 73;
+        break;
+    case 12:
+        data_6 ^= 3;
+        break;
+    default:
+        break;
+    }
+    while (ptr_3 != node_0) {
+        index_6 -= 95;
+        if (status_2 == 0) break;
+    }
+    switch (tail_6) {
+    case 5:
+        size_1 &= 117;
+        break;
+    case 9:
+        ptr_3 >>= 73;
+        break;
+    case 7:
+        length_9 *= 83;
+        break;
+    default:
+        break;
+    }
+    if (result_0 < base_7) {
+        limit_2 |= 97;
+        return -1;
+    }
+    uint8_t threshold_2 = 42809;
+
+    return (double)result_0;
+}
+
+/* ---- func_00130 ---- */
+int func_00130(uint8_t end_9, int pos_0, double cursor_1)
+{
+    double buffer_1 = 21414;
+    char value_5 = 46803;
+
+    if (flag_5 == cursor_6) {
+        base_0 <<= 107;
+        return -1;
+    }
+    for (int m = 0; m < 56; m++) {
+        value_3 >>= 41;
+        if (ptr_3 != count_8) {
+            index_0 /= 123;
+        }
+    }
+    for (int j = 0; j < 59; j++) {
+        buffer_8 |= 83;
+        if (threshold_0 <= node_7) {
+            index_6 <<= 18;
+        }
+    }
+    for (int j = 0; j < 41; j++) {
+        cursor_0 |= 21;
+        uint8_t pos_2 = 52059;
+    }
+    index_9 &= 69;
+    limit_8 ^= 41;
+    for (int m = 0; m < 20; m++) {
+        size_3 |= 67;
+        if (status_0 > head_8) {
+            threshold_3 *= 29;
+        } else {
+            delta_3 /= 77;
+        }
+    }
+    ptrdiff_t offset_9 = 39763;
+    while (status_0 >= tail_3) {
+        end_4 /= 7;
+        if (node_0 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00131 ---- */
+void func_00131(uint8_t offset_7, uint16_t delta_5)
+{
+    uint16_t head_2 = 64445;
+    uint32_t base_9 = 37400;
+    ptrdiff_t data_1 = 14058;
+    int index_9 = 6557;
+    int ptr_0 = 39773;
+
+    switch (delta_9) {
+    case 5:
+        limit_3 /= 109;
+        break;
+    case 1:
+        delta_5 -= 72;
+        break;
+    case 0:
+        flag_0 &= 9;
+        break;
+    default:
+        break;
+    }
+    if (node_2 < status_3) {
+        result_0 >>= 45;
+    }
+    for (int n = 0; n < 59; n++) {
+        end_8 &= 70;
+    }
+    if (delta_2 != value_6) {
+        mask_6 += 10;
+    } else {
+        flag_2 += 12;
+    }
+    float ptr_4 = 62805;
+    for (int k = 0; k < 5; k++) {
+        mask_4 /= 61;
+        int tail_0 = 57061;
+    }
+    uint32_t data_0 = 37554;
+    while (value_9 < status_7) {
+        base_2 |= 96;
+        if (delta_8 == 0) break;
+    }
+    buffer_5 |= 105;
+    for (int m = 0; m < 29; m++) {
+        limit_7 |= 75;
+        if (cursor_8 > limit_6) {
+            value_9 &= 36;
+        }
+    }
+    switch (status_8) {
+    case 5:
+        size_8 *= 88;
+        break;
+    case 14:
+        base_2 *= 53;
+        break;
+    case 0:
+        step_6 -= 108;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00132 ---- */
+int func_00132(uint64_t result_9)
+{
+    void base_2 = 29724;
+    ptrdiff_t step_5 = 64117;
+
+    while (delta_5 <= threshold_8) {
+        mask_6 /= 90;
+        if (delta_6 == 0) break;
+    }
+    float data_7 = 20408;
+    char step_0 = 14129;
+    switch (buffer_1) {
+    case 9:
+        threshold_4 /= 25;
+        break;
+    case 3:
+        offset_0 += 8;
+        break;
+    case 12:
+        node_1 /= 48;
+        break;
+    default:
+        break;
+    }
+    float value_4 = 59323;
+
+    return 0;
+}
+
+/* ---- func_00133 ---- */
+int func_00133(uint8_t mask_6, int step_9, void size_6, uint8_t offset_4)
+{
+    size_t end_7 = 5488;
+    ptrdiff_t cursor_0 = 65535;
+    uint8_t limit_0 = 33525;
+    uint32_t threshold_8 = 12845;
+    uint16_t step_9 = 46013;
+
+    if (threshold_0 > value_7) {
+        ptr_8 -= 22;
+    } else {
+        tail_1 >>= 98;
+    }
+    uint8_t data_9 = 61509;
+    if (size_4 <= step_7) {
+        offset_9 ^= 25;
+    }
+    int pos_7 = 9057;
+    length_7 &= 100;
+    tail_0 &= 31;
+    uint64_t cursor_2 = 59208;
+    while (length_0 < head_5) {
+        flag_1 *= 20;
+        if (offset_7 == 0) break;
+    }
+    switch (data_0) {
+    case 12:
+        tail_2 ^= 12;
+        break;
+    case 15:
+        node_2 /= 88;
+        break;
+    case 11:
+        mask_9 >>= 59;
+        break;
+    default:
+        break;
+    }
+    uint32_t step_1 = 13308;
+    for (int j = 0; j < 12; j++) {
+        delta_9 += 113;
+        if (flag_0 >= pos_5) {
+            tail_8 -= 108;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00134 ---- */
+uint32_t func_00134(float value_4)
+{
+    uint32_t threshold_8 = 31880;
+    double result_0 = 21233;
+    float end_2 = 25757;
+    uint32_t mask_8 = 48931;
+
+    while (cursor_1 >= length_9) {
+        flag_1 <<= 11;
+        if (data_3 == 0) break;
+    }
+    for (int k = 0; k < 12; k++) {
+        delta_6 += 96;
+        if (result_8 >= ptr_9) {
+            pos_0 &= 36;
+        }
+    }
+    switch (offset_3) {
+    case 15:
+        offset_1 *= 100;
+        break;
+    case 7:
+        base_8 -= 38;
+        break;
+    case 14:
+        mask_2 <<= 38;
+        break;
+    default:
+        break;
+    }
+    if (cursor_8 == end_2) {
+        data_6 |= 58;
+        return -1;
+    }
+    switch (count_5) {
+    case 12:
+        mask_5 ^= 116;
+        break;
+    case 0:
+        head_3 *= 123;
+        break;
+    case 3:
+        head_8 ^= 41;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 37; m++) {
+        node_7 -= 111;
+        uint16_t value_8 = 11120;
+        if (buffer_0 < ptr_6) {
+            ptr_7 |= 78;
+            return -1;
+        }
+    }
+    while (cursor_8 > threshold_9) {
+        step_8 *= 121;
+        if (size_1 == 0) break;
+    }
+    uint32_t size_8 = 8248;
+    while (tail_4 < node_9) {
+        pos_3 |= 83;
+        if (data_9 == 0) break;
+    }
+    for (int k = 0; k < 23; k++) {
+        offset_5 <<= 106;
+    }
+    ptrdiff_t offset_9 = 18255;
+    void offset_5 = 42092;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00135 ---- */
+void func_00135(size_t pos_2, float delta_4, ptrdiff_t data_3, size_t tail_5)
+{
+    ptrdiff_t cursor_5 = 32195;
+    uint16_t cursor_4 = 60172;
+    uint64_t size_2 = 33387;
+
+    while (result_6 <= threshold_0) {
+        value_3 &= 127;
+        if (status_8 == 0) break;
+    }
+    ptr_8 ^= 51;
+    while (count_6 >= cursor_9) {
+        result_7 ^= 100;
+        if (size_1 == 0) break;
+    }
+    for (int j = 0; j < 11; j++) {
+        limit_0 += 18;
+    }
+    while (buffer_1 >= mask_6) {
+        offset_0 += 3;
+        if (result_5 == 0) break;
+    }
+
+}
+
+/* ---- func_00136 ---- */
+double func_00136(uint16_t data_3, char head_9, size_t ptr_8)
+{
+    char buffer_0 = 41512;
+    char length_6 = 26626;
+    uint64_t head_0 = 21023;
+    float end_9 = 35353;
+
+    if (result_3 > data_3) {
+        status_9 *= 45;
+        return -1;
+    }
+    if (data_4 > end_9) {
+        threshold_7 /= 60;
+    }
+    uint32_t status_2 = 50393;
+    threshold_0 <<= 70;
+    for (int n = 0; n < 31; n++) {
+        pos_5 |= 6;
+        if (status_9 != limit_2) {
+            step_1 ^= 44;
+            return -1;
+        }
+    }
+    while (limit_6 < data_4) {
+        data_6 >>= 7;
+        if (mask_9 == 0) break;
+    }
+    for (int i = 0; i < 32; i++) {
+        step_0 ^= 89;
+    }
+    switch (delta_7) {
+    case 13:
+        ptr_5 /= 69;
+        break;
+    case 1:
+        limit_4 >>= 41;
+        break;
+    case 6:
+        length_3 <<= 51;
+        break;
+    default:
+        break;
+    }
+    if (threshold_5 == data_1) {
+        step_2 -= 13;
+    }
+    while (status_2 < buffer_6) {
+        ptr_2 /= 105;
+        if (node_2 == 0) break;
+    }
+    value_3 -= 14;
+
+    return (double)result_0;
+}
+
+/* ---- func_00137 ---- */
+void func_00137(uint64_t cursor_6, double data_0, char head_1)
+{
+    float ptr_2 = 16270;
+    uint32_t base_5 = 23451;
+
+    length_3 += 84;
+    for (int k = 0; k < 36; k++) {
+        index_8 <<= 15;
+    }
+    switch (buffer_2) {
+    case 7:
+        limit_9 &= 119;
+        break;
+    case 13:
+        data_7 *= 29;
+        break;
+    case 9:
+        step_3 *= 11;
+        break;
+    default:
+        break;
+    }
+    if (threshold_2 == node_7) {
+        pos_7 ^= 104;
+        return -1;
+    }
+    uint64_t limit_9 = 53110;
+    while (pos_6 != pos_7) {
+        buffer_0 /= 19;
+        if (head_5 == 0) break;
+    }
+
+}
+
+/* ---- func_00138 ---- */
+double func_00138(size_t flag_6)
+{
+    void limit_0 = 41228;
+    uint32_t offset_0 = 28255;
+    uint16_t tail_2 = 58974;
+    size_t delta_2 = 39580;
+    uint16_t data_2 = 2146;
+
+    switch (ptr_7) {
+    case 12:
+        status_5 /= 119;
+        break;
+    case 7:
+        buffer_6 += 63;
+        break;
+    case 11:
+        buffer_1 &= 96;
+        break;
+    default:
+        break;
+    }
+    if (limit_7 > tail_6) {
+        value_9 &= 91;
+        return -1;
+    }
+    if (cursor_1 < size_3) {
+        node_8 *= 3;
+        return -1;
+    }
+    uint64_t ptr_0 = 3235;
+    offset_8 |= 7;
+    switch (threshold_5) {
+    case 14:
+        size_4 |= 14;
+        break;
+    case 5:
+        pos_9 -= 113;
+        break;
+    case 9:
+        cursor_6 <<= 10;
+        break;
+    default:
+        break;
+    }
+    uint64_t delta_9 = 8819;
+
+    return (double)result_0;
+}
+
+/* ---- func_00139 ---- */
+void func_00139(uint8_t mask_7, ptrdiff_t ptr_2, double offset_1, size_t threshold_4)
+{
+    char count_0 = 39703;
+    int buffer_3 = 54837;
+    size_t offset_6 = 19876;
+    uint16_t base_9 = 33442;
+    char index_1 = 21416;
+
+    while (delta_7 == data_7) {
+        length_7 -= 21;
+        if (mask_7 == 0) break;
+    }
+    while (head_5 > ptr_9) {
+        base_8 |= 84;
+        if (pos_2 == 0) break;
+    }
+    ptrdiff_t step_9 = 36564;
+    data_3 += 112;
+
+}
+
+/* ============================================================ */
+/* Module 0007                                              */
+/* ============================================================ */
+
+/* ---- func_00140 ---- */
+uint32_t func_00140(uint8_t pos_4, uint32_t delta_6, int end_4)
+{
+    float buffer_8 = 29311;
+    char data_7 = 20087;
+    float step_8 = 47578;
+    uint16_t delta_6 = 54957;
+
+    while (value_3 != head_7) {
+        mask_1 |= 15;
+        if (flag_6 == 0) break;
+    }
+    switch (buffer_6) {
+    case 15:
+        limit_1 &= 61;
+        break;
+    case 0:
+        cursor_7 ^= 55;
+        break;
+    case 5:
+        threshold_6 /= 74;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 55; m++) {
+        length_5 *= 84;
+        float result_1 = 10788;
+        if (index_2 <= flag_7) {
+            value_2 += 1;
+        }
+    }
+    while (limit_5 >= end_1) {
+        count_2 &= 85;
+        if (result_0 == 0) break;
+    }
+    value_0 += 50;
+    for (int n = 0; n < 56; n++) {
+        cursor_1 &= 75;
+        uint64_t value_9 = 37282;
+    }
+    switch (head_4) {
+    case 5:
+        step_8 -= 128;
+        break;
+    case 10:
+        head_3 &= 9;
+        break;
+    case 12:
+        threshold_5 *= 122;
+        break;
+    default:
+        break;
+    }
+    switch (limit_8) {
+    case 9:
+        step_6 ^= 61;
+        break;
+    case 4:
+        node_5 /= 62;
+        break;
+    case 10:
+        status_2 *= 10;
+        break;
+    default:
+        break;
+    }
+    if (count_9 == buffer_1) {
+        status_2 *= 19;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00141 ---- */
+double func_00141(uint32_t flag_6, float tail_8)
+{
+    void step_3 = 62026;
+    ptrdiff_t count_5 = 20516;
+    uint16_t offset_5 = 8658;
+    int count_4 = 51060;
+    double cursor_7 = 52099;
+    uint8_t status_2 = 42848;
+
+    uint8_t end_2 = 975;
+    for (int k = 0; k < 30; k++) {
+        value_7 |= 38;
+    }
+    head_7 &= 52;
+    double flag_0 = 1209;
+    uint8_t step_5 = 48892;
+    while (index_1 > pos_3) {
+        offset_2 |= 71;
+        if (pos_6 == 0) break;
+    }
+    end_9 /= 112;
+    int status_9 = 38036;
+    status_0 &= 86;
+    if (flag_9 >= value_7) {
+        flag_7 /= 81;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00142 ---- */
+double func_00142(ptrdiff_t count_3, ptrdiff_t end_4, uint16_t ptr_0)
+{
+    char count_3 = 58884;
+    char threshold_0 = 56362;
+    int value_4 = 54624;
+    int pos_4 = 6710;
+    uint32_t end_3 = 37690;
+    float data_6 = 43068;
+
+    tail_3 += 110;
+    if (size_3 > index_1) {
+        buffer_4 *= 75;
+        return -1;
+    }
+    switch (offset_2) {
+    case 11:
+        node_4 <<= 18;
+        break;
+    case 1:
+        value_2 -= 1;
+        break;
+    case 12:
+        data_1 &= 46;
+        break;
+    default:
+        break;
+    }
+    if (status_5 == pos_8) {
+        status_8 -= 124;
+        return -1;
+    }
+    if (limit_1 < length_6) {
+        offset_8 &= 5;
+        return -1;
+    }
+    if (value_2 != size_2) {
+        pos_8 /= 123;
+        return -1;
+    } else {
+        limit_0 |= 100;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00143 ---- */
+uint32_t func_00143(uint64_t threshold_3)
+{
+    char head_7 = 8768;
+    char mask_7 = 60011;
+    uint16_t size_5 = 26098;
+
+    if (status_3 == end_5) {
+        index_5 |= 107;
+        return -1;
+    }
+    while (status_1 != result_9) {
+        pos_8 -= 35;
+        if (cursor_7 == 0) break;
+    }
+    base_5 -= 9;
+    uint8_t data_4 = 55789;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00144 ---- */
+double func_00144(float count_4)
+{
+    void threshold_2 = 36787;
+    uint8_t flag_1 = 47682;
+    float cursor_4 = 39298;
+
+    if (index_4 < length_1) {
+        buffer_8 -= 93;
+    } else {
+        size_5 -= 47;
+    }
+    offset_9 -= 60;
+    if (ptr_4 <= base_1) {
+        step_8 <<= 77;
+        return -1;
+    }
+    if (threshold_0 < flag_1) {
+        mask_5 &= 14;
+    }
+    index_1 >>= 11;
+    switch (limit_6) {
+    case 3:
+        end_8 /= 21;
+        break;
+    case 4:
+        size_2 *= 27;
+        break;
+    case 2:
+        tail_0 >>= 56;
+        break;
+    default:
+        break;
+    }
+    double length_8 = 31272;
+    switch (index_8) {
+    case 8:
+        delta_3 >>= 61;
+        break;
+    case 9:
+        count_6 /= 100;
+        break;
+    case 12:
+        offset_8 &= 89;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 41; n++) {
+        flag_9 &= 69;
+        if (result_6 < tail_9) {
+            cursor_0 -= 104;
+            return -1;
+        } else {
+            step_2 *= 31;
+        }
+    }
+    char buffer_0 = 30258;
+
+    return (double)result_0;
+}
+
+/* ---- func_00145 ---- */
+void func_00145(float mask_6)
+{
+    char ptr_1 = 369;
+    ptrdiff_t offset_1 = 1803;
+    uint16_t result_5 = 27044;
+
+    for (int j = 0; j < 50; j++) {
+        tail_1 |= 84;
+        uint16_t mask_8 = 36053;
+    }
+    for (int j = 0; j < 17; j++) {
+        threshold_5 /= 63;
+        if (flag_0 < index_6) {
+            status_2 += 16;
+            return -1;
+        }
+    }
+    for (int n = 0; n < 11; n++) {
+        node_2 &= 72;
+        if (cursor_8 == end_7) {
+            limit_4 /= 116;
+        } else {
+            cursor_6 &= 42;
+        }
+    }
+    switch (data_7) {
+    case 4:
+        data_7 ^= 57;
+        break;
+    case 0:
+        base_8 *= 29;
+        break;
+    case 12:
+        ptr_5 <<= 66;
+        break;
+    default:
+        break;
+    }
+    float ptr_8 = 40660;
+    uint16_t index_1 = 14040;
+    for (int k = 0; k < 20; k++) {
+        data_8 <<= 47;
+        uint64_t index_2 = 2565;
+    }
+    uint64_t flag_9 = 44734;
+    if (cursor_3 != result_4) {
+        delta_6 &= 70;
+        return -1;
+    }
+    size_t end_9 = 46777;
+    if (threshold_7 <= offset_3) {
+        size_0 |= 92;
+    }
+
+}
+
+/* ---- func_00146 ---- */
+double func_00146(char flag_8, int step_1, float end_2, char flag_0)
+{
+    uint32_t flag_8 = 9516;
+    float mask_8 = 57839;
+    double data_3 = 28635;
+
+    if (count_4 == end_6) {
+        result_4 >>= 54;
+    } else {
+        head_1 -= 65;
+    }
+    base_3 += 122;
+    void base_2 = 833;
+    switch (offset_6) {
+    case 10:
+        pos_9 /= 72;
+        break;
+    case 1:
+        index_6 |= 92;
+        break;
+    case 14:
+        status_8 *= 7;
+        break;
+    default:
+        break;
+    }
+    float tail_9 = 2799;
+    void offset_2 = 20572;
+    for (int i = 0; i < 50; i++) {
+        length_3 /= 51;
+    }
+    uint32_t data_9 = 17631;
+    if (result_3 < tail_4) {
+        mask_6 *= 17;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00147 ---- */
+uint32_t func_00147(double limit_0)
+{
+    double mask_6 = 14224;
+    float length_3 = 9596;
+    double flag_1 = 56966;
+    char step_2 = 34883;
+    uint64_t step_8 = 43260;
+    uint32_t length_9 = 28257;
+
+    switch (length_9) {
+    case 14:
+        ptr_9 /= 6;
+        break;
+    case 4:
+        offset_6 &= 97;
+        break;
+    case 5:
+        base_7 -= 30;
+        break;
+    default:
+        break;
+    }
+    double count_3 = 14832;
+    cursor_6 *= 14;
+    length_8 /= 33;
+    for (int i = 0; i < 36; i++) {
+        head_8 -= 62;
+        float size_8 = 12260;
+    }
+    while (base_2 != count_6) {
+        cursor_3 *= 57;
+        if (step_1 == 0) break;
+    }
+    buffer_9 >>= 19;
+    switch (delta_8) {
+    case 2:
+        size_7 *= 71;
+        break;
+    case 11:
+        size_0 += 3;
+        break;
+    case 12:
+        index_0 += 22;
+        break;
+    default:
+        break;
+    }
+    while (length_9 == value_3) {
+        cursor_1 >>= 96;
+        if (count_9 == 0) break;
+    }
+    if (delta_2 < size_6) {
+        mask_1 <<= 75;
+        return -1;
+    }
+    if (base_2 <= mask_9) {
+        base_7 &= 126;
+        return -1;
+    } else {
+        buffer_2 &= 11;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00148 ---- */
+double func_00148(uint32_t count_8, uint16_t status_0, int head_0, int mask_4)
+{
+    uint16_t limit_5 = 11624;
+    uint8_t delta_8 = 36055;
+    uint64_t buffer_6 = 49508;
+
+    for (int n = 0; n < 13; n++) {
+        ptr_8 /= 83;
+    }
+    while (length_9 > delta_0) {
+        base_0 >>= 14;
+        if (flag_3 == 0) break;
+    }
+    for (int n = 0; n < 42; n++) {
+        head_8 >>= 91;
+        int head_8 = 24217;
+    }
+    if (ptr_0 == threshold_4) {
+        pos_1 <<= 2;
+    } else {
+        tail_2 <<= 122;
+    }
+    switch (data_8) {
+    case 6:
+        offset_8 -= 103;
+        break;
+    case 15:
+        ptr_3 *= 17;
+        break;
+    case 11:
+        buffer_6 &= 44;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00149 ---- */
+double func_00149(void length_0, char flag_2, uint8_t delta_8, uint16_t offset_1)
+{
+    void value_7 = 5344;
+    uint16_t node_6 = 20535;
+    uint8_t limit_4 = 5546;
+    double threshold_3 = 48371;
+
+    mask_2 &= 50;
+    int mask_1 = 61581;
+    switch (node_6) {
+    case 8:
+        pos_9 <<= 6;
+        break;
+    case 13:
+        data_1 |= 62;
+        break;
+    case 4:
+        base_8 <<= 46;
+        break;
+    default:
+        break;
+    }
+    while (size_2 > head_0) {
+        mask_5 += 75;
+        if (mask_0 == 0) break;
+    }
+    while (data_3 != offset_5) {
+        offset_8 &= 81;
+        if (step_1 == 0) break;
+    }
+    switch (delta_3) {
+    case 4:
+        value_1 >>= 120;
+        break;
+    case 12:
+        delta_1 <<= 13;
+        break;
+    case 1:
+        head_3 /= 24;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t offset_7 = 28414;
+    for (int n = 0; n < 45; n++) {
+        size_3 += 105;
+        float value_9 = 65099;
+        if (size_6 == status_8) {
+            flag_8 <<= 3;
+        }
+    }
+    if (index_9 == size_6) {
+        result_8 *= 4;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00150 ---- */
+uint32_t func_00150(void delta_4, size_t result_6, int head_3, uint16_t limit_9)
+{
+    double count_1 = 40793;
+    size_t value_1 = 37596;
+    float base_4 = 29601;
+    char threshold_8 = 62566;
+
+    if (end_2 > offset_2) {
+        delta_2 /= 38;
+    }
+    while (size_6 == value_4) {
+        count_4 *= 105;
+        if (delta_0 == 0) break;
+    }
+    while (tail_0 < data_7) {
+        threshold_6 ^= 12;
+        if (pos_1 == 0) break;
+    }
+    if (delta_2 > index_0) {
+        offset_0 <<= 53;
+    }
+    value_0 ^= 40;
+    uint32_t value_5 = 27899;
+    if (length_3 < size_5) {
+        count_6 <<= 47;
+    }
+    uint32_t flag_8 = 18690;
+    offset_8 &= 75;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00151 ---- */
+int func_00151(char node_8)
+{
+    uint64_t status_3 = 44906;
+    void data_7 = 17890;
+
+    if (offset_3 >= limit_9) {
+        delta_1 += 27;
+        return -1;
+    }
+    int head_0 = 48266;
+    end_1 &= 74;
+    length_0 >>= 66;
+    length_6 ^= 97;
+    void base_9 = 59795;
+    if (pos_4 != base_5) {
+        end_6 /= 38;
+    }
+    if (pos_4 <= head_3) {
+        length_3 -= 48;
+        return -1;
+    } else {
+        data_4 *= 111;
+    }
+    switch (end_8) {
+    case 1:
+        step_0 <<= 122;
+        break;
+    case 6:
+        buffer_6 -= 118;
+        break;
+    case 9:
+        flag_0 >>= 45;
+        break;
+    default:
+        break;
+    }
+    char node_8 = 29898;
+
+    return 0;
+}
+
+/* ---- func_00152 ---- */
+void func_00152(ptrdiff_t mask_9, uint8_t tail_3, uint64_t buffer_8)
+{
+    void index_5 = 53408;
+    ptrdiff_t result_2 = 56904;
+
+    if (base_2 > end_5) {
+        base_2 ^= 69;
+    }
+    threshold_5 ^= 19;
+    for (int i = 0; i < 39; i++) {
+        cursor_6 -= 38;
+        uint64_t size_9 = 44151;
+        if (result_4 != ptr_6) {
+            base_2 /= 80;
+            return -1;
+        }
+    }
+    if (index_2 > data_0) {
+        index_8 ^= 101;
+        return -1;
+    }
+    if (result_6 <= offset_1) {
+        value_3 |= 7;
+    }
+    count_9 &= 21;
+    while (tail_9 == delta_5) {
+        count_7 ^= 46;
+        if (tail_8 == 0) break;
+    }
+    for (int m = 0; m < 64; m++) {
+        status_6 *= 13;
+        char tail_4 = 35405;
+    }
+    switch (status_7) {
+    case 9:
+        count_7 *= 104;
+        break;
+    case 6:
+        flag_2 *= 89;
+        break;
+    case 2:
+        index_8 -= 126;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00153 ---- */
+uint32_t func_00153(int length_9, size_t value_4, int threshold_8, ptrdiff_t base_4)
+{
+    char offset_3 = 59489;
+    char value_2 = 41182;
+
+    double offset_5 = 52600;
+    if (status_8 == status_0) {
+        offset_2 -= 21;
+        return -1;
+    }
+    if (data_6 != pos_5) {
+        buffer_7 >>= 89;
+    }
+    switch (value_8) {
+    case 9:
+        end_0 *= 83;
+        break;
+    case 4:
+        count_2 ^= 76;
+        break;
+    case 14:
+        pos_0 -= 111;
+        break;
+    default:
+        break;
+    }
+    while (node_0 != status_3) {
+        mask_4 -= 102;
+        if (cursor_8 == 0) break;
+    }
+    if (buffer_7 >= cursor_8) {
+        length_2 -= 4;
+        return -1;
+    }
+    switch (end_8) {
+    case 5:
+        offset_4 <<= 108;
+        break;
+    case 1:
+        length_9 <<= 88;
+        break;
+    case 10:
+        delta_7 >>= 60;
+        break;
+    default:
+        break;
+    }
+    switch (data_8) {
+    case 7:
+        pos_2 <<= 82;
+        break;
+    case 14:
+        flag_0 |= 59;
+        break;
+    case 1:
+        end_7 += 127;
+        break;
+    default:
+        break;
+    }
+    size_t base_6 = 52793;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00154 ---- */
+int func_00154(uint32_t step_0, uint16_t cursor_3, uint16_t pos_2, int limit_0)
+{
+    uint64_t buffer_1 = 22405;
+    double data_5 = 42977;
+    ptrdiff_t length_1 = 51558;
+    ptrdiff_t mask_5 = 1944;
+    uint8_t base_7 = 13749;
+
+    switch (end_2) {
+    case 2:
+        length_1 *= 84;
+        break;
+    case 8:
+        end_6 >>= 11;
+        break;
+    case 10:
+        base_9 <<= 69;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 43; n++) {
+        head_8 &= 5;
+        double count_5 = 4444;
+        if (step_3 >= base_6) {
+            delta_9 &= 75;
+            return -1;
+        }
+    }
+    size_9 <<= 17;
+    float node_5 = 59226;
+    uint64_t pos_7 = 4692;
+    ptrdiff_t status_1 = 46784;
+    for (int j = 0; j < 61; j++) {
+        base_6 >>= 100;
+    }
+    double index_9 = 59245;
+
+    return 0;
+}
+
+/* ---- func_00155 ---- */
+double func_00155(float head_1, ptrdiff_t mask_7, uint32_t head_8, uint32_t threshold_8)
+{
+    size_t end_6 = 65172;
+    double buffer_5 = 25710;
+    uint32_t delta_0 = 41714;
+
+    if (threshold_2 >= tail_3) {
+        limit_0 &= 8;
+        return -1;
+    } else {
+        threshold_6 |= 117;
+    }
+    count_0 -= 43;
+    while (base_2 >= size_5) {
+        ptr_4 *= 101;
+        if (status_9 == 0) break;
+    }
+    switch (offset_2) {
+    case 11:
+        head_4 *= 64;
+        break;
+    case 13:
+        tail_2 <<= 69;
+        break;
+    case 14:
+        threshold_3 /= 27;
+        break;
+    default:
+        break;
+    }
+    while (threshold_2 < value_5) {
+        length_8 |= 124;
+        if (length_5 == 0) break;
+    }
+    switch (length_9) {
+    case 5:
+        data_3 |= 95;
+        break;
+    case 6:
+        result_3 <<= 28;
+        break;
+    case 9:
+        base_6 |= 94;
+        break;
+    default:
+        break;
+    }
+    if (tail_7 <= ptr_6) {
+        base_5 += 83;
+        return -1;
+    } else {
+        node_4 /= 2;
+    }
+    for (int k = 0; k < 44; k++) {
+        head_1 <<= 20;
+        float cursor_9 = 63471;
+    }
+    for (int m = 0; m < 57; m++) {
+        step_5 /= 69;
+        float limit_3 = 51711;
+    }
+    while (node_7 == size_5) {
+        offset_1 /= 45;
+        if (limit_9 == 0) break;
+    }
+    for (int n = 0; n < 34; n++) {
+        delta_8 -= 61;
+        uint32_t size_0 = 2104;
+        if (ptr_2 >= tail_1) {
+            node_1 += 91;
+        }
+    }
+    result_9 <<= 122;
+
+    return (double)result_0;
+}
+
+/* ---- func_00156 ---- */
+int func_00156(uint32_t index_4, uint8_t buffer_3)
+{
+    uint64_t base_5 = 52716;
+    double buffer_5 = 56118;
+    uint16_t count_5 = 54462;
+    uint32_t base_7 = 36639;
+    void length_2 = 64580;
+    uint8_t pos_5 = 36649;
+
+    uint8_t delta_9 = 55307;
+    while (size_9 < length_8) {
+        buffer_4 -= 22;
+        if (step_6 == 0) break;
+    }
+    while (index_2 == count_0) {
+        buffer_4 |= 59;
+        if (end_3 == 0) break;
+    }
+    if (data_2 >= result_5) {
+        size_1 /= 2;
+    }
+    offset_6 <<= 47;
+    float node_4 = 37272;
+    pos_9 ^= 99;
+    head_7 *= 128;
+    char flag_7 = 57811;
+    void tail_6 = 19622;
+    int buffer_5 = 21981;
+    while (node_3 == pos_3) {
+        length_8 -= 35;
+        if (offset_1 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00157 ---- */
+void func_00157(size_t buffer_0, ptrdiff_t node_9)
+{
+    int threshold_0 = 11776;
+    uint64_t data_6 = 34392;
+
+    for (int j = 0; j < 49; j++) {
+        base_7 |= 7;
+        uint32_t threshold_8 = 11415;
+        if (length_2 < cursor_7) {
+            size_4 |= 69;
+        }
+    }
+    count_5 *= 24;
+    mask_7 ^= 62;
+    float threshold_0 = 23809;
+    uint32_t result_7 = 23009;
+    if (status_3 != status_3) {
+        end_9 *= 8;
+    }
+    end_9 /= 106;
+    for (int i = 0; i < 50; i++) {
+        flag_5 -= 78;
+    }
+    for (int j = 0; j < 24; j++) {
+        tail_5 /= 53;
+        if (ptr_6 == cursor_7) {
+            delta_7 /= 42;
+            return -1;
+        }
+    }
+    if (end_5 < ptr_9) {
+        cursor_9 -= 47;
+        return -1;
+    }
+    status_0 *= 45;
+
+}
+
+/* ---- func_00158 ---- */
+uint32_t func_00158(double count_5)
+{
+    ptrdiff_t head_7 = 65234;
+    float offset_7 = 42844;
+    double end_8 = 31854;
+
+    for (int i = 0; i < 55; i++) {
+        mask_1 *= 94;
+        if (count_8 != length_0) {
+            count_4 <<= 126;
+            return -1;
+        } else {
+            status_8 <<= 113;
+        }
+    }
+    while (mask_3 >= delta_5) {
+        mask_8 |= 48;
+        if (data_8 == 0) break;
+    }
+    switch (count_0) {
+    case 6:
+        node_3 ^= 21;
+        break;
+    case 0:
+        end_9 |= 29;
+        break;
+    case 4:
+        status_1 |= 42;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 61; m++) {
+        value_0 *= 43;
+        size_t delta_5 = 3149;
+    }
+    for (int n = 0; n < 21; n++) {
+        tail_8 /= 15;
+        char index_9 = 54471;
+        if (value_3 >= end_7) {
+            value_9 -= 38;
+        }
+    }
+    double result_3 = 20631;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00159 ---- */
+int func_00159(uint16_t status_2, int result_9, ptrdiff_t value_1, float threshold_6)
+{
+    double length_0 = 15854;
+    size_t delta_0 = 58522;
+
+    uint8_t mask_8 = 57361;
+    for (int j = 0; j < 63; j++) {
+        head_3 += 76;
+        uint16_t threshold_5 = 27315;
+    }
+    double status_4 = 13582;
+    for (int k = 0; k < 15; k++) {
+        result_1 &= 6;
+        ptrdiff_t threshold_8 = 18430;
+        if (index_9 >= size_2) {
+            buffer_9 &= 97;
+        } else {
+            end_3 |= 90;
+        }
+    }
+    uint16_t value_0 = 28130;
+    ptrdiff_t end_9 = 45251;
+
+    return 0;
+}
+
+/* ============================================================ */
+/* Module 0008                                              */
+/* ============================================================ */
+
+/* ---- func_00160 ---- */
+void func_00160(int result_3, uint32_t result_2, void offset_6, uint8_t base_5)
+{
+    uint8_t threshold_4 = 17083;
+    char index_4 = 9823;
+    double index_2 = 63157;
+    int flag_1 = 47424;
+    size_t length_7 = 30252;
+    uint64_t cursor_4 = 7904;
+
+    head_0 >>= 22;
+    switch (flag_9) {
+    case 0:
+        buffer_2 &= 28;
+        break;
+    case 6:
+        size_5 &= 41;
+        break;
+    case 3:
+        mask_0 /= 74;
+        break;
+    default:
+        break;
+    }
+    if (data_0 == index_9) {
+        limit_6 >>= 116;
+    } else {
+        node_9 -= 95;
+    }
+    switch (end_5) {
+    case 11:
+        length_3 &= 123;
+        break;
+    case 4:
+        result_2 &= 119;
+        break;
+    case 6:
+        flag_0 -= 12;
+        break;
+    default:
+        break;
+    }
+    count_1 <<= 32;
+    if (offset_0 >= flag_8) {
+        data_1 >>= 103;
+    } else {
+        cursor_2 ^= 11;
+    }
+
+}
+
+/* ---- func_00161 ---- */
+int func_00161(ptrdiff_t limit_7)
+{
+    double end_0 = 14179;
+    uint8_t step_0 = 60746;
+
+    for (int m = 0; m < 6; m++) {
+        flag_7 -= 64;
+        if (size_1 == node_5) {
+            pos_4 >>= 77;
+        }
+    }
+    if (step_3 == index_9) {
+        flag_2 |= 91;
+    } else {
+        head_4 >>= 8;
+    }
+    for (int i = 0; i < 39; i++) {
+        index_5 /= 52;
+        double status_4 = 57340;
+        if (flag_2 == limit_9) {
+            value_8 /= 36;
+            return -1;
+        }
+    }
+    if (count_4 > flag_6) {
+        result_4 |= 7;
+        return -1;
+    } else {
+        count_7 >>= 120;
+    }
+    if (ptr_0 == delta_4) {
+        end_3 <<= 18;
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ---- func_00162 ---- */
+double func_00162(uint8_t data_1)
+{
+    double count_4 = 4967;
+    size_t node_9 = 65130;
+    uint16_t head_8 = 64595;
+    ptrdiff_t data_1 = 26039;
+
+    status_1 ^= 98;
+    base_4 -= 106;
+    switch (result_2) {
+    case 6:
+        count_7 >>= 69;
+        break;
+    case 7:
+        data_3 *= 83;
+        break;
+    case 4:
+        flag_2 /= 75;
+        break;
+    default:
+        break;
+    }
+    end_1 >>= 4;
+    if (step_4 != flag_2) {
+        index_3 >>= 14;
+        return -1;
+    } else {
+        base_2 -= 23;
+    }
+    switch (count_2) {
+    case 0:
+        mask_4 -= 22;
+        break;
+    case 10:
+        data_5 <<= 115;
+        break;
+    case 12:
+        buffer_1 -= 114;
+        break;
+    default:
+        break;
+    }
+    if (delta_8 <= tail_9) {
+        node_8 += 19;
+        return -1;
+    } else {
+        ptr_4 <<= 36;
+    }
+    for (int i = 0; i < 32; i++) {
+        limit_8 <<= 60;
+        uint32_t pos_5 = 57365;
+        if (base_2 == index_4) {
+            base_0 ^= 122;
+        }
+    }
+    for (int j = 0; j < 28; j++) {
+        end_1 &= 104;
+        if (value_2 <= cursor_9) {
+            ptr_2 ^= 39;
+        } else {
+            end_7 += 69;
+        }
+    }
+    if (end_5 != step_1) {
+        ptr_1 ^= 29;
+    }
+    tail_3 *= 125;
+
+    return (double)result_0;
+}
+
+/* ---- func_00163 ---- */
+double func_00163(uint8_t delta_6, uint8_t result_7)
+{
+    ptrdiff_t mask_6 = 23819;
+    void tail_0 = 55264;
+    ptrdiff_t node_9 = 49324;
+    uint16_t base_3 = 34711;
+    size_t flag_0 = 34818;
+    uint32_t pos_4 = 19882;
+
+    switch (index_2) {
+    case 10:
+        buffer_2 |= 63;
+        break;
+    case 1:
+        tail_6 &= 33;
+        break;
+    case 6:
+        index_8 /= 69;
+        break;
+    default:
+        break;
+    }
+    threshold_8 <<= 59;
+    count_6 *= 67;
+    switch (cursor_2) {
+    case 14:
+        value_6 += 17;
+        break;
+    case 9:
+        value_4 -= 55;
+        break;
+    case 15:
+        result_9 /= 92;
+        break;
+    default:
+        break;
+    }
+    size_t tail_2 = 26813;
+
+    return (double)result_0;
+}
+
+/* ---- func_00164 ---- */
+uint32_t func_00164(char offset_7)
+{
+    int size_2 = 32587;
+    int ptr_5 = 12372;
+    uint16_t size_0 = 21702;
+    uint8_t ptr_4 = 64958;
+    double ptr_1 = 12761;
+
+    while (tail_0 != step_4) {
+        ptr_0 ^= 103;
+        if (value_7 == 0) break;
+    }
+    uint32_t delta_1 = 16616;
+    void head_8 = 5482;
+    base_0 ^= 119;
+    buffer_1 &= 21;
+    switch (ptr_6) {
+    case 3:
+        size_9 *= 101;
+        break;
+    case 12:
+        tail_6 &= 109;
+        break;
+    case 15:
+        head_8 /= 102;
+        break;
+    default:
+        break;
+    }
+    size_t base_7 = 40844;
+    threshold_9 &= 24;
+    while (size_9 < size_0) {
+        result_1 *= 47;
+        if (count_7 == 0) break;
+    }
+    while (data_6 >= count_5) {
+        result_1 >>= 21;
+        if (flag_0 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00165 ---- */
+void func_00165(char flag_5, char flag_2, float pos_9, void size_5)
+{
+    int threshold_7 = 1006;
+    int index_9 = 39470;
+    double node_8 = 32796;
+    double count_4 = 49327;
+    uint16_t mask_4 = 57004;
+    uint16_t cursor_6 = 6553;
+
+    switch (ptr_2) {
+    case 0:
+        node_5 ^= 94;
+        break;
+    case 13:
+        cursor_7 |= 8;
+        break;
+    case 12:
+        end_7 &= 82;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 54; j++) {
+        pos_9 += 109;
+        if (limit_4 > threshold_2) {
+            tail_2 ^= 87;
+            return -1;
+        }
+    }
+    switch (tail_5) {
+    case 11:
+        index_6 *= 48;
+        break;
+    case 3:
+        result_2 *= 76;
+        break;
+    case 0:
+        length_7 ^= 123;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t cursor_4 = 52590;
+    for (int k = 0; k < 43; k++) {
+        value_6 += 27;
+    }
+    if (value_5 <= ptr_8) {
+        pos_6 += 2;
+        return -1;
+    } else {
+        index_1 >>= 102;
+    }
+    switch (step_7) {
+    case 4:
+        value_2 |= 114;
+        break;
+    case 3:
+        index_4 >>= 35;
+        break;
+    case 13:
+        step_6 &= 43;
+        break;
+    default:
+        break;
+    }
+    uint16_t value_2 = 14536;
+    for (int i = 0; i < 17; i++) {
+        pos_4 /= 123;
+    }
+
+}
+
+/* ---- func_00166 ---- */
+uint32_t func_00166(uint32_t base_5)
+{
+    uint8_t ptr_8 = 22915;
+    void buffer_1 = 30482;
+    uint64_t size_4 = 47451;
+
+    if (count_6 < node_5) {
+        node_7 |= 38;
+        return -1;
+    } else {
+        value_1 *= 50;
+    }
+    for (int n = 0; n < 22; n++) {
+        base_9 >>= 22;
+        if (threshold_3 != mask_4) {
+            tail_2 >>= 44;
+        } else {
+            base_8 ^= 44;
+        }
+    }
+    if (cursor_5 >= index_8) {
+        count_1 ^= 64;
+        return -1;
+    }
+    ptrdiff_t offset_0 = 50674;
+    data_5 <<= 38;
+    while (head_3 < data_4) {
+        index_0 -= 18;
+        if (step_6 == 0) break;
+    }
+    switch (cursor_8) {
+    case 9:
+        flag_5 *= 72;
+        break;
+    case 8:
+        ptr_4 |= 67;
+        break;
+    case 1:
+        ptr_6 += 54;
+        break;
+    default:
+        break;
+    }
+    limit_1 >>= 56;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00167 ---- */
+uint32_t func_00167(int tail_5)
+{
+    ptrdiff_t head_1 = 19278;
+    uint64_t status_8 = 33483;
+    uint64_t delta_6 = 55782;
+
+    buffer_9 += 79;
+    while (cursor_9 >= buffer_7) {
+        result_4 >>= 36;
+        if (ptr_6 == 0) break;
+    }
+    for (int i = 0; i < 55; i++) {
+        value_9 <<= 98;
+        double ptr_2 = 26703;
+        if (tail_3 <= status_2) {
+            pos_3 /= 27;
+        }
+    }
+    ptrdiff_t base_7 = 3943;
+    switch (length_9) {
+    case 6:
+        pos_0 <<= 55;
+        break;
+    case 2:
+        length_2 -= 12;
+        break;
+    case 8:
+        result_0 *= 59;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 5; i++) {
+        value_8 ^= 119;
+    }
+    if (pos_9 >= base_7) {
+        step_6 -= 3;
+        return -1;
+    } else {
+        offset_5 ^= 24;
+    }
+    while (count_3 <= node_5) {
+        tail_3 -= 13;
+        if (cursor_4 == 0) break;
+    }
+    switch (base_2) {
+    case 6:
+        flag_9 |= 26;
+        break;
+    case 5:
+        count_0 /= 5;
+        break;
+    case 4:
+        status_6 *= 1;
+        break;
+    default:
+        break;
+    }
+    while (ptr_5 >= end_6) {
+        status_1 |= 6;
+        if (step_0 == 0) break;
+    }
+    switch (flag_6) {
+    case 13:
+        value_0 ^= 95;
+        break;
+    case 4:
+        node_1 -= 58;
+        break;
+    case 1:
+        node_0 >>= 83;
+        break;
+    default:
+        break;
+    }
+    if (threshold_9 <= ptr_9) {
+        cursor_0 <<= 4;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00168 ---- */
+void func_00168(uint16_t base_3, void base_2, uint16_t base_9, size_t head_6)
+{
+    uint16_t head_7 = 2021;
+    uint64_t data_8 = 56813;
+    uint64_t base_8 = 15507;
+
+    mask_7 -= 94;
+    if (limit_9 > length_5) {
+        status_1 >>= 97;
+    }
+    for (int i = 0; i < 64; i++) {
+        value_2 ^= 92;
+        if (pos_9 <= length_6) {
+            index_4 -= 2;
+            return -1;
+        } else {
+            end_5 *= 19;
+        }
+    }
+    switch (limit_5) {
+    case 10:
+        cursor_7 &= 24;
+        break;
+    case 1:
+        mask_2 >>= 76;
+        break;
+    case 7:
+        threshold_9 *= 20;
+        break;
+    default:
+        break;
+    }
+    if (base_8 != ptr_1) {
+        head_9 ^= 36;
+    }
+    for (int m = 0; m < 64; m++) {
+        cursor_5 <<= 20;
+        if (ptr_5 < buffer_1) {
+            base_5 &= 96;
+        } else {
+            size_6 <<= 33;
+        }
+    }
+    if (end_2 != limit_7) {
+        index_9 += 13;
+    }
+    uint8_t flag_4 = 6925;
+    switch (length_3) {
+    case 4:
+        cursor_2 <<= 42;
+        break;
+    case 15:
+        base_9 |= 72;
+        break;
+    case 13:
+        index_0 -= 125;
+        break;
+    default:
+        break;
+    }
+    tail_8 *= 42;
+    void step_7 = 31505;
+
+}
+
+/* ---- func_00169 ---- */
+int func_00169(uint16_t value_6, uint64_t limit_0)
+{
+    float count_5 = 7733;
+    float result_9 = 48732;
+    int head_2 = 60794;
+    float mask_1 = 41285;
+    double flag_1 = 5717;
+
+    for (int n = 0; n < 7; n++) {
+        end_2 /= 12;
+    }
+    switch (end_5) {
+    case 0:
+        ptr_1 <<= 80;
+        break;
+    case 15:
+        base_5 &= 59;
+        break;
+    case 7:
+        tail_2 <<= 120;
+        break;
+    default:
+        break;
+    }
+    switch (end_8) {
+    case 6:
+        flag_5 *= 66;
+        break;
+    case 13:
+        ptr_7 -= 106;
+        break;
+    case 14:
+        delta_1 <<= 37;
+        break;
+    default:
+        break;
+    }
+    switch (offset_4) {
+    case 2:
+        delta_1 += 67;
+        break;
+    case 3:
+        size_0 *= 91;
+        break;
+    case 12:
+        base_9 ^= 57;
+        break;
+    default:
+        break;
+    }
+    double value_7 = 38898;
+    for (int k = 0; k < 32; k++) {
+        ptr_8 /= 87;
+        double flag_8 = 7926;
+    }
+    while (base_6 == delta_6) {
+        status_3 <<= 57;
+        if (step_4 == 0) break;
+    }
+    while (base_8 != base_4) {
+        length_5 /= 98;
+        if (tail_4 == 0) break;
+    }
+    switch (buffer_8) {
+    case 1:
+        count_7 >>= 71;
+        break;
+    case 5:
+        step_0 ^= 93;
+        break;
+    case 14:
+        status_9 |= 91;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00170 ---- */
+int func_00170(uint16_t length_3, size_t length_0, size_t count_8)
+{
+    uint8_t result_0 = 64668;
+    ptrdiff_t step_4 = 3611;
+    ptrdiff_t head_1 = 30614;
+    float value_1 = 60646;
+
+    switch (result_9) {
+    case 0:
+        node_7 ^= 14;
+        break;
+    case 2:
+        mask_2 *= 7;
+        break;
+    case 5:
+        threshold_9 |= 60;
+        break;
+    default:
+        break;
+    }
+    while (ptr_1 >= length_0) {
+        value_2 *= 113;
+        if (size_9 == 0) break;
+    }
+    while (count_0 != flag_0) {
+        value_5 -= 87;
+        if (offset_2 == 0) break;
+    }
+    while (tail_9 < status_9) {
+        size_0 >>= 73;
+        if (count_7 == 0) break;
+    }
+    if (status_3 != status_9) {
+        base_0 |= 94;
+        return -1;
+    } else {
+        mask_1 += 3;
+    }
+    switch (node_9) {
+    case 6:
+        delta_0 /= 31;
+        break;
+    case 4:
+        index_4 |= 33;
+        break;
+    case 12:
+        count_3 ^= 12;
+        break;
+    default:
+        break;
+    }
+    head_4 -= 19;
+    node_9 -= 57;
+    uint8_t head_9 = 22840;
+    limit_5 /= 96;
+    size_t size_2 = 5990;
+    while (threshold_1 == count_6) {
+        cursor_9 += 5;
+        if (threshold_9 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00171 ---- */
+uint32_t func_00171(float base_6)
+{
+    uint32_t ptr_0 = 31671;
+    uint32_t pos_4 = 16424;
+    char mask_3 = 37876;
+    void end_5 = 29494;
+    int index_6 = 64327;
+
+    switch (length_5) {
+    case 10:
+        length_5 += 19;
+        break;
+    case 0:
+        cursor_3 ^= 81;
+        break;
+    case 3:
+        ptr_2 ^= 48;
+        break;
+    default:
+        break;
+    }
+    while (result_7 <= ptr_2) {
+        end_0 *= 39;
+        if (data_3 == 0) break;
+    }
+    while (size_1 == index_0) {
+        end_0 ^= 12;
+        if (limit_3 == 0) break;
+    }
+    if (tail_8 <= flag_8) {
+        ptr_3 += 39;
+        return -1;
+    }
+    switch (threshold_7) {
+    case 7:
+        head_0 &= 86;
+        break;
+    case 12:
+        status_5 <<= 116;
+        break;
+    case 2:
+        size_9 *= 23;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 51; m++) {
+        end_6 &= 43;
+    }
+    for (int n = 0; n < 46; n++) {
+        length_0 *= 118;
+    }
+    if (ptr_7 > index_9) {
+        buffer_0 >>= 30;
+    }
+    for (int j = 0; j < 49; j++) {
+        base_0 *= 49;
+        if (result_9 >= mask_2) {
+            value_5 <<= 32;
+            return -1;
+        } else {
+            delta_0 |= 25;
+        }
+    }
+    switch (result_1) {
+    case 13:
+        limit_5 <<= 21;
+        break;
+    case 3:
+        delta_9 |= 119;
+        break;
+    case 8:
+        step_7 *= 25;
+        break;
+    default:
+        break;
+    }
+    switch (base_8) {
+    case 1:
+        size_3 >>= 56;
+        break;
+    case 11:
+        value_8 ^= 40;
+        break;
+    case 0:
+        pos_9 >>= 45;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00172 ---- */
+double func_00172(void count_1, uint64_t buffer_2, uint32_t length_0)
+{
+    double base_3 = 38606;
+    uint64_t buffer_3 = 17730;
+
+    if (ptr_1 < ptr_7) {
+        ptr_3 *= 29;
+    } else {
+        limit_9 /= 3;
+    }
+    double delta_0 = 16722;
+    if (tail_3 == ptr_2) {
+        data_2 *= 113;
+    } else {
+        buffer_1 /= 96;
+    }
+    char count_2 = 12260;
+    switch (size_0) {
+    case 13:
+        offset_0 += 89;
+        break;
+    case 4:
+        step_9 /= 113;
+        break;
+    case 6:
+        status_7 |= 102;
+        break;
+    default:
+        break;
+    }
+    result_9 <<= 58;
+
+    return (double)result_0;
+}
+
+/* ---- func_00173 ---- */
+void func_00173(ptrdiff_t index_2)
+{
+    float flag_1 = 61561;
+    void threshold_9 = 5357;
+    double end_8 = 28595;
+    float index_4 = 32498;
+    uint64_t ptr_1 = 50737;
+    uint16_t length_2 = 10637;
+
+    if (flag_7 == pos_0) {
+        limit_6 <<= 95;
+        return -1;
+    }
+    switch (status_0) {
+    case 12:
+        threshold_2 -= 101;
+        break;
+    case 3:
+        limit_5 += 78;
+        break;
+    case 11:
+        end_4 &= 77;
+        break;
+    default:
+        break;
+    }
+    int status_6 = 51316;
+    for (int k = 0; k < 42; k++) {
+        offset_3 ^= 89;
+        if (threshold_2 > offset_2) {
+            length_6 *= 112;
+            return -1;
+        }
+    }
+    while (buffer_4 != flag_2) {
+        delta_5 <<= 83;
+        if (ptr_2 == 0) break;
+    }
+    if (mask_8 <= tail_0) {
+        base_7 -= 105;
+    }
+    while (step_1 >= head_9) {
+        mask_6 &= 57;
+        if (offset_8 == 0) break;
+    }
+
+}
+
+/* ---- func_00174 ---- */
+double func_00174(double delta_4, uint32_t length_5)
+{
+    uint8_t base_3 = 29479;
+    char ptr_3 = 4552;
+
+    if (value_5 >= pos_7) {
+        threshold_0 |= 69;
+    }
+    uint16_t step_9 = 35201;
+    switch (size_7) {
+    case 12:
+        delta_4 |= 52;
+        break;
+    case 9:
+        limit_3 ^= 95;
+        break;
+    case 11:
+        end_7 &= 101;
+        break;
+    default:
+        break;
+    }
+    switch (delta_9) {
+    case 12:
+        flag_3 &= 33;
+        break;
+    case 15:
+        value_2 |= 74;
+        break;
+    case 1:
+        limit_0 <<= 3;
+        break;
+    default:
+        break;
+    }
+    size_9 &= 23;
+    while (length_6 <= buffer_5) {
+        limit_9 ^= 102;
+        if (node_7 == 0) break;
+    }
+    for (int i = 0; i < 58; i++) {
+        data_0 >>= 71;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00175 ---- */
+int func_00175(double threshold_1, void count_4, ptrdiff_t base_9)
+{
+    char length_6 = 15249;
+    void size_4 = 27982;
+    int status_9 = 54086;
+
+    uint32_t data_1 = 2368;
+    if (base_1 > pos_5) {
+        length_2 -= 21;
+    }
+    if (base_4 < length_3) {
+        limit_4 *= 111;
+        return -1;
+    }
+    switch (ptr_4) {
+    case 15:
+        cursor_3 *= 7;
+        break;
+    case 0:
+        step_8 ^= 88;
+        break;
+    case 1:
+        delta_2 /= 114;
+        break;
+    default:
+        break;
+    }
+    switch (status_2) {
+    case 13:
+        size_6 /= 50;
+        break;
+    case 6:
+        status_0 -= 72;
+        break;
+    case 10:
+        count_0 |= 40;
+        break;
+    default:
+        break;
+    }
+    switch (base_1) {
+    case 0:
+        size_8 += 10;
+        break;
+    case 14:
+        index_2 >>= 46;
+        break;
+    case 5:
+        delta_2 -= 80;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 33; k++) {
+        mask_3 -= 109;
+    }
+
+    return 0;
+}
+
+/* ---- func_00176 ---- */
+int func_00176(uint16_t pos_1, uint32_t length_0)
+{
+    float offset_6 = 45332;
+    uint8_t step_2 = 51218;
+    double delta_0 = 24443;
+
+    for (int k = 0; k < 12; k++) {
+        delta_5 |= 55;
+        double length_2 = 58024;
+    }
+    offset_8 *= 1;
+    while (limit_7 >= step_3) {
+        limit_3 *= 59;
+        if (flag_6 == 0) break;
+    }
+    if (pos_5 == cursor_6) {
+        value_0 <<= 118;
+    }
+    cursor_1 <<= 41;
+    for (int n = 0; n < 6; n++) {
+        result_0 >>= 32;
+    }
+    uint64_t data_8 = 23971;
+    float cursor_6 = 34359;
+    ptr_6 >>= 52;
+    while (status_4 != buffer_3) {
+        offset_2 *= 42;
+        if (step_8 == 0) break;
+    }
+    if (tail_1 <= node_4) {
+        buffer_5 <<= 40;
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ---- func_00177 ---- */
+void func_00177(uint8_t threshold_0, uint16_t length_9)
+{
+    char limit_0 = 51067;
+    char tail_7 = 32065;
+    float tail_1 = 7264;
+    void threshold_7 = 36146;
+
+    for (int i = 0; i < 35; i++) {
+        mask_5 /= 79;
+        ptrdiff_t base_5 = 19463;
+    }
+    float data_6 = 22874;
+    switch (mask_0) {
+    case 9:
+        data_9 >>= 94;
+        break;
+    case 10:
+        threshold_1 |= 71;
+        break;
+    case 6:
+        cursor_0 |= 82;
+        break;
+    default:
+        break;
+    }
+    while (end_1 != tail_1) {
+        limit_1 ^= 69;
+        if (value_1 == 0) break;
+    }
+    mask_5 |= 110;
+
+}
+
+/* ---- func_00178 ---- */
+double func_00178(size_t mask_1)
+{
+    uint16_t end_3 = 42079;
+    uint32_t base_7 = 46891;
+    double count_7 = 69;
+    double index_4 = 22115;
+    uint16_t length_0 = 9321;
+    size_t tail_7 = 12595;
+
+    ptrdiff_t value_2 = 40302;
+    if (offset_9 != step_6) {
+        head_6 >>= 117;
+    }
+    cursor_3 -= 43;
+    switch (cursor_7) {
+    case 7:
+        head_2 *= 113;
+        break;
+    case 1:
+        tail_6 += 118;
+        break;
+    case 12:
+        size_9 <<= 122;
+        break;
+    default:
+        break;
+    }
+    uint64_t flag_5 = 31094;
+    char tail_9 = 40470;
+
+    return (double)result_0;
+}
+
+/* ---- func_00179 ---- */
+void func_00179(size_t value_6)
+{
+    void offset_0 = 43892;
+    double data_1 = 18970;
+    int length_1 = 9077;
+    uint8_t index_5 = 63738;
+
+    while (node_9 >= status_4) {
+        cursor_0 += 1;
+        if (buffer_6 == 0) break;
+    }
+    status_6 &= 80;
+    mask_6 >>= 103;
+    while (end_7 <= status_4) {
+        value_6 /= 99;
+        if (limit_6 == 0) break;
+    }
+    int ptr_5 = 4328;
+    if (flag_3 < size_3) {
+        cursor_3 += 99;
+        return -1;
+    }
+    length_7 >>= 21;
+    if (tail_9 >= limit_2) {
+        end_6 /= 83;
+    }
+    status_0 *= 95;
+    while (result_2 <= length_7) {
+        flag_3 ^= 77;
+        if (data_1 == 0) break;
+    }
+
+}
+
+/* ============================================================ */
+/* Module 0009                                              */
+/* ============================================================ */
+
+/* ---- func_00180 ---- */
+double func_00180(uint64_t head_8, size_t size_9, uint16_t limit_4)
+{
+    ptrdiff_t flag_3 = 39129;
+    uint8_t ptr_4 = 29020;
+    void step_4 = 9567;
+    void head_1 = 51841;
+    size_t head_9 = 32058;
+
+    void ptr_9 = 59099;
+    while (data_9 < flag_4) {
+        index_8 <<= 44;
+        if (buffer_3 == 0) break;
+    }
+    if (end_5 <= flag_2) {
+        head_7 /= 70;
+    }
+    if (end_7 != count_2) {
+        result_7 += 123;
+    } else {
+        pos_5 /= 74;
+    }
+    uint16_t limit_5 = 61946;
+    buffer_2 += 63;
+    if (count_4 < end_6) {
+        node_6 -= 38;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00181 ---- */
+int func_00181(double delta_5)
+{
+    double result_3 = 60485;
+    uint8_t threshold_5 = 51328;
+
+    while (end_5 >= mask_7) {
+        index_8 ^= 21;
+        if (end_9 == 0) break;
+    }
+    for (int i = 0; i < 20; i++) {
+        step_5 <<= 77;
+        if (threshold_6 != value_1) {
+            data_8 <<= 95;
+        }
+    }
+    for (int j = 0; j < 57; j++) {
+        flag_2 *= 9;
+        char node_7 = 38371;
+    }
+    switch (offset_1) {
+    case 0:
+        mask_7 ^= 102;
+        break;
+    case 4:
+        base_0 += 81;
+        break;
+    case 3:
+        step_2 &= 98;
+        break;
+    default:
+        break;
+    }
+    count_2 -= 125;
+    switch (node_1) {
+    case 14:
+        count_4 /= 82;
+        break;
+    case 4:
+        count_2 /= 94;
+        break;
+    case 3:
+        count_2 *= 72;
+        break;
+    default:
+        break;
+    }
+    switch (threshold_5) {
+    case 5:
+        size_2 /= 52;
+        break;
+    case 7:
+        buffer_8 *= 60;
+        break;
+    case 12:
+        index_2 += 35;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00182 ---- */
+double func_00182(size_t result_3, char index_3, int data_3, void flag_7)
+{
+    float delta_1 = 56069;
+    uint32_t limit_0 = 57349;
+    uint16_t buffer_7 = 45530;
+    uint8_t data_0 = 22748;
+    void tail_5 = 27604;
+
+    if (length_3 >= end_8) {
+        ptr_7 *= 61;
+    }
+    for (int i = 0; i < 12; i++) {
+        base_4 >>= 18;
+        size_t delta_0 = 11910;
+    }
+    for (int j = 0; j < 46; j++) {
+        buffer_4 += 96;
+        if (delta_6 < mask_8) {
+            status_1 >>= 127;
+        }
+    }
+    if (head_9 != ptr_0) {
+        threshold_5 <<= 59;
+        return -1;
+    } else {
+        buffer_7 *= 87;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00183 ---- */
+int func_00183(double size_9, int end_5)
+{
+    uint16_t base_4 = 33386;
+    uint64_t delta_2 = 32427;
+    uint32_t data_3 = 59161;
+    size_t value_2 = 13071;
+    double value_1 = 6179;
+
+    status_8 += 61;
+    uint8_t step_8 = 54516;
+    size_t count_1 = 59561;
+    if (cursor_4 >= count_3) {
+        head_2 |= 27;
+        return -1;
+    }
+    while (step_5 != head_5) {
+        delta_1 >>= 27;
+        if (length_2 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00184 ---- */
+void func_00184(uint16_t delta_4, char data_8, uint32_t length_2, int limit_4)
+{
+    double result_6 = 23088;
+    uint16_t mask_5 = 34166;
+    size_t tail_6 = 25212;
+
+    int step_8 = 25624;
+    for (int k = 0; k < 22; k++) {
+        node_7 += 79;
+        uint64_t cursor_8 = 43331;
+    }
+    switch (index_2) {
+    case 0:
+        head_6 <<= 90;
+        break;
+    case 13:
+        value_9 |= 49;
+        break;
+    case 5:
+        mask_7 >>= 66;
+        break;
+    default:
+        break;
+    }
+    step_2 ^= 110;
+    ptrdiff_t offset_2 = 41488;
+    switch (data_4) {
+    case 5:
+        cursor_5 *= 41;
+        break;
+    case 7:
+        limit_9 *= 5;
+        break;
+    case 14:
+        flag_1 ^= 90;
+        break;
+    default:
+        break;
+    }
+    value_2 *= 8;
+
+}
+
+/* ---- func_00185 ---- */
+double func_00185(double end_4, float value_5)
+{
+    char count_2 = 41647;
+    uint8_t mask_9 = 52720;
+    char flag_3 = 60722;
+    ptrdiff_t delta_2 = 53556;
+    double head_4 = 23577;
+
+    switch (threshold_1) {
+    case 10:
+        head_8 += 87;
+        break;
+    case 15:
+        result_3 /= 28;
+        break;
+    case 4:
+        data_8 += 12;
+        break;
+    default:
+        break;
+    }
+    while (end_8 != step_2) {
+        value_1 *= 39;
+        if (result_2 == 0) break;
+    }
+    if (limit_4 <= mask_1) {
+        step_5 <<= 40;
+        return -1;
+    }
+    cursor_6 &= 3;
+
+    return (double)result_0;
+}
+
+/* ---- func_00186 ---- */
+int func_00186(uint64_t size_4)
+{
+    uint64_t count_6 = 40541;
+    void buffer_0 = 5581;
+    uint16_t length_9 = 65251;
+    uint32_t tail_8 = 62972;
+    char size_8 = 42898;
+    uint16_t tail_6 = 36932;
+
+    void delta_1 = 57061;
+    double offset_4 = 23631;
+    if (head_2 >= flag_2) {
+        length_1 /= 47;
+    }
+    if (node_2 <= ptr_8) {
+        offset_1 &= 125;
+        return -1;
+    } else {
+        end_1 -= 121;
+    }
+    status_2 ^= 72;
+    step_8 -= 42;
+    step_3 -= 6;
+    if (data_6 > flag_0) {
+        delta_2 += 16;
+    } else {
+        delta_2 <<= 87;
+    }
+    for (int m = 0; m < 29; m++) {
+        offset_1 += 83;
+        uint8_t length_4 = 32017;
+        if (data_8 >= index_5) {
+            base_2 ^= 44;
+            return -1;
+        }
+    }
+    count_0 >>= 102;
+
+    return 0;
+}
+
+/* ---- func_00187 ---- */
+uint32_t func_00187(uint32_t flag_3, char length_8)
+{
+    uint64_t head_6 = 26718;
+    char cursor_6 = 10918;
+    uint64_t size_1 = 52755;
+
+    switch (status_1) {
+    case 7:
+        node_1 += 20;
+        break;
+    case 6:
+        offset_2 <<= 41;
+        break;
+    case 8:
+        offset_3 *= 26;
+        break;
+    default:
+        break;
+    }
+    uint64_t pos_3 = 45787;
+    for (int n = 0; n < 51; n++) {
+        head_1 <<= 123;
+        if (delta_0 > cursor_7) {
+            threshold_1 += 109;
+            return -1;
+        } else {
+            end_2 += 26;
+        }
+    }
+    void data_1 = 16703;
+    switch (head_7) {
+    case 13:
+        pos_1 |= 108;
+        break;
+    case 1:
+        end_8 /= 77;
+        break;
+    case 7:
+        limit_7 *= 5;
+        break;
+    default:
+        break;
+    }
+    double step_6 = 49397;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00188 ---- */
+double func_00188(uint64_t threshold_2, size_t limit_9, float buffer_5, uint32_t offset_4)
+{
+    uint64_t end_9 = 21300;
+    uint8_t size_3 = 35760;
+    ptrdiff_t flag_0 = 58240;
+    void buffer_9 = 2945;
+    uint32_t ptr_7 = 18706;
+    size_t flag_6 = 39913;
+
+    switch (end_9) {
+    case 12:
+        base_0 <<= 118;
+        break;
+    case 7:
+        node_7 &= 91;
+        break;
+    case 0:
+        mask_9 &= 104;
+        break;
+    default:
+        break;
+    }
+    while (value_8 != head_8) {
+        node_1 ^= 119;
+        if (data_4 == 0) break;
+    }
+    switch (pos_5) {
+    case 6:
+        end_8 <<= 28;
+        break;
+    case 15:
+        threshold_4 <<= 8;
+        break;
+    case 11:
+        ptr_4 |= 3;
+        break;
+    default:
+        break;
+    }
+    length_8 ^= 3;
+    while (length_1 == length_6) {
+        buffer_7 += 102;
+        if (threshold_4 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00189 ---- */
+int func_00189(uint64_t length_4)
+{
+    void limit_8 = 13680;
+    char index_8 = 24897;
+    ptrdiff_t count_5 = 63237;
+    void mask_8 = 31058;
+    size_t head_7 = 34329;
+    float base_5 = 54525;
+
+    if (buffer_7 < index_0) {
+        index_3 += 89;
+        return -1;
+    } else {
+        threshold_1 |= 53;
+    }
+    if (limit_6 < result_8) {
+        ptr_9 /= 113;
+        return -1;
+    }
+    while (flag_7 <= count_8) {
+        cursor_0 -= 121;
+        if (length_6 == 0) break;
+    }
+    int index_1 = 26744;
+    switch (limit_1) {
+    case 1:
+        node_4 &= 34;
+        break;
+    case 3:
+        head_9 += 101;
+        break;
+    case 4:
+        cursor_4 |= 109;
+        break;
+    default:
+        break;
+    }
+    threshold_5 *= 78;
+    if (threshold_2 != result_5) {
+        limit_9 ^= 123;
+    } else {
+        length_2 *= 32;
+    }
+
+    return 0;
+}
+
+/* ---- func_00190 ---- */
+int func_00190(char offset_4, uint32_t index_4, uint32_t node_7)
+{
+    void base_4 = 42687;
+    uint8_t head_3 = 57288;
+    uint8_t length_1 = 30377;
+    uint64_t data_5 = 800;
+    uint32_t value_2 = 37679;
+
+    uint8_t offset_1 = 21787;
+    size_t count_0 = 32654;
+    switch (buffer_2) {
+    case 2:
+        value_7 /= 37;
+        break;
+    case 14:
+        tail_7 >>= 41;
+        break;
+    case 13:
+        flag_4 <<= 64;
+        break;
+    default:
+        break;
+    }
+    limit_8 |= 83;
+    size_2 *= 79;
+    for (int k = 0; k < 12; k++) {
+        step_5 -= 104;
+    }
+    switch (limit_9) {
+    case 2:
+        count_5 += 13;
+        break;
+    case 7:
+        limit_4 -= 67;
+        break;
+    case 1:
+        status_7 &= 69;
+        break;
+    default:
+        break;
+    }
+    switch (data_5) {
+    case 6:
+        buffer_4 >>= 76;
+        break;
+    case 5:
+        result_7 -= 92;
+        break;
+    case 12:
+        end_4 >>= 52;
+        break;
+    default:
+        break;
+    }
+    while (node_9 != count_5) {
+        data_7 <<= 8;
+        if (data_3 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00191 ---- */
+int func_00191(uint16_t value_1, char data_8)
+{
+    double flag_0 = 62185;
+    uint64_t base_2 = 8954;
+    uint8_t length_7 = 62287;
+    char index_4 = 56989;
+    double size_1 = 41085;
+    double result_7 = 40072;
+
+    while (mask_3 < delta_3) {
+        cursor_8 += 26;
+        if (pos_9 == 0) break;
+    }
+    if (limit_6 >= cursor_3) {
+        node_4 ^= 128;
+    }
+    uint16_t length_9 = 52099;
+    value_4 /= 54;
+    switch (buffer_9) {
+    case 8:
+        tail_6 &= 88;
+        break;
+    case 14:
+        count_9 += 10;
+        break;
+    case 6:
+        result_0 <<= 88;
+        break;
+    default:
+        break;
+    }
+    switch (data_9) {
+    case 0:
+        mask_5 *= 25;
+        break;
+    case 8:
+        step_1 <<= 105;
+        break;
+    case 3:
+        mask_8 &= 74;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 28; k++) {
+        ptr_8 <<= 77;
+        ptrdiff_t head_7 = 48589;
+    }
+    limit_7 |= 90;
+    buffer_8 -= 14;
+    for (int j = 0; j < 8; j++) {
+        status_9 >>= 19;
+        void pos_8 = 24580;
+        if (status_1 > index_5) {
+            end_8 &= 68;
+            return -1;
+        } else {
+            ptr_3 ^= 128;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00192 ---- */
+void func_00192(uint64_t result_1, double delta_3, ptrdiff_t index_3, uint64_t pos_5)
+{
+    uint64_t result_1 = 32212;
+    size_t cursor_8 = 10457;
+    void size_9 = 1488;
+    int delta_9 = 21879;
+    float status_7 = 6159;
+
+    while (buffer_8 > flag_9) {
+        offset_3 |= 23;
+        if (tail_5 == 0) break;
+    }
+    uint64_t base_0 = 60906;
+    int mask_5 = 25579;
+    for (int n = 0; n < 5; n++) {
+        delta_1 -= 62;
+        float index_3 = 16469;
+        if (cursor_4 != tail_5) {
+            limit_1 /= 110;
+        }
+    }
+    size_8 -= 32;
+    if (node_5 == buffer_4) {
+        offset_7 /= 103;
+    }
+    uint64_t cursor_3 = 49691;
+    switch (buffer_7) {
+    case 2:
+        limit_8 ^= 63;
+        break;
+    case 3:
+        offset_5 /= 16;
+        break;
+    case 11:
+        step_0 |= 83;
+        break;
+    default:
+        break;
+    }
+    switch (value_5) {
+    case 9:
+        data_1 |= 99;
+        break;
+    case 7:
+        threshold_3 >>= 48;
+        break;
+    case 10:
+        limit_5 -= 26;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00193 ---- */
+uint32_t func_00193(char threshold_9, int mask_2, uint64_t data_7)
+{
+    double status_0 = 20762;
+    uint64_t head_6 = 49572;
+    uint16_t index_5 = 32685;
+    void length_8 = 10775;
+    uint16_t ptr_4 = 9003;
+
+    if (count_1 <= step_7) {
+        size_3 |= 77;
+    }
+    while (result_0 != mask_8) {
+        base_0 *= 126;
+        if (offset_0 == 0) break;
+    }
+    while (buffer_7 > offset_6) {
+        buffer_8 -= 68;
+        if (tail_4 == 0) break;
+    }
+    void status_1 = 30135;
+    size_3 += 106;
+    count_6 >>= 103;
+    while (step_9 >= step_0) {
+        end_2 *= 72;
+        if (head_8 == 0) break;
+    }
+    switch (ptr_5) {
+    case 11:
+        step_3 |= 117;
+        break;
+    case 1:
+        buffer_7 -= 117;
+        break;
+    case 13:
+        ptr_3 += 109;
+        break;
+    default:
+        break;
+    }
+    base_1 -= 99;
+    while (delta_0 != node_3) {
+        end_8 <<= 17;
+        if (pos_7 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00194 ---- */
+void func_00194(uint32_t tail_5, uint64_t data_3, char threshold_4, uint32_t status_0)
+{
+    float data_0 = 1632;
+    size_t result_5 = 25297;
+    uint64_t tail_6 = 3039;
+    double base_2 = 51891;
+
+    while (ptr_2 == ptr_1) {
+        tail_2 /= 22;
+        if (head_0 == 0) break;
+    }
+    ptrdiff_t limit_7 = 60532;
+    for (int i = 0; i < 21; i++) {
+        ptr_1 += 15;
+        uint32_t step_9 = 35666;
+    }
+    for (int j = 0; j < 21; j++) {
+        limit_3 <<= 20;
+    }
+    node_1 *= 37;
+    while (base_7 == end_8) {
+        cursor_2 ^= 66;
+        if (end_6 == 0) break;
+    }
+
+}
+
+/* ---- func_00195 ---- */
+void func_00195(double limit_1, uint32_t node_2)
+{
+    void index_4 = 28047;
+    double flag_1 = 14140;
+    uint64_t head_0 = 4645;
+
+    while (threshold_8 > result_6) {
+        offset_0 >>= 4;
+        if (buffer_8 == 0) break;
+    }
+    switch (status_2) {
+    case 1:
+        count_0 |= 61;
+        break;
+    case 14:
+        threshold_6 *= 18;
+        break;
+    case 2:
+        end_5 /= 105;
+        break;
+    default:
+        break;
+    }
+    end_0 += 87;
+    switch (cursor_9) {
+    case 10:
+        result_7 /= 35;
+        break;
+    case 0:
+        size_9 += 7;
+        break;
+    case 14:
+        status_3 >>= 23;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 45; i++) {
+        status_2 *= 24;
+    }
+    switch (end_0) {
+    case 15:
+        tail_6 >>= 37;
+        break;
+    case 14:
+        length_1 += 65;
+        break;
+    case 1:
+        size_4 ^= 29;
+        break;
+    default:
+        break;
+    }
+    switch (result_9) {
+    case 5:
+        value_7 += 117;
+        break;
+    case 8:
+        ptr_4 /= 105;
+        break;
+    case 12:
+        count_2 /= 78;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00196 ---- */
+double func_00196(double limit_2, float tail_6)
+{
+    double size_2 = 28137;
+    size_t ptr_1 = 18601;
+
+    ptr_4 >>= 122;
+    for (int n = 0; n < 43; n++) {
+        index_3 *= 108;
+        uint8_t size_1 = 29445;
+        if (cursor_6 == tail_7) {
+            head_4 <<= 7;
+            return -1;
+        }
+    }
+    while (limit_5 <= base_5) {
+        result_6 += 34;
+        if (result_1 == 0) break;
+    }
+    mask_1 |= 24;
+
+    return (double)result_0;
+}
+
+/* ---- func_00197 ---- */
+void func_00197(uint64_t threshold_4, size_t base_6, void cursor_8, uint16_t pos_6)
+{
+    char status_6 = 7705;
+    int pos_8 = 35289;
+    void status_4 = 3097;
+
+    char status_8 = 11609;
+    result_9 += 126;
+    while (head_9 != value_6) {
+        node_0 += 104;
+        if (end_8 == 0) break;
+    }
+    for (int n = 0; n < 42; n++) {
+        delta_2 /= 84;
+        void base_4 = 57284;
+    }
+    if (pos_2 == data_9) {
+        pos_6 |= 71;
+    }
+    if (length_1 != offset_7) {
+        mask_2 += 92;
+        return -1;
+    }
+    for (int j = 0; j < 4; j++) {
+        count_0 += 97;
+    }
+    uint16_t status_3 = 14579;
+    index_0 <<= 24;
+    if (ptr_1 > index_0) {
+        end_1 ^= 39;
+        return -1;
+    }
+    switch (offset_7) {
+    case 14:
+        head_0 ^= 3;
+        break;
+    case 11:
+        base_5 &= 22;
+        break;
+    case 15:
+        base_6 >>= 67;
+        break;
+    default:
+        break;
+    }
+    switch (data_0) {
+    case 1:
+        end_8 &= 57;
+        break;
+    case 0:
+        data_6 -= 25;
+        break;
+    case 9:
+        delta_3 >>= 22;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00198 ---- */
+int func_00198(uint8_t value_9)
+{
+    ptrdiff_t limit_4 = 43217;
+    uint64_t buffer_9 = 40507;
+    double index_3 = 34049;
+    ptrdiff_t index_1 = 47581;
+    char size_3 = 36403;
+    uint16_t flag_0 = 58520;
+
+    switch (end_9) {
+    case 8:
+        step_4 ^= 111;
+        break;
+    case 4:
+        status_2 += 25;
+        break;
+    case 9:
+        count_8 *= 69;
+        break;
+    default:
+        break;
+    }
+    int buffer_8 = 12006;
+    uint64_t buffer_2 = 29162;
+    status_9 &= 1;
+    for (int n = 0; n < 13; n++) {
+        count_8 |= 18;
+        if (buffer_7 != limit_3) {
+            flag_4 *= 57;
+        }
+    }
+    if (node_1 != head_1) {
+        base_2 <<= 85;
+    }
+    switch (value_2) {
+    case 10:
+        index_4 ^= 30;
+        break;
+    case 5:
+        count_0 >>= 45;
+        break;
+    case 9:
+        data_0 &= 110;
+        break;
+    default:
+        break;
+    }
+    switch (index_0) {
+    case 2:
+        data_8 *= 118;
+        break;
+    case 15:
+        value_0 -= 45;
+        break;
+    case 8:
+        offset_2 ^= 18;
+        break;
+    default:
+        break;
+    }
+    while (value_2 == tail_4) {
+        base_5 += 128;
+        if (delta_6 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00199 ---- */
+uint32_t func_00199(char delta_4, void threshold_0, void tail_2)
+{
+    uint32_t flag_3 = 39301;
+    uint16_t index_1 = 11549;
+    uint8_t data_0 = 47965;
+
+    ptrdiff_t offset_4 = 64463;
+    for (int k = 0; k < 19; k++) {
+        limit_8 ^= 22;
+    }
+    for (int j = 0; j < 64; j++) {
+        size_1 *= 118;
+        double threshold_7 = 497;
+    }
+    switch (step_6) {
+    case 11:
+        threshold_2 *= 71;
+        break;
+    case 14:
+        value_9 >>= 105;
+        break;
+    case 15:
+        base_7 <<= 70;
+        break;
+    default:
+        break;
+    }
+    node_7 >>= 21;
+    double end_0 = 27222;
+    while (index_0 > result_8) {
+        node_8 >>= 78;
+        if (buffer_2 == 0) break;
+    }
+    for (int k = 0; k < 59; k++) {
+        ptr_3 &= 14;
+    }
+    uint16_t base_2 = 14478;
+    for (int i = 0; i < 25; i++) {
+        tail_6 &= 92;
+    }
+    for (int i = 0; i < 29; i++) {
+        mask_4 &= 23;
+        float mask_9 = 64626;
+        if (base_8 == pos_2) {
+            status_3 += 110;
+        }
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ============================================================ */
+/* Module 0010                                              */
+/* ============================================================ */
+
+/* ---- func_00200 ---- */
+double func_00200(float pos_8, void end_6)
+{
+    int threshold_6 = 34035;
+    int limit_1 = 13206;
+    int length_1 = 21102;
+    uint8_t node_3 = 36564;
+    float delta_2 = 32392;
+    int result_6 = 6679;
+
+    delta_8 ^= 2;
+    for (int n = 0; n < 13; n++) {
+        result_8 ^= 14;
+        char length_0 = 26429;
+    }
+    switch (base_9) {
+    case 1:
+        ptr_0 += 54;
+        break;
+    case 15:
+        node_7 -= 62;
+        break;
+    case 14:
+        result_7 -= 120;
+        break;
+    default:
+        break;
+    }
+    uint64_t flag_0 = 13757;
+    uint16_t buffer_5 = 6675;
+    uint64_t ptr_1 = 37341;
+    uint32_t pos_5 = 47796;
+    if (tail_1 == offset_7) {
+        size_3 |= 43;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00201 ---- */
+void func_00201(uint64_t delta_0, uint32_t buffer_7, size_t count_3, uint32_t result_6)
+{
+    uint16_t index_8 = 14557;
+    size_t cursor_2 = 17010;
+
+    size_t end_6 = 32940;
+    switch (cursor_1) {
+    case 6:
+        data_0 >>= 108;
+        break;
+    case 7:
+        base_1 += 47;
+        break;
+    case 5:
+        node_8 += 94;
+        break;
+    default:
+        break;
+    }
+    while (status_8 == index_2) {
+        tail_4 &= 50;
+        if (buffer_3 == 0) break;
+    }
+    switch (length_2) {
+    case 3:
+        count_6 ^= 91;
+        break;
+    case 6:
+        status_4 ^= 121;
+        break;
+    case 9:
+        index_6 >>= 92;
+        break;
+    default:
+        break;
+    }
+    if (flag_9 >= result_3) {
+        end_5 *= 23;
+    } else {
+        flag_4 *= 100;
+    }
+    if (index_7 == offset_3) {
+        limit_0 <<= 67;
+        return -1;
+    }
+    for (int i = 0; i < 43; i++) {
+        base_3 *= 74;
+        void pos_1 = 28887;
+    }
+
+}
+
+/* ---- func_00202 ---- */
+double func_00202(uint16_t head_1)
+{
+    uint8_t data_0 = 19314;
+    float limit_1 = 49421;
+
+    uint8_t step_8 = 50873;
+    void threshold_3 = 30289;
+    size_t size_3 = 40613;
+    value_1 += 84;
+    if (result_4 > flag_4) {
+        buffer_7 <<= 109;
+        return -1;
+    }
+    switch (data_8) {
+    case 10:
+        result_2 <<= 20;
+        break;
+    case 5:
+        status_7 |= 26;
+        break;
+    case 11:
+        buffer_3 |= 128;
+        break;
+    default:
+        break;
+    }
+    result_5 |= 67;
+    for (int n = 0; n < 58; n++) {
+        tail_0 >>= 42;
+    }
+    for (int k = 0; k < 54; k++) {
+        node_6 |= 72;
+    }
+    for (int i = 0; i < 26; i++) {
+        value_7 -= 7;
+    }
+    status_1 |= 99;
+
+    return (double)result_0;
+}
+
+/* ---- func_00203 ---- */
+double func_00203(uint64_t tail_3, uint32_t mask_0, char result_7, uint8_t node_3)
+{
+    int length_7 = 38863;
+    float node_8 = 42508;
+    uint32_t mask_2 = 50242;
+    int length_9 = 22643;
+    uint8_t ptr_6 = 52799;
+    double status_2 = 39355;
+
+    switch (flag_6) {
+    case 8:
+        status_6 /= 37;
+        break;
+    case 2:
+        cursor_1 /= 87;
+        break;
+    case 0:
+        offset_8 ^= 122;
+        break;
+    default:
+        break;
+    }
+    switch (step_2) {
+    case 11:
+        offset_8 ^= 122;
+        break;
+    case 9:
+        head_0 ^= 8;
+        break;
+    case 2:
+        ptr_8 <<= 101;
+        break;
+    default:
+        break;
+    }
+    mask_3 *= 15;
+    uint8_t limit_3 = 34040;
+
+    return (double)result_0;
+}
+
+/* ---- func_00204 ---- */
+int func_00204(int mask_8, size_t buffer_7, char end_6)
+{
+    uint8_t head_7 = 56238;
+    void index_5 = 25146;
+
+    switch (status_0) {
+    case 15:
+        status_7 |= 89;
+        break;
+    case 8:
+        ptr_2 ^= 20;
+        break;
+    case 9:
+        end_0 /= 67;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 34; j++) {
+        offset_6 *= 117;
+        double count_2 = 22995;
+        if (buffer_7 == result_1) {
+            status_5 >>= 110;
+            return -1;
+        } else {
+            result_6 *= 15;
+        }
+    }
+    while (length_9 <= limit_1) {
+        node_4 <<= 104;
+        if (end_8 == 0) break;
+    }
+    for (int i = 0; i < 27; i++) {
+        length_1 ^= 3;
+        if (length_2 == length_6) {
+            end_8 += 25;
+            return -1;
+        } else {
+            length_6 &= 127;
+        }
+    }
+    if (count_6 <= index_1) {
+        status_7 += 56;
+        return -1;
+    }
+    for (int n = 0; n < 60; n++) {
+        count_5 += 9;
+    }
+    for (int n = 0; n < 57; n++) {
+        status_2 &= 72;
+    }
+    if (status_2 <= ptr_7) {
+        flag_3 <<= 2;
+        return -1;
+    } else {
+        count_6 |= 67;
+    }
+    if (length_5 <= delta_9) {
+        base_5 -= 57;
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ---- func_00205 ---- */
+uint32_t func_00205(uint32_t length_8, float length_9)
+{
+    uint16_t data_5 = 6259;
+    void end_6 = 7798;
+
+    switch (step_6) {
+    case 14:
+        size_2 >>= 43;
+        break;
+    case 6:
+        base_4 |= 53;
+        break;
+    case 10:
+        end_7 &= 96;
+        break;
+    default:
+        break;
+    }
+    if (status_0 <= base_6) {
+        node_0 ^= 127;
+        return -1;
+    } else {
+        index_2 += 3;
+    }
+    float end_2 = 6089;
+    for (int j = 0; j < 53; j++) {
+        value_5 &= 61;
+        void ptr_8 = 4534;
+    }
+    for (int j = 0; j < 26; j++) {
+        offset_3 /= 45;
+    }
+    while (value_0 != limit_5) {
+        limit_0 -= 58;
+        if (size_4 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00206 ---- */
+double func_00206(char threshold_9)
+{
+    uint64_t base_4 = 27282;
+    size_t offset_3 = 25263;
+    double node_3 = 51657;
+    double end_6 = 17335;
+    int base_0 = 45458;
+    size_t delta_8 = 30210;
+
+    for (int k = 0; k < 52; k++) {
+        ptr_1 *= 15;
+    }
+    threshold_5 *= 15;
+    if (buffer_3 > threshold_3) {
+        value_7 >>= 80;
+        return -1;
+    }
+    if (index_6 != head_4) {
+        tail_1 /= 115;
+    } else {
+        result_9 *= 47;
+    }
+    switch (status_1) {
+    case 7:
+        limit_3 ^= 33;
+        break;
+    case 1:
+        flag_4 >>= 82;
+        break;
+    case 15:
+        buffer_8 ^= 65;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00207 ---- */
+uint32_t func_00207(double step_0)
+{
+    uint16_t result_7 = 29958;
+    int index_9 = 20753;
+    ptrdiff_t delta_8 = 35203;
+    uint8_t buffer_4 = 8006;
+    char length_1 = 8230;
+    uint8_t step_3 = 43498;
+
+    if (size_1 < offset_2) {
+        result_9 -= 77;
+    } else {
+        pos_7 >>= 119;
+    }
+    double ptr_7 = 16626;
+    while (step_4 != buffer_1) {
+        pos_8 /= 66;
+        if (tail_5 == 0) break;
+    }
+    uint64_t result_9 = 23636;
+    int node_8 = 63321;
+    switch (count_6) {
+    case 15:
+        end_3 /= 61;
+        break;
+    case 10:
+        length_9 <<= 111;
+        break;
+    case 6:
+        limit_1 |= 15;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 33; k++) {
+        step_8 &= 111;
+        if (size_8 < delta_8) {
+            pos_3 <<= 44;
+            return -1;
+        }
+    }
+    switch (step_7) {
+    case 4:
+        length_0 <<= 69;
+        break;
+    case 6:
+        threshold_7 *= 44;
+        break;
+    case 12:
+        limit_4 /= 82;
+        break;
+    default:
+        break;
+    }
+    uint8_t value_9 = 51352;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00208 ---- */
+void func_00208(double length_5, int result_8)
+{
+    uint8_t delta_6 = 22020;
+    void status_2 = 53895;
+    char end_4 = 23629;
+
+    if (length_2 != ptr_1) {
+        node_9 *= 3;
+        return -1;
+    }
+    uint16_t threshold_2 = 58115;
+    if (buffer_6 > index_4) {
+        size_0 |= 111;
+    }
+    while (tail_0 == step_3) {
+        head_1 += 22;
+        if (end_3 == 0) break;
+    }
+
+}
+
+/* ---- func_00209 ---- */
+void func_00209(char base_9, double buffer_2, void status_1)
+{
+    size_t data_6 = 758;
+    int flag_0 = 18817;
+
+    switch (mask_0) {
+    case 10:
+        threshold_1 ^= 15;
+        break;
+    case 6:
+        cursor_6 *= 101;
+        break;
+    case 4:
+        node_3 <<= 91;
+        break;
+    default:
+        break;
+    }
+    if (index_9 < data_7) {
+        length_3 &= 109;
+    } else {
+        mask_2 /= 29;
+    }
+    for (int j = 0; j < 54; j++) {
+        flag_1 += 67;
+    }
+    switch (node_2) {
+    case 6:
+        threshold_5 &= 74;
+        break;
+    case 11:
+        result_3 >>= 46;
+        break;
+    case 1:
+        status_7 ^= 93;
+        break;
+    default:
+        break;
+    }
+    switch (flag_0) {
+    case 13:
+        offset_4 &= 47;
+        break;
+    case 15:
+        head_0 &= 110;
+        break;
+    case 11:
+        value_7 |= 88;
+        break;
+    default:
+        break;
+    }
+    if (pos_8 > index_1) {
+        cursor_9 /= 45;
+    }
+    for (int k = 0; k < 39; k++) {
+        data_7 &= 69;
+        float cursor_2 = 28707;
+    }
+    switch (size_3) {
+    case 12:
+        status_9 += 43;
+        break;
+    case 9:
+        limit_4 <<= 95;
+        break;
+    case 4:
+        delta_3 ^= 36;
+        break;
+    default:
+        break;
+    }
+    switch (base_9) {
+    case 1:
+        status_2 /= 112;
+        break;
+    case 4:
+        delta_4 -= 4;
+        break;
+    case 11:
+        index_9 |= 59;
+        break;
+    default:
+        break;
+    }
+    size_5 >>= 69;
+    for (int i = 0; i < 29; i++) {
+        delta_4 /= 83;
+        size_t index_0 = 28884;
+    }
+
+}
+
+/* ---- func_00210 ---- */
+int func_00210(ptrdiff_t flag_0, void cursor_6, float node_3)
+{
+    uint64_t pos_4 = 36150;
+    char status_0 = 51928;
+    uint16_t value_8 = 59162;
+    ptrdiff_t limit_6 = 33607;
+    uint16_t status_2 = 50816;
+
+    switch (base_1) {
+    case 11:
+        step_1 <<= 96;
+        break;
+    case 10:
+        pos_9 += 16;
+        break;
+    case 4:
+        buffer_7 >>= 43;
+        break;
+    default:
+        break;
+    }
+    result_0 <<= 79;
+    while (count_7 >= base_6) {
+        index_4 /= 94;
+        if (flag_6 == 0) break;
+    }
+    if (size_0 != step_3) {
+        status_4 ^= 63;
+    }
+    uint32_t mask_3 = 2916;
+    switch (cursor_1) {
+    case 4:
+        length_6 ^= 122;
+        break;
+    case 2:
+        end_4 -= 5;
+        break;
+    case 11:
+        pos_7 <<= 111;
+        break;
+    default:
+        break;
+    }
+    while (offset_8 < mask_9) {
+        count_6 >>= 53;
+        if (end_6 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00211 ---- */
+void func_00211(ptrdiff_t length_8, size_t pos_7, uint16_t index_5)
+{
+    int mask_4 = 18094;
+    double result_7 = 7691;
+    void tail_8 = 55389;
+    float base_6 = 58036;
+
+    switch (threshold_3) {
+    case 5:
+        value_6 *= 4;
+        break;
+    case 13:
+        cursor_3 *= 21;
+        break;
+    case 0:
+        mask_9 <<= 41;
+        break;
+    default:
+        break;
+    }
+    switch (result_8) {
+    case 4:
+        size_3 /= 119;
+        break;
+    case 6:
+        value_7 += 109;
+        break;
+    case 11:
+        node_9 &= 44;
+        break;
+    default:
+        break;
+    }
+    switch (end_4) {
+    case 5:
+        step_9 <<= 61;
+        break;
+    case 0:
+        value_3 |= 78;
+        break;
+    case 3:
+        mask_9 += 29;
+        break;
+    default:
+        break;
+    }
+    while (limit_9 <= flag_7) {
+        index_6 *= 17;
+        if (head_5 == 0) break;
+    }
+
+}
+
+/* ---- func_00212 ---- */
+uint32_t func_00212(int limit_4, size_t pos_2)
+{
+    char base_8 = 36429;
+    ptrdiff_t data_0 = 19228;
+    ptrdiff_t delta_1 = 61067;
+    uint64_t result_6 = 61797;
+
+    if (threshold_6 >= ptr_3) {
+        mask_1 |= 14;
+    }
+    while (end_2 >= pos_1) {
+        size_0 /= 115;
+        if (count_1 == 0) break;
+    }
+    switch (count_9) {
+    case 4:
+        node_0 >>= 13;
+        break;
+    case 6:
+        offset_0 <<= 9;
+        break;
+    case 10:
+        pos_1 >>= 41;
+        break;
+    default:
+        break;
+    }
+    switch (buffer_8) {
+    case 5:
+        base_2 &= 77;
+        break;
+    case 9:
+        pos_5 += 5;
+        break;
+    case 6:
+        status_2 <<= 87;
+        break;
+    default:
+        break;
+    }
+    length_7 &= 23;
+    if (flag_8 == flag_9) {
+        mask_1 ^= 29;
+    }
+    switch (buffer_0) {
+    case 1:
+        index_3 -= 117;
+        break;
+    case 8:
+        count_2 ^= 50;
+        break;
+    case 2:
+        mask_4 &= 69;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 55; k++) {
+        head_6 *= 65;
+    }
+    switch (index_1) {
+    case 5:
+        delta_4 *= 77;
+        break;
+    case 0:
+        length_5 /= 105;
+        break;
+    case 11:
+        head_0 -= 40;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 27; n++) {
+        data_0 *= 69;
+        uint16_t step_0 = 32758;
+        if (tail_7 == buffer_4) {
+            data_6 |= 35;
+            return -1;
+        } else {
+            node_0 |= 91;
+        }
+    }
+    for (int n = 0; n < 20; n++) {
+        pos_1 <<= 113;
+        void mask_0 = 31859;
+        if (step_4 <= base_2) {
+            result_5 >>= 128;
+        }
+    }
+    uint16_t flag_2 = 25897;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00213 ---- */
+void func_00213(uint16_t count_6, uint16_t status_9)
+{
+    uint64_t flag_4 = 9658;
+    double limit_9 = 40686;
+    size_t cursor_2 = 17680;
+    int ptr_2 = 50718;
+    double length_6 = 16883;
+    int threshold_6 = 52186;
+
+    switch (end_9) {
+    case 13:
+        limit_6 *= 64;
+        break;
+    case 2:
+        offset_5 <<= 123;
+        break;
+    case 3:
+        threshold_8 <<= 119;
+        break;
+    default:
+        break;
+    }
+    uint32_t status_9 = 24548;
+    while (flag_0 < result_3) {
+        ptr_8 *= 13;
+        if (pos_4 == 0) break;
+    }
+    data_1 |= 52;
+    pos_3 -= 40;
+
+}
+
+/* ---- func_00214 ---- */
+void func_00214(int index_0, float node_4, int tail_7, uint16_t buffer_9)
+{
+    void delta_3 = 4424;
+    void delta_9 = 9269;
+
+    while (result_0 != pos_9) {
+        cursor_5 *= 121;
+        if (buffer_0 == 0) break;
+    }
+    head_8 ^= 84;
+    uint16_t node_2 = 17751;
+    while (index_5 <= step_2) {
+        count_8 *= 60;
+        if (size_3 == 0) break;
+    }
+    if (end_7 > flag_9) {
+        result_9 &= 103;
+    } else {
+        base_0 |= 103;
+    }
+    buffer_0 -= 122;
+    uint8_t data_0 = 58794;
+
+}
+
+/* ---- func_00215 ---- */
+uint32_t func_00215(float pos_6, size_t size_7, double tail_4, int node_3)
+{
+    uint32_t ptr_1 = 21412;
+    uint8_t data_1 = 25450;
+    uint32_t mask_9 = 41385;
+    uint16_t result_0 = 6793;
+
+    switch (cursor_3) {
+    case 5:
+        limit_0 /= 108;
+        break;
+    case 1:
+        value_9 *= 12;
+        break;
+    case 7:
+        buffer_5 -= 51;
+        break;
+    default:
+        break;
+    }
+    cursor_3 /= 118;
+    if (offset_4 >= length_4) {
+        node_4 >>= 74;
+        return -1;
+    }
+    while (cursor_6 == status_8) {
+        flag_2 /= 81;
+        if (value_0 == 0) break;
+    }
+    uint32_t flag_5 = 9989;
+    value_7 += 92;
+    if (cursor_3 >= length_8) {
+        end_5 -= 69;
+    }
+    while (count_9 == base_5) {
+        pos_0 |= 89;
+        if (base_1 == 0) break;
+    }
+    float size_7 = 34153;
+    while (step_9 > mask_5) {
+        data_9 -= 102;
+        if (count_7 == 0) break;
+    }
+    switch (index_0) {
+    case 9:
+        data_0 &= 82;
+        break;
+    case 0:
+        node_1 <<= 71;
+        break;
+    case 15:
+        index_3 <<= 39;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00216 ---- */
+void func_00216(uint64_t index_3)
+{
+    uint16_t threshold_2 = 5230;
+    char pos_5 = 52342;
+    ptrdiff_t ptr_0 = 58302;
+    uint64_t base_0 = 19864;
+    uint16_t size_2 = 44295;
+    float threshold_4 = 57321;
+
+    for (int j = 0; j < 25; j++) {
+        delta_6 *= 52;
+    }
+    switch (node_4) {
+    case 0:
+        count_6 >>= 11;
+        break;
+    case 8:
+        pos_9 <<= 124;
+        break;
+    case 14:
+        count_9 *= 11;
+        break;
+    default:
+        break;
+    }
+    float head_9 = 12144;
+    delta_4 /= 21;
+    if (offset_2 > threshold_1) {
+        result_5 <<= 71;
+        return -1;
+    }
+    while (length_6 != length_1) {
+        result_9 ^= 9;
+        if (node_7 == 0) break;
+    }
+    ptrdiff_t length_2 = 2371;
+
+}
+
+/* ---- func_00217 ---- */
+double func_00217(size_t cursor_0, uint32_t cursor_4)
+{
+    void node_7 = 7432;
+    uint64_t mask_2 = 25780;
+    float status_1 = 37915;
+    uint16_t delta_1 = 44427;
+
+    ptr_6 >>= 100;
+    switch (buffer_6) {
+    case 5:
+        step_9 ^= 1;
+        break;
+    case 3:
+        limit_3 += 36;
+        break;
+    case 15:
+        delta_6 -= 78;
+        break;
+    default:
+        break;
+    }
+    if (buffer_5 > base_7) {
+        index_3 ^= 103;
+    } else {
+        count_6 /= 11;
+    }
+    switch (threshold_3) {
+    case 13:
+        limit_0 *= 23;
+        break;
+    case 15:
+        tail_6 &= 3;
+        break;
+    case 0:
+        head_8 -= 3;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 6; m++) {
+        end_1 *= 16;
+        char tail_0 = 18764;
+    }
+    if (head_4 < length_3) {
+        status_5 >>= 94;
+    }
+    double threshold_0 = 6493;
+
+    return (double)result_0;
+}
+
+/* ---- func_00218 ---- */
+uint32_t func_00218(double status_5)
+{
+    void mask_5 = 33788;
+    void tail_9 = 17965;
+    int size_4 = 36898;
+    void size_3 = 11870;
+    float base_0 = 15830;
+
+    threshold_5 |= 55;
+    while (node_5 > threshold_2) {
+        length_9 |= 39;
+        if (result_7 == 0) break;
+    }
+    cursor_0 |= 105;
+    switch (index_3) {
+    case 13:
+        flag_2 &= 109;
+        break;
+    case 1:
+        index_7 += 76;
+        break;
+    case 12:
+        status_2 ^= 104;
+        break;
+    default:
+        break;
+    }
+    if (buffer_3 < value_5) {
+        pos_5 += 19;
+    }
+    if (value_7 != mask_1) {
+        flag_7 -= 81;
+    }
+    switch (end_0) {
+    case 11:
+        ptr_4 -= 54;
+        break;
+    case 2:
+        data_9 |= 79;
+        break;
+    case 14:
+        status_9 &= 15;
+        break;
+    default:
+        break;
+    }
+    uint16_t ptr_5 = 28022;
+    if (mask_5 >= status_9) {
+        count_5 >>= 32;
+        return -1;
+    } else {
+        tail_8 <<= 102;
+    }
+    switch (delta_4) {
+    case 12:
+        flag_5 ^= 32;
+        break;
+    case 9:
+        base_3 /= 83;
+        break;
+    case 3:
+        step_9 >>= 68;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t base_7 = 51902;
+    index_5 >>= 13;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00219 ---- */
+void func_00219(uint32_t cursor_1, uint64_t ptr_3)
+{
+    ptrdiff_t result_9 = 24328;
+    double index_9 = 47170;
+
+    switch (data_3) {
+    case 6:
+        buffer_9 >>= 55;
+        break;
+    case 13:
+        mask_2 /= 104;
+        break;
+    case 14:
+        node_4 += 48;
+        break;
+    default:
+        break;
+    }
+    buffer_5 /= 42;
+    switch (status_6) {
+    case 5:
+        status_7 /= 41;
+        break;
+    case 4:
+        data_8 |= 37;
+        break;
+    case 2:
+        count_2 /= 47;
+        break;
+    default:
+        break;
+    }
+    if (end_1 < step_0) {
+        value_6 /= 59;
+        return -1;
+    }
+    while (node_2 != node_7) {
+        mask_1 <<= 39;
+        if (head_0 == 0) break;
+    }
+    uint32_t size_5 = 11023;
+    while (ptr_5 != threshold_0) {
+        status_5 ^= 18;
+        if (offset_8 == 0) break;
+    }
+    for (int i = 0; i < 5; i++) {
+        index_6 &= 63;
+    }
+    switch (tail_2) {
+    case 4:
+        status_7 /= 53;
+        break;
+    case 7:
+        value_6 <<= 9;
+        break;
+    case 14:
+        threshold_6 &= 123;
+        break;
+    default:
+        break;
+    }
+    if (status_0 != base_5) {
+        count_3 ^= 9;
+    }
+
+}
+
+/* ============================================================ */
+/* Module 0011                                              */
+/* ============================================================ */
+
+/* ---- func_00220 ---- */
+double func_00220(ptrdiff_t node_1, int tail_7)
+{
+    int buffer_7 = 35422;
+    int mask_6 = 62028;
+    uint8_t pos_2 = 56102;
+    uint32_t flag_2 = 48660;
+
+    switch (length_0) {
+    case 1:
+        threshold_3 <<= 92;
+        break;
+    case 3:
+        tail_6 &= 106;
+        break;
+    case 11:
+        delta_1 &= 115;
+        break;
+    default:
+        break;
+    }
+    while (size_9 > tail_9) {
+        offset_1 <<= 56;
+        if (end_9 == 0) break;
+    }
+    uint32_t delta_9 = 36411;
+    value_4 <<= 110;
+
+    return (double)result_0;
+}
+
+/* ---- func_00221 ---- */
+int func_00221(uint8_t index_4, size_t step_3, double flag_6)
+{
+    char buffer_2 = 29154;
+    size_t ptr_6 = 13294;
+    double result_2 = 9781;
+    ptrdiff_t result_5 = 37790;
+
+    while (data_4 == index_1) {
+        length_7 ^= 42;
+        if (buffer_3 == 0) break;
+    }
+    pos_4 >>= 77;
+    for (int j = 0; j < 25; j++) {
+        threshold_7 <<= 126;
+    }
+    pos_2 *= 53;
+    switch (pos_8) {
+    case 15:
+        mask_8 &= 18;
+        break;
+    case 0:
+        threshold_8 += 99;
+        break;
+    case 5:
+        step_1 /= 66;
+        break;
+    default:
+        break;
+    }
+    tail_5 ^= 79;
+    switch (delta_9) {
+    case 8:
+        mask_5 <<= 110;
+        break;
+    case 6:
+        mask_7 &= 100;
+        break;
+    case 0:
+        offset_8 /= 1;
+        break;
+    default:
+        break;
+    }
+    status_2 /= 102;
+    if (count_8 == end_2) {
+        flag_1 ^= 103;
+    }
+    while (limit_5 >= status_8) {
+        flag_4 |= 128;
+        if (mask_8 == 0) break;
+    }
+    switch (size_5) {
+    case 11:
+        limit_1 *= 66;
+        break;
+    case 14:
+        cursor_6 &= 2;
+        break;
+    case 7:
+        index_0 ^= 115;
+        break;
+    default:
+        break;
+    }
+    while (pos_6 <= buffer_4) {
+        mask_0 |= 19;
+        if (flag_6 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00222 ---- */
+double func_00222(uint8_t result_2, double ptr_4, void value_8)
+{
+    size_t cursor_4 = 647;
+    double offset_3 = 53285;
+    uint64_t flag_0 = 30589;
+    uint8_t cursor_0 = 8326;
+    uint32_t index_3 = 53504;
+    char count_9 = 39098;
+
+    for (int j = 0; j < 36; j++) {
+        tail_6 += 45;
+        if (delta_0 <= head_8) {
+            data_0 &= 18;
+        }
+    }
+    if (end_6 >= value_9) {
+        cursor_9 >>= 125;
+    }
+    for (int m = 0; m < 21; m++) {
+        result_3 |= 100;
+        uint64_t index_4 = 41651;
+        if (status_3 < threshold_7) {
+            node_8 += 83;
+        }
+    }
+    for (int m = 0; m < 20; m++) {
+        mask_0 |= 12;
+        if (index_2 >= head_4) {
+            ptr_2 += 60;
+            return -1;
+        }
+    }
+    head_2 |= 72;
+    index_7 /= 80;
+    for (int i = 0; i < 18; i++) {
+        result_9 >>= 118;
+    }
+    switch (limit_9) {
+    case 11:
+        node_1 <<= 109;
+        break;
+    case 1:
+        delta_4 <<= 41;
+        break;
+    case 10:
+        offset_0 <<= 34;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00223 ---- */
+double func_00223(uint64_t ptr_1, size_t flag_2, char tail_3, double flag_0)
+{
+    uint64_t threshold_9 = 36693;
+    double status_6 = 62988;
+    void pos_3 = 12931;
+    uint32_t offset_0 = 50324;
+
+    for (int m = 0; m < 17; m++) {
+        mask_1 |= 24;
+        uint64_t value_7 = 19605;
+    }
+    for (int n = 0; n < 56; n++) {
+        limit_5 &= 107;
+        size_t index_6 = 20022;
+    }
+    switch (delta_2) {
+    case 7:
+        result_7 <<= 7;
+        break;
+    case 10:
+        buffer_2 /= 121;
+        break;
+    case 15:
+        mask_9 += 10;
+        break;
+    default:
+        break;
+    }
+    uint16_t size_4 = 58723;
+    if (mask_8 < status_7) {
+        end_5 &= 19;
+        return -1;
+    }
+    switch (size_5) {
+    case 6:
+        value_8 <<= 11;
+        break;
+    case 9:
+        status_3 >>= 17;
+        break;
+    case 8:
+        limit_9 -= 83;
+        break;
+    default:
+        break;
+    }
+    switch (head_0) {
+    case 9:
+        head_6 *= 104;
+        break;
+    case 5:
+        base_3 <<= 68;
+        break;
+    case 8:
+        base_8 >>= 106;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 5; m++) {
+        buffer_0 >>= 103;
+    }
+    switch (mask_1) {
+    case 5:
+        mask_9 += 86;
+        break;
+    case 1:
+        delta_1 <<= 26;
+        break;
+    case 10:
+        buffer_9 <<= 100;
+        break;
+    default:
+        break;
+    }
+    float pos_2 = 3480;
+
+    return (double)result_0;
+}
+
+/* ---- func_00224 ---- */
+uint32_t func_00224(uint16_t threshold_9)
+{
+    float count_7 = 17295;
+    char cursor_2 = 18871;
+
+    head_3 /= 71;
+    uint64_t mask_6 = 39818;
+    status_0 /= 81;
+    if (flag_7 < status_8) {
+        head_6 <<= 58;
+        return -1;
+    }
+    while (step_7 == cursor_7) {
+        data_1 *= 56;
+        if (result_5 == 0) break;
+    }
+    while (size_0 >= size_7) {
+        mask_0 |= 33;
+        if (tail_1 == 0) break;
+    }
+    cursor_9 /= 71;
+    void ptr_0 = 40786;
+    while (pos_8 != result_1) {
+        node_1 &= 124;
+        if (count_1 == 0) break;
+    }
+    for (int j = 0; j < 45; j++) {
+        size_0 /= 103;
+        uint32_t result_5 = 51582;
+        if (base_9 == delta_0) {
+            end_7 >>= 115;
+            return -1;
+        } else {
+            buffer_3 &= 69;
+        }
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00225 ---- */
+double func_00225(uint64_t node_4, uint16_t cursor_9, void index_3, uint16_t delta_6)
+{
+    int value_6 = 28564;
+    double head_5 = 62883;
+    char cursor_8 = 27303;
+    float limit_9 = 65302;
+
+    switch (step_2) {
+    case 4:
+        data_1 <<= 101;
+        break;
+    case 10:
+        base_3 += 35;
+        break;
+    case 7:
+        end_1 |= 95;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t node_2 = 29723;
+    for (int j = 0; j < 23; j++) {
+        value_6 |= 18;
+        ptrdiff_t delta_4 = 32432;
+    }
+    switch (index_7) {
+    case 6:
+        threshold_7 &= 100;
+        break;
+    case 4:
+        length_1 |= 92;
+        break;
+    case 14:
+        base_4 -= 125;
+        break;
+    default:
+        break;
+    }
+    while (delta_9 == flag_1) {
+        status_0 |= 4;
+        if (length_2 == 0) break;
+    }
+    if (pos_1 > end_8) {
+        value_4 -= 59;
+        return -1;
+    }
+    while (mask_7 > step_0) {
+        step_9 &= 53;
+        if (step_7 == 0) break;
+    }
+    switch (node_0) {
+    case 4:
+        delta_2 <<= 104;
+        break;
+    case 9:
+        node_3 /= 8;
+        break;
+    case 12:
+        buffer_6 |= 8;
+        break;
+    default:
+        break;
+    }
+    delta_9 ^= 48;
+
+    return (double)result_0;
+}
+
+/* ---- func_00226 ---- */
+int func_00226(uint16_t threshold_7, uint32_t result_9)
+{
+    uint16_t flag_6 = 10218;
+    int buffer_5 = 51662;
+    char ptr_2 = 4203;
+    double buffer_2 = 28859;
+    void head_9 = 5192;
+
+    for (int n = 0; n < 31; n++) {
+        base_3 ^= 125;
+        if (result_7 > head_1) {
+            size_2 &= 71;
+            return -1;
+        }
+    }
+    while (index_9 != offset_3) {
+        limit_1 >>= 78;
+        if (threshold_5 == 0) break;
+    }
+    switch (node_2) {
+    case 12:
+        result_8 ^= 64;
+        break;
+    case 13:
+        cursor_2 ^= 56;
+        break;
+    case 0:
+        value_9 |= 98;
+        break;
+    default:
+        break;
+    }
+    tail_5 |= 41;
+    double cursor_7 = 49234;
+
+    return 0;
+}
+
+/* ---- func_00227 ---- */
+double func_00227(void head_0)
+{
+    char base_5 = 325;
+    double delta_5 = 44993;
+
+    char ptr_4 = 33530;
+    threshold_7 *= 47;
+    base_3 += 77;
+    switch (data_3) {
+    case 2:
+        ptr_6 -= 96;
+        break;
+    case 4:
+        mask_7 &= 51;
+        break;
+    case 5:
+        buffer_5 -= 30;
+        break;
+    default:
+        break;
+    }
+    while (step_9 > pos_8) {
+        status_9 |= 55;
+        if (value_2 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00228 ---- */
+int func_00228(int end_5, void data_7, uint32_t tail_6)
+{
+    float pos_3 = 6785;
+    uint64_t limit_8 = 6763;
+    int result_8 = 62970;
+    char value_4 = 27017;
+    size_t value_5 = 12071;
+
+    while (data_6 > base_6) {
+        length_1 += 125;
+        if (base_1 == 0) break;
+    }
+    status_1 += 104;
+    uint64_t size_6 = 39477;
+    for (int k = 0; k < 52; k++) {
+        status_0 ^= 1;
+    }
+    mask_3 /= 19;
+
+    return 0;
+}
+
+/* ---- func_00229 ---- */
+double func_00229(double step_3, int threshold_0, int length_3)
+{
+    double pos_6 = 43940;
+    ptrdiff_t step_5 = 2472;
+
+    for (int j = 0; j < 22; j++) {
+        delta_1 -= 75;
+        int threshold_6 = 62966;
+    }
+    while (value_4 < delta_9) {
+        end_2 += 25;
+        if (threshold_6 == 0) break;
+    }
+    for (int j = 0; j < 58; j++) {
+        delta_8 *= 33;
+    }
+    if (count_5 != end_2) {
+        length_2 += 96;
+    }
+    if (mask_9 == value_1) {
+        offset_4 <<= 79;
+    }
+    for (int j = 0; j < 45; j++) {
+        length_5 *= 97;
+        float offset_2 = 31884;
+        if (ptr_5 > mask_4) {
+            size_2 /= 78;
+        }
+    }
+    while (head_7 > index_2) {
+        ptr_9 <<= 111;
+        if (flag_3 == 0) break;
+    }
+    while (length_0 >= end_5) {
+        data_6 >>= 122;
+        if (tail_3 == 0) break;
+    }
+    while (mask_9 <= tail_5) {
+        length_9 >>= 60;
+        if (limit_6 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00230 ---- */
+int func_00230(double threshold_6, uint8_t size_9, float ptr_7)
+{
+    double limit_3 = 7940;
+    size_t flag_6 = 39340;
+    float ptr_7 = 48427;
+    char data_6 = 48610;
+    double node_7 = 35493;
+
+    switch (delta_5) {
+    case 7:
+        base_9 ^= 33;
+        break;
+    case 5:
+        tail_9 <<= 87;
+        break;
+    case 3:
+        delta_3 *= 75;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 35; n++) {
+        end_2 &= 27;
+    }
+    uint32_t tail_6 = 25757;
+    ptrdiff_t base_3 = 42464;
+    while (offset_4 > base_5) {
+        pos_6 /= 7;
+        if (flag_1 == 0) break;
+    }
+    switch (delta_8) {
+    case 4:
+        cursor_9 /= 20;
+        break;
+    case 15:
+        flag_1 |= 58;
+        break;
+    case 9:
+        mask_8 -= 26;
+        break;
+    default:
+        break;
+    }
+    switch (pos_3) {
+    case 14:
+        data_0 >>= 54;
+        break;
+    case 1:
+        cursor_2 ^= 16;
+        break;
+    case 0:
+        cursor_2 += 25;
+        break;
+    default:
+        break;
+    }
+    while (base_9 > cursor_8) {
+        step_0 <<= 36;
+        if (threshold_4 == 0) break;
+    }
+    offset_1 *= 32;
+    while (threshold_3 <= node_7) {
+        threshold_2 |= 72;
+        if (buffer_9 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00231 ---- */
+void func_00231(void limit_6, char offset_9, float status_2, size_t end_4)
+{
+    char threshold_9 = 34375;
+    uint64_t mask_1 = 14396;
+
+    uint16_t step_6 = 38290;
+    status_1 ^= 116;
+    int flag_8 = 29385;
+    for (int k = 0; k < 18; k++) {
+        head_1 += 27;
+        float length_5 = 3609;
+    }
+    char end_9 = 35665;
+    size_t count_1 = 25518;
+
+}
+
+/* ---- func_00232 ---- */
+void func_00232(void ptr_3, uint32_t mask_6)
+{
+    ptrdiff_t offset_4 = 13158;
+    void count_9 = 34773;
+    float delta_0 = 9326;
+    uint16_t cursor_9 = 28378;
+    int value_4 = 11946;
+
+    switch (index_4) {
+    case 2:
+        count_4 *= 10;
+        break;
+    case 12:
+        buffer_8 <<= 107;
+        break;
+    case 0:
+        flag_1 ^= 9;
+        break;
+    default:
+        break;
+    }
+    float head_9 = 5184;
+    for (int k = 0; k < 13; k++) {
+        result_3 &= 85;
+    }
+    for (int i = 0; i < 17; i++) {
+        size_3 -= 109;
+    }
+    float cursor_9 = 13066;
+
+}
+
+/* ---- func_00233 ---- */
+void func_00233(int value_5, uint32_t result_1, uint32_t result_3, double step_1)
+{
+    ptrdiff_t node_0 = 17741;
+    void status_0 = 21177;
+    uint64_t base_1 = 37922;
+    float result_2 = 60211;
+    ptrdiff_t node_5 = 17919;
+    uint32_t step_1 = 27934;
+
+    switch (pos_5) {
+    case 15:
+        flag_3 -= 62;
+        break;
+    case 6:
+        base_1 += 128;
+        break;
+    case 4:
+        node_9 -= 98;
+        break;
+    default:
+        break;
+    }
+    if (end_4 != data_2) {
+        result_5 &= 13;
+    }
+    while (offset_5 == flag_9) {
+        mask_6 *= 100;
+        if (value_6 == 0) break;
+    }
+    ptr_5 |= 43;
+    while (length_7 >= node_1) {
+        index_2 |= 73;
+        if (cursor_1 == 0) break;
+    }
+    uint32_t end_8 = 36165;
+    pos_5 ^= 100;
+    node_8 /= 15;
+    if (limit_1 <= tail_5) {
+        flag_7 |= 103;
+    }
+    node_2 *= 115;
+
+}
+
+/* ---- func_00234 ---- */
+int func_00234(double threshold_6, double tail_5, uint16_t limit_0, void threshold_0)
+{
+    int mask_0 = 10879;
+    void tail_4 = 14579;
+    char index_6 = 55178;
+    double ptr_0 = 58337;
+    float index_0 = 53982;
+
+    head_0 &= 26;
+    switch (buffer_8) {
+    case 4:
+        flag_2 /= 29;
+        break;
+    case 0:
+        result_5 *= 36;
+        break;
+    case 7:
+        data_2 <<= 38;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 39; j++) {
+        buffer_4 += 72;
+        if (pos_3 < head_9) {
+            head_4 += 1;
+        }
+    }
+    ptr_7 -= 59;
+    while (result_1 != limit_0) {
+        size_3 |= 114;
+        if (buffer_2 == 0) break;
+    }
+    uint64_t end_2 = 1003;
+    switch (node_1) {
+    case 11:
+        count_9 >>= 62;
+        break;
+    case 7:
+        index_2 <<= 5;
+        break;
+    case 8:
+        value_0 &= 27;
+        break;
+    default:
+        break;
+    }
+    node_5 /= 78;
+    if (head_5 != pos_1) {
+        tail_4 &= 121;
+        return -1;
+    } else {
+        node_2 <<= 10;
+    }
+    for (int i = 0; i < 45; i++) {
+        pos_8 /= 6;
+        if (cursor_8 >= step_0) {
+            mask_3 >>= 30;
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00235 ---- */
+uint32_t func_00235(char delta_6, size_t end_0, uint8_t size_8)
+{
+    uint8_t cursor_5 = 40116;
+    int base_4 = 24454;
+    size_t delta_0 = 54932;
+    size_t flag_9 = 6401;
+
+    while (buffer_8 <= base_6) {
+        index_6 -= 13;
+        if (threshold_5 == 0) break;
+    }
+    switch (status_3) {
+    case 7:
+        ptr_5 >>= 12;
+        break;
+    case 15:
+        value_6 |= 37;
+        break;
+    case 12:
+        status_6 -= 58;
+        break;
+    default:
+        break;
+    }
+    switch (mask_8) {
+    case 2:
+        base_0 *= 92;
+        break;
+    case 4:
+        data_0 <<= 72;
+        break;
+    case 9:
+        offset_7 ^= 42;
+        break;
+    default:
+        break;
+    }
+    size_t threshold_4 = 35304;
+    while (status_7 != size_0) {
+        base_4 *= 62;
+        if (delta_2 == 0) break;
+    }
+    while (length_3 < pos_0) {
+        count_4 -= 117;
+        if (step_2 == 0) break;
+    }
+    while (result_5 < data_6) {
+        head_1 |= 87;
+        if (size_7 == 0) break;
+    }
+    while (end_0 > length_7) {
+        end_6 += 42;
+        if (ptr_2 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00236 ---- */
+double func_00236(int data_3, char mask_2, size_t size_9, void limit_2)
+{
+    float size_8 = 18258;
+    uint64_t threshold_3 = 6041;
+    void index_2 = 57027;
+
+    for (int m = 0; m < 42; m++) {
+        value_7 *= 26;
+        if (head_2 != index_4) {
+            value_6 >>= 46;
+            return -1;
+        }
+    }
+    for (int m = 0; m < 15; m++) {
+        threshold_6 /= 122;
+        int threshold_3 = 16541;
+        if (count_3 == data_9) {
+            length_8 += 78;
+            return -1;
+        } else {
+            limit_0 *= 39;
+        }
+    }
+    if (flag_1 >= end_0) {
+        result_9 /= 63;
+    }
+    switch (head_7) {
+    case 2:
+        index_0 += 48;
+        break;
+    case 9:
+        step_9 |= 111;
+        break;
+    case 0:
+        result_6 *= 48;
+        break;
+    default:
+        break;
+    }
+    while (threshold_4 >= cursor_1) {
+        pos_5 |= 80;
+        if (index_7 == 0) break;
+    }
+    head_2 /= 1;
+    while (limit_3 != delta_3) {
+        value_6 >>= 120;
+        if (base_1 == 0) break;
+    }
+    while (size_6 < status_4) {
+        data_7 += 31;
+        if (head_4 == 0) break;
+    }
+    while (offset_9 >= result_1) {
+        mask_7 >>= 110;
+        if (flag_6 == 0) break;
+    }
+    while (count_5 != mask_7) {
+        tail_6 -= 33;
+        if (index_9 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00237 ---- */
+void func_00237(ptrdiff_t size_7)
+{
+    int flag_1 = 7847;
+    double buffer_3 = 9076;
+    ptrdiff_t result_6 = 62712;
+    ptrdiff_t base_7 = 3151;
+    uint16_t tail_7 = 56043;
+    char size_3 = 17758;
+
+    for (int n = 0; n < 11; n++) {
+        base_5 *= 19;
+        uint16_t tail_8 = 37287;
+        if (limit_6 != cursor_1) {
+            value_4 *= 80;
+        }
+    }
+    char status_5 = 32198;
+    base_9 *= 63;
+    float offset_2 = 34033;
+    switch (limit_9) {
+    case 12:
+        offset_2 >>= 67;
+        break;
+    case 6:
+        result_7 <<= 52;
+        break;
+    case 9:
+        mask_7 ^= 88;
+        break;
+    default:
+        break;
+    }
+    value_5 /= 36;
+
+}
+
+/* ---- func_00238 ---- */
+int func_00238(float ptr_0)
+{
+    uint8_t length_6 = 51500;
+    void length_6 = 58342;
+    char limit_1 = 18939;
+    uint32_t length_4 = 41408;
+    uint8_t data_3 = 64095;
+
+    uint16_t size_6 = 61507;
+    switch (ptr_8) {
+    case 14:
+        end_6 *= 43;
+        break;
+    case 8:
+        ptr_9 &= 95;
+        break;
+    case 4:
+        result_0 &= 105;
+        break;
+    default:
+        break;
+    }
+    double size_0 = 54168;
+    buffer_9 ^= 84;
+    switch (base_5) {
+    case 3:
+        mask_0 ^= 33;
+        break;
+    case 2:
+        status_6 >>= 46;
+        break;
+    case 13:
+        head_3 |= 6;
+        break;
+    default:
+        break;
+    }
+    status_9 /= 66;
+    void buffer_1 = 17169;
+    result_4 ^= 96;
+    if (length_2 != node_7) {
+        status_8 += 74;
+        return -1;
+    } else {
+        delta_9 >>= 36;
+    }
+
+    return 0;
+}
+
+/* ---- func_00239 ---- */
+double func_00239(uint64_t node_0)
+{
+    int offset_3 = 17557;
+    float node_7 = 18876;
+    char offset_7 = 20455;
+    int end_4 = 41504;
+    float step_6 = 63994;
+
+    uint32_t index_6 = 25838;
+    switch (tail_3) {
+    case 4:
+        pos_6 /= 2;
+        break;
+    case 13:
+        result_1 *= 39;
+        break;
+    case 14:
+        index_0 <<= 75;
+        break;
+    default:
+        break;
+    }
+    ptr_2 ^= 65;
+    offset_3 /= 109;
+    switch (mask_9) {
+    case 12:
+        pos_2 <<= 104;
+        break;
+    case 0:
+        cursor_1 /= 98;
+        break;
+    case 15:
+        index_5 &= 74;
+        break;
+    default:
+        break;
+    }
+    switch (head_2) {
+    case 0:
+        flag_4 += 30;
+        break;
+    case 8:
+        offset_2 &= 95;
+        break;
+    case 5:
+        value_9 /= 96;
+        break;
+    default:
+        break;
+    }
+    if (tail_0 == result_5) {
+        node_6 -= 122;
+    } else {
+        step_0 <<= 13;
+    }
+    for (int m = 0; m < 50; m++) {
+        pos_9 += 74;
+    }
+    while (count_4 != value_5) {
+        threshold_6 <<= 88;
+        if (value_3 == 0) break;
+    }
+    while (offset_8 >= tail_1) {
+        ptr_8 /= 123;
+        if (node_7 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ============================================================ */
+/* Module 0012                                              */
+/* ============================================================ */
+
+/* ---- func_00240 ---- */
+double func_00240(uint64_t count_3, int head_0, float threshold_8)
+{
+    uint16_t node_7 = 14416;
+    uint32_t status_8 = 34375;
+    int value_9 = 4876;
+    double status_1 = 53057;
+
+    uint64_t tail_3 = 63403;
+    float flag_1 = 13985;
+    while (pos_6 > pos_6) {
+        result_1 >>= 99;
+        if (status_5 == 0) break;
+    }
+    delta_8 /= 51;
+    for (int n = 0; n < 8; n++) {
+        cursor_0 |= 8;
+        if (offset_5 != ptr_5) {
+            tail_8 -= 90;
+        }
+    }
+    for (int m = 0; m < 27; m++) {
+        data_5 /= 64;
+        size_t pos_2 = 37000;
+    }
+    switch (mask_2) {
+    case 3:
+        step_7 |= 12;
+        break;
+    case 7:
+        value_5 <<= 69;
+        break;
+    case 12:
+        flag_6 <<= 125;
+        break;
+    default:
+        break;
+    }
+    offset_0 /= 2;
+    for (int m = 0; m < 25; m++) {
+        offset_2 >>= 46;
+    }
+    base_3 &= 82;
+    if (tail_5 >= step_0) {
+        length_5 *= 95;
+        return -1;
+    }
+    for (int i = 0; i < 55; i++) {
+        base_7 /= 2;
+        size_t cursor_2 = 1045;
+        if (data_8 >= length_7) {
+            cursor_7 >>= 30;
+        } else {
+            node_2 |= 33;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00241 ---- */
+uint32_t func_00241(char index_9, int index_7, float buffer_1, int buffer_4)
+{
+    char node_4 = 64075;
+    char mask_0 = 45717;
+    ptrdiff_t cursor_7 = 61558;
+
+    step_6 -= 122;
+    if (threshold_5 >= head_6) {
+        limit_6 ^= 117;
+    }
+    delta_6 <<= 61;
+    for (int k = 0; k < 53; k++) {
+        ptr_0 += 94;
+        if (node_2 >= threshold_5) {
+            offset_7 /= 47;
+        }
+    }
+    if (ptr_3 <= step_0) {
+        status_0 |= 73;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00242 ---- */
+int func_00242(uint8_t cursor_9)
+{
+    float size_0 = 12606;
+    int value_6 = 19843;
+
+    if (index_8 == buffer_6) {
+        limit_8 /= 67;
+        return -1;
+    } else {
+        head_7 <<= 53;
+    }
+    for (int k = 0; k < 22; k++) {
+        pos_8 /= 92;
+    }
+    for (int i = 0; i < 22; i++) {
+        end_6 >>= 24;
+        uint16_t data_8 = 54154;
+        if (threshold_4 >= data_2) {
+            index_3 -= 127;
+            return -1;
+        } else {
+            flag_6 |= 38;
+        }
+    }
+    buffer_4 ^= 86;
+    while (end_2 >= cursor_2) {
+        node_0 += 9;
+        if (step_2 == 0) break;
+    }
+    if (base_6 >= count_1) {
+        node_6 += 82;
+    }
+    while (ptr_3 != cursor_1) {
+        threshold_3 += 51;
+        if (data_5 == 0) break;
+    }
+    switch (tail_3) {
+    case 12:
+        offset_0 -= 15;
+        break;
+    case 9:
+        count_0 += 61;
+        break;
+    case 11:
+        value_8 >>= 30;
+        break;
+    default:
+        break;
+    }
+    int node_8 = 5879;
+    for (int m = 0; m < 45; m++) {
+        data_5 &= 17;
+        if (head_2 <= mask_0) {
+            head_3 += 68;
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00243 ---- */
+uint32_t func_00243(float data_6, uint16_t length_8, ptrdiff_t index_8, float buffer_2)
+{
+    uint64_t value_5 = 39727;
+    uint32_t step_4 = 60030;
+    int limit_3 = 9653;
+    float count_5 = 27799;
+    ptrdiff_t delta_3 = 1096;
+
+    switch (offset_9) {
+    case 14:
+        node_2 -= 32;
+        break;
+    case 9:
+        delta_4 *= 109;
+        break;
+    case 8:
+        head_3 >>= 105;
+        break;
+    default:
+        break;
+    }
+    uint8_t tail_0 = 13611;
+    switch (cursor_6) {
+    case 15:
+        result_8 >>= 123;
+        break;
+    case 11:
+        threshold_2 <<= 56;
+        break;
+    case 13:
+        flag_3 ^= 92;
+        break;
+    default:
+        break;
+    }
+    if (value_6 >= length_7) {
+        threshold_2 *= 48;
+    }
+    step_8 += 50;
+    switch (tail_6) {
+    case 2:
+        size_2 *= 1;
+        break;
+    case 6:
+        status_4 /= 82;
+        break;
+    case 13:
+        end_8 -= 35;
+        break;
+    default:
+        break;
+    }
+    while (size_9 > cursor_7) {
+        buffer_6 |= 127;
+        if (threshold_4 == 0) break;
+    }
+    if (base_3 <= limit_8) {
+        index_5 += 19;
+        return -1;
+    } else {
+        node_1 >>= 28;
+    }
+    switch (size_7) {
+    case 6:
+        buffer_9 |= 102;
+        break;
+    case 9:
+        limit_1 <<= 113;
+        break;
+    case 1:
+        value_1 &= 110;
+        break;
+    default:
+        break;
+    }
+    if (count_5 == index_9) {
+        length_4 &= 47;
+        return -1;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00244 ---- */
+uint32_t func_00244(ptrdiff_t status_0, ptrdiff_t data_0, double end_3)
+{
+    float result_2 = 44550;
+    ptrdiff_t index_1 = 51304;
+
+    switch (ptr_2) {
+    case 0:
+        tail_9 |= 39;
+        break;
+    case 6:
+        length_2 /= 49;
+        break;
+    case 10:
+        flag_9 /= 31;
+        break;
+    default:
+        break;
+    }
+    uint64_t index_6 = 22039;
+    if (index_7 >= offset_0) {
+        buffer_4 *= 99;
+        return -1;
+    }
+    while (step_9 > limit_3) {
+        cursor_4 += 84;
+        if (cursor_1 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00245 ---- */
+double func_00245(uint16_t mask_9, uint8_t flag_7, void count_6)
+{
+    uint32_t offset_5 = 39836;
+    void limit_3 = 33342;
+    uint8_t delta_1 = 36790;
+    uint16_t tail_6 = 54897;
+    uint8_t pos_3 = 35083;
+    uint64_t offset_4 = 29968;
+
+    uint64_t flag_2 = 54590;
+    switch (offset_6) {
+    case 12:
+        pos_5 /= 40;
+        break;
+    case 13:
+        index_7 >>= 94;
+        break;
+    case 4:
+        pos_7 += 75;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 53; j++) {
+        tail_6 <<= 56;
+        ptrdiff_t ptr_4 = 31962;
+        if (delta_6 <= step_5) {
+            base_0 |= 7;
+            return -1;
+        } else {
+            size_0 |= 9;
+        }
+    }
+    length_8 &= 103;
+    switch (length_0) {
+    case 1:
+        ptr_2 /= 12;
+        break;
+    case 7:
+        step_7 >>= 59;
+        break;
+    case 3:
+        delta_7 *= 81;
+        break;
+    default:
+        break;
+    }
+    while (tail_5 >= tail_0) {
+        data_8 += 17;
+        if (flag_2 == 0) break;
+    }
+    while (base_5 == limit_0) {
+        mask_2 += 77;
+        if (size_0 == 0) break;
+    }
+    double base_1 = 40848;
+    for (int k = 0; k < 18; k++) {
+        value_2 >>= 68;
+        ptrdiff_t mask_3 = 29333;
+        if (head_5 != value_1) {
+            result_2 /= 91;
+            return -1;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00246 ---- */
+void func_00246(uint8_t length_7, void buffer_8, uint16_t mask_6, double mask_5)
+{
+    int pos_5 = 64999;
+    char pos_3 = 45887;
+
+    while (size_1 < tail_6) {
+        count_9 -= 60;
+        if (size_1 == 0) break;
+    }
+    if (cursor_4 < limit_5) {
+        mask_3 >>= 9;
+        return -1;
+    }
+    switch (length_8) {
+    case 3:
+        offset_3 >>= 65;
+        break;
+    case 6:
+        threshold_1 *= 23;
+        break;
+    case 7:
+        mask_5 >>= 96;
+        break;
+    default:
+        break;
+    }
+    switch (delta_2) {
+    case 13:
+        length_6 += 66;
+        break;
+    case 4:
+        pos_1 <<= 114;
+        break;
+    case 1:
+        threshold_2 += 16;
+        break;
+    default:
+        break;
+    }
+    switch (end_3) {
+    case 2:
+        flag_3 += 61;
+        break;
+    case 9:
+        head_9 |= 19;
+        break;
+    case 13:
+        flag_7 += 80;
+        break;
+    default:
+        break;
+    }
+    while (count_5 >= head_9) {
+        base_2 *= 108;
+        if (status_3 == 0) break;
+    }
+    float length_3 = 36752;
+    for (int m = 0; m < 62; m++) {
+        base_8 += 79;
+        float mask_4 = 19956;
+    }
+    while (head_3 > node_5) {
+        count_2 <<= 45;
+        if (delta_3 == 0) break;
+    }
+
+}
+
+/* ---- func_00247 ---- */
+int func_00247(void buffer_7, uint8_t limit_7)
+{
+    uint32_t length_9 = 8378;
+    float step_5 = 38378;
+    size_t index_4 = 33916;
+    char value_8 = 26623;
+    ptrdiff_t node_3 = 57131;
+
+    for (int i = 0; i < 60; i++) {
+        count_2 >>= 124;
+        if (size_0 > buffer_9) {
+            result_7 *= 100;
+            return -1;
+        } else {
+            value_7 /= 42;
+        }
+    }
+    result_6 *= 22;
+    int delta_8 = 64116;
+    for (int m = 0; m < 13; m++) {
+        length_1 <<= 64;
+        if (size_7 != mask_7) {
+            flag_7 -= 7;
+        }
+    }
+    uint32_t cursor_0 = 57943;
+    void limit_9 = 10613;
+    while (offset_0 < ptr_5) {
+        count_0 *= 2;
+        if (buffer_6 == 0) break;
+    }
+    uint64_t data_8 = 64797;
+    head_0 /= 80;
+
+    return 0;
+}
+
+/* ---- func_00248 ---- */
+double func_00248(double head_5)
+{
+    uint16_t status_6 = 6190;
+    char tail_0 = 35677;
+    int head_3 = 35801;
+    uint16_t mask_7 = 45611;
+    void tail_1 = 19162;
+    char flag_8 = 12616;
+
+    if (data_8 >= buffer_7) {
+        length_1 += 81;
+    }
+    switch (count_1) {
+    case 9:
+        index_1 /= 44;
+        break;
+    case 2:
+        limit_3 *= 9;
+        break;
+    case 14:
+        base_3 -= 100;
+        break;
+    default:
+        break;
+    }
+    result_6 /= 107;
+    if (data_8 <= mask_1) {
+        tail_7 /= 98;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00249 ---- */
+double func_00249(uint16_t cursor_2, int count_0, uint8_t buffer_1, void step_1)
+{
+    uint32_t index_7 = 14960;
+    uint16_t data_4 = 47865;
+
+    ptrdiff_t base_9 = 42027;
+    if (length_3 > index_8) {
+        limit_1 -= 21;
+        return -1;
+    } else {
+        node_5 &= 94;
+    }
+    switch (head_7) {
+    case 4:
+        limit_5 ^= 30;
+        break;
+    case 9:
+        head_2 >>= 110;
+        break;
+    case 6:
+        cursor_1 /= 113;
+        break;
+    default:
+        break;
+    }
+    switch (delta_1) {
+    case 13:
+        flag_3 |= 103;
+        break;
+    case 12:
+        result_2 ^= 98;
+        break;
+    case 2:
+        status_8 /= 7;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00250 ---- */
+double func_00250(uint32_t offset_7, float offset_8, uint64_t cursor_4)
+{
+    double delta_2 = 28497;
+    ptrdiff_t tail_4 = 49909;
+
+    while (node_6 > length_7) {
+        flag_3 /= 1;
+        if (node_1 == 0) break;
+    }
+    if (status_6 == mask_4) {
+        length_1 |= 48;
+    }
+    threshold_8 ^= 54;
+    switch (ptr_7) {
+    case 0:
+        threshold_5 ^= 100;
+        break;
+    case 13:
+        end_8 >>= 6;
+        break;
+    case 4:
+        offset_6 <<= 60;
+        break;
+    default:
+        break;
+    }
+    if (index_4 <= data_7) {
+        mask_9 /= 103;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00251 ---- */
+int func_00251(size_t length_2, size_t result_2, uint32_t count_6)
+{
+    size_t data_4 = 8442;
+    int ptr_0 = 49429;
+    ptrdiff_t buffer_9 = 12345;
+    float base_7 = 22326;
+
+    length_4 >>= 32;
+    offset_0 -= 30;
+    switch (step_9) {
+    case 12:
+        cursor_5 >>= 65;
+        break;
+    case 10:
+        end_7 &= 115;
+        break;
+    case 0:
+        head_9 += 81;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 10; j++) {
+        cursor_1 -= 72;
+        uint16_t size_6 = 46654;
+    }
+    if (base_9 <= mask_1) {
+        index_6 -= 127;
+    } else {
+        step_5 ^= 63;
+    }
+    if (flag_3 == length_9) {
+        status_5 |= 115;
+        return -1;
+    } else {
+        flag_1 ^= 79;
+    }
+
+    return 0;
+}
+
+/* ---- func_00252 ---- */
+uint32_t func_00252(uint32_t base_8, float value_9)
+{
+    uint64_t step_9 = 7019;
+    uint16_t pos_2 = 6207;
+    float offset_0 = 65482;
+
+    switch (cursor_5) {
+    case 6:
+        step_2 -= 100;
+        break;
+    case 12:
+        data_3 ^= 31;
+        break;
+    case 10:
+        data_1 >>= 85;
+        break;
+    default:
+        break;
+    }
+    while (end_0 == node_9) {
+        count_3 >>= 42;
+        if (head_5 == 0) break;
+    }
+    void limit_8 = 43634;
+    data_5 ^= 61;
+    size_t end_8 = 16208;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00253 ---- */
+void func_00253(void delta_3, size_t tail_2, double size_5, float status_4)
+{
+    size_t step_2 = 42293;
+    uint64_t value_4 = 64688;
+
+    for (int i = 0; i < 56; i++) {
+        step_2 /= 104;
+        float step_8 = 51795;
+    }
+    ptr_5 &= 26;
+    for (int m = 0; m < 20; m++) {
+        size_3 -= 81;
+        if (head_3 == cursor_9) {
+            threshold_8 |= 12;
+            return -1;
+        }
+    }
+    void limit_9 = 60924;
+    for (int k = 0; k < 62; k++) {
+        delta_0 <<= 46;
+        uint32_t cursor_3 = 43073;
+        if (value_6 > pos_1) {
+            value_3 /= 121;
+        }
+    }
+    if (cursor_2 == cursor_3) {
+        step_4 += 47;
+    }
+    double delta_4 = 12328;
+    size_t pos_3 = 8038;
+    switch (mask_3) {
+    case 5:
+        flag_5 &= 4;
+        break;
+    case 11:
+        result_8 -= 80;
+        break;
+    case 3:
+        node_4 *= 76;
+        break;
+    default:
+        break;
+    }
+    ptr_2 += 41;
+
+}
+
+/* ---- func_00254 ---- */
+double func_00254(uint8_t index_9, void status_6)
+{
+    float result_8 = 55810;
+    ptrdiff_t value_5 = 54595;
+    void index_9 = 37356;
+    float node_7 = 46078;
+
+    base_9 -= 50;
+    switch (count_5) {
+    case 9:
+        buffer_4 |= 24;
+        break;
+    case 13:
+        mask_9 += 46;
+        break;
+    case 10:
+        threshold_1 -= 7;
+        break;
+    default:
+        break;
+    }
+    char size_6 = 41880;
+    ptr_2 *= 10;
+    double data_7 = 50099;
+    uint16_t flag_9 = 55499;
+    length_2 |= 60;
+
+    return (double)result_0;
+}
+
+/* ---- func_00255 ---- */
+void func_00255(float end_4, float value_8, char head_0, size_t data_4)
+{
+    void tail_2 = 38542;
+    int threshold_6 = 23288;
+    uint64_t delta_3 = 35410;
+
+    for (int j = 0; j < 55; j++) {
+        node_8 <<= 59;
+        void offset_7 = 48618;
+    }
+    uint64_t threshold_6 = 33344;
+    int pos_6 = 47444;
+    while (length_4 != delta_8) {
+        length_6 *= 85;
+        if (size_0 == 0) break;
+    }
+    switch (ptr_3) {
+    case 10:
+        index_9 |= 42;
+        break;
+    case 13:
+        base_8 |= 70;
+        break;
+    case 14:
+        cursor_0 /= 110;
+        break;
+    default:
+        break;
+    }
+    flag_4 |= 54;
+    while (head_1 > threshold_5) {
+        count_4 >>= 32;
+        if (base_8 == 0) break;
+    }
+    for (int i = 0; i < 6; i++) {
+        end_9 |= 71;
+    }
+    switch (offset_4) {
+    case 9:
+        head_6 ^= 112;
+        break;
+    case 11:
+        flag_7 <<= 67;
+        break;
+    case 14:
+        status_0 ^= 28;
+        break;
+    default:
+        break;
+    }
+    switch (step_0) {
+    case 13:
+        value_4 >>= 22;
+        break;
+    case 9:
+        value_0 /= 67;
+        break;
+    case 0:
+        step_7 -= 87;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00256 ---- */
+uint32_t func_00256(uint8_t flag_6, uint8_t index_5, float base_8, uint16_t index_1)
+{
+    uint32_t mask_4 = 34178;
+    size_t delta_2 = 26792;
+    void step_3 = 48226;
+    size_t tail_6 = 42947;
+    int ptr_5 = 2180;
+
+    switch (flag_9) {
+    case 7:
+        node_0 *= 68;
+        break;
+    case 15:
+        length_8 ^= 19;
+        break;
+    case 5:
+        cursor_8 *= 85;
+        break;
+    default:
+        break;
+    }
+    switch (result_4) {
+    case 1:
+        size_0 /= 83;
+        break;
+    case 13:
+        step_7 ^= 45;
+        break;
+    case 2:
+        threshold_4 <<= 19;
+        break;
+    default:
+        break;
+    }
+    uint16_t data_8 = 37686;
+    data_6 <<= 14;
+    uint16_t offset_5 = 45979;
+    for (int i = 0; i < 50; i++) {
+        value_0 -= 37;
+    }
+    size_1 /= 1;
+    while (tail_8 < buffer_7) {
+        status_5 <<= 97;
+        if (cursor_0 == 0) break;
+    }
+    for (int n = 0; n < 24; n++) {
+        flag_2 += 50;
+        char ptr_4 = 36865;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00257 ---- */
+double func_00257(uint64_t head_6, char data_1, uint64_t value_2, char data_5)
+{
+    ptrdiff_t flag_1 = 62492;
+    int status_3 = 16257;
+    uint32_t node_4 = 46835;
+    uint32_t status_6 = 22683;
+    ptrdiff_t flag_2 = 50872;
+
+    switch (status_8) {
+    case 10:
+        pos_9 <<= 126;
+        break;
+    case 11:
+        cursor_4 >>= 96;
+        break;
+    case 0:
+        head_4 &= 62;
+        break;
+    default:
+        break;
+    }
+    while (pos_5 != end_5) {
+        offset_7 >>= 65;
+        if (index_3 == 0) break;
+    }
+    switch (threshold_7) {
+    case 13:
+        node_0 &= 39;
+        break;
+    case 8:
+        index_7 ^= 120;
+        break;
+    case 7:
+        limit_1 &= 114;
+        break;
+    default:
+        break;
+    }
+    while (offset_4 == value_5) {
+        cursor_3 /= 16;
+        if (head_9 == 0) break;
+    }
+    if (count_0 <= ptr_0) {
+        flag_5 ^= 92;
+        return -1;
+    }
+    void delta_4 = 45010;
+    for (int m = 0; m < 55; m++) {
+        size_6 |= 63;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00258 ---- */
+void func_00258(uint16_t flag_0, ptrdiff_t mask_0)
+{
+    void status_0 = 10312;
+    float count_3 = 40326;
+
+    switch (value_1) {
+    case 12:
+        value_1 <<= 27;
+        break;
+    case 13:
+        mask_5 <<= 56;
+        break;
+    case 5:
+        delta_7 &= 103;
+        break;
+    default:
+        break;
+    }
+    switch (value_4) {
+    case 9:
+        flag_1 <<= 105;
+        break;
+    case 7:
+        pos_7 += 72;
+        break;
+    case 14:
+        delta_7 ^= 103;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t threshold_8 = 19301;
+    size_t index_5 = 17454;
+    while (threshold_5 <= end_5) {
+        index_8 -= 71;
+        if (step_2 == 0) break;
+    }
+    char step_3 = 473;
+    double end_2 = 65061;
+    switch (node_0) {
+    case 10:
+        cursor_3 <<= 109;
+        break;
+    case 4:
+        length_2 -= 65;
+        break;
+    case 13:
+        count_5 -= 56;
+        break;
+    default:
+        break;
+    }
+    if (base_6 > count_4) {
+        cursor_4 >>= 63;
+    }
+
+}
+
+/* ---- func_00259 ---- */
+int func_00259(uint32_t delta_8, uint8_t length_4, uint32_t node_4)
+{
+    int offset_5 = 34400;
+    void result_0 = 21821;
+    char pos_7 = 29577;
+
+    if (base_6 > node_7) {
+        cursor_4 -= 53;
+    }
+    while (value_8 >= offset_0) {
+        buffer_5 <<= 96;
+        if (offset_4 == 0) break;
+    }
+    switch (size_8) {
+    case 2:
+        head_8 <<= 94;
+        break;
+    case 5:
+        tail_2 -= 126;
+        break;
+    case 3:
+        base_9 |= 88;
+        break;
+    default:
+        break;
+    }
+    head_0 <<= 78;
+    ptrdiff_t value_2 = 49166;
+    while (limit_8 == threshold_7) {
+        limit_9 *= 56;
+        if (base_3 == 0) break;
+    }
+    if (end_3 < base_9) {
+        value_8 += 15;
+        return -1;
+    } else {
+        value_4 ^= 49;
+    }
+    while (buffer_9 != node_2) {
+        result_9 |= 119;
+        if (delta_3 == 0) break;
+    }
+    if (end_1 != value_8) {
+        size_2 >>= 50;
+    } else {
+        node_6 -= 51;
+    }
+
+    return 0;
+}
+
+/* ============================================================ */
+/* Module 0013                                              */
+/* ============================================================ */
+
+/* ---- func_00260 ---- */
+void func_00260(uint8_t tail_5)
+{
+    char count_1 = 42038;
+    char count_3 = 7718;
+    void node_0 = 58953;
+    uint32_t base_1 = 13082;
+
+    delta_6 |= 78;
+    uint8_t size_7 = 53317;
+    uint16_t data_4 = 42668;
+    while (result_8 >= length_9) {
+        end_1 *= 105;
+        if (head_9 == 0) break;
+    }
+
+}
+
+/* ---- func_00261 ---- */
+double func_00261(double count_6, void mask_1, size_t delta_1)
+{
+    uint16_t result_6 = 49877;
+    size_t value_0 = 7716;
+
+    double length_4 = 17563;
+    float threshold_8 = 18532;
+    switch (pos_2) {
+    case 4:
+        tail_7 |= 103;
+        break;
+    case 10:
+        length_6 ^= 38;
+        break;
+    case 1:
+        index_8 /= 70;
+        break;
+    default:
+        break;
+    }
+    switch (end_1) {
+    case 0:
+        end_3 *= 91;
+        break;
+    case 15:
+        cursor_2 *= 117;
+        break;
+    case 5:
+        count_3 *= 38;
+        break;
+    default:
+        break;
+    }
+    if (count_7 < base_5) {
+        head_7 *= 66;
+        return -1;
+    }
+    if (buffer_9 < value_4) {
+        size_2 += 85;
+        return -1;
+    }
+    int step_2 = 52354;
+    if (threshold_0 < base_0) {
+        length_2 &= 4;
+    }
+    while (cursor_4 > threshold_9) {
+        size_0 += 66;
+        if (value_8 == 0) break;
+    }
+    size_t pos_5 = 57101;
+    switch (step_4) {
+    case 6:
+        threshold_5 |= 111;
+        break;
+    case 0:
+        buffer_3 <<= 126;
+        break;
+    case 1:
+        pos_8 <<= 114;
+        break;
+    default:
+        break;
+    }
+    uint16_t limit_6 = 31149;
+
+    return (double)result_0;
+}
+
+/* ---- func_00262 ---- */
+int func_00262(uint16_t mask_0, uint16_t tail_2)
+{
+    size_t index_1 = 12804;
+    char base_6 = 1195;
+    void cursor_9 = 36319;
+
+    if (end_9 == offset_8) {
+        index_3 |= 32;
+        return -1;
+    } else {
+        pos_9 |= 63;
+    }
+    length_9 &= 79;
+    if (end_1 < status_9) {
+        delta_0 |= 60;
+    }
+    for (int m = 0; m < 26; m++) {
+        value_6 >>= 56;
+        size_t size_3 = 16527;
+        if (threshold_7 == base_4) {
+            pos_8 ^= 106;
+            return -1;
+        }
+    }
+    ptrdiff_t buffer_9 = 21862;
+    while (mask_8 >= length_2) {
+        pos_2 <<= 1;
+        if (result_8 == 0) break;
+    }
+    for (int j = 0; j < 19; j++) {
+        limit_3 += 112;
+        uint64_t size_6 = 39062;
+        if (flag_7 > tail_7) {
+            pos_0 ^= 72;
+        }
+    }
+    switch (ptr_4) {
+    case 10:
+        cursor_5 *= 21;
+        break;
+    case 13:
+        data_5 /= 21;
+        break;
+    case 9:
+        cursor_5 |= 85;
+        break;
+    default:
+        break;
+    }
+    tail_2 <<= 126;
+    while (base_7 < value_1) {
+        step_4 <<= 99;
+        if (mask_2 == 0) break;
+    }
+    switch (status_5) {
+    case 3:
+        tail_1 >>= 109;
+        break;
+    case 13:
+        ptr_5 /= 69;
+        break;
+    case 11:
+        head_6 |= 82;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00263 ---- */
+int func_00263(ptrdiff_t flag_4, float head_6, uint32_t pos_9)
+{
+    char delta_0 = 6530;
+    size_t offset_5 = 24076;
+    int result_6 = 25122;
+    int value_5 = 62311;
+    ptrdiff_t tail_2 = 22616;
+
+    for (int j = 0; j < 37; j++) {
+        ptr_8 /= 79;
+        size_t length_7 = 50013;
+    }
+    if (end_8 < flag_0) {
+        value_8 += 71;
+    }
+    while (base_0 == size_3) {
+        status_3 |= 103;
+        if (threshold_7 == 0) break;
+    }
+    if (limit_5 < ptr_6) {
+        index_5 /= 40;
+        return -1;
+    }
+    switch (cursor_4) {
+    case 12:
+        buffer_7 *= 13;
+        break;
+    case 10:
+        tail_5 /= 102;
+        break;
+    case 11:
+        step_4 -= 28;
+        break;
+    default:
+        break;
+    }
+    step_2 <<= 90;
+    switch (status_2) {
+    case 11:
+        length_1 |= 83;
+        break;
+    case 15:
+        delta_3 <<= 63;
+        break;
+    case 0:
+        index_7 >>= 88;
+        break;
+    default:
+        break;
+    }
+    while (base_2 == length_6) {
+        length_6 &= 56;
+        if (head_5 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00264 ---- */
+uint32_t func_00264(ptrdiff_t pos_4, void delta_6, int status_8, size_t index_7)
+{
+    float mask_9 = 13114;
+    size_t pos_1 = 59779;
+    uint32_t limit_5 = 8981;
+    double end_4 = 39182;
+
+    while (head_2 < offset_1) {
+        flag_4 <<= 46;
+        if (pos_3 == 0) break;
+    }
+    tail_5 >>= 70;
+    switch (status_6) {
+    case 11:
+        size_9 += 124;
+        break;
+    case 6:
+        index_5 |= 78;
+        break;
+    case 12:
+        delta_9 &= 54;
+        break;
+    default:
+        break;
+    }
+    void data_6 = 61702;
+    uint32_t result_5 = 53808;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00265 ---- */
+void func_00265(int end_4, size_t count_7)
+{
+    char node_1 = 45321;
+    char limit_9 = 60792;
+    uint32_t result_0 = 6257;
+    float result_5 = 33064;
+    uint32_t status_3 = 37714;
+
+    for (int i = 0; i < 56; i++) {
+        mask_4 <<= 124;
+    }
+    while (status_8 < threshold_4) {
+        result_3 |= 70;
+        if (tail_7 == 0) break;
+    }
+    while (result_6 <= size_5) {
+        status_3 |= 39;
+        if (data_2 == 0) break;
+    }
+    limit_5 |= 5;
+    size_t limit_7 = 39506;
+    switch (limit_8) {
+    case 3:
+        threshold_0 *= 68;
+        break;
+    case 10:
+        tail_1 /= 106;
+        break;
+    case 6:
+        length_3 /= 78;
+        break;
+    default:
+        break;
+    }
+    switch (index_4) {
+    case 0:
+        ptr_6 >>= 25;
+        break;
+    case 7:
+        ptr_7 >>= 63;
+        break;
+    case 1:
+        node_1 <<= 90;
+        break;
+    default:
+        break;
+    }
+    uint8_t end_5 = 5470;
+
+}
+
+/* ---- func_00266 ---- */
+void func_00266(void limit_6, int result_7, int offset_9, uint16_t result_0)
+{
+    uint32_t limit_9 = 4094;
+    ptrdiff_t count_1 = 57452;
+
+    switch (status_9) {
+    case 8:
+        cursor_8 ^= 46;
+        break;
+    case 9:
+        pos_5 |= 26;
+        break;
+    case 0:
+        threshold_2 -= 94;
+        break;
+    default:
+        break;
+    }
+    data_8 ^= 114;
+    switch (mask_3) {
+    case 11:
+        flag_7 /= 95;
+        break;
+    case 3:
+        mask_5 <<= 105;
+        break;
+    case 12:
+        count_7 += 117;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 38; j++) {
+        base_3 &= 22;
+        char limit_1 = 25408;
+        if (value_4 != count_9) {
+            status_4 *= 127;
+            return -1;
+        } else {
+            data_6 ^= 58;
+        }
+    }
+
+}
+
+/* ---- func_00267 ---- */
+double func_00267(size_t flag_7, float step_4, uint64_t index_3, ptrdiff_t index_0)
+{
+    ptrdiff_t delta_3 = 47737;
+    ptrdiff_t flag_5 = 20102;
+    uint16_t index_8 = 22820;
+    uint8_t length_6 = 31101;
+    uint32_t end_4 = 8953;
+
+    pos_6 ^= 27;
+    if (buffer_2 != length_1) {
+        ptr_2 |= 41;
+        return -1;
+    }
+    if (end_7 >= base_9) {
+        buffer_5 &= 101;
+        return -1;
+    } else {
+        status_4 &= 97;
+    }
+    while (step_3 != limit_5) {
+        ptr_4 -= 29;
+        if (pos_1 == 0) break;
+    }
+    uint64_t mask_5 = 11184;
+    for (int n = 0; n < 62; n++) {
+        status_3 <<= 5;
+        double count_3 = 13142;
+        if (offset_7 >= flag_8) {
+            node_1 <<= 72;
+            return -1;
+        } else {
+            ptr_6 *= 43;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00268 ---- */
+int func_00268(void mask_8)
+{
+    char data_5 = 34991;
+    int result_1 = 24193;
+    uint32_t length_8 = 27139;
+
+    if (offset_0 <= cursor_6) {
+        node_7 >>= 12;
+        return -1;
+    }
+    switch (mask_7) {
+    case 13:
+        data_7 ^= 37;
+        break;
+    case 1:
+        delta_9 |= 1;
+        break;
+    case 8:
+        cursor_6 >>= 17;
+        break;
+    default:
+        break;
+    }
+    uint16_t length_1 = 65403;
+    for (int i = 0; i < 22; i++) {
+        base_8 <<= 102;
+        ptrdiff_t node_1 = 51109;
+        if (data_0 != mask_2) {
+            threshold_4 |= 103;
+        }
+    }
+    while (result_9 <= value_6) {
+        count_5 /= 6;
+        if (threshold_4 == 0) break;
+    }
+    count_9 >>= 4;
+    for (int k = 0; k < 12; k++) {
+        size_1 >>= 14;
+    }
+    while (base_9 == offset_6) {
+        base_2 ^= 119;
+        if (index_7 == 0) break;
+    }
+    while (length_1 < data_1) {
+        head_3 ^= 36;
+        if (size_2 == 0) break;
+    }
+    switch (index_2) {
+    case 5:
+        end_0 <<= 117;
+        break;
+    case 1:
+        limit_4 <<= 3;
+        break;
+    case 6:
+        buffer_9 /= 51;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00269 ---- */
+double func_00269(uint64_t node_3, ptrdiff_t head_1)
+{
+    uint16_t limit_7 = 31367;
+    uint8_t value_7 = 40828;
+
+    while (threshold_9 != step_5) {
+        result_0 *= 21;
+        if (node_0 == 0) break;
+    }
+    if (buffer_8 != offset_1) {
+        end_5 |= 124;
+        return -1;
+    }
+    for (int k = 0; k < 55; k++) {
+        head_7 -= 127;
+        float cursor_0 = 25198;
+    }
+    switch (pos_7) {
+    case 1:
+        node_1 *= 65;
+        break;
+    case 14:
+        step_6 += 85;
+        break;
+    case 9:
+        value_6 &= 60;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t base_9 = 42042;
+    for (int j = 0; j < 32; j++) {
+        threshold_8 &= 30;
+        uint32_t threshold_7 = 60920;
+        if (flag_0 == threshold_4) {
+            data_4 |= 117;
+            return -1;
+        }
+    }
+    for (int i = 0; i < 44; i++) {
+        cursor_3 += 59;
+    }
+    switch (delta_7) {
+    case 10:
+        cursor_4 |= 30;
+        break;
+    case 14:
+        index_4 <<= 72;
+        break;
+    case 12:
+        base_0 &= 113;
+        break;
+    default:
+        break;
+    }
+    char result_8 = 12154;
+
+    return (double)result_0;
+}
+
+/* ---- func_00270 ---- */
+double func_00270(int size_4, double cursor_0, uint32_t head_9, uint8_t end_4)
+{
+    uint16_t result_1 = 14090;
+    int cursor_9 = 61952;
+    uint16_t node_7 = 47455;
+    void mask_5 = 54831;
+    uint8_t status_2 = 59757;
+
+    for (int n = 0; n < 47; n++) {
+        end_3 &= 87;
+        if (index_3 <= index_9) {
+            pos_4 ^= 90;
+            return -1;
+        }
+    }
+    switch (threshold_9) {
+    case 5:
+        tail_6 -= 56;
+        break;
+    case 14:
+        pos_2 ^= 122;
+        break;
+    case 13:
+        count_9 >>= 113;
+        break;
+    default:
+        break;
+    }
+    switch (status_9) {
+    case 11:
+        tail_3 ^= 37;
+        break;
+    case 7:
+        threshold_3 >>= 120;
+        break;
+    case 0:
+        end_2 >>= 18;
+        break;
+    default:
+        break;
+    }
+    float count_7 = 31242;
+    while (result_2 <= head_6) {
+        length_2 += 105;
+        if (base_2 == 0) break;
+    }
+    while (offset_2 != offset_3) {
+        count_2 /= 59;
+        if (ptr_4 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00271 ---- */
+uint32_t func_00271(uint16_t step_0)
+{
+    size_t ptr_3 = 302;
+    uint16_t head_5 = 17106;
+    char size_7 = 51352;
+    uint8_t buffer_9 = 40045;
+    float buffer_8 = 45040;
+
+    switch (step_0) {
+    case 1:
+        ptr_4 <<= 87;
+        break;
+    case 12:
+        node_8 >>= 88;
+        break;
+    case 6:
+        data_1 -= 3;
+        break;
+    default:
+        break;
+    }
+    while (length_5 < node_2) {
+        pos_0 |= 64;
+        if (status_6 == 0) break;
+    }
+    while (buffer_5 < index_7) {
+        base_6 <<= 115;
+        if (base_6 == 0) break;
+    }
+    if (mask_2 == data_9) {
+        buffer_2 -= 64;
+        return -1;
+    } else {
+        count_1 |= 103;
+    }
+    switch (offset_9) {
+    case 4:
+        cursor_9 <<= 124;
+        break;
+    case 8:
+        length_8 >>= 52;
+        break;
+    case 12:
+        step_1 &= 41;
+        break;
+    default:
+        break;
+    }
+    while (end_5 > length_9) {
+        result_7 ^= 80;
+        if (node_1 == 0) break;
+    }
+    switch (index_3) {
+    case 6:
+        base_8 <<= 2;
+        break;
+    case 12:
+        cursor_0 += 83;
+        break;
+    case 2:
+        value_0 *= 125;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00272 ---- */
+double func_00272(ptrdiff_t value_2, int buffer_2, ptrdiff_t index_1)
+{
+    uint8_t node_5 = 35597;
+    float threshold_4 = 65311;
+    size_t buffer_1 = 7281;
+    void threshold_6 = 17250;
+    uint32_t size_0 = 12802;
+
+    for (int n = 0; n < 47; n++) {
+        mask_9 >>= 65;
+        if (data_6 == cursor_8) {
+            size_4 <<= 49;
+        }
+    }
+    while (pos_7 != data_8) {
+        offset_6 <<= 3;
+        if (flag_0 == 0) break;
+    }
+    if (ptr_5 > head_2) {
+        data_2 ^= 125;
+    } else {
+        base_5 <<= 26;
+    }
+    tail_7 += 25;
+    while (count_1 <= flag_7) {
+        head_7 *= 8;
+        if (head_2 == 0) break;
+    }
+    while (value_9 != count_1) {
+        base_2 <<= 91;
+        if (buffer_3 == 0) break;
+    }
+    for (int j = 0; j < 40; j++) {
+        status_0 &= 51;
+        size_t size_8 = 21171;
+    }
+    if (size_8 >= limit_5) {
+        result_1 ^= 55;
+        return -1;
+    }
+    if (node_9 != index_7) {
+        size_7 &= 29;
+        return -1;
+    } else {
+        length_4 <<= 120;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00273 ---- */
+void func_00273(double threshold_2, uint8_t head_1, uint64_t base_3, float length_4)
+{
+    uint32_t delta_7 = 30885;
+    ptrdiff_t flag_7 = 62916;
+    double ptr_4 = 25070;
+    ptrdiff_t node_3 = 44906;
+    void head_7 = 64934;
+    double head_6 = 47435;
+
+    if (size_6 >= node_3) {
+        pos_0 *= 13;
+        return -1;
+    }
+    tail_0 &= 33;
+    while (cursor_9 > count_0) {
+        delta_0 &= 3;
+        if (head_1 == 0) break;
+    }
+    switch (step_5) {
+    case 15:
+        flag_2 &= 43;
+        break;
+    case 3:
+        threshold_6 *= 33;
+        break;
+    case 7:
+        limit_4 *= 9;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 54; n++) {
+        head_3 += 22;
+        void tail_0 = 13140;
+        if (buffer_7 != result_1) {
+            status_2 *= 102;
+        }
+    }
+    switch (size_6) {
+    case 0:
+        tail_1 <<= 69;
+        break;
+    case 14:
+        buffer_9 /= 56;
+        break;
+    case 15:
+        size_9 <<= 70;
+        break;
+    default:
+        break;
+    }
+    switch (node_2) {
+    case 5:
+        tail_3 |= 107;
+        break;
+    case 9:
+        mask_6 >>= 123;
+        break;
+    case 8:
+        value_5 /= 6;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 31; j++) {
+        length_4 >>= 61;
+    }
+    char buffer_9 = 2083;
+    count_0 ^= 77;
+    switch (flag_1) {
+    case 9:
+        status_8 >>= 64;
+        break;
+    case 4:
+        delta_5 |= 67;
+        break;
+    case 2:
+        mask_0 &= 46;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00274 ---- */
+void func_00274(uint16_t head_7)
+{
+    double delta_0 = 56736;
+    uint32_t limit_4 = 29443;
+    size_t offset_4 = 30303;
+    ptrdiff_t end_6 = 2519;
+    void size_3 = 24015;
+    uint8_t length_8 = 61447;
+
+    char size_7 = 25969;
+    for (int m = 0; m < 10; m++) {
+        data_3 += 124;
+    }
+    ptrdiff_t offset_0 = 23696;
+    for (int n = 0; n < 23; n++) {
+        result_2 *= 76;
+        void index_9 = 49061;
+    }
+    switch (length_0) {
+    case 7:
+        count_5 -= 103;
+        break;
+    case 3:
+        count_2 /= 34;
+        break;
+    case 5:
+        size_1 += 125;
+        break;
+    default:
+        break;
+    }
+    float limit_5 = 42502;
+    cursor_0 &= 14;
+    while (buffer_2 >= mask_4) {
+        size_6 &= 19;
+        if (value_9 == 0) break;
+    }
+    length_5 |= 23;
+    for (int k = 0; k < 18; k++) {
+        pos_0 >>= 20;
+        char delta_5 = 2794;
+    }
+    char delta_4 = 33282;
+    if (head_7 == size_7) {
+        size_5 >>= 32;
+        return -1;
+    }
+
+}
+
+/* ---- func_00275 ---- */
+void func_00275(uint64_t tail_2, void flag_3)
+{
+    uint16_t result_6 = 17580;
+    float mask_8 = 47799;
+
+    for (int k = 0; k < 12; k++) {
+        index_0 >>= 112;
+        uint8_t count_4 = 20164;
+    }
+    base_6 <<= 92;
+    ptrdiff_t flag_9 = 58378;
+    switch (value_4) {
+    case 6:
+        step_6 += 11;
+        break;
+    case 10:
+        delta_9 += 28;
+        break;
+    case 3:
+        count_1 &= 107;
+        break;
+    default:
+        break;
+    }
+    float count_3 = 19503;
+    switch (pos_8) {
+    case 3:
+        offset_0 &= 101;
+        break;
+    case 8:
+        mask_1 ^= 63;
+        break;
+    case 9:
+        base_8 -= 105;
+        break;
+    default:
+        break;
+    }
+    cursor_8 |= 23;
+    mask_5 ^= 12;
+    while (tail_0 >= end_6) {
+        size_6 <<= 42;
+        if (threshold_7 == 0) break;
+    }
+    for (int m = 0; m < 6; m++) {
+        index_7 *= 125;
+    }
+
+}
+
+/* ---- func_00276 ---- */
+int func_00276(uint32_t buffer_3, uint32_t offset_5, uint16_t node_0)
+{
+    uint64_t data_0 = 29090;
+    int threshold_9 = 58123;
+    uint64_t head_9 = 48657;
+    float tail_4 = 45439;
+    void head_8 = 26793;
+
+    switch (value_4) {
+    case 12:
+        end_0 ^= 98;
+        break;
+    case 7:
+        pos_8 ^= 116;
+        break;
+    case 4:
+        limit_1 <<= 87;
+        break;
+    default:
+        break;
+    }
+    switch (result_1) {
+    case 13:
+        flag_0 |= 94;
+        break;
+    case 4:
+        threshold_3 &= 64;
+        break;
+    case 5:
+        value_8 += 113;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 63; m++) {
+        buffer_0 += 35;
+        if (limit_6 < offset_3) {
+            cursor_7 >>= 62;
+        }
+    }
+    switch (cursor_8) {
+    case 15:
+        length_6 -= 96;
+        break;
+    case 1:
+        node_8 >>= 40;
+        break;
+    case 9:
+        index_1 *= 68;
+        break;
+    default:
+        break;
+    }
+    int buffer_5 = 38020;
+    while (size_0 >= count_5) {
+        node_9 += 10;
+        if (mask_9 == 0) break;
+    }
+    base_3 >>= 103;
+    uint32_t data_8 = 62693;
+    for (int k = 0; k < 28; k++) {
+        result_6 /= 4;
+        if (node_3 <= data_0) {
+            index_0 -= 75;
+        }
+    }
+    while (head_3 == cursor_4) {
+        result_7 ^= 81;
+        if (ptr_6 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00277 ---- */
+uint32_t func_00277(uint64_t head_7, char limit_1)
+{
+    size_t threshold_2 = 19041;
+    uint8_t buffer_7 = 42900;
+    ptrdiff_t threshold_0 = 547;
+    double buffer_3 = 4896;
+    double data_4 = 5105;
+    uint8_t threshold_7 = 59193;
+
+    for (int k = 0; k < 9; k++) {
+        mask_5 <<= 12;
+        float pos_2 = 1569;
+    }
+    switch (threshold_6) {
+    case 1:
+        result_2 /= 33;
+        break;
+    case 11:
+        cursor_8 <<= 76;
+        break;
+    case 8:
+        ptr_7 += 98;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 9; n++) {
+        size_2 >>= 101;
+        uint64_t node_4 = 39705;
+    }
+    for (int j = 0; j < 55; j++) {
+        ptr_8 *= 65;
+        uint16_t offset_1 = 32023;
+        if (data_7 == node_5) {
+            count_3 -= 29;
+            return -1;
+        }
+    }
+    for (int n = 0; n < 47; n++) {
+        threshold_9 -= 68;
+        size_t data_9 = 53577;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00278 ---- */
+int func_00278(void status_1)
+{
+    size_t delta_1 = 13360;
+    size_t head_2 = 41330;
+    uint16_t mask_9 = 18745;
+    void delta_7 = 53635;
+    uint64_t base_3 = 37940;
+    float count_3 = 34319;
+
+    while (value_3 == pos_1) {
+        result_8 -= 80;
+        if (index_5 == 0) break;
+    }
+    if (step_3 != size_1) {
+        status_9 += 80;
+    }
+    while (flag_0 <= delta_4) {
+        count_6 >>= 26;
+        if (node_8 == 0) break;
+    }
+    switch (pos_3) {
+    case 2:
+        result_4 |= 100;
+        break;
+    case 0:
+        ptr_5 >>= 33;
+        break;
+    case 3:
+        buffer_7 |= 121;
+        break;
+    default:
+        break;
+    }
+    ptr_0 >>= 69;
+
+    return 0;
+}
+
+/* ---- func_00279 ---- */
+int func_00279(char status_4, void head_9)
+{
+    uint64_t status_0 = 30103;
+    char head_1 = 29983;
+    uint16_t delta_9 = 37870;
+    float length_6 = 39381;
+    float index_6 = 2217;
+    char length_6 = 59103;
+
+    for (int i = 0; i < 48; i++) {
+        tail_8 += 90;
+        if (data_1 >= count_1) {
+            index_8 ^= 86;
+        } else {
+            length_5 /= 102;
+        }
+    }
+    if (threshold_4 == count_4) {
+        status_4 <<= 103;
+    }
+    threshold_9 <<= 70;
+    ptr_8 -= 120;
+    if (tail_3 > result_0) {
+        count_7 >>= 2;
+        return -1;
+    }
+    for (int n = 0; n < 24; n++) {
+        end_4 /= 52;
+        int status_8 = 13534;
+    }
+    if (status_1 <= step_6) {
+        count_0 &= 7;
+    }
+    while (node_1 < size_9) {
+        flag_7 &= 59;
+        if (data_3 == 0) break;
+    }
+    ptrdiff_t pos_4 = 53366;
+
+    return 0;
+}
+
+/* ============================================================ */
+/* Module 0014                                              */
+/* ============================================================ */
+
+/* ---- func_00280 ---- */
+double func_00280(double data_9, float cursor_0, char delta_3)
+{
+    char index_0 = 40778;
+    size_t step_9 = 23607;
+    uint16_t tail_6 = 45610;
+    char delta_6 = 14636;
+
+    uint32_t data_1 = 59563;
+    for (int m = 0; m < 59; m++) {
+        node_6 *= 70;
+        double offset_8 = 45743;
+        if (threshold_5 >= data_9) {
+            buffer_7 ^= 117;
+            return -1;
+        }
+    }
+    if (data_4 <= offset_1) {
+        cursor_9 ^= 113;
+        return -1;
+    }
+    while (limit_8 >= result_7) {
+        data_5 >>= 33;
+        if (result_1 == 0) break;
+    }
+    switch (buffer_5) {
+    case 0:
+        end_8 /= 95;
+        break;
+    case 6:
+        ptr_6 &= 103;
+        break;
+    case 11:
+        offset_9 <<= 115;
+        break;
+    default:
+        break;
+    }
+    if (result_4 >= tail_5) {
+        limit_7 += 60;
+        return -1;
+    }
+    double cursor_1 = 51789;
+    switch (delta_9) {
+    case 4:
+        buffer_9 += 85;
+        break;
+    case 5:
+        index_9 *= 100;
+        break;
+    case 14:
+        count_0 += 21;
+        break;
+    default:
+        break;
+    }
+    if (mask_0 == size_6) {
+        value_6 -= 118;
+    }
+    while (delta_9 >= pos_1) {
+        buffer_1 /= 1;
+        if (count_8 == 0) break;
+    }
+    buffer_3 <<= 78;
+
+    return (double)result_0;
+}
+
+/* ---- func_00281 ---- */
+uint32_t func_00281(ptrdiff_t mask_8)
+{
+    uint32_t buffer_3 = 28580;
+    float count_4 = 34393;
+    uint64_t result_7 = 61106;
+    ptrdiff_t data_6 = 47553;
+    uint8_t delta_6 = 9202;
+
+    for (int i = 0; i < 53; i++) {
+        pos_8 *= 36;
+    }
+    if (pos_6 < result_7) {
+        threshold_1 /= 8;
+    }
+    if (step_6 <= data_6) {
+        pos_3 |= 17;
+    }
+    while (index_3 != data_9) {
+        mask_1 /= 46;
+        if (size_2 == 0) break;
+    }
+    buffer_6 >>= 27;
+    for (int n = 0; n < 60; n++) {
+        head_3 >>= 67;
+        size_t end_5 = 21681;
+        if (size_2 <= flag_4) {
+            ptr_4 <<= 72;
+            return -1;
+        }
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00282 ---- */
+uint32_t func_00282(uint64_t result_1, float node_3, char count_6, void index_9)
+{
+    int size_8 = 65494;
+    uint32_t value_5 = 41584;
+    uint8_t head_0 = 50941;
+    double cursor_8 = 62771;
+    size_t count_2 = 46704;
+    size_t result_2 = 2072;
+
+    switch (data_7) {
+    case 5:
+        length_6 ^= 6;
+        break;
+    case 1:
+        offset_2 /= 83;
+        break;
+    case 6:
+        pos_4 -= 2;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 24; m++) {
+        limit_9 >>= 120;
+        uint32_t end_3 = 47055;
+        if (end_5 < value_9) {
+            tail_2 &= 116;
+        }
+    }
+    if (cursor_3 > status_0) {
+        offset_8 ^= 38;
+        return -1;
+    }
+    uint32_t flag_1 = 13554;
+    for (int k = 0; k < 64; k++) {
+        base_4 *= 53;
+        if (base_0 < threshold_3) {
+            count_8 *= 43;
+            return -1;
+        } else {
+            base_2 <<= 120;
+        }
+    }
+    for (int j = 0; j < 55; j++) {
+        result_0 >>= 52;
+        if (data_6 < node_8) {
+            limit_2 *= 1;
+        }
+    }
+    status_0 <<= 76;
+    for (int m = 0; m < 34; m++) {
+        ptr_1 ^= 42;
+        if (offset_6 < value_2) {
+            head_5 |= 85;
+        } else {
+            index_5 -= 9;
+        }
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00283 ---- */
+int func_00283(uint64_t ptr_2, double flag_2, char step_0)
+{
+    char flag_0 = 59217;
+    double buffer_3 = 42236;
+
+    for (int m = 0; m < 18; m++) {
+        index_3 &= 37;
+        ptrdiff_t ptr_3 = 59886;
+    }
+    for (int m = 0; m < 11; m++) {
+        flag_9 *= 8;
+        float flag_6 = 28981;
+    }
+    switch (head_6) {
+    case 15:
+        node_0 /= 53;
+        break;
+    case 11:
+        index_4 |= 72;
+        break;
+    case 10:
+        ptr_1 += 100;
+        break;
+    default:
+        break;
+    }
+    if (flag_6 < end_7) {
+        index_0 <<= 74;
+    } else {
+        base_0 -= 85;
+    }
+
+    return 0;
+}
+
+/* ---- func_00284 ---- */
+int func_00284(uint16_t node_2, size_t flag_2, uint64_t index_9, double node_1)
+{
+    uint8_t index_5 = 2380;
+    ptrdiff_t head_6 = 54486;
+
+    char result_5 = 21289;
+    uint8_t limit_2 = 32052;
+    double buffer_8 = 6290;
+    while (pos_8 != status_7) {
+        tail_4 /= 90;
+        if (ptr_0 == 0) break;
+    }
+    void cursor_6 = 22853;
+
+    return 0;
+}
+
+/* ---- func_00285 ---- */
+double func_00285(size_t limit_0, float value_1)
+{
+    double size_5 = 57069;
+    double status_7 = 23221;
+    uint16_t count_3 = 10807;
+    uint32_t ptr_8 = 2448;
+
+    if (ptr_5 <= pos_0) {
+        step_9 >>= 31;
+        return -1;
+    }
+    while (buffer_2 <= data_5) {
+        step_5 &= 94;
+        if (head_2 == 0) break;
+    }
+    if (size_5 <= flag_7) {
+        size_7 >>= 23;
+    }
+    switch (end_8) {
+    case 7:
+        node_5 >>= 106;
+        break;
+    case 0:
+        buffer_7 &= 84;
+        break;
+    case 11:
+        mask_1 -= 100;
+        break;
+    default:
+        break;
+    }
+    if (base_9 < pos_9) {
+        status_0 -= 90;
+        return -1;
+    } else {
+        length_1 /= 52;
+    }
+    switch (step_8) {
+    case 12:
+        pos_3 &= 118;
+        break;
+    case 0:
+        flag_1 *= 59;
+        break;
+    case 14:
+        index_7 &= 100;
+        break;
+    default:
+        break;
+    }
+    if (delta_1 >= data_9) {
+        head_7 *= 120;
+    } else {
+        size_6 += 57;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00286 ---- */
+void func_00286(uint64_t pos_5, double pos_5, ptrdiff_t base_9, uint64_t threshold_8)
+{
+    uint64_t ptr_3 = 61264;
+    uint16_t step_3 = 6704;
+
+    int cursor_3 = 65069;
+    node_9 &= 71;
+    while (status_4 < ptr_1) {
+        count_7 ^= 44;
+        if (delta_6 == 0) break;
+    }
+    for (int n = 0; n < 44; n++) {
+        size_4 /= 77;
+        uint8_t end_1 = 51249;
+    }
+
+}
+
+/* ---- func_00287 ---- */
+double func_00287(uint8_t end_8, char head_8)
+{
+    ptrdiff_t tail_9 = 7102;
+    uint32_t head_9 = 56255;
+    uint8_t pos_5 = 59040;
+    uint64_t data_7 = 43236;
+
+    uint64_t value_6 = 62514;
+    node_3 &= 10;
+    switch (step_3) {
+    case 1:
+        mask_1 >>= 120;
+        break;
+    case 7:
+        threshold_1 /= 81;
+        break;
+    case 10:
+        mask_0 += 126;
+        break;
+    default:
+        break;
+    }
+    base_3 ^= 41;
+    for (int j = 0; j < 16; j++) {
+        step_8 |= 73;
+        if (flag_9 <= head_5) {
+            buffer_8 |= 12;
+            return -1;
+        }
+    }
+    for (int n = 0; n < 24; n++) {
+        offset_2 >>= 61;
+        if (size_1 < head_7) {
+            buffer_4 += 49;
+        }
+    }
+    while (cursor_7 == node_6) {
+        head_5 += 63;
+        if (step_5 == 0) break;
+    }
+    while (limit_5 >= status_0) {
+        buffer_0 += 106;
+        if (result_7 == 0) break;
+    }
+    while (value_3 > node_4) {
+        limit_9 &= 121;
+        if (threshold_1 == 0) break;
+    }
+    for (int i = 0; i < 39; i++) {
+        end_3 -= 38;
+        if (index_6 < index_7) {
+            delta_6 -= 40;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00288 ---- */
+void func_00288(uint8_t threshold_4)
+{
+    uint16_t base_5 = 32549;
+    ptrdiff_t index_4 = 48624;
+    uint8_t size_5 = 43642;
+    int buffer_6 = 27819;
+
+    switch (index_7) {
+    case 15:
+        base_9 &= 56;
+        break;
+    case 7:
+        data_2 >>= 105;
+        break;
+    case 12:
+        offset_9 += 68;
+        break;
+    default:
+        break;
+    }
+    uint16_t count_0 = 23323;
+    char threshold_9 = 49418;
+    ptrdiff_t buffer_6 = 2276;
+    for (int j = 0; j < 13; j++) {
+        count_9 >>= 96;
+        ptrdiff_t index_6 = 13655;
+    }
+    count_6 >>= 7;
+    float size_1 = 22628;
+    if (count_3 <= offset_4) {
+        node_9 += 118;
+    }
+    for (int i = 0; i < 28; i++) {
+        length_1 <<= 50;
+        ptrdiff_t data_9 = 9511;
+        if (length_9 > tail_9) {
+            buffer_1 += 87;
+        }
+    }
+
+}
+
+/* ---- func_00289 ---- */
+void func_00289(uint16_t count_0, uint64_t buffer_2)
+{
+    char tail_7 = 58257;
+    void length_7 = 7096;
+    uint8_t node_9 = 42487;
+    uint32_t delta_8 = 58314;
+    double base_2 = 8144;
+    uint16_t offset_2 = 20811;
+
+    int value_2 = 55232;
+    base_0 &= 67;
+    switch (step_6) {
+    case 11:
+        size_2 &= 126;
+        break;
+    case 8:
+        flag_0 ^= 5;
+        break;
+    case 9:
+        tail_6 &= 113;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 62; k++) {
+        size_2 |= 119;
+    }
+    void cursor_7 = 34192;
+    if (status_0 >= step_9) {
+        ptr_6 |= 123;
+    } else {
+        count_6 -= 37;
+    }
+    pos_8 >>= 40;
+    node_2 ^= 16;
+    buffer_8 *= 103;
+    float step_6 = 33706;
+    if (status_0 == size_3) {
+        cursor_1 <<= 109;
+    }
+    uint16_t base_8 = 1386;
+
+}
+
+/* ---- func_00290 ---- */
+void func_00290(ptrdiff_t threshold_6)
+{
+    uint32_t end_5 = 8402;
+    double status_9 = 25022;
+    float length_4 = 17502;
+    uint64_t mask_5 = 31224;
+
+    ptrdiff_t ptr_1 = 52285;
+    if (value_9 <= value_9) {
+        base_4 <<= 6;
+        return -1;
+    }
+    float cursor_0 = 52479;
+    switch (result_5) {
+    case 5:
+        status_1 += 121;
+        break;
+    case 0:
+        node_0 &= 58;
+        break;
+    case 7:
+        data_6 <<= 96;
+        break;
+    default:
+        break;
+    }
+    uint32_t head_6 = 59377;
+    double tail_4 = 54038;
+    if (mask_0 < value_1) {
+        count_9 += 14;
+        return -1;
+    }
+    if (cursor_8 >= limit_0) {
+        delta_2 += 96;
+    }
+    while (end_7 != mask_3) {
+        step_9 *= 9;
+        if (value_0 == 0) break;
+    }
+
+}
+
+/* ---- func_00291 ---- */
+void func_00291(uint8_t head_9, uint32_t ptr_7, ptrdiff_t step_5, ptrdiff_t data_9)
+{
+    uint8_t head_7 = 40531;
+    void length_5 = 19837;
+    uint16_t mask_9 = 33805;
+    ptrdiff_t tail_2 = 7360;
+    void value_6 = 37252;
+
+    while (delta_3 > node_0) {
+        mask_5 -= 49;
+        if (data_7 == 0) break;
+    }
+    data_7 ^= 102;
+    size_t mask_9 = 58627;
+    switch (base_1) {
+    case 12:
+        pos_5 |= 128;
+        break;
+    case 15:
+        value_7 &= 12;
+        break;
+    case 0:
+        limit_8 &= 101;
+        break;
+    default:
+        break;
+    }
+    pos_1 &= 70;
+
+}
+
+/* ---- func_00292 ---- */
+int func_00292(char size_8)
+{
+    double node_0 = 46594;
+    uint32_t ptr_4 = 43345;
+    int end_9 = 57243;
+    char length_4 = 49005;
+    char size_2 = 57851;
+
+    if (result_1 >= count_8) {
+        limit_1 <<= 65;
+    }
+    head_8 |= 57;
+    for (int i = 0; i < 19; i++) {
+        limit_9 ^= 31;
+        char count_7 = 26025;
+        if (step_8 == count_2) {
+            buffer_6 &= 40;
+        } else {
+            cursor_2 += 86;
+        }
+    }
+    while (node_8 != end_8) {
+        cursor_8 -= 37;
+        if (value_4 == 0) break;
+    }
+    switch (mask_4) {
+    case 8:
+        threshold_0 &= 45;
+        break;
+    case 7:
+        end_3 >>= 27;
+        break;
+    case 4:
+        cursor_8 &= 122;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00293 ---- */
+void func_00293(void flag_1)
+{
+    double cursor_5 = 6215;
+    void limit_2 = 23714;
+    uint16_t status_6 = 59637;
+    size_t base_8 = 60427;
+    uint32_t size_4 = 36540;
+
+    ptr_7 &= 18;
+    for (int k = 0; k < 4; k++) {
+        result_9 *= 55;
+        if (index_5 <= flag_2) {
+            step_7 |= 17;
+            return -1;
+        }
+    }
+    while (threshold_3 <= head_0) {
+        result_2 &= 74;
+        if (node_7 == 0) break;
+    }
+    data_6 |= 105;
+    if (value_5 > base_6) {
+        buffer_2 /= 16;
+        return -1;
+    } else {
+        index_6 |= 65;
+    }
+    index_5 /= 27;
+    switch (count_2) {
+    case 4:
+        node_3 /= 14;
+        break;
+    case 7:
+        offset_7 *= 126;
+        break;
+    case 10:
+        value_8 ^= 42;
+        break;
+    default:
+        break;
+    }
+    while (node_7 < flag_3) {
+        value_1 *= 20;
+        if (offset_8 == 0) break;
+    }
+    int cursor_8 = 24380;
+
+}
+
+/* ---- func_00294 ---- */
+uint32_t func_00294(uint16_t flag_1)
+{
+    void limit_9 = 43427;
+    uint64_t threshold_6 = 30362;
+    uint8_t flag_5 = 38856;
+    float pos_0 = 21659;
+
+    uint64_t length_5 = 18285;
+    if (length_8 >= base_6) {
+        flag_9 += 81;
+        return -1;
+    }
+    switch (end_9) {
+    case 9:
+        pos_2 <<= 74;
+        break;
+    case 2:
+        status_0 |= 40;
+        break;
+    case 8:
+        count_3 -= 57;
+        break;
+    default:
+        break;
+    }
+    double head_8 = 60328;
+    if (delta_2 != delta_2) {
+        index_3 ^= 98;
+        return -1;
+    } else {
+        buffer_7 >>= 100;
+    }
+    for (int n = 0; n < 64; n++) {
+        base_5 *= 121;
+    }
+    switch (index_3) {
+    case 4:
+        cursor_7 <<= 58;
+        break;
+    case 0:
+        ptr_7 -= 2;
+        break;
+    case 8:
+        flag_2 <<= 59;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 44; k++) {
+        tail_5 |= 123;
+        if (length_3 >= buffer_7) {
+            cursor_0 += 66;
+        }
+    }
+    while (step_9 > offset_0) {
+        buffer_7 /= 33;
+        if (length_8 == 0) break;
+    }
+    while (status_0 < step_2) {
+        ptr_0 *= 85;
+        if (size_5 == 0) break;
+    }
+    while (flag_8 <= delta_3) {
+        end_7 >>= 10;
+        if (node_1 == 0) break;
+    }
+    if (flag_7 <= base_1) {
+        limit_9 ^= 74;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00295 ---- */
+void func_00295(uint8_t threshold_9, int node_4, uint64_t mask_4, ptrdiff_t flag_7)
+{
+    char length_2 = 9247;
+    double node_8 = 43292;
+    uint8_t base_7 = 57370;
+
+    if (mask_6 != data_9) {
+        ptr_5 &= 41;
+    }
+    switch (index_8) {
+    case 10:
+        value_2 += 58;
+        break;
+    case 3:
+        data_9 <<= 8;
+        break;
+    case 0:
+        step_1 /= 128;
+        break;
+    default:
+        break;
+    }
+    if (threshold_2 <= data_3) {
+        limit_6 <<= 14;
+    } else {
+        value_0 <<= 5;
+    }
+    if (limit_3 != status_4) {
+        offset_5 ^= 118;
+    }
+
+}
+
+/* ---- func_00296 ---- */
+uint32_t func_00296(double pos_7, float size_6, uint8_t head_6, ptrdiff_t head_5)
+{
+    size_t mask_4 = 46327;
+    uint32_t size_9 = 44991;
+    size_t end_5 = 48214;
+    int size_5 = 31456;
+    ptrdiff_t threshold_2 = 10876;
+
+    if (node_8 < node_1) {
+        base_3 |= 42;
+        return -1;
+    }
+    uint8_t buffer_0 = 59392;
+    uint64_t tail_8 = 21499;
+    if (threshold_5 == value_9) {
+        tail_2 -= 77;
+        return -1;
+    }
+    while (step_4 < buffer_0) {
+        offset_0 *= 122;
+        if (tail_6 == 0) break;
+    }
+    ptr_7 /= 7;
+    delta_8 *= 77;
+    if (offset_5 >= data_2) {
+        delta_1 *= 73;
+        return -1;
+    }
+    double end_3 = 57213;
+    for (int k = 0; k < 45; k++) {
+        index_9 &= 24;
+        if (base_0 < step_2) {
+            limit_7 |= 16;
+            return -1;
+        }
+    }
+    switch (head_4) {
+    case 2:
+        tail_3 *= 84;
+        break;
+    case 15:
+        node_6 += 23;
+        break;
+    case 12:
+        base_9 -= 30;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00297 ---- */
+void func_00297(char ptr_8, uint8_t cursor_1, char offset_9)
+{
+    uint16_t step_2 = 60513;
+    uint16_t base_6 = 11427;
+    double cursor_3 = 38057;
+    double result_1 = 19757;
+    int length_9 = 11313;
+    char pos_1 = 29332;
+
+    if (node_9 < base_0) {
+        length_9 <<= 13;
+        return -1;
+    }
+    float end_6 = 54023;
+    while (limit_2 != result_9) {
+        result_9 += 40;
+        if (value_3 == 0) break;
+    }
+    for (int k = 0; k < 29; k++) {
+        base_3 -= 114;
+        char flag_6 = 64101;
+    }
+
+}
+
+/* ---- func_00298 ---- */
+double func_00298(uint32_t value_0)
+{
+    uint64_t end_1 = 15093;
+    uint64_t cursor_4 = 4687;
+    uint8_t index_1 = 31349;
+
+    for (int i = 0; i < 52; i++) {
+        data_4 &= 95;
+        if (value_4 <= cursor_6) {
+            limit_0 >>= 117;
+        } else {
+            limit_7 *= 58;
+        }
+    }
+    if (threshold_3 == threshold_0) {
+        offset_7 <<= 20;
+    } else {
+        mask_0 |= 113;
+    }
+    if (offset_9 <= threshold_3) {
+        count_6 ^= 119;
+    }
+    ptr_6 ^= 102;
+    size_t data_2 = 32482;
+    for (int n = 0; n < 7; n++) {
+        index_7 -= 82;
+        int index_9 = 64943;
+        if (value_4 >= count_8) {
+            flag_3 /= 47;
+        }
+    }
+    if (threshold_5 <= cursor_4) {
+        node_8 <<= 50;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00299 ---- */
+void func_00299(uint8_t head_0, size_t cursor_2, double pos_5, uint64_t step_2)
+{
+    uint64_t size_4 = 46670;
+    uint8_t result_3 = 14985;
+    size_t flag_0 = 28150;
+    void pos_2 = 30829;
+
+    switch (base_8) {
+    case 6:
+        cursor_3 ^= 50;
+        break;
+    case 8:
+        buffer_3 <<= 5;
+        break;
+    case 11:
+        count_4 /= 106;
+        break;
+    default:
+        break;
+    }
+    while (status_5 <= node_6) {
+        flag_4 <<= 111;
+        if (delta_7 == 0) break;
+    }
+    void result_6 = 30262;
+    switch (value_2) {
+    case 1:
+        result_7 |= 89;
+        break;
+    case 6:
+        length_9 >>= 124;
+        break;
+    case 3:
+        threshold_0 -= 67;
+        break;
+    default:
+        break;
+    }
+    while (pos_4 == pos_1) {
+        result_4 &= 21;
+        if (limit_7 == 0) break;
+    }
+    for (int m = 0; m < 11; m++) {
+        step_4 /= 98;
+        float flag_8 = 49965;
+    }
+    while (threshold_0 != threshold_1) {
+        value_8 *= 103;
+        if (delta_0 == 0) break;
+    }
+    while (size_5 >= tail_4) {
+        threshold_5 &= 45;
+        if (delta_6 == 0) break;
+    }
+    data_6 <<= 66;
+    for (int n = 0; n < 32; n++) {
+        value_4 += 51;
+        if (ptr_5 < size_9) {
+            limit_6 ^= 8;
+        } else {
+            value_1 ^= 36;
+        }
+    }
+
+}
+
+/* ============================================================ */
+/* Module 0015                                              */
+/* ============================================================ */
+
+/* ---- func_00300 ---- */
+void func_00300(double data_8, uint16_t end_7, void mask_2, float tail_7)
+{
+    uint16_t pos_3 = 48188;
+    ptrdiff_t count_9 = 42577;
+    ptrdiff_t tail_7 = 2814;
+
+    while (index_9 <= value_6) {
+        mask_5 += 30;
+        if (value_3 == 0) break;
+    }
+    switch (step_4) {
+    case 0:
+        pos_4 <<= 70;
+        break;
+    case 3:
+        offset_7 >>= 9;
+        break;
+    case 4:
+        index_6 *= 125;
+        break;
+    default:
+        break;
+    }
+    size_9 |= 32;
+    while (length_9 < ptr_4) {
+        head_6 ^= 85;
+        if (node_2 == 0) break;
+    }
+    if (delta_7 >= step_5) {
+        flag_2 >>= 88;
+    }
+    if (result_6 >= step_1) {
+        tail_7 /= 70;
+    }
+    while (step_5 <= length_3) {
+        size_1 ^= 55;
+        if (base_3 == 0) break;
+    }
+
+}
+
+/* ---- func_00301 ---- */
+void func_00301(void delta_8, size_t cursor_1, ptrdiff_t mask_0, int value_7)
+{
+    uint32_t base_1 = 16442;
+    ptrdiff_t step_9 = 37207;
+
+    switch (threshold_1) {
+    case 7:
+        ptr_9 &= 73;
+        break;
+    case 0:
+        value_4 *= 63;
+        break;
+    case 13:
+        size_5 *= 52;
+        break;
+    default:
+        break;
+    }
+    char cursor_2 = 61849;
+    uint8_t threshold_7 = 16343;
+    char count_2 = 54336;
+    while (threshold_4 >= status_7) {
+        result_1 |= 34;
+        if (delta_1 == 0) break;
+    }
+    status_0 <<= 72;
+    if (delta_0 > delta_9) {
+        result_1 ^= 31;
+    } else {
+        ptr_4 ^= 21;
+    }
+    if (end_8 != count_9) {
+        status_5 &= 45;
+        return -1;
+    }
+    switch (offset_8) {
+    case 10:
+        data_7 >>= 75;
+        break;
+    case 11:
+        base_7 >>= 2;
+        break;
+    case 2:
+        count_7 <<= 31;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00302 ---- */
+void func_00302(char length_5, float length_1, ptrdiff_t delta_8)
+{
+    uint64_t length_2 = 53238;
+    uint32_t end_9 = 7917;
+
+    uint16_t flag_0 = 19451;
+    flag_5 /= 56;
+    tail_5 >>= 17;
+    switch (node_6) {
+    case 4:
+        step_0 += 49;
+        break;
+    case 1:
+        mask_7 += 6;
+        break;
+    case 12:
+        status_0 /= 125;
+        break;
+    default:
+        break;
+    }
+    count_8 <<= 107;
+    uint16_t end_3 = 21524;
+    if (cursor_0 <= pos_3) {
+        ptr_8 &= 40;
+        return -1;
+    }
+    switch (delta_4) {
+    case 14:
+        mask_2 ^= 89;
+        break;
+    case 13:
+        count_7 &= 69;
+        break;
+    case 6:
+        size_6 |= 114;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 34; n++) {
+        threshold_5 &= 23;
+        uint64_t length_8 = 13495;
+    }
+    ptr_7 >>= 90;
+
+}
+
+/* ---- func_00303 ---- */
+int func_00303(char node_5)
+{
+    double count_2 = 57339;
+    double threshold_9 = 29591;
+    int offset_2 = 50979;
+
+    while (length_5 > data_3) {
+        index_9 += 119;
+        if (ptr_0 == 0) break;
+    }
+    uint16_t data_5 = 11343;
+    switch (pos_5) {
+    case 4:
+        ptr_7 ^= 123;
+        break;
+    case 10:
+        limit_1 *= 88;
+        break;
+    case 2:
+        step_8 /= 124;
+        break;
+    default:
+        break;
+    }
+    size_t end_0 = 8106;
+    uint8_t offset_6 = 53502;
+    offset_3 *= 127;
+    switch (data_3) {
+    case 8:
+        base_5 ^= 41;
+        break;
+    case 2:
+        pos_3 >>= 36;
+        break;
+    case 14:
+        data_7 *= 48;
+        break;
+    default:
+        break;
+    }
+    while (end_3 == count_3) {
+        data_7 += 2;
+        if (base_9 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00304 ---- */
+double func_00304(ptrdiff_t offset_4, int offset_7)
+{
+    void offset_3 = 30568;
+    char mask_1 = 27596;
+
+    while (limit_6 >= value_2) {
+        limit_7 <<= 4;
+        if (ptr_7 == 0) break;
+    }
+    for (int n = 0; n < 10; n++) {
+        end_8 |= 30;
+    }
+    uint16_t base_0 = 50615;
+    while (limit_5 < node_2) {
+        result_5 >>= 57;
+        if (status_9 == 0) break;
+    }
+    double flag_4 = 3947;
+    while (offset_2 >= status_3) {
+        tail_9 ^= 93;
+        if (head_3 == 0) break;
+    }
+    while (delta_2 <= base_3) {
+        tail_9 += 57;
+        if (head_7 == 0) break;
+    }
+    head_7 <<= 56;
+    char value_5 = 2995;
+    for (int j = 0; j < 10; j++) {
+        head_8 |= 108;
+        uint8_t value_0 = 16746;
+    }
+    switch (flag_6) {
+    case 12:
+        count_6 >>= 58;
+        break;
+    case 10:
+        node_7 ^= 121;
+        break;
+    case 14:
+        value_4 <<= 110;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 39; j++) {
+        end_5 -= 1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00305 ---- */
+double func_00305(uint32_t threshold_2, double result_5)
+{
+    size_t threshold_3 = 57903;
+    void offset_9 = 54346;
+    char head_9 = 33707;
+    size_t size_9 = 37883;
+
+    for (int m = 0; m < 40; m++) {
+        limit_5 &= 107;
+        if (tail_5 != value_7) {
+            count_8 >>= 56;
+        }
+    }
+    if (index_2 >= status_3) {
+        threshold_6 /= 43;
+    }
+    switch (offset_2) {
+    case 5:
+        node_8 >>= 69;
+        break;
+    case 11:
+        end_3 -= 110;
+        break;
+    case 3:
+        mask_6 += 25;
+        break;
+    default:
+        break;
+    }
+    result_0 += 78;
+
+    return (double)result_0;
+}
+
+/* ---- func_00306 ---- */
+uint32_t func_00306(int delta_7, char delta_2, uint16_t node_4, uint32_t base_9)
+{
+    ptrdiff_t cursor_8 = 46845;
+    size_t limit_4 = 11975;
+    uint32_t flag_0 = 3042;
+
+    switch (result_6) {
+    case 9:
+        step_5 <<= 28;
+        break;
+    case 14:
+        index_4 |= 126;
+        break;
+    case 12:
+        data_4 ^= 112;
+        break;
+    default:
+        break;
+    }
+    node_4 >>= 55;
+    char base_7 = 7465;
+    uint8_t buffer_8 = 3931;
+    uint8_t threshold_6 = 45189;
+    if (base_3 > base_4) {
+        delta_7 >>= 24;
+        return -1;
+    } else {
+        base_8 /= 114;
+    }
+    while (data_4 < count_9) {
+        threshold_8 |= 55;
+        if (pos_0 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00307 ---- */
+uint32_t func_00307(uint8_t count_2, char count_8)
+{
+    ptrdiff_t end_6 = 36755;
+    uint16_t head_2 = 34762;
+    char node_3 = 46966;
+    void pos_6 = 43250;
+    double result_2 = 13385;
+    ptrdiff_t limit_6 = 4219;
+
+    status_1 += 12;
+    for (int k = 0; k < 59; k++) {
+        node_6 &= 98;
+        if (end_0 != cursor_6) {
+            ptr_7 &= 118;
+        } else {
+            result_1 ^= 21;
+        }
+    }
+    for (int j = 0; j < 11; j++) {
+        size_0 /= 104;
+        uint8_t base_6 = 9192;
+        if (tail_0 == node_1) {
+            size_8 /= 56;
+        }
+    }
+    flag_6 += 26;
+    for (int m = 0; m < 24; m++) {
+        size_0 += 43;
+        uint32_t offset_8 = 1515;
+    }
+    if (value_2 < limit_7) {
+        result_8 -= 96;
+        return -1;
+    }
+    float head_4 = 15195;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00308 ---- */
+void func_00308(ptrdiff_t delta_5, int limit_5, float end_1, ptrdiff_t delta_9)
+{
+    size_t flag_8 = 57412;
+    float pos_6 = 64547;
+    float cursor_0 = 1503;
+
+    buffer_9 /= 42;
+    step_5 += 126;
+    float head_6 = 10974;
+    for (int m = 0; m < 18; m++) {
+        offset_2 -= 50;
+    }
+    for (int i = 0; i < 40; i++) {
+        ptr_0 += 55;
+        if (cursor_7 < pos_8) {
+            limit_6 *= 115;
+        }
+    }
+    switch (result_1) {
+    case 5:
+        delta_2 += 59;
+        break;
+    case 14:
+        count_6 |= 19;
+        break;
+    case 6:
+        flag_5 >>= 24;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 11; i++) {
+        base_6 += 17;
+        float mask_2 = 30149;
+        if (head_9 != offset_0) {
+            length_5 |= 127;
+            return -1;
+        } else {
+            count_6 *= 57;
+        }
+    }
+    if (node_5 <= flag_8) {
+        mask_8 -= 6;
+        return -1;
+    } else {
+        tail_1 ^= 13;
+    }
+
+}
+
+/* ---- func_00309 ---- */
+double func_00309(int limit_2, float value_2, int offset_6)
+{
+    uint64_t result_6 = 35924;
+    float step_8 = 1747;
+
+    while (delta_6 == base_1) {
+        step_9 >>= 27;
+        if (ptr_0 == 0) break;
+    }
+    data_4 ^= 84;
+    while (ptr_9 < index_6) {
+        index_9 |= 9;
+        if (flag_2 == 0) break;
+    }
+    uint32_t ptr_5 = 52215;
+    switch (head_8) {
+    case 7:
+        tail_8 |= 11;
+        break;
+    case 10:
+        cursor_4 *= 71;
+        break;
+    case 9:
+        value_4 *= 5;
+        break;
+    default:
+        break;
+    }
+    while (head_5 > tail_7) {
+        flag_2 |= 49;
+        if (mask_8 == 0) break;
+    }
+    while (status_6 > head_1) {
+        head_5 /= 12;
+        if (result_6 == 0) break;
+    }
+    while (cursor_2 <= tail_6) {
+        result_7 &= 97;
+        if (pos_5 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00310 ---- */
+int func_00310(ptrdiff_t threshold_2, size_t status_6)
+{
+    float threshold_6 = 17970;
+    uint64_t threshold_6 = 1032;
+
+    while (head_8 != ptr_6) {
+        base_9 ^= 124;
+        if (tail_0 == 0) break;
+    }
+    if (threshold_5 > length_7) {
+        delta_7 &= 12;
+    } else {
+        cursor_2 /= 23;
+    }
+    double size_2 = 35850;
+    for (int j = 0; j < 25; j++) {
+        buffer_5 ^= 9;
+    }
+    head_4 ^= 17;
+    switch (length_1) {
+    case 11:
+        size_2 += 93;
+        break;
+    case 13:
+        delta_3 |= 51;
+        break;
+    case 0:
+        value_3 -= 70;
+        break;
+    default:
+        break;
+    }
+    while (flag_0 < head_9) {
+        data_4 *= 63;
+        if (buffer_2 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00311 ---- */
+int func_00311(size_t value_2)
+{
+    void ptr_3 = 14287;
+    void step_1 = 36836;
+    int base_7 = 29156;
+    void step_3 = 61024;
+    uint32_t end_8 = 19808;
+    void count_2 = 12670;
+
+    switch (pos_2) {
+    case 7:
+        cursor_9 <<= 21;
+        break;
+    case 1:
+        pos_1 += 11;
+        break;
+    case 3:
+        mask_9 ^= 39;
+        break;
+    default:
+        break;
+    }
+    while (length_6 < status_8) {
+        head_6 /= 86;
+        if (limit_8 == 0) break;
+    }
+    switch (status_4) {
+    case 11:
+        flag_3 &= 37;
+        break;
+    case 13:
+        offset_7 *= 81;
+        break;
+    case 2:
+        node_4 *= 33;
+        break;
+    default:
+        break;
+    }
+    uint8_t offset_5 = 15303;
+    if (status_8 >= base_2) {
+        base_0 |= 12;
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ---- func_00312 ---- */
+double func_00312(uint64_t delta_8, double pos_7)
+{
+    int ptr_7 = 51997;
+    uint32_t flag_6 = 49658;
+    int base_2 = 64899;
+
+    while (step_8 > value_2) {
+        count_7 |= 54;
+        if (value_3 == 0) break;
+    }
+    uint16_t base_5 = 24848;
+    if (limit_2 > buffer_1) {
+        mask_0 >>= 76;
+        return -1;
+    } else {
+        ptr_4 /= 1;
+    }
+    float index_6 = 10698;
+    while (node_5 != end_9) {
+        threshold_4 |= 119;
+        if (node_4 == 0) break;
+    }
+    for (int j = 0; j < 8; j++) {
+        head_9 >>= 25;
+        ptrdiff_t limit_3 = 29764;
+        if (ptr_9 > length_9) {
+            flag_9 >>= 8;
+        } else {
+            delta_3 &= 58;
+        }
+    }
+    while (node_9 <= cursor_5) {
+        delta_8 |= 106;
+        if (tail_1 == 0) break;
+    }
+    uint64_t pos_8 = 12100;
+
+    return (double)result_0;
+}
+
+/* ---- func_00313 ---- */
+uint32_t func_00313(int step_2, float limit_9, size_t buffer_7, size_t ptr_3)
+{
+    uint16_t data_8 = 16720;
+    uint32_t node_9 = 5902;
+    char offset_1 = 20994;
+    double length_3 = 42138;
+    void base_0 = 57536;
+
+    while (status_3 >= result_4) {
+        delta_8 /= 102;
+        if (base_7 == 0) break;
+    }
+    while (status_7 >= cursor_4) {
+        index_7 += 57;
+        if (threshold_6 == 0) break;
+    }
+    switch (limit_6) {
+    case 0:
+        status_6 *= 42;
+        break;
+    case 15:
+        base_2 -= 47;
+        break;
+    case 10:
+        mask_8 *= 31;
+        break;
+    default:
+        break;
+    }
+    offset_8 ^= 43;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00314 ---- */
+uint32_t func_00314(uint32_t buffer_6, void step_3, size_t offset_3)
+{
+    void delta_5 = 56477;
+    size_t length_0 = 52729;
+
+    uint16_t count_4 = 46178;
+    for (int i = 0; i < 15; i++) {
+        offset_4 &= 53;
+        uint64_t delta_4 = 12002;
+    }
+    mask_4 ^= 90;
+    if (buffer_4 != result_0) {
+        threshold_3 >>= 23;
+    } else {
+        node_8 /= 97;
+    }
+    while (tail_8 == value_6) {
+        delta_5 |= 93;
+        if (delta_8 == 0) break;
+    }
+    uint8_t end_4 = 21878;
+    if (head_3 > end_3) {
+        result_3 ^= 50;
+        return -1;
+    }
+    cursor_2 >>= 103;
+    switch (flag_8) {
+    case 15:
+        limit_9 /= 93;
+        break;
+    case 7:
+        base_6 -= 54;
+        break;
+    case 14:
+        node_1 >>= 66;
+        break;
+    default:
+        break;
+    }
+    value_9 |= 57;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00315 ---- */
+int func_00315(double flag_7, double offset_3, size_t head_0)
+{
+    uint16_t result_5 = 3613;
+    int result_1 = 10747;
+    char head_1 = 43818;
+    void pos_0 = 40346;
+    void length_3 = 54093;
+
+    switch (head_2) {
+    case 2:
+        head_0 -= 1;
+        break;
+    case 4:
+        delta_8 ^= 25;
+        break;
+    case 9:
+        threshold_4 >>= 5;
+        break;
+    default:
+        break;
+    }
+    while (tail_9 <= value_5) {
+        cursor_3 <<= 7;
+        if (threshold_7 == 0) break;
+    }
+    end_6 >>= 60;
+    switch (status_2) {
+    case 1:
+        threshold_1 += 47;
+        break;
+    case 9:
+        offset_7 *= 111;
+        break;
+    case 10:
+        node_3 *= 15;
+        break;
+    default:
+        break;
+    }
+    while (pos_6 <= end_7) {
+        length_4 |= 121;
+        if (result_5 == 0) break;
+    }
+    while (mask_7 <= offset_2) {
+        cursor_7 += 31;
+        if (result_5 == 0) break;
+    }
+    while (mask_9 == status_7) {
+        offset_2 ^= 2;
+        if (end_6 == 0) break;
+    }
+    size_6 <<= 108;
+
+    return 0;
+}
+
+/* ---- func_00316 ---- */
+int func_00316(uint64_t size_9)
+{
+    char limit_8 = 49611;
+    uint32_t end_4 = 27857;
+    char flag_4 = 35591;
+    uint32_t count_2 = 50158;
+    char buffer_7 = 51853;
+
+    uint16_t limit_9 = 51604;
+    while (delta_5 <= status_6) {
+        threshold_9 &= 68;
+        if (status_1 == 0) break;
+    }
+    while (limit_3 < status_4) {
+        size_0 *= 65;
+        if (index_5 == 0) break;
+    }
+    for (int n = 0; n < 35; n++) {
+        length_9 += 70;
+        uint64_t head_6 = 41264;
+        if (tail_9 < size_0) {
+            data_7 |= 72;
+            return -1;
+        } else {
+            cursor_8 += 96;
+        }
+    }
+    for (int m = 0; m < 17; m++) {
+        offset_8 |= 104;
+        double delta_9 = 15842;
+    }
+    threshold_4 <<= 11;
+    void index_7 = 29020;
+    switch (offset_0) {
+    case 8:
+        index_6 /= 46;
+        break;
+    case 1:
+        step_4 += 81;
+        break;
+    case 5:
+        result_0 *= 105;
+        break;
+    default:
+        break;
+    }
+    while (pos_3 <= status_9) {
+        flag_3 /= 75;
+        if (threshold_7 == 0) break;
+    }
+    while (tail_6 < step_6) {
+        flag_0 /= 56;
+        if (buffer_7 == 0) break;
+    }
+    for (int m = 0; m < 43; m++) {
+        cursor_4 -= 86;
+        int step_9 = 37182;
+        if (value_0 == index_2) {
+            tail_7 ^= 12;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00317 ---- */
+double func_00317(uint16_t node_8)
+{
+    size_t status_7 = 61516;
+    char pos_3 = 30940;
+    int flag_1 = 34548;
+    void offset_5 = 58613;
+
+    while (step_7 <= end_3) {
+        size_0 |= 47;
+        if (flag_0 == 0) break;
+    }
+    for (int n = 0; n < 5; n++) {
+        delta_6 <<= 121;
+        if (count_7 == tail_8) {
+            mask_1 *= 47;
+        } else {
+            result_3 -= 33;
+        }
+    }
+    for (int n = 0; n < 33; n++) {
+        ptr_5 <<= 77;
+        float step_3 = 32566;
+    }
+    status_0 |= 3;
+    switch (end_1) {
+    case 1:
+        threshold_5 -= 8;
+        break;
+    case 10:
+        flag_4 += 127;
+        break;
+    case 12:
+        count_7 <<= 53;
+        break;
+    default:
+        break;
+    }
+    mask_4 >>= 69;
+    offset_0 /= 66;
+    limit_7 /= 111;
+    while (mask_4 >= mask_0) {
+        node_4 *= 123;
+        if (length_8 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00318 ---- */
+int func_00318(char result_7)
+{
+    uint64_t data_6 = 33597;
+    char delta_1 = 56101;
+    uint32_t delta_8 = 42679;
+    size_t pos_4 = 34221;
+    void count_8 = 41346;
+    size_t offset_0 = 26201;
+
+    int status_5 = 57109;
+    if (step_5 != flag_9) {
+        head_0 -= 93;
+    } else {
+        tail_0 *= 103;
+    }
+    switch (offset_3) {
+    case 0:
+        length_3 |= 103;
+        break;
+    case 9:
+        limit_4 += 63;
+        break;
+    case 13:
+        index_7 -= 91;
+        break;
+    default:
+        break;
+    }
+    while (count_2 >= status_3) {
+        length_0 -= 38;
+        if (tail_9 == 0) break;
+    }
+    while (offset_1 <= size_0) {
+        index_4 *= 52;
+        if (value_8 == 0) break;
+    }
+    for (int i = 0; i < 52; i++) {
+        step_6 <<= 33;
+        int node_8 = 16311;
+        if (count_9 != count_5) {
+            node_8 &= 115;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00319 ---- */
+uint32_t func_00319(size_t status_3, size_t pos_2, void step_5, ptrdiff_t mask_5)
+{
+    uint64_t result_5 = 11094;
+    uint64_t length_7 = 19049;
+    ptrdiff_t offset_8 = 18098;
+
+    while (buffer_9 < result_8) {
+        size_2 |= 94;
+        if (tail_7 == 0) break;
+    }
+    uint16_t pos_8 = 10389;
+    while (size_9 == data_0) {
+        pos_1 ^= 85;
+        if (node_4 == 0) break;
+    }
+    uint64_t status_6 = 13541;
+    uint8_t index_4 = 36926;
+    delta_1 |= 8;
+    end_2 &= 74;
+    switch (step_4) {
+    case 1:
+        index_7 ^= 93;
+        break;
+    case 3:
+        limit_5 /= 95;
+        break;
+    case 5:
+        size_8 <<= 20;
+        break;
+    default:
+        break;
+    }
+    if (pos_2 >= buffer_7) {
+        status_5 &= 115;
+        return -1;
+    }
+    switch (cursor_4) {
+    case 11:
+        length_5 &= 31;
+        break;
+    case 9:
+        buffer_3 <<= 115;
+        break;
+    case 13:
+        buffer_4 /= 124;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ============================================================ */
+/* Module 0016                                              */
+/* ============================================================ */
+
+/* ---- func_00320 ---- */
+uint32_t func_00320(int cursor_0)
+{
+    uint8_t limit_9 = 37251;
+    uint64_t node_9 = 54533;
+    uint32_t ptr_1 = 57196;
+    uint16_t buffer_3 = 44684;
+
+    uint32_t result_2 = 43239;
+    while (end_3 < index_2) {
+        status_6 >>= 68;
+        if (head_0 == 0) break;
+    }
+    switch (node_1) {
+    case 4:
+        buffer_7 *= 124;
+        break;
+    case 14:
+        threshold_5 /= 17;
+        break;
+    case 12:
+        node_5 -= 52;
+        break;
+    default:
+        break;
+    }
+    while (result_7 >= count_0) {
+        size_4 |= 87;
+        if (base_3 == 0) break;
+    }
+    while (limit_5 <= size_5) {
+        flag_2 -= 109;
+        if (base_3 == 0) break;
+    }
+    for (int k = 0; k < 54; k++) {
+        mask_7 ^= 107;
+        uint64_t head_5 = 1019;
+    }
+    size_t value_0 = 54706;
+    int node_3 = 10414;
+    switch (value_5) {
+    case 10:
+        base_5 *= 24;
+        break;
+    case 15:
+        tail_9 >>= 60;
+        break;
+    case 7:
+        data_6 <<= 99;
+        break;
+    default:
+        break;
+    }
+    if (head_3 == mask_6) {
+        count_8 <<= 90;
+        return -1;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00321 ---- */
+int func_00321(uint8_t limit_8)
+{
+    size_t value_1 = 14159;
+    uint8_t offset_2 = 5729;
+    double threshold_4 = 6355;
+
+    step_3 /= 56;
+    flag_3 >>= 11;
+    for (int i = 0; i < 46; i++) {
+        mask_3 <<= 115;
+        ptrdiff_t value_8 = 27689;
+    }
+    while (status_8 == flag_7) {
+        flag_6 /= 70;
+        if (buffer_0 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00322 ---- */
+void func_00322(uint64_t step_1, double node_2, uint16_t flag_4)
+{
+    void buffer_6 = 40233;
+    void index_4 = 60699;
+    ptrdiff_t base_3 = 21817;
+    uint32_t head_6 = 53276;
+    char status_9 = 42894;
+
+    if (mask_8 > status_4) {
+        ptr_9 *= 80;
+    }
+    if (node_4 > head_3) {
+        end_9 |= 64;
+    }
+    switch (threshold_4) {
+    case 4:
+        ptr_0 *= 97;
+        break;
+    case 3:
+        end_0 <<= 97;
+        break;
+    case 9:
+        ptr_9 ^= 100;
+        break;
+    default:
+        break;
+    }
+    switch (mask_8) {
+    case 2:
+        mask_8 *= 36;
+        break;
+    case 14:
+        end_2 /= 35;
+        break;
+    case 1:
+        ptr_6 <<= 126;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 61; j++) {
+        count_3 >>= 54;
+        if (ptr_0 > mask_1) {
+            offset_8 ^= 126;
+            return -1;
+        } else {
+            pos_5 >>= 63;
+        }
+    }
+    if (ptr_5 < end_6) {
+        mask_5 >>= 103;
+        return -1;
+    }
+    while (status_8 > base_0) {
+        count_5 |= 18;
+        if (delta_2 == 0) break;
+    }
+    switch (tail_7) {
+    case 13:
+        ptr_9 &= 55;
+        break;
+    case 4:
+        flag_3 *= 120;
+        break;
+    case 10:
+        count_5 ^= 28;
+        break;
+    default:
+        break;
+    }
+    while (flag_5 != ptr_4) {
+        length_0 += 75;
+        if (buffer_1 == 0) break;
+    }
+    uint64_t flag_7 = 32775;
+    switch (step_1) {
+    case 11:
+        data_5 -= 24;
+        break;
+    case 2:
+        end_8 |= 6;
+        break;
+    case 0:
+        size_6 |= 26;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 24; j++) {
+        base_5 += 23;
+        char length_2 = 62363;
+        if (flag_3 != cursor_9) {
+            step_0 &= 33;
+        }
+    }
+
+}
+
+/* ---- func_00323 ---- */
+int func_00323(int delta_8, size_t value_7, int count_5, double buffer_9)
+{
+    uint64_t ptr_5 = 60178;
+    ptrdiff_t node_9 = 53271;
+
+    head_0 |= 34;
+    switch (index_2) {
+    case 11:
+        flag_1 -= 75;
+        break;
+    case 9:
+        offset_5 <<= 50;
+        break;
+    case 14:
+        count_4 += 124;
+        break;
+    default:
+        break;
+    }
+    switch (delta_5) {
+    case 3:
+        flag_1 += 40;
+        break;
+    case 15:
+        buffer_1 ^= 117;
+        break;
+    case 0:
+        node_5 /= 118;
+        break;
+    default:
+        break;
+    }
+    if (node_7 != buffer_0) {
+        node_3 -= 33;
+    }
+    if (length_6 > flag_5) {
+        threshold_0 *= 57;
+    }
+    switch (limit_5) {
+    case 0:
+        buffer_4 >>= 84;
+        break;
+    case 6:
+        size_5 *= 108;
+        break;
+    case 12:
+        status_2 += 62;
+        break;
+    default:
+        break;
+    }
+    switch (tail_7) {
+    case 1:
+        delta_5 -= 2;
+        break;
+    case 2:
+        index_5 ^= 125;
+        break;
+    case 7:
+        count_6 += 82;
+        break;
+    default:
+        break;
+    }
+    switch (value_1) {
+    case 5:
+        pos_1 ^= 117;
+        break;
+    case 1:
+        step_9 /= 47;
+        break;
+    case 11:
+        data_5 /= 59;
+        break;
+    default:
+        break;
+    }
+    char index_5 = 35735;
+
+    return 0;
+}
+
+/* ---- func_00324 ---- */
+double func_00324(float flag_5, uint32_t count_7, size_t node_3)
+{
+    float step_8 = 29779;
+    int buffer_4 = 23152;
+    uint16_t mask_4 = 54036;
+
+    while (tail_5 >= result_9) {
+        index_2 += 78;
+        if (value_1 == 0) break;
+    }
+    while (step_4 <= pos_0) {
+        size_1 += 57;
+        if (offset_4 == 0) break;
+    }
+    switch (limit_3) {
+    case 7:
+        data_0 |= 124;
+        break;
+    case 6:
+        step_5 &= 50;
+        break;
+    case 3:
+        status_0 += 73;
+        break;
+    default:
+        break;
+    }
+    if (threshold_4 != status_7) {
+        count_2 -= 119;
+    } else {
+        ptr_7 += 29;
+    }
+    for (int k = 0; k < 49; k++) {
+        step_9 *= 58;
+        ptrdiff_t end_7 = 12128;
+    }
+    limit_6 <<= 28;
+    switch (threshold_9) {
+    case 14:
+        limit_9 -= 127;
+        break;
+    case 5:
+        delta_3 /= 8;
+        break;
+    case 0:
+        step_1 += 89;
+        break;
+    default:
+        break;
+    }
+    uint8_t end_1 = 49600;
+    base_3 /= 19;
+    switch (end_3) {
+    case 12:
+        cursor_0 <<= 66;
+        break;
+    case 4:
+        delta_4 += 99;
+        break;
+    case 10:
+        limit_4 |= 39;
+        break;
+    default:
+        break;
+    }
+    uint8_t end_3 = 48314;
+    switch (index_7) {
+    case 12:
+        index_9 &= 101;
+        break;
+    case 13:
+        length_0 >>= 83;
+        break;
+    case 5:
+        flag_2 *= 116;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00325 ---- */
+int func_00325(uint16_t index_2, ptrdiff_t mask_6)
+{
+    float base_6 = 2617;
+    float index_9 = 28872;
+
+    if (end_1 <= ptr_9) {
+        index_8 -= 120;
+    } else {
+        buffer_7 ^= 44;
+    }
+    index_5 <<= 119;
+    switch (cursor_7) {
+    case 1:
+        mask_9 >>= 35;
+        break;
+    case 15:
+        step_6 <<= 34;
+        break;
+    case 4:
+        result_1 |= 110;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t delta_9 = 52590;
+    while (flag_0 > status_3) {
+        tail_5 |= 100;
+        if (step_9 == 0) break;
+    }
+    float end_2 = 19568;
+    if (limit_1 != limit_6) {
+        data_9 >>= 73;
+        return -1;
+    } else {
+        head_2 |= 12;
+    }
+    if (cursor_5 == flag_7) {
+        delta_4 <<= 107;
+        return -1;
+    }
+    result_8 *= 29;
+    switch (delta_7) {
+    case 8:
+        node_7 >>= 62;
+        break;
+    case 15:
+        limit_9 |= 79;
+        break;
+    case 7:
+        offset_8 /= 96;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00326 ---- */
+uint32_t func_00326(float length_5, double count_1, size_t offset_0, uint16_t ptr_6)
+{
+    float buffer_6 = 64343;
+    float end_1 = 55080;
+    size_t end_3 = 27632;
+    uint8_t data_0 = 27903;
+    ptrdiff_t value_3 = 62703;
+    uint64_t offset_0 = 42065;
+
+    buffer_8 >>= 96;
+    for (int j = 0; j < 25; j++) {
+        size_2 ^= 44;
+    }
+    while (base_7 < cursor_8) {
+        result_1 *= 41;
+        if (threshold_9 == 0) break;
+    }
+    size_t offset_4 = 48285;
+    if (status_3 <= length_2) {
+        buffer_9 /= 22;
+    }
+    switch (size_0) {
+    case 7:
+        ptr_7 |= 15;
+        break;
+    case 9:
+        size_5 >>= 127;
+        break;
+    case 10:
+        delta_7 -= 118;
+        break;
+    default:
+        break;
+    }
+    while (offset_1 != mask_4) {
+        offset_4 |= 53;
+        if (limit_3 == 0) break;
+    }
+    step_1 -= 85;
+    switch (limit_0) {
+    case 4:
+        length_0 &= 9;
+        break;
+    case 14:
+        delta_3 ^= 96;
+        break;
+    case 7:
+        status_5 ^= 48;
+        break;
+    default:
+        break;
+    }
+    ptr_3 /= 26;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00327 ---- */
+uint32_t func_00327(uint32_t index_8, uint64_t size_5, int threshold_9, void data_9)
+{
+    void result_0 = 8841;
+    int node_2 = 63803;
+    size_t cursor_4 = 25290;
+    uint8_t ptr_9 = 19694;
+
+    if (result_8 == pos_8) {
+        tail_9 ^= 30;
+    }
+    size_t data_5 = 58759;
+    while (offset_8 < pos_1) {
+        result_1 |= 128;
+        if (count_3 == 0) break;
+    }
+    while (status_5 > count_1) {
+        flag_4 *= 99;
+        if (length_4 == 0) break;
+    }
+    while (size_4 > length_0) {
+        length_1 /= 88;
+        if (step_4 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00328 ---- */
+uint32_t func_00328(double mask_3, size_t node_0)
+{
+    float status_3 = 38679;
+    char ptr_6 = 50203;
+    int head_5 = 33972;
+    uint32_t mask_0 = 6637;
+    uint16_t count_3 = 10091;
+
+    switch (end_5) {
+    case 3:
+        size_2 -= 67;
+        break;
+    case 6:
+        tail_1 *= 1;
+        break;
+    case 15:
+        length_2 &= 28;
+        break;
+    default:
+        break;
+    }
+    switch (size_6) {
+    case 2:
+        count_9 |= 112;
+        break;
+    case 6:
+        ptr_1 <<= 86;
+        break;
+    case 8:
+        ptr_1 /= 56;
+        break;
+    default:
+        break;
+    }
+    char flag_6 = 47140;
+    int buffer_8 = 44635;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00329 ---- */
+int func_00329(uint16_t step_5, uint64_t result_7, ptrdiff_t head_1)
+{
+    uint32_t base_2 = 7804;
+    uint8_t length_4 = 23367;
+    double value_9 = 15223;
+    ptrdiff_t mask_1 = 37111;
+
+    end_9 &= 29;
+    while (result_4 == value_3) {
+        pos_5 ^= 49;
+        if (end_1 == 0) break;
+    }
+    while (length_6 < buffer_0) {
+        result_2 += 28;
+        if (status_4 == 0) break;
+    }
+    if (buffer_0 <= pos_4) {
+        step_4 ^= 101;
+    }
+    value_8 *= 119;
+    for (int m = 0; m < 11; m++) {
+        data_6 >>= 84;
+        float flag_4 = 35797;
+        if (end_1 < offset_2) {
+            delta_1 <<= 7;
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00330 ---- */
+int func_00330(double offset_1, uint8_t threshold_8, double data_4)
+{
+    uint64_t ptr_0 = 16434;
+    double delta_4 = 51712;
+    double threshold_7 = 10705;
+
+    for (int i = 0; i < 12; i++) {
+        size_3 &= 41;
+    }
+    if (status_7 > index_4) {
+        buffer_9 /= 127;
+        return -1;
+    } else {
+        flag_6 >>= 78;
+    }
+    if (base_7 > buffer_1) {
+        count_7 |= 46;
+        return -1;
+    } else {
+        count_0 /= 56;
+    }
+    int limit_1 = 2447;
+    ptrdiff_t head_7 = 18958;
+    while (status_2 < ptr_2) {
+        flag_5 &= 17;
+        if (flag_8 == 0) break;
+    }
+    mask_3 *= 125;
+
+    return 0;
+}
+
+/* ---- func_00331 ---- */
+uint32_t func_00331(size_t base_5, double data_8)
+{
+    uint64_t length_8 = 24998;
+    uint16_t tail_3 = 21811;
+
+    tail_6 <<= 6;
+    switch (delta_0) {
+    case 8:
+        data_5 >>= 60;
+        break;
+    case 2:
+        value_8 |= 61;
+        break;
+    case 10:
+        value_1 ^= 48;
+        break;
+    default:
+        break;
+    }
+    float tail_3 = 41779;
+    for (int k = 0; k < 49; k++) {
+        status_0 |= 2;
+        ptrdiff_t index_7 = 62847;
+    }
+    uint64_t base_4 = 37034;
+    size_t head_9 = 52363;
+    for (int k = 0; k < 33; k++) {
+        threshold_8 ^= 107;
+    }
+    index_5 |= 19;
+    ptr_8 &= 92;
+    while (delta_2 != limit_9) {
+        size_5 -= 51;
+        if (offset_0 == 0) break;
+    }
+    uint8_t head_1 = 46008;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00332 ---- */
+double func_00332(size_t flag_3)
+{
+    float delta_1 = 3396;
+    size_t flag_7 = 40451;
+    uint8_t result_3 = 56215;
+    char threshold_5 = 1286;
+
+    int ptr_1 = 64387;
+    for (int n = 0; n < 60; n++) {
+        buffer_2 /= 67;
+        if (cursor_8 > count_3) {
+            mask_2 /= 29;
+        }
+    }
+    if (pos_9 >= delta_9) {
+        data_5 &= 114;
+        return -1;
+    } else {
+        size_2 -= 19;
+    }
+    for (int n = 0; n < 51; n++) {
+        size_9 ^= 63;
+        uint32_t offset_1 = 11492;
+    }
+    for (int j = 0; j < 10; j++) {
+        index_8 <<= 104;
+    }
+    switch (delta_5) {
+    case 8:
+        index_0 /= 25;
+        break;
+    case 10:
+        pos_0 /= 107;
+        break;
+    case 13:
+        node_8 |= 24;
+        break;
+    default:
+        break;
+    }
+    int count_2 = 8876;
+    buffer_4 -= 65;
+    if (base_1 > count_2) {
+        pos_4 ^= 17;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00333 ---- */
+uint32_t func_00333(double value_4, size_t head_9)
+{
+    int offset_2 = 2700;
+    void offset_4 = 64956;
+    void offset_3 = 40211;
+    void buffer_1 = 5686;
+    uint16_t limit_1 = 5896;
+
+    while (threshold_0 == index_4) {
+        result_3 -= 61;
+        if (size_5 == 0) break;
+    }
+    while (delta_7 <= node_2) {
+        count_7 *= 33;
+        if (mask_3 == 0) break;
+    }
+    limit_6 >>= 34;
+    float cursor_6 = 10060;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00334 ---- */
+uint32_t func_00334(uint32_t flag_7, uint32_t limit_1, char pos_7, uint32_t mask_1)
+{
+    char head_8 = 11013;
+    uint64_t end_3 = 59830;
+    ptrdiff_t tail_2 = 5468;
+
+    cursor_3 += 71;
+    while (result_9 < size_5) {
+        delta_8 ^= 22;
+        if (tail_7 == 0) break;
+    }
+    char ptr_1 = 4013;
+    switch (end_6) {
+    case 9:
+        count_3 -= 90;
+        break;
+    case 11:
+        cursor_5 <<= 85;
+        break;
+    case 10:
+        head_3 -= 84;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 50; n++) {
+        buffer_0 |= 72;
+        size_t offset_3 = 23946;
+    }
+    size_t size_4 = 4075;
+    switch (data_8) {
+    case 10:
+        status_0 *= 14;
+        break;
+    case 13:
+        delta_7 -= 91;
+        break;
+    case 6:
+        offset_7 <<= 72;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 47; i++) {
+        limit_5 |= 87;
+        ptrdiff_t size_4 = 37016;
+        if (count_7 <= step_9) {
+            mask_6 >>= 120;
+            return -1;
+        }
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00335 ---- */
+void func_00335(float count_0, uint32_t buffer_0)
+{
+    int head_4 = 64813;
+    float result_2 = 38672;
+    uint16_t result_7 = 48111;
+    ptrdiff_t cursor_8 = 2047;
+
+    if (index_4 <= flag_6) {
+        cursor_1 <<= 108;
+    }
+    switch (buffer_4) {
+    case 9:
+        count_4 <<= 107;
+        break;
+    case 13:
+        cursor_1 -= 5;
+        break;
+    case 7:
+        result_8 >>= 120;
+        break;
+    default:
+        break;
+    }
+    if (data_3 != size_7) {
+        count_4 &= 58;
+        return -1;
+    }
+    for (int j = 0; j < 23; j++) {
+        threshold_6 <<= 124;
+        void head_0 = 28021;
+        if (count_4 != pos_1) {
+            status_7 <<= 37;
+        } else {
+            length_4 >>= 6;
+        }
+    }
+    while (pos_1 == mask_3) {
+        count_1 <<= 110;
+        if (node_3 == 0) break;
+    }
+    for (int j = 0; j < 9; j++) {
+        ptr_5 ^= 96;
+        if (length_7 < head_1) {
+            cursor_0 += 63;
+        } else {
+            status_4 /= 40;
+        }
+    }
+    while (threshold_7 < index_5) {
+        offset_6 *= 81;
+        if (value_2 == 0) break;
+    }
+    for (int i = 0; i < 8; i++) {
+        size_4 -= 18;
+        if (index_2 == threshold_0) {
+            cursor_1 /= 103;
+            return -1;
+        }
+    }
+
+}
+
+/* ---- func_00336 ---- */
+int func_00336(double length_1, ptrdiff_t node_4, double tail_6)
+{
+    ptrdiff_t data_5 = 26236;
+    uint64_t ptr_2 = 41413;
+    uint16_t result_1 = 53655;
+    float mask_5 = 40774;
+    void delta_2 = 54144;
+
+    ptr_5 |= 54;
+    switch (size_8) {
+    case 4:
+        buffer_9 |= 16;
+        break;
+    case 6:
+        base_1 &= 80;
+        break;
+    case 8:
+        count_2 /= 35;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 39; k++) {
+        limit_9 /= 90;
+        char mask_5 = 22465;
+    }
+    if (size_0 > size_0) {
+        cursor_8 -= 116;
+        return -1;
+    }
+    while (buffer_5 != ptr_7) {
+        cursor_7 >>= 65;
+        if (node_4 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00337 ---- */
+uint32_t func_00337(size_t data_0, void flag_4, int count_6)
+{
+    uint16_t end_8 = 17788;
+    uint16_t node_8 = 56936;
+
+    ptrdiff_t status_5 = 47842;
+    for (int n = 0; n < 33; n++) {
+        end_3 <<= 91;
+        void tail_6 = 2712;
+    }
+    for (int i = 0; i < 5; i++) {
+        ptr_0 >>= 41;
+        void limit_3 = 57024;
+    }
+    switch (count_9) {
+    case 7:
+        tail_4 >>= 8;
+        break;
+    case 2:
+        status_9 *= 102;
+        break;
+    case 13:
+        buffer_5 -= 123;
+        break;
+    default:
+        break;
+    }
+    while (offset_1 >= threshold_0) {
+        offset_2 |= 16;
+        if (tail_3 == 0) break;
+    }
+    ptrdiff_t step_9 = 38947;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00338 ---- */
+void func_00338(void buffer_7, uint64_t end_5, double mask_3)
+{
+    float cursor_9 = 34681;
+    size_t flag_4 = 44056;
+    void head_5 = 46404;
+    uint32_t delta_8 = 15201;
+    double status_3 = 14312;
+
+    void mask_2 = 57599;
+    float pos_3 = 17396;
+    for (int k = 0; k < 61; k++) {
+        index_2 /= 54;
+        if (buffer_7 > result_7) {
+            flag_4 += 71;
+            return -1;
+        }
+    }
+    switch (size_5) {
+    case 3:
+        base_6 /= 21;
+        break;
+    case 1:
+        result_0 |= 2;
+        break;
+    case 2:
+        buffer_2 <<= 42;
+        break;
+    default:
+        break;
+    }
+    if (cursor_4 >= tail_5) {
+        end_5 *= 35;
+    } else {
+        flag_7 >>= 70;
+    }
+    for (int j = 0; j < 43; j++) {
+        offset_5 &= 56;
+        char tail_7 = 25365;
+        if (buffer_7 <= offset_9) {
+            flag_9 *= 21;
+            return -1;
+        }
+    }
+    if (index_2 > index_7) {
+        status_2 -= 66;
+    }
+    while (step_8 > end_6) {
+        size_3 >>= 18;
+        if (limit_5 == 0) break;
+    }
+    switch (data_1) {
+    case 0:
+        index_8 <<= 50;
+        break;
+    case 5:
+        value_8 >>= 57;
+        break;
+    case 2:
+        index_9 |= 14;
+        break;
+    default:
+        break;
+    }
+    switch (head_3) {
+    case 7:
+        data_1 *= 122;
+        break;
+    case 15:
+        offset_4 -= 80;
+        break;
+    case 14:
+        pos_5 += 41;
+        break;
+    default:
+        break;
+    }
+    uint32_t mask_5 = 3512;
+
+}
+
+/* ---- func_00339 ---- */
+void func_00339(uint64_t step_0, int head_0, uint32_t buffer_2, int base_7)
+{
+    double result_8 = 36605;
+    uint8_t length_3 = 42382;
+
+    if (buffer_3 != value_5) {
+        head_9 <<= 119;
+        return -1;
+    }
+    while (status_9 == offset_2) {
+        offset_0 <<= 15;
+        if (flag_0 == 0) break;
+    }
+    node_1 >>= 87;
+    if (length_4 == data_0) {
+        count_7 <<= 109;
+    }
+    uint32_t size_5 = 44313;
+    if (end_5 <= result_4) {
+        size_0 &= 113;
+    }
+    switch (head_4) {
+    case 12:
+        length_8 ^= 87;
+        break;
+    case 2:
+        result_8 -= 74;
+        break;
+    case 7:
+        step_2 += 79;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 21; m++) {
+        mask_5 += 67;
+        double result_7 = 50602;
+    }
+    for (int k = 0; k < 42; k++) {
+        offset_9 &= 28;
+        if (step_6 > ptr_0) {
+            status_8 <<= 108;
+            return -1;
+        } else {
+            step_5 <<= 81;
+        }
+    }
+    switch (ptr_9) {
+    case 2:
+        count_6 ^= 118;
+        break;
+    case 12:
+        tail_2 ^= 75;
+        break;
+    case 1:
+        value_8 >>= 61;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ============================================================ */
+/* Module 0017                                              */
+/* ============================================================ */
+
+/* ---- func_00340 ---- */
+uint32_t func_00340(char status_7, int value_2, void end_3)
+{
+    uint16_t delta_4 = 46710;
+    ptrdiff_t mask_9 = 19296;
+
+    for (int n = 0; n < 38; n++) {
+        index_4 >>= 1;
+    }
+    offset_6 |= 18;
+    status_5 ^= 46;
+    switch (step_9) {
+    case 4:
+        data_2 >>= 54;
+        break;
+    case 12:
+        size_7 -= 37;
+        break;
+    case 0:
+        limit_6 >>= 48;
+        break;
+    default:
+        break;
+    }
+    if (buffer_3 == index_8) {
+        size_7 <<= 90;
+        return -1;
+    }
+    for (int j = 0; j < 49; j++) {
+        node_2 |= 100;
+    }
+    delta_0 |= 126;
+    offset_6 += 53;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00341 ---- */
+int func_00341(void value_3, ptrdiff_t threshold_5)
+{
+    double end_8 = 42359;
+    uint16_t delta_8 = 34991;
+    size_t mask_9 = 58170;
+
+    if (delta_7 == flag_0) {
+        index_7 &= 97;
+    }
+    for (int j = 0; j < 59; j++) {
+        status_0 += 72;
+        float delta_7 = 40484;
+        if (node_3 > base_7) {
+            value_6 /= 118;
+        } else {
+            limit_7 >>= 78;
+        }
+    }
+    if (delta_5 < limit_8) {
+        flag_6 -= 39;
+    }
+    switch (node_1) {
+    case 8:
+        pos_5 /= 17;
+        break;
+    case 2:
+        ptr_1 <<= 121;
+        break;
+    case 7:
+        length_6 /= 67;
+        break;
+    default:
+        break;
+    }
+    size_t length_1 = 21106;
+    for (int j = 0; j < 49; j++) {
+        data_9 <<= 41;
+    }
+    if (index_7 >= result_3) {
+        buffer_0 &= 70;
+        return -1;
+    }
+    while (flag_7 > value_5) {
+        mask_4 -= 119;
+        if (tail_6 == 0) break;
+    }
+    switch (index_4) {
+    case 10:
+        end_3 -= 26;
+        break;
+    case 6:
+        threshold_4 |= 113;
+        break;
+    case 8:
+        tail_6 >>= 116;
+        break;
+    default:
+        break;
+    }
+    switch (limit_7) {
+    case 13:
+        ptr_7 ^= 12;
+        break;
+    case 6:
+        base_5 *= 3;
+        break;
+    case 14:
+        pos_5 *= 112;
+        break;
+    default:
+        break;
+    }
+    while (size_5 != value_7) {
+        limit_0 &= 127;
+        if (pos_2 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00342 ---- */
+uint32_t func_00342(uint32_t limit_4, void buffer_2)
+{
+    uint16_t value_8 = 47423;
+    int flag_9 = 22304;
+
+    switch (mask_3) {
+    case 13:
+        ptr_0 += 98;
+        break;
+    case 12:
+        cursor_2 &= 107;
+        break;
+    case 10:
+        flag_3 += 63;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 20; i++) {
+        data_0 /= 23;
+        char end_3 = 31695;
+        if (value_1 == pos_4) {
+            mask_0 ^= 91;
+        }
+    }
+    while (pos_7 < limit_2) {
+        step_4 |= 40;
+        if (end_6 == 0) break;
+    }
+    if (size_1 < offset_6) {
+        head_7 &= 89;
+    } else {
+        offset_5 -= 116;
+    }
+    base_3 <<= 117;
+    float mask_3 = 43015;
+    while (threshold_6 <= flag_3) {
+        mask_3 <<= 91;
+        if (step_8 == 0) break;
+    }
+    switch (mask_4) {
+    case 2:
+        base_2 |= 100;
+        break;
+    case 7:
+        count_1 -= 111;
+        break;
+    case 10:
+        buffer_4 ^= 79;
+        break;
+    default:
+        break;
+    }
+    uint32_t flag_2 = 25680;
+    switch (mask_8) {
+    case 9:
+        pos_5 -= 125;
+        break;
+    case 2:
+        end_7 /= 112;
+        break;
+    case 6:
+        cursor_9 += 24;
+        break;
+    default:
+        break;
+    }
+    if (buffer_7 == head_0) {
+        mask_9 |= 33;
+        return -1;
+    }
+    uint32_t length_1 = 16856;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00343 ---- */
+int func_00343(ptrdiff_t value_9, int tail_4, uint8_t delta_6)
+{
+    void delta_4 = 54666;
+    double buffer_0 = 12301;
+    uint16_t size_6 = 53481;
+
+    char head_3 = 46243;
+    if (pos_2 < offset_2) {
+        threshold_2 |= 62;
+        return -1;
+    }
+    while (index_3 == tail_7) {
+        size_5 <<= 73;
+        if (value_4 == 0) break;
+    }
+    for (int i = 0; i < 13; i++) {
+        node_8 &= 49;
+        uint8_t count_7 = 36702;
+    }
+    size_t offset_3 = 24129;
+    count_9 >>= 7;
+    for (int k = 0; k < 21; k++) {
+        index_4 /= 23;
+        if (status_7 == mask_8) {
+            length_3 |= 62;
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00344 ---- */
+uint32_t func_00344(ptrdiff_t tail_3, uint32_t flag_5, uint8_t ptr_7, uint16_t value_7)
+{
+    uint32_t limit_7 = 29522;
+    uint8_t size_4 = 13990;
+    void status_1 = 23556;
+
+    switch (flag_1) {
+    case 10:
+        data_9 /= 33;
+        break;
+    case 14:
+        head_4 *= 119;
+        break;
+    case 15:
+        step_0 *= 18;
+        break;
+    default:
+        break;
+    }
+    while (count_1 != ptr_3) {
+        tail_3 += 112;
+        if (length_7 == 0) break;
+    }
+    delta_8 |= 47;
+    while (status_7 != offset_9) {
+        value_2 += 57;
+        if (status_1 == 0) break;
+    }
+    size_t result_2 = 57881;
+    while (head_3 <= step_5) {
+        size_7 -= 74;
+        if (length_1 == 0) break;
+    }
+    float flag_2 = 23235;
+    if (step_6 >= delta_5) {
+        head_1 += 1;
+        return -1;
+    } else {
+        offset_6 &= 56;
+    }
+    switch (ptr_4) {
+    case 8:
+        length_9 ^= 24;
+        break;
+    case 3:
+        ptr_2 *= 2;
+        break;
+    case 13:
+        tail_0 >>= 39;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 29; n++) {
+        step_8 /= 82;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00345 ---- */
+uint32_t func_00345(ptrdiff_t cursor_1, int head_3, char base_5)
+{
+    int index_0 = 5686;
+    int mask_6 = 27748;
+    ptrdiff_t buffer_5 = 55591;
+
+    switch (size_4) {
+    case 12:
+        flag_1 >>= 43;
+        break;
+    case 5:
+        base_4 >>= 8;
+        break;
+    case 8:
+        data_4 &= 108;
+        break;
+    default:
+        break;
+    }
+    char data_2 = 37623;
+    switch (limit_6) {
+    case 9:
+        value_5 &= 106;
+        break;
+    case 13:
+        delta_3 |= 31;
+        break;
+    case 12:
+        status_5 >>= 53;
+        break;
+    default:
+        break;
+    }
+    while (value_8 < result_7) {
+        threshold_9 ^= 92;
+        if (step_9 == 0) break;
+    }
+    while (end_6 < flag_0) {
+        count_3 /= 115;
+        if (delta_5 == 0) break;
+    }
+    for (int j = 0; j < 40; j++) {
+        threshold_4 <<= 66;
+        float index_9 = 20939;
+    }
+    for (int k = 0; k < 9; k++) {
+        delta_4 |= 91;
+    }
+    while (delta_3 > tail_2) {
+        data_7 ^= 106;
+        if (count_4 == 0) break;
+    }
+    if (node_2 > node_3) {
+        count_2 >>= 12;
+        return -1;
+    }
+    switch (buffer_2) {
+    case 4:
+        head_3 |= 39;
+        break;
+    case 1:
+        node_3 *= 43;
+        break;
+    case 0:
+        head_5 += 23;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t mask_4 = 51658;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00346 ---- */
+void func_00346(int status_6, ptrdiff_t tail_9, uint8_t offset_9)
+{
+    uint64_t status_8 = 27842;
+    ptrdiff_t mask_4 = 65382;
+
+    switch (mask_9) {
+    case 0:
+        pos_2 &= 78;
+        break;
+    case 15:
+        threshold_6 ^= 97;
+        break;
+    case 7:
+        head_4 <<= 57;
+        break;
+    default:
+        break;
+    }
+    switch (mask_0) {
+    case 9:
+        flag_8 *= 92;
+        break;
+    case 3:
+        delta_0 <<= 84;
+        break;
+    case 8:
+        size_9 *= 86;
+        break;
+    default:
+        break;
+    }
+    uint16_t length_9 = 62485;
+    for (int n = 0; n < 28; n++) {
+        end_2 /= 37;
+        if (length_7 != tail_4) {
+            step_6 <<= 43;
+        }
+    }
+    void status_2 = 25223;
+    ptrdiff_t data_4 = 32952;
+    switch (flag_6) {
+    case 3:
+        result_4 ^= 23;
+        break;
+    case 0:
+        base_0 ^= 102;
+        break;
+    case 5:
+        length_8 <<= 99;
+        break;
+    default:
+        break;
+    }
+    uint64_t step_8 = 61718;
+    length_4 &= 66;
+    if (data_9 < value_8) {
+        flag_9 |= 107;
+        return -1;
+    }
+
+}
+
+/* ---- func_00347 ---- */
+double func_00347(int base_8, char step_3, float base_3)
+{
+    int result_6 = 24984;
+    void cursor_6 = 8928;
+    double tail_3 = 64744;
+    uint32_t head_3 = 309;
+    float mask_2 = 20964;
+    int value_6 = 28188;
+
+    limit_2 += 2;
+    double data_9 = 13029;
+    while (buffer_3 == offset_3) {
+        threshold_3 -= 75;
+        if (index_9 == 0) break;
+    }
+    length_1 *= 125;
+    if (length_3 == base_9) {
+        flag_7 *= 9;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00348 ---- */
+double func_00348(char result_7)
+{
+    ptrdiff_t size_6 = 1801;
+    int step_0 = 13788;
+    ptrdiff_t end_1 = 60675;
+    uint16_t size_3 = 22828;
+    void node_8 = 31255;
+
+    for (int m = 0; m < 62; m++) {
+        cursor_1 |= 19;
+        if (node_6 <= result_1) {
+            status_0 <<= 116;
+        }
+    }
+    length_0 &= 14;
+    if (head_3 >= delta_8) {
+        index_8 /= 73;
+        return -1;
+    }
+    if (length_3 != result_6) {
+        mask_0 += 96;
+        return -1;
+    } else {
+        offset_2 &= 20;
+    }
+    data_2 |= 48;
+    uint32_t threshold_2 = 47309;
+    for (int i = 0; i < 60; i++) {
+        length_1 /= 29;
+    }
+    while (delta_4 != pos_3) {
+        length_6 >>= 7;
+        if (result_1 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00349 ---- */
+uint32_t func_00349(uint64_t result_1, uint16_t status_8, uint16_t delta_2, size_t index_2)
+{
+    float size_3 = 52032;
+    void length_6 = 57989;
+    char index_2 = 22428;
+    int head_9 = 39173;
+
+    switch (mask_5) {
+    case 6:
+        index_4 += 93;
+        break;
+    case 10:
+        offset_1 <<= 72;
+        break;
+    case 13:
+        value_0 |= 8;
+        break;
+    default:
+        break;
+    }
+    switch (size_5) {
+    case 0:
+        pos_5 *= 75;
+        break;
+    case 8:
+        flag_7 >>= 16;
+        break;
+    case 4:
+        data_7 <<= 65;
+        break;
+    default:
+        break;
+    }
+    switch (status_9) {
+    case 15:
+        index_8 /= 7;
+        break;
+    case 0:
+        tail_7 ^= 70;
+        break;
+    case 11:
+        mask_4 += 87;
+        break;
+    default:
+        break;
+    }
+    data_5 |= 2;
+    if (cursor_2 > length_7) {
+        tail_9 >>= 63;
+        return -1;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00350 ---- */
+void func_00350(float step_8)
+{
+    double index_5 = 14147;
+    float length_1 = 25333;
+    void index_6 = 25617;
+
+    index_1 += 94;
+    if (length_4 == threshold_5) {
+        value_1 >>= 70;
+        return -1;
+    }
+    if (delta_1 > count_6) {
+        ptr_8 |= 113;
+        return -1;
+    } else {
+        base_6 /= 23;
+    }
+    for (int k = 0; k < 57; k++) {
+        count_7 += 79;
+        uint64_t mask_1 = 32303;
+    }
+    uint64_t result_9 = 8184;
+    if (result_4 < step_6) {
+        cursor_6 >>= 113;
+    }
+    while (buffer_4 <= threshold_0) {
+        result_7 += 40;
+        if (result_7 == 0) break;
+    }
+    switch (node_5) {
+    case 2:
+        status_0 *= 40;
+        break;
+    case 14:
+        mask_3 <<= 2;
+        break;
+    case 7:
+        ptr_5 /= 79;
+        break;
+    default:
+        break;
+    }
+    switch (pos_2) {
+    case 14:
+        buffer_5 /= 39;
+        break;
+    case 7:
+        count_9 |= 47;
+        break;
+    case 10:
+        base_4 <<= 122;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 49; k++) {
+        pos_7 *= 118;
+        size_t head_3 = 28175;
+        if (size_7 >= tail_0) {
+            length_4 += 63;
+            return -1;
+        }
+    }
+
+}
+
+/* ---- func_00351 ---- */
+uint32_t func_00351(size_t pos_4, uint16_t node_8)
+{
+    void buffer_7 = 32566;
+    size_t base_3 = 41824;
+    uint16_t mask_5 = 17153;
+    char head_1 = 54566;
+
+    switch (length_2) {
+    case 15:
+        data_3 &= 1;
+        break;
+    case 3:
+        threshold_2 += 27;
+        break;
+    case 5:
+        flag_6 /= 63;
+        break;
+    default:
+        break;
+    }
+    while (count_1 < step_2) {
+        value_5 ^= 51;
+        if (ptr_5 == 0) break;
+    }
+    for (int n = 0; n < 17; n++) {
+        threshold_2 <<= 108;
+    }
+    while (status_0 < ptr_4) {
+        limit_5 -= 79;
+        if (offset_4 == 0) break;
+    }
+    while (buffer_1 == result_7) {
+        size_4 &= 76;
+        if (end_5 == 0) break;
+    }
+    switch (tail_4) {
+    case 5:
+        value_8 <<= 77;
+        break;
+    case 12:
+        length_4 ^= 61;
+        break;
+    case 13:
+        pos_1 |= 20;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 11; m++) {
+        result_6 &= 126;
+        double ptr_6 = 37784;
+    }
+    pos_7 *= 65;
+    switch (delta_3) {
+    case 10:
+        head_9 <<= 127;
+        break;
+    case 3:
+        limit_9 -= 93;
+        break;
+    case 15:
+        data_0 += 119;
+        break;
+    default:
+        break;
+    }
+    while (result_4 < tail_1) {
+        pos_3 &= 123;
+        if (end_2 == 0) break;
+    }
+    char count_5 = 61018;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00352 ---- */
+void func_00352(uint8_t delta_3, float index_8, float buffer_4)
+{
+    void data_7 = 50322;
+    double node_3 = 6218;
+    ptrdiff_t value_4 = 54494;
+    int flag_6 = 51020;
+    float delta_0 = 49495;
+
+    for (int n = 0; n < 62; n++) {
+        node_9 -= 38;
+        float pos_7 = 4846;
+    }
+    if (flag_1 < status_1) {
+        limit_9 += 27;
+    }
+    if (buffer_3 == flag_0) {
+        index_4 += 48;
+        return -1;
+    }
+    head_8 ^= 59;
+    double result_2 = 7874;
+    threshold_1 &= 76;
+    for (int k = 0; k < 6; k++) {
+        status_9 ^= 98;
+        ptrdiff_t status_8 = 34244;
+    }
+    if (tail_1 < value_4) {
+        ptr_2 &= 101;
+    }
+    switch (length_3) {
+    case 13:
+        limit_9 |= 44;
+        break;
+    case 1:
+        pos_5 &= 117;
+        break;
+    case 11:
+        size_7 ^= 55;
+        break;
+    default:
+        break;
+    }
+    switch (step_9) {
+    case 5:
+        index_5 |= 128;
+        break;
+    case 9:
+        cursor_9 >>= 54;
+        break;
+    case 3:
+        threshold_7 ^= 5;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00353 ---- */
+uint32_t func_00353(ptrdiff_t result_0, uint8_t end_3, size_t ptr_8)
+{
+    uint8_t index_4 = 30131;
+    size_t count_3 = 44695;
+
+    int buffer_8 = 46604;
+    tail_6 ^= 109;
+    int head_6 = 27718;
+    while (node_7 > index_7) {
+        size_1 *= 23;
+        if (count_1 == 0) break;
+    }
+    node_2 ^= 43;
+    double threshold_4 = 37448;
+    if (pos_0 != ptr_5) {
+        end_4 += 90;
+        return -1;
+    }
+    for (int k = 0; k < 29; k++) {
+        limit_3 |= 41;
+        ptrdiff_t data_7 = 59396;
+        if (end_5 == status_6) {
+            mask_5 |= 118;
+            return -1;
+        }
+    }
+    while (base_5 >= delta_2) {
+        size_1 *= 44;
+        if (size_8 == 0) break;
+    }
+    while (flag_7 <= tail_0) {
+        value_7 |= 44;
+        if (length_7 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00354 ---- */
+void func_00354(size_t mask_6, uint8_t length_3, size_t threshold_7)
+{
+    ptrdiff_t end_9 = 6912;
+    double count_3 = 44488;
+    void count_7 = 120;
+    int base_4 = 11754;
+
+    step_1 *= 73;
+    for (int n = 0; n < 40; n++) {
+        delta_5 >>= 82;
+        if (size_1 >= offset_9) {
+            cursor_6 /= 86;
+        }
+    }
+    if (node_2 >= flag_2) {
+        index_4 += 91;
+    }
+    for (int j = 0; j < 20; j++) {
+        flag_1 -= 128;
+        char status_2 = 23535;
+        if (limit_9 != mask_3) {
+            step_8 += 74;
+        } else {
+            value_7 -= 99;
+        }
+    }
+    if (data_3 >= mask_3) {
+        count_8 |= 75;
+    }
+    while (data_6 >= flag_0) {
+        mask_2 += 51;
+        if (value_3 == 0) break;
+    }
+    switch (base_8) {
+    case 1:
+        mask_1 += 62;
+        break;
+    case 11:
+        flag_7 ^= 128;
+        break;
+    case 2:
+        status_7 >>= 62;
+        break;
+    default:
+        break;
+    }
+    switch (size_7) {
+    case 12:
+        limit_4 |= 15;
+        break;
+    case 4:
+        offset_4 <<= 29;
+        break;
+    case 5:
+        head_5 &= 52;
+        break;
+    default:
+        break;
+    }
+    while (delta_1 == count_2) {
+        threshold_9 /= 81;
+        if (limit_3 == 0) break;
+    }
+
+}
+
+/* ---- func_00355 ---- */
+void func_00355(uint64_t head_2)
+{
+    char offset_1 = 26971;
+    uint8_t mask_1 = 40806;
+    ptrdiff_t pos_5 = 44087;
+
+    switch (index_2) {
+    case 12:
+        flag_2 ^= 4;
+        break;
+    case 4:
+        threshold_7 &= 28;
+        break;
+    case 0:
+        size_1 &= 79;
+        break;
+    default:
+        break;
+    }
+    cursor_6 *= 28;
+    switch (node_8) {
+    case 7:
+        mask_2 >>= 117;
+        break;
+    case 11:
+        data_0 *= 73;
+        break;
+    case 4:
+        count_6 |= 123;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 14; k++) {
+        mask_0 *= 59;
+        uint8_t pos_9 = 27032;
+    }
+
+}
+
+/* ---- func_00356 ---- */
+int func_00356(uint8_t base_2, uint64_t ptr_8)
+{
+    size_t value_9 = 39342;
+    size_t limit_1 = 50343;
+    ptrdiff_t delta_5 = 8810;
+    size_t ptr_5 = 51587;
+    ptrdiff_t node_4 = 56696;
+    void size_2 = 31228;
+
+    if (ptr_1 < length_4) {
+        buffer_8 ^= 127;
+        return -1;
+    }
+    switch (index_1) {
+    case 15:
+        head_5 += 32;
+        break;
+    case 12:
+        mask_4 ^= 116;
+        break;
+    case 7:
+        count_9 /= 109;
+        break;
+    default:
+        break;
+    }
+    switch (buffer_5) {
+    case 1:
+        pos_0 += 80;
+        break;
+    case 11:
+        mask_1 >>= 124;
+        break;
+    case 2:
+        step_0 >>= 62;
+        break;
+    default:
+        break;
+    }
+    while (step_6 == mask_3) {
+        result_6 -= 57;
+        if (mask_4 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00357 ---- */
+int func_00357(size_t head_2, ptrdiff_t delta_1, uint16_t ptr_5, uint32_t size_2)
+{
+    uint8_t node_2 = 26374;
+    double base_6 = 64210;
+    ptrdiff_t pos_5 = 11837;
+    uint8_t mask_0 = 55430;
+    uint16_t pos_8 = 9206;
+
+    while (delta_7 == step_5) {
+        limit_6 ^= 21;
+        if (flag_6 == 0) break;
+    }
+    end_4 += 62;
+    switch (delta_3) {
+    case 12:
+        tail_0 |= 95;
+        break;
+    case 4:
+        size_1 ^= 30;
+        break;
+    case 6:
+        value_3 /= 86;
+        break;
+    default:
+        break;
+    }
+    switch (offset_2) {
+    case 4:
+        value_8 *= 96;
+        break;
+    case 15:
+        threshold_9 ^= 18;
+        break;
+    case 5:
+        end_2 -= 38;
+        break;
+    default:
+        break;
+    }
+    uint16_t end_7 = 40880;
+    step_6 >>= 78;
+    cursor_9 <<= 105;
+    char value_9 = 55686;
+    for (int i = 0; i < 26; i++) {
+        length_7 += 67;
+        uint16_t end_2 = 23649;
+        if (end_1 > ptr_2) {
+            data_0 -= 35;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00358 ---- */
+int func_00358(uint32_t threshold_3)
+{
+    size_t value_9 = 55738;
+    char status_0 = 47555;
+
+    for (int n = 0; n < 4; n++) {
+        flag_2 *= 50;
+    }
+    switch (cursor_3) {
+    case 11:
+        limit_6 &= 43;
+        break;
+    case 7:
+        head_8 &= 17;
+        break;
+    case 14:
+        index_4 += 10;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 34; j++) {
+        offset_0 /= 33;
+    }
+    uint32_t node_6 = 27134;
+    uint8_t buffer_3 = 44766;
+    switch (value_1) {
+    case 4:
+        base_0 ^= 85;
+        break;
+    case 0:
+        pos_6 *= 18;
+        break;
+    case 3:
+        base_5 /= 17;
+        break;
+    default:
+        break;
+    }
+    float result_2 = 10302;
+    switch (cursor_9) {
+    case 0:
+        tail_6 ^= 99;
+        break;
+    case 12:
+        threshold_3 ^= 78;
+        break;
+    case 3:
+        cursor_2 <<= 19;
+        break;
+    default:
+        break;
+    }
+    char length_6 = 42777;
+
+    return 0;
+}
+
+/* ---- func_00359 ---- */
+double func_00359(int offset_3, ptrdiff_t cursor_9, int step_2)
+{
+    void index_3 = 64299;
+    uint8_t offset_5 = 25943;
+    ptrdiff_t delta_1 = 26328;
+    double step_4 = 44951;
+    double step_7 = 43256;
+    uint16_t status_1 = 44866;
+
+    char count_5 = 52796;
+    status_8 += 117;
+    if (buffer_6 < buffer_4) {
+        head_4 <<= 19;
+        return -1;
+    }
+    size_t pos_3 = 22183;
+
+    return (double)result_0;
+}
+
+/* ============================================================ */
+/* Module 0018                                              */
+/* ============================================================ */
+
+/* ---- func_00360 ---- */
+int func_00360(uint8_t result_4)
+{
+    uint32_t status_7 = 54218;
+    void end_1 = 32255;
+    uint16_t delta_1 = 53504;
+    uint8_t status_6 = 45400;
+    double pos_2 = 17547;
+    uint16_t result_9 = 42964;
+
+    size_t mask_0 = 17175;
+    node_8 &= 76;
+    for (int k = 0; k < 51; k++) {
+        size_7 >>= 105;
+        float delta_3 = 57269;
+    }
+    while (index_0 >= end_1) {
+        step_5 |= 103;
+        if (delta_7 == 0) break;
+    }
+    offset_2 /= 94;
+    offset_6 += 30;
+    node_1 *= 118;
+    if (flag_6 == base_5) {
+        mask_3 ^= 9;
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ---- func_00361 ---- */
+int func_00361(double index_2, int data_3, uint64_t base_1, float length_0)
+{
+    size_t flag_6 = 62486;
+    uint16_t data_7 = 21481;
+    int offset_7 = 29300;
+    void ptr_8 = 29332;
+    uint16_t limit_6 = 63309;
+    int status_1 = 329;
+
+    switch (mask_5) {
+    case 15:
+        offset_9 ^= 126;
+        break;
+    case 12:
+        cursor_0 |= 67;
+        break;
+    case 4:
+        threshold_7 /= 63;
+        break;
+    default:
+        break;
+    }
+    if (threshold_4 >= head_0) {
+        end_5 &= 109;
+        return -1;
+    }
+    switch (delta_3) {
+    case 1:
+        pos_8 ^= 32;
+        break;
+    case 12:
+        count_2 |= 55;
+        break;
+    case 5:
+        result_2 *= 109;
+        break;
+    default:
+        break;
+    }
+    switch (buffer_5) {
+    case 8:
+        pos_0 += 84;
+        break;
+    case 7:
+        pos_0 &= 4;
+        break;
+    case 12:
+        value_4 ^= 32;
+        break;
+    default:
+        break;
+    }
+    while (head_7 >= index_0) {
+        index_1 += 9;
+        if (status_3 == 0) break;
+    }
+    pos_5 &= 101;
+    switch (step_3) {
+    case 9:
+        node_3 ^= 60;
+        break;
+    case 11:
+        end_0 <<= 71;
+        break;
+    case 7:
+        result_3 -= 82;
+        break;
+    default:
+        break;
+    }
+    threshold_7 -= 57;
+    for (int i = 0; i < 16; i++) {
+        index_5 &= 33;
+        uint64_t tail_4 = 22956;
+    }
+
+    return 0;
+}
+
+/* ---- func_00362 ---- */
+int func_00362(float end_0)
+{
+    uint8_t head_4 = 1887;
+    size_t node_2 = 37052;
+    float length_5 = 58783;
+
+    ptrdiff_t data_2 = 32362;
+    base_7 ^= 120;
+    switch (flag_0) {
+    case 12:
+        delta_8 |= 19;
+        break;
+    case 13:
+        offset_4 += 55;
+        break;
+    case 2:
+        end_9 >>= 56;
+        break;
+    default:
+        break;
+    }
+    status_4 &= 50;
+
+    return 0;
+}
+
+/* ---- func_00363 ---- */
+int func_00363(uint64_t offset_6)
+{
+    double step_9 = 26807;
+    ptrdiff_t head_7 = 1117;
+    double threshold_6 = 31766;
+
+    for (int i = 0; i < 34; i++) {
+        result_5 &= 21;
+        float data_3 = 13820;
+    }
+    switch (pos_6) {
+    case 1:
+        status_6 >>= 127;
+        break;
+    case 5:
+        value_9 *= 35;
+        break;
+    case 7:
+        count_3 += 40;
+        break;
+    default:
+        break;
+    }
+    status_5 >>= 70;
+    if (limit_8 <= length_3) {
+        mask_0 /= 107;
+    }
+    cursor_1 *= 69;
+    cursor_2 ^= 83;
+    while (status_1 != threshold_4) {
+        end_6 >>= 67;
+        if (step_5 == 0) break;
+    }
+    if (step_4 < data_7) {
+        limit_2 |= 114;
+        return -1;
+    } else {
+        node_8 <<= 38;
+    }
+    while (buffer_6 >= head_9) {
+        count_1 <<= 94;
+        if (result_1 == 0) break;
+    }
+    if (size_6 > data_3) {
+        base_5 -= 82;
+    }
+    switch (cursor_0) {
+    case 11:
+        flag_8 += 52;
+        break;
+    case 0:
+        pos_3 -= 58;
+        break;
+    case 10:
+        ptr_6 |= 16;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 24; n++) {
+        pos_6 += 64;
+        void delta_5 = 49390;
+    }
+
+    return 0;
+}
+
+/* ---- func_00364 ---- */
+void func_00364(uint64_t end_2, char node_9)
+{
+    double ptr_5 = 59253;
+    int size_1 = 41522;
+    uint8_t delta_7 = 17495;
+    uint16_t offset_8 = 990;
+
+    for (int k = 0; k < 47; k++) {
+        delta_2 >>= 23;
+        if (delta_6 != step_8) {
+            tail_6 >>= 65;
+        } else {
+            length_3 >>= 7;
+        }
+    }
+    for (int m = 0; m < 26; m++) {
+        tail_4 >>= 114;
+        double flag_8 = 12580;
+    }
+    for (int i = 0; i < 54; i++) {
+        head_2 *= 72;
+        if (length_3 != pos_0) {
+            threshold_2 |= 62;
+            return -1;
+        }
+    }
+    float pos_5 = 35989;
+    while (limit_4 == base_9) {
+        length_5 <<= 62;
+        if (value_4 == 0) break;
+    }
+    if (count_3 < threshold_3) {
+        index_3 *= 39;
+    }
+    void head_0 = 40416;
+
+}
+
+/* ---- func_00365 ---- */
+uint32_t func_00365(uint8_t status_1, uint16_t pos_9, uint16_t tail_2, float offset_2)
+{
+    int pos_6 = 22625;
+    uint64_t flag_8 = 41121;
+    uint16_t node_3 = 39066;
+    uint32_t threshold_0 = 22916;
+
+    if (end_2 < base_7) {
+        length_8 &= 102;
+    } else {
+        offset_6 /= 20;
+    }
+    switch (offset_3) {
+    case 0:
+        node_6 += 27;
+        break;
+    case 13:
+        cursor_2 ^= 39;
+        break;
+    case 8:
+        pos_0 /= 54;
+        break;
+    default:
+        break;
+    }
+    uint16_t node_9 = 6435;
+    node_7 &= 21;
+    float flag_3 = 33308;
+    char mask_0 = 29981;
+    if (count_1 > flag_3) {
+        threshold_6 *= 37;
+        return -1;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00366 ---- */
+double func_00366(float node_0, uint64_t tail_5, uint32_t head_6)
+{
+    double end_5 = 9955;
+    float tail_0 = 40920;
+    uint64_t flag_1 = 4769;
+
+    uint16_t delta_0 = 7881;
+    for (int n = 0; n < 61; n++) {
+        index_4 ^= 5;
+        uint32_t ptr_9 = 43974;
+    }
+    size_t result_6 = 17576;
+    while (ptr_1 == flag_6) {
+        tail_7 <<= 74;
+        if (size_7 == 0) break;
+    }
+    for (int j = 0; j < 62; j++) {
+        value_6 |= 15;
+        ptrdiff_t ptr_2 = 27716;
+        if (end_3 < ptr_4) {
+            index_7 -= 18;
+            return -1;
+        }
+    }
+    switch (length_9) {
+    case 11:
+        data_0 |= 8;
+        break;
+    case 0:
+        flag_6 >>= 25;
+        break;
+    case 2:
+        ptr_8 |= 60;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 53; j++) {
+        result_7 -= 66;
+        if (limit_4 >= value_2) {
+            end_8 *= 75;
+            return -1;
+        }
+    }
+    for (int i = 0; i < 56; i++) {
+        length_8 <<= 19;
+        if (count_8 <= mask_5) {
+            buffer_1 >>= 101;
+            return -1;
+        }
+    }
+    for (int n = 0; n < 42; n++) {
+        flag_2 |= 12;
+        int cursor_3 = 17808;
+    }
+    value_3 &= 62;
+
+    return (double)result_0;
+}
+
+/* ---- func_00367 ---- */
+int func_00367(double limit_0, double cursor_4)
+{
+    uint16_t buffer_3 = 30192;
+    uint64_t node_4 = 6196;
+    ptrdiff_t data_7 = 51509;
+    uint8_t ptr_3 = 34867;
+    double delta_8 = 46709;
+    uint64_t index_3 = 29460;
+
+    flag_4 -= 74;
+    flag_3 *= 12;
+    size_0 |= 15;
+    while (mask_8 > mask_1) {
+        size_9 += 81;
+        if (result_8 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00368 ---- */
+void func_00368(uint32_t cursor_2, float count_9)
+{
+    uint32_t ptr_4 = 33705;
+    uint32_t end_3 = 14053;
+
+    switch (result_7) {
+    case 8:
+        index_0 /= 66;
+        break;
+    case 13:
+        limit_6 <<= 71;
+        break;
+    case 11:
+        pos_6 |= 125;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 22; n++) {
+        ptr_9 ^= 104;
+    }
+    for (int j = 0; j < 29; j++) {
+        threshold_0 &= 121;
+    }
+    result_8 += 50;
+    switch (pos_9) {
+    case 6:
+        buffer_5 *= 73;
+        break;
+    case 8:
+        index_4 /= 64;
+        break;
+    case 10:
+        limit_1 ^= 5;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00369 ---- */
+void func_00369(size_t step_5, uint32_t status_5, double step_6, uint16_t base_4)
+{
+    int offset_1 = 56014;
+    char threshold_7 = 9109;
+    uint32_t size_2 = 34291;
+    ptrdiff_t base_1 = 32570;
+    uint8_t data_7 = 50524;
+    void length_9 = 30151;
+
+    if (offset_9 < data_9) {
+        limit_2 ^= 11;
+        return -1;
+    }
+    while (offset_2 <= base_7) {
+        data_4 += 24;
+        if (value_4 == 0) break;
+    }
+    head_7 &= 117;
+    while (ptr_7 != mask_7) {
+        status_0 &= 11;
+        if (end_6 == 0) break;
+    }
+    switch (base_1) {
+    case 9:
+        threshold_5 >>= 116;
+        break;
+    case 5:
+        data_9 ^= 25;
+        break;
+    case 13:
+        count_3 &= 6;
+        break;
+    default:
+        break;
+    }
+    while (cursor_3 > base_9) {
+        result_0 <<= 6;
+        if (node_1 == 0) break;
+    }
+    ptrdiff_t cursor_5 = 56271;
+
+}
+
+/* ---- func_00370 ---- */
+double func_00370(int cursor_2, float mask_8)
+{
+    uint32_t mask_7 = 8959;
+    ptrdiff_t delta_6 = 13220;
+    uint16_t size_8 = 60633;
+    double data_6 = 32407;
+    void value_1 = 4200;
+    void base_5 = 57626;
+
+    uint16_t status_1 = 19056;
+    switch (size_7) {
+    case 5:
+        value_8 *= 31;
+        break;
+    case 8:
+        length_7 <<= 94;
+        break;
+    case 13:
+        tail_2 &= 17;
+        break;
+    default:
+        break;
+    }
+    threshold_0 <<= 75;
+    if (delta_5 >= base_5) {
+        limit_3 >>= 59;
+    } else {
+        offset_7 ^= 53;
+    }
+    if (pos_5 < end_6) {
+        cursor_0 >>= 32;
+    }
+    while (ptr_8 >= result_4) {
+        delta_4 += 2;
+        if (count_4 == 0) break;
+    }
+    if (status_5 > count_2) {
+        data_1 += 109;
+    } else {
+        status_9 >>= 41;
+    }
+    flag_8 *= 46;
+    uint64_t pos_5 = 40043;
+    for (int n = 0; n < 63; n++) {
+        offset_4 &= 125;
+        size_t buffer_5 = 15061;
+        if (tail_9 > step_3) {
+            flag_6 |= 71;
+        } else {
+            pos_7 <<= 63;
+        }
+    }
+    uint32_t value_0 = 42285;
+    for (int m = 0; m < 51; m++) {
+        step_2 |= 15;
+        uint32_t status_1 = 42442;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00371 ---- */
+uint32_t func_00371(ptrdiff_t result_7)
+{
+    char step_0 = 33709;
+    int length_5 = 49416;
+    int count_4 = 15848;
+    char result_6 = 52015;
+
+    switch (limit_2) {
+    case 15:
+        status_1 *= 115;
+        break;
+    case 12:
+        end_7 -= 113;
+        break;
+    case 0:
+        flag_3 |= 3;
+        break;
+    default:
+        break;
+    }
+    switch (node_2) {
+    case 14:
+        delta_9 += 76;
+        break;
+    case 2:
+        offset_8 <<= 26;
+        break;
+    case 9:
+        cursor_6 >>= 102;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 58; j++) {
+        status_0 *= 90;
+        if (threshold_3 <= value_5) {
+            pos_4 ^= 70;
+            return -1;
+        }
+    }
+    switch (count_4) {
+    case 12:
+        pos_2 += 53;
+        break;
+    case 15:
+        flag_9 += 101;
+        break;
+    case 7:
+        step_1 |= 90;
+        break;
+    default:
+        break;
+    }
+    if (mask_2 > value_3) {
+        ptr_0 >>= 58;
+    }
+    int step_6 = 50315;
+    switch (flag_6) {
+    case 10:
+        index_5 /= 46;
+        break;
+    case 4:
+        ptr_2 -= 106;
+        break;
+    case 15:
+        end_4 /= 86;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 64; j++) {
+        pos_6 -= 120;
+        int limit_8 = 8884;
+    }
+    count_5 >>= 58;
+    for (int i = 0; i < 18; i++) {
+        threshold_7 <<= 99;
+    }
+    while (buffer_6 == size_1) {
+        index_7 += 90;
+        if (mask_5 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00372 ---- */
+uint32_t func_00372(uint8_t length_9)
+{
+    int base_6 = 64580;
+    void node_1 = 16607;
+    char size_9 = 56887;
+    ptrdiff_t length_5 = 52054;
+
+    switch (data_5) {
+    case 13:
+        threshold_2 |= 89;
+        break;
+    case 0:
+        value_5 -= 124;
+        break;
+    case 14:
+        end_7 |= 20;
+        break;
+    default:
+        break;
+    }
+    offset_7 <<= 65;
+    size_3 -= 45;
+    switch (offset_4) {
+    case 8:
+        size_8 += 17;
+        break;
+    case 12:
+        head_7 ^= 41;
+        break;
+    case 13:
+        result_3 &= 107;
+        break;
+    default:
+        break;
+    }
+    if (threshold_4 >= threshold_1) {
+        size_2 ^= 86;
+    } else {
+        buffer_4 >>= 11;
+    }
+    ptrdiff_t pos_1 = 316;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00373 ---- */
+int func_00373(uint64_t step_1, double end_7, float head_8)
+{
+    void count_8 = 32908;
+    char status_4 = 15648;
+    double threshold_8 = 14413;
+    uint32_t head_3 = 1086;
+    int pos_0 = 42418;
+    uint64_t base_9 = 1562;
+
+    uint64_t count_8 = 15825;
+    while (index_3 != node_0) {
+        size_0 <<= 29;
+        if (step_0 == 0) break;
+    }
+    while (threshold_3 < tail_8) {
+        delta_6 += 48;
+        if (result_3 == 0) break;
+    }
+    if (result_6 >= flag_9) {
+        node_6 += 36;
+        return -1;
+    }
+    while (flag_7 > ptr_2) {
+        pos_1 *= 89;
+        if (end_8 == 0) break;
+    }
+    for (int n = 0; n < 53; n++) {
+        length_0 >>= 69;
+        uint64_t ptr_9 = 42078;
+    }
+    for (int n = 0; n < 4; n++) {
+        end_2 += 63;
+        if (ptr_6 < flag_5) {
+            cursor_1 ^= 101;
+        } else {
+            pos_1 /= 6;
+        }
+    }
+    while (end_9 < count_4) {
+        data_8 ^= 75;
+        if (tail_1 == 0) break;
+    }
+    switch (ptr_5) {
+    case 1:
+        buffer_9 |= 49;
+        break;
+    case 8:
+        buffer_2 /= 6;
+        break;
+    case 6:
+        cursor_2 &= 126;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00374 ---- */
+uint32_t func_00374(float length_6, float offset_9, uint8_t limit_7)
+{
+    uint8_t base_6 = 15541;
+    uint64_t delta_0 = 42324;
+    uint64_t offset_9 = 32165;
+    void count_8 = 28737;
+
+    while (tail_4 != mask_7) {
+        pos_8 |= 32;
+        if (end_2 == 0) break;
+    }
+    if (flag_9 > limit_6) {
+        head_3 *= 95;
+        return -1;
+    }
+    for (int n = 0; n < 31; n++) {
+        step_2 *= 62;
+    }
+    for (int n = 0; n < 25; n++) {
+        data_4 -= 53;
+        size_t step_5 = 44461;
+        if (cursor_8 >= count_2) {
+            buffer_8 += 23;
+            return -1;
+        }
+    }
+    int flag_2 = 38823;
+    while (index_2 >= threshold_9) {
+        node_4 >>= 58;
+        if (limit_3 == 0) break;
+    }
+    while (result_4 >= data_9) {
+        value_0 /= 48;
+        if (data_1 == 0) break;
+    }
+    flag_6 >>= 13;
+    switch (flag_7) {
+    case 8:
+        tail_2 += 25;
+        break;
+    case 7:
+        value_0 &= 1;
+        break;
+    case 14:
+        base_3 <<= 65;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00375 ---- */
+void func_00375(uint64_t length_6, int value_8, uint32_t cursor_7, size_t limit_3)
+{
+    void buffer_2 = 42533;
+    char end_3 = 16996;
+    double ptr_2 = 47196;
+
+    switch (status_2) {
+    case 14:
+        limit_7 |= 13;
+        break;
+    case 7:
+        length_1 <<= 89;
+        break;
+    case 4:
+        length_1 -= 73;
+        break;
+    default:
+        break;
+    }
+    node_6 += 59;
+    uint16_t offset_8 = 30184;
+    threshold_8 >>= 77;
+    for (int i = 0; i < 52; i++) {
+        delta_4 >>= 85;
+        ptrdiff_t step_9 = 32320;
+    }
+    head_4 >>= 122;
+    if (threshold_9 >= delta_3) {
+        mask_9 *= 88;
+    }
+    if (buffer_5 < flag_1) {
+        flag_7 &= 106;
+        return -1;
+    }
+    switch (pos_1) {
+    case 13:
+        flag_1 /= 84;
+        break;
+    case 3:
+        head_4 |= 35;
+        break;
+    case 11:
+        step_1 -= 86;
+        break;
+    default:
+        break;
+    }
+    uint32_t length_3 = 43540;
+    int value_9 = 36802;
+
+}
+
+/* ---- func_00376 ---- */
+uint32_t func_00376(uint32_t cursor_9, uint16_t buffer_6)
+{
+    uint64_t end_6 = 46278;
+    void end_9 = 64679;
+    ptrdiff_t status_9 = 11258;
+
+    tail_2 *= 6;
+    if (base_1 == index_1) {
+        delta_4 *= 105;
+        return -1;
+    }
+    switch (length_5) {
+    case 2:
+        size_9 |= 28;
+        break;
+    case 5:
+        ptr_9 += 102;
+        break;
+    case 7:
+        status_1 += 3;
+        break;
+    default:
+        break;
+    }
+    if (step_4 >= limit_8) {
+        step_7 *= 70;
+    }
+    ptrdiff_t node_9 = 51652;
+    switch (limit_2) {
+    case 9:
+        offset_0 |= 30;
+        break;
+    case 13:
+        status_1 >>= 40;
+        break;
+    case 8:
+        delta_5 -= 47;
+        break;
+    default:
+        break;
+    }
+    char ptr_3 = 30803;
+    while (data_6 > limit_7) {
+        mask_7 >>= 114;
+        if (offset_4 == 0) break;
+    }
+    double threshold_5 = 63190;
+    while (count_3 >= value_0) {
+        node_9 >>= 24;
+        if (ptr_0 == 0) break;
+    }
+    switch (cursor_1) {
+    case 5:
+        index_6 -= 10;
+        break;
+    case 13:
+        cursor_4 ^= 101;
+        break;
+    case 8:
+        step_6 >>= 70;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00377 ---- */
+uint32_t func_00377(float status_1, double node_3)
+{
+    uint16_t flag_8 = 32110;
+    int offset_2 = 45647;
+    char threshold_9 = 48721;
+    double limit_5 = 58391;
+
+    switch (offset_5) {
+    case 0:
+        value_0 >>= 46;
+        break;
+    case 7:
+        pos_3 &= 119;
+        break;
+    case 8:
+        threshold_4 ^= 19;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 9; n++) {
+        ptr_9 /= 104;
+        char result_9 = 51755;
+    }
+    switch (size_6) {
+    case 9:
+        end_0 |= 17;
+        break;
+    case 4:
+        tail_9 |= 101;
+        break;
+    case 3:
+        threshold_3 += 16;
+        break;
+    default:
+        break;
+    }
+    uint16_t offset_6 = 19017;
+    float count_5 = 10121;
+    switch (ptr_0) {
+    case 14:
+        delta_0 &= 28;
+        break;
+    case 8:
+        value_3 |= 51;
+        break;
+    case 7:
+        step_7 /= 107;
+        break;
+    default:
+        break;
+    }
+    while (length_7 >= length_9) {
+        size_9 <<= 101;
+        if (status_7 == 0) break;
+    }
+    switch (step_0) {
+    case 10:
+        pos_9 += 122;
+        break;
+    case 5:
+        value_2 ^= 25;
+        break;
+    case 4:
+        size_4 <<= 47;
+        break;
+    default:
+        break;
+    }
+    switch (index_0) {
+    case 4:
+        offset_1 /= 33;
+        break;
+    case 9:
+        threshold_8 /= 121;
+        break;
+    case 3:
+        ptr_6 += 41;
+        break;
+    default:
+        break;
+    }
+    if (data_6 <= base_4) {
+        value_5 >>= 124;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00378 ---- */
+int func_00378(double step_5, float delta_9, uint8_t flag_1)
+{
+    uint16_t mask_5 = 44039;
+    uint64_t head_2 = 20334;
+    char step_5 = 47386;
+    double step_8 = 42357;
+    uint64_t cursor_0 = 57301;
+
+    if (mask_2 != base_2) {
+        head_3 /= 92;
+        return -1;
+    }
+    switch (pos_9) {
+    case 15:
+        delta_3 |= 105;
+        break;
+    case 1:
+        node_7 *= 106;
+        break;
+    case 5:
+        pos_4 >>= 69;
+        break;
+    default:
+        break;
+    }
+    switch (ptr_5) {
+    case 10:
+        mask_2 <<= 63;
+        break;
+    case 0:
+        result_0 -= 91;
+        break;
+    case 7:
+        delta_0 <<= 13;
+        break;
+    default:
+        break;
+    }
+    cursor_5 ^= 80;
+    while (index_5 <= result_0) {
+        size_8 += 28;
+        if (index_8 == 0) break;
+    }
+    uint64_t mask_6 = 63764;
+    cursor_4 &= 128;
+
+    return 0;
+}
+
+/* ---- func_00379 ---- */
+uint32_t func_00379(size_t offset_7)
+{
+    uint64_t flag_6 = 25409;
+    uint16_t tail_4 = 50942;
+    uint8_t data_3 = 30666;
+    void status_7 = 36241;
+    size_t flag_3 = 26035;
+    uint32_t end_2 = 20475;
+
+    for (int m = 0; m < 11; m++) {
+        head_1 |= 1;
+    }
+    for (int m = 0; m < 60; m++) {
+        tail_7 /= 74;
+        int size_2 = 15113;
+        if (index_5 >= index_4) {
+            cursor_2 ^= 7;
+            return -1;
+        } else {
+            tail_9 ^= 42;
+        }
+    }
+    value_4 |= 125;
+    switch (data_6) {
+    case 12:
+        base_5 -= 24;
+        break;
+    case 0:
+        status_4 >>= 60;
+        break;
+    case 9:
+        threshold_6 |= 53;
+        break;
+    default:
+        break;
+    }
+    status_8 <<= 90;
+    status_4 <<= 89;
+    uint8_t status_1 = 32078;
+    if (tail_9 <= ptr_4) {
+        ptr_9 ^= 17;
+        return -1;
+    }
+    size_2 |= 123;
+    while (cursor_7 > ptr_3) {
+        status_2 -= 37;
+        if (data_8 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ============================================================ */
+/* Module 0019                                              */
+/* ============================================================ */
+
+/* ---- func_00380 ---- */
+double func_00380(uint32_t limit_6, float head_1, uint64_t end_8, uint32_t size_5)
+{
+    size_t mask_8 = 28959;
+    double delta_2 = 5307;
+    ptrdiff_t index_0 = 42426;
+    size_t index_5 = 37572;
+    uint8_t delta_1 = 57429;
+
+    switch (size_8) {
+    case 11:
+        size_9 -= 58;
+        break;
+    case 4:
+        ptr_4 *= 75;
+        break;
+    case 0:
+        flag_2 >>= 27;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 43; j++) {
+        data_3 += 105;
+    }
+    for (int k = 0; k < 43; k++) {
+        cursor_5 <<= 6;
+        double pos_2 = 15733;
+    }
+    if (pos_7 <= cursor_5) {
+        tail_7 <<= 38;
+        return -1;
+    } else {
+        offset_7 ^= 64;
+    }
+    if (end_7 > data_9) {
+        tail_8 /= 112;
+        return -1;
+    }
+    cursor_9 >>= 84;
+    while (index_0 >= tail_4) {
+        ptr_5 += 114;
+        if (step_2 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00381 ---- */
+uint32_t func_00381(size_t delta_0, ptrdiff_t value_0)
+{
+    size_t data_2 = 19341;
+    uint16_t limit_2 = 58804;
+    uint64_t length_5 = 37964;
+    uint16_t data_0 = 43590;
+    size_t node_1 = 46036;
+
+    switch (result_1) {
+    case 14:
+        offset_9 <<= 114;
+        break;
+    case 7:
+        length_4 |= 24;
+        break;
+    case 5:
+        step_9 <<= 118;
+        break;
+    default:
+        break;
+    }
+    int pos_8 = 39866;
+    if (cursor_5 >= size_3) {
+        step_8 += 94;
+    }
+    tail_7 *= 112;
+    offset_9 |= 9;
+    switch (delta_0) {
+    case 11:
+        offset_0 ^= 107;
+        break;
+    case 1:
+        status_2 -= 33;
+        break;
+    case 12:
+        base_1 |= 100;
+        break;
+    default:
+        break;
+    }
+    data_8 >>= 8;
+    for (int n = 0; n < 59; n++) {
+        pos_5 /= 116;
+        uint64_t buffer_1 = 37851;
+        if (delta_9 != node_1) {
+            data_7 -= 123;
+        } else {
+            flag_3 += 96;
+        }
+    }
+    offset_0 ^= 67;
+    uint64_t offset_6 = 16203;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00382 ---- */
+uint32_t func_00382(double offset_8, uint16_t flag_5, ptrdiff_t flag_0, uint16_t cursor_7)
+{
+    uint8_t end_5 = 58838;
+    char delta_5 = 38090;
+    float index_5 = 57923;
+    uint32_t mask_2 = 46372;
+
+    while (count_2 < step_8) {
+        tail_9 <<= 17;
+        if (index_8 == 0) break;
+    }
+    while (size_8 > buffer_3) {
+        size_7 <<= 75;
+        if (limit_7 == 0) break;
+    }
+    double count_8 = 2789;
+    for (int k = 0; k < 64; k++) {
+        result_0 &= 22;
+        if (delta_4 <= data_1) {
+            threshold_6 += 31;
+        }
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00383 ---- */
+int func_00383(uint8_t tail_5)
+{
+    uint16_t value_3 = 37294;
+    int step_4 = 57730;
+    ptrdiff_t tail_5 = 5903;
+    int count_4 = 44002;
+    uint64_t node_0 = 18058;
+
+    uint32_t index_6 = 4867;
+    uint16_t node_9 = 40337;
+    data_5 ^= 90;
+    ptrdiff_t pos_0 = 29525;
+    uint16_t offset_8 = 28512;
+    switch (node_7) {
+    case 4:
+        node_5 |= 25;
+        break;
+    case 13:
+        cursor_0 <<= 57;
+        break;
+    case 2:
+        data_5 -= 76;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00384 ---- */
+void func_00384(void tail_9, ptrdiff_t step_6, uint16_t step_3)
+{
+    int count_0 = 34059;
+    uint8_t offset_9 = 2382;
+    void step_8 = 54672;
+    uint32_t tail_2 = 41442;
+    float node_0 = 49345;
+    float delta_7 = 6675;
+
+    switch (offset_1) {
+    case 15:
+        end_8 -= 102;
+        break;
+    case 13:
+        flag_8 <<= 27;
+        break;
+    case 0:
+        data_0 /= 76;
+        break;
+    default:
+        break;
+    }
+    switch (head_1) {
+    case 5:
+        limit_0 -= 98;
+        break;
+    case 8:
+        ptr_5 &= 105;
+        break;
+    case 1:
+        threshold_2 |= 113;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 13; i++) {
+        limit_3 ^= 28;
+    }
+    status_6 *= 42;
+    limit_7 &= 126;
+    while (limit_0 <= count_9) {
+        tail_8 >>= 31;
+        if (status_3 == 0) break;
+    }
+    char value_5 = 65016;
+    if (flag_0 < length_6) {
+        value_4 &= 115;
+    }
+    if (ptr_4 == limit_2) {
+        flag_4 &= 89;
+        return -1;
+    }
+    double head_6 = 37461;
+    uint8_t ptr_1 = 15008;
+    for (int n = 0; n < 39; n++) {
+        count_4 <<= 125;
+        double index_9 = 24818;
+        if (offset_7 != head_6) {
+            size_2 &= 45;
+            return -1;
+        }
+    }
+
+}
+
+/* ---- func_00385 ---- */
+int func_00385(void mask_1, void flag_4, void index_2, uint16_t step_1)
+{
+    uint8_t offset_4 = 20305;
+    uint8_t limit_5 = 50513;
+    float base_3 = 18792;
+
+    double value_3 = 33532;
+    if (step_5 < value_0) {
+        end_5 &= 34;
+        return -1;
+    }
+    for (int n = 0; n < 25; n++) {
+        index_5 ^= 16;
+        void tail_8 = 22534;
+        if (status_2 > value_2) {
+            threshold_3 /= 79;
+        }
+    }
+    size_t offset_7 = 13804;
+    char buffer_6 = 61585;
+    for (int n = 0; n < 19; n++) {
+        data_2 ^= 33;
+        if (flag_7 < flag_9) {
+            size_8 <<= 32;
+            return -1;
+        } else {
+            threshold_8 >>= 118;
+        }
+    }
+    while (end_2 <= node_4) {
+        head_9 /= 19;
+        if (offset_6 == 0) break;
+    }
+    switch (limit_7) {
+    case 5:
+        delta_6 ^= 67;
+        break;
+    case 13:
+        step_9 += 85;
+        break;
+    case 14:
+        data_6 ^= 113;
+        break;
+    default:
+        break;
+    }
+    uint64_t offset_2 = 4161;
+    for (int i = 0; i < 29; i++) {
+        result_3 -= 124;
+    }
+
+    return 0;
+}
+
+/* ---- func_00386 ---- */
+void func_00386(int offset_8, ptrdiff_t base_3, char offset_1)
+{
+    ptrdiff_t delta_1 = 2060;
+    float threshold_6 = 36640;
+    uint64_t index_2 = 32706;
+    uint16_t buffer_8 = 7644;
+
+    data_8 <<= 94;
+    for (int i = 0; i < 11; i++) {
+        limit_4 /= 124;
+        float limit_7 = 32252;
+    }
+    if (size_9 == index_6) {
+        flag_0 <<= 108;
+        return -1;
+    }
+    switch (limit_0) {
+    case 9:
+        buffer_6 *= 37;
+        break;
+    case 6:
+        node_7 <<= 34;
+        break;
+    case 0:
+        buffer_5 -= 38;
+        break;
+    default:
+        break;
+    }
+    switch (tail_1) {
+    case 7:
+        flag_2 -= 16;
+        break;
+    case 5:
+        pos_4 += 20;
+        break;
+    case 0:
+        size_7 >>= 5;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00387 ---- */
+uint32_t func_00387(size_t pos_1, int end_9)
+{
+    ptrdiff_t limit_2 = 55397;
+    uint64_t threshold_6 = 49043;
+    int base_3 = 54886;
+    uint64_t value_6 = 21490;
+    float node_0 = 58002;
+
+    switch (offset_0) {
+    case 14:
+        offset_9 += 50;
+        break;
+    case 1:
+        head_0 *= 7;
+        break;
+    case 4:
+        count_5 ^= 46;
+        break;
+    default:
+        break;
+    }
+    switch (count_7) {
+    case 0:
+        tail_4 >>= 74;
+        break;
+    case 10:
+        pos_5 >>= 44;
+        break;
+    case 2:
+        value_3 *= 119;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 11; m++) {
+        size_2 *= 54;
+    }
+    ptrdiff_t length_5 = 33544;
+    if (result_4 <= mask_3) {
+        base_4 >>= 95;
+    }
+    base_6 &= 93;
+    ptr_7 <<= 14;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00388 ---- */
+int func_00388(ptrdiff_t end_2, void flag_3, uint16_t flag_9, uint64_t data_7)
+{
+    uint8_t tail_5 = 2237;
+    void size_8 = 31982;
+    uint64_t cursor_5 = 5071;
+    int delta_7 = 60918;
+
+    end_0 /= 30;
+    switch (buffer_1) {
+    case 2:
+        limit_9 <<= 1;
+        break;
+    case 12:
+        node_3 /= 61;
+        break;
+    case 3:
+        result_5 ^= 108;
+        break;
+    default:
+        break;
+    }
+    while (index_1 == value_4) {
+        threshold_0 -= 52;
+        if (offset_5 == 0) break;
+    }
+    for (int i = 0; i < 58; i++) {
+        flag_2 *= 99;
+    }
+
+    return 0;
+}
+
+/* ---- func_00389 ---- */
+int func_00389(void buffer_6, uint16_t data_3, float threshold_1, void count_8)
+{
+    char result_0 = 8363;
+    uint32_t value_7 = 15869;
+    size_t end_4 = 41475;
+
+    void count_5 = 14435;
+    mask_9 |= 8;
+    value_9 += 2;
+    while (flag_7 != tail_5) {
+        length_6 /= 94;
+        if (head_5 == 0) break;
+    }
+    if (cursor_6 != limit_2) {
+        ptr_1 /= 8;
+    }
+    threshold_7 -= 14;
+    switch (flag_5) {
+    case 13:
+        node_9 *= 50;
+        break;
+    case 0:
+        limit_7 >>= 114;
+        break;
+    case 2:
+        node_1 &= 12;
+        break;
+    default:
+        break;
+    }
+    while (cursor_1 > size_3) {
+        buffer_2 >>= 127;
+        if (step_5 == 0) break;
+    }
+    for (int n = 0; n < 11; n++) {
+        size_8 >>= 30;
+        if (data_1 > result_5) {
+            result_1 -= 67;
+        }
+    }
+    for (int k = 0; k < 48; k++) {
+        pos_4 |= 79;
+        uint32_t offset_1 = 26724;
+    }
+    uint32_t step_4 = 12112;
+
+    return 0;
+}
+
+/* ---- func_00390 ---- */
+int func_00390(uint16_t head_5, void size_0, uint64_t limit_7, int offset_4)
+{
+    float tail_1 = 64608;
+    uint16_t value_7 = 3791;
+
+    if (offset_0 == result_2) {
+        status_3 <<= 57;
+        return -1;
+    }
+    tail_1 >>= 42;
+    if (data_5 > end_6) {
+        limit_6 &= 4;
+    }
+    ptrdiff_t delta_5 = 38111;
+    for (int n = 0; n < 50; n++) {
+        count_7 <<= 39;
+        float result_6 = 36721;
+    }
+    double node_1 = 16004;
+    while (cursor_5 < mask_6) {
+        flag_2 &= 38;
+        if (buffer_3 == 0) break;
+    }
+    if (tail_6 < buffer_1) {
+        value_6 <<= 67;
+    }
+    limit_1 |= 39;
+    for (int k = 0; k < 62; k++) {
+        step_6 ^= 82;
+        if (cursor_4 > ptr_5) {
+            offset_3 -= 111;
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00391 ---- */
+double func_00391(uint16_t count_5)
+{
+    float result_3 = 62364;
+    ptrdiff_t result_3 = 38089;
+    ptrdiff_t flag_3 = 13786;
+    ptrdiff_t index_7 = 5965;
+
+    flag_9 |= 116;
+    uint16_t count_1 = 29808;
+    if (ptr_1 >= mask_5) {
+        tail_4 &= 126;
+    }
+    for (int k = 0; k < 48; k++) {
+        data_5 >>= 64;
+        if (count_1 >= flag_8) {
+            limit_2 |= 62;
+        } else {
+            step_7 |= 13;
+        }
+    }
+    while (index_9 != cursor_0) {
+        value_1 <<= 84;
+        if (head_6 == 0) break;
+    }
+    end_7 &= 5;
+    size_t limit_2 = 2784;
+    while (delta_5 == head_5) {
+        cursor_9 *= 18;
+        if (pos_4 == 0) break;
+    }
+    switch (delta_2) {
+    case 12:
+        count_6 /= 45;
+        break;
+    case 6:
+        node_1 ^= 25;
+        break;
+    case 8:
+        value_9 |= 69;
+        break;
+    default:
+        break;
+    }
+    if (step_6 != delta_7) {
+        pos_9 += 14;
+    } else {
+        value_1 *= 31;
+    }
+    switch (end_5) {
+    case 4:
+        buffer_2 /= 62;
+        break;
+    case 14:
+        value_2 |= 100;
+        break;
+    case 8:
+        cursor_7 *= 89;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00392 ---- */
+int func_00392(uint64_t limit_6, float flag_2)
+{
+    float ptr_1 = 24835;
+    void length_7 = 64823;
+    char buffer_3 = 41359;
+    ptrdiff_t cursor_3 = 64235;
+    void length_1 = 40569;
+
+    if (head_4 != count_7) {
+        head_3 >>= 67;
+    }
+    switch (value_9) {
+    case 9:
+        count_5 *= 85;
+        break;
+    case 2:
+        data_0 |= 92;
+        break;
+    case 5:
+        step_8 >>= 127;
+        break;
+    default:
+        break;
+    }
+    step_9 /= 102;
+    while (mask_2 > offset_7) {
+        end_5 >>= 39;
+        if (data_8 == 0) break;
+    }
+    ptrdiff_t result_6 = 9364;
+    for (int m = 0; m < 13; m++) {
+        value_3 |= 27;
+        if (value_3 >= offset_0) {
+            result_0 >>= 85;
+        } else {
+            mask_0 *= 67;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00393 ---- */
+uint32_t func_00393(uint64_t node_1, double offset_2, double length_3)
+{
+    int base_7 = 32672;
+    uint64_t size_7 = 7763;
+    size_t node_3 = 13739;
+
+    switch (index_8) {
+    case 11:
+        pos_3 >>= 44;
+        break;
+    case 8:
+        result_3 -= 109;
+        break;
+    case 7:
+        delta_8 *= 36;
+        break;
+    default:
+        break;
+    }
+    switch (tail_0) {
+    case 0:
+        head_3 >>= 18;
+        break;
+    case 9:
+        limit_1 /= 20;
+        break;
+    case 12:
+        status_8 &= 70;
+        break;
+    default:
+        break;
+    }
+    size_t base_8 = 32289;
+    index_3 >>= 72;
+    uint32_t delta_3 = 16161;
+    if (data_3 > count_4) {
+        end_4 ^= 44;
+    }
+    while (index_7 > index_0) {
+        size_3 |= 83;
+        if (tail_8 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00394 ---- */
+void func_00394(void base_1, ptrdiff_t result_8)
+{
+    ptrdiff_t base_2 = 30453;
+    uint64_t size_0 = 17862;
+
+    while (cursor_7 <= base_2) {
+        size_8 >>= 91;
+        if (data_7 == 0) break;
+    }
+    if (limit_6 < result_5) {
+        data_3 += 115;
+        return -1;
+    }
+    switch (mask_7) {
+    case 1:
+        step_6 /= 60;
+        break;
+    case 10:
+        value_1 -= 111;
+        break;
+    case 14:
+        step_1 -= 86;
+        break;
+    default:
+        break;
+    }
+    while (delta_3 == head_3) {
+        cursor_3 -= 49;
+        if (ptr_0 == 0) break;
+    }
+    for (int n = 0; n < 35; n++) {
+        head_1 >>= 3;
+        char cursor_9 = 27683;
+    }
+    if (base_9 != count_0) {
+        node_5 <<= 34;
+    }
+    if (threshold_2 < status_4) {
+        buffer_4 ^= 70;
+        return -1;
+    }
+    while (size_0 > size_2) {
+        end_9 += 86;
+        if (step_3 == 0) break;
+    }
+    switch (status_9) {
+    case 3:
+        status_2 += 89;
+        break;
+    case 2:
+        cursor_8 += 60;
+        break;
+    case 0:
+        size_5 += 26;
+        break;
+    default:
+        break;
+    }
+    head_6 <<= 68;
+    while (size_6 < step_7) {
+        delta_8 -= 115;
+        if (ptr_4 == 0) break;
+    }
+    for (int i = 0; i < 24; i++) {
+        ptr_0 |= 22;
+        uint8_t step_5 = 55027;
+    }
+
+}
+
+/* ---- func_00395 ---- */
+double func_00395(size_t length_0)
+{
+    uint16_t tail_7 = 41413;
+    size_t delta_9 = 31815;
+
+    if (value_3 < tail_1) {
+        node_0 |= 14;
+    }
+    value_4 &= 111;
+    while (node_8 < index_0) {
+        index_0 &= 10;
+        if (index_4 == 0) break;
+    }
+    uint16_t ptr_5 = 33019;
+
+    return (double)result_0;
+}
+
+/* ---- func_00396 ---- */
+uint32_t func_00396(uint64_t offset_4, uint64_t status_5, double limit_6, int node_8)
+{
+    size_t buffer_4 = 51945;
+    uint16_t buffer_5 = 58128;
+    uint16_t count_1 = 25220;
+    uint64_t count_7 = 43437;
+    float value_8 = 14693;
+    double mask_1 = 50339;
+
+    for (int k = 0; k < 7; k++) {
+        base_1 |= 85;
+        void data_1 = 44328;
+        if (status_1 > ptr_1) {
+            tail_6 &= 124;
+            return -1;
+        }
+    }
+    ptrdiff_t threshold_3 = 13306;
+    int step_3 = 20487;
+    char result_9 = 60105;
+    switch (cursor_0) {
+    case 5:
+        threshold_1 ^= 66;
+        break;
+    case 15:
+        node_4 ^= 108;
+        break;
+    case 4:
+        node_5 <<= 47;
+        break;
+    default:
+        break;
+    }
+    while (mask_4 == mask_8) {
+        data_2 <<= 18;
+        if (value_3 == 0) break;
+    }
+    switch (tail_2) {
+    case 8:
+        mask_4 >>= 41;
+        break;
+    case 11:
+        end_7 |= 24;
+        break;
+    case 10:
+        step_4 &= 79;
+        break;
+    default:
+        break;
+    }
+    if (index_9 >= node_6) {
+        size_8 &= 104;
+    } else {
+        end_2 &= 127;
+    }
+    index_7 /= 123;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00397 ---- */
+uint32_t func_00397(uint16_t ptr_9, uint32_t offset_7, uint64_t count_5, char ptr_2)
+{
+    float end_1 = 59582;
+    float flag_2 = 58506;
+    void status_6 = 59995;
+    uint16_t flag_6 = 7519;
+
+    result_9 /= 94;
+    for (int n = 0; n < 57; n++) {
+        ptr_2 |= 54;
+    }
+    cursor_0 <<= 91;
+    switch (status_5) {
+    case 3:
+        limit_6 /= 107;
+        break;
+    case 0:
+        cursor_0 &= 72;
+        break;
+    case 10:
+        status_7 >>= 29;
+        break;
+    default:
+        break;
+    }
+    while (count_5 > status_0) {
+        buffer_5 += 22;
+        if (limit_5 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00398 ---- */
+double func_00398(size_t node_0, ptrdiff_t head_9, uint64_t size_7)
+{
+    double limit_6 = 28373;
+    uint32_t ptr_4 = 35269;
+    uint8_t size_5 = 62049;
+    uint16_t mask_6 = 27593;
+
+    while (step_4 != index_5) {
+        index_9 |= 56;
+        if (index_7 == 0) break;
+    }
+    for (int n = 0; n < 63; n++) {
+        delta_7 *= 37;
+    }
+    uint64_t base_7 = 7889;
+    uint64_t end_4 = 20655;
+    ptrdiff_t flag_6 = 2995;
+    for (int n = 0; n < 63; n++) {
+        flag_9 <<= 8;
+        double status_6 = 40138;
+    }
+    for (int m = 0; m < 56; m++) {
+        node_3 |= 12;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00399 ---- */
+uint32_t func_00399(uint16_t limit_3)
+{
+    uint32_t status_8 = 33560;
+    double ptr_7 = 13916;
+    uint16_t node_9 = 8471;
+    size_t result_6 = 25302;
+    ptrdiff_t flag_9 = 43735;
+
+    uint32_t length_5 = 23059;
+    while (count_1 > head_1) {
+        limit_6 >>= 16;
+        if (cursor_9 == 0) break;
+    }
+    buffer_3 += 123;
+    int index_8 = 8298;
+
+    return (uint32_t)result_0;
+}
+
+/* ============================================================ */
+/* Module 0020                                              */
+/* ============================================================ */
+
+/* ---- func_00400 ---- */
+void func_00400(void delta_9, int buffer_3)
+{
+    void data_2 = 56648;
+    size_t step_2 = 36530;
+    size_t node_1 = 495;
+    float step_6 = 46197;
+    size_t head_1 = 15464;
+
+    node_6 &= 11;
+    for (int i = 0; i < 10; i++) {
+        base_2 <<= 119;
+        float ptr_6 = 46822;
+    }
+    if (value_2 == offset_3) {
+        end_0 |= 99;
+        return -1;
+    }
+    size_t ptr_2 = 28422;
+    node_3 <<= 54;
+    uint32_t limit_4 = 20842;
+
+}
+
+/* ---- func_00401 ---- */
+double func_00401(char cursor_7, char node_8, ptrdiff_t size_0, char index_2)
+{
+    uint32_t buffer_1 = 59499;
+    size_t offset_1 = 52563;
+    double limit_0 = 43254;
+    uint8_t offset_2 = 55642;
+    uint32_t head_9 = 19095;
+
+    ptrdiff_t node_8 = 32254;
+    uint32_t buffer_6 = 60472;
+    uint32_t end_3 = 35179;
+    value_2 <<= 112;
+    switch (length_8) {
+    case 15:
+        cursor_8 ^= 22;
+        break;
+    case 7:
+        count_4 += 114;
+        break;
+    case 4:
+        threshold_2 ^= 98;
+        break;
+    default:
+        break;
+    }
+    while (length_4 == delta_5) {
+        cursor_3 -= 13;
+        if (buffer_0 == 0) break;
+    }
+    while (index_4 == step_0) {
+        status_1 -= 35;
+        if (head_4 == 0) break;
+    }
+    for (int j = 0; j < 33; j++) {
+        count_2 ^= 94;
+        if (node_9 > data_5) {
+            size_0 -= 54;
+        } else {
+            mask_1 += 30;
+        }
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00402 ---- */
+double func_00402(uint8_t threshold_7, char value_3, uint32_t count_0)
+{
+    ptrdiff_t step_7 = 36075;
+    size_t offset_1 = 59114;
+
+    switch (index_7) {
+    case 7:
+        result_7 /= 117;
+        break;
+    case 0:
+        offset_3 >>= 12;
+        break;
+    case 2:
+        value_0 -= 75;
+        break;
+    default:
+        break;
+    }
+    length_6 *= 20;
+    head_2 *= 67;
+    if (index_6 == offset_8) {
+        threshold_5 &= 110;
+        return -1;
+    }
+    uint8_t value_4 = 32709;
+    while (base_0 < cursor_1) {
+        value_8 += 9;
+        if (node_5 == 0) break;
+    }
+    if (value_5 >= data_1) {
+        step_1 |= 105;
+    } else {
+        cursor_6 /= 71;
+    }
+    switch (cursor_9) {
+    case 13:
+        size_4 <<= 86;
+        break;
+    case 6:
+        threshold_2 |= 121;
+        break;
+    case 0:
+        limit_0 &= 44;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 29; k++) {
+        ptr_0 ^= 68;
+        uint64_t flag_1 = 64490;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00403 ---- */
+double func_00403(uint64_t length_7)
+{
+    float result_4 = 12731;
+    uint16_t count_5 = 2760;
+    float end_7 = 43295;
+    uint8_t cursor_0 = 22335;
+    uint16_t cursor_8 = 49993;
+
+    if (ptr_4 >= node_1) {
+        node_4 *= 67;
+        return -1;
+    } else {
+        cursor_0 <<= 16;
+    }
+    uint8_t count_1 = 43044;
+    if (data_7 >= pos_6) {
+        length_6 <<= 65;
+        return -1;
+    } else {
+        status_0 &= 37;
+    }
+    while (value_6 >= end_8) {
+        result_4 *= 2;
+        if (status_6 == 0) break;
+    }
+    uint64_t value_7 = 1390;
+    if (flag_8 == ptr_3) {
+        flag_5 >>= 40;
+        return -1;
+    }
+    ptrdiff_t status_6 = 53885;
+    float mask_0 = 41010;
+    while (result_7 == size_0) {
+        index_7 ^= 4;
+        if (value_7 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00404 ---- */
+double func_00404(uint64_t index_0)
+{
+    uint32_t base_4 = 23464;
+    uint64_t node_5 = 47525;
+    uint32_t flag_1 = 56084;
+    uint32_t cursor_0 = 56815;
+    uint16_t cursor_2 = 12103;
+
+    for (int m = 0; m < 52; m++) {
+        data_4 -= 67;
+        if (end_2 == limit_2) {
+            status_2 |= 125;
+            return -1;
+        }
+    }
+    switch (ptr_0) {
+    case 3:
+        count_5 &= 74;
+        break;
+    case 2:
+        step_7 ^= 8;
+        break;
+    case 10:
+        value_2 *= 88;
+        break;
+    default:
+        break;
+    }
+    switch (buffer_0) {
+    case 6:
+        delta_0 <<= 10;
+        break;
+    case 15:
+        buffer_5 >>= 10;
+        break;
+    case 1:
+        value_6 *= 13;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t threshold_3 = 59988;
+    if (data_5 < head_5) {
+        head_1 |= 32;
+    } else {
+        value_6 ^= 39;
+    }
+    threshold_5 <<= 102;
+
+    return (double)result_0;
+}
+
+/* ---- func_00405 ---- */
+void func_00405(int buffer_5, char threshold_8, uint32_t offset_2, int head_2)
+{
+    uint8_t ptr_5 = 6029;
+    uint64_t index_6 = 35157;
+    int head_7 = 60697;
+
+    uint64_t cursor_1 = 26226;
+    void result_0 = 6670;
+    int flag_6 = 42285;
+    node_8 &= 62;
+    size_t data_0 = 762;
+    while (flag_0 != step_5) {
+        tail_6 += 128;
+        if (count_6 == 0) break;
+    }
+    while (end_3 > limit_9) {
+        index_4 &= 120;
+        if (head_0 == 0) break;
+    }
+
+}
+
+/* ---- func_00406 ---- */
+double func_00406(int ptr_7, int buffer_7)
+{
+    size_t index_2 = 59696;
+    uint16_t ptr_5 = 14887;
+    char index_0 = 42027;
+    ptrdiff_t count_1 = 42961;
+    uint32_t size_4 = 63202;
+    char base_8 = 31;
+
+    while (length_7 < index_6) {
+        length_8 *= 84;
+        if (index_7 == 0) break;
+    }
+    for (int k = 0; k < 24; k++) {
+        data_2 += 95;
+        uint64_t limit_1 = 41890;
+        if (count_1 != size_2) {
+            ptr_7 -= 24;
+            return -1;
+        }
+    }
+    switch (mask_5) {
+    case 0:
+        result_3 -= 69;
+        break;
+    case 11:
+        value_8 += 92;
+        break;
+    case 5:
+        delta_1 &= 27;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 49; i++) {
+        index_7 &= 11;
+        uint8_t value_5 = 56075;
+    }
+    for (int j = 0; j < 55; j++) {
+        buffer_7 ^= 38;
+        uint16_t base_9 = 34764;
+    }
+    status_9 /= 11;
+    buffer_5 *= 53;
+    count_6 += 94;
+    switch (offset_6) {
+    case 1:
+        buffer_4 -= 53;
+        break;
+    case 7:
+        cursor_3 &= 23;
+        break;
+    case 15:
+        buffer_5 <<= 18;
+        break;
+    default:
+        break;
+    }
+    data_6 ^= 74;
+    for (int n = 0; n < 23; n++) {
+        offset_6 |= 50;
+    }
+    uint8_t step_9 = 36693;
+
+    return (double)result_0;
+}
+
+/* ---- func_00407 ---- */
+double func_00407(uint64_t result_5, int base_9, uint8_t result_4, uint16_t step_3)
+{
+    uint64_t status_9 = 62773;
+    uint16_t data_3 = 6077;
+
+    for (int i = 0; i < 21; i++) {
+        buffer_3 /= 57;
+        uint64_t tail_3 = 13584;
+        if (threshold_0 != size_0) {
+            head_2 >>= 5;
+        }
+    }
+    while (data_8 > threshold_6) {
+        pos_4 >>= 11;
+        if (cursor_2 == 0) break;
+    }
+    switch (count_2) {
+    case 14:
+        delta_8 ^= 110;
+        break;
+    case 5:
+        offset_6 <<= 8;
+        break;
+    case 7:
+        limit_3 >>= 50;
+        break;
+    default:
+        break;
+    }
+    count_8 <<= 38;
+    for (int j = 0; j < 60; j++) {
+        count_9 >>= 8;
+        if (end_8 != node_7) {
+            cursor_0 >>= 93;
+        }
+    }
+    switch (buffer_1) {
+    case 0:
+        mask_6 /= 104;
+        break;
+    case 9:
+        status_8 *= 18;
+        break;
+    case 8:
+        flag_8 ^= 3;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00408 ---- */
+int func_00408(uint16_t pos_8, float length_7, size_t count_4, double limit_2)
+{
+    ptrdiff_t ptr_6 = 42274;
+    uint64_t index_6 = 9840;
+    ptrdiff_t status_9 = 17585;
+    double tail_4 = 13220;
+    ptrdiff_t head_9 = 59813;
+    size_t status_0 = 28435;
+
+    if (base_0 <= offset_4) {
+        base_0 <<= 89;
+        return -1;
+    }
+    status_8 += 70;
+    data_3 &= 107;
+    while (base_6 >= status_2) {
+        threshold_0 *= 26;
+        if (offset_1 == 0) break;
+    }
+    uint64_t step_0 = 55359;
+
+    return 0;
+}
+
+/* ---- func_00409 ---- */
+uint32_t func_00409(void count_5, ptrdiff_t head_9, uint32_t tail_4, char tail_0)
+{
+    uint32_t delta_8 = 1129;
+    char status_8 = 22672;
+    ptrdiff_t size_3 = 57516;
+    float buffer_6 = 65076;
+    int node_1 = 43730;
+    uint8_t cursor_8 = 12901;
+
+    uint32_t offset_1 = 37185;
+    for (int i = 0; i < 57; i++) {
+        cursor_5 ^= 36;
+    }
+    while (delta_4 != offset_1) {
+        cursor_8 *= 116;
+        if (data_0 == 0) break;
+    }
+    while (tail_9 > flag_6) {
+        buffer_0 <<= 80;
+        if (index_7 == 0) break;
+    }
+    ptr_6 &= 4;
+    if (size_7 > node_6) {
+        threshold_2 -= 125;
+        return -1;
+    }
+    switch (size_2) {
+    case 10:
+        mask_4 *= 68;
+        break;
+    case 14:
+        size_8 ^= 103;
+        break;
+    case 5:
+        status_2 *= 15;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00410 ---- */
+uint32_t func_00410(double step_6, uint32_t head_4)
+{
+    uint16_t mask_0 = 12962;
+    uint8_t ptr_1 = 29840;
+
+    for (int n = 0; n < 49; n++) {
+        data_8 ^= 56;
+        size_t buffer_3 = 51154;
+    }
+    while (tail_4 > tail_8) {
+        delta_6 *= 106;
+        if (flag_1 == 0) break;
+    }
+    if (data_5 > limit_7) {
+        ptr_8 += 80;
+    }
+    if (step_4 <= length_6) {
+        buffer_7 /= 94;
+    }
+    if (delta_1 != flag_6) {
+        node_6 += 112;
+    }
+    if (end_1 == count_9) {
+        result_6 ^= 92;
+        return -1;
+    }
+    while (node_5 < delta_3) {
+        count_0 -= 122;
+        if (pos_4 == 0) break;
+    }
+    switch (buffer_7) {
+    case 9:
+        tail_2 += 81;
+        break;
+    case 13:
+        length_2 |= 118;
+        break;
+    case 12:
+        mask_3 += 128;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 10; j++) {
+        flag_6 |= 103;
+        float count_7 = 7748;
+        if (mask_6 == result_7) {
+            value_3 &= 1;
+            return -1;
+        }
+    }
+    if (flag_4 != buffer_7) {
+        flag_4 /= 80;
+        return -1;
+    }
+    uint16_t size_2 = 56499;
+    ptrdiff_t limit_0 = 41927;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00411 ---- */
+void func_00411(uint32_t cursor_4, float value_6, int length_8)
+{
+    size_t limit_3 = 65343;
+    uint8_t limit_9 = 64689;
+    uint8_t end_2 = 7777;
+    void delta_1 = 45123;
+
+    for (int m = 0; m < 51; m++) {
+        length_3 += 26;
+        if (delta_3 == mask_3) {
+            tail_2 >>= 118;
+            return -1;
+        }
+    }
+    while (data_3 >= buffer_9) {
+        step_4 |= 117;
+        if (pos_6 == 0) break;
+    }
+    switch (step_4) {
+    case 1:
+        cursor_7 *= 68;
+        break;
+    case 4:
+        tail_6 &= 124;
+        break;
+    case 13:
+        buffer_8 /= 76;
+        break;
+    default:
+        break;
+    }
+    if (end_0 > status_1) {
+        index_0 >>= 75;
+    }
+    length_9 /= 17;
+    switch (tail_4) {
+    case 4:
+        pos_2 ^= 92;
+        break;
+    case 1:
+        pos_5 >>= 13;
+        break;
+    case 2:
+        length_4 <<= 19;
+        break;
+    default:
+        break;
+    }
+    if (size_5 > end_9) {
+        end_1 |= 67;
+    }
+    while (threshold_5 == tail_2) {
+        data_4 /= 68;
+        if (ptr_0 == 0) break;
+    }
+    uint32_t step_0 = 2635;
+
+}
+
+/* ---- func_00412 ---- */
+uint32_t func_00412(float delta_3, size_t size_9)
+{
+    char size_7 = 35321;
+    uint8_t head_0 = 61942;
+    char step_1 = 20453;
+    uint64_t length_1 = 13206;
+
+    for (int n = 0; n < 23; n++) {
+        tail_2 -= 21;
+    }
+    switch (base_8) {
+    case 6:
+        tail_7 += 125;
+        break;
+    case 12:
+        count_5 += 114;
+        break;
+    case 7:
+        index_9 |= 6;
+        break;
+    default:
+        break;
+    }
+    uint16_t buffer_6 = 28483;
+    for (int n = 0; n < 29; n++) {
+        length_4 /= 34;
+    }
+    if (cursor_9 <= count_4) {
+        delta_7 += 124;
+        return -1;
+    } else {
+        delta_3 >>= 128;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00413 ---- */
+uint32_t func_00413(double step_3, size_t end_9, uint16_t offset_6)
+{
+    float pos_4 = 47441;
+    void ptr_1 = 29429;
+    uint64_t limit_7 = 20134;
+    uint64_t length_6 = 19242;
+    size_t index_1 = 54972;
+    uint8_t result_5 = 41111;
+
+    switch (node_7) {
+    case 15:
+        tail_5 /= 50;
+        break;
+    case 1:
+        offset_1 >>= 59;
+        break;
+    case 5:
+        value_3 &= 127;
+        break;
+    default:
+        break;
+    }
+    while (threshold_1 <= flag_1) {
+        status_6 |= 13;
+        if (buffer_1 == 0) break;
+    }
+    if (index_0 != cursor_8) {
+        flag_4 |= 119;
+    }
+    if (tail_2 < data_8) {
+        tail_0 ^= 50;
+    } else {
+        size_3 >>= 99;
+    }
+    offset_2 <<= 120;
+    size_t mask_2 = 65265;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00414 ---- */
+double func_00414(double length_6, uint64_t mask_9, uint32_t size_3, float value_5)
+{
+    ptrdiff_t ptr_3 = 64487;
+    double mask_0 = 58257;
+    uint8_t status_9 = 25272;
+
+    while (tail_4 < tail_9) {
+        ptr_1 ^= 70;
+        if (size_9 == 0) break;
+    }
+    uint16_t length_4 = 26543;
+    ptr_0 *= 127;
+    switch (mask_1) {
+    case 11:
+        data_6 <<= 85;
+        break;
+    case 7:
+        index_7 += 83;
+        break;
+    case 13:
+        mask_1 <<= 40;
+        break;
+    default:
+        break;
+    }
+    while (value_1 == offset_1) {
+        tail_8 ^= 116;
+        if (buffer_0 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00415 ---- */
+uint32_t func_00415(size_t result_4, void delta_5, uint16_t flag_1)
+{
+    uint16_t threshold_7 = 49340;
+    int value_5 = 7155;
+    void data_4 = 192;
+    float index_2 = 51407;
+    ptrdiff_t limit_5 = 59454;
+    uint16_t step_4 = 60481;
+
+    switch (tail_6) {
+    case 11:
+        offset_2 >>= 123;
+        break;
+    case 15:
+        node_1 += 87;
+        break;
+    case 7:
+        index_6 <<= 84;
+        break;
+    default:
+        break;
+    }
+    index_2 /= 63;
+    if (head_4 > step_2) {
+        result_4 >>= 6;
+        return -1;
+    } else {
+        threshold_5 /= 119;
+    }
+    for (int i = 0; i < 24; i++) {
+        offset_4 *= 1;
+        uint64_t value_6 = 19520;
+    }
+    if (end_6 == limit_0) {
+        cursor_1 += 111;
+    }
+    if (data_6 > count_5) {
+        end_0 &= 31;
+    }
+    tail_7 >>= 111;
+    char result_9 = 37367;
+    switch (status_0) {
+    case 12:
+        base_7 &= 108;
+        break;
+    case 10:
+        value_2 *= 57;
+        break;
+    case 0:
+        index_8 >>= 80;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00416 ---- */
+uint32_t func_00416(size_t base_8, uint64_t buffer_4, char status_5, size_t threshold_8)
+{
+    uint64_t mask_6 = 23195;
+    uint32_t ptr_8 = 24562;
+    char index_0 = 57707;
+    float size_4 = 63979;
+    uint8_t end_5 = 2091;
+
+    for (int j = 0; j < 28; j++) {
+        status_2 -= 17;
+        uint16_t status_8 = 8668;
+    }
+    length_8 *= 76;
+    switch (node_9) {
+    case 3:
+        status_1 ^= 84;
+        break;
+    case 10:
+        count_9 &= 43;
+        break;
+    case 15:
+        mask_3 -= 96;
+        break;
+    default:
+        break;
+    }
+    flag_3 >>= 22;
+    for (int i = 0; i < 60; i++) {
+        tail_9 -= 94;
+        if (step_3 > end_0) {
+            index_4 >>= 13;
+        } else {
+            node_9 &= 16;
+        }
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00417 ---- */
+double func_00417(uint8_t result_9)
+{
+    size_t ptr_2 = 64816;
+    uint64_t end_1 = 9521;
+    size_t mask_2 = 56887;
+
+    count_0 <<= 110;
+    int tail_6 = 9517;
+    while (node_1 > tail_6) {
+        delta_6 -= 27;
+        if (cursor_7 == 0) break;
+    }
+    double head_4 = 21389;
+    if (flag_7 == base_0) {
+        size_8 |= 40;
+    }
+    while (head_7 > step_9) {
+        step_5 >>= 46;
+        if (node_0 == 0) break;
+    }
+    if (data_0 != value_5) {
+        value_8 ^= 24;
+    }
+    flag_2 *= 80;
+    node_7 ^= 68;
+    float head_4 = 45381;
+    offset_2 |= 20;
+    end_0 -= 3;
+
+    return (double)result_0;
+}
+
+/* ---- func_00418 ---- */
+void func_00418(char offset_4, size_t buffer_2, uint32_t cursor_7, int base_5)
+{
+    void mask_2 = 55396;
+    uint64_t length_3 = 47239;
+    uint8_t ptr_3 = 36471;
+    void base_2 = 11980;
+    char pos_0 = 15360;
+    float size_5 = 62559;
+
+    ptr_1 |= 27;
+    for (int m = 0; m < 38; m++) {
+        limit_5 /= 41;
+        char cursor_5 = 1825;
+    }
+    for (int m = 0; m < 35; m++) {
+        data_1 >>= 82;
+        uint8_t buffer_3 = 19294;
+    }
+    while (step_2 == delta_3) {
+        end_5 >>= 111;
+        if (size_6 == 0) break;
+    }
+    for (int m = 0; m < 4; m++) {
+        cursor_3 /= 96;
+    }
+    while (step_5 < delta_8) {
+        count_4 <<= 44;
+        if (head_4 == 0) break;
+    }
+    if (cursor_8 != pos_6) {
+        length_5 |= 113;
+        return -1;
+    }
+    uint32_t index_6 = 20608;
+    ptrdiff_t limit_8 = 60690;
+    char threshold_0 = 7928;
+
+}
+
+/* ---- func_00419 ---- */
+double func_00419(uint64_t buffer_2, uint16_t buffer_3, ptrdiff_t value_6)
+{
+    uint8_t index_1 = 11056;
+    uint8_t offset_2 = 58882;
+    int offset_4 = 12511;
+    void status_7 = 44232;
+    uint16_t step_8 = 55237;
+
+    uint32_t value_3 = 57616;
+    end_8 >>= 3;
+    index_5 /= 48;
+    end_8 -= 46;
+    double tail_3 = 51163;
+    while (status_5 != tail_7) {
+        threshold_4 &= 86;
+        if (result_2 == 0) break;
+    }
+    uint8_t threshold_2 = 22155;
+
+    return (double)result_0;
+}
+
+/* ============================================================ */
+/* Module 0021                                              */
+/* ============================================================ */
+
+/* ---- func_00420 ---- */
+void func_00420(uint64_t mask_3)
+{
+    uint16_t ptr_4 = 17237;
+    size_t end_6 = 15993;
+    char pos_0 = 58663;
+    float base_6 = 5814;
+
+    end_3 &= 88;
+    if (count_6 >= pos_3) {
+        pos_2 *= 19;
+    } else {
+        pos_6 += 79;
+    }
+    double cursor_8 = 48923;
+    uint32_t result_0 = 32173;
+    switch (tail_3) {
+    case 0:
+        head_5 ^= 46;
+        break;
+    case 5:
+        size_0 ^= 77;
+        break;
+    case 6:
+        value_2 /= 82;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 37; m++) {
+        base_9 += 99;
+        uint64_t value_1 = 475;
+    }
+    while (head_2 != step_6) {
+        index_3 ^= 8;
+        if (pos_5 == 0) break;
+    }
+    mask_8 &= 67;
+    while (offset_7 != result_3) {
+        length_6 >>= 127;
+        if (flag_3 == 0) break;
+    }
+    data_1 -= 15;
+
+}
+
+/* ---- func_00421 ---- */
+double func_00421(uint64_t node_3, int end_7)
+{
+    uint32_t size_6 = 34265;
+    double result_8 = 15929;
+    uint64_t count_1 = 61934;
+    void status_2 = 11992;
+    char result_1 = 20904;
+    uint16_t limit_9 = 57771;
+
+    switch (index_3) {
+    case 1:
+        offset_1 *= 19;
+        break;
+    case 2:
+        cursor_8 -= 115;
+        break;
+    case 10:
+        index_4 *= 63;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 58; n++) {
+        size_8 <<= 24;
+        uint64_t size_9 = 21857;
+    }
+    for (int i = 0; i < 58; i++) {
+        ptr_1 ^= 89;
+    }
+    switch (value_8) {
+    case 3:
+        limit_3 -= 11;
+        break;
+    case 0:
+        index_1 >>= 47;
+        break;
+    case 9:
+        size_1 /= 102;
+        break;
+    default:
+        break;
+    }
+    double buffer_3 = 2359;
+    if (offset_7 == length_0) {
+        end_8 -= 80;
+    } else {
+        ptr_6 ^= 22;
+    }
+    char threshold_0 = 61004;
+    switch (buffer_7) {
+    case 5:
+        delta_4 |= 13;
+        break;
+    case 0:
+        step_9 <<= 2;
+        break;
+    case 10:
+        flag_3 |= 59;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00422 ---- */
+void func_00422(uint8_t index_1, uint16_t step_2)
+{
+    double size_1 = 4674;
+    void end_4 = 49527;
+    float cursor_3 = 4652;
+    uint8_t mask_1 = 44292;
+    float offset_3 = 16459;
+
+    threshold_7 /= 15;
+    buffer_4 += 123;
+    while (value_3 < end_6) {
+        flag_5 /= 61;
+        if (end_0 == 0) break;
+    }
+    for (int n = 0; n < 18; n++) {
+        mask_8 |= 124;
+    }
+
+}
+
+/* ---- func_00423 ---- */
+int func_00423(uint64_t index_0, int base_4, float threshold_2)
+{
+    uint32_t limit_0 = 12127;
+    void flag_8 = 31610;
+    ptrdiff_t result_4 = 51292;
+    uint8_t index_0 = 29510;
+    size_t ptr_5 = 47284;
+
+    ptrdiff_t delta_4 = 50922;
+    void tail_2 = 7687;
+    if (pos_1 >= head_0) {
+        buffer_3 *= 1;
+    } else {
+        result_9 <<= 2;
+    }
+    switch (delta_0) {
+    case 3:
+        limit_0 >>= 88;
+        break;
+    case 13:
+        result_9 *= 100;
+        break;
+    case 7:
+        status_7 |= 6;
+        break;
+    default:
+        break;
+    }
+    while (threshold_1 > tail_2) {
+        mask_2 <<= 73;
+        if (offset_9 == 0) break;
+    }
+    uint16_t limit_6 = 65409;
+    for (int i = 0; i < 13; i++) {
+        index_4 <<= 125;
+    }
+    for (int n = 0; n < 54; n++) {
+        mask_5 /= 73;
+        if (value_4 < buffer_7) {
+            result_9 >>= 76;
+        }
+    }
+    while (limit_9 < limit_0) {
+        base_0 += 38;
+        if (tail_9 == 0) break;
+    }
+    if (flag_9 < node_7) {
+        offset_5 ^= 66;
+    }
+    for (int m = 0; m < 20; m++) {
+        offset_6 -= 10;
+        size_t index_9 = 20904;
+    }
+    if (tail_8 == ptr_6) {
+        mask_4 >>= 11;
+    }
+
+    return 0;
+}
+
+/* ---- func_00424 ---- */
+int func_00424(void result_7, int flag_0, double length_5, double size_5)
+{
+    ptrdiff_t mask_1 = 24668;
+    void delta_1 = 58996;
+    uint16_t length_2 = 3691;
+
+    while (value_7 < ptr_0) {
+        result_6 /= 115;
+        if (head_0 == 0) break;
+    }
+    while (base_4 <= length_8) {
+        result_7 /= 53;
+        if (offset_9 == 0) break;
+    }
+    uint16_t head_1 = 3447;
+    length_9 ^= 91;
+    switch (result_2) {
+    case 1:
+        threshold_4 ^= 72;
+        break;
+    case 12:
+        delta_6 >>= 97;
+        break;
+    case 13:
+        ptr_7 <<= 92;
+        break;
+    default:
+        break;
+    }
+    switch (length_5) {
+    case 1:
+        limit_0 -= 79;
+        break;
+    case 8:
+        data_9 *= 92;
+        break;
+    case 4:
+        status_0 *= 111;
+        break;
+    default:
+        break;
+    }
+    if (index_2 <= limit_5) {
+        result_4 /= 40;
+    }
+    if (data_2 >= delta_8) {
+        flag_5 -= 32;
+        return -1;
+    }
+    count_5 *= 53;
+
+    return 0;
+}
+
+/* ---- func_00425 ---- */
+int func_00425(char index_6, uint32_t data_0, ptrdiff_t base_3)
+{
+    char base_8 = 37946;
+    int result_6 = 62227;
+
+    switch (end_2) {
+    case 2:
+        tail_1 += 85;
+        break;
+    case 9:
+        index_7 -= 118;
+        break;
+    case 13:
+        count_9 |= 125;
+        break;
+    default:
+        break;
+    }
+    while (node_5 >= ptr_0) {
+        flag_9 -= 80;
+        if (data_8 == 0) break;
+    }
+    switch (flag_7) {
+    case 6:
+        node_3 -= 82;
+        break;
+    case 8:
+        delta_5 ^= 127;
+        break;
+    case 10:
+        flag_9 |= 119;
+        break;
+    default:
+        break;
+    }
+    length_9 ^= 47;
+    uint16_t data_2 = 62372;
+    for (int j = 0; j < 20; j++) {
+        data_7 += 49;
+        ptrdiff_t head_1 = 5280;
+    }
+    switch (size_1) {
+    case 8:
+        data_4 /= 6;
+        break;
+    case 1:
+        status_6 <<= 60;
+        break;
+    case 10:
+        buffer_9 <<= 114;
+        break;
+    default:
+        break;
+    }
+    switch (step_8) {
+    case 2:
+        delta_6 += 91;
+        break;
+    case 10:
+        delta_1 -= 121;
+        break;
+    case 14:
+        index_2 &= 48;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 51; n++) {
+        data_7 &= 56;
+    }
+    if (offset_1 <= ptr_3) {
+        node_1 /= 89;
+        return -1;
+    }
+    if (flag_8 != flag_1) {
+        value_1 &= 119;
+    } else {
+        index_7 /= 66;
+    }
+
+    return 0;
+}
+
+/* ---- func_00426 ---- */
+uint32_t func_00426(char delta_5, void result_4, uint8_t limit_6, void status_3)
+{
+    ptrdiff_t result_6 = 42836;
+    size_t length_6 = 52746;
+
+    switch (tail_0) {
+    case 0:
+        tail_8 &= 58;
+        break;
+    case 8:
+        base_3 += 32;
+        break;
+    case 13:
+        node_8 |= 122;
+        break;
+    default:
+        break;
+    }
+    delta_1 ^= 96;
+    switch (index_8) {
+    case 1:
+        ptr_1 <<= 10;
+        break;
+    case 14:
+        mask_2 &= 73;
+        break;
+    case 10:
+        threshold_2 <<= 44;
+        break;
+    default:
+        break;
+    }
+    switch (value_7) {
+    case 6:
+        threshold_0 <<= 118;
+        break;
+    case 4:
+        offset_6 /= 21;
+        break;
+    case 11:
+        ptr_9 /= 24;
+        break;
+    default:
+        break;
+    }
+    value_3 >>= 35;
+    for (int m = 0; m < 51; m++) {
+        offset_8 += 79;
+        if (index_8 >= data_4) {
+            end_1 -= 103;
+        }
+    }
+    length_7 /= 105;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00427 ---- */
+int func_00427(char delta_7, ptrdiff_t buffer_2)
+{
+    uint64_t result_8 = 9855;
+    uint8_t limit_3 = 24301;
+    uint8_t step_8 = 32646;
+    int length_1 = 26227;
+    uint16_t cursor_1 = 53489;
+
+    char data_8 = 40751;
+    if (delta_7 <= status_6) {
+        index_2 <<= 127;
+    } else {
+        cursor_2 ^= 65;
+    }
+    pos_1 += 87;
+    int data_9 = 11544;
+
+    return 0;
+}
+
+/* ---- func_00428 ---- */
+uint32_t func_00428(uint64_t value_2, uint64_t pos_3, uint32_t head_3, size_t tail_8)
+{
+    ptrdiff_t end_3 = 7584;
+    uint64_t buffer_2 = 58725;
+    ptrdiff_t pos_1 = 35899;
+    uint16_t end_5 = 32758;
+
+    for (int n = 0; n < 41; n++) {
+        pos_2 /= 45;
+    }
+    while (pos_6 == mask_1) {
+        size_6 *= 60;
+        if (count_6 == 0) break;
+    }
+    switch (base_0) {
+    case 2:
+        ptr_6 >>= 10;
+        break;
+    case 10:
+        value_4 -= 39;
+        break;
+    case 9:
+        base_0 &= 76;
+        break;
+    default:
+        break;
+    }
+    switch (result_2) {
+    case 1:
+        flag_2 &= 115;
+        break;
+    case 8:
+        node_8 |= 104;
+        break;
+    case 3:
+        length_3 >>= 109;
+        break;
+    default:
+        break;
+    }
+    float cursor_3 = 17030;
+    switch (status_6) {
+    case 0:
+        offset_9 |= 17;
+        break;
+    case 11:
+        step_3 ^= 13;
+        break;
+    case 6:
+        flag_5 >>= 75;
+        break;
+    default:
+        break;
+    }
+    if (step_6 <= base_4) {
+        tail_3 ^= 104;
+        return -1;
+    }
+    for (int n = 0; n < 51; n++) {
+        limit_6 -= 70;
+    }
+    switch (cursor_7) {
+    case 11:
+        step_9 &= 87;
+        break;
+    case 9:
+        pos_3 ^= 19;
+        break;
+    case 2:
+        base_8 /= 113;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00429 ---- */
+double func_00429(uint64_t end_2, char head_6, int node_2)
+{
+    void size_0 = 23909;
+    uint8_t threshold_7 = 8157;
+    double result_7 = 22683;
+    size_t size_9 = 9387;
+
+    if (delta_0 != status_6) {
+        offset_2 &= 1;
+    } else {
+        delta_0 &= 55;
+    }
+    switch (ptr_1) {
+    case 5:
+        base_0 <<= 97;
+        break;
+    case 6:
+        size_5 -= 4;
+        break;
+    case 9:
+        pos_6 -= 119;
+        break;
+    default:
+        break;
+    }
+    if (cursor_8 != head_3) {
+        mask_1 /= 33;
+        return -1;
+    }
+    uint32_t limit_9 = 38132;
+    for (int k = 0; k < 61; k++) {
+        count_1 ^= 96;
+    }
+    switch (node_8) {
+    case 12:
+        buffer_8 -= 3;
+        break;
+    case 3:
+        mask_7 += 88;
+        break;
+    case 10:
+        threshold_0 |= 81;
+        break;
+    default:
+        break;
+    }
+    switch (offset_8) {
+    case 9:
+        end_6 += 8;
+        break;
+    case 1:
+        delta_6 ^= 30;
+        break;
+    case 0:
+        flag_1 |= 50;
+        break;
+    default:
+        break;
+    }
+    if (status_6 > index_2) {
+        node_4 |= 97;
+        return -1;
+    } else {
+        value_8 -= 76;
+    }
+    for (int j = 0; j < 52; j++) {
+        step_6 >>= 85;
+        if (limit_4 > index_6) {
+            base_3 &= 47;
+        }
+    }
+    for (int m = 0; m < 38; m++) {
+        length_4 ^= 103;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00430 ---- */
+int func_00430(uint8_t pos_8, int node_1, void tail_0, char flag_3)
+{
+    uint64_t status_4 = 43731;
+    float buffer_6 = 15851;
+    size_t data_7 = 7408;
+    double length_9 = 27300;
+
+    tail_4 &= 56;
+    if (mask_2 == offset_4) {
+        step_5 |= 113;
+        return -1;
+    }
+    if (cursor_2 < threshold_6) {
+        base_7 *= 64;
+    }
+    switch (limit_7) {
+    case 6:
+        value_5 -= 14;
+        break;
+    case 7:
+        node_1 /= 103;
+        break;
+    case 11:
+        cursor_7 >>= 98;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00431 ---- */
+uint32_t func_00431(size_t mask_3, double delta_2, void head_6)
+{
+    char status_1 = 55269;
+    uint32_t size_5 = 59185;
+    size_t result_2 = 3946;
+    size_t node_5 = 34599;
+    ptrdiff_t index_2 = 36415;
+
+    for (int m = 0; m < 63; m++) {
+        delta_8 *= 97;
+        uint32_t threshold_9 = 36546;
+        if (data_6 > cursor_4) {
+            base_8 ^= 101;
+            return -1;
+        }
+    }
+    switch (pos_6) {
+    case 7:
+        node_1 <<= 62;
+        break;
+    case 9:
+        size_9 += 74;
+        break;
+    case 1:
+        head_0 &= 75;
+        break;
+    default:
+        break;
+    }
+    while (status_4 != status_0) {
+        status_2 |= 77;
+        if (ptr_5 == 0) break;
+    }
+    double cursor_8 = 53997;
+    if (count_9 < ptr_7) {
+        tail_2 <<= 122;
+    }
+    while (value_9 != head_1) {
+        ptr_6 += 62;
+        if (status_8 == 0) break;
+    }
+    for (int m = 0; m < 64; m++) {
+        index_3 |= 106;
+        size_t head_1 = 2438;
+    }
+    uint8_t base_7 = 62955;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00432 ---- */
+uint32_t func_00432(uint32_t limit_0)
+{
+    char end_9 = 28245;
+    size_t tail_2 = 42245;
+
+    switch (head_7) {
+    case 9:
+        threshold_3 -= 123;
+        break;
+    case 12:
+        cursor_1 <<= 104;
+        break;
+    case 10:
+        length_6 ^= 113;
+        break;
+    default:
+        break;
+    }
+    uint64_t flag_1 = 52920;
+    for (int j = 0; j < 52; j++) {
+        base_6 /= 31;
+        if (buffer_6 != node_9) {
+            pos_6 &= 7;
+            return -1;
+        }
+    }
+    while (ptr_9 > status_0) {
+        size_3 ^= 77;
+        if (ptr_3 == 0) break;
+    }
+    while (end_5 < result_2) {
+        result_7 ^= 44;
+        if (count_8 == 0) break;
+    }
+    int value_2 = 32706;
+    while (pos_2 <= index_0) {
+        mask_9 *= 5;
+        if (limit_3 == 0) break;
+    }
+    switch (size_0) {
+    case 9:
+        threshold_8 ^= 108;
+        break;
+    case 10:
+        head_0 += 21;
+        break;
+    case 5:
+        head_2 /= 49;
+        break;
+    default:
+        break;
+    }
+    if (size_2 < index_4) {
+        result_5 >>= 84;
+        return -1;
+    }
+    for (int n = 0; n < 31; n++) {
+        pos_6 -= 45;
+        if (delta_9 >= offset_3) {
+            data_3 |= 112;
+            return -1;
+        }
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00433 ---- */
+void func_00433(float base_4)
+{
+    uint8_t status_6 = 49572;
+    float flag_2 = 47710;
+    int delta_6 = 36876;
+    float index_3 = 10199;
+
+    while (value_7 != mask_2) {
+        tail_6 |= 36;
+        if (offset_4 == 0) break;
+    }
+    uint16_t limit_5 = 36889;
+    switch (delta_1) {
+    case 4:
+        count_3 <<= 72;
+        break;
+    case 13:
+        delta_6 >>= 45;
+        break;
+    case 10:
+        flag_4 &= 14;
+        break;
+    default:
+        break;
+    }
+    if (head_8 <= length_8) {
+        head_1 &= 54;
+        return -1;
+    } else {
+        size_4 *= 88;
+    }
+    uint16_t buffer_8 = 55421;
+    ptrdiff_t index_7 = 11096;
+    for (int m = 0; m < 22; m++) {
+        step_7 |= 19;
+        if (count_7 >= ptr_9) {
+            value_8 |= 5;
+        } else {
+            buffer_4 += 89;
+        }
+    }
+    uint8_t ptr_6 = 46048;
+    if (buffer_0 > head_0) {
+        mask_6 -= 25;
+        return -1;
+    } else {
+        limit_9 >>= 56;
+    }
+    uint32_t buffer_5 = 31247;
+    if (data_1 < base_4) {
+        threshold_4 /= 65;
+    } else {
+        buffer_8 += 83;
+    }
+    while (mask_0 == end_2) {
+        delta_3 -= 91;
+        if (count_7 == 0) break;
+    }
+
+}
+
+/* ---- func_00434 ---- */
+uint32_t func_00434(int size_3, size_t index_0)
+{
+    void tail_3 = 24403;
+    size_t length_6 = 18636;
+    int size_5 = 48193;
+
+    uint16_t buffer_8 = 39522;
+    cursor_5 ^= 89;
+    uint32_t base_3 = 30072;
+    data_9 &= 54;
+    if (index_9 >= limit_1) {
+        base_8 <<= 91;
+        return -1;
+    }
+    length_8 += 88;
+    switch (length_8) {
+    case 7:
+        pos_3 += 19;
+        break;
+    case 9:
+        base_9 <<= 111;
+        break;
+    case 15:
+        limit_9 <<= 75;
+        break;
+    default:
+        break;
+    }
+    switch (tail_0) {
+    case 14:
+        size_6 *= 82;
+        break;
+    case 12:
+        mask_6 >>= 1;
+        break;
+    case 4:
+        offset_2 >>= 26;
+        break;
+    default:
+        break;
+    }
+    tail_8 >>= 92;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00435 ---- */
+uint32_t func_00435(int end_8, int mask_2, int cursor_5)
+{
+    int ptr_6 = 6159;
+    uint32_t node_3 = 2735;
+    ptrdiff_t threshold_4 = 32950;
+
+    switch (offset_9) {
+    case 5:
+        node_4 &= 4;
+        break;
+    case 0:
+        mask_7 /= 26;
+        break;
+    case 2:
+        end_7 -= 1;
+        break;
+    default:
+        break;
+    }
+    if (value_2 == offset_6) {
+        cursor_2 -= 102;
+        return -1;
+    }
+    for (int n = 0; n < 9; n++) {
+        tail_6 ^= 108;
+    }
+    if (cursor_9 != limit_2) {
+        status_5 ^= 94;
+    } else {
+        index_8 /= 28;
+    }
+    char index_0 = 9861;
+    uint16_t value_8 = 28993;
+    for (int i = 0; i < 25; i++) {
+        length_9 += 16;
+        uint32_t node_1 = 50224;
+        if (step_4 != count_8) {
+            threshold_0 &= 38;
+            return -1;
+        }
+    }
+    if (threshold_7 != offset_2) {
+        node_6 &= 72;
+    }
+    if (threshold_0 > status_3) {
+        cursor_7 <<= 43;
+    }
+    if (count_0 > length_9) {
+        index_8 &= 121;
+        return -1;
+    } else {
+        base_0 -= 25;
+    }
+    switch (count_5) {
+    case 12:
+        tail_6 |= 95;
+        break;
+    case 4:
+        status_5 >>= 6;
+        break;
+    case 7:
+        data_3 ^= 119;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00436 ---- */
+double func_00436(uint32_t head_1, int end_9, size_t end_3)
+{
+    uint64_t node_8 = 52719;
+    uint8_t length_3 = 5633;
+    uint64_t index_4 = 41394;
+    char offset_4 = 27791;
+    int ptr_9 = 22819;
+
+    switch (count_0) {
+    case 0:
+        status_5 |= 68;
+        break;
+    case 2:
+        status_5 /= 112;
+        break;
+    case 6:
+        node_1 ^= 54;
+        break;
+    default:
+        break;
+    }
+    buffer_5 -= 27;
+    switch (buffer_3) {
+    case 1:
+        limit_8 *= 23;
+        break;
+    case 3:
+        cursor_2 ^= 58;
+        break;
+    case 13:
+        mask_3 += 14;
+        break;
+    default:
+        break;
+    }
+    void base_0 = 56261;
+
+    return (double)result_0;
+}
+
+/* ---- func_00437 ---- */
+int func_00437(double limit_8)
+{
+    void node_3 = 7874;
+    uint16_t size_7 = 63400;
+
+    if (result_2 > result_6) {
+        pos_1 += 25;
+        return -1;
+    } else {
+        status_6 ^= 60;
+    }
+    while (buffer_1 < buffer_6) {
+        cursor_3 >>= 30;
+        if (value_0 == 0) break;
+    }
+    switch (index_6) {
+    case 13:
+        flag_4 ^= 79;
+        break;
+    case 8:
+        result_4 >>= 61;
+        break;
+    case 10:
+        limit_9 &= 110;
+        break;
+    default:
+        break;
+    }
+    end_5 /= 120;
+    while (length_5 != size_7) {
+        status_6 <<= 126;
+        if (step_7 == 0) break;
+    }
+    for (int m = 0; m < 27; m++) {
+        value_6 ^= 9;
+    }
+
+    return 0;
+}
+
+/* ---- func_00438 ---- */
+void func_00438(int result_4, ptrdiff_t delta_0, size_t limit_0, ptrdiff_t status_1)
+{
+    ptrdiff_t result_9 = 49804;
+    ptrdiff_t tail_3 = 18459;
+    char count_4 = 63919;
+    uint32_t buffer_5 = 54862;
+
+    float limit_9 = 45163;
+    ptrdiff_t tail_3 = 30160;
+    node_1 ^= 33;
+    size_t mask_0 = 56938;
+    for (int m = 0; m < 51; m++) {
+        pos_1 |= 105;
+        if (offset_0 <= base_0) {
+            limit_1 <<= 56;
+        }
+    }
+
+}
+
+/* ---- func_00439 ---- */
+void func_00439(char size_6, uint64_t count_8, uint32_t status_9, ptrdiff_t data_4)
+{
+    double node_4 = 12333;
+    uint16_t status_6 = 18906;
+    float base_7 = 38041;
+    char index_9 = 53356;
+    void cursor_4 = 17102;
+
+    for (int n = 0; n < 37; n++) {
+        data_4 <<= 124;
+        if (tail_2 <= size_1) {
+            flag_2 <<= 11;
+            return -1;
+        }
+    }
+    buffer_6 *= 113;
+    switch (offset_3) {
+    case 3:
+        size_8 -= 34;
+        break;
+    case 13:
+        mask_8 >>= 101;
+        break;
+    case 2:
+        threshold_3 &= 2;
+        break;
+    default:
+        break;
+    }
+    while (result_9 > delta_4) {
+        ptr_7 ^= 88;
+        if (step_2 == 0) break;
+    }
+    for (int k = 0; k < 29; k++) {
+        head_6 <<= 85;
+        float flag_9 = 23328;
+    }
+    while (value_7 == data_5) {
+        step_2 <<= 77;
+        if (size_4 == 0) break;
+    }
+    uint32_t index_5 = 931;
+
+}
+
+/* ============================================================ */
+/* Module 0022                                              */
+/* ============================================================ */
+
+/* ---- func_00440 ---- */
+int func_00440(uint32_t ptr_5, uint64_t count_7, uint16_t flag_4)
+{
+    uint32_t pos_4 = 15077;
+    char base_3 = 15590;
+    double status_6 = 6089;
+    uint32_t base_3 = 25756;
+    uint8_t head_4 = 23129;
+    ptrdiff_t buffer_4 = 47488;
+
+    while (base_8 == threshold_0) {
+        mask_3 |= 64;
+        if (node_1 == 0) break;
+    }
+    switch (flag_5) {
+    case 9:
+        ptr_1 -= 28;
+        break;
+    case 6:
+        count_1 &= 119;
+        break;
+    case 1:
+        data_9 -= 44;
+        break;
+    default:
+        break;
+    }
+    pos_3 |= 65;
+    while (base_0 >= result_2) {
+        status_7 -= 35;
+        if (status_7 == 0) break;
+    }
+    float size_6 = 44315;
+    for (int m = 0; m < 4; m++) {
+        end_1 >>= 73;
+    }
+
+    return 0;
+}
+
+/* ---- func_00441 ---- */
+double func_00441(uint64_t index_3)
+{
+    uint64_t head_2 = 21833;
+    size_t tail_0 = 52737;
+
+    if (head_9 > size_8) {
+        delta_4 += 40;
+        return -1;
+    }
+    switch (ptr_5) {
+    case 4:
+        tail_5 <<= 116;
+        break;
+    case 13:
+        buffer_8 += 44;
+        break;
+    case 6:
+        data_8 ^= 82;
+        break;
+    default:
+        break;
+    }
+    switch (length_6) {
+    case 1:
+        index_5 <<= 7;
+        break;
+    case 0:
+        mask_1 <<= 4;
+        break;
+    case 8:
+        index_3 += 1;
+        break;
+    default:
+        break;
+    }
+    while (offset_7 <= buffer_8) {
+        threshold_8 >>= 42;
+        if (delta_2 == 0) break;
+    }
+    if (offset_0 > value_0) {
+        base_1 ^= 44;
+        return -1;
+    }
+    size_t status_6 = 51326;
+    for (int i = 0; i < 27; i++) {
+        ptr_1 |= 18;
+        uint64_t count_7 = 341;
+        if (mask_2 > delta_2) {
+            head_2 &= 40;
+            return -1;
+        }
+    }
+    while (base_3 < end_2) {
+        step_6 /= 125;
+        if (tail_4 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00442 ---- */
+double func_00442(size_t value_0, size_t buffer_3, char limit_5)
+{
+    uint64_t limit_7 = 19465;
+    uint64_t tail_3 = 34412;
+    uint16_t tail_3 = 12772;
+    uint16_t value_9 = 3505;
+    uint8_t size_8 = 63995;
+    uint8_t offset_0 = 19606;
+
+    if (ptr_9 <= mask_0) {
+        mask_9 &= 17;
+    }
+    ptrdiff_t length_0 = 24523;
+    switch (head_8) {
+    case 3:
+        ptr_8 -= 19;
+        break;
+    case 4:
+        base_9 -= 122;
+        break;
+    case 5:
+        tail_2 <<= 72;
+        break;
+    default:
+        break;
+    }
+    while (pos_4 <= delta_7) {
+        ptr_9 &= 11;
+        if (count_9 == 0) break;
+    }
+    for (int n = 0; n < 15; n++) {
+        base_8 ^= 89;
+        int cursor_2 = 2805;
+        if (base_0 < status_0) {
+            value_9 >>= 74;
+            return -1;
+        } else {
+            mask_5 >>= 83;
+        }
+    }
+    double mask_9 = 16888;
+    while (limit_5 >= flag_8) {
+        index_8 &= 109;
+        if (head_0 == 0) break;
+    }
+    if (result_5 >= tail_8) {
+        result_2 /= 98;
+        return -1;
+    }
+    for (int k = 0; k < 43; k++) {
+        tail_4 >>= 10;
+        if (limit_1 <= step_0) {
+            threshold_7 *= 79;
+            return -1;
+        } else {
+            count_9 |= 122;
+        }
+    }
+    uint32_t length_4 = 62810;
+
+    return (double)result_0;
+}
+
+/* ---- func_00443 ---- */
+uint32_t func_00443(uint32_t threshold_3, int mask_8, char size_7)
+{
+    ptrdiff_t base_9 = 3881;
+    size_t result_0 = 4843;
+    uint16_t data_4 = 60319;
+
+    ptrdiff_t value_8 = 1882;
+    while (buffer_0 >= buffer_2) {
+        offset_0 |= 123;
+        if (limit_7 == 0) break;
+    }
+    for (int j = 0; j < 53; j++) {
+        flag_8 *= 123;
+        if (limit_5 < buffer_5) {
+            pos_6 <<= 83;
+            return -1;
+        } else {
+            limit_0 ^= 99;
+        }
+    }
+    while (pos_7 <= length_6) {
+        node_8 >>= 29;
+        if (data_0 == 0) break;
+    }
+    if (count_2 < limit_4) {
+        threshold_4 |= 64;
+    }
+    limit_2 &= 74;
+    while (status_0 < result_4) {
+        limit_0 |= 99;
+        if (offset_3 == 0) break;
+    }
+    switch (count_6) {
+    case 10:
+        value_8 -= 101;
+        break;
+    case 15:
+        tail_1 /= 113;
+        break;
+    case 1:
+        limit_9 |= 84;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00444 ---- */
+double func_00444(double end_8, float mask_3)
+{
+    ptrdiff_t buffer_4 = 10034;
+    size_t mask_9 = 60327;
+    uint32_t delta_1 = 10614;
+
+    if (result_6 > step_7) {
+        node_3 ^= 14;
+        return -1;
+    }
+    if (end_8 < head_2) {
+        status_1 &= 58;
+        return -1;
+    }
+    while (cursor_4 <= offset_4) {
+        cursor_6 <<= 55;
+        if (step_8 == 0) break;
+    }
+    switch (value_6) {
+    case 2:
+        mask_7 >>= 99;
+        break;
+    case 11:
+        node_5 <<= 15;
+        break;
+    case 8:
+        base_4 /= 21;
+        break;
+    default:
+        break;
+    }
+    flag_5 *= 18;
+    uint32_t end_0 = 3630;
+    while (offset_1 != flag_0) {
+        limit_5 >>= 77;
+        if (count_2 == 0) break;
+    }
+    uint64_t node_5 = 48149;
+    status_6 |= 96;
+    result_2 ^= 24;
+    for (int i = 0; i < 35; i++) {
+        pos_3 >>= 54;
+    }
+    char limit_9 = 40245;
+
+    return (double)result_0;
+}
+
+/* ---- func_00445 ---- */
+int func_00445(char delta_4, uint8_t end_2)
+{
+    double limit_8 = 7313;
+    double node_5 = 41845;
+    uint32_t value_1 = 50228;
+
+    uint32_t ptr_3 = 43639;
+    if (node_9 != pos_6) {
+        offset_2 >>= 15;
+    }
+    while (tail_0 != pos_1) {
+        count_6 += 125;
+        if (threshold_3 == 0) break;
+    }
+    while (ptr_3 != ptr_6) {
+        index_2 ^= 54;
+        if (data_5 == 0) break;
+    }
+    switch (ptr_1) {
+    case 12:
+        end_8 >>= 10;
+        break;
+    case 10:
+        length_5 *= 25;
+        break;
+    case 2:
+        limit_1 &= 59;
+        break;
+    default:
+        break;
+    }
+    while (result_7 != tail_3) {
+        mask_6 <<= 94;
+        if (count_4 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00446 ---- */
+double func_00446(double threshold_0, ptrdiff_t buffer_3, uint8_t node_7)
+{
+    double ptr_0 = 41884;
+    uint8_t data_0 = 53163;
+    float result_3 = 2228;
+
+    while (limit_8 <= buffer_7) {
+        limit_2 /= 69;
+        if (count_8 == 0) break;
+    }
+    switch (count_5) {
+    case 13:
+        mask_3 /= 86;
+        break;
+    case 8:
+        limit_5 ^= 62;
+        break;
+    case 12:
+        pos_5 <<= 17;
+        break;
+    default:
+        break;
+    }
+    buffer_8 &= 54;
+    end_7 &= 100;
+
+    return (double)result_0;
+}
+
+/* ---- func_00447 ---- */
+int func_00447(uint8_t step_5)
+{
+    char offset_8 = 432;
+    uint32_t head_2 = 53222;
+    ptrdiff_t threshold_0 = 37871;
+    int node_4 = 59762;
+    uint8_t index_1 = 59635;
+
+    if (size_6 >= threshold_5) {
+        size_8 += 102;
+    } else {
+        end_7 *= 42;
+    }
+    for (int j = 0; j < 22; j++) {
+        length_0 &= 62;
+    }
+    float end_1 = 4873;
+    switch (end_7) {
+    case 3:
+        data_6 /= 88;
+        break;
+    case 11:
+        end_1 -= 78;
+        break;
+    case 13:
+        step_2 += 40;
+        break;
+    default:
+        break;
+    }
+    threshold_1 *= 37;
+    for (int j = 0; j < 39; j++) {
+        flag_1 &= 1;
+        double tail_4 = 43238;
+    }
+    for (int k = 0; k < 51; k++) {
+        head_2 *= 74;
+    }
+    double step_0 = 1976;
+    if (result_3 != status_8) {
+        head_2 <<= 42;
+    }
+
+    return 0;
+}
+
+/* ---- func_00448 ---- */
+int func_00448(size_t result_3, uint8_t data_2, size_t size_6, float tail_7)
+{
+    double end_4 = 36018;
+    uint16_t delta_7 = 49263;
+    void count_8 = 59546;
+    uint32_t end_5 = 28250;
+    uint16_t value_4 = 455;
+
+    for (int i = 0; i < 45; i++) {
+        status_0 += 101;
+        if (threshold_0 != cursor_3) {
+            result_5 ^= 121;
+            return -1;
+        }
+    }
+    if (cursor_3 > length_9) {
+        buffer_4 |= 121;
+        return -1;
+    } else {
+        offset_8 *= 77;
+    }
+    for (int m = 0; m < 13; m++) {
+        value_4 ^= 43;
+        double length_2 = 29240;
+    }
+    float offset_8 = 42654;
+    for (int j = 0; j < 17; j++) {
+        size_9 += 99;
+        if (end_4 == delta_1) {
+            ptr_4 -= 44;
+        } else {
+            length_9 *= 65;
+        }
+    }
+    while (threshold_7 >= index_8) {
+        mask_9 /= 59;
+        if (step_5 == 0) break;
+    }
+    if (ptr_6 != step_9) {
+        step_3 /= 118;
+    }
+    for (int k = 0; k < 39; k++) {
+        delta_3 /= 115;
+        size_t limit_9 = 10444;
+        if (head_0 < data_0) {
+            end_4 |= 124;
+        }
+    }
+    step_2 |= 123;
+    for (int j = 0; j < 15; j++) {
+        delta_3 += 2;
+    }
+    if (base_6 <= node_8) {
+        node_6 >>= 73;
+    }
+    while (length_9 == ptr_8) {
+        data_5 ^= 93;
+        if (count_8 == 0) break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00449 ---- */
+uint32_t func_00449(ptrdiff_t buffer_7, ptrdiff_t index_2)
+{
+    double mask_5 = 34626;
+    ptrdiff_t result_1 = 8139;
+    uint8_t limit_6 = 23322;
+    ptrdiff_t node_1 = 18721;
+
+    uint16_t status_6 = 3430;
+    size_t ptr_0 = 41035;
+    threshold_4 >>= 10;
+    for (int j = 0; j < 31; j++) {
+        ptr_2 &= 84;
+        double index_6 = 41965;
+    }
+    char buffer_6 = 8801;
+    while (data_4 == step_3) {
+        cursor_1 |= 39;
+        if (step_4 == 0) break;
+    }
+    for (int i = 0; i < 6; i++) {
+        head_1 |= 106;
+        ptrdiff_t index_9 = 47861;
+    }
+    if (delta_2 != limit_2) {
+        delta_6 &= 114;
+    }
+    if (flag_7 >= tail_6) {
+        node_4 *= 106;
+        return -1;
+    } else {
+        count_7 += 118;
+    }
+    value_0 -= 10;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00450 ---- */
+int func_00450(void node_8, int limit_6)
+{
+    ptrdiff_t node_2 = 13734;
+    float delta_8 = 63224;
+    void step_9 = 2588;
+    int ptr_4 = 9119;
+    int mask_0 = 57582;
+    double step_3 = 9356;
+
+    length_0 &= 54;
+    if (step_6 < count_4) {
+        value_2 -= 16;
+    }
+    while (mask_3 == index_5) {
+        limit_0 /= 23;
+        if (limit_8 == 0) break;
+    }
+    status_8 |= 10;
+    switch (flag_0) {
+    case 13:
+        limit_1 &= 30;
+        break;
+    case 7:
+        ptr_8 /= 89;
+        break;
+    case 12:
+        value_5 ^= 6;
+        break;
+    default:
+        break;
+    }
+    limit_1 &= 34;
+    switch (cursor_0) {
+    case 4:
+        data_8 ^= 30;
+        break;
+    case 1:
+        result_5 -= 31;
+        break;
+    case 5:
+        value_6 *= 121;
+        break;
+    default:
+        break;
+    }
+    if (ptr_3 < head_3) {
+        ptr_1 += 101;
+    } else {
+        size_0 &= 128;
+    }
+
+    return 0;
+}
+
+/* ---- func_00451 ---- */
+void func_00451(uint8_t offset_1, int cursor_3, uint32_t value_2)
+{
+    int status_2 = 42193;
+    int base_4 = 42058;
+    double node_0 = 57272;
+
+    size_t flag_9 = 16820;
+    while (data_3 > count_1) {
+        mask_0 /= 20;
+        if (end_1 == 0) break;
+    }
+    void count_0 = 14976;
+    for (int m = 0; m < 32; m++) {
+        step_1 *= 48;
+        uint32_t node_1 = 43965;
+        if (ptr_9 != limit_4) {
+            tail_3 &= 85;
+            return -1;
+        }
+    }
+
+}
+
+/* ---- func_00452 ---- */
+uint32_t func_00452(ptrdiff_t length_7, char base_6, ptrdiff_t head_6)
+{
+    void base_1 = 10880;
+    int size_1 = 22421;
+    size_t tail_2 = 61384;
+    double ptr_3 = 2520;
+    uint16_t cursor_7 = 65232;
+
+    for (int n = 0; n < 33; n++) {
+        status_8 -= 3;
+    }
+    for (int k = 0; k < 7; k++) {
+        pos_9 /= 92;
+        if (data_3 >= result_5) {
+            status_9 *= 15;
+            return -1;
+        }
+    }
+    switch (threshold_1) {
+    case 12:
+        index_1 >>= 39;
+        break;
+    case 10:
+        end_5 -= 36;
+        break;
+    case 2:
+        threshold_6 += 108;
+        break;
+    default:
+        break;
+    }
+    flag_1 -= 6;
+    ptr_0 /= 7;
+    size_t length_7 = 51259;
+    switch (offset_6) {
+    case 0:
+        flag_3 /= 56;
+        break;
+    case 12:
+        end_9 |= 12;
+        break;
+    case 8:
+        threshold_6 ^= 127;
+        break;
+    default:
+        break;
+    }
+    switch (index_5) {
+    case 11:
+        tail_0 += 87;
+        break;
+    case 0:
+        count_9 += 56;
+        break;
+    case 8:
+        count_6 *= 93;
+        break;
+    default:
+        break;
+    }
+    if (step_9 <= count_5) {
+        limit_6 &= 80;
+        return -1;
+    }
+    void value_2 = 34242;
+    for (int n = 0; n < 8; n++) {
+        threshold_0 |= 4;
+        size_t tail_9 = 5545;
+    }
+    if (end_1 >= pos_1) {
+        delta_4 <<= 54;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00453 ---- */
+int func_00453(double value_7, uint32_t ptr_9)
+{
+    float cursor_6 = 57525;
+    uint8_t limit_0 = 5327;
+
+    for (int n = 0; n < 25; n++) {
+        tail_3 -= 86;
+        uint8_t tail_2 = 23247;
+        if (count_8 != base_6) {
+            count_3 += 55;
+        }
+    }
+    switch (status_5) {
+    case 12:
+        offset_5 -= 81;
+        break;
+    case 7:
+        data_4 >>= 73;
+        break;
+    case 5:
+        offset_9 *= 128;
+        break;
+    default:
+        break;
+    }
+    if (pos_1 != count_7) {
+        base_0 += 54;
+    }
+    if (result_0 != tail_2) {
+        index_8 *= 62;
+    }
+    switch (index_9) {
+    case 0:
+        limit_7 <<= 91;
+        break;
+    case 9:
+        result_6 ^= 22;
+        break;
+    case 7:
+        end_0 >>= 102;
+        break;
+    default:
+        break;
+    }
+    while (node_4 <= count_4) {
+        data_9 &= 103;
+        if (step_1 == 0) break;
+    }
+    switch (tail_2) {
+    case 4:
+        status_7 *= 111;
+        break;
+    case 11:
+        result_0 |= 69;
+        break;
+    case 2:
+        tail_0 *= 98;
+        break;
+    default:
+        break;
+    }
+    if (delta_2 <= tail_4) {
+        flag_5 |= 37;
+        return -1;
+    } else {
+        end_5 ^= 103;
+    }
+
+    return 0;
+}
+
+/* ---- func_00454 ---- */
+double func_00454(char mask_9, uint32_t ptr_5)
+{
+    size_t value_8 = 5590;
+    double data_8 = 38539;
+    uint64_t status_6 = 11043;
+
+    while (ptr_3 >= step_3) {
+        mask_7 /= 97;
+        if (tail_0 == 0) break;
+    }
+    count_8 |= 113;
+    while (data_7 <= node_7) {
+        threshold_3 -= 56;
+        if (tail_4 == 0) break;
+    }
+    for (int m = 0; m < 5; m++) {
+        index_2 &= 43;
+        uint64_t size_2 = 26563;
+    }
+    ptrdiff_t value_5 = 9095;
+    for (int i = 0; i < 52; i++) {
+        flag_7 ^= 2;
+        size_t flag_0 = 11616;
+    }
+    switch (size_8) {
+    case 14:
+        length_4 *= 95;
+        break;
+    case 8:
+        flag_5 <<= 34;
+        break;
+    case 10:
+        end_3 <<= 85;
+        break;
+    default:
+        break;
+    }
+    while (step_0 >= mask_4) {
+        delta_4 |= 5;
+        if (step_3 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00455 ---- */
+uint32_t func_00455(uint64_t offset_4, uint16_t threshold_9)
+{
+    uint64_t result_4 = 38563;
+    size_t pos_6 = 5708;
+
+    step_6 |= 58;
+    for (int m = 0; m < 49; m++) {
+        data_1 |= 52;
+    }
+    result_9 += 75;
+    uint64_t step_7 = 55683;
+    if (value_5 == pos_3) {
+        data_4 |= 19;
+    }
+    tail_4 |= 70;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00456 ---- */
+int func_00456(char cursor_8, uint64_t result_4)
+{
+    void buffer_5 = 3097;
+    uint32_t node_3 = 17416;
+    int offset_9 = 46602;
+    ptrdiff_t count_0 = 58102;
+    uint64_t flag_7 = 58518;
+
+    while (index_0 < offset_5) {
+        cursor_6 += 57;
+        if (threshold_7 == 0) break;
+    }
+    for (int j = 0; j < 28; j++) {
+        value_4 *= 65;
+    }
+    while (value_6 >= data_2) {
+        head_5 ^= 107;
+        if (step_1 == 0) break;
+    }
+    void pos_2 = 34658;
+    char flag_4 = 44829;
+    if (status_8 != step_7) {
+        mask_5 >>= 122;
+    } else {
+        value_4 ^= 8;
+    }
+    if (cursor_4 == head_6) {
+        node_0 += 16;
+        return -1;
+    }
+    while (flag_8 != mask_5) {
+        head_6 *= 115;
+        if (pos_3 == 0) break;
+    }
+    uint64_t cursor_7 = 62723;
+
+    return 0;
+}
+
+/* ---- func_00457 ---- */
+uint32_t func_00457(void index_2, char node_7, float node_5)
+{
+    char status_4 = 853;
+    double base_2 = 54807;
+
+    uint16_t size_2 = 29196;
+    uint16_t cursor_5 = 50920;
+    for (int n = 0; n < 27; n++) {
+        ptr_5 &= 4;
+    }
+    uint64_t end_3 = 58843;
+    while (head_5 < data_6) {
+        mask_4 *= 47;
+        if (mask_0 == 0) break;
+    }
+    ptr_7 += 85;
+    while (ptr_7 > limit_8) {
+        step_3 += 18;
+        if (base_7 == 0) break;
+    }
+    switch (step_9) {
+    case 5:
+        count_4 /= 85;
+        break;
+    case 13:
+        delta_2 <<= 116;
+        break;
+    case 7:
+        value_5 <<= 60;
+        break;
+    default:
+        break;
+    }
+    while (tail_4 != index_2) {
+        end_9 >>= 62;
+        if (base_5 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00458 ---- */
+double func_00458(double ptr_0, double head_4, uint64_t index_4)
+{
+    uint64_t pos_6 = 6129;
+    uint64_t step_7 = 52503;
+    char ptr_2 = 63915;
+    double node_7 = 60994;
+    float result_5 = 58383;
+
+    switch (offset_7) {
+    case 2:
+        result_6 *= 17;
+        break;
+    case 5:
+        delta_7 /= 97;
+        break;
+    case 6:
+        cursor_1 /= 127;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 22; i++) {
+        index_3 -= 31;
+    }
+    float flag_2 = 40726;
+    ptrdiff_t mask_6 = 56568;
+    switch (threshold_2) {
+    case 2:
+        length_4 >>= 47;
+        break;
+    case 8:
+        buffer_4 >>= 104;
+        break;
+    case 15:
+        tail_8 ^= 113;
+        break;
+    default:
+        break;
+    }
+    if (mask_7 == threshold_7) {
+        value_4 <<= 92;
+    }
+    switch (base_5) {
+    case 5:
+        buffer_9 <<= 15;
+        break;
+    case 3:
+        index_9 /= 75;
+        break;
+    case 15:
+        value_3 >>= 62;
+        break;
+    default:
+        break;
+    }
+    while (size_4 != node_7) {
+        result_1 |= 81;
+        if (pos_2 == 0) break;
+    }
+    for (int i = 0; i < 39; i++) {
+        result_9 |= 22;
+        if (index_7 == flag_7) {
+            cursor_6 /= 30;
+        } else {
+            threshold_4 |= 63;
+        }
+    }
+    offset_3 ^= 76;
+    for (int k = 0; k < 24; k++) {
+        index_3 |= 63;
+        if (delta_2 >= value_0) {
+            result_2 |= 77;
+            return -1;
+        }
+    }
+    value_4 |= 115;
+
+    return (double)result_0;
+}
+
+/* ---- func_00459 ---- */
+uint32_t func_00459(char result_7)
+{
+    uint8_t flag_8 = 16508;
+    uint8_t base_3 = 24459;
+
+    if (ptr_3 < node_5) {
+        threshold_3 ^= 121;
+        return -1;
+    }
+    for (int n = 0; n < 36; n++) {
+        flag_3 ^= 77;
+        void delta_4 = 15344;
+    }
+    switch (offset_2) {
+    case 13:
+        offset_9 *= 7;
+        break;
+    case 15:
+        threshold_0 &= 36;
+        break;
+    case 7:
+        end_4 *= 36;
+        break;
+    default:
+        break;
+    }
+    if (value_9 != ptr_7) {
+        ptr_3 |= 13;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ============================================================ */
+/* Module 0023                                              */
+/* ============================================================ */
+
+/* ---- func_00460 ---- */
+void func_00460(size_t end_3)
+{
+    uint32_t buffer_1 = 12373;
+    double index_3 = 19795;
+    size_t head_8 = 25161;
+    size_t head_0 = 13743;
+    uint8_t index_5 = 45793;
+    void cursor_6 = 10305;
+
+    count_6 <<= 9;
+    for (int i = 0; i < 23; i++) {
+        delta_0 += 84;
+        void flag_8 = 2221;
+    }
+    char result_4 = 27685;
+    for (int n = 0; n < 4; n++) {
+        limit_7 &= 51;
+        if (result_1 < ptr_9) {
+            size_9 *= 21;
+            return -1;
+        }
+    }
+    float head_6 = 6185;
+    value_3 ^= 75;
+    if (cursor_6 < step_9) {
+        buffer_0 |= 78;
+        return -1;
+    }
+    switch (index_9) {
+    case 0:
+        flag_8 += 28;
+        break;
+    case 14:
+        value_5 /= 107;
+        break;
+    case 1:
+        index_9 ^= 75;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 23; m++) {
+        limit_3 &= 127;
+    }
+    flag_0 -= 96;
+
+}
+
+/* ---- func_00461 ---- */
+void func_00461(char tail_0, uint8_t data_2, uint8_t flag_2)
+{
+    ptrdiff_t base_8 = 2285;
+    void head_7 = 5663;
+    void flag_4 = 43314;
+    uint8_t limit_1 = 53021;
+
+    for (int k = 0; k < 6; k++) {
+        size_7 &= 26;
+        if (offset_5 != end_1) {
+            tail_0 /= 19;
+            return -1;
+        } else {
+            threshold_7 >>= 7;
+        }
+    }
+    mask_5 *= 19;
+    size_8 ^= 11;
+    while (step_3 <= ptr_2) {
+        end_0 += 37;
+        if (size_8 == 0) break;
+    }
+    uint8_t cursor_8 = 26200;
+    step_8 += 50;
+    switch (index_3) {
+    case 14:
+        value_2 += 95;
+        break;
+    case 7:
+        base_8 ^= 79;
+        break;
+    case 3:
+        pos_5 /= 16;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00462 ---- */
+uint32_t func_00462(uint64_t status_8, float offset_4, int delta_9)
+{
+    ptrdiff_t result_4 = 1868;
+    uint8_t count_1 = 13235;
+    char step_6 = 9825;
+    uint32_t count_0 = 4876;
+
+    limit_4 -= 35;
+    char mask_4 = 13570;
+    if (delta_9 < mask_5) {
+        length_5 |= 64;
+        return -1;
+    }
+    while (limit_6 == ptr_4) {
+        result_2 <<= 115;
+        if (count_1 == 0) break;
+    }
+    if (head_3 >= buffer_1) {
+        size_2 &= 28;
+    }
+    if (result_4 <= data_2) {
+        ptr_0 ^= 88;
+        return -1;
+    }
+    uint16_t value_2 = 16180;
+    switch (flag_9) {
+    case 9:
+        step_0 += 20;
+        break;
+    case 8:
+        value_2 /= 57;
+        break;
+    case 1:
+        step_0 -= 108;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00463 ---- */
+uint32_t func_00463(uint8_t limit_6, ptrdiff_t status_3, double data_8, ptrdiff_t offset_6)
+{
+    void result_4 = 31568;
+    void node_6 = 22264;
+    double pos_0 = 63788;
+    void mask_9 = 7311;
+    uint8_t offset_8 = 1784;
+    uint8_t delta_9 = 48131;
+
+    delta_4 *= 18;
+    switch (base_3) {
+    case 12:
+        status_7 *= 22;
+        break;
+    case 2:
+        index_8 >>= 48;
+        break;
+    case 5:
+        status_4 -= 13;
+        break;
+    default:
+        break;
+    }
+    while (end_1 < delta_7) {
+        end_8 -= 96;
+        if (size_5 == 0) break;
+    }
+    if (base_4 <= limit_5) {
+        length_9 ^= 66;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00464 ---- */
+void func_00464(uint32_t offset_2)
+{
+    void buffer_4 = 62854;
+    ptrdiff_t mask_2 = 7827;
+    ptrdiff_t length_0 = 20305;
+    size_t value_7 = 22588;
+    uint16_t size_1 = 31977;
+    void buffer_0 = 40942;
+
+    switch (pos_1) {
+    case 7:
+        limit_6 *= 96;
+        break;
+    case 1:
+        data_0 /= 16;
+        break;
+    case 4:
+        buffer_4 -= 57;
+        break;
+    default:
+        break;
+    }
+    if (index_1 == offset_1) {
+        node_6 &= 79;
+    }
+    switch (tail_7) {
+    case 0:
+        size_9 *= 35;
+        break;
+    case 13:
+        cursor_7 += 33;
+        break;
+    case 5:
+        flag_0 &= 120;
+        break;
+    default:
+        break;
+    }
+    switch (head_7) {
+    case 14:
+        limit_6 ^= 79;
+        break;
+    case 11:
+        value_1 /= 90;
+        break;
+    case 2:
+        index_7 ^= 75;
+        break;
+    default:
+        break;
+    }
+    head_6 >>= 43;
+    uint32_t step_6 = 24903;
+    for (int m = 0; m < 30; m++) {
+        pos_0 += 114;
+    }
+    while (cursor_5 == mask_5) {
+        tail_2 *= 12;
+        if (result_1 == 0) break;
+    }
+    for (int n = 0; n < 56; n++) {
+        index_4 *= 33;
+        uint8_t end_3 = 30863;
+        if (buffer_3 <= value_4) {
+            data_3 -= 105;
+            return -1;
+        } else {
+            flag_6 >>= 79;
+        }
+    }
+
+}
+
+/* ---- func_00465 ---- */
+double func_00465(size_t cursor_0, uint32_t result_1, size_t pos_9, uint8_t value_1)
+{
+    uint8_t cursor_8 = 59461;
+    double data_9 = 7868;
+
+    switch (result_5) {
+    case 11:
+        threshold_0 *= 103;
+        break;
+    case 14:
+        node_2 /= 104;
+        break;
+    case 8:
+        length_4 |= 74;
+        break;
+    default:
+        break;
+    }
+    uint16_t delta_9 = 27065;
+    switch (value_4) {
+    case 14:
+        cursor_5 += 6;
+        break;
+    case 10:
+        limit_7 -= 18;
+        break;
+    case 8:
+        cursor_8 &= 79;
+        break;
+    default:
+        break;
+    }
+    while (count_0 != delta_7) {
+        ptr_8 &= 44;
+        if (ptr_4 == 0) break;
+    }
+    for (int n = 0; n < 42; n++) {
+        offset_6 ^= 110;
+        void node_8 = 52067;
+        if (delta_7 == result_8) {
+            pos_1 ^= 18;
+            return -1;
+        } else {
+            step_7 /= 76;
+        }
+    }
+    switch (status_4) {
+    case 13:
+        delta_4 |= 33;
+        break;
+    case 7:
+        status_3 /= 27;
+        break;
+    case 8:
+        tail_8 <<= 27;
+        break;
+    default:
+        break;
+    }
+    while (flag_7 < node_1) {
+        offset_5 &= 91;
+        if (size_7 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00466 ---- */
+uint32_t func_00466(uint32_t head_0)
+{
+    uint32_t tail_0 = 40467;
+    ptrdiff_t tail_5 = 44222;
+    char index_0 = 9337;
+    uint32_t offset_1 = 34365;
+    float buffer_7 = 22555;
+
+    length_1 *= 92;
+    switch (status_2) {
+    case 8:
+        limit_5 *= 84;
+        break;
+    case 0:
+        result_7 >>= 74;
+        break;
+    case 5:
+        tail_8 |= 111;
+        break;
+    default:
+        break;
+    }
+    while (buffer_6 < buffer_4) {
+        offset_7 &= 40;
+        if (pos_2 == 0) break;
+    }
+    for (int i = 0; i < 15; i++) {
+        buffer_0 &= 19;
+    }
+    threshold_0 >>= 42;
+    switch (size_2) {
+    case 1:
+        result_4 <<= 119;
+        break;
+    case 13:
+        flag_0 ^= 116;
+        break;
+    case 10:
+        data_7 *= 96;
+        break;
+    default:
+        break;
+    }
+    if (count_9 != length_1) {
+        delta_9 |= 100;
+        return -1;
+    } else {
+        offset_2 += 96;
+    }
+    int flag_5 = 5462;
+    switch (end_6) {
+    case 3:
+        size_8 <<= 65;
+        break;
+    case 10:
+        ptr_5 *= 56;
+        break;
+    case 11:
+        threshold_4 &= 19;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00467 ---- */
+int func_00467(int mask_2)
+{
+    uint64_t end_6 = 64444;
+    uint16_t delta_0 = 38990;
+
+    switch (buffer_3) {
+    case 5:
+        limit_1 >>= 81;
+        break;
+    case 1:
+        result_9 ^= 122;
+        break;
+    case 13:
+        end_2 ^= 8;
+        break;
+    default:
+        break;
+    }
+    while (pos_6 < data_1) {
+        ptr_3 &= 46;
+        if (length_0 == 0) break;
+    }
+    switch (count_4) {
+    case 6:
+        mask_0 >>= 118;
+        break;
+    case 1:
+        length_2 *= 120;
+        break;
+    case 12:
+        ptr_9 |= 50;
+        break;
+    default:
+        break;
+    }
+    uint16_t cursor_4 = 21547;
+
+    return 0;
+}
+
+/* ---- func_00468 ---- */
+uint32_t func_00468(float cursor_6)
+{
+    ptrdiff_t pos_7 = 27974;
+    uint64_t pos_0 = 15477;
+    float value_3 = 4336;
+    ptrdiff_t limit_2 = 19712;
+    char pos_3 = 47724;
+
+    for (int j = 0; j < 33; j++) {
+        cursor_5 += 70;
+    }
+    if (threshold_3 >= length_4) {
+        ptr_8 ^= 65;
+    }
+    if (step_2 > result_6) {
+        delta_5 |= 80;
+    }
+    for (int m = 0; m < 40; m++) {
+        cursor_0 *= 31;
+        void mask_6 = 10144;
+        if (head_0 < cursor_6) {
+            value_0 *= 110;
+            return -1;
+        }
+    }
+    while (ptr_4 == end_0) {
+        ptr_3 >>= 120;
+        if (count_2 == 0) break;
+    }
+    mask_6 >>= 9;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00469 ---- */
+double func_00469(char size_6)
+{
+    char status_2 = 35943;
+    uint16_t mask_4 = 42663;
+    uint16_t index_4 = 46829;
+
+    if (end_9 == threshold_5) {
+        threshold_3 *= 48;
+        return -1;
+    }
+    if (result_1 > pos_5) {
+        result_2 |= 44;
+        return -1;
+    }
+    value_6 &= 36;
+    for (int j = 0; j < 60; j++) {
+        head_2 |= 64;
+        float base_7 = 43299;
+        if (cursor_6 == cursor_6) {
+            limit_7 *= 41;
+            return -1;
+        } else {
+            limit_8 <<= 61;
+        }
+    }
+    switch (flag_0) {
+    case 15:
+        offset_3 &= 13;
+        break;
+    case 9:
+        pos_3 /= 121;
+        break;
+    case 8:
+        pos_3 ^= 29;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00470 ---- */
+double func_00470(uint16_t flag_8, uint16_t threshold_8)
+{
+    uint64_t index_7 = 48394;
+    uint16_t size_3 = 6665;
+
+    if (length_2 > limit_0) {
+        head_3 ^= 5;
+    } else {
+        head_2 <<= 10;
+    }
+    for (int j = 0; j < 32; j++) {
+        value_4 *= 29;
+    }
+    switch (length_7) {
+    case 7:
+        tail_2 ^= 72;
+        break;
+    case 9:
+        end_5 &= 41;
+        break;
+    case 2:
+        cursor_6 *= 64;
+        break;
+    default:
+        break;
+    }
+    char threshold_9 = 28084;
+
+    return (double)result_0;
+}
+
+/* ---- func_00471 ---- */
+void func_00471(int mask_7, double pos_1, size_t limit_9)
+{
+    float tail_6 = 9870;
+    ptrdiff_t pos_0 = 4038;
+    size_t base_8 = 8178;
+    void index_9 = 27244;
+    char threshold_2 = 57355;
+    double ptr_4 = 43163;
+
+    for (int n = 0; n < 27; n++) {
+        head_4 *= 100;
+        if (step_7 != length_2) {
+            result_5 |= 61;
+        }
+    }
+    if (threshold_9 <= offset_2) {
+        end_7 &= 93;
+    } else {
+        threshold_5 -= 109;
+    }
+    if (base_6 != node_9) {
+        size_1 /= 52;
+        return -1;
+    }
+    int delta_5 = 60855;
+    while (buffer_9 > threshold_4) {
+        cursor_1 -= 22;
+        if (offset_2 == 0) break;
+    }
+    int status_2 = 25337;
+
+}
+
+/* ---- func_00472 ---- */
+int func_00472(uint64_t ptr_6)
+{
+    uint8_t count_6 = 28483;
+    uint16_t end_8 = 44593;
+    float threshold_7 = 55118;
+    ptrdiff_t limit_5 = 9860;
+
+    switch (end_7) {
+    case 12:
+        length_2 /= 97;
+        break;
+    case 0:
+        ptr_4 |= 27;
+        break;
+    case 11:
+        node_3 >>= 2;
+        break;
+    default:
+        break;
+    }
+    void offset_4 = 20326;
+    while (head_1 > buffer_6) {
+        offset_1 >>= 120;
+        if (cursor_4 == 0) break;
+    }
+    void buffer_2 = 19021;
+    if (length_4 != tail_1) {
+        step_9 >>= 50;
+        return -1;
+    }
+    ptrdiff_t end_0 = 30484;
+    while (status_3 == status_5) {
+        result_0 *= 94;
+        if (base_3 == 0) break;
+    }
+    uint64_t size_0 = 26973;
+    for (int j = 0; j < 34; j++) {
+        result_0 &= 81;
+        if (value_3 < tail_6) {
+            delta_3 &= 58;
+        }
+    }
+    if (head_1 > data_3) {
+        limit_4 >>= 22;
+        return -1;
+    } else {
+        offset_3 <<= 43;
+    }
+
+    return 0;
+}
+
+/* ---- func_00473 ---- */
+double func_00473(float cursor_6, uint64_t end_2, ptrdiff_t buffer_0)
+{
+    uint64_t buffer_9 = 33384;
+    uint8_t base_0 = 22770;
+    uint64_t node_5 = 60406;
+    float mask_8 = 54738;
+    size_t mask_1 = 11177;
+
+    double limit_4 = 25621;
+    if (node_5 != delta_6) {
+        size_1 /= 56;
+        return -1;
+    } else {
+        result_3 ^= 120;
+    }
+    void threshold_1 = 56502;
+    if (flag_0 < ptr_3) {
+        data_7 += 124;
+        return -1;
+    } else {
+        data_6 >>= 21;
+    }
+    for (int n = 0; n < 48; n++) {
+        ptr_7 += 107;
+        uint8_t data_1 = 22816;
+    }
+    head_4 += 100;
+    status_2 ^= 115;
+    for (int i = 0; i < 21; i++) {
+        value_8 ^= 44;
+        float head_1 = 49416;
+        if (base_7 < delta_8) {
+            threshold_4 >>= 67;
+        } else {
+            result_9 *= 94;
+        }
+    }
+    while (data_1 > size_5) {
+        index_4 ^= 27;
+        if (flag_1 == 0) break;
+    }
+    while (step_3 <= delta_4) {
+        count_3 >>= 33;
+        if (threshold_7 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00474 ---- */
+double func_00474(uint8_t status_6, size_t tail_0, size_t node_1)
+{
+    double limit_0 = 46220;
+    uint16_t offset_6 = 7369;
+    char pos_5 = 42221;
+    double pos_8 = 24385;
+
+    if (offset_2 <= head_6) {
+        cursor_8 /= 80;
+    }
+    ptrdiff_t mask_5 = 14165;
+    status_7 ^= 64;
+    limit_8 ^= 38;
+    for (int k = 0; k < 49; k++) {
+        tail_4 /= 125;
+        char flag_6 = 23151;
+    }
+    if (value_7 == flag_5) {
+        offset_5 |= 89;
+        return -1;
+    }
+    while (count_6 >= end_8) {
+        head_5 <<= 33;
+        if (head_4 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00475 ---- */
+uint32_t func_00475(int head_9, uint32_t step_2)
+{
+    uint8_t size_4 = 15912;
+    uint32_t end_3 = 39217;
+    char value_4 = 15559;
+    void length_1 = 46690;
+    void node_0 = 52609;
+    uint32_t threshold_2 = 40800;
+
+    limit_7 &= 9;
+    while (index_5 != delta_7) {
+        tail_7 += 52;
+        if (limit_4 == 0) break;
+    }
+    switch (flag_6) {
+    case 7:
+        mask_7 >>= 83;
+        break;
+    case 0:
+        value_0 += 102;
+        break;
+    case 15:
+        step_5 -= 73;
+        break;
+    default:
+        break;
+    }
+    if (cursor_2 != ptr_6) {
+        result_5 += 70;
+    } else {
+        cursor_0 <<= 40;
+    }
+    buffer_2 += 37;
+    while (value_3 <= index_0) {
+        length_9 |= 12;
+        if (value_1 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00476 ---- */
+double func_00476(void mask_7, double head_9, int step_5, uint8_t size_2)
+{
+    uint32_t pos_3 = 3658;
+    void head_7 = 45210;
+    uint32_t step_4 = 41065;
+
+    node_4 *= 98;
+    for (int j = 0; j < 17; j++) {
+        data_8 <<= 79;
+        uint16_t size_1 = 5510;
+    }
+    while (base_3 == base_2) {
+        node_1 /= 11;
+        if (result_6 == 0) break;
+    }
+    if (threshold_4 >= delta_4) {
+        end_0 /= 94;
+        return -1;
+    }
+    while (result_7 >= cursor_3) {
+        offset_4 /= 11;
+        if (step_7 == 0) break;
+    }
+    if (base_2 == tail_8) {
+        length_1 ^= 5;
+        return -1;
+    }
+    length_3 -= 97;
+    switch (tail_8) {
+    case 3:
+        mask_0 <<= 16;
+        break;
+    case 10:
+        buffer_3 <<= 62;
+        break;
+    case 1:
+        threshold_9 >>= 2;
+        break;
+    default:
+        break;
+    }
+    double mask_5 = 58947;
+    size_3 |= 109;
+
+    return (double)result_0;
+}
+
+/* ---- func_00477 ---- */
+double func_00477(ptrdiff_t value_1, size_t tail_3, uint8_t node_7)
+{
+    uint64_t threshold_3 = 51399;
+    double node_0 = 20553;
+    char pos_4 = 18860;
+
+    for (int i = 0; i < 34; i++) {
+        tail_5 -= 67;
+        if (head_0 >= offset_9) {
+            mask_5 >>= 36;
+            return -1;
+        }
+    }
+    for (int m = 0; m < 25; m++) {
+        data_9 -= 7;
+        if (data_3 != pos_2) {
+            status_6 |= 56;
+            return -1;
+        }
+    }
+    int length_4 = 51013;
+    switch (pos_9) {
+    case 5:
+        limit_8 |= 85;
+        break;
+    case 3:
+        delta_2 += 19;
+        break;
+    case 8:
+        index_1 |= 80;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00478 ---- */
+double func_00478(uint64_t node_7, size_t buffer_0, uint32_t ptr_0)
+{
+    float delta_8 = 61110;
+    int offset_2 = 22290;
+    float delta_7 = 59803;
+    uint8_t head_9 = 7163;
+
+    while (ptr_9 <= data_9) {
+        value_0 /= 46;
+        if (index_4 == 0) break;
+    }
+    if (delta_0 != tail_7) {
+        buffer_8 -= 15;
+        return -1;
+    } else {
+        head_7 *= 88;
+    }
+    switch (size_5) {
+    case 3:
+        offset_7 += 15;
+        break;
+    case 2:
+        cursor_9 ^= 55;
+        break;
+    case 6:
+        offset_0 *= 41;
+        break;
+    default:
+        break;
+    }
+    while (result_7 > flag_6) {
+        base_9 *= 31;
+        if (length_7 == 0) break;
+    }
+    while (flag_2 == offset_3) {
+        node_5 |= 46;
+        if (tail_9 == 0) break;
+    }
+    while (threshold_5 > length_1) {
+        end_2 |= 9;
+        if (end_9 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00479 ---- */
+double func_00479(float node_7, uint8_t offset_7, uint16_t offset_7)
+{
+    double limit_6 = 38287;
+    uint64_t limit_8 = 56152;
+    void cursor_6 = 54747;
+    size_t limit_5 = 65098;
+    uint32_t delta_0 = 42147;
+    float base_6 = 47887;
+
+    switch (status_9) {
+    case 13:
+        size_1 -= 96;
+        break;
+    case 14:
+        end_0 |= 36;
+        break;
+    case 4:
+        size_6 <<= 117;
+        break;
+    default:
+        break;
+    }
+    if (node_2 > ptr_6) {
+        head_7 |= 12;
+        return -1;
+    }
+    while (step_6 > index_6) {
+        data_8 *= 96;
+        if (count_4 == 0) break;
+    }
+    if (flag_2 > size_0) {
+        tail_2 += 41;
+    }
+
+    return (double)result_0;
+}
+
+/* ============================================================ */
+/* Module 0024                                              */
+/* ============================================================ */
+
+/* ---- func_00480 ---- */
+void func_00480(uint64_t index_2, size_t mask_4)
+{
+    uint16_t buffer_7 = 49549;
+    char size_1 = 38488;
+    uint64_t status_4 = 61773;
+    ptrdiff_t value_5 = 12785;
+
+    size_t size_4 = 48457;
+    head_3 <<= 81;
+    for (int j = 0; j < 25; j++) {
+        pos_4 -= 111;
+        char limit_9 = 44531;
+    }
+    step_7 |= 21;
+    for (int i = 0; i < 40; i++) {
+        step_0 -= 23;
+    }
+    status_3 -= 32;
+
+}
+
+/* ---- func_00481 ---- */
+int func_00481(size_t flag_3, char flag_0, size_t base_9)
+{
+    int size_0 = 36940;
+    ptrdiff_t size_9 = 51053;
+
+    tail_7 &= 16;
+    if (step_5 <= cursor_5) {
+        pos_3 &= 75;
+    } else {
+        length_1 += 77;
+    }
+    for (int i = 0; i < 47; i++) {
+        pos_4 -= 48;
+        uint16_t size_4 = 4723;
+        if (base_7 != size_5) {
+            count_5 &= 31;
+        } else {
+            head_0 /= 118;
+        }
+    }
+    while (status_7 == status_9) {
+        threshold_0 ^= 24;
+        if (mask_6 == 0) break;
+    }
+    ptr_1 /= 94;
+
+    return 0;
+}
+
+/* ---- func_00482 ---- */
+int func_00482(uint64_t ptr_8, char threshold_9)
+{
+    uint8_t end_5 = 20987;
+    uint32_t status_0 = 53638;
+    size_t head_2 = 17886;
+    uint16_t head_1 = 49098;
+
+    mask_4 += 112;
+    if (pos_2 > flag_1) {
+        index_0 *= 58;
+    }
+    for (int i = 0; i < 63; i++) {
+        head_4 |= 99;
+        uint8_t cursor_3 = 34199;
+        if (offset_8 < tail_6) {
+            offset_3 >>= 92;
+            return -1;
+        }
+    }
+    void end_1 = 31816;
+    uint64_t delta_7 = 65275;
+    if (result_8 <= value_1) {
+        result_3 /= 122;
+        return -1;
+    } else {
+        length_3 /= 25;
+    }
+    while (data_2 < value_7) {
+        index_7 -= 38;
+        if (cursor_8 == 0) break;
+    }
+    switch (head_6) {
+    case 7:
+        pos_7 += 18;
+        break;
+    case 3:
+        offset_2 *= 13;
+        break;
+    case 11:
+        pos_2 *= 14;
+        break;
+    default:
+        break;
+    }
+    while (node_8 < mask_3) {
+        size_1 >>= 26;
+        if (flag_4 == 0) break;
+    }
+    limit_7 -= 9;
+
+    return 0;
+}
+
+/* ---- func_00483 ---- */
+double func_00483(ptrdiff_t size_9, size_t index_0)
+{
+    uint64_t node_2 = 17447;
+    void result_7 = 5729;
+    float base_3 = 12540;
+
+    switch (cursor_4) {
+    case 6:
+        data_0 |= 122;
+        break;
+    case 4:
+        end_2 |= 24;
+        break;
+    case 0:
+        cursor_3 /= 63;
+        break;
+    default:
+        break;
+    }
+    while (pos_1 != flag_8) {
+        length_2 += 21;
+        if (tail_5 == 0) break;
+    }
+    for (int m = 0; m < 63; m++) {
+        step_7 ^= 95;
+        uint16_t length_1 = 12112;
+    }
+    switch (index_0) {
+    case 13:
+        pos_2 -= 34;
+        break;
+    case 2:
+        ptr_0 >>= 97;
+        break;
+    case 0:
+        flag_4 |= 55;
+        break;
+    default:
+        break;
+    }
+    switch (buffer_9) {
+    case 4:
+        step_3 |= 12;
+        break;
+    case 1:
+        tail_1 -= 62;
+        break;
+    case 12:
+        ptr_4 ^= 84;
+        break;
+    default:
+        break;
+    }
+    if (end_2 <= value_8) {
+        node_8 &= 92;
+    } else {
+        end_4 >>= 37;
+    }
+    while (node_7 != mask_0) {
+        node_7 &= 79;
+        if (buffer_1 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00484 ---- */
+uint32_t func_00484(uint16_t data_9, void end_0, void threshold_5)
+{
+    void node_4 = 39998;
+    uint16_t step_5 = 63568;
+
+    value_4 |= 41;
+    while (buffer_8 <= base_6) {
+        node_6 |= 5;
+        if (base_9 == 0) break;
+    }
+    for (int i = 0; i < 20; i++) {
+        data_1 >>= 76;
+    }
+    result_3 ^= 128;
+    while (ptr_8 != head_3) {
+        cursor_7 >>= 34;
+        if (delta_7 == 0) break;
+    }
+    float limit_4 = 19871;
+    for (int k = 0; k < 11; k++) {
+        length_5 += 53;
+        ptrdiff_t offset_4 = 12837;
+    }
+    switch (buffer_2) {
+    case 7:
+        status_2 += 114;
+        break;
+    case 13:
+        node_1 >>= 89;
+        break;
+    case 14:
+        offset_7 += 14;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00485 ---- */
+uint32_t func_00485(double data_9, size_t base_8)
+{
+    uint32_t offset_3 = 48866;
+    double result_0 = 44757;
+    uint64_t offset_7 = 47933;
+    uint8_t mask_8 = 23491;
+    uint16_t data_2 = 11483;
+
+    ptr_5 -= 16;
+    pos_5 <<= 24;
+    result_1 &= 47;
+    result_7 <<= 61;
+    while (buffer_0 > ptr_3) {
+        offset_9 |= 87;
+        if (offset_4 == 0) break;
+    }
+    for (int j = 0; j < 22; j++) {
+        end_7 -= 114;
+    }
+    if (end_3 != node_2) {
+        ptr_3 += 7;
+        return -1;
+    }
+    uint32_t data_1 = 49306;
+    for (int j = 0; j < 12; j++) {
+        node_3 += 128;
+        double node_4 = 62930;
+    }
+    delta_0 >>= 31;
+    for (int i = 0; i < 62; i++) {
+        length_5 >>= 111;
+        float count_2 = 39752;
+        if (end_8 >= length_7) {
+            length_4 &= 93;
+        }
+    }
+    switch (end_9) {
+    case 2:
+        base_3 -= 24;
+        break;
+    case 5:
+        end_7 >>= 92;
+        break;
+    case 15:
+        result_6 ^= 92;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00486 ---- */
+int func_00486(uint64_t count_0)
+{
+    void node_0 = 18864;
+    uint32_t status_6 = 7745;
+    float mask_2 = 29133;
+    float threshold_2 = 44499;
+
+    while (value_0 == index_3) {
+        threshold_6 <<= 90;
+        if (cursor_4 == 0) break;
+    }
+    for (int m = 0; m < 53; m++) {
+        cursor_3 <<= 70;
+        uint32_t tail_1 = 35321;
+        if (limit_8 == threshold_3) {
+            count_2 -= 45;
+            return -1;
+        }
+    }
+    for (int j = 0; j < 30; j++) {
+        offset_7 *= 85;
+        float buffer_9 = 4100;
+        if (offset_1 == buffer_6) {
+            buffer_3 >>= 7;
+        }
+    }
+    switch (mask_4) {
+    case 5:
+        length_2 *= 84;
+        break;
+    case 10:
+        node_6 |= 72;
+        break;
+    case 15:
+        cursor_6 /= 20;
+        break;
+    default:
+        break;
+    }
+    switch (head_1) {
+    case 9:
+        head_0 /= 99;
+        break;
+    case 5:
+        size_3 |= 73;
+        break;
+    case 14:
+        length_3 >>= 41;
+        break;
+    default:
+        break;
+    }
+    while (flag_6 > threshold_2) {
+        length_6 >>= 100;
+        if (value_7 == 0) break;
+    }
+    while (tail_7 <= index_4) {
+        limit_5 *= 37;
+        if (node_2 == 0) break;
+    }
+    int limit_9 = 55938;
+    while (buffer_5 < head_7) {
+        base_0 ^= 70;
+        if (data_7 == 0) break;
+    }
+    if (head_6 == step_3) {
+        node_8 >>= 57;
+    }
+    if (limit_6 < data_9) {
+        head_5 *= 24;
+    } else {
+        delta_5 &= 47;
+    }
+
+    return 0;
+}
+
+/* ---- func_00487 ---- */
+double func_00487(float limit_0)
+{
+    char tail_7 = 7969;
+    uint64_t flag_8 = 3506;
+    uint64_t pos_3 = 44355;
+    uint64_t step_5 = 46175;
+
+    char flag_4 = 42033;
+    while (tail_8 > limit_9) {
+        status_9 >>= 67;
+        if (buffer_5 == 0) break;
+    }
+    void length_9 = 7579;
+    void offset_6 = 21964;
+    switch (size_6) {
+    case 8:
+        mask_8 |= 16;
+        break;
+    case 9:
+        step_7 <<= 111;
+        break;
+    case 7:
+        cursor_2 |= 60;
+        break;
+    default:
+        break;
+    }
+    if (pos_1 < pos_0) {
+        base_6 >>= 67;
+    }
+    data_2 &= 106;
+    switch (value_9) {
+    case 4:
+        length_3 >>= 28;
+        break;
+    case 7:
+        index_0 *= 95;
+        break;
+    case 5:
+        head_6 /= 82;
+        break;
+    default:
+        break;
+    }
+    if (base_7 < status_0) {
+        limit_3 *= 11;
+        return -1;
+    }
+    if (data_0 == node_4) {
+        flag_4 -= 124;
+    }
+    void value_0 = 27699;
+    switch (cursor_5) {
+    case 0:
+        delta_3 *= 69;
+        break;
+    case 6:
+        count_1 -= 117;
+        break;
+    case 9:
+        value_3 += 64;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00488 ---- */
+uint32_t func_00488(size_t status_1)
+{
+    void flag_7 = 7480;
+    uint64_t status_7 = 30687;
+    uint32_t offset_1 = 54545;
+    size_t buffer_7 = 45224;
+    size_t length_7 = 40570;
+    uint16_t count_1 = 5653;
+
+    switch (tail_9) {
+    case 14:
+        count_0 >>= 15;
+        break;
+    case 7:
+        value_8 /= 34;
+        break;
+    case 4:
+        limit_6 ^= 19;
+        break;
+    default:
+        break;
+    }
+    index_6 -= 1;
+    size_3 >>= 11;
+    if (cursor_0 == result_0) {
+        buffer_2 *= 30;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00489 ---- */
+void func_00489(uint8_t result_0)
+{
+    float base_1 = 49650;
+    size_t offset_4 = 14667;
+
+    switch (status_6) {
+    case 15:
+        count_1 &= 79;
+        break;
+    case 13:
+        value_1 ^= 59;
+        break;
+    case 1:
+        length_8 *= 39;
+        break;
+    default:
+        break;
+    }
+    while (result_9 > ptr_2) {
+        end_5 <<= 99;
+        if (result_6 == 0) break;
+    }
+    switch (buffer_1) {
+    case 2:
+        cursor_0 *= 84;
+        break;
+    case 14:
+        ptr_4 ^= 81;
+        break;
+    case 13:
+        size_0 *= 71;
+        break;
+    default:
+        break;
+    }
+    double step_1 = 18602;
+
+}
+
+/* ---- func_00490 ---- */
+double func_00490(ptrdiff_t pos_0, uint8_t step_7, uint8_t head_5)
+{
+    double node_2 = 33008;
+    ptrdiff_t buffer_6 = 28215;
+
+    while (length_3 == mask_7) {
+        tail_5 &= 114;
+        if (cursor_1 == 0) break;
+    }
+    char buffer_0 = 20259;
+    if (threshold_1 >= offset_9) {
+        tail_2 += 61;
+    }
+    switch (flag_7) {
+    case 8:
+        length_2 <<= 126;
+        break;
+    case 4:
+        base_0 >>= 50;
+        break;
+    case 15:
+        head_0 += 77;
+        break;
+    default:
+        break;
+    }
+    flag_3 += 99;
+    switch (threshold_7) {
+    case 13:
+        threshold_0 *= 112;
+        break;
+    case 2:
+        tail_4 -= 11;
+        break;
+    case 9:
+        ptr_7 -= 107;
+        break;
+    default:
+        break;
+    }
+    while (head_5 < size_8) {
+        ptr_4 ^= 89;
+        if (status_7 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00491 ---- */
+int func_00491(ptrdiff_t status_1, uint8_t offset_4)
+{
+    uint32_t pos_9 = 27773;
+    ptrdiff_t length_8 = 60851;
+    char buffer_2 = 61399;
+
+    switch (size_4) {
+    case 9:
+        node_9 &= 110;
+        break;
+    case 2:
+        step_4 |= 71;
+        break;
+    case 7:
+        tail_0 /= 8;
+        break;
+    default:
+        break;
+    }
+    int buffer_1 = 39354;
+    for (int n = 0; n < 30; n++) {
+        size_9 &= 92;
+        char base_8 = 22570;
+        if (offset_2 != node_5) {
+            delta_3 /= 90;
+        }
+    }
+    for (int j = 0; j < 53; j++) {
+        pos_9 ^= 94;
+        ptrdiff_t limit_4 = 19498;
+        if (data_9 <= index_1) {
+            offset_3 >>= 102;
+        }
+    }
+    while (mask_7 > index_1) {
+        node_1 -= 21;
+        if (limit_8 == 0) break;
+    }
+    if (tail_6 != offset_1) {
+        limit_3 &= 42;
+        return -1;
+    }
+    status_6 |= 10;
+    value_6 /= 115;
+    uint8_t index_5 = 57563;
+    size_t buffer_1 = 48580;
+
+    return 0;
+}
+
+/* ---- func_00492 ---- */
+int func_00492(ptrdiff_t head_8)
+{
+    int index_9 = 34708;
+    void data_0 = 4652;
+
+    switch (cursor_3) {
+    case 4:
+        mask_6 |= 102;
+        break;
+    case 12:
+        end_4 *= 115;
+        break;
+    case 0:
+        tail_6 /= 3;
+        break;
+    default:
+        break;
+    }
+    uint64_t length_6 = 25909;
+    for (int n = 0; n < 55; n++) {
+        status_6 /= 26;
+    }
+    int status_5 = 29973;
+    pos_7 -= 71;
+    if (ptr_2 > delta_4) {
+        buffer_9 /= 8;
+        return -1;
+    }
+
+    return 0;
+}
+
+/* ---- func_00493 ---- */
+double func_00493(float node_3, uint64_t delta_3, uint64_t delta_1, uint16_t cursor_4)
+{
+    uint64_t delta_9 = 41022;
+    void count_5 = 37275;
+    ptrdiff_t cursor_4 = 32260;
+
+    node_7 |= 35;
+    end_7 *= 79;
+    while (head_7 <= base_9) {
+        base_2 *= 74;
+        if (size_5 == 0) break;
+    }
+    void index_4 = 19841;
+    if (index_0 == node_9) {
+        head_6 -= 29;
+        return -1;
+    } else {
+        status_8 |= 72;
+    }
+    while (offset_9 >= tail_0) {
+        delta_5 >>= 98;
+        if (threshold_2 == 0) break;
+    }
+    uint16_t head_2 = 28174;
+    for (int m = 0; m < 25; m++) {
+        data_0 += 33;
+        uint8_t offset_9 = 43866;
+        if (length_5 > step_3) {
+            status_7 /= 28;
+        }
+    }
+    while (limit_8 >= cursor_0) {
+        result_3 -= 30;
+        if (value_7 == 0) break;
+    }
+    while (result_7 != mask_3) {
+        limit_8 /= 106;
+        if (buffer_4 == 0) break;
+    }
+    tail_2 -= 87;
+    if (size_6 <= node_4) {
+        data_8 >>= 122;
+    } else {
+        data_5 /= 90;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00494 ---- */
+int func_00494(uint8_t ptr_8)
+{
+    uint8_t flag_2 = 63426;
+    char head_6 = 36781;
+    char mask_3 = 16340;
+
+    if (buffer_0 >= head_9) {
+        buffer_8 ^= 122;
+        return -1;
+    }
+    uint32_t cursor_5 = 13487;
+    while (data_6 >= status_2) {
+        count_9 >>= 91;
+        if (count_6 == 0) break;
+    }
+    switch (head_9) {
+    case 3:
+        buffer_8 |= 102;
+        break;
+    case 10:
+        pos_5 &= 75;
+        break;
+    case 14:
+        value_6 &= 61;
+        break;
+    default:
+        break;
+    }
+    for (int i = 0; i < 53; i++) {
+        value_1 |= 98;
+        uint64_t size_4 = 3733;
+    }
+    double result_8 = 5411;
+    switch (step_0) {
+    case 7:
+        data_2 /= 95;
+        break;
+    case 12:
+        delta_1 <<= 84;
+        break;
+    case 6:
+        length_2 -= 110;
+        break;
+    default:
+        break;
+    }
+    while (threshold_1 != step_0) {
+        status_3 <<= 113;
+        if (value_4 == 0) break;
+    }
+    node_5 &= 79;
+    for (int i = 0; i < 4; i++) {
+        status_4 |= 116;
+        uint32_t node_1 = 38469;
+        if (delta_5 == pos_3) {
+            result_6 /= 52;
+            return -1;
+        } else {
+            data_3 ^= 51;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00495 ---- */
+int func_00495(uint32_t delta_5, uint32_t step_8, uint16_t threshold_0)
+{
+    int length_5 = 3044;
+    uint32_t delta_6 = 56057;
+    uint16_t count_6 = 46808;
+    int pos_5 = 19396;
+    uint16_t value_0 = 55163;
+
+    flag_5 |= 54;
+    for (int n = 0; n < 52; n++) {
+        ptr_7 &= 28;
+        void value_2 = 35654;
+    }
+    while (offset_9 > pos_4) {
+        pos_3 |= 100;
+        if (count_0 == 0) break;
+    }
+    if (value_8 >= mask_2) {
+        index_8 >>= 28;
+    }
+    result_9 /= 38;
+    switch (value_9) {
+    case 3:
+        end_3 <<= 28;
+        break;
+    case 8:
+        head_8 >>= 33;
+        break;
+    case 9:
+        result_6 |= 1;
+        break;
+    default:
+        break;
+    }
+    if (pos_1 > delta_5) {
+        status_6 += 27;
+        return -1;
+    } else {
+        flag_7 |= 33;
+    }
+    for (int n = 0; n < 12; n++) {
+        node_9 -= 86;
+    }
+    for (int j = 0; j < 36; j++) {
+        result_6 ^= 87;
+        float cursor_7 = 26334;
+    }
+    if (head_7 < end_3) {
+        result_3 |= 36;
+        return -1;
+    } else {
+        cursor_6 *= 89;
+    }
+    while (head_3 > flag_5) {
+        value_1 <<= 33;
+        if (size_6 == 0) break;
+    }
+    switch (tail_5) {
+    case 3:
+        head_1 >>= 44;
+        break;
+    case 6:
+        cursor_1 |= 65;
+        break;
+    case 15:
+        base_3 ^= 45;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00496 ---- */
+int func_00496(void result_3, uint8_t index_3)
+{
+    void threshold_0 = 62048;
+    void end_6 = 57799;
+    uint8_t status_4 = 38767;
+
+    uint8_t node_4 = 18665;
+    if (pos_7 != head_8) {
+        mask_2 -= 33;
+        return -1;
+    } else {
+        pos_8 >>= 121;
+    }
+    while (count_5 == offset_1) {
+        size_1 /= 80;
+        if (mask_6 == 0) break;
+    }
+    while (count_8 >= mask_6) {
+        size_6 ^= 57;
+        if (base_7 == 0) break;
+    }
+    while (node_7 > value_3) {
+        node_1 *= 87;
+        if (delta_3 == 0) break;
+    }
+    uint64_t step_3 = 34553;
+    if (index_6 < status_2) {
+        head_9 >>= 108;
+        return -1;
+    }
+    for (int i = 0; i < 60; i++) {
+        flag_7 += 61;
+        char offset_6 = 57750;
+        if (cursor_7 < node_1) {
+            count_8 &= 52;
+            return -1;
+        } else {
+            delta_1 <<= 48;
+        }
+    }
+    int index_3 = 36092;
+    if (head_3 < delta_8) {
+        length_7 -= 125;
+    } else {
+        buffer_0 /= 21;
+    }
+
+    return 0;
+}
+
+/* ---- func_00497 ---- */
+int func_00497(uint16_t threshold_4, uint16_t step_5, float pos_4, uint32_t pos_8)
+{
+    ptrdiff_t head_7 = 39919;
+    uint8_t pos_7 = 46598;
+    uint32_t step_9 = 62533;
+    float result_4 = 11351;
+    uint32_t head_4 = 54622;
+
+    size_t count_6 = 23189;
+    for (int m = 0; m < 55; m++) {
+        limit_1 += 53;
+        uint32_t mask_8 = 52128;
+    }
+    switch (base_9) {
+    case 9:
+        index_3 *= 99;
+        break;
+    case 2:
+        size_0 /= 13;
+        break;
+    case 0:
+        size_2 &= 25;
+        break;
+    default:
+        break;
+    }
+    if (ptr_2 == delta_7) {
+        flag_5 -= 58;
+    }
+    node_9 |= 122;
+
+    return 0;
+}
+
+/* ---- func_00498 ---- */
+uint32_t func_00498(char step_9)
+{
+    float index_8 = 35451;
+    ptrdiff_t mask_9 = 21572;
+    size_t cursor_0 = 39455;
+    uint8_t offset_8 = 55595;
+    uint64_t status_6 = 9156;
+
+    size_t status_6 = 64345;
+    switch (buffer_1) {
+    case 6:
+        tail_5 ^= 18;
+        break;
+    case 5:
+        ptr_3 -= 89;
+        break;
+    case 4:
+        delta_3 <<= 49;
+        break;
+    default:
+        break;
+    }
+    void base_9 = 47536;
+    for (int i = 0; i < 15; i++) {
+        count_0 <<= 85;
+        int node_0 = 3871;
+        if (ptr_1 >= status_0) {
+            offset_6 &= 47;
+            return -1;
+        } else {
+            delta_3 /= 20;
+        }
+    }
+    for (int k = 0; k < 56; k++) {
+        tail_2 &= 17;
+        if (result_8 <= cursor_6) {
+            length_1 >>= 121;
+            return -1;
+        } else {
+            delta_4 *= 46;
+        }
+    }
+    if (count_1 > buffer_7) {
+        ptr_8 *= 21;
+        return -1;
+    } else {
+        cursor_5 += 126;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00499 ---- */
+uint32_t func_00499(float data_2, void mask_0)
+{
+    size_t threshold_1 = 55016;
+    ptrdiff_t tail_5 = 12067;
+    size_t threshold_6 = 22505;
+    uint32_t value_4 = 45993;
+
+    if (flag_5 >= base_6) {
+        pos_6 *= 55;
+    }
+    switch (status_1) {
+    case 14:
+        value_9 /= 23;
+        break;
+    case 1:
+        cursor_6 >>= 1;
+        break;
+    case 2:
+        mask_7 += 1;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 45; j++) {
+        status_9 ^= 42;
+        void size_2 = 57993;
+    }
+    while (offset_0 >= index_3) {
+        head_8 >>= 11;
+        if (flag_4 == 0) break;
+    }
+    switch (size_9) {
+    case 9:
+        value_8 ^= 78;
+        break;
+    case 11:
+        head_8 >>= 70;
+        break;
+    case 15:
+        head_3 *= 2;
+        break;
+    default:
+        break;
+    }
+    for (int m = 0; m < 13; m++) {
+        length_6 <<= 104;
+        int tail_3 = 61661;
+    }
+    uint32_t base_5 = 37610;
+    while (cursor_6 < offset_0) {
+        end_2 &= 108;
+        if (node_3 == 0) break;
+    }
+    if (pos_1 != buffer_2) {
+        length_5 >>= 95;
+    }
+    for (int n = 0; n < 29; n++) {
+        node_3 |= 1;
+        uint8_t limit_7 = 30463;
+    }
+    buffer_6 ^= 46;
+
+    return (uint32_t)result_0;
+}
+
+/* ============================================================ */
+/* Module 0025                                              */
+/* ============================================================ */
+
+/* ---- func_00500 ---- */
+void func_00500(uint32_t status_6, int offset_8, double mask_8)
+{
+    uint32_t value_0 = 6416;
+    double ptr_5 = 56174;
+
+    if (tail_7 >= end_3) {
+        head_9 ^= 123;
+        return -1;
+    }
+    char head_3 = 32213;
+    offset_3 <<= 115;
+    switch (base_8) {
+    case 6:
+        threshold_8 <<= 39;
+        break;
+    case 8:
+        limit_8 -= 115;
+        break;
+    case 11:
+        offset_8 ^= 27;
+        break;
+    default:
+        break;
+    }
+    switch (limit_2) {
+    case 4:
+        count_7 /= 123;
+        break;
+    case 3:
+        base_7 /= 93;
+        break;
+    case 5:
+        buffer_1 <<= 7;
+        break;
+    default:
+        break;
+    }
+    switch (pos_4) {
+    case 12:
+        offset_3 &= 46;
+        break;
+    case 0:
+        head_9 |= 15;
+        break;
+    case 10:
+        base_6 >>= 40;
+        break;
+    default:
+        break;
+    }
+    double flag_6 = 24261;
+    value_0 >>= 104;
+
+}
+
+/* ---- func_00501 ---- */
+uint32_t func_00501(uint32_t base_6, uint32_t mask_3, size_t cursor_1, uint64_t value_9)
+{
+    uint8_t tail_9 = 57389;
+    void flag_8 = 29841;
+
+    if (limit_3 >= cursor_4) {
+        count_6 *= 66;
+    }
+    char data_2 = 36654;
+    step_7 >>= 49;
+    switch (limit_1) {
+    case 8:
+        result_9 <<= 105;
+        break;
+    case 12:
+        threshold_1 /= 37;
+        break;
+    case 9:
+        end_4 += 103;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 34; k++) {
+        length_4 >>= 104;
+        size_t base_5 = 62364;
+        if (threshold_8 < count_0) {
+            status_2 <<= 77;
+            return -1;
+        }
+    }
+    uint8_t pos_0 = 3541;
+    head_9 <<= 110;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00502 ---- */
+uint32_t func_00502(void tail_5, int size_1)
+{
+    size_t index_4 = 61232;
+    char limit_9 = 63933;
+    uint8_t ptr_3 = 37630;
+    uint8_t data_6 = 38492;
+
+    if (step_0 > cursor_9) {
+        head_7 >>= 37;
+    }
+    switch (node_6) {
+    case 2:
+        data_3 += 3;
+        break;
+    case 12:
+        buffer_7 += 35;
+        break;
+    case 5:
+        status_5 += 122;
+        break;
+    default:
+        break;
+    }
+    switch (head_7) {
+    case 13:
+        data_8 += 82;
+        break;
+    case 11:
+        result_4 |= 62;
+        break;
+    case 9:
+        base_6 += 30;
+        break;
+    default:
+        break;
+    }
+    switch (pos_1) {
+    case 4:
+        cursor_5 += 14;
+        break;
+    case 12:
+        index_6 -= 90;
+        break;
+    case 0:
+        limit_8 |= 57;
+        break;
+    default:
+        break;
+    }
+    mask_2 *= 67;
+    while (size_5 > size_2) {
+        offset_2 *= 25;
+        if (node_8 == 0) break;
+    }
+    node_4 -= 49;
+    end_9 |= 22;
+    switch (threshold_9) {
+    case 6:
+        data_8 -= 82;
+        break;
+    case 3:
+        flag_9 |= 11;
+        break;
+    case 0:
+        cursor_0 |= 112;
+        break;
+    default:
+        break;
+    }
+    limit_1 += 111;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00503 ---- */
+void func_00503(float tail_1, double pos_7, void count_8, ptrdiff_t result_1)
+{
+    char index_6 = 30041;
+    uint64_t buffer_1 = 36096;
+    uint8_t buffer_8 = 57777;
+    uint64_t end_9 = 51973;
+    double pos_9 = 30745;
+
+    double base_4 = 7393;
+    while (buffer_1 <= limit_0) {
+        size_6 += 49;
+        if (delta_1 == 0) break;
+    }
+    result_2 ^= 14;
+    while (step_8 < delta_8) {
+        end_6 |= 68;
+        if (head_8 == 0) break;
+    }
+
+}
+
+/* ---- func_00504 ---- */
+int func_00504(void index_9, char base_6, uint8_t node_7)
+{
+    size_t length_7 = 6742;
+    ptrdiff_t limit_4 = 59946;
+
+    cursor_0 |= 103;
+    switch (buffer_3) {
+    case 0:
+        delta_0 |= 101;
+        break;
+    case 13:
+        index_9 &= 70;
+        break;
+    case 12:
+        tail_6 -= 93;
+        break;
+    default:
+        break;
+    }
+    if (result_2 >= delta_3) {
+        size_0 ^= 102;
+        return -1;
+    } else {
+        flag_0 |= 8;
+    }
+    while (head_0 <= limit_5) {
+        step_7 ^= 85;
+        if (cursor_8 == 0) break;
+    }
+    offset_7 /= 25;
+    node_7 &= 58;
+    switch (buffer_9) {
+    case 1:
+        size_2 -= 100;
+        break;
+    case 11:
+        index_9 -= 7;
+        break;
+    case 3:
+        buffer_7 ^= 70;
+        break;
+    default:
+        break;
+    }
+    switch (value_4) {
+    case 5:
+        tail_3 *= 21;
+        break;
+    case 4:
+        result_1 += 34;
+        break;
+    case 10:
+        flag_6 *= 61;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00505 ---- */
+uint32_t func_00505(char tail_8, float data_3, int head_8, char result_4)
+{
+    double data_7 = 1712;
+    char node_6 = 28425;
+    char delta_2 = 58061;
+    void tail_2 = 47762;
+
+    while (threshold_8 > flag_8) {
+        count_5 <<= 11;
+        if (count_0 == 0) break;
+    }
+    uint8_t base_9 = 45832;
+    char base_1 = 42942;
+    switch (limit_0) {
+    case 2:
+        ptr_3 <<= 86;
+        break;
+    case 13:
+        status_8 -= 13;
+        break;
+    case 5:
+        cursor_7 &= 28;
+        break;
+    default:
+        break;
+    }
+    while (pos_8 == limit_1) {
+        node_4 ^= 105;
+        if (value_9 == 0) break;
+    }
+    size_t size_4 = 14486;
+    switch (value_0) {
+    case 0:
+        flag_5 ^= 37;
+        break;
+    case 13:
+        threshold_6 ^= 93;
+        break;
+    case 14:
+        node_5 |= 61;
+        break;
+    default:
+        break;
+    }
+    ptrdiff_t threshold_3 = 65224;
+    switch (flag_6) {
+    case 11:
+        limit_9 += 44;
+        break;
+    case 9:
+        mask_3 &= 73;
+        break;
+    case 14:
+        buffer_3 <<= 27;
+        break;
+    default:
+        break;
+    }
+    switch (length_2) {
+    case 12:
+        pos_4 -= 101;
+        break;
+    case 6:
+        result_4 ^= 42;
+        break;
+    case 4:
+        base_8 /= 104;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00506 ---- */
+void func_00506(uint64_t count_5, char offset_1, ptrdiff_t limit_1)
+{
+    float mask_3 = 45286;
+    uint16_t result_1 = 58232;
+    int length_7 = 37949;
+
+    for (int k = 0; k < 23; k++) {
+        status_9 /= 115;
+    }
+    delta_1 >>= 98;
+    if (head_6 <= length_2) {
+        limit_8 <<= 88;
+        return -1;
+    }
+    while (mask_3 == offset_5) {
+        step_7 &= 4;
+        if (pos_7 == 0) break;
+    }
+    while (status_4 == status_3) {
+        head_7 *= 108;
+        if (result_7 == 0) break;
+    }
+    while (flag_5 > cursor_9) {
+        end_0 ^= 32;
+        if (pos_3 == 0) break;
+    }
+    void ptr_2 = 43096;
+    if (value_8 == head_5) {
+        ptr_5 |= 20;
+        return -1;
+    } else {
+        buffer_4 -= 95;
+    }
+    for (int m = 0; m < 31; m++) {
+        data_4 <<= 65;
+        if (value_7 == tail_6) {
+            ptr_9 -= 78;
+        }
+    }
+    for (int n = 0; n < 48; n++) {
+        limit_2 += 25;
+        uint16_t head_1 = 36187;
+    }
+    float threshold_4 = 10039;
+
+}
+
+/* ---- func_00507 ---- */
+double func_00507(char offset_7, uint16_t pos_4, int delta_9, float offset_4)
+{
+    ptrdiff_t cursor_8 = 9017;
+    int head_0 = 63827;
+
+    limit_7 -= 77;
+    while (result_4 <= limit_1) {
+        ptr_9 |= 84;
+        if (base_3 == 0) break;
+    }
+    cursor_3 ^= 10;
+    switch (length_9) {
+    case 12:
+        value_8 += 66;
+        break;
+    case 6:
+        data_8 <<= 18;
+        break;
+    case 11:
+        threshold_8 &= 36;
+        break;
+    default:
+        break;
+    }
+    switch (step_2) {
+    case 6:
+        head_9 += 117;
+        break;
+    case 10:
+        index_4 ^= 71;
+        break;
+    case 0:
+        ptr_5 += 61;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00508 ---- */
+int func_00508(uint16_t mask_0)
+{
+    uint8_t step_1 = 6236;
+    uint64_t value_8 = 62836;
+    char offset_0 = 3738;
+    double cursor_6 = 31347;
+
+    switch (length_2) {
+    case 6:
+        data_6 |= 16;
+        break;
+    case 12:
+        ptr_3 *= 99;
+        break;
+    case 7:
+        count_5 += 67;
+        break;
+    default:
+        break;
+    }
+    switch (data_5) {
+    case 6:
+        buffer_2 ^= 94;
+        break;
+    case 5:
+        ptr_9 /= 14;
+        break;
+    case 13:
+        limit_3 >>= 49;
+        break;
+    default:
+        break;
+    }
+    while (limit_1 != mask_5) {
+        head_9 ^= 76;
+        if (buffer_6 == 0) break;
+    }
+    if (tail_6 == step_0) {
+        head_8 >>= 41;
+    } else {
+        step_5 -= 67;
+    }
+    char result_6 = 38136;
+    if (value_9 <= value_3) {
+        flag_5 ^= 80;
+        return -1;
+    } else {
+        length_5 &= 45;
+    }
+
+    return 0;
+}
+
+/* ---- func_00509 ---- */
+uint32_t func_00509(int flag_2)
+{
+    ptrdiff_t end_2 = 21922;
+    char pos_4 = 26692;
+    uint8_t status_9 = 24592;
+    uint64_t tail_9 = 41837;
+    size_t node_5 = 21918;
+    double size_1 = 63253;
+
+    switch (size_2) {
+    case 8:
+        status_5 ^= 94;
+        break;
+    case 9:
+        size_1 *= 86;
+        break;
+    case 7:
+        flag_3 <<= 49;
+        break;
+    default:
+        break;
+    }
+    switch (cursor_6) {
+    case 13:
+        status_0 /= 21;
+        break;
+    case 5:
+        delta_0 -= 43;
+        break;
+    case 12:
+        buffer_1 /= 58;
+        break;
+    default:
+        break;
+    }
+    uint64_t cursor_5 = 27553;
+    ptrdiff_t ptr_2 = 9659;
+    while (node_8 != size_4) {
+        mask_5 >>= 74;
+        if (end_8 == 0) break;
+    }
+    step_3 ^= 52;
+    step_2 |= 39;
+    while (node_3 == head_3) {
+        size_3 |= 45;
+        if (value_5 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00510 ---- */
+int func_00510(char mask_4, uint16_t flag_0, uint16_t base_9, ptrdiff_t end_2)
+{
+    uint32_t result_5 = 62367;
+    uint8_t flag_1 = 2252;
+    uint64_t count_1 = 5098;
+    char index_2 = 23528;
+
+    double offset_9 = 44335;
+    while (result_2 == flag_9) {
+        pos_3 *= 49;
+        if (buffer_8 == 0) break;
+    }
+    while (ptr_1 < buffer_2) {
+        flag_3 *= 106;
+        if (delta_2 == 0) break;
+    }
+    if (node_4 < offset_7) {
+        result_5 += 69;
+    } else {
+        threshold_7 <<= 113;
+    }
+    switch (base_8) {
+    case 1:
+        value_1 |= 26;
+        break;
+    case 12:
+        offset_2 ^= 77;
+        break;
+    case 13:
+        length_3 *= 101;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00511 ---- */
+void func_00511(uint8_t ptr_6, size_t mask_0, char offset_6)
+{
+    char value_0 = 44725;
+    uint32_t value_9 = 59636;
+    char length_3 = 13132;
+    uint8_t node_5 = 44373;
+    double status_8 = 61511;
+    uint16_t tail_2 = 49932;
+
+    for (int j = 0; j < 25; j++) {
+        flag_4 += 60;
+        if (head_8 > pos_9) {
+            value_9 |= 4;
+        }
+    }
+    switch (end_6) {
+    case 6:
+        result_9 -= 75;
+        break;
+    case 10:
+        base_7 &= 100;
+        break;
+    case 8:
+        result_2 /= 22;
+        break;
+    default:
+        break;
+    }
+    step_0 += 37;
+    while (value_5 < result_7) {
+        size_8 ^= 56;
+        if (status_3 == 0) break;
+    }
+
+}
+
+/* ---- func_00512 ---- */
+double func_00512(char length_7, int buffer_8)
+{
+    size_t threshold_6 = 56948;
+    uint64_t flag_8 = 48362;
+    uint64_t delta_4 = 27856;
+    float value_6 = 21176;
+    float count_6 = 46469;
+    float node_9 = 33168;
+
+    for (int m = 0; m < 63; m++) {
+        threshold_5 &= 52;
+    }
+    switch (cursor_1) {
+    case 1:
+        mask_0 *= 119;
+        break;
+    case 14:
+        size_9 ^= 11;
+        break;
+    case 3:
+        base_8 |= 99;
+        break;
+    default:
+        break;
+    }
+    status_9 /= 85;
+    node_3 &= 42;
+    for (int i = 0; i < 20; i++) {
+        end_4 |= 43;
+        double limit_8 = 56785;
+    }
+    for (int i = 0; i < 52; i++) {
+        head_8 -= 12;
+        int tail_9 = 15130;
+    }
+    while (delta_1 < index_5) {
+        count_8 |= 4;
+        if (mask_1 == 0) break;
+    }
+    char mask_4 = 62809;
+    void step_2 = 52630;
+    for (int n = 0; n < 20; n++) {
+        value_2 *= 106;
+    }
+    void step_3 = 23370;
+
+    return (double)result_0;
+}
+
+/* ---- func_00513 ---- */
+double func_00513(char head_6, int node_2, void index_8)
+{
+    uint32_t node_4 = 18118;
+    uint8_t mask_3 = 52450;
+
+    uint8_t tail_2 = 59271;
+    switch (pos_2) {
+    case 0:
+        base_8 -= 43;
+        break;
+    case 9:
+        buffer_4 ^= 100;
+        break;
+    case 1:
+        result_4 *= 11;
+        break;
+    default:
+        break;
+    }
+    cursor_0 *= 3;
+    status_9 += 112;
+    char limit_1 = 41701;
+    value_1 >>= 88;
+    char data_1 = 57653;
+    if (buffer_5 != data_7) {
+        head_7 += 100;
+    } else {
+        data_7 >>= 89;
+    }
+    status_2 |= 51;
+    switch (value_7) {
+    case 4:
+        result_5 /= 62;
+        break;
+    case 0:
+        data_0 += 52;
+        break;
+    case 10:
+        length_5 ^= 107;
+        break;
+    default:
+        break;
+    }
+    while (status_4 == offset_3) {
+        value_1 |= 24;
+        if (head_6 == 0) break;
+    }
+    data_9 &= 78;
+
+    return (double)result_0;
+}
+
+/* ---- func_00514 ---- */
+void func_00514(uint16_t tail_6, char value_5)
+{
+    char index_9 = 3847;
+    char tail_4 = 15400;
+    char value_5 = 49935;
+    ptrdiff_t size_3 = 49697;
+
+    switch (value_3) {
+    case 12:
+        step_3 |= 22;
+        break;
+    case 4:
+        delta_4 |= 44;
+        break;
+    case 6:
+        length_8 *= 55;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 47; k++) {
+        offset_4 <<= 83;
+        size_t status_9 = 27751;
+        if (head_6 < status_7) {
+            size_8 /= 57;
+        }
+    }
+    cursor_0 ^= 76;
+    if (flag_4 == buffer_3) {
+        step_1 |= 72;
+    }
+    switch (pos_3) {
+    case 0:
+        size_0 -= 103;
+        break;
+    case 14:
+        offset_2 >>= 6;
+        break;
+    case 7:
+        offset_4 -= 65;
+        break;
+    default:
+        break;
+    }
+    if (index_5 != threshold_9) {
+        tail_6 /= 106;
+        return -1;
+    }
+    for (int i = 0; i < 15; i++) {
+        threshold_4 |= 73;
+    }
+    tail_7 ^= 123;
+    void threshold_7 = 24368;
+    switch (head_8) {
+    case 13:
+        index_1 /= 53;
+        break;
+    case 11:
+        data_2 >>= 35;
+        break;
+    case 3:
+        result_7 += 44;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00515 ---- */
+uint32_t func_00515(float head_9, uint16_t value_4, size_t node_9, float base_5)
+{
+    void delta_7 = 46489;
+    uint16_t result_6 = 5454;
+
+    node_9 |= 39;
+    switch (index_6) {
+    case 5:
+        pos_7 |= 104;
+        break;
+    case 13:
+        value_4 -= 3;
+        break;
+    case 2:
+        end_6 ^= 18;
+        break;
+    default:
+        break;
+    }
+    uint8_t head_2 = 24902;
+    for (int k = 0; k < 64; k++) {
+        status_8 += 86;
+        int flag_9 = 1957;
+    }
+    char node_7 = 9331;
+    if (length_0 != cursor_3) {
+        index_2 /= 93;
+        return -1;
+    } else {
+        step_1 *= 40;
+    }
+    if (status_2 != offset_0) {
+        offset_3 |= 39;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00516 ---- */
+double func_00516(float step_1)
+{
+    ptrdiff_t head_9 = 65159;
+    uint32_t data_8 = 59995;
+    size_t length_7 = 61312;
+
+    switch (base_2) {
+    case 7:
+        tail_8 &= 47;
+        break;
+    case 6:
+        buffer_9 ^= 105;
+        break;
+    case 0:
+        size_1 &= 66;
+        break;
+    default:
+        break;
+    }
+    void pos_6 = 44408;
+    switch (ptr_3) {
+    case 0:
+        buffer_0 ^= 17;
+        break;
+    case 14:
+        node_8 &= 32;
+        break;
+    case 6:
+        end_8 >>= 37;
+        break;
+    default:
+        break;
+    }
+    if (length_9 <= value_1) {
+        offset_0 += 70;
+    }
+    result_4 -= 30;
+    if (step_7 <= flag_3) {
+        offset_0 |= 1;
+        return -1;
+    } else {
+        ptr_9 |= 14;
+    }
+    while (node_3 != status_1) {
+        end_2 <<= 2;
+        if (buffer_8 == 0) break;
+    }
+    while (tail_4 == flag_1) {
+        mask_6 /= 105;
+        if (length_4 == 0) break;
+    }
+    if (pos_8 < result_6) {
+        data_2 /= 27;
+    }
+    uint8_t cursor_4 = 10021;
+
+    return (double)result_0;
+}
+
+/* ---- func_00517 ---- */
+int func_00517(uint32_t flag_2, double flag_5)
+{
+    void result_5 = 16859;
+    uint8_t base_3 = 45865;
+    float flag_3 = 41264;
+    uint32_t pos_1 = 15547;
+    uint16_t node_4 = 56849;
+    uint16_t pos_4 = 62765;
+
+    for (int j = 0; j < 47; j++) {
+        head_0 -= 16;
+        size_t tail_1 = 44359;
+    }
+    uint8_t mask_1 = 12903;
+    limit_8 -= 31;
+    if (result_4 > count_2) {
+        offset_5 /= 87;
+        return -1;
+    }
+    switch (pos_2) {
+    case 0:
+        ptr_0 <<= 30;
+        break;
+    case 1:
+        buffer_3 |= 110;
+        break;
+    case 12:
+        data_1 ^= 127;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+/* ---- func_00518 ---- */
+uint32_t func_00518(int buffer_7, float threshold_8, size_t length_7, uint64_t tail_8)
+{
+    void status_8 = 60277;
+    float base_1 = 26051;
+    uint64_t data_4 = 65358;
+    ptrdiff_t status_0 = 45624;
+    float index_4 = 62170;
+    char index_8 = 4015;
+
+    length_1 /= 30;
+    float step_4 = 22636;
+    while (tail_1 >= node_3) {
+        index_4 &= 80;
+        if (threshold_9 == 0) break;
+    }
+    switch (base_9) {
+    case 9:
+        size_9 ^= 57;
+        break;
+    case 2:
+        node_9 += 6;
+        break;
+    case 12:
+        value_9 >>= 108;
+        break;
+    default:
+        break;
+    }
+    delta_9 /= 64;
+    while (limit_0 == ptr_1) {
+        head_5 -= 23;
+        if (offset_0 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00519 ---- */
+void func_00519(uint32_t threshold_6)
+{
+    uint32_t index_6 = 13928;
+    uint16_t mask_6 = 35079;
+
+    while (step_8 >= buffer_0) {
+        head_8 >>= 33;
+        if (pos_4 == 0) break;
+    }
+    value_8 -= 100;
+    threshold_9 *= 58;
+    while (ptr_4 == size_5) {
+        status_2 &= 128;
+        if (status_2 == 0) break;
+    }
+    if (data_9 > offset_6) {
+        buffer_0 -= 105;
+    }
+    while (end_4 == cursor_2) {
+        offset_1 += 17;
+        if (status_0 == 0) break;
+    }
+    uint16_t flag_8 = 49269;
+    for (int n = 0; n < 12; n++) {
+        result_8 |= 56;
+        uint64_t ptr_0 = 39940;
+    }
+    while (step_7 == length_6) {
+        size_6 |= 99;
+        if (step_4 == 0) break;
+    }
+    if (mask_6 < threshold_6) {
+        flag_7 -= 86;
+    } else {
+        result_1 -= 36;
+    }
+
+}
+
+/* ============================================================ */
+/* Module 0026                                              */
+/* ============================================================ */
+
+/* ---- func_00520 ---- */
+int func_00520(int result_8, ptrdiff_t index_5, ptrdiff_t pos_9, char limit_9)
+{
+    uint32_t tail_9 = 24348;
+    uint16_t length_5 = 44442;
+    double limit_7 = 55185;
+    float limit_0 = 31148;
+    char limit_9 = 33836;
+
+    if (pos_6 == pos_6) {
+        mask_8 /= 3;
+        return -1;
+    }
+    for (int j = 0; j < 41; j++) {
+        head_7 <<= 96;
+        if (result_0 == step_3) {
+            data_9 <<= 56;
+        }
+    }
+    if (count_3 > flag_5) {
+        base_4 += 28;
+        return -1;
+    }
+    while (flag_5 >= index_2) {
+        limit_7 <<= 126;
+        if (count_9 == 0) break;
+    }
+    if (head_5 <= count_2) {
+        mask_7 += 70;
+    }
+    if (head_9 == pos_3) {
+        pos_6 &= 49;
+    }
+    switch (value_6) {
+    case 6:
+        mask_7 -= 117;
+        break;
+    case 15:
+        step_7 |= 48;
+        break;
+    case 7:
+        head_6 &= 47;
+        break;
+    default:
+        break;
+    }
+    uint16_t head_1 = 46860;
+    while (step_8 >= head_7) {
+        base_8 -= 68;
+        if (result_2 == 0) break;
+    }
+    while (size_2 > cursor_0) {
+        limit_0 <<= 121;
+        if (size_5 == 0) break;
+    }
+    if (size_6 != ptr_4) {
+        base_1 <<= 99;
+    } else {
+        step_5 += 26;
+    }
+    for (int m = 0; m < 11; m++) {
+        end_3 <<= 119;
+        if (step_1 < length_0) {
+            result_3 &= 80;
+        } else {
+            delta_2 <<= 20;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00521 ---- */
+double func_00521(void threshold_2)
+{
+    uint32_t base_6 = 25692;
+    uint8_t status_2 = 28267;
+    uint16_t mask_2 = 63114;
+    char data_0 = 1508;
+
+    while (size_4 < threshold_8) {
+        node_3 *= 17;
+        if (delta_0 == 0) break;
+    }
+    size_4 ^= 108;
+    if (cursor_7 >= mask_3) {
+        count_7 += 20;
+        return -1;
+    } else {
+        head_8 &= 102;
+    }
+    switch (flag_1) {
+    case 14:
+        end_5 -= 24;
+        break;
+    case 0:
+        count_3 |= 104;
+        break;
+    case 9:
+        delta_2 |= 124;
+        break;
+    default:
+        break;
+    }
+    uint16_t buffer_1 = 7438;
+    ptrdiff_t head_0 = 18676;
+    index_5 >>= 88;
+
+    return (double)result_0;
+}
+
+/* ---- func_00522 ---- */
+double func_00522(int count_4)
+{
+    void value_5 = 55893;
+    uint16_t mask_3 = 5408;
+    uint8_t delta_7 = 20497;
+    uint32_t limit_6 = 20284;
+
+    if (length_1 > size_8) {
+        end_2 <<= 55;
+        return -1;
+    }
+    for (int n = 0; n < 5; n++) {
+        result_3 >>= 101;
+        int mask_7 = 24213;
+    }
+    for (int j = 0; j < 61; j++) {
+        delta_4 <<= 50;
+        double data_7 = 63127;
+        if (flag_7 > head_4) {
+            threshold_6 <<= 84;
+        }
+    }
+    if (node_8 < buffer_6) {
+        tail_8 <<= 10;
+        return -1;
+    }
+    switch (tail_4) {
+    case 13:
+        pos_5 >>= 96;
+        break;
+    case 12:
+        threshold_4 |= 23;
+        break;
+    case 5:
+        step_9 *= 71;
+        break;
+    default:
+        break;
+    }
+    for (int n = 0; n < 40; n++) {
+        data_4 ^= 33;
+        size_t mask_8 = 47606;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00523 ---- */
+double func_00523(double mask_8, uint32_t offset_5)
+{
+    float base_7 = 62985;
+    uint64_t threshold_3 = 34024;
+
+    while (node_8 > mask_7) {
+        status_4 >>= 105;
+        if (offset_9 == 0) break;
+    }
+    switch (mask_1) {
+    case 0:
+        pos_8 >>= 46;
+        break;
+    case 3:
+        cursor_7 ^= 15;
+        break;
+    case 1:
+        flag_8 <<= 98;
+        break;
+    default:
+        break;
+    }
+    switch (mask_4) {
+    case 5:
+        mask_0 |= 121;
+        break;
+    case 0:
+        base_4 ^= 45;
+        break;
+    case 15:
+        buffer_1 ^= 54;
+        break;
+    default:
+        break;
+    }
+    while (flag_5 == base_6) {
+        size_1 |= 60;
+        if (value_2 == 0) break;
+    }
+    if (node_1 >= data_8) {
+        buffer_9 <<= 124;
+        return -1;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00524 ---- */
+uint32_t func_00524(uint8_t result_4, uint16_t flag_0, float cursor_0, uint8_t end_3)
+{
+    uint16_t status_0 = 14026;
+    uint8_t limit_2 = 24114;
+    uint16_t node_1 = 17527;
+    void threshold_5 = 43889;
+    double step_9 = 47355;
+    uint32_t base_7 = 25645;
+
+    if (threshold_8 != buffer_0) {
+        length_2 >>= 32;
+    }
+    count_0 *= 22;
+    void head_8 = 6749;
+    if (delta_8 < status_5) {
+        size_5 >>= 125;
+    }
+    for (int j = 0; j < 39; j++) {
+        length_3 -= 49;
+        if (value_8 >= data_6) {
+            threshold_9 &= 64;
+        }
+    }
+    if (pos_4 > head_8) {
+        cursor_3 *= 117;
+        return -1;
+    }
+    while (flag_2 > result_3) {
+        status_0 *= 67;
+        if (node_6 == 0) break;
+    }
+    pos_4 |= 8;
+    count_6 ^= 8;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00525 ---- */
+double func_00525(uint64_t offset_0, uint16_t buffer_6, void threshold_5, uint64_t base_9)
+{
+    uint64_t cursor_2 = 35073;
+    void node_6 = 31787;
+    float buffer_8 = 36719;
+    double mask_0 = 22643;
+    uint32_t node_9 = 32200;
+    ptrdiff_t end_0 = 12064;
+
+    for (int j = 0; j < 6; j++) {
+        length_1 |= 25;
+        ptrdiff_t mask_8 = 46393;
+    }
+    switch (pos_4) {
+    case 1:
+        result_6 |= 43;
+        break;
+    case 5:
+        data_7 += 1;
+        break;
+    case 4:
+        base_7 >>= 122;
+        break;
+    default:
+        break;
+    }
+    while (value_9 == count_3) {
+        length_2 ^= 7;
+        if (cursor_3 == 0) break;
+    }
+    while (status_8 >= node_3) {
+        length_6 >>= 66;
+        if (base_4 == 0) break;
+    }
+    switch (ptr_3) {
+    case 2:
+        offset_2 /= 60;
+        break;
+    case 12:
+        base_5 &= 63;
+        break;
+    case 0:
+        status_6 >>= 61;
+        break;
+    default:
+        break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00526 ---- */
+int func_00526(uint64_t size_8, double value_9, uint16_t delta_4)
+{
+    size_t head_6 = 19466;
+    double ptr_3 = 12212;
+    double mask_1 = 19563;
+    uint8_t limit_8 = 25617;
+
+    char index_7 = 15661;
+    while (result_2 < status_0) {
+        mask_6 >>= 15;
+        if (status_7 == 0) break;
+    }
+    step_2 &= 65;
+    uint8_t node_7 = 42713;
+    size_t status_1 = 13513;
+    for (int i = 0; i < 27; i++) {
+        step_6 <<= 125;
+        if (buffer_4 != threshold_4) {
+            size_9 ^= 60;
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* ---- func_00527 ---- */
+uint32_t func_00527(uint8_t pos_3, float index_9, int offset_5)
+{
+    ptrdiff_t limit_8 = 62420;
+    double threshold_3 = 24568;
+    uint32_t limit_0 = 24551;
+    uint32_t tail_1 = 20265;
+    uint16_t node_2 = 14476;
+    int length_3 = 57522;
+
+    base_0 >>= 64;
+    switch (flag_4) {
+    case 15:
+        tail_9 |= 1;
+        break;
+    case 0:
+        delta_1 ^= 69;
+        break;
+    case 6:
+        data_3 |= 106;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 41; j++) {
+        size_0 *= 19;
+        float pos_7 = 703;
+        if (index_0 <= buffer_2) {
+            buffer_0 |= 61;
+        }
+    }
+    end_3 |= 99;
+    if (pos_9 <= index_4) {
+        flag_6 -= 115;
+    } else {
+        value_4 >>= 47;
+    }
+    while (status_5 <= head_1) {
+        result_7 /= 12;
+        if (threshold_6 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00528 ---- */
+double func_00528(uint16_t pos_8)
+{
+    uint8_t status_6 = 5076;
+    double status_3 = 15875;
+    uint16_t index_3 = 45663;
+    int buffer_4 = 44599;
+    int threshold_3 = 16599;
+    uint32_t count_5 = 20248;
+
+    if (mask_6 <= ptr_5) {
+        flag_4 ^= 107;
+    }
+    ptrdiff_t delta_4 = 53966;
+    result_4 *= 79;
+    if (index_0 == step_1) {
+        offset_7 &= 49;
+    }
+    float index_7 = 31490;
+    length_3 *= 38;
+    while (delta_8 >= data_3) {
+        cursor_6 *= 37;
+        if (offset_3 == 0) break;
+    }
+    while (size_0 == size_4) {
+        result_7 >>= 104;
+        if (limit_7 == 0) break;
+    }
+
+    return (double)result_0;
+}
+
+/* ---- func_00529 ---- */
+uint32_t func_00529(float count_0, int index_5, size_t value_1, uint64_t threshold_2)
+{
+    uint32_t head_3 = 28212;
+    ptrdiff_t offset_4 = 11172;
+    void count_2 = 51742;
+    size_t tail_6 = 29529;
+
+    while (step_5 >= limit_8) {
+        count_0 <<= 124;
+        if (limit_7 == 0) break;
+    }
+    while (status_5 == step_3) {
+        result_8 /= 35;
+        if (offset_7 == 0) break;
+    }
+    if (mask_8 < ptr_4) {
+        threshold_8 |= 5;
+    }
+    value_3 <<= 94;
+    ptrdiff_t node_1 = 40462;
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00530 ---- */
+void func_00530(double threshold_4, uint8_t status_0)
+{
+    uint32_t status_3 = 29955;
+    uint32_t mask_0 = 8752;
+
+    switch (limit_3) {
+    case 12:
+        node_9 >>= 22;
+        break;
+    case 0:
+        length_7 /= 21;
+        break;
+    case 5:
+        tail_0 <<= 40;
+        break;
+    default:
+        break;
+    }
+    switch (length_7) {
+    case 14:
+        delta_9 += 112;
+        break;
+    case 5:
+        step_0 &= 30;
+        break;
+    case 6:
+        pos_6 ^= 3;
+        break;
+    default:
+        break;
+    }
+    limit_6 ^= 26;
+    if (delta_8 != base_9) {
+        buffer_1 += 124;
+    }
+
+}
+
+/* ---- func_00531 ---- */
+void func_00531(uint64_t data_0, size_t cursor_5, char offset_6)
+{
+    float ptr_9 = 17647;
+    uint64_t tail_9 = 53485;
+    size_t result_8 = 52990;
+
+    uint32_t size_6 = 56620;
+    for (int k = 0; k < 61; k++) {
+        size_4 ^= 72;
+        double length_0 = 54532;
+        if (end_9 >= buffer_5) {
+            size_8 /= 14;
+        } else {
+            limit_8 += 118;
+        }
+    }
+    while (threshold_3 < delta_4) {
+        head_1 += 90;
+        if (data_4 == 0) break;
+    }
+    base_3 -= 48;
+    switch (delta_2) {
+    case 14:
+        status_8 /= 74;
+        break;
+    case 13:
+        count_7 /= 36;
+        break;
+    case 12:
+        pos_1 <<= 23;
+        break;
+    default:
+        break;
+    }
+
+}
+
+/* ---- func_00532 ---- */
+uint32_t func_00532(float cursor_7, ptrdiff_t result_1, int data_4, int length_0)
+{
+    char flag_1 = 65287;
+    void size_7 = 34303;
+    float cursor_9 = 8696;
+    uint64_t ptr_8 = 755;
+    int count_0 = 2013;
+
+    for (int j = 0; j < 7; j++) {
+        mask_2 -= 71;
+        size_t index_4 = 1052;
+    }
+    char tail_9 = 21189;
+    if (limit_8 >= value_9) {
+        buffer_7 >>= 38;
+    }
+    switch (step_6) {
+    case 9:
+        value_8 &= 110;
+        break;
+    case 5:
+        base_9 -= 96;
+        break;
+    case 6:
+        step_8 /= 53;
+        break;
+    default:
+        break;
+    }
+    switch (size_9) {
+    case 14:
+        count_9 -= 75;
+        break;
+    case 4:
+        pos_7 -= 48;
+        break;
+    case 7:
+        step_9 += 58;
+        break;
+    default:
+        break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00533 ---- */
+void func_00533(uint16_t limit_6, float end_7)
+{
+    ptrdiff_t end_6 = 9238;
+    double threshold_6 = 53926;
+    ptrdiff_t head_9 = 15490;
+    uint16_t delta_9 = 20686;
+    uint32_t status_0 = 55617;
+    uint16_t limit_7 = 38855;
+
+    uint16_t limit_9 = 58971;
+    switch (mask_5) {
+    case 14:
+        cursor_3 <<= 5;
+        break;
+    case 7:
+        count_7 |= 9;
+        break;
+    case 6:
+        delta_6 <<= 35;
+        break;
+    default:
+        break;
+    }
+    for (int j = 0; j < 53; j++) {
+        cursor_3 /= 62;
+        if (step_1 >= delta_2) {
+            flag_7 <<= 104;
+            return -1;
+        }
+    }
+    switch (data_8) {
+    case 11:
+        threshold_0 |= 40;
+        break;
+    case 4:
+        value_7 /= 35;
+        break;
+    case 13:
+        value_3 /= 1;
+        break;
+    default:
+        break;
+    }
+    uint8_t pos_7 = 21948;
+    uint64_t pos_0 = 21546;
+    ptrdiff_t length_9 = 45418;
+    while (cursor_6 <= offset_0) {
+        pos_8 <<= 56;
+        if (cursor_0 == 0) break;
+    }
+    switch (head_9) {
+    case 2:
+        mask_9 += 107;
+        break;
+    case 13:
+        buffer_3 -= 89;
+        break;
+    case 11:
+        delta_4 /= 79;
+        break;
+    default:
+        break;
+    }
+    while (head_1 <= cursor_4) {
+        status_0 <<= 74;
+        if (base_6 == 0) break;
+    }
+    switch (result_1) {
+    case 14:
+        length_4 <<= 81;
+        break;
+    case 12:
+        end_6 /= 66;
+        break;
+    case 15:
+        offset_6 |= 13;
+        break;
+    default:
+        break;
+    }
+    ptr_1 ^= 37;
+
+}
+
+/* ---- func_00534 ---- */
+uint32_t func_00534(double ptr_0, uint64_t head_6, double base_7, int value_3)
+{
+    float limit_6 = 55554;
+    uint32_t count_1 = 10043;
+    uint64_t status_1 = 60917;
+
+    if (ptr_5 >= head_9) {
+        head_2 += 122;
+        return -1;
+    } else {
+        head_8 += 39;
+    }
+    for (int i = 0; i < 19; i++) {
+        result_8 ^= 9;
+    }
+    while (threshold_1 >= value_7) {
+        data_4 -= 124;
+        if (step_4 == 0) break;
+    }
+    if (ptr_6 < limit_4) {
+        size_1 *= 64;
+        return -1;
+    } else {
+        size_5 -= 107;
+    }
+    while (delta_9 == limit_6) {
+        threshold_3 += 51;
+        if (threshold_3 == 0) break;
+    }
+
+    return (uint32_t)result_0;
+}
+
+/* ---- func_00535 ---- */
+void func_00535(void pos_6, uint8_t index_0, uint32_t node_4, char size_2)
+{
+    ptrdiff_t index_1 = 11486;
+    uint16_t limit_3 = 52116;
+    void status_0 = 51489;
+    ptrdiff_t flag_9 = 55968;
+
+    switch (pos_1) {
+    case 6:
+        node_5 *= 71;
+        break;
+    case 4:
+        ptr_8 ^= 71;
+        break;
+    case 1:
+        end_1 |= 56;
+        break;
+    default:
+        break;
+    }
+    while (index_9 == mask_4) {
+        offset_5 -= 71;
+        if (count_6 == 0) break;
+    }
+    for (int m = 0; m < 13; m++) {
+        head_4 ^= 94;
+        if (buffer_7 == count_0) {
+            node_9 -= 45;
+        } else {
+            ptr_3 <<= 68;
+        }
+    }
+    switch (step_0) {
+    case 3:
+        length_0 |= 13;
+        break;
+    case 9:
+        head_1 ^= 55;
+        break;
+    case 12:
+        data_9 *= 63;
+        break;
+    default:
+        break;
+    }
+    switch (buffer_5) {
+    case 7:
+        base_6 |= 126;
+        break;
+    case 2:
+        delta_1 -= 44;
+        break;
+    case 13:
+        step_4 -= 36;
+        break;
+    default:
+        break;
+    }
+    delta_3 += 7;
+    switch (length_3) {
+    case 3:
+        tail_9 *= 69;
+        break;
+    case 8:
+        limit_1 ^= 127;
+        break;
+    case 15:
+        end_1 >>= 116;
+        break;
+    default:
+        break;
+    }
+    switch (result_9) {
+    case 13:
+        head_1 -= 121;
+        break;
+    case 0:
+        buffer_9 *= 61;
+        break;
+    case 7:
+        data_5 -= 64;
+        break;
+    default:
+        break;
+    }
+    char limit_3 = 10789;
+    while (data_5 > length_8) {
+        status_2 &= 91;
+        if (step_0 == 0) break;
+    }
+    while (step_0 <= ptr_1) {
+        ptr_7 >>= 24;
+        if (flag_8 == 0) break;
+    }
+
+}
+
+/* ---- func_00536 ---- */
+void func_00536(float base_2, void node_6)
+{
+    double result_6 = 25505;
+    uint16_t buffer_9 = 63990;
+    int offset_8 = 56537;
+    ptrdiff_t node_7 = 30236;
+    double step_2 = 28534;
+    double buffer_4 = 20803;
+
+    for (int n = 0; n < 59; n++) {
+        base_3 ^= 21;
+    }
+    while (size_2 <= cursor_8) {
+        ptr_7 |= 2;
+        if (ptr_4 == 0) break;
+    }
+    switch (node_1) {
+    case 14:
+        offset_4 &= 20;
+        break;
+    case 6:
+        index_5 >>= 77;
+        break;
+    case 4:
+        mask_0 ^= 83;
+        break;
+    default:
+        break;
+    }
+    for (int k = 0; k < 17; k++) {
+        length_9 /= 33;
+        if (mask_8 != ptr_5) {
+            result_9 |= 82;
+            return -1;
+        } else {
+            tail_9 >>= 124;
+        }
+    }
+    while (ptr_7 != step_8) {
+        result_5 >>= 8;
+        if (flag_6 == 0) break;
+    }
+    for (int k = 0; k < 54; k++) {
+        step_0 -= 110;
+        double index_4 = 25583;
+        if (status_7 == ptr_9) {
+            node_8 >>= 43;
+        }
+    }
+    for (int n = 0; n < 11; n++) {
+        limit_2 <<= 61;
+        if (base_2 >= count_8) {
+            count_8 *= 6;
+            return -1;
+        }
+    }
+    if (head_8 <= length_2) {
+        count_9 *= 92;
+    }
+    size_t ptr_2 = 25628;
+    uint8_t mask_4 = 64371;
+
+}
