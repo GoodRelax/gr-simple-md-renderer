@@ -39,6 +39,7 @@ describe("UIController.preprocessInput", () => {
       isPreRenderState: vi.fn().mockReturnValue(true),
       reRender: vi.fn().mockResolvedValue(undefined),
       reloadCodeView: vi.fn().mockResolvedValue(undefined),
+      readMarkdownFile: vi.fn().mockResolvedValue(null),
       renderAll: vi.fn().mockResolvedValue(undefined),
       loadMarkdown: vi.fn().mockResolvedValue(undefined),
       clear: vi.fn(),
@@ -54,9 +55,12 @@ describe("UIController.preprocessInput", () => {
 
     const mockElements = {
       editor: document.createElement("textarea"),
+      fileInfo: document.createElement("div"),
+      keyHint: document.createElement("div"),
       preview: document.createElement("div"),
       renderLightBtn: document.createElement("button"),
       renderDarkBtn: document.createElement("button"),
+      reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),

@@ -30,6 +30,7 @@ describe("UIController.setupKeyboard (modifier guard)", () => {
       isPreRenderState: vi.fn().mockReturnValue(false),
       reRender: vi.fn().mockResolvedValue(undefined),
       reloadCodeView: vi.fn().mockResolvedValue(undefined),
+      readMarkdownFile: vi.fn().mockResolvedValue(null),
       loadMarkdown: vi.fn().mockResolvedValue(undefined),
       renderCodeView: vi.fn().mockResolvedValue(undefined),
       clear: vi.fn(),
@@ -61,6 +62,7 @@ describe("UIController.setupKeyboard (modifier guard)", () => {
       preview: document.createElement("div"),
       renderLightBtn: document.createElement("button"),
       renderDarkBtn: document.createElement("button"),
+      reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
@@ -149,6 +151,26 @@ describe("UIController.setupKeyboard (modifier guard)", () => {
     dispatchKey("d", { ctrlKey: true });
 
     expect(renderSpy).not.toHaveBeenCalled();
+  });
+
+  it("bare 'r' key triggers handleReload", () => {
+    const ctrl = createController();
+    const reloadSpy = vi.spyOn(ctrl, "handleReload");
+    reloadSpy.mockClear();
+
+    dispatchKey("r");
+
+    expect(reloadSpy).toHaveBeenCalled();
+  });
+
+  it("Ctrl+R does NOT trigger handleReload (INV-14)", () => {
+    const ctrl = createController();
+    const reloadSpy = vi.spyOn(ctrl, "handleReload");
+    reloadSpy.mockClear();
+
+    dispatchKey("r", { ctrlKey: true });
+
+    expect(reloadSpy).not.toHaveBeenCalled();
   });
 
   it("bare ArrowDown triggers startScroll when not in pre-render state", () => {

@@ -53,6 +53,7 @@ describe("UIController.setupFileDrop", () => {
       renderAll: vi.fn().mockResolvedValue(undefined),
       loadMarkdown: vi.fn().mockResolvedValue(undefined),
       renderCodeView: vi.fn().mockResolvedValue(mockMetadata),
+      readMarkdownFile: vi.fn().mockResolvedValue(null),
       clear: vi.fn(),
     };
 
@@ -70,6 +71,7 @@ describe("UIController.setupFileDrop", () => {
       preview: document.createElement("div"),
       renderLightBtn: document.createElement("button"),
       renderDarkBtn: document.createElement("button"),
+      reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-describe("UIController.handleRender", () => {
+describe("UIController.handleReload", () => {
   let UIController;
   let mockOrchestrator;
   let mockState;
@@ -10,14 +10,12 @@ describe("UIController.handleRender", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    // Mock utils.js
     vi.doMock("../js/utils.js", () => ({
       applyTheme: vi.fn(),
       applySystemTheme: vi.fn(),
       systemTheme: vi.fn().mockReturnValue("light"),
     }));
 
-    // Mock ModalController
     vi.doMock("../js/classes/ModalController.js", () => ({
       default: {
         setupModal: vi.fn(),
@@ -43,9 +41,10 @@ describe("UIController.handleRender", () => {
       isPreRenderState: vi.fn().mockReturnValue(false),
       reRender: vi.fn().mockResolvedValue(undefined),
       reloadCodeView: vi.fn().mockResolvedValue(mockMetadata),
-      readMarkdownFile: vi.fn().mockResolvedValue(null),
+      readMarkdownFile: vi.fn().mockResolvedValue("# Reloaded"),
       renderAll: vi.fn().mockResolvedValue(undefined),
       loadMarkdown: vi.fn().mockResolvedValue(undefined),
+      renderCodeView: vi.fn().mockResolvedValue(mockMetadata),
       clear: vi.fn(),
     };
 
@@ -82,91 +81,79 @@ describe("UIController.handleRender", () => {
 
   function createMockModal() {
     const modal = document.createElement("div");
-    modal.innerHTML = '<button class="close-btn"></button><button class="prompt-close"></button>';
+    modal.innerHTML =
+      '<button class="close-btn"></button><button class="prompt-close"></button>';
     return modal;
   }
 
   function createController() {
-    return new UIController(mockOrchestrator, mockState, mockElements, mockScrollEngine);
+    return new UIController(
+      mockOrchestrator,
+      mockState,
+      mockElements,
+      mockScrollEngine,
+    );
   }
 
-  it("applies CSS-only theme toggle when code view is active (no DOM rebuild)", async () => {
-    const { applyTheme } = await import("../js/utils.js");
+  it("does nothing when in pre-render state", async () => {
+    mockOrchestrator.isPreRenderState.mockReturnValue(true);
+    const ctrl = createController();
+
+    await ctrl.handleReload();
+
+    expect(mockOrchestrator.reloadCodeView).not.toHaveBeenCalled();
+    expect(mockOrchestrator.readMarkdownFile).not.toHaveBeenCalled();
+  });
+
+  it("calls reloadCodeView when code view is active", async () => {
     mockOrchestrator.isCodeViewActive.mockReturnValue(true);
+    mockState.currentTheme = "dark";
     const ctrl = createController();
-    applyTheme.mockClear();
 
-    await ctrl.handleRender("dark");
+    await ctrl.handleReload();
 
-    expect(applyTheme).toHaveBeenCalledWith("dark");
-    expect(mockState.setTheme).toHaveBeenCalledWith("dark");
-    expect(mockOrchestrator.reloadCodeView).not.toHaveBeenCalled();
-    expect(mockOrchestrator.reRender).not.toHaveBeenCalled();
+    expect(mockOrchestrator.reloadCodeView).toHaveBeenCalledWith("dark");
   });
 
-  it("calls reRender when markdown view is active (not pre-render, not code)", async () => {
+  it("reads file, preprocesses, and calls loadMarkdown for markdown view", async () => {
     mockOrchestrator.isCodeViewActive.mockReturnValue(false);
     mockOrchestrator.isPreRenderState.mockReturnValue(false);
-    mockElements.editor.value = "# Hello World";
-
+    mockOrchestrator.readMarkdownFile.mockResolvedValue("```markdown\n# Hello\n```");
+    mockState.currentTheme = "light";
     const ctrl = createController();
-    await ctrl.handleRender("light");
 
-    expect(mockState.setMarkdownText).toHaveBeenCalledWith("# Hello World");
-    expect(mockOrchestrator.reRender).toHaveBeenCalledWith("light");
-  });
+    await ctrl.handleReload();
 
-  it("does nothing when in pre-render state with empty editor", async () => {
-    mockOrchestrator.isCodeViewActive.mockReturnValue(false);
-    mockOrchestrator.isPreRenderState.mockReturnValue(true);
-    mockElements.editor.value = "";
-
-    const ctrl = createController();
-    await ctrl.handleRender("dark");
-
-    expect(mockOrchestrator.reRender).not.toHaveBeenCalled();
-    expect(mockOrchestrator.reloadCodeView).not.toHaveBeenCalled();
-    expect(mockOrchestrator.loadMarkdown).not.toHaveBeenCalled();
-  });
-
-  it("calls loadMarkdown when in pre-render state with editor content", async () => {
-    mockOrchestrator.isCodeViewActive.mockReturnValue(false);
-    mockOrchestrator.isPreRenderState.mockReturnValue(true);
-    mockElements.editor.value = "# Hello";
-
-    const ctrl = createController();
-    await ctrl.handleRender("light");
-
-    expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# Hello", "light");
-    expect(mockOrchestrator.reRender).not.toHaveBeenCalled();
-  });
-
-  it("does NOT call applyTheme directly (LOD compliance)", async () => {
-    const { applyTheme } = await import("../js/utils.js");
-    mockOrchestrator.isCodeViewActive.mockReturnValue(false);
-    mockOrchestrator.isPreRenderState.mockReturnValue(false);
-    mockElements.editor.value = "test";
-
-    const ctrl = createController();
-    // Clear any calls from constructor
-    applyTheme.mockClear();
-
-    await ctrl.handleRender("dark");
-
-    // applyTheme should NOT be called directly by handleRender
-    // It should be delegated to orchestrator.reRender
-    expect(applyTheme).not.toHaveBeenCalled();
-  });
-
-  it("preprocesses input before passing to reRender", async () => {
-    mockOrchestrator.isCodeViewActive.mockReturnValue(false);
-    mockOrchestrator.isPreRenderState.mockReturnValue(false);
-    mockElements.editor.value = "```markdown\n# Hello\n```";
-
-    const ctrl = createController();
-    await ctrl.handleRender("light");
-
+    expect(mockOrchestrator.readMarkdownFile).toHaveBeenCalled();
     // preprocessInput should strip the markdown fence
-    expect(mockState.setMarkdownText).toHaveBeenCalledWith("# Hello");
+    expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# Hello", "light");
+    // editor should be updated with preprocessed text
+    expect(mockElements.editor.value).toBe("# Hello");
+  });
+
+  it("does not call loadMarkdown when readMarkdownFile returns null", async () => {
+    mockOrchestrator.isCodeViewActive.mockReturnValue(false);
+    mockOrchestrator.isPreRenderState.mockReturnValue(false);
+    mockOrchestrator.readMarkdownFile.mockResolvedValue(null);
+    const ctrl = createController();
+    const setViewModeSpy = vi.spyOn(ctrl, "setViewMode");
+
+    await ctrl.handleReload();
+
+    expect(mockOrchestrator.loadMarkdown).not.toHaveBeenCalled();
+    expect(setViewModeSpy).not.toHaveBeenCalled();
+  });
+
+  it("passes raw text through preprocessInput on reload", async () => {
+    mockOrchestrator.isCodeViewActive.mockReturnValue(false);
+    mockOrchestrator.isPreRenderState.mockReturnValue(false);
+    mockOrchestrator.readMarkdownFile.mockResolvedValue("# No fence here");
+    mockState.currentTheme = "dark";
+    const ctrl = createController();
+
+    await ctrl.handleReload();
+
+    // No fence to strip, text passes through unchanged
+    expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# No fence here", "dark");
   });
 });

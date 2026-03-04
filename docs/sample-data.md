@@ -41,7 +41,7 @@ classDiagram
     Renderer --> DiagramRenderer : delegates
 ```
 
-## Code Block
+## Code Blocks
 
 **code_image.py:**
 

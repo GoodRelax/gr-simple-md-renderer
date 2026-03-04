@@ -1,5 +1,5 @@
-import { CONFIG } from "../config.js";
-import { applyTheme, waitForDOMStability } from "../utils.js";
+import { CONFIG, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
+import { applyTheme, waitForDOMStability, showToast } from "../utils.js";
 
 /**
  * Coordinates the full rendering pipeline.
@@ -33,6 +33,7 @@ export default class RendererOrchestrator {
     this.preview = preview;
     this.sourceFileRenderer = sourceFileRenderer;
     this._viewState = "initial"; // 'initial' | 'markdown' | 'code'
+    this._mdFileHandle = null;
   }
 
   // ---- State queries (CQS: pure queries, no side effects) ----
@@ -53,8 +54,10 @@ export default class RendererOrchestrator {
    * Load and render a markdown text string.
    * @param {string} text - raw markdown text
    * @param {string} theme - 'light' | 'dark'
+   * @param {FileSystemFileHandle|null} [fileHandle] - for reload support
    */
-  async loadMarkdown(text, theme) {
+  async loadMarkdown(text, theme, fileHandle = undefined) {
+    if (fileHandle !== undefined) this._mdFileHandle = fileHandle;
     this._viewState = "markdown";
     this.state.setMarkdownText(text);
     this.state.setTheme(theme);
@@ -89,6 +92,7 @@ export default class RendererOrchestrator {
    */
   clear() {
     this._viewState = "initial";
+    this._mdFileHandle = null;
     this.sourceFileRenderer.destroy();
   }
 
@@ -114,6 +118,24 @@ export default class RendererOrchestrator {
    */
   async reloadCodeView(theme) {
     return await this.sourceFileRenderer.reload(theme);
+  }
+
+  /**
+   * Read the .md file from stored fileHandle.
+   * Returns raw text string, or null if unavailable (with toast).
+   * Caller (UIController) is responsible for preprocessInput and loadMarkdown.
+   * @returns {Promise<string|null>}
+   */
+  async readMarkdownFile() {
+    if (!this._mdFileHandle) {
+      const msg = FILE_SYSTEM_HANDLE_SUPPORTED
+        ? CONFIG.codeView.reloadNoFileMsg
+        : CONFIG.codeView.reloadUnavailableMsg;
+      showToast(msg, CONFIG.codeView.toastDurationMs);
+      return null;
+    }
+    const file = await this._mdFileHandle.getFile();
+    return await file.text();
   }
 
   /**

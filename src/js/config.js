@@ -57,9 +57,10 @@ export const CONFIG = {
   // New: code view settings
   codeView: {
     defaultTheme: "dark",
-    keyHintDurationMs: 3000,
+    keyHintDurationMs: 5000,
     toastDurationMs: 3000,
     reloadUnavailableMsg: "Reload not available (Chrome/Edge 86+ required)",
+    reloadNoFileMsg: "No file to reload. Drop a file to enable reload.",
   },
   // Editor background colors per view mode and theme (CSS-driven via body class)
   editorColors: {
@@ -68,8 +69,8 @@ export const CONFIG = {
   },
   // Keyboard hint text per view mode
   keyHints: {
-    markdown: "[up][dn] scroll  [l] light  [d] dark  [c] clear  [n] new tab",
-    code:     "[up][dn] scroll  [l] light  [d] dark  [c] clear  [n] new tab",
+    markdown: "[up][dn] scroll  [l] light  [d] dark\n[r] reload  [c] clear  [n] new tab",
+    code:     "[up][dn] scroll  [l] light  [d] dark\n[r] reload  [c] clear  [n] new tab",
   },
 };
 

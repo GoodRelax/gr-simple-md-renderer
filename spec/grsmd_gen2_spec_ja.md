@@ -1,8 +1,8 @@
 # GRSMD Gen2 ソフトウェア仕様書
 
-**バージョン:** Gen2 v0.3
+**バージョン:** Gen2 v0.5
 **日付:** 2026-03-05
-**ステータス:** 統合仕様書 (Spec①②③ 統合 + アーキテクチャレビュー反映 + UI改善)
+**ステータス:** 統合仕様書 (Spec①②③ 統合 + アーキテクチャレビュー反映 + UI改善 + Reload/テーマ分離 + preprocessInput/トースト修正)
 
 ---
 
@@ -1275,6 +1275,7 @@ Feature: タッチデバイスレイアウト
 | `controls`      | div      | ボタングループコンテナ                                                             |
 | `renderLight`   | button   | ラベル: "Render Light" — 両ビュー共用 (FR-06)                                      |
 | `renderDark`    | button   | ラベル: "Render Dark" — 両ビュー共用 (FR-06)                                       |
+| `reloadBtn`     | button   | ラベル: "Re-\nload" — fileHandleからファイルを再読込 (FR-07)                        |
 | `newTabBtn`     | button   | GRSMDを新しいブラウザタブで開く                                                    |
 | `clearBtn`      | button   | エディタをクリアしプレレンダー状態にリセット                                       |
 | `helpBtn`       | button   | ヘルプモーダルを開く (ラベル: "?")                                                 |
@@ -1289,7 +1290,7 @@ Feature: タッチデバイスレイアウト
 | 要素ID           | タグ | 説明                                                                                                                                          |
 | ---------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fileInfo`       | div  | `#editor` の直後に配置。`mode=code` 時にファイルメタデータを表示、他モードでは非表示。UIController.setViewMode() が管理。                     |
-| `keyHint`        | div  | `#topbar` 内に配置。ショートカットヒントを表示し、`CONFIG.codeView.keyHintDurationMs` 後にフェードアウト。UIController.showKeyHint() が管理。 |
+| `keyHint`        | div  | `#preview` 先頭にオーバーレイ表示 (`position: fixed`, topbar直下)。ショートカットヒントを表示。消去条件: 5秒経過 / ボタン押下 / スクロール / クリック。UIController.showKeyHint() が管理。 |
 | `affordanceText` | div  | `_viewState === 'initial'` 時に `#preview` 内に表示されるデフォルトヒントテキスト。UIController.setViewMode('initial') で表示。               |
 | `codeViewBody`   | div  | ハイライト済みコード＋行番号のスクロール可能領域。SourceFileRenderer.\_buildCodeBody() が生成。                                               |
 | `toastContainer` | div  | トースト通知用の固定コンテナ (ビューポート下部中央)                                                                                           |
@@ -1343,9 +1344,10 @@ const CONFIG = {
   // New: Code View behavior settings
   codeView: {
     defaultTheme: "dark",
-    keyHintDurationMs: 3000,
+    keyHintDurationMs: 5000,
     toastDurationMs: 3000,
     reloadUnavailableMsg: "Reload not available (Chrome/Edge 86+ required)",
+    reloadNoFileMsg: "No file to reload. Drop a file to enable reload.",
   },
   // Editor background colors per view mode and theme (CSS-driven via body class)
   editorColors: {
@@ -1354,8 +1356,8 @@ const CONFIG = {
   },
   // Keyboard hint text per view mode (2-line for narrow browsers)
   keyHints: {
-    markdown: "[up][dn] scroll  [l] light  [d] dark\n[c] clear  [n] new tab",
-    code: "[up][dn] scroll  [l] light  [d] dark\n[c] clear  [n] new tab",
+    markdown: "[up][dn] scroll  [l] light  [d] dark\n[r] reload  [c] clear  [n] new tab",
+    code: "[up][dn] scroll  [l] light  [d] dark\n[r] reload  [c] clear  [n] new tab",
   },
   messages: {
     plantuml: {
@@ -1603,9 +1605,10 @@ document.addEventListener("drop", async (e) => {
 
   if (CONFIG.fileDrop.markdownExtensions.includes(ext)) {
     // (1) .md -> Markdown Preview (with preprocessInput)
+    const fileHandle = handlePromise ? await handlePromise : null;
     const text = this.preprocessInput(await file.text());
     this.elements.editor.value = text;
-    orchestrator.loadMarkdown(text, systemTheme());
+    await orchestrator.loadMarkdown(text, systemTheme(), fileHandle);
   } else if (EXT_TO_HLJS[ext] || EXT_TO_HLJS[file.name]) {
     // (2) Known text extension -> Code View (highlight attempt)
     this.elements.editor.value = ""; // RTC2-07: clear editor before code view
@@ -1917,21 +1920,57 @@ _formatFileInfo(metadata) {
 | ------------------------------------------ | --------------------------------------------------------- |
 | HTMLページ読み込み                         | `applySystemTheme()` が `prefers-color-scheme` を読み取る |
 | コードファイルドロップ                     | `applyTheme('dark')` を強制適用                           |
-| `l` キーまたは Render Light (コードビュー) | `orchestrator.reloadCodeView('light')`                    |
-| `d` キーまたは Render Dark (コードビュー)  | `orchestrator.reloadCodeView('dark')`                     |
+| `l` キーまたは Render Light (コードビュー) | `applyTheme('light')` のみ (CSS切替、再読込なし)          |
+| `d` キーまたは Render Dark (コードビュー)  | `applyTheme('dark')` のみ (CSS切替、再読込なし)           |
 | `l` キーまたは Render Light (Markdown)     | `orchestrator.reRender('light')`                          |
 | `d` キーまたは Render Dark (Markdown)      | `orchestrator.reRender('dark')`                           |
+| `r` キーまたは Reload (コードビュー)       | `orchestrator.reloadCodeView(currentTheme)`               |
+| `r` キーまたは Reload (Markdown)           | `orchestrator.readMarkdownFile()` → preprocessInput → `loadMarkdown` (要fileHandle)|
 | `c` キーまたは Clear                       | `uiController.doClear()`                                  |
+
+設計根拠: hljs出力はCSSクラス (`hljs-keyword` 等) ベースであり、ライト/ダーク切替は `body.dark` のCSS切替のみで完結する。ファイル再読込・DOM再構築は不要。これによりコードビューの `l`/`d` は即時応答となる。
 
 **UIController.handleRender() メソッド (ボタンとキーボードの両方で使用):**
 
 ```javascript
 async handleRender(theme) {
   if (this.orchestrator.isCodeViewActive()) {
+    // Code view: CSS-only theme switch (no file re-read, no DOM rebuild)
+    applyTheme(theme);
+    this.state.setTheme(theme);
+  } else if (!this.orchestrator.isPreRenderState()) {
+    const content = this.preprocessInput(this.elements.editor.value);
+    this.state.setMarkdownText(content);
+    await this.orchestrator.reRender(theme);
+    this.setViewMode("markdown");
+    this.showKeyHint("markdown");
+  } else {
+    // Initial state: render if editor has content
+    const content = this.preprocessInput(this.elements.editor.value);
+    if (content.trim()) {
+      await this.orchestrator.loadMarkdown(content, theme);
+      this.setViewMode("markdown");
+      this.showKeyHint("markdown");
+    }
+  }
+}
+```
+
+**UIController.handleReload() メソッド (Reload ボタンと `r` キーで使用):**
+
+```javascript
+async handleReload() {
+  if (this.orchestrator.isPreRenderState()) return;
+  const theme = this.state.currentTheme;
+  if (this.orchestrator.isCodeViewActive()) {
     const metadata = await this.orchestrator.reloadCodeView(theme);
     if (metadata) this.setViewMode("code", metadata);
-  } else if (!this.orchestrator.isPreRenderState()) {
-    this.orchestrator.reRender(theme);
+  } else {
+    const rawText = await this.orchestrator.readMarkdownFile();
+    if (rawText === null) return; // toast already shown
+    const text = this.preprocessInput(rawText);
+    this.elements.editor.value = text;
+    await this.orchestrator.loadMarkdown(text, theme);
     this.setViewMode("markdown");
     this.showKeyHint("markdown");
   }
@@ -1959,11 +1998,43 @@ async renderCodeView(file, fileHandle) {
   );
   return metadata;
 }
+
+// .md fileHandle storage for reload
+_mdFileHandle = null;
+
+async loadMarkdown(text, theme, fileHandle = undefined) {
+  if (fileHandle !== undefined) this._mdFileHandle = fileHandle;
+  this.state.setMarkdownText(text);
+  this._viewState = "markdown";
+  this.state.setTheme(theme);
+  applyTheme(theme);
+  await this.renderAll();
+}
+
+/**
+ * Read .md file from stored fileHandle. Returns raw text or null.
+ * Shows appropriate toast when unavailable:
+ *   - FILE_SYSTEM_HANDLE_SUPPORTED && no handle -> "No file to reload..."
+ *   - !FILE_SYSTEM_HANDLE_SUPPORTED           -> "Chrome/Edge 86+ required"
+ */
+async readMarkdownFile() {
+  if (!this._mdFileHandle) {
+    const msg = FILE_SYSTEM_HANDLE_SUPPORTED
+      ? CONFIG.codeView.reloadNoFileMsg
+      : CONFIG.codeView.reloadUnavailableMsg;
+    showToast(msg, CONFIG.codeView.toastDurationMs);
+    return null;
+  }
+  const file = await this._mdFileHandle.getFile();
+  return await file.text();
+}
 ```
 
 注意: `renderCodeView()` は `preview.classList` 操作を行わない。body クラスの管理は UIController.setViewMode() に委譲される。
 
 UIController は RendererOrchestrator のパブリックメソッドのみを呼び出し、内部の SourceFileRenderer に直接アクセスしない。
+
+`_mdFileHandle` は RendererOrchestrator (UseCase層) が保持する。Adapter用Interfaceは不要（ScrollMementoと同じCA意図的逸脱）。
 
 ### 5.9 コードビュー UIレイアウトとCSS
 
@@ -1975,9 +2046,11 @@ UIController は RendererOrchestrator のパブリックメソッドのみを呼
 |  [editor textarea (hidden in code view)]                         |
 |  [#fileInfo: hello.c | 1,234 lines | 48.20 KB                 ] |
 |  [          Updated: 2026-03-05 12:34:56                       ] |
-|  [#keyHint: [up][dn] scroll  [l] light  [d] dark               ] |
-|  [          [c] clear  [n] new tab                              ] |
-|  [Render Light] [Render Dark] [New Tab] [Clear] [?]              |
+|  [Render Light] [Render Dark] [Re-load] [New Tab] [Clear] [?]   |
++------------------------------------------------------------------+
+| #keyHint (position: fixed; top: topbar bottom edge; overlay)     |
+|  [up][dn] scroll  [l] light  [d] dark                           |
+|  [r] reload  [c] clear  [n] new tab                             |
 +------------------------------------------------------------------+
 |                                                                  |
 | #preview (flex: 1; overflow: auto; position: relative)           |
@@ -2001,9 +2074,11 @@ UIController は RendererOrchestrator のパブリックメソッドのみを呼
 **レイアウト変更点:**
 
 - `#codeViewHeader` と `#codeViewStatusBar` を廃止。ファイルメタデータは `#fileInfo` (topbar 内) に統合。
-- `#codeViewKeyHint` を廃止。キーヒントは `#keyHint` (topbar 内) に統合。
+- `#codeViewKeyHint` を廃止。キーヒントは `#keyHint` (`#preview` 先頭にオーバーレイ) に統合。
+- `#keyHint` は `position: fixed; top: <topbar下端>` でプレビューエリア先頭に重ねて表示。
+- [Re-load] ボタンを [Render Dark] と [New Tab] の間に追加。
 - コードビュー時、`#editor` は `display: none` + `readOnly = true`。
-- `#fileInfo` と `#keyHint` は UIController.setViewMode() / showKeyHint() が管理。
+- `#fileInfo` は UIController.setViewMode() が管理。`#keyHint` は UIController.showKeyHint() が管理。
 
 **エディタ背景色 (CSS, body クラスベース):**
 
@@ -2052,7 +2127,7 @@ body.view-code[data-theme="dark"] #editor {
 
 **#fileInfo:** `#editor` の直後に配置。コードビュー時にファイルメタデータを2行で表示する。フォーマット: `<filename>  |  <lines> lines  |  <KB> KB\nUpdated: <YYYY-MM-DD HH:MM:SS>`。`white-space: pre-line` で改行を反映。setViewMode("code", metadata) で表示、他モードで非表示。
 
-**#keyHint:** `#topbar` 内に配置。CSS `opacity` トランジションによるフェードアウト。`white-space: pre` で改行を反映（2行表示対応）。showKeyHint(mode) で表示し、CONFIG.codeView.keyHintDurationMs 後にフェードアウト。
+**#keyHint:** `position: fixed; top: <topbar下端>` でプレビューエリア先頭にオーバーレイ表示。CSS `opacity` トランジションによるフェードアウト。`white-space: pre` で改行を反映（2行表示対応）。showKeyHint(mode) で表示。消去条件: CONFIG.codeView.keyHintDurationMs (5秒) 経過 / 任意のボタン押下 / マウススクロール / クリック。いずれかが発生した時点でフェードアウト開始。
 
 ### 5.10 アフォーダンステキスト
 
@@ -2098,16 +2173,17 @@ Get started:
 
 ### 5.11 キーボードショートカット対応表
 
-| キー      | プレレンダー               | Markdownプレビュー             | コードビュー                   |
-| --------- | -------------------------- | ------------------------------ | ------------------------------ |
-| ArrowUp   | 無動作                     | スムーススクロール↑            | スムーススクロール↑            |
-| ArrowDown | 無動作                     | スムーススクロール↓            | スムーススクロール↓            |
-| `l`       | 無動作                     | Markdownをライトでレンダリング | リロード＋ライトテーマ         |
-| `d`       | 無動作                     | Markdownをダークでレンダリング | リロード＋ダークテーマ         |
-| `n`       | 新規タブを開く             | 新規タブを開く                 | 新規タブを開く                 |
-| `c`       | 無動作                     | クリアしてリセット             | コードビューを破棄してリセット |
-| Ctrl+C    | ブラウザネイティブコピー   | ブラウザネイティブコピー       | ブラウザネイティブコピー       |
-| Ctrl+V    | ペースト＋自動レンダリング | 無動作 (ブラウザデフォルト)    | 無動作 (ブラウザデフォルト)    |
+| キー      | プレレンダー               | Markdownプレビュー             | コードビュー                            |
+| --------- | -------------------------- | ------------------------------ | --------------------------------------- |
+| ArrowUp   | 無動作                     | スムーススクロール↑            | スムーススクロール↑                     |
+| ArrowDown | 無動作                     | スムーススクロール↓            | スムーススクロール↓                     |
+| `l`       | 無動作                     | Markdownをライトでレンダリング | ライトテーマに切替 (CSS切替のみ、即時)  |
+| `d`       | 無動作                     | Markdownをダークでレンダリング | ダークテーマに切替 (CSS切替のみ、即時)  |
+| `r`       | 無動作                     | fileHandleからファイル再読込   | fileHandleからファイル再読込            |
+| `n`       | 新規タブを開く             | 新規タブを開く                 | 新規タブを開く                          |
+| `c`       | 無動作                     | クリアしてリセット             | コードビューを破棄してリセット          |
+| Ctrl+C    | ブラウザネイティブコピー   | ブラウザネイティブコピー       | ブラウザネイティブコピー                |
+| Ctrl+V    | ペースト＋自動レンダリング | 無動作 (ブラウザデフォルト)    | 無動作 (ブラウザデフォルト)             |
 
 注意: 修飾キー (Ctrl / Meta / Alt) が押されている場合、ショートカットハンドラをバイパスしてブラウザネイティブ動作を優先する (INV-14)。
 
@@ -2136,6 +2212,9 @@ document.addEventListener("keydown", (e) => {
     case "d":
       this.handleRender("dark");
       break;
+    case "r":
+      this.handleReload();
+      break;
     case "n":
       window.open(window.location.href, "_blank");
       break;
@@ -2155,15 +2234,57 @@ document.addEventListener("keyup", (e) => {
 
 ```javascript
 doClear() {
+  this.scrollEngine.destroy();
   this.orchestrator.clear();
   this.elements.editor.value = "";
-  this.applySystemTheme();
+  applySystemTheme();
   this._showAffordance();
   this.setViewMode("initial");
 }
 ```
 
-Render Light / Render Dark ボタンのクリックハンドラも `this.handleRender('light')` / `this.handleRender('dark')` を呼び出す。
+Render Light / Render Dark ボタンのクリックハンドラは `this.handleRender('light')` / `this.handleRender('dark')` を呼び出す。
+Reload ボタンのクリックハンドラは `this.handleReload()` を呼び出す。
+
+**UIController.showKeyHint(mode) メソッド:**
+
+```javascript
+showKeyHint(mode) {
+  const hint = this.elements.keyHint;
+  if (!hint) return;
+  const text = CONFIG.keyHints[mode];
+  if (!text) { hint.style.display = "none"; return; }
+  hint.textContent = text;
+  hint.style.opacity = "1";
+  hint.style.display = "block";
+
+  // Clear previous dismissal listeners and timer
+  this._clearKeyHintDismiss();
+
+  // Dismiss on: timeout / button press / scroll / click
+  const dismiss = () => {
+    hint.style.opacity = "0";
+    this._clearKeyHintDismiss();
+  };
+  this._keyHintTimer = setTimeout(dismiss,
+    CONFIG.codeView.keyHintDurationMs);
+  this._keyHintDismissHandler = dismiss;
+  document.addEventListener("click", dismiss, { once: true });
+  document.addEventListener("scroll", dismiss, { once: true, capture: true });
+  document.addEventListener("keydown", dismiss, { once: true });
+}
+
+_clearKeyHintDismiss() {
+  clearTimeout(this._keyHintTimer);
+  if (this._keyHintDismissHandler) {
+    document.removeEventListener("click", this._keyHintDismissHandler);
+    document.removeEventListener("scroll", this._keyHintDismissHandler,
+      { capture: true });
+    document.removeEventListener("keydown", this._keyHintDismissHandler);
+    this._keyHintDismissHandler = null;
+  }
+}
+```
 
 ### 5.12 ユーティリティ関数
 

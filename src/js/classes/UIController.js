@@ -1,5 +1,5 @@
 import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
-import { applySystemTheme, systemTheme } from "../utils.js";
+import { applyTheme, applySystemTheme, systemTheme } from "../utils.js";
 import ModalController from "./ModalController.js";
 
 /**
@@ -98,7 +98,8 @@ export default class UIController {
   }
 
   /**
-   * Show keyboard shortcut hints in #keyHint, then fade out.
+   * Show keyboard shortcut hints in #keyHint, then dismiss on
+   * timeout (5s), keydown, scroll, or click.
    * @param {'initial'|'markdown'|'code'} mode
    */
   showKeyHint(mode) {
@@ -109,13 +110,37 @@ export default class UIController {
       hint.style.display = "none";
       return;
     }
+    // Clear any previous dismissal listeners
+    this._clearKeyHintDismiss();
+
     hint.textContent = text;
     hint.style.opacity = "1";
     hint.style.display = "block";
-    clearTimeout(this._keyHintTimer);
-    this._keyHintTimer = setTimeout(() => {
+
+    const dismiss = () => {
       hint.style.opacity = "0";
-    }, CONFIG.codeView.keyHintDurationMs);
+      this._clearKeyHintDismiss();
+    };
+
+    this._keyHintTimer = setTimeout(dismiss, CONFIG.codeView.keyHintDurationMs);
+
+    this._keyHintDismissHandler = dismiss;
+    document.addEventListener("keydown", dismiss, { once: true });
+    this.elements.preview.addEventListener("scroll", dismiss, { once: true });
+    document.addEventListener("click", dismiss, { once: true });
+  }
+
+  /**
+   * Remove all keyHint dismissal listeners and clear timer.
+   */
+  _clearKeyHintDismiss() {
+    clearTimeout(this._keyHintTimer);
+    if (this._keyHintDismissHandler) {
+      document.removeEventListener("keydown", this._keyHintDismissHandler);
+      this.elements.preview.removeEventListener("scroll", this._keyHintDismissHandler);
+      document.removeEventListener("click", this._keyHintDismissHandler);
+      this._keyHintDismissHandler = null;
+    }
   }
 
   /**
@@ -164,6 +189,9 @@ export default class UIController {
   }
 
   setupUtilityButtons() {
+    this.elements.reloadBtn.addEventListener("click", async () => {
+      await this.handleReload();
+    });
     this.elements.newTabBtn.addEventListener("click", () => {
       window.open(window.location.href, "_blank");
     });
@@ -173,16 +201,17 @@ export default class UIController {
   }
 
   /**
-   * Dispatch render based on current view state (FR-06, Sect 3.4).
-   * - Code view: reload the source file with the new theme.
+   * Dispatch render / theme switch based on current view state (Sect 5.8).
+   * - Code view: CSS-only toggle (no DOM rebuild).
    * - Markdown view: re-render markdown with the new theme.
    * - Initial state with editor content: first render via loadMarkdown.
    * @param {'light'|'dark'} theme
    */
   async handleRender(theme) {
     if (this.orchestrator.isCodeViewActive()) {
-      const metadata = await this.orchestrator.reloadCodeView(theme);
-      if (metadata) this.setViewMode("code", metadata);
+      // Code view: hljs uses CSS classes, so just toggle body.dark
+      applyTheme(theme);
+      this.state.setTheme(theme);
     } else if (!this.orchestrator.isPreRenderState()) {
       const content = this.preprocessInput(this.elements.editor.value);
       this.state.setMarkdownText(content);
@@ -197,6 +226,29 @@ export default class UIController {
         this.setViewMode("markdown");
         this.showKeyHint("markdown");
       }
+    }
+  }
+
+  /**
+   * Reload the current file from its FileSystemFileHandle (Sect 5.8).
+   * - Code view: reload via sourceFileRenderer.
+   * - Markdown view: read file, preprocessInput, then loadMarkdown.
+   * - Initial state: no-op.
+   */
+  async handleReload() {
+    if (this.orchestrator.isPreRenderState()) return;
+    const theme = this.state.currentTheme;
+    if (this.orchestrator.isCodeViewActive()) {
+      const metadata = await this.orchestrator.reloadCodeView(theme);
+      if (metadata) this.setViewMode("code", metadata);
+    } else {
+      const rawText = await this.orchestrator.readMarkdownFile();
+      if (rawText === null) return;
+      const text = this.preprocessInput(rawText);
+      this.elements.editor.value = text;
+      await this.orchestrator.loadMarkdown(text, theme);
+      this.setViewMode("markdown");
+      this.showKeyHint("markdown");
     }
   }
 
@@ -250,6 +302,7 @@ export default class UIController {
 
       if (CONFIG.fileDrop.markdownExtensions.includes(ext)) {
         // (1) .md -> Markdown Preview (with preprocessInput)
+        const fileHandle = handlePromise ? await handlePromise : null;
         let text;
         try {
           text = await file.text();
@@ -259,7 +312,7 @@ export default class UIController {
         }
         text = this.preprocessInput(text);
         this.elements.editor.value = text;
-        await this.orchestrator.loadMarkdown(text, systemTheme());
+        await this.orchestrator.loadMarkdown(text, systemTheme(), fileHandle);
         this.setViewMode("markdown");
         this.showKeyHint("markdown");
       } else if (EXT_TO_HLJS[ext] || EXT_TO_HLJS[file.name]) {
@@ -349,6 +402,9 @@ export default class UIController {
           break;
         case "d":
           this.handleRender("dark");
+          break;
+        case "r":
+          this.handleReload();
           break;
         case "n":
           window.open(window.location.href, "_blank");

@@ -3,12 +3,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock utils.js to avoid DOM side-effects during import
 vi.mock("../js/utils.js", () => ({
   applyTheme: vi.fn(),
+  showToast: vi.fn(),
   waitForDOMStability: vi.fn().mockResolvedValue(true),
 }));
 
 import RendererOrchestrator from "../js/classes/RendererOrchestrator.js";
 import ApplicationState from "../js/classes/ApplicationState.js";
-import { applyTheme, waitForDOMStability } from "../js/utils.js";
+import { applyTheme, showToast, waitForDOMStability } from "../js/utils.js";
 
 function createOrchestrator() {
   const state = new ApplicationState();
@@ -156,5 +157,136 @@ describe("RendererOrchestrator", () => {
       await orchestrator.loadMarkdown("# Test", "dark");
       expect(applyTheme).toHaveBeenCalledWith("dark");
     });
+
+    it("stores fileHandle for reload support", async () => {
+      const { orchestrator } = createOrchestrator();
+      const fakeHandle = { getFile: vi.fn() };
+      await orchestrator.loadMarkdown("# Test", "light", fakeHandle);
+      expect(orchestrator._mdFileHandle).toBe(fakeHandle);
+    });
+
+    it("preserves existing fileHandle when called without fileHandle arg (sentinel)", async () => {
+      const { orchestrator } = createOrchestrator();
+      const fakeHandle = { getFile: vi.fn() };
+      await orchestrator.loadMarkdown("# First", "light", fakeHandle);
+      expect(orchestrator._mdFileHandle).toBe(fakeHandle);
+
+      // Call without fileHandle — should preserve existing handle
+      await orchestrator.loadMarkdown("# Second", "dark");
+      expect(orchestrator._mdFileHandle).toBe(fakeHandle);
+    });
+
+    it("clears fileHandle when null is passed explicitly", async () => {
+      const { orchestrator } = createOrchestrator();
+      const fakeHandle = { getFile: vi.fn() };
+      await orchestrator.loadMarkdown("# First", "light", fakeHandle);
+
+      // Pass null explicitly — should clear handle
+      await orchestrator.loadMarkdown("# Second", "dark", null);
+      expect(orchestrator._mdFileHandle).toBeNull();
+    });
+  });
+
+  describe("readMarkdownFile()", () => {
+    it("returns null and shows toast when no fileHandle", async () => {
+      const { orchestrator } = createOrchestrator();
+      orchestrator._viewState = "markdown";
+
+      const result = await orchestrator.readMarkdownFile();
+
+      expect(result).toBeNull();
+      expect(showToast).toHaveBeenCalled();
+    });
+
+    it("returns raw text string when fileHandle exists (no render)", async () => {
+      const { orchestrator, markdownRenderer } = createOrchestrator();
+      orchestrator._viewState = "markdown";
+
+      const fakeFile = { text: vi.fn().mockResolvedValue("# Reloaded") };
+      const fakeHandle = { getFile: vi.fn().mockResolvedValue(fakeFile) };
+      orchestrator._mdFileHandle = fakeHandle;
+
+      const result = await orchestrator.readMarkdownFile();
+
+      expect(result).toBe("# Reloaded");
+      expect(fakeHandle.getFile).toHaveBeenCalled();
+      expect(fakeFile.text).toHaveBeenCalled();
+      // readMarkdownFile does NOT render or apply theme
+      expect(applyTheme).not.toHaveBeenCalled();
+      expect(markdownRenderer.render).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("clear() resets fileHandle", () => {
+    it("resets _mdFileHandle to null", async () => {
+      const { orchestrator } = createOrchestrator();
+      const fakeHandle = { getFile: vi.fn() };
+      await orchestrator.loadMarkdown("# Test", "light", fakeHandle);
+      expect(orchestrator._mdFileHandle).toBe(fakeHandle);
+
+      orchestrator.clear();
+      expect(orchestrator._mdFileHandle).toBeNull();
+    });
+  });
+});
+
+// Separate describe for 2-message toast split (requires dynamic import to mock config)
+describe("readMarkdownFile toast messages", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  async function createWithFSHSupported(supported) {
+    const actualConfig = await vi.importActual("../js/config.js");
+
+    vi.doMock("../js/utils.js", () => ({
+      applyTheme: vi.fn(),
+      showToast: vi.fn(),
+      waitForDOMStability: vi.fn().mockResolvedValue(true),
+    }));
+    vi.doMock("../js/config.js", () => ({
+      CONFIG: actualConfig.CONFIG,
+      FILE_SYSTEM_HANDLE_SUPPORTED: supported,
+    }));
+
+    const { default: Orch } = await import("../js/classes/RendererOrchestrator.js");
+    const { showToast: toast } = await import("../js/utils.js");
+    const cfg = actualConfig.CONFIG;
+
+    const state = { setMarkdownText: vi.fn(), setTheme: vi.fn(), markdownText: "", currentTheme: "light" };
+    const orch = new Orch(
+      state,
+      { render: vi.fn() },
+      { render: vi.fn() },
+      { render: vi.fn() },
+      { save: vi.fn(), restore: vi.fn() },
+      document.createElement("div"),
+      { render: vi.fn(), reload: vi.fn(), destroy: vi.fn() },
+    );
+    return { orch, toast, cfg };
+  }
+
+  it("shows reloadNoFileMsg when FILE_SYSTEM_HANDLE_SUPPORTED=true and no handle", async () => {
+    const { orch, toast, cfg } = await createWithFSHSupported(true);
+    orch._viewState = "markdown";
+
+    await orch.readMarkdownFile();
+
+    expect(toast).toHaveBeenCalledWith(
+      cfg.codeView.reloadNoFileMsg,
+      cfg.codeView.toastDurationMs,
+    );
+  });
+
+  it("shows reloadUnavailableMsg when FILE_SYSTEM_HANDLE_SUPPORTED=false and no handle", async () => {
+    const { orch, toast, cfg } = await createWithFSHSupported(false);
+    orch._viewState = "markdown";
+
+    await orch.readMarkdownFile();
+
+    expect(toast).toHaveBeenCalledWith(
+      cfg.codeView.reloadUnavailableMsg,
+      cfg.codeView.toastDurationMs,
+    );
   });
 });

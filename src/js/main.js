@@ -34,6 +34,7 @@ const elements = {
   preview: document.getElementById("preview"),
   renderLightBtn: document.getElementById("renderLight"),
   renderDarkBtn: document.getElementById("renderDark"),
+  reloadBtn: document.getElementById("reloadBtn"),
   newTabBtn: document.getElementById("newTabBtn"),
   clearBtn: document.getElementById("clearBtn"),
   helpBtn: document.getElementById("helpBtn"),

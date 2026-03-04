@@ -412,7 +412,7 @@ body.dark {
 #keyHint {
   display: none;
   position: fixed;
-  bottom: 28px;
+  top: 60px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.75);
@@ -425,7 +425,7 @@ body.dark {
   transition: opacity 0.6s ease;
   pointer-events: none;
   z-index: 250;
-  white-space: nowrap;
+  white-space: pre;
 }
 
 body:not(.dark) #keyHint {
