@@ -95,7 +95,12 @@ export default class SourceFileRenderer {
         ? hljs.highlight(text, { language: lang }).value
         : hljs.highlightAuto(text).value;
     } catch (_) {
-      highlighted = escapeHtml(text);
+      // Language not in hljs common bundle; fall back to auto-detection
+      try {
+        highlighted = hljs.highlightAuto(text).value;
+      } catch (_e) {
+        highlighted = escapeHtml(text);
+      }
     }
 
     // Split into lines, properly reopening/closing spans at boundaries
@@ -103,7 +108,7 @@ export default class SourceFileRenderer {
 
     const lineHtml = lines
       .map((line) => `<span class="code-line">${line}</span>`)
-      .join("\n");
+      .join("");
 
     // Format metadata
     const ts = formatDateTime(file.lastModified);

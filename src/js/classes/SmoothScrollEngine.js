@@ -6,9 +6,11 @@
 export default class SmoothScrollEngine {
   /**
    * @param {object} config - CONFIG.scroll reference
+   * @param {HTMLElement} [scrollTarget] - element to scroll (defaults to window)
    */
-  constructor(config) {
+  constructor(config, scrollTarget) {
     this._cfg = config;
+    this._scrollTarget = scrollTarget || null;
     this._velocity = 0;
     this._direction = 0; // +1: down, -1: up
     this._keyHeld = false;
@@ -24,6 +26,7 @@ export default class SmoothScrollEngine {
     if (!this._rafId) {
       this._lastTs = null;
       this._rafId = requestAnimationFrame(this._loop);
+      this._setScrolling(true);
     }
   }
 
@@ -38,6 +41,13 @@ export default class SmoothScrollEngine {
     this._rafId = null;
     this._velocity = 0;
     this._lastTs = null;
+    this._setScrolling(false);
+  }
+
+  /** Add/remove .scrolling class on scrollTarget to suppress hover flicker */
+  _setScrolling(active) {
+    if (!this._scrollTarget) return;
+    this._scrollTarget.classList.toggle("scrolling", active);
   }
 
   _loop(ts) {
@@ -55,11 +65,13 @@ export default class SmoothScrollEngine {
       }
 
       if (this._velocity > 0.005) {
-        window.scrollBy(0, this._direction * this._velocity * dt);
+        const target = this._scrollTarget || window;
+        target.scrollBy(0, this._direction * this._velocity * dt);
       } else {
         this._velocity = 0;
         this._rafId = null;
         this._lastTs = null;
+        this._setScrolling(false);
         return;
       }
     }

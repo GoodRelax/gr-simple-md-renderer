@@ -95,6 +95,29 @@ export default class RendererOrchestrator {
   }
 
   /**
+   * Facade: re-render markdown with a new theme (Sect 5.8).
+   * Called by UIController.handleRender() for markdown view.
+   * @param {'light'|'dark'} theme
+   */
+  async reRender(theme) {
+    this.state.setTheme(theme);
+    this.state.setMarkdownText(
+      this.state.markdownText // already stored; no-op re-set for explicitness
+    );
+    applyTheme(theme);
+    await this.renderAll();
+  }
+
+  /**
+   * Facade: reload the current code view with a new theme (Sect 5.8).
+   * Called by UIController.handleRender() for code view.
+   * @param {'light'|'dark'} theme
+   */
+  async reloadCodeView(theme) {
+    await this.sourceFileRenderer.reload(theme);
+  }
+
+  /**
    * Full markdown rendering pipeline: Markdown -> Mermaid -> PlantUML.
    * Uses state.markdownText and state.currentTheme.
    */

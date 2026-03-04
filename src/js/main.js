@@ -73,7 +73,7 @@ const orchestrator = new RendererOrchestrator(
 );
 
 // SmoothScrollEngine: used by UIController keyboard handler
-const scrollEngine = new SmoothScrollEngine(CONFIG.scroll);
+const scrollEngine = new SmoothScrollEngine(CONFIG.scroll, elements.preview);
 
 // UIController wires all events
 new UIController(orchestrator, state, elements, scrollEngine);

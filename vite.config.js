@@ -11,4 +11,8 @@ export default defineConfig({
     },
   },
   plugins: [viteSingleFile()],
+  test: {
+    environment: "jsdom",
+    root: ".",
+  },
 });

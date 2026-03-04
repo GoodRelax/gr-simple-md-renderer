@@ -441,6 +441,11 @@ body:not(.dark) .code-line:hover {
   background: rgba(0, 0, 0, 0.03);
 }
 
+/* Suppress hover highlight during keyboard scroll to prevent flicker (INV-18b) */
+.scrolling .code-line {
+  pointer-events: none;
+}
+
 .code-line::before {
   content: counter(line);
   display: inline-block;

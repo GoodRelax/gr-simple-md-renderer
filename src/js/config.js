@@ -32,6 +32,8 @@ export const CONFIG = {
     messages: {
       tooLarge: "Dropped file is too large. Maximum file size is 5 MB.",
       readError: "Failed to read the dropped file.",
+      unsupportedType: "Unsupported file type. Only text-based files with recognized extensions are accepted.",
+      binaryFile: "Binary file is not supported.",
     },
   },
   messages: {
@@ -112,6 +114,29 @@ export const EXT_TO_HLJS = {
   "Makefile": "makefile",
   "GNUmakefile": "makefile",
 };
+
+// Binary file extensions blacklist (INV-18)
+// Files with these extensions are rejected without content inspection.
+export const BINARY_EXTENSIONS = new Set([
+  // Images
+  ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".svg", ".tiff", ".tif",
+  // Audio
+  ".mp3", ".wav", ".ogg", ".flac", ".aac", ".wma", ".m4a",
+  // Video
+  ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm",
+  // Archives
+  ".zip", ".tar", ".gz", ".bz2", ".7z", ".rar", ".xz",
+  // Executables / Libraries
+  ".exe", ".dll", ".so", ".dylib", ".bin", ".msi", ".dmg", ".app", ".deb", ".rpm",
+  // Documents (binary formats)
+  ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp",
+  // Compiled / Object
+  ".class", ".o", ".obj", ".pyc", ".pyo", ".wasm",
+  // Fonts
+  ".ttf", ".otf", ".woff", ".woff2", ".eot",
+  // Database
+  ".db", ".sqlite", ".sqlite3",
+]);
 
 // FileSystemFileHandle availability check (CON-01)
 export const FILE_SYSTEM_HANDLE_SUPPORTED =

@@ -28,7 +28,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
           `Your data will be sent to an external PlantUML rendering server.
 
 ` +
-          `[OK]: data -> official server -> render PlantUML
+          `[OK]: data -> \u{1F310} official server -> render PlantUML
 
 ` +
           `[Cancel]: Render Markdown without PlantUML`,

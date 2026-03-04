@@ -1,5 +1,5 @@
-import { CONFIG, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
-import { applyTheme, applySystemTheme, systemTheme } from "../utils.js";
+import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
+import { applySystemTheme, systemTheme } from "../utils.js";
 import ModalController from "./ModalController.js";
 
 /**
@@ -72,18 +72,22 @@ export default class UIController {
    * Dispatch render based on current view state (FR-06, Sect 3.4).
    * - Code view: reload the source file with the new theme.
    * - Markdown view: re-render markdown with the new theme.
-   * - Initial state: no-op.
+   * - Initial state with editor content: first render via loadMarkdown.
    * @param {'light'|'dark'} theme
    */
   async handleRender(theme) {
     if (this.orchestrator.isCodeViewActive()) {
-      await this.orchestrator.sourceFileRenderer.reload(theme);
+      await this.orchestrator.reloadCodeView(theme);
     } else if (!this.orchestrator.isPreRenderState()) {
       const content = this.preprocessInput(this.elements.editor.value);
-      this.state.setTheme(theme);
       this.state.setMarkdownText(content);
-      applyTheme(theme);
-      await this.orchestrator.renderAll();
+      await this.orchestrator.reRender(theme);
+    } else {
+      // Initial state: render if editor has content (paste / manual input)
+      const content = this.preprocessInput(this.elements.editor.value);
+      if (content.trim()) {
+        await this.orchestrator.loadMarkdown(content, theme);
+      }
     }
   }
 
@@ -133,7 +137,7 @@ export default class UIController {
         : "";
 
       if (CONFIG.fileDrop.markdownExtensions.includes(ext)) {
-        // Markdown path
+        // (1) .md -> Markdown Preview (with preprocessInput)
         let text;
         try {
           text = await file.text();
@@ -141,9 +145,31 @@ export default class UIController {
           alert(CONFIG.fileDrop.messages.readError);
           return;
         }
+        text = this.preprocessInput(text);
+        this.elements.editor.value = text;
         await this.orchestrator.loadMarkdown(text, systemTheme());
+      } else if (EXT_TO_HLJS[ext] || EXT_TO_HLJS[file.name]) {
+        // (2) Known text extension -> Code View
+        const fileHandle = handlePromise ? await handlePromise : null;
+        await this.orchestrator.renderCodeView(file, fileHandle);
+      } else if (BINARY_EXTENSIONS.has(ext)) {
+        // (3) Known binary extension -> reject
+        alert(CONFIG.fileDrop.messages.binaryFile);
       } else {
-        // Code view path (FR-01: all non-.md files including .txt)
+        // (4)/(5) Unknown extension -> null byte check on first 8KB
+        let bytes;
+        try {
+          const slice = file.slice(0, 8192);
+          bytes = new Uint8Array(await slice.arrayBuffer());
+        } catch (_) {
+          alert(CONFIG.fileDrop.messages.readError);
+          return;
+        }
+        if (bytes.some((b) => b === 0)) {
+          alert(CONFIG.fileDrop.messages.binaryFile);
+          return;
+        }
+        // Text file with unknown extension -> Code View (plaintext)
         const fileHandle = handlePromise ? await handlePromise : null;
         await this.orchestrator.renderCodeView(file, fileHandle);
       }
