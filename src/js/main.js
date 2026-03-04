@@ -29,6 +29,8 @@ import UIController from "./classes/UIController.js";
 
 const elements = {
   editor: document.getElementById("editor"),
+  fileInfo: document.getElementById("fileInfo"),
+  keyHint: document.getElementById("keyHint"),
   preview: document.getElementById("preview"),
   renderLightBtn: document.getElementById("renderLight"),
   renderDarkBtn: document.getElementById("renderDark"),
@@ -75,11 +77,8 @@ const orchestrator = new RendererOrchestrator(
 // SmoothScrollEngine: used by UIController keyboard handler
 const scrollEngine = new SmoothScrollEngine(CONFIG.scroll, elements.preview);
 
-// UIController wires all events
+// UIController wires all events and initializes view
 new UIController(orchestrator, state, elements, scrollEngine);
-
-// Populate initial affordance text in #preview
-orchestrator._showAffordance();
 
 // Diagram controllers: fine-pointer (mouse/trackpad) devices only
 const isTouchCapable = window.matchMedia("(any-pointer: coarse)").matches;

@@ -61,6 +61,16 @@ export const CONFIG = {
     toastDurationMs: 3000,
     reloadUnavailableMsg: "Reload not available (Chrome/Edge 86+ required)",
   },
+  // Editor background colors per view mode and theme (CSS-driven via body class)
+  editorColors: {
+    markdown: { light: "#FFF8F0", dark: "#2D2520" },
+    code:     { light: "#F0F4FF", dark: "#1A1E2E" },
+  },
+  // Keyboard hint text per view mode
+  keyHints: {
+    markdown: "[up][dn] scroll  [l] light  [d] dark  [c] clear  [n] new tab",
+    code:     "[up][dn] scroll  [l] light  [d] dark  [c] clear  [n] new tab",
+  },
 };
 
 // ========================================

@@ -6,6 +6,7 @@ import ModalController from "./ModalController.js";
  * Translates UI events into use-case calls.
  * Handles: render buttons, utility buttons, file drop (all files),
  * paste, keyboard shortcuts, modals, long-press.
+ * Manages view mode UI chrome via setViewMode() and showKeyHint().
  */
 export default class UIController {
   /**
@@ -21,10 +22,15 @@ export default class UIController {
     this.scrollEngine = scrollEngine;
     this.longPressTimer = null;
     this.isLongPress = false;
+    this._keyHintTimer = null;
 
     this.setupEventListeners();
     this.setupModals();
     this.setupPromptText();
+
+    // Initialize view: show affordance and set initial view mode
+    this._showAffordance();
+    this.setViewMode("initial");
   }
 
   setupEventListeners() {
@@ -49,6 +55,103 @@ export default class UIController {
       .replace(/^(?:\s*\n)*`{3,}markdown\s*\n/i, "")
       .replace(/\n`{3,}\s*$/i, "");
   }
+
+  // ---- View mode management ----
+
+  /**
+   * Set the application view mode and update UI chrome accordingly.
+   * @param {'initial'|'markdown'|'code'} mode
+   * @param {CodeViewMeta} [metadata] - required when mode is 'code'
+   */
+  setViewMode(mode, metadata) {
+    // Set body class: view-initial / view-markdown / view-code
+    document.body.classList.remove("view-initial", "view-markdown", "view-code");
+    document.body.classList.add(`view-${mode}`);
+
+    const fileInfo = this.elements.fileInfo;
+    const editor = this.elements.editor;
+    const affordance = document.getElementById("affordanceText");
+
+    switch (mode) {
+      case "code":
+        if (fileInfo) {
+          fileInfo.textContent = this._formatFileInfo(metadata);
+          fileInfo.style.display = "block";
+        }
+        editor.readOnly = true;
+        editor.style.display = "none";
+        if (affordance) affordance.style.display = "none";
+        break;
+      case "markdown":
+        if (fileInfo) fileInfo.style.display = "none";
+        editor.readOnly = false;
+        editor.style.display = "";
+        if (affordance) affordance.style.display = "none";
+        break;
+      case "initial":
+        if (fileInfo) fileInfo.style.display = "none";
+        editor.readOnly = false;
+        editor.style.display = "";
+        if (affordance) affordance.style.display = "block";
+        break;
+    }
+  }
+
+  /**
+   * Show keyboard shortcut hints in #keyHint, then fade out.
+   * @param {'initial'|'markdown'|'code'} mode
+   */
+  showKeyHint(mode) {
+    const hint = this.elements.keyHint;
+    if (!hint) return;
+    const text = CONFIG.keyHints[mode];
+    if (!text) {
+      hint.style.display = "none";
+      return;
+    }
+    hint.textContent = text;
+    hint.style.opacity = "1";
+    hint.style.display = "block";
+    clearTimeout(this._keyHintTimer);
+    this._keyHintTimer = setTimeout(() => {
+      hint.style.opacity = "0";
+    }, CONFIG.codeView.keyHintDurationMs);
+  }
+
+  /**
+   * Format CodeViewMeta into a display string for #fileInfo.
+   * @param {CodeViewMeta} metadata
+   * @returns {string}
+   */
+  _formatFileInfo(metadata) {
+    if (!metadata) return "";
+    const { fileName, fileSize, lineCount, language, loadedAtStr } = metadata;
+    const sizeStr = (fileSize / 1024).toFixed(2) + " KB";
+    return `${fileName}  |  ${lineCount} lines  |  ${sizeStr}  |  ${language || "plaintext"}  |  Loaded: ${loadedAtStr}`;
+  }
+
+  // ---- Affordance management ----
+
+  /**
+   * Show affordance text in #preview. Called during initialization
+   * and on clear to display the initial state hint.
+   */
+  _showAffordance() {
+    let el = this.elements.preview.querySelector("#affordanceText");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "affordanceText";
+      this.elements.preview.appendChild(el);
+    }
+    el.textContent =
+      "Get started:\n\n" +
+      "  1. Paste Markdown (Ctrl+V)  ->  Markdown Preview\n" +
+      "  2. Drop a .md file          ->  Markdown Preview\n" +
+      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)";
+    el.style.display = "block";
+  }
+
+  // ---- Event setup ----
 
   setupRenderButtons() {
     this.elements.renderLightBtn.addEventListener("click", async () => {
@@ -77,28 +180,36 @@ export default class UIController {
    */
   async handleRender(theme) {
     if (this.orchestrator.isCodeViewActive()) {
-      await this.orchestrator.reloadCodeView(theme);
+      const metadata = await this.orchestrator.reloadCodeView(theme);
+      if (metadata) this.setViewMode("code", metadata);
     } else if (!this.orchestrator.isPreRenderState()) {
       const content = this.preprocessInput(this.elements.editor.value);
       this.state.setMarkdownText(content);
       await this.orchestrator.reRender(theme);
+      this.setViewMode("markdown");
+      this.showKeyHint("markdown");
     } else {
       // Initial state: render if editor has content (paste / manual input)
       const content = this.preprocessInput(this.elements.editor.value);
       if (content.trim()) {
         await this.orchestrator.loadMarkdown(content, theme);
+        this.setViewMode("markdown");
+        this.showKeyHint("markdown");
       }
     }
   }
 
   /**
-   * Full clear: destroy view, clear editor, restore system theme.
+   * Full clear: destroy view, clear editor, restore system theme,
+   * set view mode to initial.
    */
   doClear() {
     this.scrollEngine.destroy();
     this.orchestrator.clear();
     this.elements.editor.value = "";
     applySystemTheme();
+    this._showAffordance();
+    this.setViewMode("initial");
   }
 
   /**
@@ -148,10 +259,15 @@ export default class UIController {
         text = this.preprocessInput(text);
         this.elements.editor.value = text;
         await this.orchestrator.loadMarkdown(text, systemTheme());
+        this.setViewMode("markdown");
+        this.showKeyHint("markdown");
       } else if (EXT_TO_HLJS[ext] || EXT_TO_HLJS[file.name]) {
         // (2) Known text extension -> Code View
+        this.elements.editor.value = ""; // RTC2-07: clear editor before code view
         const fileHandle = handlePromise ? await handlePromise : null;
-        await this.orchestrator.renderCodeView(file, fileHandle);
+        const metadata = await this.orchestrator.renderCodeView(file, fileHandle);
+        this.setViewMode("code", metadata);
+        this.showKeyHint("code");
       } else if (BINARY_EXTENSIONS.has(ext)) {
         // (3) Known binary extension -> reject
         alert(CONFIG.fileDrop.messages.binaryFile);
@@ -170,8 +286,11 @@ export default class UIController {
           return;
         }
         // Text file with unknown extension -> Code View (plaintext)
+        this.elements.editor.value = ""; // RTC2-07: clear editor before code view
         const fileHandle = handlePromise ? await handlePromise : null;
-        await this.orchestrator.renderCodeView(file, fileHandle);
+        const metadata = await this.orchestrator.renderCodeView(file, fileHandle);
+        this.setViewMode("code", metadata);
+        this.showKeyHint("code");
       }
     });
   }

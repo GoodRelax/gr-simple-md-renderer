@@ -17,9 +17,17 @@ function createOrchestrator() {
   const plantumlRenderer = { render: vi.fn().mockResolvedValue(undefined) };
   const scrollManager = { save: vi.fn().mockReturnValue(0), restore: vi.fn() };
   const preview = document.createElement("div");
+  const mockMetadata = {
+    fileName: "test.py",
+    fileSize: 1024,
+    lineCount: 42,
+    language: "python",
+    lastModified: Date.now(),
+    loadedAtStr: "2024-01-01 12:00:00",
+  };
   const sourceFileRenderer = {
-    render: vi.fn().mockResolvedValue(undefined),
-    reload: vi.fn().mockResolvedValue(undefined),
+    render: vi.fn().mockResolvedValue(mockMetadata),
+    reload: vi.fn().mockResolvedValue(mockMetadata),
     destroy: vi.fn(),
   };
 
@@ -106,6 +114,15 @@ describe("RendererOrchestrator", () => {
     });
   });
 
+  describe("renderCodeView()", () => {
+    it("returns CodeViewMeta from sourceFileRenderer.render()", async () => {
+      const { orchestrator } = createOrchestrator();
+      const file = new File(["test"], "test.py");
+      const result = await orchestrator.renderCodeView(file, null);
+      expect(result).toEqual(expect.objectContaining({ fileName: "test.py" }));
+    });
+  });
+
   describe("reloadCodeView(theme)", () => {
     it("calls sourceFileRenderer.reload(theme)", async () => {
       const { orchestrator, sourceFileRenderer } = createOrchestrator();
@@ -116,6 +133,13 @@ describe("RendererOrchestrator", () => {
 
       expect(sourceFileRenderer.reload).toHaveBeenCalledWith("light");
       expect(sourceFileRenderer.reload).toHaveBeenCalledOnce();
+    });
+
+    it("returns metadata from sourceFileRenderer.reload()", async () => {
+      const { orchestrator } = createOrchestrator();
+      orchestrator._viewState = "code";
+      const result = await orchestrator.reloadCodeView("dark");
+      expect(result).toEqual(expect.objectContaining({ fileName: "test.py" }));
     });
   });
 

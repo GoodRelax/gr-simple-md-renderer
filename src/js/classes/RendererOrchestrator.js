@@ -4,6 +4,7 @@ import { applyTheme, waitForDOMStability } from "../utils.js";
 /**
  * Coordinates the full rendering pipeline.
  * Owns: all renderer instances, view state, scroll manager.
+ * Does NOT manipulate DOM classList or UI chrome (delegated to UIController).
  */
 export default class RendererOrchestrator {
   /**
@@ -55,8 +56,6 @@ export default class RendererOrchestrator {
    */
   async loadMarkdown(text, theme) {
     this._viewState = "markdown";
-    this.preview.classList.remove("code-view");
-    this._hideAffordance();
     this.state.setMarkdownText(text);
     this.state.setTheme(theme);
     applyTheme(theme);
@@ -66,32 +65,31 @@ export default class RendererOrchestrator {
   /**
    * Load a non-.md file into code view.
    * Forces dark theme on first load (FR-06).
+   * Returns CodeViewMeta for UIController to display in #fileInfo.
    * @param {File} file
    * @param {FileSystemFileHandle|null} fileHandle
+   * @returns {Promise<CodeViewMeta>}
    */
   async renderCodeView(file, fileHandle) {
     this._viewState = "code";
-    this.preview.classList.add("code-view");
-    this._hideAffordance();
-    applyTheme("dark");
-    this.state.setTheme("dark");
-    await this.sourceFileRenderer.render(
+    applyTheme(CONFIG.codeView.defaultTheme);
+    this.state.setTheme(CONFIG.codeView.defaultTheme);
+    const metadata = await this.sourceFileRenderer.render(
       file,
       fileHandle,
       CONFIG.codeView.defaultTheme,
     );
+    return metadata;
   }
 
   /**
    * Destroy code/markdown view and return to initial state.
-   * Caller is responsible for clearing the editor textarea and
-   * restoring the system theme.
+   * Caller is responsible for clearing the editor textarea,
+   * restoring the system theme, and calling setViewMode('initial').
    */
   clear() {
     this._viewState = "initial";
-    this.preview.classList.remove("code-view");
     this.sourceFileRenderer.destroy();
-    this._showAffordance();
   }
 
   /**
@@ -110,11 +108,12 @@ export default class RendererOrchestrator {
 
   /**
    * Facade: reload the current code view with a new theme (Sect 5.8).
-   * Called by UIController.handleRender() for code view.
+   * Returns CodeViewMeta for UIController to update #fileInfo.
    * @param {'light'|'dark'} theme
+   * @returns {Promise<CodeViewMeta|null>}
    */
   async reloadCodeView(theme) {
-    await this.sourceFileRenderer.reload(theme);
+    return await this.sourceFileRenderer.reload(theme);
   }
 
   /**
@@ -134,29 +133,5 @@ export default class RendererOrchestrator {
     } catch (error) {
       console.error("Rendering orchestration error:", error);
     }
-  }
-
-  // ---- Private helpers ----
-
-  _hideAffordance() {
-    const el = this.preview.querySelector("#affordanceText");
-    if (el) el.style.display = "none";
-  }
-
-  _showAffordance() {
-    // After destroy(), innerHTML is empty so affordanceText is gone.
-    // Recreate it from scratch.
-    let el = this.preview.querySelector("#affordanceText");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "affordanceText";
-      this.preview.appendChild(el);
-    }
-    el.textContent =
-      "Get started:\n\n" +
-      "  1. Paste Markdown (Ctrl+V)  ->  Markdown Preview\n" +
-      "  2. Drop a .md file          ->  Markdown Preview\n" +
-      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)";
-    el.style.display = "block";
   }
 }

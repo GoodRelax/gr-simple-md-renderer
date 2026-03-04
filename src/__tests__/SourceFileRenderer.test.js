@@ -33,7 +33,6 @@ describe("SourceFileRenderer", () => {
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;"),
       formatDateTime: vi.fn(() => "2024-01-01 12:00:00"),
-      formatTime: vi.fn(() => "12:00:00"),
       applyTheme: vi.fn(),
       showToast: showToastMock,
     }));
@@ -81,11 +80,6 @@ describe("SourceFileRenderer", () => {
       const { renderer } = createRenderer();
       expect(renderer._lastScrollTop).toBe(0);
     });
-
-    it("initializes _keyHintTimer to null", () => {
-      const { renderer } = createRenderer();
-      expect(renderer._keyHintTimer).toBeNull();
-    });
   });
 
   describe("destroy()", () => {
@@ -115,13 +109,6 @@ describe("SourceFileRenderer", () => {
       renderer._lastScrollTop = 500;
       renderer.destroy();
       expect(renderer._lastScrollTop).toBe(0);
-    });
-
-    it("clears _keyHintTimer", () => {
-      const { renderer } = createRenderer();
-      renderer._keyHintTimer = setTimeout(() => {}, 9999);
-      renderer.destroy();
-      expect(renderer._keyHintTimer).toBeNull();
     });
   });
 

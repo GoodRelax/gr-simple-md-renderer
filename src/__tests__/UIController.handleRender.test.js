@@ -29,15 +29,23 @@ describe("UIController.handleRender", () => {
     const mod = await import("../js/classes/UIController.js");
     UIController = mod.default;
 
+    const mockMetadata = {
+      fileName: "test.py",
+      fileSize: 1024,
+      lineCount: 42,
+      language: "python",
+      lastModified: Date.now(),
+      loadedAtStr: "2024-01-01 12:00:00",
+    };
+
     mockOrchestrator = {
       isCodeViewActive: vi.fn().mockReturnValue(false),
       isPreRenderState: vi.fn().mockReturnValue(false),
       reRender: vi.fn().mockResolvedValue(undefined),
-      reloadCodeView: vi.fn().mockResolvedValue(undefined),
+      reloadCodeView: vi.fn().mockResolvedValue(mockMetadata),
       renderAll: vi.fn().mockResolvedValue(undefined),
       loadMarkdown: vi.fn().mockResolvedValue(undefined),
       clear: vi.fn(),
-      _showAffordance: vi.fn(),
     };
 
     mockState = {
@@ -49,6 +57,8 @@ describe("UIController.handleRender", () => {
 
     mockElements = {
       editor: document.createElement("textarea"),
+      fileInfo: document.createElement("div"),
+      keyHint: document.createElement("div"),
       preview: document.createElement("div"),
       renderLightBtn: document.createElement("button"),
       renderDarkBtn: document.createElement("button"),

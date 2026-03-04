@@ -1,10 +1,11 @@
 import hljs from "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js";
 import { EXT_TO_HLJS } from "../config.js";
-import { escapeHtml, formatDateTime, formatTime, applyTheme, showToast } from "../utils.js";
+import { escapeHtml, formatDateTime, applyTheme, showToast } from "../utils.js";
 
 /**
  * Renders non-.md files with syntax highlighting and line numbers.
- * Owns: header bar, code body, status bar, keyboard hint overlay.
+ * Owns: code body only. UI chrome (fileInfo, keyHint) is managed by UIController.
+ * Returns CodeViewMeta for UIController to display.
  */
 export default class SourceFileRenderer {
   /**
@@ -17,14 +18,14 @@ export default class SourceFileRenderer {
     this._fileHandle = null;
     this._fileName = "";
     this._lastScrollTop = 0;
-    this._keyHintTimer = null;
   }
 
   /**
-   * Initial render: read file, highlight, build DOM, inject into previewEl.
+   * Initial render: read file, highlight, build code body, inject into previewEl.
    * @param {File} file
    * @param {FileSystemFileHandle|null} fileHandle
    * @param {'light'|'dark'} theme
+   * @returns {Promise<CodeViewMeta>}
    */
   async render(file, fileHandle, theme) {
     this._fileHandle = fileHandle;
@@ -32,15 +33,26 @@ export default class SourceFileRenderer {
     this._lastScrollTop = 0;
 
     const text = await file.text();
-    this._previewEl.innerHTML = this._buildDOM(text, file, new Date());
+    const loadedAt = new Date();
+    const { html, lineCount, language } = this._buildCodeBody(text, file, loadedAt);
+    this._previewEl.innerHTML = html;
     this._applyCodeTheme(theme);
-    this._scheduleKeyHintFade();
+
+    return {
+      fileName: file.name,
+      fileSize: file.size,
+      lineCount,
+      language,
+      lastModified: file.lastModified,
+      loadedAtStr: formatDateTime(loadedAt.getTime()),
+    };
   }
 
   /**
    * Reload from fileHandle preserving scroll position.
    * Shows a toast if fileHandle is unavailable.
    * @param {'light'|'dark'} theme
+   * @returns {Promise<CodeViewMeta|null>} null if fileHandle is unavailable
    */
   async reload(theme) {
     if (!this._fileHandle) {
@@ -48,22 +60,31 @@ export default class SourceFileRenderer {
         this._cfg.codeView.reloadUnavailableMsg,
         this._cfg.codeView.toastDurationMs,
       );
-      return;
+      return null;
     }
     this._lastScrollTop = window.scrollY;
     const file = await this._fileHandle.getFile();
     const text = await file.text();
-    this._previewEl.innerHTML = this._buildDOM(text, file, new Date());
+    const loadedAt = new Date();
+    const { html, lineCount, language } = this._buildCodeBody(text, file, loadedAt);
+    this._previewEl.innerHTML = html;
     this._applyCodeTheme(theme);
     window.scrollTo(0, this._lastScrollTop);
+
+    return {
+      fileName: file.name,
+      fileSize: file.size,
+      lineCount,
+      language,
+      lastModified: file.lastModified,
+      loadedAtStr: formatDateTime(loadedAt.getTime()),
+    };
   }
 
   /**
-   * Clean up: clear previewEl, cancel timers, reset state.
+   * Clean up: clear previewEl, reset state.
    */
   destroy() {
-    clearTimeout(this._keyHintTimer);
-    this._keyHintTimer = null;
     this._previewEl.innerHTML = "";
     this._fileHandle = null;
     this._fileName = "";
@@ -73,13 +94,13 @@ export default class SourceFileRenderer {
   // ---- private helpers ----
 
   /**
-   * Build the full code view HTML string.
+   * Build the code body HTML string (no header, status bar, or key hint).
    * @param {string} text
    * @param {File} file
    * @param {Date} loadedAt
-   * @returns {string}
+   * @returns {{ html: string, lineCount: number, language: string }}
    */
-  _buildDOM(text, file, loadedAt) {
+  _buildCodeBody(text, file, loadedAt) {
     const fileName = file.name;
 
     // Resolve highlight.js language ID
@@ -110,26 +131,13 @@ export default class SourceFileRenderer {
       .map((line) => `<span class="code-line">${line}</span>`)
       .join("");
 
-    // Format metadata
-    const ts = formatDateTime(file.lastModified);
-    const sizeStr = file.size.toLocaleString() + " bytes";
     const lineCount = text.split("\n").length;
-    const sizeKb = (file.size / 1024).toFixed(2);
-    const loadedStr = formatTime(loadedAt);
-    const safeFileName = escapeHtml(fileName);
 
-    return (
-      `<div id="codeViewHeader">` +
-      `[CODE VIEW]  ${safeFileName}  |  ${ts}  |  ${sizeStr}` +
-      `</div>` +
-      `<div id="codeViewBody">${lineHtml}</div>` +
-      `<div id="codeViewKeyHint">` +
-      `[up][dn] scroll   [l] light   [d] dark   [c] clear   [n] new tab` +
-      `</div>` +
-      `<div id="codeViewStatusBar">` +
-      `${safeFileName}  |  ${lineCount.toLocaleString()} lines  |  ${sizeKb} KB  |  Loaded: ${loadedStr}` +
-      `</div>`
-    );
+    return {
+      html: `<div id="codeViewBody">${lineHtml}</div>`,
+      lineCount,
+      language: lang || "plaintext",
+    };
   }
 
   /**
@@ -173,19 +181,5 @@ export default class SourceFileRenderer {
    */
   _applyCodeTheme(theme) {
     applyTheme(theme);
-  }
-
-  /**
-   * Schedule fade-out and removal of #codeViewKeyHint.
-   */
-  _scheduleKeyHintFade() {
-    const hint = document.getElementById("codeViewKeyHint");
-    if (!hint) return;
-    this._keyHintTimer = setTimeout(() => {
-      hint.style.opacity = "0";
-      hint.addEventListener("transitionend", () => hint.remove(), {
-        once: true,
-      });
-    }, this._cfg.codeView.keyHintDurationMs);
   }
 }

@@ -95,8 +95,8 @@ body {
   position: relative;
 }
 
-/* Code view: remove padding so header sticks to top edge */
-#preview.code-view {
+/* Code view: remove padding so code body fills the area */
+body.view-code #preview {
   padding: 0;
 }
 
@@ -383,27 +383,53 @@ body.dark {
 }
 
 /* ============================================================
-   Code View: Header bar (sticky inside #preview)
+   File info bar (code view: replaces editor in topbar)
    ============================================================ */
-#codeViewHeader {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: #252526;
-  color: #cccccc;
-  padding: 5px 16px;
+#fileInfo {
+  display: none;
+  flex: 1;
   font-family: monospace;
   font-size: 12px;
-  border-bottom: 1px solid #3c3c3c;
+  padding: 4px 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #333;
+  background: #f3f3f3;
+  border: 1px solid #ccc;
+  align-self: center;
 }
 
-body:not(.dark) #codeViewHeader {
-  background: #f3f3f3;
-  color: #333333;
-  border-bottom-color: #e0e0e0;
+.dark #fileInfo {
+  background: #333;
+  color: #ccc;
+  border-color: #555;
+}
+
+/* ============================================================
+   Key hint (floating, fades out)
+   ============================================================ */
+#keyHint {
+  display: none;
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #eeeeee;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 6px 16px;
+  border-radius: 4px;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  z-index: 250;
+  white-space: nowrap;
+}
+
+body:not(.dark) #keyHint {
+  background: rgba(40, 40, 40, 0.8);
 }
 
 /* ============================================================
@@ -463,53 +489,22 @@ body:not(.dark) .code-line::before {
 }
 
 /* ============================================================
-   Code View: Status bar (fixed at viewport bottom)
+   Editor background colors per view mode
    ============================================================ */
-#codeViewStatusBar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: #007acc;
-  color: #ffffff;
-  font-family: monospace;
-  font-size: 11px;
-  padding: 3px 16px;
-  box-sizing: border-box;
-  z-index: 200;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+body.view-markdown #editor {
+  background: #FFF8F0;
 }
 
-body:not(.dark) #codeViewStatusBar {
-  background: #005f9e;
-  color: #ffffff;
+body.view-markdown.dark #editor {
+  background: #2D2520;
 }
 
-/* ============================================================
-   Code View: Keyboard hint overlay (sticky bottom of content)
-   ============================================================ */
-#codeViewKeyHint {
-  position: sticky;
-  bottom: 28px;
-  display: block;
-  width: fit-content;
-  margin: 16px auto;
-  background: rgba(0, 0, 0, 0.75);
-  color: #eeeeee;
-  font-family: monospace;
-  font-size: 12px;
-  padding: 6px 16px;
-  border-radius: 4px;
-  opacity: 1;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-  z-index: 5;
+body.view-code #editor {
+  background: #F0F4FF;
 }
 
-body:not(.dark) #codeViewKeyHint {
-  background: rgba(40, 40, 40, 0.8);
+body.view-code.dark #editor {
+  background: #1A1E2E;
 }
 
 /* ============================================================
