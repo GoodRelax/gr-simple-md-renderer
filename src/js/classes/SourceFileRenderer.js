@@ -33,8 +33,7 @@ export default class SourceFileRenderer {
     this._lastScrollTop = 0;
 
     const text = await file.text();
-    const loadedAt = new Date();
-    const { html, lineCount, language } = this._buildCodeBody(text, file, loadedAt);
+    const { html, lineCount, language } = this._buildCodeBody(text, file);
     this._previewEl.innerHTML = html;
     this._applyCodeTheme(theme);
 
@@ -43,8 +42,7 @@ export default class SourceFileRenderer {
       fileSize: file.size,
       lineCount,
       language,
-      lastModified: file.lastModified,
-      loadedAtStr: formatDateTime(loadedAt.getTime()),
+      updatedAtStr: formatDateTime(file.lastModified),
     };
   }
 
@@ -65,8 +63,7 @@ export default class SourceFileRenderer {
     this._lastScrollTop = window.scrollY;
     const file = await this._fileHandle.getFile();
     const text = await file.text();
-    const loadedAt = new Date();
-    const { html, lineCount, language } = this._buildCodeBody(text, file, loadedAt);
+    const { html, lineCount, language } = this._buildCodeBody(text, file);
     this._previewEl.innerHTML = html;
     this._applyCodeTheme(theme);
     window.scrollTo(0, this._lastScrollTop);
@@ -76,8 +73,7 @@ export default class SourceFileRenderer {
       fileSize: file.size,
       lineCount,
       language,
-      lastModified: file.lastModified,
-      loadedAtStr: formatDateTime(loadedAt.getTime()),
+      updatedAtStr: formatDateTime(file.lastModified),
     };
   }
 
@@ -97,10 +93,9 @@ export default class SourceFileRenderer {
    * Build the code body HTML string (no header, status bar, or key hint).
    * @param {string} text
    * @param {File} file
-   * @param {Date} loadedAt
    * @returns {{ html: string, lineCount: number, language: string }}
    */
-  _buildCodeBody(text, file, loadedAt) {
+  _buildCodeBody(text, file) {
     const fileName = file.name;
 
     // Resolve highlight.js language ID

@@ -125,9 +125,10 @@ export default class UIController {
    */
   _formatFileInfo(metadata) {
     if (!metadata) return "";
-    const { fileName, fileSize, lineCount, language, loadedAtStr } = metadata;
+    const { fileName, fileSize, lineCount, updatedAtStr } = metadata;
     const sizeStr = (fileSize / 1024).toFixed(2) + " KB";
-    return `${fileName}  |  ${lineCount} lines  |  ${sizeStr}  |  ${language || "plaintext"}  |  Loaded: ${loadedAtStr}`;
+    const linesStr = lineCount.toLocaleString() + " lines";
+    return `${fileName}  |  ${linesStr}  |  ${sizeStr}\nUpdated: ${updatedAtStr}`;
   }
 
   // ---- Affordance management ----
@@ -330,6 +331,7 @@ export default class UIController {
     document.addEventListener("keydown", (e) => {
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return; // INV-14: modifier guard
 
       switch (e.key) {
         case "ArrowUp":

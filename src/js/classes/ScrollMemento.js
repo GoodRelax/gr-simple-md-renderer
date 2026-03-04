@@ -1,4 +1,4 @@
-export default class ScrollManager {
+export default class ScrollMemento {
   /** @param {HTMLElement} container */
   constructor(container) {
     this.container = container;

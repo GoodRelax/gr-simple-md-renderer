@@ -23,7 +23,7 @@ function createOrchestrator() {
     lineCount: 42,
     language: "python",
     lastModified: Date.now(),
-    loadedAtStr: "2024-01-01 12:00:00",
+    updatedAtStr: "2024-01-01 12:00:00",
   };
   const sourceFileRenderer = {
     render: vi.fn().mockResolvedValue(mockMetadata),

@@ -885,7 +885,7 @@
       }
 
       // ========================================
-      // Class: ScrollManager
+      // Class: ScrollMemento
       // ========================================
 
       /**
@@ -897,7 +897,7 @@
        * same "scroll position restore after re-render" behaviour is available
        * on iPad/iPhone as on PC.
        */
-      class ScrollManager {
+      class ScrollMemento {
         /** @param {HTMLElement} container */
         constructor(container) {
           this.container = container;
@@ -1243,7 +1243,7 @@
          * @param {MarkdownRenderer} markdownRenderer
          * @param {MermaidRenderer} mermaidRenderer
          * @param {PlantUMLRenderer} plantumlRenderer
-         * @param {ScrollManager} scrollManager
+         * @param {ScrollMemento} scrollManager
          * @param {HTMLElement} preview
          */
         constructor(
@@ -2197,7 +2197,7 @@
       marked.use(markedKatex({ throwOnError: false }));
 
       const state = new ApplicationState();
-      const scrollManager = new ScrollManager(elements.preview);
+      const scrollManager = new ScrollMemento(elements.preview);
       const markdownRenderer = new MarkdownRenderer(
         elements.preview,
         marked,

@@ -11,7 +11,7 @@ import markedKatex from "https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1
 // ========================================
 import { CONFIG } from "./config.js";
 import ApplicationState from "./classes/ApplicationState.js";
-import ScrollManager from "./classes/ScrollManager.js";
+import ScrollMemento from "./classes/ScrollMemento.js";
 import MarkdownRenderer from "./classes/MarkdownRenderer.js";
 import MermaidRenderer from "./classes/MermaidRenderer.js";
 import PlantUMLRenderer from "./classes/PlantUMLRenderer.js";
@@ -46,7 +46,7 @@ const elements = {
 marked.use(markedKatex({ throwOnError: false }));
 
 const state = new ApplicationState();
-const scrollManager = new ScrollManager(elements.preview);
+const scrollManager = new ScrollMemento(elements.preview);
 const markdownRenderer = new MarkdownRenderer(
   elements.preview,
   marked,

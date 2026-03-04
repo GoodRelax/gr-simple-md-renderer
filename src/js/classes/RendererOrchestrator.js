@@ -12,7 +12,7 @@ export default class RendererOrchestrator {
    * @param {MarkdownRenderer} markdownRenderer
    * @param {MermaidRenderer} mermaidRenderer
    * @param {PlantUMLRenderer} plantumlRenderer
-   * @param {ScrollManager} scrollManager
+   * @param {ScrollMemento} scrollManager
    * @param {HTMLElement} preview
    * @param {SourceFileRenderer} sourceFileRenderer
    */
