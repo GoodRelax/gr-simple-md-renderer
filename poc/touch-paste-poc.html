@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Touch Paste PoC</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, sans-serif;
+  font-size: 14px;
+  padding: 12px;
+  background: #f5f5f5;
+}
+h1 { font-size: 16px; margin-bottom: 8px; }
+p.info { font-size: 12px; color: #666; margin-bottom: 12px; }
+
+.pattern {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.pattern-header {
+  padding: 6px 10px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 13px;
+}
+.pattern-area {
+  height: 120px;
+  padding: 10px;
+  font-size: 14px;
+  outline: none;
+  border: none;
+  width: 100%;
+  resize: none;
+  display: block;
+}
+.pattern-log {
+  padding: 6px 10px;
+  font-family: monospace;
+  font-size: 11px;
+  background: #1a1a1a;
+  color: #0f0;
+  height: 60px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.pattern-result {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #222;
+  color: #ff0;
+  min-height: 20px;
+}
+
+.pa .pattern-header { background: #c0392b; }
+.pa .pattern-area   { background: #fde8e8; }
+.pb .pattern-header { background: #2980b9; }
+.pb .pattern-area   { background: #e8f0fe; }
+.pc .pattern-header { background: #27ae60; }
+.pc .pattern-area   { background: #e8f8e8; }
+.pd .pattern-header { background: #8e44ad; }
+.pd .pattern-area   { background: #f3e8fa; }
+.pe .pattern-header { background: #d35400; }
+.pe .pattern-area   { background: #fef0e8; }
+.pf .pattern-header { background: #16a085; }
+.pf .pattern-area   { background: #e8faf5; }
+
+button.clear-all {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: bold;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+</style>
+</head>
+<body>
+
+<h1>Touch Paste PoC - iOS Safari</h1>
+<p class="info">Tap / long-press each colored area. Check which shows paste menu. Events logged below each.</p>
+
+<button class="clear-all" onclick="clearAll()">Clear All Logs &amp; Results</button>
+
+<!-- A: textarea (baseline) -->
+<div class="pattern pa" id="boxA">
+  <div class="pattern-header">A: textarea (red) -- baseline</div>
+  <textarea class="pattern-area" placeholder="Tap or long-press here..."></textarea>
+  <div class="pattern-result" id="resultA">pasted: (none)</div>
+  <div class="pattern-log" id="logA"></div>
+</div>
+
+<!-- B: contentEditable div -->
+<div class="pattern pb" id="boxB">
+  <div class="pattern-header">B: contentEditable div (blue)</div>
+  <div class="pattern-area" contenteditable="true" style="overflow:auto;"></div>
+  <div class="pattern-result" id="resultB">pasted: (none)</div>
+  <div class="pattern-log" id="logB"></div>
+</div>
+
+<!-- C: contentEditable + inputmode=none -->
+<div class="pattern pc" id="boxC">
+  <div class="pattern-header">C: contentEditable + inputmode=none (green)</div>
+  <div class="pattern-area" contenteditable="true" inputmode="none" style="overflow:auto;"></div>
+  <div class="pattern-result" id="resultC">pasted: (none)</div>
+  <div class="pattern-log" id="logC"></div>
+</div>
+
+<!-- D: transparent textarea (color/bg transparent, NOT opacity:0) -->
+<div class="pattern pd" id="boxD">
+  <div class="pattern-header">D: transparent textarea (purple) -- color:transparent, caret:auto</div>
+  <textarea class="pattern-area" style="color:transparent; background:transparent; caret-color:auto;" placeholder="Tap or long-press here..."></textarea>
+  <div class="pattern-result" id="resultD">pasted: (none)</div>
+  <div class="pattern-log" id="logD"></div>
+</div>
+
+<!-- E: large textarea inside div -->
+<div class="pattern pe" id="boxE">
+  <div class="pattern-header">E: full-size textarea in div (orange)</div>
+  <div style="position:relative; height:120px;">
+    <textarea class="pattern-area" style="position:absolute; inset:0; width:100%; height:100%;" placeholder="Tap or long-press here..."></textarea>
+  </div>
+  <div class="pattern-result" id="resultE">pasted: (none)</div>
+  <div class="pattern-log" id="logE"></div>
+</div>
+
+<!-- F: clipboard.readText() on plain div -->
+<div class="pattern pf" id="boxF">
+  <div class="pattern-header">F: clipboard.readText() on div (teal)</div>
+  <div class="pattern-area" id="areaF" style="overflow:auto; cursor:pointer;">Tap here to try clipboard.readText()...</div>
+  <div class="pattern-result" id="resultF">pasted: (none)</div>
+  <div class="pattern-log" id="logF"></div>
+</div>
+
+<script>
+function log(id, msg) {
+  var el = document.getElementById("log" + id);
+  var d = new Date();
+  var ts = [d.getHours(), d.getMinutes(), d.getSeconds()].map(function(n){return String(n).padStart(2,"0")}).join(":");
+  ts += "." + String(d.getMilliseconds()).padStart(3,"0");
+  el.textContent += ts + " " + msg + "
+";
+  el.scrollTop = el.scrollHeight;
+}
+
+function showResult(id, text) {
+  var el = document.getElementById("result" + id);
+  var preview = text.length > 80 ? text.substring(0, 80) + "..." : text;
+  el.textContent = "pasted (" + text.length + " chars): " + preview;
+}
+
+function clearAll() {
+  ["A","B","C","D","E","F"].forEach(function(id) {
+    document.getElementById("log" + id).textContent = "";
+    document.getElementById("result" + id).textContent = "pasted: (none)";
+  });
+  document.querySelectorAll("textarea.pattern-area").forEach(function(el) { el.value = ""; });
+  document.querySelectorAll("[contenteditable]").forEach(function(el) { el.textContent = ""; });
+  document.getElementById("areaF").textContent = "Tap here to try clipboard.readText()...";
+}
+
+function wireEvents(boxId, patternId) {
+  var box = document.getElementById(boxId);
+  var area = box.querySelector(".pattern-area");
+
+  ["focus", "blur", "click", "touchstart", "touchend"].forEach(function(evt) {
+    area.addEventListener(evt, function() { log(patternId, evt); });
+  });
+
+  area.addEventListener("paste", function(e) {
+    var text = e.clipboardData.getData("text/plain");
+    log(patternId, "paste (" + text.length + " chars)");
+    showResult(patternId, text);
+  });
+
+  area.addEventListener("input", function() {
+    log(patternId, "input");
+  });
+}
+
+wireEvents("boxA", "A");
+wireEvents("boxB", "B");
+wireEvents("boxC", "C");
+wireEvents("boxD", "D");
+wireEvents("boxE", "E");
+
+// F: clipboard.readText() -- special handling
+(function() {
+  var area = document.getElementById("areaF");
+
+  ["focus", "blur", "click", "touchstart", "touchend"].forEach(function(evt) {
+    area.addEventListener(evt, function() { log("F", evt); });
+  });
+
+  area.addEventListener("click", async function() {
+    log("F", "trying clipboard.readText()...");
+    if (!navigator.clipboard || !navigator.clipboard.readText) {
+      log("F", "ERROR: clipboard.readText not available");
+      return;
+    }
+    try {
+      var text = await navigator.clipboard.readText();
+      log("F", "readText OK (" + text.length + " chars)");
+      showResult("F", text);
+    } catch (err) {
+      log("F", "readText FAILED: " + err.name + ": " + err.message);
+    }
+  });
+})();
+
+// Log environment info on load
+(function() {
+  var proto = location.protocol;
+  var touch = ("ontouchstart" in window) ? "yes" : "no";
+  var clipboard = navigator.clipboard ? "yes" : "no";
+  var readText = (navigator.clipboard && navigator.clipboard.readText) ? "yes" : "no";
+  var info = "proto=" + proto + " touch=" + touch + " clipboard=" + clipboard + " readText=" + readText;
+  ["A","B","C","D","E","F"].forEach(function(id) {
+    log(id, "--- ENV: " + info);
+  });
+})();
+</script>
+</body>
+</html>
