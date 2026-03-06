@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PoC v4: click-only (no touchstart)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, sans-serif; font-size: 14px;
+  display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+}
+.top-bar { padding: 8px 12px; background: #2c3e50; color: #fff; font-size: 13px; font-weight: bold; }
+#editor {
+  display: block; width: 100%; height: 80px; padding: 8px; font-size: 16px;
+  border: 2px solid #2c3e50; resize: none; outline: none;
+}
+#editor:focus { border-color: #e74c3c; background: #fff8f0; }
+#preview {
+  flex: 1; overflow: auto; padding: 20px; position: relative; background: #fff;
+}
+#affordance {
+  color: #999; font-size: 16px; text-align: center; padding-top: 20vh;
+  user-select: none; -webkit-user-select: none;
+}
+.status {
+  position: fixed; top: 8px; right: 8px; padding: 4px 8px;
+  border-radius: 4px; font-size: 11px; z-index: 10001;
+  background: #2c3e50; color: #fff;
+}
+#log {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 150px;
+  background: #1a1a1a; color: #0f0; font-family: monospace; font-size: 11px;
+  overflow-y: auto; padding: 4px 8px; white-space: pre-wrap; word-break: break-all;
+  z-index: 10000;
+}
+</style>
+</head>
+<body>
+<div class="top-bar">PoC v4: click-only (no touchstart, no preventDefault)</div>
+<textarea id="editor" placeholder="Editor area. Paste here..."></textarea>
+<div id="preview">
+  <div id="affordance">
+    Tap this text OR the blank area below.<br>
+    Using click event only (no touchstart).<br>
+    Also try: pinch-out after tapping.
+  </div>
+</div>
+<div class="status" id="status">waiting</div>
+<div id="log"></div>
+<script>
+var editor = document.getElementById("editor");
+var preview = document.getElementById("preview");
+var logEl = document.getElementById("log");
+var statusEl = document.getElementById("status");
+
+function log(msg) {
+  var d = new Date();
+  var ts = [d.getHours(), d.getMinutes(), d.getSeconds()]
+    .map(function(v) { return String(v).padStart(2, "0"); }).join(":");
+  logEl.textContent += ts + " " + msg + "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+var isTouchDevice = ("ontouchstart" in window) && navigator.maxTouchPoints > 0;
+log("isTouchDevice=" + isTouchDevice + " maxTouchPoints=" + navigator.maxTouchPoints);
+log("Layout: flex-column + overflow:auto (same as production)");
+log("Listening: click only (NO touchstart)");
+
+// --- click only (the thing we want to verify) ---
+preview.addEventListener("click", function(e) {
+  log("preview.click target=" + e.target.id + " (" + e.target.tagName + ")");
+  editor.focus();
+  var ok = document.activeElement === editor;
+  log("focus() result: " + (ok ? "SUCCESS" : "FAIL") + " activeElement=" + document.activeElement.tagName);
+  statusEl.textContent = ok ? "FOCUSED via click" : "focus FAILED";
+  statusEl.style.background = ok ? "#27ae60" : "#e74c3c";
+});
+
+// --- diagnostic: log touchstart but do NOT preventDefault or focus ---
+preview.addEventListener("touchstart", function(e) {
+  log("preview.touchstart target=" + e.target.id + " touches=" + e.touches.length + " (diagnostic only, no action)");
+});
+
+preview.addEventListener("touchend", function(e) {
+  log("preview.touchend");
+});
+
+// --- editor events ---
+["focus", "blur", "paste", "input"].forEach(function(evt) {
+  editor.addEventListener(evt, function() {
+    var extra = evt === "input" ? " " + editor.value.length + "ch" : "";
+    log("editor." + evt + extra);
+  });
+});
+
+editor.addEventListener("paste", function(e) {
+  var text = e.clipboardData ? e.clipboardData.getData("text/plain") : "";
+  log("paste content: " + text.length + "ch");
+});
+</script>
+</body>
+</html>
