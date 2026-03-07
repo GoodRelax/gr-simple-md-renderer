@@ -225,11 +225,11 @@ Updated: ${i}`}_showAffordance(){let e=this.elements.preview.querySelector("#aff
         <div class="modal-section">
           <h3>Details</h3>
           <ul>
-            <li><code>[Render Light]</code> / <code>l</code> : Render / switch to light mode</li>
-            <li><code>[Render Dark]</code> / <code>d</code> : Render / switch to dark mode</li>
-            <li><code>[Reload]</code> / <code>r</code> : Reload the current file from disk</li>
-            <li><code>[New Tab]</code> / <code>n</code> : Open GRSMD in a new tab</li>
-            <li><code>[Clear]</code> / <code>c</code> : Clear and reset</li>
+            <li><code>[Render Light]</code> / <code>L</code> : Render / switch to light mode</li>
+            <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
+            <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk</li>
+            <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
+            <li><code>[Clear]</code> / <code>C</code> : Clear and reset</li>
             <li><code>[?]</code> : Show this help</li>
             <li>
               <code>[?]</code> (long press) : Display a prompt template for
@@ -298,17 +298,20 @@ Updated: ${i}`}_showAffordance(){let e=this.elements.preview.querySelector("#aff
               <small>※ シンタックスハイライトは highlight.js common バンドルを使用。
               一部の言語（Dockerfile, Scala, PowerShell 等）はハイライトされない場合があります。</small>
             </li>
+            <li>
+              上部の <code>[Paste Markdown...]</code> ボックスに直接テキストをペースト
+            </li>
           </ol>
         </div>
 
         <div class="modal-section">
           <h3>詳細 (Japanese)</h3>
           <ul>
-            <li><code>[Render Light]</code> / <code>l</code> : レンダリング/ライトモード切替</li>
-            <li><code>[Render Dark]</code> / <code>d</code> : レンダリング/ダークモード切替</li>
-            <li><code>[Reload]</code> / <code>r</code> : 現在のファイルをディスクからリロード</li>
-            <li><code>[New Tab]</code> / <code>n</code> : 新しいタブでGRSMDを開く</li>
-            <li><code>[Clear]</code> / <code>c</code> : 初期化</li>
+            <li><code>[Render Light]</code> / <code>L</code> : レンダリング/ライトモード切替</li>
+            <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
+            <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード</li>
+            <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
+            <li><code>[Clear]</code> / <code>C</code> : 初期化</li>
             <li><code>[?]</code> : 本ヘルプを表示</li>
             <li>
               <code>[?]</code> 長押し :
@@ -348,7 +351,8 @@ Updated: ${i}`}_showAffordance(){let e=this.elements.preview.querySelector("#aff
           <p>
             The prompt below improves the quality of the AI's Markdown output by
             reducing errors.<br />
-            Copy this prompt and instruct your AI to output in MCBSMD format.
+            Copy this prompt and instruct your AI to output in MCBSMD format.<br />
+            <small>&copy; 2026 GoodRelax. MIT License.</small>
           </p>
 
           <textarea id="promptText" readonly></textarea>
