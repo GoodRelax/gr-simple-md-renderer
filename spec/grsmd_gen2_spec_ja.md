@@ -34,6 +34,7 @@
    - 5.8 カラーモード管理
    - 5.9 コードビュー UIレイアウトとCSS
    - 5.10 アフォーダンステキスト
+   - 5.10.1 Touch Paste Assist (FS-16)
    - 5.11 キーボードショートカット対応表
    - 5.12 ユーティリティ関数
    - 5.13 AI出力前処理 (preprocessInput)
@@ -64,7 +65,7 @@
 | EXT_TO_HLJS              | ファイル拡張子から highlight.js 言語IDへのルックアップテーブル。                                                                                                                                            |
 | \_viewState              | RendererOrchestrator 内部の状態フラグ。列挙値: 'initial' / 'markdown' / 'code'。                                                                                                                            |
 | 速度＋摩擦モデル         | スクロールの物理モデル。キー押下中は速度がmaxSpeedまで加速し、キー解放後はフレームごとの摩擦係数で速度が減衰する。物理パラメータの詳細は 5.6 を参照。                                                       |
-| トースト (Toast)         | ビューポート下部に表示される、時間経過で自動消去される短い通知オーバーレイ。                                                                                                                                |
+| トースト (Toast)         | ビューポート上部 (top: 60px) に表示される、時間経過で自動消去される短い通知オーバーレイ。                                                                                                                   |
 | SRI                      | Subresource Integrity。CDNリソースが改ざんされていないことをハッシュ値で検証する仕組み。                                                                                                                    |
 
 ---
@@ -1257,6 +1258,57 @@ Feature: タッチデバイスレイアウト
     And ScrollMementoがwindow.scrollYで位置を追跡する
 ```
 
+### FS-16: Touch Paste Assist
+
+```gherkin
+Feature: Touch Paste Assist
+  iPhone/iPad ユーザーとして
+  プレレンダー状態でプレビュー領域をタッチしたとき
+  エディタにフォーカスが移り、ペースト操作ができるようにしたい
+
+  Background:
+    Given タッチデバイス (ontouchstart in window && maxTouchPoints > 0) である
+
+  Scenario: プレレンダー状態でプレビュー領域タッチ -> エディタフォーカス
+    Given アプリがプレレンダー状態である
+    And エディタが空である
+    When ユーザーが #preview 領域のどこかをタッチする
+    Then #editor に focus() が呼ばれる
+    And ユーザーはそのまま長押しペースト操作を行える
+
+  Scenario: レンダリング済み状態ではタッチアシスト無効
+    Given アプリがMarkdownプレビュー状態 or コードビュー状態である
+    When ユーザーが #preview 領域をタッチする
+    Then エディタへのフォーカス移動は発生しない
+
+  Scenario: エディタに既存内容がある場合はタッチアシスト無効
+    Given アプリがプレレンダー状態である
+    And エディタに既存テキストがある
+    When ユーザーが #preview 領域をタッチする
+    Then エディタへのフォーカス移動は発生しない
+
+  Scenario: PCブラウザでも同様のクリック動作
+    Given デバイスがPCブラウザである
+    And アプリがプレレンダー状態である
+    And エディタが空である
+    When ユーザーが #preview 領域をクリックする
+    Then #editor に focus() が呼ばれる
+```
+
+**実装方針 (v5: click-only + whitespace padding approach):**
+
+iOS Safari はレンダリングされたコンテンツのない空白領域で click/touch イベントを発火しない。
+`background-color` や `::after` 疑似要素では不十分であり、`<meta name="viewport">` の追加は既存レイアウトを破壊する。
+
+対策:
+1. `#affordanceText` を通常フロー配置（`padding-top: 40px` で上部寄せ）
+2. アフォーダンステキストの後に空白行（`" \n"` x 50行）を付加し、プレビュー領域全体にレンダリング済みコンテンツを充填
+3. `#preview` に `background-color` を明示指定（安全マージン）
+4. `UIController.setupTouchPasteAssist()` で `click` イベントのみ監視
+5. プレレンダー状態かつエディタ空の場合のみ `editor.focus()` を呼ぶ
+6. `<meta name="viewport">` は追加しない（iPhone レイアウト崩壊の原因となるため）
+7. `touchstart` は使用しない（ピンチアウト操作を阻害するため）
+
 ---
 
 ## 5. 実装仕様
@@ -1269,8 +1321,8 @@ Feature: タッチデバイスレイアウト
 | --------------- | -------- | ---------------------------------------------------------------------------------- |
 | `topbar`        | div      | エディタとコントロールを含む固定トップバー                                         |
 | `header-group`  | div      | タイトル＋著作権ラッパー                                                           |
-| `title`         | div      | アプリケーションタイトルテキスト                                                   |
-| `copyright`     | div      | GitHub リンク付き著作権表示                                                        |
+| `title`         | div      | アプリケーションタイトル（リポジトリへのリンク `<a>` 付き）                        |
+| `copyright`     | div      | リポジトリリンク付き著作権表示                                                     |
 | `editor`        | textarea | Markdown 入力エリア。`placeholder="Paste Markdown..."`                             |
 | `controls`      | div      | ボタングループコンテナ                                                             |
 | `renderLight`   | button   | ラベル: "Render Light" — 両ビュー共用 (FR-06)                                      |
@@ -1280,8 +1332,8 @@ Feature: タッチデバイスレイアウト
 | `clearBtn`      | button   | エディタをクリアしプレレンダー状態にリセット                                       |
 | `helpBtn`       | button   | ヘルプモーダルを開く (ラベル: "?")                                                 |
 | `preview`       | div      | メインコンテンツエリア: Markdownプレビュー / コードビュー / アフォーダンステキスト |
-| `helpModal`     | div      | ヘルプダイアログモーダル                                                           |
-| `promptModal`   | div      | MCBSMDプロンプトテンプレートオーバーレイ                                           |
+| `helpModal`     | div      | ヘルプダイアログモーダル（英語・日本語バイリンガル）。ショートカットキーは大文字表記 (L, D, R, N, C) |
+| `promptModal`   | div      | MCBSMDプロンプトテンプレートオーバーレイ。著作権表示 (&copy; 2026 GoodRelax. MIT License.) を含む   |
 | `promptText`    | textarea | 読み取り専用MCBSMDテンプレートテキスト                                             |
 | `copyPromptBtn` | button   | プロンプトをクリップボードにコピー                                                 |
 
@@ -1293,7 +1345,7 @@ Feature: タッチデバイスレイアウト
 | `keyHint`        | div  | `#preview` 先頭にオーバーレイ表示 (`position: fixed`, topbar直下)。ショートカットヒントを表示。消去条件: 5秒経過 / ボタン押下 / スクロール / クリック。UIController.showKeyHint() が管理。 |
 | `affordanceText` | div  | `_viewState === 'initial'` 時に `#preview` 内に表示されるデフォルトヒントテキスト。UIController.setViewMode('initial') で表示。               |
 | `codeViewBody`   | div  | ハイライト済みコード＋行番号のスクロール可能領域。SourceFileRenderer.\_buildCodeBody() が生成。                                               |
-| `toastContainer` | div  | トースト通知用の固定コンテナ (ビューポート下部中央)                                                                                           |
+| `toastContainer` | div  | トースト通知用の固定コンテナ (ビューポート上部中央, top: 60px)                                                                                |
 
 ### 5.2 CONFIG オブジェクト
 
@@ -1356,8 +1408,8 @@ const CONFIG = {
   },
   // Keyboard hint text per view mode (2-line for narrow browsers)
   keyHints: {
-    markdown: "[up][dn] scroll  [l] light  [d] dark\n[r] reload  [c] clear  [n] new tab",
-    code: "[up][dn] scroll  [l] light  [d] dark\n[r] reload  [c] clear  [n] new tab",
+    markdown: "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
+    code: "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
   },
   messages: {
     plantuml: {
@@ -2049,8 +2101,8 @@ UIController は RendererOrchestrator のパブリックメソッドのみを呼
 |  [Render Light] [Render Dark] [Re-load] [New Tab] [Clear] [?]   |
 +------------------------------------------------------------------+
 | #keyHint (position: fixed; top: topbar bottom edge; overlay)     |
-|  [up][dn] scroll  [l] light  [d] dark                           |
-|  [r] reload  [c] clear  [n] new tab                             |
+|  [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;       |
+|  [Up][Down] Scroll Up/Down;                                      |
 +------------------------------------------------------------------+
 |                                                                  |
 | #preview (flex: 1; overflow: auto; position: relative)           |
@@ -2066,7 +2118,7 @@ UIController は RendererOrchestrator のパブリックメソッドのみを呼
 |  +------------------------------------------------------------+  |
 |                                                                  |
 +------------------------------------------------------------------+
-| #toastContainer  (position: fixed; bottom: 40px; center)         |
+| #toastContainer  (position: fixed; top: 60px; center)            |
 |  [  Reload not available (Chrome/Edge 86+ required)  ]          |
 +------------------------------------------------------------------+
 ```
@@ -2125,7 +2177,7 @@ body.view-code[data-theme="dark"] #editor {
 }
 ```
 
-**#fileInfo:** `#editor` の直後に配置。コードビュー時にファイルメタデータを2行で表示する。フォーマット: `<filename>  |  <lines> lines  |  <KB> KB\nUpdated: <YYYY-MM-DD HH:MM:SS>`。`white-space: pre-line` で改行を反映。setViewMode("code", metadata) で表示、他モードで非表示。
+**#fileInfo:** `#editor` の直後に配置。コードビュー時にファイルメタデータを2行で表示する。フォーマット: `<filename>  |  <lines> lines  |  <KB> KB\nUpdated: <YYYY-MM-DD HH:MM:SS>`。`white-space: pre-line` で改行を反映。setViewMode("code", metadata) で表示、他モードで非表示。コードビュー時の背景色は `#editor` と同じ寒色系 (Light: #F0F4FF, Dark: #1A1E2E) を適用する。
 
 **#keyHint:** `position: fixed; top: <topbar下端>` でプレビューエリア先頭にオーバーレイ表示。CSS `opacity` トランジションによるフェードアウト。`white-space: pre` で改行を反映（2行表示対応）。showKeyHint(mode) で表示。消去条件: CONFIG.codeView.keyHintDurationMs (5秒) 経過 / 任意のボタン押下 / マウススクロール / クリック。いずれかが発生した時点でフェードアウト開始。
 
@@ -2141,25 +2193,27 @@ Get started:
   3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)
 ```
 
+各行を最長行（3行目: 71文字）と同じ文字数に末尾スペースでパディングする。`text-align: center` + `white-space: pre` の下で行の左端を揃えるため。
+
 **アフォーダンスCSS:**
 
 ```css
 #affordanceText {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   white-space: pre;
   font-family: monospace;
   font-size: 14px;
   line-height: 2;
   color: #555;
-  pointer-events: none;
+  text-align: center;
+  padding-top: 40px;
   user-select: none;
 }
 ```
 
-`#preview` にはabsolute positioningが機能するよう `position: relative` が必要。
+注意: 旧仕様では `position: absolute; top: 50%; transform: translate(-50%, -50%); pointer-events: none` を使用していたが、
+iOS Safariで `#preview` のコンテンツ高さが実質ゼロになりタッチイベントが発火しない問題 (FS-16) の根本原因となったため、通常フロー配置に変更。
+`pointer-events: none` も削除し、affordanceText上のタッチ/クリックがpreviewに伝播するようにした。
+`padding-top` は `20vh` から `40px` に変更（上部寄せ配置）。テキスト後に空白行（50行）を付加し、プレビュー領域全体にレンダリング済みコンテンツを充填する (FS-16)。
 
 **ライフサイクル (UIController.setViewMode() が管理):**
 
@@ -2170,6 +2224,36 @@ Get started:
 | `setViewMode('code', metadata)` | 非表示 (display: none) |
 
 注意: RendererOrchestrator の `_showAffordance()` / `_hideAffordance()` は廃止。アフォーダンスの表示/非表示は UIController.setViewMode() に一元化。main.js の初期化時は `orchestrator._showAffordance()` の代わりに UIController 初期化内で `setViewMode('initial')` を呼ぶ。
+
+### 5.10.1 Touch Paste Assist (FS-16)
+
+プレレンダー状態で `#preview` 領域をクリック/タップすると `#editor` にフォーカスを移動する。
+UIController.setupTouchPasteAssist() で設定する。
+
+```javascript
+setupTouchPasteAssist() {
+  const preview = this.elements.preview;
+  const editor = this.elements.editor;
+
+  preview.addEventListener("click", (e) => {
+    if (!this.orchestrator.isPreRenderState()) return;
+    if (editor.value.trim() !== "") return;
+    editor.focus();
+  });
+}
+```
+
+**iOS Safari 対策:**
+- アフォーダンステキストの後に空白行（`" \n"` x 50行）を `textContent` に付加する。iOS Safari はレンダリングされたコンテンツのない領域で click を発火しないため、プレビュー領域全体を「描画済み」にする必要がある。
+- `#affordanceText` の CSS は `padding-top: 40px` で上部寄せ。`white-space: pre` により空白行がそのまま高さとして描画される。
+- `#preview` に `background-color` を明示的に指定する (`#fff` / dark: `#222`)。安全マージンとして維持。
+- `<meta name="viewport">` は追加しない。追加すると iPhone の既存レイアウトが崩壊するため。
+
+**設計判断:**
+- `click` イベントのみ使用する。`touchstart` は使用しない
+- `click` は iOS Safari でもユーザージェスチャとして認識され `focus()` が成功する (PoC v4 で iPad 実機検証済み)
+- `click` はピンチ・スクロールジェスチャでは発火しないため、ピンチアウト操作を阻害しない。`touchstart` + `preventDefault()` 方式ではピンチの1本目の指で `focus()` が発火しキーボードが出るため、ピンチ操作が不可能になる問題があった
+- 条件チェック (`isPreRenderState()` + editor空) により、レンダリング済み状態では無干渉
 
 ### 5.11 キーボードショートカット対応表
 
@@ -2387,6 +2471,7 @@ preprocessInput(rawText) {
 - `````markdown` (3個) も `````````markdown` (6個, MCBSMD) も処理可能。
 - ネストされた内部のコードブロックは除去しない（正規表現が最外のフェンスのみにマッチするため）。
 - D&D による `.md` ファイル読み込み時にも `preprocessInput` を適用する (INV-17)。
+- Ctrl+V ペースト時にも `preprocessInput` を適用し、処理済みテキストを `editor.value` にセットする。
 
 ### 5.14 SW設計原則 準拠確認
 
@@ -2404,7 +2489,7 @@ preprocessInput(rawText) {
 | **SLAP**     | 各メソッドは単一の抽象レベルで動作する。`render()` は `_buildCodeBody()` と `_applyCodeTheme()` に委譲し CodeViewMeta を返す。`setViewMode()` はモードごとのUI設定に委譲する。                                                                                                                                      |
 | **LOD**      | UIControllerはRendererOrchestratorのパブリックメソッド (`reRender()`, `reloadCodeView()`, `clear()`) のみを呼び出す。内部のSourceFileRendererへの直接アクセスは禁止。委譲深度は1レベル。                                                                                                                            |
 | **CQS**      | `isPreRenderState()` / `isCodeViewActive()` は純粋なクエリ（副作用なし）。`render()` / `reload()` はコマンド + CodeViewMeta 返却（CQS の実用的例外: レンダリング副作用とメタデータ返却を分離すると呼び出し側が複雑化するため）。`destroy()` / `setViewMode()` は純粋なコマンド。                                    |
-| **POLA**     | `l` = ライト、`d` = ダーク — 両ビューで一貫。`c` = 常にクリア。`n` = 常に新規タブ。Ctrl+C = ブラウザネイティブコピー（修飾キーガードにより bare key ショートカットと衝突しない）。`setViewMode()` で全ビュー切替を統一API化。リロードはファイルが読み込まれている場合のみ発火。                                     |
+| **POLA**     | `L` = ライト、`D` = ダーク — 両ビューで一貫。`C` = 常にクリア。`N` = 常に新規タブ。Ctrl+C = ブラウザネイティブコピー（修飾キーガードにより bare key ショートカットと衝突しない）。`setViewMode()` で全ビュー切替を統一API化。リロードはファイルが読み込まれている場合のみ発火。                                     |
 | **PIE**      | 自己説明的な命名: SourceFileRenderer、SmoothScrollEngine、EXT_TO_HLJS、keyHintDurationMs。CONFIGのキーは自然な英語として読める。                                                                                                                                                                                    |
 | **CA**       | 依存の方向は内側へ: Framework(UIController) → UseCase(Orchestrator) → Entity(Renderers, ApplicationState)。Renderers はドメインコアレンダリングのため Entity に分類。循環依存なし。CONFIGは境界上の純粋データオブジェクト。**意図的逸脱:** ScrollMemento は Adapter 層だが UseCase(Orchestrator) が直接所有する。2メソッドのクラスに対して Interface を挟むのはオーバーエンジニアリングのため、実用上許容する。 |
 | **命名規則** | CSS: 既存のcamelCase ID規約を維持。JS: メソッドはcamelCase、クラスはPascalCase、モジュールレベル定数はUPPER_SNAKE。                                                                                                                                                                                                 |

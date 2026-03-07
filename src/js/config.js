@@ -69,8 +69,8 @@ export const CONFIG = {
   },
   // Keyboard hint text per view mode
   keyHints: {
-    markdown: "[up][dn] scroll  [l] light  [d] dark\n[r] reload  [c] clear  [n] new tab",
-    code:     "[up][dn] scroll  [l] light  [d] dark\n[r] reload  [c] clear  [n] new tab",
+    markdown: "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
+    code:     "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
   },
 };
 

@@ -42,7 +42,7 @@ export function formatTime(date) {
 }
 
 /**
- * Show a transient toast message at the bottom-center of the viewport.
+ * Show a transient toast message at the top-center of the viewport.
  * @param {string} msg
  * @param {number} durationMs
  */

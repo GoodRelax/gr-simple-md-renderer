@@ -41,6 +41,7 @@ export default class UIController {
     this.setupFileDrop();
     this.setupAutoRenderOnPaste();
     this.setupKeyboard();
+    this.setupTouchPasteAssist();
     // Apply OS color-scheme preference on first load
     applySystemTheme();
   }
@@ -128,6 +129,7 @@ export default class UIController {
     document.addEventListener("keydown", dismiss, { once: true });
     this.elements.preview.addEventListener("scroll", dismiss, { once: true });
     document.addEventListener("click", dismiss, { once: true });
+    document.addEventListener("touchmove", dismiss, { once: true });
   }
 
   /**
@@ -139,6 +141,7 @@ export default class UIController {
       document.removeEventListener("keydown", this._keyHintDismissHandler);
       this.elements.preview.removeEventListener("scroll", this._keyHintDismissHandler);
       document.removeEventListener("click", this._keyHintDismissHandler);
+      document.removeEventListener("touchmove", this._keyHintDismissHandler);
       this._keyHintDismissHandler = null;
     }
   }
@@ -169,15 +172,35 @@ export default class UIController {
       el.id = "affordanceText";
       this.elements.preview.appendChild(el);
     }
-    el.textContent =
+    const msg =
       "Get started:\n\n" +
-      "  1. Paste Markdown (Ctrl+V)  ->  Markdown Preview\n" +
-      "  2. Drop a .md file          ->  Markdown Preview\n" +
+      "  1. Paste Markdown (Ctrl+V)  ->  Markdown Preview                     \n" +
+      "  2. Drop a .md file          ->  Markdown Preview                     \n" +
       "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)";
+    // FS-16: Pad with whitespace lines so iOS Safari has rendered content
+    // to register click events across the entire preview area.
+    const pad = "\n" + " \n".repeat(50);
+    el.textContent = msg + pad;
     el.style.display = "block";
   }
 
   // ---- Event setup ----
+
+  /**
+   * FS-16: Touch paste assist.
+   * In pre-render state with empty editor, touching/clicking #preview
+   * focuses the editor so the user can long-press to paste on iOS.
+   */
+  setupTouchPasteAssist() {
+    const preview = this.elements.preview;
+    const editor = this.elements.editor;
+
+    preview.addEventListener("click", (e) => {
+      if (!this.orchestrator.isPreRenderState()) return;
+      if (editor.value.trim() !== "") return;
+      editor.focus();
+    });
+  }
 
   setupRenderButtons() {
     this.elements.renderLightBtn.addEventListener("click", async () => {
@@ -365,9 +388,10 @@ export default class UIController {
         this.elements.editor.value.trim() !== ""
       )
         return;
-      const text = e.clipboardData.getData("text/plain");
-      if (!text) return;
+      const raw = e.clipboardData.getData("text/plain");
+      if (!raw) return;
       e.preventDefault();
+      const text = this.preprocessInput(raw);
       this.elements.editor.value = text;
       await this.handleRender(systemTheme());
     });
@@ -517,7 +541,7 @@ export default class UIController {
   > Write the explanation for the code block here, immediately after the block, following a blank line.
 
 - Do not write explanations inside the code blocks.
-- In all diagrams, use alphanumeric characters and underscores (\`_\`) by default; non-ASCII plain text (no spaces) is permitted when necessary. Special symbols (e.g., \`\\\`, \`/\`, \`|\`, \`<\`, \`>\`, \`{\`, \`}\`) are strictly prohibited.
+- In all diagrams, prefer alphanumeric characters and underscores (\`_\`); non-ASCII text (no spaces) is allowed only when non-English is more appropriate for the diagram. Special symbols (e.g., \`\\\`, \`/\`, \`|\`, \`<\`, \`>\`, \`{\`, \`}\`) are strictly prohibited.
 - Output all diagram content without omission. Never use \`...\` or any shorthand.
 
 ### Diagram Label and Notation Rules

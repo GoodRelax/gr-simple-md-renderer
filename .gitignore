@@ -26,4 +26,11 @@ prompt/
 # Announce
 announce/
 
+# Spec archives
+spec/old/
+spec/know-how/
 
+# Temporary / local-only files
+github-quick-manual*.md
+sample-data-for-test.md
+bat/

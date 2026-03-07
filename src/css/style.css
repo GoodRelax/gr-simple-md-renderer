@@ -32,6 +32,11 @@ body {
   white-space: nowrap;
 }
 
+#title a {
+  color: inherit;
+  text-decoration: none;
+}
+
 #copyright {
   font-size: 10px;
   line-height: 1.2;
@@ -93,6 +98,7 @@ body {
   overflow: auto;
   padding: 20px;
   position: relative;
+  background-color: #fff;
 }
 
 /* Code view: remove padding so code body fills the area */
@@ -307,6 +313,10 @@ body.dark {
   border-bottom: 1px solid #444;
 }
 
+.dark #preview {
+  background-color: #222;
+}
+
 .dark #editor {
   background: #444;
   color: #fff;
@@ -364,16 +374,13 @@ body.dark {
    Affordance Text (initial state hint)
    ============================================================ */
 #affordanceText {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   white-space: pre;
   font-family: monospace;
   font-size: 14px;
   line-height: 2;
   color: #555;
-  pointer-events: none;
+  text-align: center;
+  padding-top: 40px;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -404,6 +411,16 @@ body.dark {
   background: #333;
   color: #ccc;
   border-color: #555;
+}
+
+body.view-code #fileInfo {
+  background: #F0F4FF;
+  border-color: #c0c8e0;
+}
+
+body.view-code.dark #fileInfo {
+  background: #1A1E2E;
+  border-color: #3a3e5e;
 }
 
 /* ============================================================
@@ -512,7 +529,7 @@ body.view-code.dark #editor {
    ============================================================ */
 #toastContainer {
   position: fixed;
-  bottom: 44px;
+  top: 60px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 300;
