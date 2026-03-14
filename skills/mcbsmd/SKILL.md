@@ -1,7 +1,6 @@
 ---
 name: mcbsmd
 description: Output content in MCBSMD (Multiple Code Blocks in a Single Markdown) format. Use when the user wants structured documentation with code blocks and diagrams saved as a .md file.
-disable-model-invocation: true
 argument-hint: [topic]
 allowed-tools: Write, Bash
 ---
