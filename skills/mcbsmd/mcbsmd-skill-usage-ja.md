@@ -37,7 +37,18 @@ Claude Code のチャットで `/mcbsmd` に続けてトピックを入力しま
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) がインストール済みであること
 
-### 手順
+### 方法A：Claudeに指示する（推奨）
+
+Claude Code のチャットで以下のように指示するだけでインストールできます。
+
+```text
+このURLのスキルを取得して /mcbsmd で使えるようにして
+https://raw.githubusercontent.com/GoodRelax/gr-simple-md-renderer/refs/heads/main/skills/mcbsmd/SKILL.md
+```
+
+Claude が SKILL.md をダウンロードし、`~/.claude/skills/mcbsmd/SKILL.md` に配置します。常に最新版が取得されます。
+
+### 方法B：手動インストール
 
 1. スキルディレクトリを作成します。
 
@@ -47,20 +58,13 @@ Claude Code のチャットで `/mcbsmd` に続けてトピックを入力しま
 mkdir -p ~/.claude/skills/mcbsmd
 ```
 
-2. 以下の内容で `~/.claude/skills/mcbsmd/SKILL.md` を作成します。
+2. 以下のコマンドで SKILL.md をダウンロードします。
 
-**SKILL.md:**
+**ダウンロード:**
 
-```markdown
----
-name: mcbsmd
-description: Output content in MCBSMD (Multiple Code Blocks in a Single Markdown) format. Use when the user wants structured documentation with code blocks and diagrams saved as a .md file.
-disable-model-invocation: true
-argument-hint: [topic]
-allowed-tools: Write, Bash
----
-
-（SKILL.md の本文はリポジトリの SKILL.md を参照）
+```bash
+curl -sL https://raw.githubusercontent.com/GoodRelax/gr-simple-md-renderer/refs/heads/main/skills/mcbsmd/SKILL.md \
+  -o ~/.claude/skills/mcbsmd/SKILL.md
 ```
 
 3. Claude Code を再起動すると `/mcbsmd` コマンドが使えるようになります。
@@ -185,7 +189,6 @@ $$
 |---|---|---|
 | `name` | `mcbsmd` | スキル名（スラッシュコマンド名） |
 | `description` | MCBSMD形式で出力 | スキルの説明 |
-| `disable-model-invocation` | `true` | モデルによる自動呼び出しを無効化 |
 | `argument-hint` | `[topic]` | 引数のヒント表示 |
 | `allowed-tools` | `Write, Bash` | 使用可能なツール |
 

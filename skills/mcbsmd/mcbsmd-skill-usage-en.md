@@ -37,7 +37,18 @@ The generated `.md` file may contain Mermaid diagrams and math formulas that don
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) must be installed
 
-### Steps
+### Method A: Ask Claude to install it (Recommended)
+
+Simply give the following instruction in the Claude Code chat:
+
+```text
+Install the skill from this URL and make it available as /mcbsmd
+https://raw.githubusercontent.com/GoodRelax/gr-simple-md-renderer/refs/heads/main/skills/mcbsmd/SKILL.md
+```
+
+Claude will download SKILL.md and place it at `~/.claude/skills/mcbsmd/SKILL.md`. This always fetches the latest version.
+
+### Method B: Manual installation
 
 1. Create the skill directory.
 
@@ -47,20 +58,13 @@ The generated `.md` file may contain Mermaid diagrams and math formulas that don
 mkdir -p ~/.claude/skills/mcbsmd
 ```
 
-2. Create `~/.claude/skills/mcbsmd/SKILL.md` with the following content.
+2. Download SKILL.md with the following command.
 
-**SKILL.md:**
+**Download:**
 
-```markdown
----
-name: mcbsmd
-description: Output content in MCBSMD (Multiple Code Blocks in a Single Markdown) format. Use when the user wants structured documentation with code blocks and diagrams saved as a .md file.
-disable-model-invocation: true
-argument-hint: [topic]
-allowed-tools: Write, Bash
----
-
-(See the repository's SKILL.md for the full body text)
+```bash
+curl -sL https://raw.githubusercontent.com/GoodRelax/gr-simple-md-renderer/refs/heads/main/skills/mcbsmd/SKILL.md \
+  -o ~/.claude/skills/mcbsmd/SKILL.md
 ```
 
 3. Restart Claude Code and the `/mcbsmd` command will be available.
@@ -185,7 +189,6 @@ $$
 |---|---|---|
 | `name` | `mcbsmd` | Skill name (slash command) |
 | `description` | Output in MCBSMD format | Skill description |
-| `disable-model-invocation` | `true` | Disable automatic invocation by the model |
 | `argument-hint` | `[topic]` | Argument hint display |
 | `allowed-tools` | `Write, Bash` | Available tools |
 
