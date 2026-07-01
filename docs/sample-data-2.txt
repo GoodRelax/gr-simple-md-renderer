@@ -1,5 +1,14 @@
 # Diagram Test Data (MCBSMD Format)
 
+**Sample Comparison Table:**
+
+| Feature   | Status | Priority | Notes            |
+| --------- | ------ | -------- | ---------------- |
+| Login     | Done   | High     | OAuth2 supported |
+| Search    | WIP    | Medium   | Full text index  |
+| Export    | Todo   | Low      | CSV and JSON     |
+| Dark Mode | Done   | Medium   | Auto detect      |
+
 **mermaid_flowchart:**
 
 ```mermaid

@@ -120,6 +120,17 @@ blockquote {
   color: #666;
 }
 
+#preview table {
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+#preview th,
+#preview td {
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+}
+
 .mermaid {
   display: flex;
   justify-content: flex-start;
@@ -360,6 +371,11 @@ body.dark {
   background-color: #2d1f1f;
   color: #ff8787;
   border-color: #ff6b6b;
+}
+
+.dark #preview th,
+.dark #preview td {
+  border-color: #555;
 }
 
 .dark .katex {

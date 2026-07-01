@@ -1,10 +1,10 @@
 // ========================================
 // CDN Imports (ES Modules)
 // ========================================
-import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.esm.min.mjs";
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs";
 import hljs from "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js";
 import plantumlEncoder from "https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm";
-import markedKatex from "https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.6/+esm";
+import markedKatex from "https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.10/+esm";
 
 // ========================================
 // Local Imports

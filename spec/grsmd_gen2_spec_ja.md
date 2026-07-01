@@ -4,6 +4,8 @@
 **日付:** 2026-03-05
 **ステータス:** 統合仕様書 (Spec①②③ 統合 + アーキテクチャレビュー反映 + UI改善 + Reload/テーマ分離 + preprocessInput/トースト修正)
 
+**改訂:** 2026-07-02 — CDN依存を最新安定版へ更新 (marked 17.0.1->18.0.5 / mermaid 11.12.2->11.16.0 / KaTeX 0.16.28->0.17.0 / marked-katex-extension 5.1.6->5.1.10)。plantuml-encoder (1.4.0) と highlight.js (11.11.1) は据置で、plantuml-encoder は jsdelivr /+esm の上流再ビルドに伴いSRIハッシュのみ再計算。あわせてMarkdown表に薄グレー罫線を追加。
+
 ---
 
 ## 目次
@@ -117,11 +119,11 @@
 | ---------------------- | ---------------------------------------------------- | ------------------------------------------------ |
 | 言語                   | JavaScript (ES6+ クラス)                             | 当面TypeScriptは使用しない                       |
 | ランタイム             | ブラウザのみ（クライアントサイド SPA）               | バックエンドなし、Node.jsなし                    |
-| Markdownパーサー       | marked.js v17.0.1 (UMD, CDN)                         | SRI保護あり                                      |
-| ダイアグラム描画       | Mermaid.js v11.12.2 (ESM, CDN)                       | クライアントサイドのみ                           |
+| Markdownパーサー       | marked.js v18.0.5 (UMD, CDN)                         | SRI保護あり                                      |
+| ダイアグラム描画       | Mermaid.js v11.16.0 (ESM, CDN)                       | クライアントサイドのみ                           |
 | PlantUMLエンコード     | plantuml-encoder v1.4.0 (ESM, CDN)                   | 同意付き外部サーバー通信                         |
 | シンタックスハイライト | highlight.js v11.11.1 (ESM, CDN)                     | Markdownコードブロックとコードビューの両方で使用 |
-| 数式描画               | KaTeX v0.16.28 + marked-katex-extension v5.1.6 (CDN) | LaTeX数式サポート                                |
+| 数式描画               | KaTeX v0.17.0 + marked-katex-extension v5.1.10 (CDN) | LaTeX数式サポート                                |
 
 **ビルド戦略:**
 
@@ -240,7 +242,7 @@ gr-simple-md-renderer/
 | ID     | 制約                                                                                                                                                                                      |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CON-01 | `DataTransferItem.getAsFileSystemHandle()` はdropイベントハンドラ内で、最初の `await` よりも前に同期的に呼び出す必要がある。返されたPromiseは保存し、後でawaitする。                      |
-| CON-02 | highlight.js 11.11.1、marked.js 17.0.1、mermaid 11.12.2、plantuml-encoder 1.4.0、KaTeX 0.16.28、marked-katex-extension 5.1.6 のCDN URLおよびSRIハッシュは、検証なしに変更してはならない。 |
+| CON-02 | highlight.js 11.11.1、marked.js 18.0.5、mermaid 11.16.0、plantuml-encoder 1.4.0、KaTeX 0.17.0、marked-katex-extension 5.1.10 のCDN URLおよびSRIハッシュは、検証なしに変更してはならない。 |
 | CON-03 | ユーザーデータ（ファイル内容、ファイル名、メタデータ）をlocalStorage、sessionStorage、Cookieに保存してはならない。                                                                        |
 | CON-04 | 既存のPlantUML同意ダイアログ（window.confirm）を削除またはバイパスしてはならない。                                                                                                        |
 | CON-05 | 本番リリースは単一HTMLファイルでなければならない。マルチファイル構成は開発時（Viteソース）のみ許容され、リリース前に統合すること。                                                        |
@@ -318,10 +320,10 @@ graph TB
             COPY["DiagramCopyController<br/>(SVG and PNG)"]:::framework
         end
         subgraph CDN_Libs["CDN Libraries (SRI Protected)"]
-            MARKED["marked.js v17.0.1"]
-            MERMAIDJS["mermaid.js v11.12.2"]
+            MARKED["marked.js v18.0.5"]
+            MERMAIDJS["mermaid.js v11.16.0"]
             HLJS["highlight.js v11.11.1"]
-            KATEX["KaTeX v0.16.28"]
+            KATEX["KaTeX v0.17.0"]
             PUMLENC["plantuml-encoder v1.4.0"]
         end
     end
@@ -2500,11 +2502,11 @@ preprocessInput(rawText) {
 
 | ライブラリ             | バージョン | 種別            | CDNホスト            | SRI  |
 | ---------------------- | ---------- | --------------- | -------------------- | ---- |
-| marked.js              | 17.0.1     | Script (UMD)    | cdn.jsdelivr.net     | あり |
-| Mermaid.js             | 11.12.2    | ES Module       | cdn.jsdelivr.net     | あり |
+| marked.js              | 18.0.5     | Script (UMD)    | cdn.jsdelivr.net     | あり |
+| Mermaid.js             | 11.16.0    | ES Module       | cdn.jsdelivr.net     | あり |
 | highlight.js           | 11.11.1    | ES Module + CSS | cdnjs.cloudflare.com | あり |
-| KaTeX                  | 0.16.28    | CSSのみ         | cdn.jsdelivr.net     | あり |
-| marked-katex-extension | 5.1.6      | ES Module       | cdn.jsdelivr.net     | あり |
+| KaTeX                  | 0.17.0     | CSSのみ         | cdn.jsdelivr.net     | あり |
+| marked-katex-extension | 5.1.10     | ES Module       | cdn.jsdelivr.net     | あり |
 | plantuml-encoder       | 1.4.0      | ES Module       | cdn.jsdelivr.net     | あり |
 
 すべてのCDNリソースにはSRI integrityアトリビュートを必須とする (INV-07)。機能検証なしにURLやバージョンを変更してはならない (CON-02, CON-10)。
