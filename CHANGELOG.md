@@ -13,7 +13,25 @@ The authoritative, live values always live in `src/index.html`
 
 ---
 
-## [Unreleased] - 2026-07-02
+## [Unreleased] - 2026-07-13
+
+jsdelivr rebuilt the marked-katex-extension `/+esm` bundle again (about 11
+days after the 2026-07-02 update), changing its bytes and breaking SRI once
+more. Version unchanged; integrity refreshed to the value the browser now
+computes. This is the second `/+esm` breakage - a permanent fix (bundle into
+the build, or drop SRI on `/+esm`) is still pending.
+
+### Fixed
+
+- Refresh SRI after upstream `/+esm` rebuild (version unchanged):
+
+  | Library | Version | integrity |
+  |---------|---------|-----------|
+  | marked-katex-extension | 5.1.10 | sha384-x9xvDHWk3lUv72Gr7xAxUj8r8t+tOPNMJgXRCqZo5w6YwLKb0+rIPoRo548HIel9 |
+
+---
+
+## 2026-07-02
 
 Update CDN libraries to latest stable, refresh the SRI hashes for the
 jsdelivr `/+esm` bundles that had drifted upstream, and add Markdown table
