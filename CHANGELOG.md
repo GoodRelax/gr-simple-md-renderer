@@ -3,17 +3,42 @@
 All notable changes to GRSMD are recorded here.
 Format is loosely based on Keep a Changelog (https://keepachangelog.com/).
 
-CDN dependency versions and their Subresource Integrity (SRI) hashes are
-recorded per entry. These hashes are public (they ship in the HTML) and
-serve as an audit trail: when a CDN `/+esm` bundle is rebuilt upstream and
-its hash changes, add a new entry documenting the re-hash.
-
-The authoritative, live values always live in `src/index.html`
-(and `src/js/main.js` for the version strings). This file is the history.
+As of 2026-07-16 all rendering libraries are bundled into the build (see that
+entry), so there are no runtime CDN resources or SRI hashes to maintain. Library
+versions live in `package.json`. The earlier entries below record the previous
+CDN + SRI era, in which each upstream `/+esm` rebuild required a documented
+re-hash.
 
 ---
 
-## [Unreleased] - 2026-07-13
+## [Unreleased] - 2026-07-16
+
+### Changed
+
+- Bundle all rendering libraries into the build instead of loading them from a
+  CDN at runtime. marked, mermaid, highlight.js, katex, marked-katex-extension
+  and plantuml-encoder are now npm dependencies, inlined into `docs/index.html`
+  by vite-plugin-singlefile. The only remaining external call is the optional
+  PlantUML rendering server (unchanged, still consent-gated).
+  - Permanently ends the recurring jsdelivr `/+esm` SRI breakage: those bundles
+    are no longer fetched at runtime, so there are no more SRI hashes to chase.
+  - Zero external CDN requests; the app works fully offline after load.
+  - katex fonts are embedded as data URIs in woff2 only. All glyph coverage is
+    retained; the woff/ttf fallbacks are dropped because every browser that can
+    run this app supports woff2.
+  - Single file grows from ~54 KB to ~4.37 MB (gzip ~1.38 MB).
+  - Shipped first as `docs/pre-release.html` (canary) for live trial on GitHub
+    Pages; the existing CDN-based `docs/index.html` stays live until promoted.
+    The Vite build entry is now `src/pre-release.html`.
+
+### Removed
+
+- All CDN `<script>` / `<link>` tags and their SRI `integrity` attributes from
+  `src/index.html`.
+
+---
+
+## 2026-07-13
 
 jsdelivr rebuilt the marked-katex-extension `/+esm` bundle again (about 11
 days after the 2026-07-02 update), changing its bytes and breaking SRI once

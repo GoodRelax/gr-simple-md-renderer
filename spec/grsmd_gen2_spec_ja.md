@@ -6,6 +6,8 @@
 
 **改訂:** 2026-07-02 — CDN依存を最新安定版へ更新 (marked 17.0.1->18.0.5 / mermaid 11.12.2->11.16.0 / KaTeX 0.16.28->0.17.0 / marked-katex-extension 5.1.6->5.1.10)。plantuml-encoder (1.4.0) と highlight.js (11.11.1) は据置で、plantuml-encoder は jsdelivr /+esm の上流再ビルドに伴いSRIハッシュのみ再計算。あわせてMarkdown表に薄グレー罫線を追加。
 
+**改訂:** 2026-07-16 — 全描画ライブラリ (marked / mermaid / highlight.js / KaTeX / marked-katex-extension / plantuml-encoder) をCDNから外し、npm依存としてViteビルドに**バンドル(単一ファイルへ内包)**。実行時にCDNから取得しない。外部通信はPlantUMLサーバ (同意付き) のみ。これにより jsdelivr /+esm のSRI破綻は原理的に解消し、SRIハッシュの保守は不要になった。KaTeXフォントはwoff2形式のみをdata URIで内包 (字形の網羅性は不変、woff/ttfフォールバックは削除)。単一ファイルは約54KB->約4.37MB (gzip約1.38MB)。
+
 ---
 
 ## 目次
@@ -119,11 +121,11 @@
 | ---------------------- | ---------------------------------------------------- | ------------------------------------------------ |
 | 言語                   | JavaScript (ES6+ クラス)                             | 当面TypeScriptは使用しない                       |
 | ランタイム             | ブラウザのみ（クライアントサイド SPA）               | バックエンドなし、Node.jsなし                    |
-| Markdownパーサー       | marked.js v18.0.5 (UMD, CDN)                         | SRI保護あり                                      |
-| ダイアグラム描画       | Mermaid.js v11.16.0 (ESM, CDN)                       | クライアントサイドのみ                           |
-| PlantUMLエンコード     | plantuml-encoder v1.4.0 (ESM, CDN)                   | 同意付き外部サーバー通信                         |
-| シンタックスハイライト | highlight.js v11.11.1 (ESM, CDN)                     | Markdownコードブロックとコードビューの両方で使用 |
-| 数式描画               | KaTeX v0.17.0 + marked-katex-extension v5.1.10 (CDN) | LaTeX数式サポート                                |
+| Markdownパーサー       | marked.js v18.0.5 (UMD, バンドル)                    | ビルドに内包                                     |
+| ダイアグラム描画       | Mermaid.js v11.16.0 (バンドル)                       | クライアントサイドのみ                           |
+| PlantUMLエンコード     | plantuml-encoder v1.4.0 (バンドル)                   | エンコードのみ。描画は同意付き外部サーバー       |
+| シンタックスハイライト | highlight.js v11.11.1 (バンドル)                     | Markdownコードブロックとコードビューの両方で使用 |
+| 数式描画               | KaTeX v0.17.0 + marked-katex-extension v5.1.10 (バンドル) | LaTeX数式サポート                            |
 
 **ビルド戦略:**
 
@@ -131,7 +133,7 @@
 | -------------- | ---------------------------------- | -------------------------------------------------- |
 | 開発ビルド     | Vite + vite-plugin-singlefile      | マルチファイル開発、単一ファイルリリース           |
 | リリース成果物 | 単一HTMLファイル (docs/index.html) | CSS/JSはvite-plugin-singlefileでインライン化       |
-| CDNインポート  | 外部URLインポート                  | mermaid, hljs, katex等はCDNのまま                  |
+| ライブラリ取込 | npm依存をViteでバンドル            | 全描画ライブラリを単一ファイルに内包 (実行時CDNなし) |
 | ホスティング   | GitHub Pages                       | https://goodrelax.github.io/gr-simple-md-renderer/ |
 
 **アーキテクチャ:** ES6クラスベースのSPA。Rendererパターン + Orchestratorによる協調制御。本番ではすべてのクラス、設定、スタイル、HTMLを単一ファイルに統合する。開発時はViteのマルチファイルソースを使用する。
@@ -242,7 +244,7 @@ gr-simple-md-renderer/
 | ID     | 制約                                                                                                                                                                                      |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CON-01 | `DataTransferItem.getAsFileSystemHandle()` はdropイベントハンドラ内で、最初の `await` よりも前に同期的に呼び出す必要がある。返されたPromiseは保存し、後でawaitする。                      |
-| CON-02 | highlight.js 11.11.1、marked.js 18.0.5、mermaid 11.16.0、plantuml-encoder 1.4.0、KaTeX 0.17.0、marked-katex-extension 5.1.10 のCDN URLおよびSRIハッシュは、検証なしに変更してはならない。 |
+| CON-02 | highlight.js 11.11.1、marked.js 18.0.5、mermaid 11.16.0、plantuml-encoder 1.4.0、KaTeX 0.17.0、marked-katex-extension 5.1.10 はnpm依存としてバンドルする。バージョンを変更する場合は機能検証を行うこと。2026-07-16よりCDN/SRI運用は廃止した。 |
 | CON-03 | ユーザーデータ（ファイル内容、ファイル名、メタデータ）をlocalStorage、sessionStorage、Cookieに保存してはならない。                                                                        |
 | CON-04 | 既存のPlantUML同意ダイアログ（window.confirm）を削除またはバイパスしてはならない。                                                                                                        |
 | CON-05 | 本番リリースは単一HTMLファイルでなければならない。マルチファイル構成は開発時（Viteソース）のみ許容され、リリース前に統合すること。                                                        |
@@ -319,7 +321,7 @@ graph TB
             PAN["DiagramPanController<br/>(Drag)"]:::framework
             COPY["DiagramCopyController<br/>(SVG and PNG)"]:::framework
         end
-        subgraph CDN_Libs["CDN Libraries (SRI Protected)"]
+        subgraph CDN_Libs["Bundled Libraries"]
             MARKED["marked.js v18.0.5"]
             MERMAIDJS["mermaid.js v11.16.0"]
             HLJS["highlight.js v11.11.1"]
@@ -2498,15 +2500,15 @@ preprocessInput(rawText) {
 
 ---
 
-## 付録 A: CDN依存ライブラリ
+## 付録 A: バンドル依存ライブラリ
 
-| ライブラリ             | バージョン | 種別            | CDNホスト            | SRI  |
-| ---------------------- | ---------- | --------------- | -------------------- | ---- |
-| marked.js              | 18.0.5     | Script (UMD)    | cdn.jsdelivr.net     | あり |
-| Mermaid.js             | 11.16.0    | ES Module       | cdn.jsdelivr.net     | あり |
-| highlight.js           | 11.11.1    | ES Module + CSS | cdnjs.cloudflare.com | あり |
-| KaTeX                  | 0.17.0     | CSSのみ         | cdn.jsdelivr.net     | あり |
-| marked-katex-extension | 5.1.10     | ES Module       | cdn.jsdelivr.net     | あり |
-| plantuml-encoder       | 1.4.0      | ES Module       | cdn.jsdelivr.net     | あり |
+| ライブラリ             | バージョン | 取込方法                          |
+| ---------------------- | ---------- | --------------------------------- |
+| marked.js              | 18.0.5     | バンドル (npm)                    |
+| Mermaid.js             | 11.16.0    | バンドル (npm)                    |
+| highlight.js           | 11.11.1    | バンドル (npm, JS + CSSテーマ)    |
+| KaTeX                  | 0.17.0     | バンドル (npm, CSS + woff2フォント) |
+| marked-katex-extension | 5.1.10     | バンドル (npm)                    |
+| plantuml-encoder       | 1.4.0      | バンドル (npm)                    |
 
-すべてのCDNリソースにはSRI integrityアトリビュートを必須とする (INV-07)。機能検証なしにURLやバージョンを変更してはならない (CON-02, CON-10)。
+2026-07-16より全ライブラリをnpm依存としてViteビルドに内包する (単一ファイル)。実行時のCDN取得およびSRIは廃止。バージョンを変更する場合は機能検証を行うこと (CON-02, CON-10)。外部通信はPlantUMLサーバ (同意付き) のみ。

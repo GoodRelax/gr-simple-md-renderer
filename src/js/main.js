@@ -1,10 +1,15 @@
 // ========================================
-// CDN Imports (ES Modules)
+// Vendored libraries (bundled at build time; no runtime CDN fetch)
 // ========================================
-import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.esm.min.mjs";
-import hljs from "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js";
-import plantumlEncoder from "https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/+esm";
-import markedKatex from "https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.10/+esm";
+import { marked } from "marked";
+import mermaid from "mermaid";
+import hljs from "highlight.js/lib/common";
+import plantumlEncoder from "plantuml-encoder";
+import markedKatex from "marked-katex-extension";
+
+// Vendor CSS (inlined into the single file; katex fonts embedded as data URIs)
+import "highlight.js/styles/vs2015.css";
+import "katex/dist/katex.min.css";
 
 // ========================================
 // Local Imports

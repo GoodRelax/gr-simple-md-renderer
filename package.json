@@ -13,5 +13,13 @@
     "vite": "^7.3.1",
     "vite-plugin-singlefile": "^2.3.0",
     "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "highlight.js": "^11.11.1",
+    "katex": "^0.17.0",
+    "marked": "^18.0.5",
+    "marked-katex-extension": "^5.1.10",
+    "mermaid": "^11.16.0",
+    "plantuml-encoder": "^1.4.0"
   }
 }
