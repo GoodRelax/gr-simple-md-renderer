@@ -1,6 +1,5 @@
 import { defineConfig } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
-import { fileURLToPath } from "node:url";
 
 // Keep only the woff2 source in each @font-face rule, dropping the woff/ttf
 // fallback copies. woff2 is supported by every browser that can run this app
@@ -23,12 +22,6 @@ export default defineConfig({
     // Inline all assets (incl. katex woff2 fonts) as data URIs so the output
     // stays a single self-contained file.
     assetsInlineLimit: 100000000,
-    rollupOptions: {
-      // Canary: build the pre-release entry to docs/pre-release.html. The live
-      // docs/index.html is left untouched (emptyOutDir: false) so GitHub Pages
-      // keeps serving the current release until pre-release is promoted.
-      input: fileURLToPath(new URL("./src/pre-release.html", import.meta.url)),
-    },
   },
   css: {
     postcss: {

@@ -27,9 +27,8 @@ re-hash.
     retained; the woff/ttf fallbacks are dropped because every browser that can
     run this app supports woff2.
   - Single file grows from ~54 KB to ~4.37 MB (gzip ~1.38 MB).
-  - Shipped first as `docs/pre-release.html` (canary) for live trial on GitHub
-    Pages; the existing CDN-based `docs/index.html` stays live until promoted.
-    The Vite build entry is now `src/pre-release.html`.
+  - Published as `docs/index.html`. The previous CDN-based build is kept as
+    `docs/bak-index.html` for rollback.
 
 ### Removed
 
