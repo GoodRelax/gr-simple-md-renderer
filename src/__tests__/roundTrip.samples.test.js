@@ -15,6 +15,10 @@ import {
 // and the CRLF / BOM variants are built here.
 
 const lexer = makeLexer();
+
+// Heavy tests (about 1 s alone, 2 s or more when the machine is busy) get an
+// explicit timeout so CPU load cannot fail them; the global 5 s default stays.
+const HEAVY_TEST_TIMEOUT_MS = 30000;
 const SAMPLES = ["sample-data.md", "sample-data.txt", "sample-data-2.md", "sample-data-2.txt"];
 const NUL = String.fromCharCode(0);
 const NBSP = String.fromCharCode(160);
@@ -90,7 +94,7 @@ describe("round trips through the block model (INV-41, INV-44, INV-38)", () => {
       expect(lines.length).toBe(origLines.length);
       expect(lines.filter((line, i) => line !== origLines[i])).toHaveLength(1);
     }
-  });
+  }, HEAVY_TEST_TIMEOUT_MS);
 
   it("AT-RT-06 the fixtures cover every block type the model must handle", () => {
     const types = new Set();

@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import BlockDiff from "../js/classes/BlockDiff.js";
 
+// Heavy tests (about 1 s alone, 2 s or more when the machine is busy) get an
+// explicit timeout so CPU load cannot fail them; the global 5 s default stays.
+const HEAVY_TEST_TIMEOUT_MS = 30000;
+
 const blocks = (list) => list.map((raw, i) => ({ id: i + 1, type: "paragraph", raw, separatorAfter: "\n\n" }));
 const diff = (a, b, max = 250000) => BlockDiff.diffBlocks(blocks(a), blocks(b), max);
 const pairs = (m) => m.map((x) => [x.oldIndex, x.newIndex]);
@@ -54,7 +58,7 @@ describe("BlockDiff.diffBlocks (pure)", () => {
         expect(m.length).toBe(lcsLength(a, b));
       }
     }
-  });
+  }, HEAVY_TEST_TIMEOUT_MS);
 
   it("AT-DIFF-05 the middle range uses LCS at exactly maxCells and is skipped at maxCells + 1", () => {
     // Middle range after trimming: old [p, q, r] vs new [r, s] -> 3 x 2 = 6 cells.
@@ -80,7 +84,7 @@ describe("BlockDiff.diffBlocks (pure)", () => {
     b[0] = "head";
     b[8999] = "tail";
     expect(diff(a, b, 250000)).toEqual([]);
-  });
+  }, HEAVY_TEST_TIMEOUT_MS);
 
   it("AT-DIFF-09 output indexes are ascending", () => {
     const m = diff(["a", "b", "c", "d", "e"], ["a", "x", "c", "y", "e"]);

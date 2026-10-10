@@ -142,6 +142,18 @@ export async function waitForDOMStability(
 }
 
 /**
+ * All elements matching selector under one root or a list of roots.
+ * @param {ParentNode|ParentNode[]} roots
+ * @param {string} selector
+ * @returns {Element[]}
+ * @purity semi-pure-b
+ */
+export function queryAllIn(roots, selector) {
+  const list = Array.isArray(roots) ? roots : [roots];
+  return list.flatMap((root) => [...root.querySelectorAll(selector)]);
+}
+
+/**
  * Replace a code block element (and its pre parent if present) with newElement.
  * @param {HTMLElement} block
  * @param {HTMLElement} newElement

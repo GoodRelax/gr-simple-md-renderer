@@ -1,5 +1,5 @@
 import DiagramRenderer from "./DiagramRenderer.js";
-import { replaceCodeBlock } from "../utils.js";
+import { replaceCodeBlock, queryAllIn } from "../utils.js";
 
 export default class MermaidRenderer extends DiagramRenderer {
   /**
@@ -14,19 +14,20 @@ export default class MermaidRenderer extends DiagramRenderer {
   }
 
   /**
-   * @param {string} theme @param {boolean} [_skipRendering=false]
+   * Convert and draw the Mermaid blocks under root (the whole preview by
+   * default; a partial render passes the replaced blocks, INV-42).
+   * @param {string} theme
+   * @param {ParentNode|ParentNode[]} [root]
    * @purity non-pure
    */
-  async render(theme, _skipRendering = false) {
+  async render(theme, root = this.preview) {
     try {
-      const blocks = this.preview.querySelectorAll(
-        "code.language-mermaid",
-      );
+      const blocks = queryAllIn(root, "code.language-mermaid");
       if (blocks.length === 0) return;
 
-      blocks.forEach((block) => this.convertCodeBlockToContainer(block));
+      const containers = blocks.map((block) => this.convertCodeBlockToContainer(block));
       this.initializeMermaid(theme);
-      await this.renderMermaid();
+      await this.renderMermaid(containers);
     } catch (error) {
       console.error("Mermaid rendering error:", error);
     }
@@ -58,11 +59,14 @@ export default class MermaidRenderer extends DiagramRenderer {
     });
   }
 
-  /** @purity non-pure */
-  async renderMermaid() {
+  /**
+   * @param {HTMLElement[]} containers - the .mermaid elements to draw
+   * @purity non-pure
+   */
+  async renderMermaid(containers) {
     try {
       await this.mermaid.run({
-        nodes: this.preview.querySelectorAll(".mermaid"),
+        nodes: containers,
       });
     } catch (error) {
       console.error("Mermaid execution error:", error);

@@ -1,6 +1,6 @@
 import DiagramRenderer from "./DiagramRenderer.js";
 import { CONFIG } from "../config.js";
-import { replaceCodeBlock } from "../utils.js";
+import { replaceCodeBlock, queryAllIn } from "../utils.js";
 
 export default class PlantUMLRenderer extends DiagramRenderer {
   /**
@@ -12,31 +12,35 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     super();
     this.preview = preview;
     this.encoder = plantumlEncoder;
+    // Placeholders created here -> { code, theme }. A user-written
+    // .plantuml-pending element is not in this map and never sends (INV-23).
+    this._pending = new WeakMap();
   }
 
   /**
+   * Render the PlantUML blocks under root (the whole preview by default).
+   * mode "consent" (full render): one confirm, then send (INV-02).
+   * mode "placeholder" (partial render after an edit): send nothing and show
+   * a pending box with a [Render] button instead (INV-23).
    * @param {string} theme
+   * @param {ParentNode|ParentNode[]} [root]
+   * @param {"consent"|"placeholder"} [mode]
    * @purity non-pure
    */
-  async render(theme) {
+  async render(theme, root = this.preview, mode = "consent") {
     try {
-      const blocks = this.preview.querySelectorAll(
-        "code.language-plantuml, code.language-puml",
-      );
+      const blocks = queryAllIn(root, "code.language-plantuml, code.language-puml");
       if (blocks.length === 0) return;
 
-      const permitted = window.confirm(
-        `Security & Confidentiality Warning
+      if (mode === "placeholder") {
+        /** @purity non-pure */
+        blocks.forEach((block) => {
+          replaceCodeBlock(block, this.createPendingElement(block.textContent, theme));
+        });
+        return;
+      }
 
-` +
-          `Your data will be sent to an external PlantUML rendering server.
-
-` +
-          `[OK]: data -> \u{1F310} official server -> render PlantUML
-
-` +
-          `[Cancel]: Render Markdown without PlantUML`,
-      );
+      const permitted = this.askConsent();
 
       if (!permitted) {
         /** @purity non-pure */
@@ -59,6 +63,67 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     } catch (error) {
       console.error("PlantUML rendering error:", error);
     }
+  }
+
+  /**
+   * The PlantUML consent dialog (CON-04, INV-02).
+   * @returns {boolean} true when the user allows sending
+   * @purity non-pure
+   */
+  askConsent() {
+    return window.confirm(
+      `Security & Confidentiality Warning
+
+` +
+        `Your data will be sent to an external PlantUML rendering server.
+
+` +
+        `[OK]: data -> \u{1F310} official server -> render PlantUML
+
+` +
+        `[Cancel]: Render Markdown without PlantUML`,
+
+    );
+  }
+
+  /**
+   * A pending box for a PlantUML block that was not sent (INV-23).
+   * @param {string} code
+   * @param {string} theme
+   * @returns {HTMLDivElement}
+   * @purity non-pure
+   */
+  createPendingElement(code, theme) {
+    const box = document.createElement("div");
+    box.className = "plantuml-pending";
+    const label = document.createElement("span");
+    label.textContent = CONFIG.messages.edit.plantumlPending;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = CONFIG.messages.edit.plantumlRenderButton;
+    button.addEventListener("click", () => this.renderPending(box, theme));
+    box.append(label, " ", button);
+    this._pending.set(box, { code, theme });
+    return box;
+  }
+
+  /**
+   * [Render] on a pending box: ask with the usual dialog, and send only on OK
+   * (INV-23, INV-02). Cancel keeps the box. The dialog and the image request
+   * start synchronously, inside the click.
+   * @param {HTMLElement} placeholder
+   * @param {string} [theme]
+   * @returns {Promise<boolean>}
+   * @purity non-pure
+   */
+  renderPending(placeholder, theme) {
+    const entry = this._pending.get(placeholder);
+    if (!entry || !placeholder.isConnected) return Promise.resolve(false);
+    if (!this.askConsent()) return Promise.resolve(false);
+    this._pending.delete(placeholder);
+    const img = this.createImage(this.applyTheme(entry.code, theme ?? entry.theme));
+    placeholder.replaceWith(this.createWrapper(img));
+    return this.waitForImageLoad(img, CONFIG.plantuml.imageLoadTimeout);
   }
 
   /**

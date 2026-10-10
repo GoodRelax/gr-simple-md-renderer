@@ -183,12 +183,14 @@ export default class ExternalImageGate {
   }
 
   /**
-   * Show placeholders for the pending images in the preview, or load them
-   * right away if consent is active. Call after the sanitized HTML is set.
+   * Show placeholders for the pending images under root (the whole preview by
+   * default), or load them right away if consent is active. Call after the
+   * sanitized HTML is set. A partial render passes the replaced block (INV-43).
    * @purity non-pure
+   * @param {ParentNode} [root]
    */
-  apply() {
-    const pending = this.preview.querySelectorAll(
+  apply(root = this.preview) {
+    const pending = root.querySelectorAll(
       `img[${PENDING_SRC}], img[${PENDING_SRCSET}]`,
     );
     /** @purity non-pure */
