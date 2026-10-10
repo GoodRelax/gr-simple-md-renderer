@@ -14,6 +14,10 @@ describe("escapeHtml", () => {
     expect(escapeHtml('"hello"')).toBe("&quot;hello&quot;");
   });
 
+  it("escapes single quotes", () => {
+    expect(escapeHtml("'hello'")).toBe("&#39;hello&#39;");
+  });
+
   it("returns empty string for empty input", () => {
     expect(escapeHtml("")).toBe("");
   });
@@ -23,7 +27,9 @@ describe("escapeHtml", () => {
   });
 
   it("escapes all special chars together", () => {
-    expect(escapeHtml('<a href="x">&')).toBe('&lt;a href=&quot;x&quot;&gt;&amp;');
+    expect(escapeHtml(`<a href="x" title='y'>&`)).toBe(
+      "&lt;a href=&quot;x&quot; title=&#39;y&#39;&gt;&amp;",
+    );
   });
 });
 

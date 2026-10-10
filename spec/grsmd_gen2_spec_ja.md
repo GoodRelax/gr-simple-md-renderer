@@ -8,6 +8,8 @@
 
 **改訂:** 2026-07-16 — 全描画ライブラリ (marked / mermaid / highlight.js / KaTeX / marked-katex-extension / plantuml-encoder) をCDNから外し、npm依存としてViteビルドに**バンドル(単一ファイルへ内包)**。実行時にCDNから取得しない。外部通信はPlantUMLサーバ (同意付き) のみ。これにより jsdelivr /+esm のSRI破綻は原理的に解消し、SRIハッシュの保守は不要になった。KaTeXフォントはwoff2形式のみをdata URIで内包 (字形の網羅性は不変、woff/ttfフォールバックは削除)。単一ファイルは約54KB->約4.37MB (gzip約1.38MB)。
 
+**改訂:** 2026-10-10 — Markdown出力のHTMLサニタイズを導入。marked (v18) にはサニタイズ機能が存在しないため、DOMPurify 3.4.12 (mermaid の推移的依存として既に内包されていたものを直接依存に昇格) で全出力をサニタイズしてからDOMへ挿入する (OS-14)。パース失敗時のエラーメッセージもエスケープし、`escapeHtml` はシングルクォートもエスケープするよう修正。外部画像読込の同意とCSPは後続対応。
+
 ---
 
 ## 目次
@@ -126,6 +128,7 @@
 | PlantUMLエンコード     | plantuml-encoder v1.4.0 (バンドル)                   | エンコードのみ。描画は同意付き外部サーバー       |
 | シンタックスハイライト | highlight.js v11.11.1 (バンドル)                     | Markdownコードブロックとコードビューの両方で使用 |
 | 数式描画               | KaTeX v0.17.0 + marked-katex-extension v5.1.10 (バンドル) | LaTeX数式サポート                            |
+| HTMLサニタイズ         | DOMPurify v3.4.12 (バンドル)                         | Markdown出力をDOM挿入前に必ずサニタイズ (OS-14)  |
 
 **ビルド戦略:**
 
@@ -234,7 +237,7 @@ gr-simple-md-renderer/
 | OS-11 | ファイル保存 / エクスポート（クリップボードコピー以外）       | YAGNI                                                                                                                 |
 | OS-12 | リアルタイムコラボレーション                                  | スコープ外                                                                                                            |
 | OS-13 | WYSIWYG Markdown編集                                          | スコープ外                                                                                                            |
-| OS-14 | HTMLサニタイゼーション（DOMPurify）                           | marked.js のビルトインサニタイズに依存。ローカル使用前提のためDOMPurifyは不要と判断。リスク受容済み。                 |
+| OS-14 | HTMLサニタイゼーション（DOMPurify）                           | **スコープ外から除外 (2026-10-10、実装済み)。** 旧記述「marked.js のビルトインサニタイズに依存、DOMPurify不要、リスク受容」は前提が誤り: marked (v18) にはサニタイズ機能が存在せず、Markdown中の生HTML (例: `<img src=x onerror=...>`) がそのままDOM化されスクリプトが実行され得た。現行: `MarkdownRenderer` は marked の全出力を DOMPurify (npm依存としてバンドル、`main.js` からコンストラクタ注入) で `sanitize()` してから `innerHTML` に挿入する。設定は既定値に、KaTeX の MathML 出力用として `semantics` / `annotation` タグと `encoding` 属性のみを追加 (追加しないと `annotation` 内のTeXソースが `<math>` 直下の裸テキストとして残る)。`annotation-xml` は禁止のまま。`language-mermaid` / `language-plantuml` / `language-puml` クラス、KaTeXの `style` 属性、タスクリストのチェックボックス、表は既定設定で保持される。**後続対応 (本項の対象外):** 外部画像読込の同意、CSP の導入。 |
 | OS-15 | オフラインPWA                                                 | スコープ外                                                                                                            |
 | OS-16 | アクセシビリティ（ARIA、スクリーンリーダー対応）              | 将来のフェーズに延期。現時点ではキーボードナビゲーションのみ対応。                                                    |
 | OS-17 | highlight.js 非common言語の個別インポート                     | YAGNIとする。バンドルした `highlight.js/lib/common` (36言語) で十分。非common言語はplaintext表示のみ (highlightAutoは使わない。5.3参照)。 |
@@ -244,7 +247,7 @@ gr-simple-md-renderer/
 | ID     | 制約                                                                                                                                                                                      |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CON-01 | `DataTransferItem.getAsFileSystemHandle()` はdropイベントハンドラ内で、最初の `await` よりも前に同期的に呼び出す必要がある。返されたPromiseは保存し、後でawaitする。                      |
-| CON-02 | highlight.js 11.11.1、marked.js 18.0.5、mermaid 11.16.0、plantuml-encoder 1.4.0、KaTeX 0.17.0、marked-katex-extension 5.1.10 はnpm依存としてバンドルする。バージョンを変更する場合は機能検証を行うこと。2026-07-16よりCDN/SRI運用は廃止した。 |
+| CON-02 | highlight.js 11.11.1、marked.js 18.0.5、mermaid 11.16.0、plantuml-encoder 1.4.0、KaTeX 0.17.0、marked-katex-extension 5.1.10、DOMPurify 3.4.12 はnpm依存としてバンドルする。バージョンを変更する場合は機能検証を行うこと。2026-07-16よりCDN/SRI運用は廃止した。 |
 | CON-03 | ユーザーデータ（ファイル内容、ファイル名、メタデータ）をlocalStorage、sessionStorage、Cookieに保存してはならない。                                                                        |
 | CON-04 | 既存のPlantUML同意ダイアログ（window.confirm）を削除またはバイパスしてはならない。                                                                                                        |
 | CON-05 | 本番リリースは単一HTMLファイルでなければならない。マルチファイル構成は開発時（Viteソース）のみ許容され、リリース前に統合すること。                                                        |
@@ -310,7 +313,7 @@ graph TB
             UI["UIController<br/>(Event Wiring)"]:::framework
             ORCH["RendererOrchestrator<br/>(Coordination)"]:::usecase
             STATE["ApplicationState<br/>(Theme + Text)"]:::entity
-            MD["MarkdownRenderer<br/>(marked.js + hljs)"]:::entity
+            MD["MarkdownRenderer<br/>(marked.js + DOMPurify + hljs)"]:::entity
             MERM["MermaidRenderer<br/>(mermaid.js)"]:::entity
             PUML["PlantUMLRenderer<br/>(plantuml-encoder)"]:::entity
             SRC["SourceFileRenderer<br/>(hljs Code View)"]:::entity
@@ -327,6 +330,7 @@ graph TB
             HLJS["highlight.js v11.11.1"]
             KATEX["KaTeX v0.17.0"]
             PUMLENC["plantuml-encoder v1.4.0"]
+            PURIFY["DOMPurify v3.4.12"]
         end
     end
     PUML_SERVER["PlantUML Server<br/>(External, consent required)"]
@@ -341,6 +345,7 @@ graph TB
     ORCH -->|"code view"| SRC
     ORCH -->|"scroll save and restore"| SMGR
     MD -->|"uses"| MARKED
+    MD -->|"sanitizes with"| PURIFY
     MD -->|"uses"| HLJS
     MERM -->|"uses"| MERMAIDJS
     SRC -->|"uses"| HLJS
@@ -381,6 +386,7 @@ classDiagram
         -preview : HTMLElement
         -marked : object
         -hljs : object
+        -purify : object
         +render(markdownText) : Promise
     }
 
@@ -744,7 +750,7 @@ sequenceDiagram
     RendererOrchestrator->>RendererOrchestrator : renderAll()
     RendererOrchestrator->>ScrollMemento : save()
     RendererOrchestrator->>MarkdownRenderer : render(markdownText)
-    MarkdownRenderer->>DOM : innerHTML = parsed HTML
+    MarkdownRenderer->>DOM : innerHTML = DOMPurify.sanitize(parsed HTML)
     MarkdownRenderer->>DOM : hljs.highlightElement() for code blocks
     RendererOrchestrator->>MermaidRenderer : render(theme)
     MermaidRenderer->>MermaidRenderer : initializeMermaid(theme)
@@ -2512,5 +2518,6 @@ preprocessInput(rawText) {
 | KaTeX                  | 0.17.0     | バンドル (npm, CSS + woff2フォント) |
 | marked-katex-extension | 5.1.10     | バンドル (npm)                    |
 | plantuml-encoder       | 1.4.0      | バンドル (npm)                    |
+| DOMPurify              | 3.4.12     | バンドル (npm、mermaidと同一コピーを共有) |
 
 2026-07-16より全ライブラリをnpm依存としてViteビルドに内包する (単一ファイル)。実行時のCDN取得およびSRIは廃止。バージョンを変更する場合は機能検証を行うこと (CON-02, CON-10)。外部通信はPlantUMLサーバ (同意付き) のみ。

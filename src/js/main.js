@@ -6,6 +6,7 @@ import mermaid from "mermaid";
 import hljs from "highlight.js/lib/common";
 import plantumlEncoder from "plantuml-encoder";
 import markedKatex from "marked-katex-extension";
+import DOMPurify from "dompurify";
 
 // Vendor CSS (inlined into the single file; katex fonts embedded as data URIs)
 import "highlight.js/styles/vs2015.css";
@@ -57,6 +58,7 @@ const markdownRenderer = new MarkdownRenderer(
   elements.preview,
   marked,
   hljs,
+  DOMPurify,
 );
 const mermaidRenderer = new MermaidRenderer(elements.preview, mermaid);
 const plantumlRenderer = new PlantUMLRenderer(
