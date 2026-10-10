@@ -22,8 +22,9 @@ const katexWoff2Only = {
 const noExternalImports = {
   name: "no-external-imports",
   generateBundle(_options, bundle) {
+    // The Oxc minifier (Vite 8) may emit import(`...`) with a template literal.
     const remoteImport =
-      /\bimport\b[^;]*?\bfrom\s*["']https?:\/\/|\bimport\s*\(\s*["']https?:\/\//;
+      /\bimport\b[^;]*?\bfrom\s*["']https?:\/\/|\bimport\s*\(\s*["'`]https?:\/\//;
     for (const file of Object.values(bundle)) {
       const code = file.type === "chunk" ? file.code : String(file.source);
       if (remoteImport.test(code) || code.includes("cdnjs")) {

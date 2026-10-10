@@ -41,6 +41,30 @@ re-hash.
     (jsdom stays on 28.1.0, the latest 28.x).
   - Single file: ~4.37 MB (gzip ~1.38 MB), about +10 KB.
 
+- Dev tooling major updates (bundled libraries unchanged):
+
+  | Package | Version |
+  |---------|---------|
+  | vite | 7.3.7 -> 8.3.4 |
+  | vitest | 4.1.11 -> 5.0.3 |
+
+  - vite 8 replaces Rollup/esbuild with Rolldown/Oxc. `vite.config.js` needs
+    no option changes: the inline PostCSS plugin (`katexWoff2Only`),
+    `assetsInlineLimit` and both `generateBundle` plugins still run, and the CSP
+    hash still matches the final inlined script. The Oxc minifier writes
+    `import(...)` specifiers as template literals, so the `no-external-imports`
+    check now also matches `` import(`https://...`) ``.
+  - Single file: ~4.38 MB -> ~4.33 MB (gzip ~1.39 MB -> ~1.37 MB).
+  - jsdom stays on 28.1.0: jsdom 30 requires Node `^22.22.2 || ^24.15.0 ||
+    >=26.0.0`, and the current dev environment runs Node 24.12.0. Tests pass on
+    jsdom 30.1.2 too, so it can be bumped after a Node update.
+  - npm audit: the postcss, nanoid, source-map-js and undici findings are gone.
+    The 3 high findings left (braces via micromatch via vite-plugin-singlefile)
+    are build-time only and have no fixed braces release yet.
+  - mermaid 12.1.0 was evaluated and deferred: it bundles the ELK layout engine
+    (about +0.5 MB gzip) and makes it the default, which changes the layout of
+    flowchart, state, class and requirement diagrams.
+
 ### Known issues
 
 - mermaid 11.17.2 still pins its own nested `katex ^0.16.47` (used only for
