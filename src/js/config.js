@@ -60,6 +60,8 @@ export const CONFIG = {
       unsavedConfirm: "You have unsaved changes. Discard them?",
       externalChangeConfirm:
         "This file was changed outside GRSMD. Overwrite it?",
+      overwriteUnknownConfirm:
+        "GRSMD could not confirm whether this file changed since the last save. Overwrite it?",
       saved: (name) => `Saved: ${name}`,
       downloadStarted: (name) =>
         `Download started: ${name}. The tab stays marked unsaved.`,

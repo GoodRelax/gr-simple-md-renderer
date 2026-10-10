@@ -336,7 +336,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-36 | 常時 | 編集パレットとポップオーバーの操作 (押す・離す・移動) は、ブロック編集の「外側」として扱わないこと。編集欄のフォーカスと選択範囲を保ったまま機能を適用すること。 |
 | INV-37 | 常時 | 編集パレットとポップオーバーはビューポートの外に出さず、移動をビューポートの端で止めること。ビューポートの大きさが変わった場合も、ビューポート内に収まるよう位置を補正すること。ポップオーバーは、パレットの左右のうちビューポートに収まる側に開くこと。 |
 | INV-38 | イベント駆動 | 保存する場合、システムは、ファイルから読み込んだ文書 (`.md` のドロップと Reload) について、読み込み時に `splitMarkdownWrapper` が除去した `prefix` と `suffix` を、本文の前後に元どおりに付け直して書き込むこと (5.13)。初期状態からのペーストと初期状態の `#editor` からの描画で除去したラッパーは戻さない (保存するのは本文だけ。ペーストした AI 出力をラッパー無しで保存できる。Markdown 表示中の `#editor` からの描画では除去しない。5.14.1)。Markdown 表示中の `#editor` からの描画では、セッションのラッパー (ファイルから読み込んだもの) を変えない。 |
-| INV-39 | イベント駆動 | 上書き保存の直前に、ファイルの更新日時 (`getFile().lastModified`) が基準の更新日時 (読み込み時、Reload 時、または前回の保存時) と異なる場合、または基準の更新日時が不明な場合 (前回の保存で書き込みの後に読み直せなかった場合。5.14.7)、システムは「外部で変更されている」旨の確認ダイアログを表示すること。キャンセルなら書き込まず、未保存のままとすること。 |
+| INV-39 | イベント駆動 | 上書き保存の直前に、ファイルの更新日時 (`getFile().lastModified`) が基準の更新日時 (読み込み時、Reload 時、または前回の保存時) と異なる場合、システムは「外部で変更されている」旨の確認ダイアログを表示すること。基準の更新日時が不明な場合 (前回の保存で書き込みの後に読み直せなかった場合。5.14.7) は、「前回の保存から変更されたかを確かめられなかった」旨の確認ダイアログを表示すること。キャンセルなら書き込まず、未保存のままとすること。 |
 | INV-40 | 常時 | ブロック編集欄の高さは、内容の行数に合わせて自動で伸縮し、編集欄の内部にスクロールバーを出さないこと。 |
 | INV-41 | 常時 | ブロックは `marked.lexer()` の最上位トークン 1 つとすること。ただし、開始タグが閉じていない `html` トークンは、そのタグが閉じるまでの後続のトークンと合わせて 1 ブロックとすること (文書の末尾まで閉じなければ末尾まで)。リストは全体で 1 ブロックとする。`space` トークンはブロックとして表示も編集もしない。描画結果が不可視のブロック (参照リンク定義 (`def`)、sanitize 後の HTML が空白だけになるもの、HTML コメントだけのもの、の 3 種) は、編集モードの間だけ細い帯 (`.md-block-hidden`) として表示し、開けるようにすること (編集モードでない間と印刷では表示しない)。開始タグが文書の末尾まで閉じない場合 (終了タグがインライン HTML にある場合や、終了タグを省略できる要素を含む) は、末尾までを 1 ブロックとすることを許容する (表示は全体描画と同じで、編集の単位が大きくなるだけである)。本文の先頭の空行は先頭のブロックの前の区切りとして保持し、ブロックとして表示しない。すべてのブロックの原文と `space` を順につなげた文字列は、本文と一致しなければならない (往復の不変条件)。 |
 | INV-42 | イベント駆動 | ブロックの確定または Undo が行われた場合、システムは新しい本文全体を字句解析し直し、ブロックの列を前の列と原文の一致で対応付けること (前後の一致を先に除き、残りの区間だけを LCS で対応付ける。区間の表が `CONFIG.edit.diffMaxCells` を超える場合は、その区間を全部置き換えとして扱う。5.14.2)。対応したブロックはブロック ID と DOM を引き継ぎ、描画結果の HTML が変わったブロックだけ DOM を差し替えること。Mermaid と PlantUML の処理は差し替えた範囲だけに行うこと。差し替えなかったブロックの DOM (描画済みの図、ズーム状態、PlantUML の画像を含む) は変更しないこと。 |
@@ -710,7 +710,7 @@ classDiagram
         +onBlockSplitFailed() void
     }
     class OverwriteConfirmPort {
-        +confirmOverwrite() Promise~boolean~
+        +confirmOverwrite(reason) Promise~boolean~
     }
     class SaveDocument {
         +SaveDocument(fileAccess, messages, defaultFileName)
@@ -900,7 +900,7 @@ classDiagram
 | `ExternalImageGate` | `apply(root)` (適用範囲を引数で取る。省略時は preview 全体。INV-43) |
 | `ScrollMemento` | `+captureAnchor(element) ScrollAnchor` (`@purity semi-pure-b`。要素の上端の画面上の位置を読む) / `+restoreAnchor(anchor, element) void` (基準の要素は呼び出し側が `anchorBlockId` で探して渡す。要素が無ければ補正しない) (INV-46。タッチ端末では document のスクロールを使う既存の切り替えに従う) |
 | `ScrollAnchor` (新しい値の型) | `{ offsetTop : number }` (押下・確定の時点の、基準のブロックの上端の画面上の位置)。描画の時点の基準の要素は `ModelChange.anchorBlockId` で決める (INV-46) |
-| `UIController` | `+toggleEditPalette() void` / `+requestSave() Promise` / `+requestSaveAs() Promise` / `+confirmOverwrite() Promise~boolean~` (`OverwriteConfirmPort` の実装。`window.confirm` を出す) / `+onModelChanged(change) void` (`ModelChangedPort` の実装。同期で `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろし、未保存の印を更新する) / `+onBlockSplitFailed() void` (`ModelChangedPort` の実装。本文をブロックに分けられず全体を 1 ブロックにしたことを `messages.edit.blockSplitFailed` のトーストで知らせる。5.14.2) / `-_confirmDiscardIfDirty() boolean` / `-_isDocumentDirty() boolean` / `-_session : DocumentSession` / `-_location : DocumentLocation` / `-_nextDocumentId : number` / `-_editorChangedSinceRender : boolean` (INV-45) |
+| `UIController` | `+toggleEditPalette() void` / `+requestSave() Promise` / `+requestSaveAs() Promise` / `+confirmOverwrite(reason) Promise~boolean~` (`OverwriteConfirmPort` の実装。`reason` が `"changed"` なら `externalChangeConfirm`、`"unknown"` なら `overwriteUnknownConfirm` の文言で `window.confirm` を出す) / `+onModelChanged(change) void` (`ModelChangedPort` の実装。同期で `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろし、未保存の印を更新する) / `+onBlockSplitFailed() void` (`ModelChangedPort` の実装。本文をブロックに分けられず全体を 1 ブロックにしたことを `messages.edit.blockSplitFailed` のトーストで知らせる。5.14.2) / `-_confirmDiscardIfDirty() boolean` / `-_isDocumentDirty() boolean` / `-_session : DocumentSession` / `-_location : DocumentLocation` / `-_nextDocumentId : number` / `-_editorChangedSinceRender : boolean` (INV-45) |
 
 **実装で確定したメンバと決めごと (その場編集):**
 
@@ -1288,7 +1288,7 @@ sequenceDiagram
     SaveDocument->>SaveDocument : Await permission
     SaveDocument->>MarkdownFileAccess : readLastModified(fileHandle)
     MarkdownFileAccess-->>SaveDocument : lastModified differs from the baseline
-    SaveDocument->>UIController : confirmOverwrite()
+    SaveDocument->>UIController : confirmOverwrite("changed")
     UIController->>User : window.confirm (overwrite external change)
     User-->>UIController : OK
     UIController-->>SaveDocument : true
@@ -2379,6 +2379,8 @@ const CONFIG = {
       unsavedConfirm: "You have unsaved changes. Discard them?",
       externalChangeConfirm:
         "This file was changed outside GRSMD. Overwrite it?",
+      overwriteUnknownConfirm:
+        "GRSMD could not confirm whether this file changed since the last save. Overwrite it?",
       saved: (name) => `Saved: ${name}`,
       downloadStarted: (name) =>
         `Download started: ${name}. The tab stays marked unsaved.`,
@@ -2862,7 +2864,7 @@ class SmoothScrollEngine {
 
 `_viewState === 'markdown'` の中には、ブロック編集の状態 (`blockEditState`: `browsingPreview` / `editModeIdle` / `editingBlock`。3.3 の 11-c) がある。`_viewState` の値は増やさない。
 
-`#editor` (上部の入力欄) はペーストの入口として残す。`#editor` と文書は次の規則で同期する: (1) ブロックの確定・Undo・挿入では、その操作のイベントハンドラの中で同期的にモデルを更新し、`onModelChanged` で UIController が `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろす (INV-47)。描画を待ってから書き換えることはしないので、確定の直後に `#editor` へ打ち込んだ文字は上書きされない。(2) `#editor` の `input` イベントで `_editorChangedSinceRender` を立てる。(3) `#editor` からの全体描画 ([Render] / `l` / `d`) は、開いている編集欄を同期的に確定してから行い (描画はキューに入れる)、未保存の確認は出さない (INV-45)。ただし `#editor` が空で本文が空でない場合は、確定より前に INV-56 の確認を出し、Cancel なら `#editor` を本文に戻して印を下ろすだけにする。システムが `#editor.value` を代入する場合の一つであり、(6) のガードはそのまま働く。`_editorChangedSinceRender` は、`#editor` の内容をモデルに取り込んだ時点で (同期。描画の完了は待たない) 下ろす。 また、システムが `#editor.value` を書き換えるとき (確定・Undo・挿入の `onModelChanged`、文書の作り直し (`.md` のドロップ、Reload、初期状態からのペーストと描画、空の文書の開始)、Clear、コードビューへの切り替え) にも同期的に下ろす (INV-45 の「最後の全体描画またはブロックの確定の後の `input`」の定義にそろえる)。その後の `#editor` の `input` は、描画中であっても印をもう一度立てる (裁定 T32)。(4) 編集モードでブロックの開始ジェスチャが行われたとき、`_editorChangedSinceRender` が立っていれば、先に `#editor` の内容で全体を描画し直す (INV-45)。 (5) ブロック編集欄を開いたまま `#editor` にフォーカスが入った場合 (Shift+Tab などのキーボード操作を含む) は、その `focusin` のハンドラの中で編集欄を同期的に確定する (`#editor` への入力が、後の確定による `#editor.value` の書き換えで失われないため。裁定 T19)。(6) ブラウザの Undo / Redo の履歴は、ページの中で 1 本である (Chromium では、ブロック編集欄の履歴が尽きた後の Ctrl+Z が、以前に入力した `#editor` に `historyUndo` として届き、フォーカスも `#editor` へ移る)。システムが `#editor.value` を代入すると、それより前の `#editor` の Undo の履歴は文書と対応しなくなる。そこで UIController は `#editor` の `beforeinput` で、`inputType` が `historyUndo` / `historyRedo` で、かつフォーカス (`document.activeElement`) が `#editor` でないものを `preventDefault()` する (`#editor` の中で押した Undo / Redo と、それ以外の入力は妨げない)。ブロック編集欄・パレット・本体での Ctrl+Z が、`#editor` と文書をずらすことはない (INV-45、INV-47、PRT-U36)。
+`#editor` (上部の入力欄) はペーストの入口として残す。`#editor` と文書は次の規則で同期する: (1) ブロックの確定・Undo・挿入では、その操作のイベントハンドラの中で同期的にモデルを更新し、`onModelChanged` で UIController が `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろす (INV-47)。描画を待ってから書き換えることはしないので、確定の直後に `#editor` へ打ち込んだ文字は上書きされない。(2) `#editor` の `input` イベントで `_editorChangedSinceRender` を立てる。(3) `#editor` からの全体描画 ([Render] / `l` / `d`) は、開いている編集欄を同期的に確定してから行い (描画はキューに入れる)、未保存の確認は出さない (INV-45)。ただし `#editor` が空で本文が空でない場合は、確定より前に INV-56 の確認を出し、Cancel なら `#editor` を本文に戻して印を下ろすだけにする。システムが `#editor.value` を代入する場合の一つであり、(6) のガードはそのまま働く。`_editorChangedSinceRender` は、`#editor` の内容をモデルに取り込んだ時点で (同期。描画の完了は待たない) 下ろす。 また、システムが `#editor.value` を書き換えるとき (確定・Undo・挿入の `onModelChanged`、文書の作り直し (`.md` のドロップ、Reload、初期状態からのペーストと描画、空の文書の開始)、Clear、コードビューへの切り替え) にも同期的に下ろす (INV-45 の「最後の全体描画またはブロックの確定の後の `input`」の定義にそろえる)。その後の `#editor` の `input` は、描画中であっても印をもう一度立てる (裁定 T32)。(4) 編集モードでブロックの開始ジェスチャが行われたとき、`_editorChangedSinceRender` が立っていれば、先に `#editor` の内容で全体を描画し直す (INV-45)。 (5) ブロック編集欄を開いたまま `#editor` にフォーカスが入った場合 (Shift+Tab などのキーボード操作を含む) は、その `focusin` のハンドラの中で編集欄を同期的に確定する (`#editor` への入力が、後の確定による `#editor.value` の書き換えで失われないため。裁定 T19)。(6) ブラウザの Undo / Redo の履歴は、ページの中で 1 本である (Chromium では、ブロック編集欄の履歴が尽きた後の Ctrl+Z が、以前に入力した `#editor` に `historyUndo` として届き、フォーカスも `#editor` へ移る)。システムが `#editor.value` を代入すると、それより前の `#editor` の Undo の履歴は文書と対応しなくなる。そこで UIController は `#editor` の `beforeinput` で、`inputType` が `historyUndo` / `historyRedo` で、かつフォーカス (`document.activeElement`) が `#editor` でないものを `preventDefault()` する。また、システムが `#editor.value` を代入した後は (`onModelChanged`、文書の作り直し、Clear、コードビューへの切り替え、INV-56 の Cancel での戻し)、利用者が `#editor` に自分で入力する (`inputType` が `historyUndo` / `historyRedo` 以外の `input` が起きる) までの間、`#editor` の中で押した Undo / Redo も `preventDefault()` する (Chromium では、代入の前の履歴が代入の後の文字列に当てはめられ、本文が二重になることがある [検証済: INV-56 の Cancel の後])。それ以外の入力は妨げない。ブロック編集欄・パレット・本体での Ctrl+Z が、`#editor` と文書をずらすことはない (INV-45、INV-47、PRT-U36)。残る制限 (受容): 利用者が `#editor` に入力した後の Undo は、その入力を戻した後、代入より前の古い履歴まで進むことがある。
 
 **RendererOrchestrator ビュー状態:**
 
@@ -3554,7 +3556,7 @@ CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選�
 #### 5.14.7 保存 (`SaveDocument` / `SaveDocumentAs`、UseCase 層)
 
 - 押下のハンドラの中で同期的に、(`#editor` を取り込む場合は先に INV-56 の確認を出し、Cancel なら `#editor` を本文に戻して、何も始めずに終える) `MarkdownFileAccess.startPermissionRequest(location.fileHandle)` (Save) または `startSavePicker(location.fileName)` (Save as) を始め、続けて開いている編集欄を確定し、`#editor` に未描画の変更があればそれをモデルに取り込む (`applyEditorText`。どちらも同期。INV-33)。その後で `SaveRequest` (セッション、保存先、本文、権限またはダイアログの Promise、`confirmOverwrite` ポート) を組み立てて `execute` に渡す。アクティベーションが失効していた場合 (`SecurityError` 等) は `failed` とし、`saveActivationLost` のトーストを出す (INV-25)。
-- SaveDocument は UI を直接扱わない。外部変更の確認は、`SaveRequest.confirmer` (UIController が実装する `OverwriteConfirmPort`) の `confirmOverwrite()` (`Promise<boolean>` を返す) を通して行う (INV-39)。
+- SaveDocument は UI を直接扱わない。外部変更の確認は、`SaveRequest.confirmer` (UIController が実装する `OverwriteConfirmPort`) の `confirmOverwrite(reason)` (`Promise<boolean>` を返す) を通して行う (INV-39)。`reason` は、ファイルの更新日時が基準と異なる場合は `"changed"`、基準が不明な場合は `"unknown"` とする。不明な場合に「外部で変更された」と出すと、事実でないことがあり利用者を誤らせるので、文言を分ける。
 - Save: 保存先 (`location.fileHandle`) が無い、または書き込み API が無い場合は Save as と同じ動作にする。権限 → `readLastModified` (`NotFoundError` は `failed`) → 基準と異なれば `confirmOverwrite` → `toFileText` → `writeFile` → `withSaved`。
 - Save as: 保存ダイアログで得た handle と名前で、新しい `DocumentLocation` を返す (以後の Save と Reload の対象)。書き込み API が無い場合は `startDownload` で Blob (`text/markdown;charset=utf-8`) をダウンロードし、`downloadStarted` を返す。ダウンロードでは保存先も基準も変えない (INV-26)。Blob URL は `<a>` の click の後のタスクで `URL.revokeObjectURL` する。ダウンロードは、押下のハンドラの中で、確定 (同期) に続けて同期的に始める (INV-33。ユーザーアクティベーションの中で始まる)。それでも止められた場合 **[一般知識・未検証: iOS Safari など]** は、INV-26 により基準は変わらず、安全側に倒れる (PRT-W06 を iOS Safari でも行う)。
 - `SaveOutcome` は保存を始めたときの `documentId` を持ち、UIController は現在の文書 ID と一致するときだけ反映する (INV-54)。保存中 (`writingFile`) は、文書の置き換えを拒む (INV-54)。

@@ -55,6 +55,7 @@ describe("SaveDocument / SaveDocumentAs (UseCase)", () => {
     const req = request({ confirmer: { confirmOverwrite: vi.fn().mockResolvedValue(false) } });
     const out = await save.execute(req);
     expect(req.confirmer.confirmOverwrite).toHaveBeenCalledTimes(1);
+    expect(req.confirmer.confirmOverwrite).toHaveBeenCalledWith("changed");
     expect(access.writes).toEqual([]);
     expect(out.status).toBe("canceled");
     expect(out.session).toBe(req.session);
@@ -275,6 +276,7 @@ describe("the file is written but its new lastModified cannot be read (INV-39)",
     const confirmer = { confirmOverwrite: vi.fn().mockResolvedValue(answer) };
     const outcome = await save.execute(request({ session, confirmer }));
     expect(confirmer.confirmOverwrite).toHaveBeenCalledTimes(1);
+    expect(confirmer.confirmOverwrite).toHaveBeenCalledWith("unknown");
     expect(outcome.status).toBe(status);
     expect(access.calls.filter((c) => c.startsWith("writeFile"))).toHaveLength(writes);
   });

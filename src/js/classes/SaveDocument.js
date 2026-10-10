@@ -51,8 +51,9 @@ export default class SaveDocument {
       return this.saveAs.outcome(request, "failed", this.saveAs.failureMessage(error));
     }
     const baseline = request.session.baselineLastModified;
-    if (baseline === LAST_MODIFIED_UNKNOWN || (baseline !== null && onDisk !== baseline)) {
-      const overwrite = await request.confirmer.confirmOverwrite();
+    const isUnknown = baseline === LAST_MODIFIED_UNKNOWN;
+    if (isUnknown || (baseline !== null && onDisk !== baseline)) {
+      const overwrite = await request.confirmer.confirmOverwrite(isUnknown ? "unknown" : "changed");
       if (!overwrite) return this.saveAs.outcome(request, "canceled", null);
     }
 

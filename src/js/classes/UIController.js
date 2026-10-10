@@ -11,6 +11,16 @@ import SaveDocumentAs from "./SaveDocumentAs.js";
 import { cell } from "../stateTable.js";
 
 /**
+ * An Undo or Redo of the browser's editing history.
+ * @purity pure
+ * @param {InputEvent} e
+ * @returns {boolean}
+ */
+function isHistoryInput(e) {
+  return e.inputType === "historyUndo" || e.inputType === "historyRedo";
+}
+
+/**
  * INV-14: a key typed into an input, a textarea (the block editor included),
  * a contenteditable element or a role="toolbar" (the edit palette) is not a
  * document shortcut. The role is checked as written (ruling T2).
@@ -135,6 +145,7 @@ export default class UIController {
     this._saveOperationState = "idle"; // 11-e
     this._baseTitle = document.title;
     this._lastTap = null; // double tap on the empty preview (INV-31)
+    this._isEditorHistoryStale = false; // #editor's undo history after a system write (5.7 (6))
     this.saveDocument = new SaveDocument(this.fileAccess, CONFIG.messages.edit, CONFIG.edit.defaultFileName);
     this.saveDocumentAs = new SaveDocumentAs(this.fileAccess, CONFIG.messages.edit, CONFIG.edit.defaultFileName);
     this.palette = services.createPalette(this._paletteHost());
@@ -451,7 +462,7 @@ export default class UIController {
     this._editorChangedSinceRender = false;
     this.scrollEngine.destroy();
     this.orchestrator.clear();
-    this.elements.editor.value = "";
+    this._setEditorText("");
     applySystemTheme();
     this._showAffordance();
     this.setViewMode("initial");
@@ -543,7 +554,7 @@ export default class UIController {
     this._session = null;
     this._location = null;
     this._editorChangedSinceRender = false;
-    this.elements.editor.value = ""; // RTC2-07: clear editor before code view
+    this._setEditorText(""); // RTC2-07: clear editor before code view
     const rendering = this.orchestrator.renderCodeView(file, fileHandle);
     this._refreshDirtyMark();
     const metadata = await rendering;
@@ -668,7 +679,7 @@ export default class UIController {
    * @purity non-pure
    */
   onModelChanged(change) {
-    this.elements.editor.value = change.model.toBody();
+    this._setEditorText(change.model.toBody());
     this._editorChangedSinceRender = false;
     this._refreshDirtyMark();
   }
@@ -688,17 +699,19 @@ export default class UIController {
    * The browser's Undo / Redo can act on #editor while the focus is elsewhere
    * (Chromium sends historyUndo to the last edited textarea): keep the block
    * editor's undo history away from #editor, so only an Undo / Redo typed in
-   * #editor itself may change it (5.7 (6)).
+   * #editor itself may change it, and only after the user's own input since
+   * the last system write (5.7 (6)).
    * @purity non-pure
    */
   setupEditorSync() {
     /** @purity non-pure */
     this.elements.editor.addEventListener("beforeinput", (e) => {
-      const isHistory = e.inputType === "historyUndo" || e.inputType === "historyRedo";
-      if (isHistory && document.activeElement !== this.elements.editor) e.preventDefault();
+      if (!isHistoryInput(e)) return;
+      if (document.activeElement !== this.elements.editor || this._isEditorHistoryStale) e.preventDefault();
     });
     /** @purity non-pure */
-    this.elements.editor.addEventListener("input", () => {
+    this.elements.editor.addEventListener("input", (e) => {
+      if (!isHistoryInput(e)) this._isEditorHistoryStale = false;
       this._editorChangedSinceRender = true;
       this._refreshDirtyMark();
     });
@@ -775,7 +788,7 @@ export default class UIController {
     if (this._rejectWhileSaving()) return Promise.resolve();
     this._session = DocumentSession.fromPastedText("", this._newDocumentId());
     this._location = null;
-    this.elements.editor.value = "";
+    this._setEditorText("");
     this._editorChangedSinceRender = false;
     this.setViewMode("markdown");
     this.showKeyHint("markdown");
@@ -840,6 +853,18 @@ export default class UIController {
   }
 
   /**
+   * A system write to #editor. The browser's undo history of #editor no
+   * longer matches its text, so #editor's own Undo / Redo waits until the
+   * user types in #editor again (5.7 (6)).
+   * @param {string} text
+   * @purity non-pure
+   */
+  _setEditorText(text) {
+    this.elements.editor.value = text;
+    this._isEditorHistoryStale = true;
+  }
+
+  /**
    * INV-56: an empty #editor (whitespace only) taken into a document that is
    * not empty would empty the document; ask first. Called before anything
    * changes. Cancel puts the document back into #editor (a value assignment:
@@ -853,7 +878,7 @@ export default class UIController {
     const isDocumentBlank = this.orchestrator.getBody().trim() === "";
     if (!isEditorBlank || isDocumentBlank) return true;
     if (window.confirm(CONFIG.messages.edit.emptyEditorConfirm)) return true;
-    this.elements.editor.value = this.orchestrator.getBody();
+    this._setEditorText(this.orchestrator.getBody());
     this._editorChangedSinceRender = false;
     this._refreshDirtyMark();
     return false;
@@ -867,7 +892,7 @@ export default class UIController {
    */
   async _showSessionBody(theme) {
     const body = this._session.getBodyText();
-    this.elements.editor.value = body;
+    this._setEditorText(body);
     this._editorChangedSinceRender = false;
     const rendering = this.orchestrator.loadMarkdown(body, theme);
     this._refreshDirtyMark();
@@ -1101,12 +1126,17 @@ export default class UIController {
   }
 
   /**
-   * OverwriteConfirmPort (INV-39).
+   * OverwriteConfirmPort (INV-39). "changed": the file time differs from the
+   * baseline; "unknown": the baseline could not be read after the last save,
+   * so whether the file changed is not known.
+   * @param {"changed"|"unknown"} reason
    * @returns {Promise<boolean>}
    * @purity non-pure
    */
-  confirmOverwrite() {
-    return Promise.resolve(window.confirm(CONFIG.messages.edit.externalChangeConfirm));
+  confirmOverwrite(reason) {
+    const messages = CONFIG.messages.edit;
+    const message = reason === "unknown" ? messages.overwriteUnknownConfirm : messages.externalChangeConfirm;
+    return Promise.resolve(window.confirm(message));
   }
 
   /**

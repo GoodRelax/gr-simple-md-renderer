@@ -236,6 +236,11 @@ describe("INV-56 an empty #editor taken into a non-empty document asks first", (
     keydown(document.body, "l");
     await settle();
     expect(inputs).not.toHaveBeenCalled();
+    app.elements.editor.focus();
+    const own = new InputEvent("beforeinput", { inputType: "historyUndo", bubbles: true, cancelable: true });
+    app.elements.editor.dispatchEvent(own);
+    expect(own.defaultPrevented).toBe(true); // the restore was a system write: no doubled text
+    app.elements.editor.blur();
     document.activeElement?.blur();
     const undo = new InputEvent("beforeinput", { inputType: "historyUndo", bubbles: true, cancelable: true });
     app.elements.editor.dispatchEvent(undo);

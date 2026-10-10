@@ -225,15 +225,70 @@ describe("the browser's Undo / Redo never reaches #editor from elsewhere (5.7 (6
 
   it("Undo typed in #editor itself is left to the browser; other input types are never touched", async () => {
     await withDocument();
-    app.elements.editor.focus();
-    const own = historyEvent("historyUndo");
-    app.elements.editor.dispatchEvent(own);
-    expect(own.defaultPrevented).toBe(false);
-    app.elements.editor.blur();
     openChanged();
     const typing = new InputEvent("beforeinput", { inputType: "insertText", data: "x", bubbles: true, cancelable: true });
     app.elements.editor.dispatchEvent(typing);
     expect(typing.defaultPrevented).toBe(false);
+    app.elements.editor.focus(); // commits the block editor (editorFocused)
+    app.elements.editor.dispatchEvent(new InputEvent("input", { inputType: "insertText", data: "y", bubbles: true }));
+    const own = historyEvent("historyUndo");
+    app.elements.editor.dispatchEvent(own);
+    expect(own.defaultPrevented).toBe(false);
+  });
+});
+
+describe("#editor's own Undo / Redo waits for the user's own input after a system write (5.7 (6))", () => {
+  const historyEvent = (inputType) => new InputEvent("beforeinput", { inputType, bubbles: true, cancelable: true });
+  const ownUndoPrevented = (inputType = "historyUndo") => {
+    app.elements.editor.focus();
+    const e = historyEvent(inputType);
+    app.elements.editor.dispatchEvent(e);
+    return e.defaultPrevented;
+  };
+  const userInput = (inputType) =>
+    app.elements.editor.dispatchEvent(new InputEvent("input", { inputType, data: "z", bubbles: true }));
+
+  it.each(["historyUndo", "historyRedo"])("after a document is loaded (#editor written), %s in #editor is cancelled", async (inputType) => {
+    await withDocument();
+    expect(ownUndoPrevented(inputType)).toBe(true);
+  });
+
+  it("after a block commit (onModelChanged writes #editor), #editor's own Undo is cancelled", async () => {
+    await withDocument();
+    userInput("insertText"); // lifts the wait left by loading
+    await app.ui.handleRender("light"); // takes #editor in without writing it
+    await settle();
+    expect(ownUndoPrevented()).toBe(false);
+    app.elements.editor.blur();
+    openChanged("Hello", "Committed B.");
+    app.elements.editor.focus(); // commits through editorFocused: a system write
+    expect(app.elements.editor.value).toContain("Committed B.");
+    expect(ownUndoPrevented()).toBe(true);
+  });
+
+  it("the user's own input in #editor lifts it; a history input does not", async () => {
+    await withDocument();
+    userInput("historyUndo");
+    expect(ownUndoPrevented()).toBe(true);
+    userInput("insertText");
+    expect(ownUndoPrevented()).toBe(false);
+    expect(ownUndoPrevented("historyRedo")).toBe(false);
+  });
+
+  it("before any system write (initial typing), #editor's own Undo is left to the browser", async () => {
+    app = await setupApp();
+    userInput("insertText");
+    expect(ownUndoPrevented()).toBe(false);
+  });
+
+  it("after Clear (#editor emptied by the system), #editor's own Undo is cancelled", async () => {
+    await withDocument();
+    userInput("insertText");
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    app.ui.doClear();
+    await settle();
+    expect(app.elements.editor.value).toBe("");
+    expect(ownUndoPrevented()).toBe(true);
   });
 });
 

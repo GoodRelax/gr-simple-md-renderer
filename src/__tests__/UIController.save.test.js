@@ -237,9 +237,18 @@ describe("AT-UI-27 / 28 / 29 / 06 / 39 save results", () => {
   it("AT-UI-29 confirmOverwrite asks with externalChangeConfirm and resolves with the answer", async () => {
     await withDocument();
     confirmSpy.mockReturnValueOnce(false);
-    await expect(app.ui.confirmOverwrite()).resolves.toBe(false);
+    await expect(app.ui.confirmOverwrite("changed")).resolves.toBe(false);
     expect(confirmSpy).toHaveBeenCalledWith(M.externalChangeConfirm);
-    await expect(app.ui.confirmOverwrite()).resolves.toBe(true);
+    await expect(app.ui.confirmOverwrite("changed")).resolves.toBe(true);
+  });
+
+  it("INV-39 an unknown baseline asks with its own message (not 'changed outside')", async () => {
+    await withDocument();
+    confirmSpy.mockReturnValueOnce(false);
+    await expect(app.ui.confirmOverwrite("unknown")).resolves.toBe(false);
+    expect(confirmSpy).toHaveBeenCalledWith(M.overwriteUnknownConfirm);
+    expect(M.overwriteUnknownConfirm).not.toBe(M.externalChangeConfirm);
+    expect(M.overwriteUnknownConfirm).toMatch(/^[\x20-\x7e]+$/);
   });
 
   it("INV-39 a file changed on disk: Cancel keeps it unsaved, nothing written", async () => {
