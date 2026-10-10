@@ -51,12 +51,50 @@ re-hash.
 
 ### Added
 
+- In-place Markdown editing (SC-22 to SC-24). `[Edit]` (or `E`) shows a
+  movable edit palette; while it is shown, clicking (tapping) a rendered block
+  opens its Markdown source in place. Clicking outside applies the change and
+  only the changed blocks are rendered again; `Esc` cancels. Lists, tables,
+  `<details>` and other raw HTML open as one block; reference definitions and
+  hidden HTML show as thin bands in edit mode.
+  - Palette: Bold, Italic, Undo (one step), Save, Save as, Insert table / row
+    / column, and four Mermaid samples. Buttons run on press-and-release
+    inside the button; moving off a pressed button drags the palette instead.
+    Full keyboard use (Tab from the block, arrow keys, Enter / Space, Esc).
+  - Save overwrites the dropped file through the File System Access API
+    (Chrome / Edge, after the permission prompt), and asks before overwriting
+    a file that changed on disk. Save as picks a new file. Browsers without
+    file write support download the file instead, and the document stays
+    marked unsaved. The original line endings, BOM and AI wrapper fence are
+    written back.
+  - Unsaved changes put `* ` in front of the tab title (never the file name)
+    and make leaving the page, Reload, Clear and file drops ask first. Nothing
+    is saved automatically and nothing is stored in the browser.
+  - On the empty start screen, `[Edit]`, a double-click or a double-tap
+    starts a new empty document.
+  - Editing a PlantUML block never sends it automatically: the block shows a
+    placeholder with a `[Render]` button that asks for consent first.
 - `docs/sample-data-2.md` / `.txt`: a "9. Images" section with a small SVG
   embedded as a data URI.
 - The help text now mentions math (LaTeX) support.
 
 ### Changed
 
+- **Behaviour change (ruling T33): while a Markdown document is shown, rendering
+  from the top `#editor` box no longer strips a ```` ```markdown ```` wrapper.**
+  The box already holds the document body, and stripping it again cut the
+  fences off a document that starts with a `markdown` example block and ends
+  with a code block. Line endings are still normalized. To strip the wrapper
+  of a pasted AI answer, Clear first and paste again (the initial paste and a
+  dropped `.md` file still strip it, as before).
+- The full render now builds the preview block by block (one wrapper per
+  top-level Markdown block). The output is the same HTML as before, sanitized
+  the same way, but every existing view is affected; the pre-release tests
+  A to T are to be run again.
+- Line endings are normalized before the ```` ```markdown ```` wrapper is
+  split, so a CRLF file no longer leaves `\r` in the body.
+- Reload reads the file again with its BOM and line endings, and asks first
+  when there are unsaved changes.
 - Code View: files with an unknown extension, and languages that are not in the
   highlight.js common build, are shown as plaintext. `highlightAuto` is no
   longer used (slow on large files, unreliable guesses).

@@ -586,3 +586,327 @@ body.view-code.dark #editor {
   white-space: nowrap;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
+
+/* ========================================
+   In-place Markdown editing (SC-22 to SC-24)
+   body.edit-mode is set while the edit palette is shown (EditPalette).
+   ======================================== */
+
+/* Block editor (INV-40: as tall as its content, no inner scroll bar) */
+.md-block-editor {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 4px 0;
+  padding: 6px 8px;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1f2328;
+  background: #fffdf5;
+  border: 1px solid #1f7a3a;
+  border-radius: 4px;
+  resize: none;
+  overflow-y: hidden;
+  white-space: pre-wrap;
+}
+
+.md-block-editor:focus {
+  outline: 2px solid #1f7a3a;
+  outline-offset: 1px;
+}
+
+.dark .md-block-editor {
+  color: #e8e8e8;
+  background: #1b1d1f;
+  border-color: #6fd08c;
+}
+
+.dark .md-block-editor:focus {
+  outline-color: #6fd08c;
+}
+
+/* In edit mode a block shows where a click opens it */
+body.edit-mode #preview > .md-block:hover {
+  outline: 1px dashed #c4c7cb;
+  outline-offset: 2px;
+  cursor: text;
+}
+
+body.edit-mode #preview > .md-block.md-block-editing:hover {
+  outline: none;
+  cursor: auto;
+}
+
+body.dark.edit-mode #preview > .md-block:hover {
+  outline-color: #5a5d62;
+}
+
+/* Blocks that show nothing (reference definitions, comments): a band in
+   edit mode only; the title attribute names the kind on hover (INV-41) */
+.md-block-hidden {
+  display: none;
+}
+
+body.edit-mode .md-block-hidden {
+  display: block;
+  min-height: 8px;
+  margin: 6px 0;
+  border: 1px dashed #c4c7cb;
+  border-radius: 4px;
+  background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0, 0, 0, 0.04) 4px, rgba(0, 0, 0, 0.04) 8px);
+  cursor: pointer;
+}
+
+body.edit-mode .md-block-hidden.md-block-editing {
+  border: none;
+  background: none;
+  cursor: auto;
+}
+
+body.dark.edit-mode .md-block-hidden {
+  border-color: #5a5d62;
+  background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255, 255, 255, 0.05) 4px, rgba(255, 255, 255, 0.05) 8px);
+}
+
+body.dark.edit-mode .md-block-hidden.md-block-editing {
+  border: none;
+  background: none;
+}
+
+/* The empty first block of an empty document (INV-49): edit mode only */
+.md-block-empty {
+  display: none;
+}
+
+body.edit-mode .md-block-empty {
+  display: block;
+  min-height: 1.6em;
+  border: 1px dashed #c4c7cb;
+  border-radius: 4px;
+  cursor: text;
+}
+
+body.edit-mode .md-block-empty.md-block-editing {
+  border: none;
+}
+
+body.dark.edit-mode .md-block-empty {
+  border-color: #5a5d62;
+}
+
+body.dark.edit-mode .md-block-empty.md-block-editing {
+  border: none;
+}
+
+/* PlantUML block that has not been sent (INV-23) */
+.plantuml-pending {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px dashed #868e96;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  color: #495057;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.plantuml-pending button {
+  font-size: 12px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+.dark .plantuml-pending {
+  background-color: #2b2b2b;
+  color: #ced4da;
+  border-color: #868e96;
+}
+
+/* Edit palette (spec 5.15.1, colors 5.15.2) */
+.edit-palette {
+  position: fixed;
+  z-index: 400;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: #f6f7f8;
+  border: 1px solid #d9dbde;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.edit-palette[hidden],
+.edit-palette-popover[hidden] {
+  display: none;
+}
+
+.edit-palette-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.edit-palette-btn {
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: #1f2328;
+  background: transparent;
+  border: 1px solid #c4c7cb;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.edit-palette-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.edit-palette-btn svg.edit-palette-submenu {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 5px;
+  height: 5px;
+}
+
+.edit-palette-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.edit-palette-btn:focus-visible {
+  outline: 2px solid #1f7a3a;
+  outline-offset: 1px;
+}
+
+.edit-palette-btn[aria-pressed="true"] {
+  background: #1f7a3a;
+  color: #ffffff;
+}
+
+.edit-palette-btn:disabled {
+  color: #b5b8bc;
+  border-color: #e1e3e6;
+  cursor: default;
+}
+
+.edit-palette-grip {
+  width: 18px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2328;
+  cursor: move;
+}
+
+.edit-palette-grip svg {
+  width: 17px;
+  height: 17px;
+}
+
+.edit-palette-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: #d9dbde;
+}
+
+.edit-palette-status {
+  max-width: 230px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: monospace;
+  font-size: 11px;
+  color: #57606a;
+}
+
+.edit-palette-popover {
+  position: fixed;
+  z-index: 401;
+  box-sizing: border-box;
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: #f6f7f8;
+  border: 1px solid #d9dbde;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.dark .edit-palette,
+.dark .edit-palette-popover {
+  background: #2b2d30;
+  border-color: #45474b;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.dark .edit-palette-btn {
+  color: #e8e8e8;
+  border-color: #5a5d62;
+}
+
+.dark .edit-palette-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dark .edit-palette-btn:focus-visible {
+  outline-color: #6fd08c;
+}
+
+.dark .edit-palette-btn[aria-pressed="true"] {
+  background: #6fd08c;
+  color: #10301b;
+}
+
+.dark .edit-palette-btn:disabled {
+  color: #5f6267;
+  border-color: #3e4044;
+}
+
+.dark .edit-palette-grip {
+  color: #e8e8e8;
+}
+
+.dark .edit-palette-sep {
+  background: #45474b;
+}
+
+.dark .edit-palette-status {
+  color: #9da3aa;
+}
+
+/* Touch: larger buttons are a PRT-V09 decision (spec 5.15.1); 28 px for now. */
+
+@media print {
+  .edit-palette,
+  .edit-palette-popover,
+  .md-block-hidden,
+  .md-block-empty {
+    display: none !important;
+  }
+
+  .md-block-editor {
+    border: none;
+    outline: none;
+    background: none;
+  }
+}

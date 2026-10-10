@@ -154,6 +154,7 @@
             <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
             <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk</li>
             <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
+            <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette (see Editing)</li>
             <li><code>[Clear]</code> / <code>C</code> : Clear and reset</li>
             <li><code>[?]</code> : Show this help</li>
             <li>
@@ -168,6 +169,56 @@
               reset. Mac pinch also works.
             </li>
             <li>Pan (PC): Click and drag inside a diagram.</li>
+          </ul>
+        </div>
+
+        <div class="modal-section">
+          <h3>Editing</h3>
+          <ul>
+            <li>
+              <code>[Edit]</code> / <code>E</code> : Show or hide the edit palette.
+              While it is shown, click (tap) a block to edit its Markdown source
+              in place.
+            </li>
+            <li>
+              On the empty start screen, <code>[Edit]</code>, a double-click or a
+              double-tap starts a new empty document.
+            </li>
+            <li>
+              Click outside the block to apply the change; <code>Esc</code>
+              cancels it. Only the changed blocks are rendered again.
+              <code>Undo</code> reverts the last applied change.
+            </li>
+            <li>
+              Palette: Bold, Italic, Undo, Save, Save as, Insert table / row /
+              column, and Mermaid samples. <code>Tab</code> moves from the block
+              to the palette. Drag the grip, or move off a pressed button, to
+              move the palette.
+            </li>
+            <li>
+              In a table, <code>Enter</code> inserts <code>&lt;br&gt;</code>. Write
+              a pipe inside a cell as <code>\|</code>.
+            </li>
+            <li>
+              <code>Save</code> overwrites the dropped file (Chrome / Edge; the
+              browser asks for write permission). <code>Save as</code> lets you
+              choose a file. Browsers that cannot write files download the file
+              instead; the tab stays marked unsaved (<code>*</code> in the title).
+            </li>
+            <li>
+              Nothing is saved automatically, and nothing is stored in the
+              browser. Leaving, reloading, clearing or dropping another file
+              asks first while there are unsaved changes.
+            </li>
+            <li>
+              An edited PlantUML diagram is not sent until you press its
+              <code>[Render]</code> button and confirm.
+            </li>
+            <li>
+              While the page is showing a document, the top box is the same
+              document: rendering from it keeps a leading <code>```markdown</code>
+              fence. To strip an AI wrapper, <code>[Clear]</code> and paste again.
+            </li>
           </ul>
         </div>
 
@@ -246,6 +297,7 @@
             <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
             <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード</li>
             <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
+            <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示（「編集」を参照）</li>
             <li><code>[Clear]</code> / <code>C</code> : 初期化</li>
             <li><code>[?]</code> : 本ヘルプを表示</li>
             <li>
@@ -260,6 +312,39 @@
               マウスホイール。ダブルクリックでリセット。Macピンチも可。
             </li>
             <li>図の表示位置を移動 (PC): 図の上でクリック＆ドラッグ。</li>
+          </ul>
+        </div>
+
+        <div class="modal-section">
+          <h3>編集 (Japanese)</h3>
+          <ul>
+            <li>
+              <code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示。表示中にブロックをクリック（タップ）すると、その場で原文を編集できます。
+            </li>
+            <li>
+              初期画面で <code>[Edit]</code>、ダブルクリック、ダブルタップのいずれかで、空の文書を新しく始めます。
+            </li>
+            <li>
+              ブロックの外をクリックすると反映、<code>Esc</code> で取り消し。変わったブロックだけを描き直します。<code>Undo</code> で直前の反映を戻せます。
+            </li>
+            <li>
+              パレット: 太字、斜体、Undo、Save、Save as、表・行・列の挿入、Mermaid の雛形。ブロックから <code>Tab</code> でパレットへ移れます。グリップをドラッグする（またはボタンを押したまま外へずらす）とパレットが動きます。
+            </li>
+            <li>
+              表の中で <code>Enter</code> を押すと <code>&lt;br&gt;</code> を挿入します。セルの中で縦棒を文字として書くときは <code>\|</code> と書きます。
+            </li>
+            <li>
+              <code>Save</code> はドロップしたファイルに上書きします（Chrome / Edge。書き込みの許可を求めます）。<code>Save as</code> は保存先を選びます。ファイルを書き込めないブラウザではダウンロードになり、タブは未保存（タイトルの <code>*</code>）のままです。
+            </li>
+            <li>
+              自動保存はしません。ブラウザにも何も保存しません。未保存の変更があるときに、離れる・Reload・Clear・別のファイルのドロップをすると、先に確認します。
+            </li>
+            <li>
+              編集した PlantUML の図は、<code>[Render]</code> を押して確認するまで送信しません。
+            </li>
+            <li>
+              文書を表示している間、上部のボックスは同じ文書です。そこから描画しても先頭の <code>```markdown</code> のフェンスは外しません。AI の出力の外枠を外すには、<code>[Clear]</code> してからペーストし直してください。
+            </li>
           </ul>
         </div>
 

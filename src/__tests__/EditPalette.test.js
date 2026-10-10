@@ -536,6 +536,14 @@ describe("AT-PAL states, status, life cycle, security", () => {
     fake.remove();
   });
 
+  it("body has the edit-mode class exactly while the palette is shown (CSS for bands and the empty block)", () => {
+    expect(document.body.classList.contains("edit-mode")).toBe(false);
+    palette.show();
+    expect(document.body.classList.contains("edit-mode")).toBe(true);
+    palette.hide();
+    expect(document.body.classList.contains("edit-mode")).toBe(false);
+  });
+
   it("toggle and isShown", () => {
     expect(palette.isShown()).toBe(false);
     palette.toggle();

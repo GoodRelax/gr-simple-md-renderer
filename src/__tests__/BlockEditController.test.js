@@ -418,6 +418,11 @@ describe("AT-BEC editor value and life cycle", () => {
       expect(ta.style.height).toBe("60px");
       expect(ta.style.overflowY).toBe("hidden");
       expect(s.host.onEditorInput).toHaveBeenCalledTimes(1);
+      // border-box: the borders (offsetHeight - clientHeight) are added
+      Object.defineProperty(ta, "offsetHeight", { configurable: true, value: 64 });
+      Object.defineProperty(ta, "clientHeight", { configurable: true, value: 62 });
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+      expect(ta.style.height).toBe("62px");
     } finally {
       delete HTMLTextAreaElement.prototype.scrollHeight;
     }

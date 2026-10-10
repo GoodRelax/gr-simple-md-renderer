@@ -142,3 +142,73 @@ describe("AT-STA static checks of src/js", () => {
     }
   });
 });
+
+// ---- style.css (AT-PAL-27 and the editing rules; the look itself is PRT-V) ----
+
+const css = readFileSync(resolve(here, "../css/style.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+
+/** The body of every "@media print { ... }" block, joined. */
+function printBlocks(text) {
+  const out = [];
+  let i = text.indexOf("@media print");
+  while (i >= 0) {
+    const open = text.indexOf("{", i);
+    let depth = 0;
+    let j = open;
+    for (; j < text.length; j++) {
+      if (text[j] === "{") depth++;
+      if (text[j] === "}" && --depth === 0) break;
+    }
+    out.push(text.slice(open + 1, j));
+    i = text.indexOf("@media print", j);
+  }
+  return out.join("\n");
+}
+
+/** The declarations of the first rule whose selector list has exactly this selector. */
+function ruleBody(text, selector) {
+  for (const m of text.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const selectors = m[1].split(",").map((s) => s.trim());
+    if (selectors.includes(selector)) return m[2];
+  }
+  return null;
+}
+
+describe("style.css for in-place editing", () => {
+  it("AT-PAL-27 @media print hides the palette, the popover, the hidden-block bands and the editor frame", () => {
+    const print = printBlocks(css);
+    for (const sel of [".edit-palette", ".edit-palette-popover", ".md-block-hidden"]) {
+      expect(print, sel).toContain(sel);
+    }
+    expect(ruleBody(print, ".edit-palette")).toMatch(/display:\s*none/);
+    expect(ruleBody(print, ".md-block-hidden")).toMatch(/display:\s*none/);
+    expect(ruleBody(print, ".md-block-editor")).toMatch(/border:\s*none/);
+  });
+
+  it("the block editor is border-box and full width; no inner scroll bar (INV-40)", () => {
+    const body = ruleBody(css, ".md-block-editor");
+    expect(body).toMatch(/box-sizing:\s*border-box/);
+    expect(body).toMatch(/width:\s*100%/);
+    expect(body).toMatch(/overflow-y:\s*hidden/);
+    expect(body).toMatch(/font-family:\s*monospace/);
+  });
+
+  it("bands and the empty block show only in edit mode (INV-41, INV-49)", () => {
+    expect(ruleBody(css, ".md-block-hidden")).toMatch(/display:\s*none/);
+    expect(ruleBody(css, ".md-block-empty")).toMatch(/display:\s*none/);
+    expect(css).toMatch(/body\.edit-mode \.md-block-hidden/);
+    expect(css).toMatch(/body\.edit-mode \.md-block-empty/);
+  });
+
+  it("palette, popover and pending-box classes exist for light and dark (5.15.2)", () => {
+    for (const sel of [".edit-palette", ".edit-palette-btn", ".edit-palette-popover", ".edit-palette-grip", ".edit-palette-status", ".plantuml-pending"]) {
+      expect(css, sel).toContain(sel);
+      expect(css, `.dark ${sel}`).toContain(`.dark ${sel}`);
+    }
+  });
+
+  it("no url() in the editing rules (CSP, no external fetch)", () => {
+    const editing = css.split("\n").filter((line) => /edit-palette|md-block|plantuml-pending/.test(line)).join("\n");
+    expect(editing).not.toMatch(/url\(/);
+  });
+});

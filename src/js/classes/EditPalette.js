@@ -196,6 +196,7 @@ export default class EditPalette {
     this._shown = true;
     this._state = IDLE;
     this._root.hidden = false;
+    document.body.classList.add("edit-mode"); // CSS: bands and the empty block (INV-41, INV-49)
     const r = this._root.getBoundingClientRect();
     const margin = CONFIG.edit.paletteMarginPx;
     this._placeAt(window.innerWidth - r.width - margin, window.innerHeight - r.height - margin);
@@ -215,6 +216,7 @@ export default class EditPalette {
     this._closePopover();
     this._root.hidden = true;
     this._shown = false;
+    document.body.classList.remove("edit-mode");
   }
 
   /**

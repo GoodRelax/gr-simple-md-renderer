@@ -23,4 +23,13 @@
 - [ ] `npm audit` の high 3 件（開発時のみ）：braces <- micromatch <- vite-plugin-singlefile。修正版が出たら更新する
 
 ### Markdown 編集機能
-- [ ] GRSMD 上で Markdown を編集する機能の仕様を検討中（実装は当分しない）。検討レポートが出たら方針を決める
+- [x] その場編集（SC-22〜24）を `feature/inplace-edit` で実装した。リリース前の実機テスト（試験仕様のセクション U / V / W と、既存の A〜T のやり直し）が残る
+
+### 純粋関数への切り出し（その場編集の実装中に見つけた、編集機能の範囲外の指摘）
+- [ ] F-B1 `DiagramZoomController.zoom`：次の倍率の上限・下限を決める規則が、レイアウトを読みスタイルを書く状態付きのメソッドの中で計算されている。規則を純粋関数に切り出す（R7.2）
+- [ ] F-B2 `DiagramCopyController.inlineSvgStyles` / `convertForeignObjects`：複製を組み立てるループの中で `getComputedStyle` を読んでいる（R7.4）。`convertForeignObjects` は文字の配置の計算（R7.2）と DOM の生成も混ざっている。読み取りと計算と生成を分ける
+- [ ] F-B3 `SmoothScrollEngine._loop`：速度と摩擦の物理計算が `scrollBy` と `requestAnimationFrame` と混ざっている。計算を純粋関数に切り出す（R7.2）
+
+### 保存（`MarkdownFileAccess.writeFile`）
+- [ ] 書き込みストリームの `close()` が失敗したときに `abort()` を呼んでいない（Low）
+- [ ] `abort()` 自体が例外を投げると、元の書き込みのエラーが失われる（Low）。元のエラーを優先して投げ直す

@@ -581,6 +581,7 @@ export default class BlockEditController {
   _fitHeight() {
     const t = this._editor.textarea;
     t.style.height = "auto";
-    t.style.height = `${t.scrollHeight}px`;
+    // box-sizing: border-box (style.css): the height includes the borders
+    t.style.height = `${t.scrollHeight + t.offsetHeight - t.clientHeight}px`;
   }
 }
