@@ -405,6 +405,12 @@ export default class BlockEditController {
    * @purity non-pure
    */
   _commitBlock() {
+    // INV-46: the anchor is taken while the editor is still open, when the
+    // layout is still clean; the block's top does not move when its own
+    // content changes. Taking it after closing forced a layout of the whole
+    // preview (~20 ms on a 1 MB document).
+    const open = this._editor;
+    const anchor = open && open.blockId !== null ? this.scrollMemento.captureAnchor(open.wrapper) : undefined;
     const closed = this._closeEditor();
     if (!closed || closed.text === closed.original) return;
     if (closed.blockId === null) {
@@ -412,7 +418,7 @@ export default class BlockEditController {
       if (closed.text.trim() !== "") void this.orchestrator.insertAfter(null, closed.text);
       return;
     }
-    void this.orchestrator.commitBlock(closed.blockId, closed.text);
+    void this.orchestrator.commitBlock(closed.blockId, closed.text, anchor);
   }
 
   // ---- internals: pointer (INV-29, INV-30) ----

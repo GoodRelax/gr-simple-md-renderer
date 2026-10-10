@@ -8,6 +8,10 @@ const END = "[*]";
 
 const POPOVER_GAP_PX = 4;
 
+// The next animation frame (a short timer where there is none, e.g. jsdom).
+const nextFrame = (cb) => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(cb) : setTimeout(cb, 16));
+const cancelFrame = (id) => (typeof cancelAnimationFrame === "function" ? cancelAnimationFrame(id) : clearTimeout(id));
+
 // Icons of spec 5.15.3, inlined in each button (no <use>, no external
 // reference: a user-written id="i-bold" in the preview must not change them).
 const ICONS = {
@@ -200,6 +204,8 @@ export default class EditPalette {
    */
   hide() {
     if (!this._shown) return;
+    cancelFrame(this._cornerFrame);
+    this._cornerFrame = 0;
     this.dispatch("paletteHidden");
     this._closePopover();
     this._root.hidden = true;
@@ -244,15 +250,31 @@ export default class EditPalette {
    */
   setStatusText(text) {
     if (this._status.textContent === text) return;
-    const before = this._shown ? this._root.getBoundingClientRect() : null;
     this._status.textContent = text;
-    if (!before) return;
+    if (!this._shown || this._cornerFrame) return;
     // The text can change the size of the shown palette (an empty document
     // gets its status right after show). Keep the bottom-right corner, so the
-    // margin of INV-32 stays (PRT-U16); _placeAt keeps it inside the viewport.
-    const after = this._root.getBoundingClientRect();
-    if (after.width === before.width && after.height === before.height) return;
-    this._placeAt(before.right - after.width, before.bottom - after.height);
+    // margin of INV-32 stays (PRT-U16). Checked in the next frame, when the
+    // layout is done anyway: reading it here, inside a commit, forced a
+    // layout of the whole preview.
+    /** @purity non-pure */
+    this._cornerFrame = nextFrame(() => {
+      this._cornerFrame = 0;
+      this._keepCorner();
+    });
+  }
+
+  /**
+   * Move the palette so that its bottom-right corner is where the last
+   * placement left it, if its size changed since.
+   * @purity non-pure
+   */
+  _keepCorner() {
+    const last = this._lastBox;
+    if (!this._shown || !last) return;
+    const rect = this._root.getBoundingClientRect();
+    if (rect.width === last.width && rect.height === last.height) return;
+    this._placeAt(last.right - rect.width, last.bottom - rect.height);
   }
 
   /**
@@ -441,8 +463,11 @@ export default class EditPalette {
    */
   _placeAt(left, top) {
     const rect = this._root.getBoundingClientRect();
-    this._root.style.left = `${clamp(left, 0, window.innerWidth - rect.width)}px`;
-    this._root.style.top = `${clamp(top, 0, window.innerHeight - rect.height)}px`;
+    const x = clamp(left, 0, window.innerWidth - rect.width);
+    const y = clamp(top, 0, window.innerHeight - rect.height);
+    this._root.style.left = `${x}px`;
+    this._root.style.top = `${y}px`;
+    this._lastBox = { width: rect.width, height: rect.height, right: x + rect.width, bottom: y + rect.height };
     if (!this._popover.hidden) this._placePopover();
   }
 

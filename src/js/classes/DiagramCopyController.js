@@ -1,5 +1,7 @@
 import { CONFIG } from "../config.js";
 
+const DIAGRAM_SELECTOR = ".mermaid, .plantuml-wrapper";
+
 export default class DiagramCopyController {
   /**
    * @param {HTMLElement} preview
@@ -7,20 +9,40 @@ export default class DiagramCopyController {
    */
   constructor(preview) {
     this.preview = preview;
-    this.observer = new MutationObserver(() => this.attachBars());
+    // Only the added nodes are searched: a scan of the whole preview on every
+    // change of a large document (a commit, highlighting) costs ~10 ms.
+    this.observer = new MutationObserver((records) => this.attachBarsIn(records));
     this.observer.observe(this.preview, { childList: true, subtree: true });
+  }
+
+  /**
+   * Attach bars to the diagram containers among and inside the added nodes.
+   * @purity non-pure
+   * @param {MutationRecord[]} records
+   */
+  attachBarsIn(records) {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE || !node.isConnected) continue;
+        if (node.matches(DIAGRAM_SELECTOR)) this._attachOnce(node);
+        node.querySelectorAll(DIAGRAM_SELECTOR).forEach((container) => this._attachOnce(container));
+      }
+    }
+  }
+
+  /**
+   * @purity non-pure
+   * @param {HTMLElement} container
+   */
+  _attachOnce(container) {
+    const prev = container.previousElementSibling;
+    if (prev && prev.classList.contains("diagram-copy-bar")) return;
+    this.attachBar(container);
   }
 
   /** @purity non-pure */
   attachBars() {
-    this.preview
-      .querySelectorAll(".mermaid, .plantuml-wrapper")
-      /** @purity non-pure */
-      .forEach((container) => {
-        const prev = container.previousElementSibling;
-        if (prev && prev.classList.contains("diagram-copy-bar")) return;
-        this.attachBar(container);
-      });
+    this.preview.querySelectorAll(DIAGRAM_SELECTOR).forEach((container) => this._attachOnce(container));
   }
 
   /**

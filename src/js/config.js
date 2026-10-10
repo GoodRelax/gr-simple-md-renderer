@@ -107,6 +107,10 @@ export const CONFIG = {
     doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",
     commitBudgetMs: 300, // performance target for 1 MB (INV-51), used by tests
+    // A longer body is not written into the visible #editor on every commit,
+    // undo or insert (laying out 1 MB of textarea text takes ~0.5 s in Chrome).
+    // It is written before the user can use #editor (INV-47).
+    editorSyncMaxChars: 100000,
     diffMaxCells: 250000, // max LCS table cells for the middle range (INV-42)
     titleUnsavedPrefix: "* ", // document.title prefix while dirty (INV-50)
     tableTemplate:

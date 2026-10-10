@@ -283,11 +283,11 @@ export default class RendererOrchestrator {
    * @returns {Promise<void>} settles when the render is done
    * @purity non-pure
    */
-  commitBlock(blockId, newRaw) {
+  commitBlock(blockId, newRaw, anchor = undefined) {
     const model = this._currentModel;
     if (!model || model.findIndexById(blockId) < 0) return Promise.resolve();
     markCommitStart();
-    const scroll = this._capture(this.markdownRenderer.getBlockElement(blockId));
+    const scroll = anchor !== undefined ? anchor : this._capture(this.markdownRenderer.getBlockElement(blockId));
     const change = model.replaceBlock(blockId, newRaw, this._lexer, CONFIG.edit.diffMaxCells);
     if (!change.isChanged) {
       clearCommitMark();
@@ -483,10 +483,15 @@ export default class RendererOrchestrator {
     if (!target || !this._renderedModel || (target === this._renderedModel && !force)) return;
     this._renderingAnchor = this._pendingAnchor;
     this._pendingAnchor = null;
-    const replaced = this.markdownRenderer.replaceBlocks(this._renderedModel, target, this._heldBlockId);
+    const before = this._renderedModel;
+    const replaced = this.markdownRenderer.replaceBlocks(before, target, this._heldBlockId);
     measureCommit();
     this._renderedModel = target;
-    this._restoreAnchor(this._renderingAnchor, generation);
+    // Nothing above the anchor block moved when it is the only block that
+    // changed and the number of blocks is the same: its top is where it was,
+    // so the correction can wait for the one after DOM stability (a
+    // correction here forces a layout of the whole preview).
+    if (!this._onlyAnchorChanged(before, target, replaced)) this._restoreAnchor(this._renderingAnchor, generation);
     try {
       if (replaced.length > 0) {
         const theme = this.state.currentTheme;
@@ -499,6 +504,17 @@ export default class RendererOrchestrator {
     } finally {
       this._renderingAnchor = null;
     }
+  }
+
+  /**
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  _onlyAnchorChanged(before, target, replaced) {
+    const anchor = this._renderingAnchor;
+    if (!anchor || replaced.length !== 1) return false;
+    if (before.getBlocks().length !== target.getBlocks().length) return false;
+    return replaced[0] === this.markdownRenderer.getBlockElement(anchor.blockId);
   }
 
   /**

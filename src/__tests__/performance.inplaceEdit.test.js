@@ -18,7 +18,7 @@ import ApplicationState from "../js/classes/ApplicationState.js";
 import MarkdownBlockModel from "../js/classes/MarkdownBlockModel.js";
 import BlockDiff from "../js/classes/BlockDiff.js";
 import { CONFIG } from "../js/config.js";
-import { loadSampleLf, makeLexer, makeOneMegabyteDoc, makeDocWithDuplicateDefs } from "./helpers/samples.js";
+import { loadSampleLf, makeLexer, makeOneMegabyteDoc, makeDocWithDuplicateDefs, makeOneMegabyteTextDoc } from "./helpers/samples.js";
 
 // Heavy setup (whole-document renders in jsdom) gets an explicit timeout so CPU
 // load cannot fail it; the global 5 s default stays.
@@ -200,6 +200,30 @@ describe.runIf(PERF)("AT-PERF-02..04 timing (GRSMD_PERF=1 only)", () => {
     }
     times.sort((a, b) => a - b);
     console.log(`AT-PERF-05 times (ms): ${times.map((t) => t.toFixed(1)).join(", ")}`);
+    expect(times[2]).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
+    stack.preview.remove();
+  }, PERF_TIMEOUT_MS);
+
+  it("AT-PERF-06 1 MB text document (PRT-U25): full render, then commit to DOM swap median of 5 <= commitBudgetMs", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const stack = realStack();
+    const body = makeOneMegabyteTextDoc();
+    const t0 = performance.now();
+    await stack.orchestrator.loadMarkdown(body, "light");
+    const full = performance.now() - t0;
+    const paras = stack.orchestrator
+      .getModel()
+      .getBlocks()
+      .filter((b) => b.type === "paragraph" && b.raw.length > 40);
+    const times = [];
+    for (let i = 0; i < 5; i++) {
+      const p = paras[Math.floor(((i + 1) * paras.length) / 6)];
+      const t1 = performance.now();
+      await stack.orchestrator.commitBlock(p.id, p.raw.replace(/\w+/, `Changed${i}`));
+      times.push(performance.now() - t1);
+    }
+    times.sort((a, b) => a - b);
+    console.log(`AT-PERF-06 full render (ms): ${full.toFixed(1)}; commits (ms): ${times.map((t) => t.toFixed(1)).join(", ")}`);
     expect(times[2]).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
     stack.preview.remove();
   }, PERF_TIMEOUT_MS);

@@ -146,6 +146,7 @@ export default class UIController {
     this._baseTitle = document.title;
     this._lastTap = null; // double tap on the empty preview (INV-31)
     this._isEditorHistoryStale = false; // #editor's undo history after a system write (5.7 (6))
+    this._isEditorTextStale = false; // #editor not yet given the body after a large commit (INV-47)
     this.saveDocument = new SaveDocument(this.fileAccess, CONFIG.messages.edit, CONFIG.edit.defaultFileName);
     this.saveDocumentAs = new SaveDocumentAs(this.fileAccess, CONFIG.messages.edit, CONFIG.edit.defaultFileName);
     this.palette = services.createPalette(this._paletteHost());
@@ -686,7 +687,14 @@ export default class UIController {
    * @purity non-pure
    */
   onModelChanged(change) {
-    this._setEditorText(change.model.toBody());
+    const body = change.model.toBody();
+    if (body.length > CONFIG.edit.editorSyncMaxChars) {
+      // Written before the user can use #editor (_syncEditorText); the
+      // system reads the model meanwhile (_editorText).
+      this._isEditorTextStale = true;
+    } else {
+      this._setEditorText(body);
+    }
     this._editorChangedSinceRender = false;
     this._refreshDirtyMark();
   }
@@ -713,9 +721,17 @@ export default class UIController {
   setupEditorSync() {
     /** @purity non-pure */
     this.elements.editor.addEventListener("beforeinput", (e) => {
+      if (this._isEditorTextStale) {
+        // Input without focus or drag (defensive): it would land in old text.
+        e.preventDefault();
+        this._syncEditorText();
+        return;
+      }
       if (!isHistoryInput(e)) return;
       if (document.activeElement !== this.elements.editor || this._isEditorHistoryStale) e.preventDefault();
     });
+    /** @purity non-pure */
+    this.elements.editor.addEventListener("dragenter", () => this._syncEditorText());
     /** @purity non-pure */
     this.elements.editor.addEventListener("input", (e) => {
       if (!isHistoryInput(e)) this._isEditorHistoryStale = false;
@@ -725,6 +741,7 @@ export default class UIController {
     /** @purity non-pure */
     this.elements.editor.addEventListener("focusin", () => {
       if (this.blockEdit.isEditing()) this.blockEdit.dispatch("editorFocused");
+      this._syncEditorText(); // before the user can type (INV-47)
     });
     // Bold / Italic follow the editor's selection (5.15.5). Capture also sees
     // the event when it is fired at the textarea itself.
@@ -842,7 +859,7 @@ export default class UIController {
    * @purity non-pure
    */
   _takeEditorIntoModel(theme) {
-    this.state.setMarkdownText(normalizeLineEndings(this.elements.editor.value));
+    this.state.setMarkdownText(normalizeLineEndings(this._editorText()));
     this._editorChangedSinceRender = false;
     const rendering = this.orchestrator.reRender(theme);
     this._refreshDirtyMark();
@@ -869,6 +886,25 @@ export default class UIController {
   _setEditorText(text) {
     this.elements.editor.value = text;
     this._isEditorHistoryStale = true;
+    this._isEditorTextStale = false;
+  }
+
+  /**
+   * The text #editor stands for: the body while a large commit has not been
+   * written into it yet (INV-47), else what it shows.
+   * @purity semi-pure-b
+   * @returns {string}
+   */
+  _editorText() {
+    return this._isEditorTextStale ? this.orchestrator.getBody() : this.elements.editor.value;
+  }
+
+  /**
+   * Write the body into #editor if a large commit left it stale (INV-47).
+   * @purity non-pure
+   */
+  _syncEditorText() {
+    if (this._isEditorTextStale) this._setEditorText(this.orchestrator.getBody());
   }
 
   /**
@@ -881,7 +917,7 @@ export default class UIController {
    * @purity non-pure
    */
   _confirmEditorIntoDocument() {
-    const isEditorBlank = this.elements.editor.value.trim() === "";
+    const isEditorBlank = this._editorText().trim() === "";
     const isDocumentBlank = this.orchestrator.getBody().trim() === "";
     if (!isEditorBlank || isDocumentBlank) return true;
     if (window.confirm(CONFIG.messages.edit.emptyEditorConfirm)) return true;

@@ -10,11 +10,11 @@ import ExternalImageGate from "./ExternalImageGate.js";
 // <style> is forbidden: a stylesheet in the document could fetch remote
 // resources (@import, url()) and restyle the whole app, including the
 // external image placeholders. GitHub drops it too.
-const PURIFY_CONFIG = {
+export const PURIFY_CONFIG = Object.freeze({
   ADD_TAGS: ["semantics", "annotation"],
   ADD_ATTR: ["encoding"],
   FORBID_TAGS: ["style"],
-};
+});
 
 const HIGHLIGHT_SELECTOR =
   "pre code:not(.language-mermaid):not(.language-plantuml):not(.language-puml)";
@@ -56,6 +56,10 @@ export default class MarkdownRenderer {
     // Private DOMPurify instance: mermaid sanitizes its labels with the same
     // bundled DOMPurify, and our hook must not change what mermaid sees.
     this.purify = purify(window);
+    // Set once: a config passed per call is cloned and parsed again on every
+    // call (DOMPurify), which for the ~15,000 blocks of a 1 MB document cost
+    // more than the sanitizing itself. The rules are the same.
+    this.purify.setConfig(PURIFY_CONFIG);
     this.imageGate = imageGate;
     /** @purity non-pure */
     this.purify.addHook("afterSanitizeAttributes", (node) => {
@@ -82,13 +86,19 @@ export default class MarkdownRenderer {
   // ---- HTML generation (no DOM writes) ----
 
   /**
-   * Top-level tokens of a body, with the same marked setup as rendering.
+   * Top-level tokens of a body, with the same marked setup as rendering:
+   * block tokens only. The block model needs the block boundaries and the
+   * link definitions (INV-41); each block's HTML comes from a full lexing of
+   * that block (blockHtml), so the inline pass here was wasted work (about
+   * two thirds of the lexing of a commit on a 1 MB document).
    * @purity semi-pure-a
    * @param {string} src
-   * @returns {object[]}
+   * @returns {object[]} tokens, with tokens.links
    */
   lex(src) {
-    return this.marked.lexer(src);
+    const lexer = new this.marked.Lexer(this.marked.defaults);
+    lexer.blockTokens(src.replace(/\r\n?/g, "\n"), lexer.tokens);
+    return lexer.tokens;
   }
 
   /**
@@ -102,7 +112,7 @@ export default class MarkdownRenderer {
    */
   documentHtml(markdownText) {
     try {
-      return { html: this.purify.sanitize(this.marked.parse(markdownText), PURIFY_CONFIG), error: null };
+      return { html: this.purify.sanitize(this.marked.parse(markdownText)), error: null };
     } catch (error) {
       return { html: this._errorHtml(error), error };
     }
@@ -123,7 +133,7 @@ export default class MarkdownRenderer {
       const tokens = lexer.lex(raw);
       const walk = this.marked.defaults?.walkTokens;
       if (typeof walk === "function") this.marked.walkTokens(tokens, walk);
-      return { html: this.purify.sanitize(this.marked.parser(tokens), PURIFY_CONFIG), error: null };
+      return { html: this.purify.sanitize(this.marked.parser(tokens)), error: null };
     } catch (error) {
       return { html: this._errorHtml(error), error };
     }

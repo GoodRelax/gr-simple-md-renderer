@@ -74,6 +74,28 @@ export function makeDocWithDuplicateDefs(units, duplicates = units) {
 }
 
 /**
+ * A Markdown document of text, code, tables and headings only (no diagrams,
+ * no math), as PRT-U25 prescribes: sample-data-2.md (LF) without its mermaid
+ * and plantuml fences, its $$ blocks and its inline $...$ (each replaced by
+ * "x"); every heading of copy k gets "[k] " after its hashes; copies are
+ * joined with a blank line (two newlines after each). By default as many
+ * copies as make the text at least 1 MiB (121 copies, 1,051,590 bytes).
+ * @param {number} [copies]
+ * @returns {string}
+ */
+export function makeOneMegabyteTextDoc(copies) {
+  let unit = loadSampleLf("sample-data-2.md");
+  unit = unit.replace(/^```(mermaid|plantuml)\n[\s\S]*?^```\n\n?/gm, "");
+  unit = unit.replace(/^\$\$\n[\s\S]*?^\$\$\n\n?/gm, "");
+  unit = unit.replace(/\$[^$\n]+\$/g, "x");
+  const copy = (k) => unit.replace(/^(#{1,6}) /gm, (_m, hashes) => `${hashes} [${k}] `);
+  let doc = "";
+  const bytes = () => new TextEncoder().encode(doc).length;
+  for (let k = 1; copies === undefined ? bytes() < 1048576 : k <= copies; k++) doc += `${copy(k)}\n\n`;
+  return doc;
+}
+
+/**
  * sample-data-2.md (LF) repeated with one newline between copies until the
  * text is at least 1 MiB, then cut at the first blank line after 1 MiB.
  * Deterministic (test-design 7.3).

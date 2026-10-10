@@ -242,6 +242,26 @@ describe("INV-46 opening another block keeps the tapped block where it was (PRT-
   });
 });
 
+describe("INV-46 the commit's anchor is taken before the editor closes (one forced layout less)", () => {
+  it("captureAnchor sees the open editor; commitBlock gets that anchor", async () => {
+    s = await setupEdit(DOC);
+    const { el, ta } = openBlock(isPara("Hello"));
+    ta.value = "Hello changed.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    const anchor = { offsetTop: 77 };
+    const capture = vi.spyOn(s.scrollMemento, "captureAnchor").mockImplementation((w) => {
+      expect(w).toBe(el);
+      expect(w.querySelector("textarea")).not.toBeNull(); // still open
+      return anchor;
+    });
+    const commit = vi.spyOn(s.orchestrator, "commitBlock");
+    pointer(document.body, "pointerdown");
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(commit).toHaveBeenCalledWith(expect.any(Number), "Hello changed.", anchor);
+    await flush();
+  });
+});
+
 describe("AT-BEC committing on the outside (INV-30)", () => {
   function outsideTarget(kind) {
     const el = document.createElement("div");
@@ -257,7 +277,7 @@ describe("AT-BEC committing on the outside (INV-30)", () => {
     const commit = vi.spyOn(s.orchestrator, "commitBlock");
     const target = outsideTarget(kind);
     pointer(target, "pointerdown");
-    expect(commit).toHaveBeenCalledWith(block.id, "Hello changed.");
+    expect(commit).toHaveBeenCalledWith(block.id, "Hello changed.", expect.anything()); // + the anchor taken before closing
     expect(s.editor()).toBeNull();
     target.remove();
   });
@@ -268,7 +288,7 @@ describe("AT-BEC committing on the outside (INV-30)", () => {
     ta.value = "Hello changed.";
     const commit = vi.spyOn(s.orchestrator, "commitBlock");
     pointer(s.block(isPara("Third")).el.firstElementChild, "pointerdown");
-    expect(commit).toHaveBeenCalledWith(block.id, "Hello changed.");
+    expect(commit).toHaveBeenCalledWith(block.id, "Hello changed.", expect.anything()); // + the anchor taken before closing
   });
 
   it.each(["touch", "pen"])("AT-BEC-10 %s: pointerdown alone does not commit; a release within 5 px does", async (pointerType) => {
@@ -282,7 +302,7 @@ describe("AT-BEC committing on the outside (INV-30)", () => {
     expect(commit).not.toHaveBeenCalled();
     expect(s.editor()).toBe(ta);
     pointer(target, "pointerup", { x: 13, y: 14, pointerType });
-    expect(commit).toHaveBeenCalledWith(block.id, "Hello changed.");
+    expect(commit).toHaveBeenCalledWith(block.id, "Hello changed.", expect.anything()); // + the anchor taken before closing
     target.remove();
   });
 
@@ -322,7 +342,7 @@ describe("AT-BEC committing on the outside (INV-30)", () => {
     const b = s.block(isPara("Second"));
     const commit = vi.spyOn(s.orchestrator, "commitBlock");
     tap(b.el.firstElementChild, { pointerType });
-    expect(commit).toHaveBeenCalledWith(a.block.id, "Hello changed.");
+    expect(commit).toHaveBeenCalledWith(a.block.id, "Hello changed.", expect.anything()); // + the anchor taken before closing
     const ta = s.editor();
     expect(ta).not.toBeNull();
     expect(b.el.contains(ta)).toBe(true);
@@ -348,7 +368,7 @@ describe("AT-BEC committing on the outside (INV-30)", () => {
     const render = vi.spyOn(s.markdownRenderer, "replaceBlocks");
     pointer(document.body, "pointerdown");
     expect(commit).toHaveBeenCalledTimes(1);
-    expect(commit).toHaveBeenCalledWith(a.block.id, "Hello changed.");
+    expect(commit).toHaveBeenCalledWith(a.block.id, "Hello changed.", expect.anything()); // + the anchor taken before closing
     expect(s.orchestrator.getBody()).toBe("# Title\n\nHello changed.\n\nSecond para.\n\nThird para.\n");
     expect(s.editor()).toBeNull();
     expect(render).not.toHaveBeenCalled(); // the DOM render runs later from the queue
@@ -368,7 +388,7 @@ describe("AT-BEC committing on the outside (INV-30)", () => {
     expect(commit).not.toHaveBeenCalled();
     expect(s.editor()).toBe(ta);
     pointer(s.preview, "pointerdown", { x: 250, y: 50 });
-    expect(commit).toHaveBeenCalledWith(block.id, "Hello changed.");
+    expect(commit).toHaveBeenCalledWith(block.id, "Hello changed.", expect.anything()); // + the anchor taken before closing
   });
 
   it("AT-BEC-31 editing A, a failed gesture on B (moved 6 px) commits A at pointerdown and opens nothing", async () => {
@@ -378,7 +398,7 @@ describe("AT-BEC committing on the outside (INV-30)", () => {
     const b = s.block(isPara("Second"));
     const commit = vi.spyOn(s.orchestrator, "commitBlock");
     pointer(b.el.firstElementChild, "pointerdown", { x: 10, y: 10 });
-    expect(commit).toHaveBeenCalledWith(a.block.id, "Hello changed.");
+    expect(commit).toHaveBeenCalledWith(a.block.id, "Hello changed.", expect.anything()); // + the anchor taken before closing
     pointer(b.el.firstElementChild, "pointerup", { x: 16, y: 10 });
     expect(s.editor()).toBeNull();
     expect(s.bec.isEditing()).toBe(false);
@@ -768,7 +788,7 @@ describe("AT-BEC-28 spoofed attributes have no effect (Q1, T2)", () => {
     const commit = vi.spyOn(s.orchestrator, "commitBlock");
     const fake = s.block(htmlBlock("<textarea")).el.querySelector("textarea");
     pointer(fake, "pointerdown");
-    expect(commit).toHaveBeenCalledWith(b.block.id, "Paragraph B changed.");
+    expect(commit).toHaveBeenCalledWith(b.block.id, "Paragraph B changed.", expect.anything()); // + the anchor taken before closing
   });
 
   it("(3) editing B, a click on a user-written toolbar commits B at pointerdown, then opens that HTML block", async () => {
@@ -779,7 +799,7 @@ describe("AT-BEC-28 spoofed attributes have no effect (Q1, T2)", () => {
     const fakeBlock = s.block(htmlBlock('role="toolbar"'));
     const fakeToolbar = fakeBlock.el.querySelector('[role="toolbar"]');
     pointer(fakeToolbar, "pointerdown");
-    expect(commit).toHaveBeenCalledWith(b.block.id, "Paragraph B changed.");
+    expect(commit).toHaveBeenCalledWith(b.block.id, "Paragraph B changed.", expect.anything()); // + the anchor taken before closing
     pointer(fakeToolbar, "pointerup");
     expect(fakeBlock.el.contains(s.editor())).toBe(true);
     expect(s.editor().value).toContain('role="toolbar"');

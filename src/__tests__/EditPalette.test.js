@@ -89,16 +89,26 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
       layout = fakePaletteLayout({ statusHeight: STATUS_H });
     });
 
-    it("shown with no status, then the status arrives: the bottom margin stays 16 px", () => {
+    const nextFrame = () => new Promise((r) => setTimeout(r, 40));
+
+    it("setStatusText reads no layout itself (a commit must not force a layout of the preview)", () => {
+      palette.show();
+      const reads = vi.mocked(Element.prototype.getBoundingClientRect).mock.calls.length;
+      palette.setStatusText("doc.md * unsaved");
+      expect(vi.mocked(Element.prototype.getBoundingClientRect).mock.calls.length).toBe(reads);
+    });
+
+    it("shown with no status, then the status arrives: the bottom margin stays 16 px (from the next frame)", async () => {
       palette.show();
       palette.setStatusText("untitled.md - saved");
+      await nextFrame();
       expect(positionOf(root)).toEqual({
         left: W - PALETTE_SIZE.width - MARGIN,
         top: H - (PALETTE_SIZE.height + STATUS_H) - MARGIN,
       });
     });
 
-    it("a palette the user moved keeps its bottom edge too", () => {
+    it("a palette the user moved keeps its bottom edge too", async () => {
       palette.show();
       const grip = root.querySelector(".edit-palette-grip");
       const c = centerOf(grip);
@@ -107,15 +117,27 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
       pointer(grip, "pointerup", { x: c.x - 300, y: c.y - 200 });
       const before = positionOf(root);
       palette.setStatusText("doc.md * unsaved");
+      await nextFrame();
       expect(positionOf(root)).toEqual({ left: before.left, top: before.top - STATUS_H });
     });
 
-    it("the same text again, or a hidden palette, does not move it", () => {
+    it("the same text again, or a hidden palette, does not move it", async () => {
       palette.setStatusText("untitled.md - saved"); // hidden: nothing placed
+      await nextFrame();
       expect(root.style.top).toBe("");
       palette.show();
       const shown = positionOf(root);
       palette.setStatusText("untitled.md - saved");
+      await nextFrame();
+      expect(positionOf(root)).toEqual(shown);
+    });
+
+    it("a palette hidden before the frame is not moved", async () => {
+      palette.show();
+      const shown = positionOf(root);
+      palette.setStatusText("doc.md * unsaved");
+      palette.hide();
+      await nextFrame();
       expect(positionOf(root)).toEqual(shown);
     });
   });

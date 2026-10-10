@@ -177,12 +177,21 @@ describe("RendererOrchestrator edit API (INV-47, INV-48, spec 5.14.3)", () => {
     expect(lastRestores[0][0]).toBe(t.scrollManager.captureAnchor.mock.results.at(-1).value);
   });
 
-  it("AT-ORC-06 anchor: captured synchronously on the old element; restored after the swap and after DOM stability", async () => {
+  it("AT-ORC-06 anchor: captured synchronously on the old element; restored after DOM stability (only the anchor block changed: nothing above it moved, so no correction right after the swap)", async () => {
     const t = await loaded();
     const bId = t.idOf("B");
     const p = t.orchestrator.commitBlock(bId, "B2");
     expect(t.calls).toEqual([`capture:el${bId}`]);
     await p;
+    const newId = t.idOf("B2");
+    expect(t.calls).toEqual([`capture:el${bId}`, "replaceBlocks", "mermaid", "plantuml:placeholder", `restore:el${newId}`]);
+    expect(waitForDOMStability).toHaveBeenCalled();
+  });
+
+  it("AT-ORC-06b when the block count changes (a split), the anchor is also restored right after the swap", async () => {
+    const t = await loaded();
+    const bId = t.idOf("B");
+    await t.orchestrator.commitBlock(bId, "B2\n\nB3");
     const newId = t.idOf("B2");
     expect(t.calls).toEqual([
       `capture:el${bId}`,
@@ -192,7 +201,14 @@ describe("RendererOrchestrator edit API (INV-47, INV-48, spec 5.14.3)", () => {
       "plantuml:placeholder",
       `restore:el${newId}`,
     ]);
-    expect(waitForDOMStability).toHaveBeenCalled();
+  });
+
+  it("a commit given an anchor taken before the editor closed uses it and captures nothing itself", async () => {
+    const t = await loaded();
+    const anchor = { offsetTop: 42 };
+    await t.orchestrator.commitBlock(t.idOf("B"), "B2", anchor);
+    expect(t.scrollManager.captureAnchor).not.toHaveBeenCalled();
+    expect(t.scrollManager.restoreAnchor.mock.calls.at(-1)[0]).toBe(anchor);
   });
 
   it("AT-ORC-07 undo restores the body synchronously, notifies, disables undo, and queues a render", async () => {
@@ -245,7 +261,8 @@ describe("RendererOrchestrator edit API (INV-47, INV-48, spec 5.14.3)", () => {
       const p = t.orchestrator.undoLastCommit();
       expect(t.calls[0]).toBe(`capture:el${bId}`);
       await p;
-      expect(t.calls.filter((c) => c.startsWith("restore:"))).toEqual([`restore:el${bId}`, `restore:el${bId}`]);
+      // Only the restored block changed (same count): one correction, after DOM stability.
+      expect(t.calls.filter((c) => c.startsWith("restore:"))).toEqual([`restore:el${bId}`]);
     });
 
     it("falls back to the element now at the same position", async () => {

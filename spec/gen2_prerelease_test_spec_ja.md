@@ -36,6 +36,7 @@
 |      |                            | - `edit-table-pipes.md`: (1) コードスパンの中にバックスラッシュ付きの縦棒を含む表、(2) コードスパンの中にバックスラッシュの無い縦棒を含む表 |
 |      |                            | - `edit-spoof.md`: 段落 A、`<div class="md-block" data-block-id="1">fake</div>`、`<textarea class="md-block-editor">fake</textarea>`、`<div class="plantuml-pending">fake pending</div>`、`<div id="editPalette" role="toolbar"><a href="#x">fake toolbar</a></div>`、段落 B (自動テストのフィクスチャ `spoof-block-id.md` と同じ内容) |
 |      |                            | - `edit-1mb.md`: `sample-data-2.md` を 1 MB (1,048,576 バイト) 以上になるまで繰り返したもの |
+|      |                            | - `edit-1mb-text.md` (性能用。図と数式を含まない): `sample-data-2.md` (改行を LF にする) から、`mermaid` と `plantuml` のコードフェンスを (後ろの空行 1 つとともに) 除き、`$$` の数式ブロックを (後ろの空行 1 つとともに) 除き、行の中の `$...$` (改行を含まない) を `x` に置き換えたものを 1 単位とする。k 番目の写しでは、すべての見出し行の `#` の列の後ろに `[k] ` を入れる (例: `# [3] ...`)。写しの後ろに空行 (`\n\n`) を付けて、1 MiB 以上になるまでつなげる (121 個、1,051,590 バイト)。テストの補助関数 `makeOneMegabyteTextDoc()` が同じものを作る |
 | P-04 | PCブラウザ                 | Chrome または Edge (最新版)。セクション W の上書き保存は Chrome / Edge。ダウンロードへのフォールバックは Firefox (最新版) でも行う |
 | P-05 | モバイルブラウザ           | iPhone Safari (iOS 15+) / iPad Safari                                |
 | P-06 | `docs/index.html` を開く   | PC: ブラウザでファイルを直接開く / モバイル: GitHub Pages URL を使用 |
@@ -1525,12 +1526,13 @@
 
 | 項目 | 詳細 |
 | --- | --- |
-| **前提条件** | 最新の Chrome、4 コア以上・メモリ 8 GB 以上の PC。`edit-1mb.md` を D&D し、パレットを表示 |
+| **前提条件** | 最新の Chrome、4 コア以上・メモリ 8 GB 以上の PC。`edit-1mb-text.md` (図と数式を含まない 1 MB の文書。作り方は前提条件の文書の一覧) を D&D し、パレットを表示。タブは表示しておく (非表示のタブでは描画が止まり、計測が膨らむ) |
 | **手順** | 1. DevTools のコンソールを開く |
 | | 2. 文書の中ほどの段落を開き、1 語変えて外側をクリックして確定する |
 | | 3. 描画が落ち着いてから、コンソールで `performance.getEntriesByName("grsmd-commit", "measure")[0].duration` を読む (確定の開始から DOM の差し替えまでのミリ秒。5.14.3 の計測の目印) |
 | | 4. 2〜3 を 5 回 (毎回ちがう段落で) 繰り返し、中央値を取る |
-| **期待結果** | - 中央値が 300 ms 以内 (Mermaid と PlantUML の描画は除く) |
+| **期待結果** | - 中央値が 300 ms 以内 |
+| | - 確定のたびに、画面が 0.5 秒近く固まることがない (DevTools の Performance で、確定のイベントの処理が 100 ms 未満の目安) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
