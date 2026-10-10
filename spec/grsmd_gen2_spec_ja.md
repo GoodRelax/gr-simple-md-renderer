@@ -10,6 +10,8 @@
 
 **改訂:** 2026-10-10 — Markdown出力のHTMLサニタイズを導入。marked (v18) にはサニタイズ機能が存在しないため、DOMPurify 3.4.12 (mermaid の推移的依存として既に内包されていたものを直接依存に昇格) で全出力をサニタイズしてからDOMへ挿入する (OS-14)。パース失敗時のエラーメッセージもエスケープし、`escapeHtml` はシングルクォートもエスケープするよう修正。外部画像読込の同意とCSPは後続対応。
 
+**改訂:** 2026-10-10 — バンドル依存を同一メジャー内の最新へ更新 (marked 18.0.5->18.1.0 / mermaid 11.16.0->11.17.2 / highlight.js 11.11.1->11.12.0 / KaTeX 0.17.0->0.18.11 / marked-katex-extension 5.1.10->5.1.13 / DOMPurify 3.4.12->3.4.16)。plantuml-encoder (1.4.0) は最新のため据置。KaTeX は 0.19.0 が最新だが、marked-katex-extension 5.1.13 の peerDependencies が `katex <0.19` のため 0.18.x に留める。KaTeX 0.18 は内部CSSクラスに接頭辞を付与した (例: `base`->`katex-base`) が、GRSMDが参照する `.katex` / `.katex-display` / `.katex-html` は不変。フォント構成 (20書体) も不変で、woff2のみ内包は維持。highlight.js 11.12.0 の commonビルドは36言語のまま (追加の `freedesktop` は非common) で、OS-17 / 5.3 の記述は不変。
+
 ---
 
 ## 目次
@@ -123,12 +125,12 @@
 | ---------------------- | ---------------------------------------------------- | ------------------------------------------------ |
 | 言語                   | JavaScript (ES6+ クラス)                             | 当面TypeScriptは使用しない                       |
 | ランタイム             | ブラウザのみ（クライアントサイド SPA）               | バックエンドなし、Node.jsなし                    |
-| Markdownパーサー       | marked.js v18.0.5 (UMD, バンドル)                    | ビルドに内包                                     |
-| ダイアグラム描画       | Mermaid.js v11.16.0 (バンドル)                       | クライアントサイドのみ                           |
+| Markdownパーサー       | marked.js v18.1.0 (UMD, バンドル)                    | ビルドに内包                                     |
+| ダイアグラム描画       | Mermaid.js v11.17.2 (バンドル)                       | クライアントサイドのみ                           |
 | PlantUMLエンコード     | plantuml-encoder v1.4.0 (バンドル)                   | エンコードのみ。描画は同意付き外部サーバー       |
-| シンタックスハイライト | highlight.js v11.11.1 (バンドル)                     | Markdownコードブロックとコードビューの両方で使用 |
-| 数式描画               | KaTeX v0.17.0 + marked-katex-extension v5.1.10 (バンドル) | LaTeX数式サポート                            |
-| HTMLサニタイズ         | DOMPurify v3.4.12 (バンドル)                         | Markdown出力をDOM挿入前に必ずサニタイズ (OS-14)  |
+| シンタックスハイライト | highlight.js v11.12.0 (バンドル)                     | Markdownコードブロックとコードビューの両方で使用 |
+| 数式描画               | KaTeX v0.18.11 + marked-katex-extension v5.1.13 (バンドル) | LaTeX数式サポート                            |
+| HTMLサニタイズ         | DOMPurify v3.4.16 (バンドル)                         | Markdown出力をDOM挿入前に必ずサニタイズ (OS-14)  |
 
 **ビルド戦略:**
 
@@ -247,7 +249,7 @@ gr-simple-md-renderer/
 | ID     | 制約                                                                                                                                                                                      |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CON-01 | `DataTransferItem.getAsFileSystemHandle()` はdropイベントハンドラ内で、最初の `await` よりも前に同期的に呼び出す必要がある。返されたPromiseは保存し、後でawaitする。                      |
-| CON-02 | highlight.js 11.11.1、marked.js 18.0.5、mermaid 11.16.0、plantuml-encoder 1.4.0、KaTeX 0.17.0、marked-katex-extension 5.1.10、DOMPurify 3.4.12 はnpm依存としてバンドルする。バージョンを変更する場合は機能検証を行うこと。2026-07-16よりCDN/SRI運用は廃止した。 |
+| CON-02 | highlight.js 11.12.0、marked.js 18.1.0、mermaid 11.17.2、plantuml-encoder 1.4.0、KaTeX 0.18.11、marked-katex-extension 5.1.13、DOMPurify 3.4.16 はnpm依存としてバンドルする。バージョンを変更する場合は機能検証を行うこと。2026-07-16よりCDN/SRI運用は廃止した。 |
 | CON-03 | ユーザーデータ（ファイル内容、ファイル名、メタデータ）をlocalStorage、sessionStorage、Cookieに保存してはならない。                                                                        |
 | CON-04 | 既存のPlantUML同意ダイアログ（window.confirm）を削除またはバイパスしてはならない。                                                                                                        |
 | CON-05 | 本番リリースは単一HTMLファイルでなければならない。マルチファイル構成は開発時（Viteソース）のみ許容され、リリース前に統合すること。                                                        |
@@ -325,12 +327,12 @@ graph TB
             COPY["DiagramCopyController<br/>(SVG and PNG)"]:::framework
         end
         subgraph CDN_Libs["Bundled Libraries"]
-            MARKED["marked.js v18.0.5"]
-            MERMAIDJS["mermaid.js v11.16.0"]
-            HLJS["highlight.js v11.11.1"]
-            KATEX["KaTeX v0.17.0"]
+            MARKED["marked.js v18.1.0"]
+            MERMAIDJS["mermaid.js v11.17.2"]
+            HLJS["highlight.js v11.12.0"]
+            KATEX["KaTeX v0.18.11"]
             PUMLENC["plantuml-encoder v1.4.0"]
-            PURIFY["DOMPurify v3.4.12"]
+            PURIFY["DOMPurify v3.4.16"]
         end
     end
     PUML_SERVER["PlantUML Server<br/>(External, consent required)"]
@@ -1440,7 +1442,7 @@ CONFIGはすべてのマジックナンバーとユーザー向けメッセー�
 
 ### 5.3 EXT_TO_HLJS マッピング
 
-以下のすべての言語IDは highlight.js 11.11.1 に対して定義済み。ただし、GRSMDはnpm依存としてバンドルした **commonビルド** (`highlight.js/lib/common`) を使用しており、36言語のみが同梱されている。commonビルドに含まれない言語 (scala, powershell, elixir, erlang, haskell, clojure, dart, groovy, vim, latex, protobuf, dockerfile) は `hljs.getLanguage(lang)` が未定義となるため、ハイライトせずプレーンテキスト (`escapeHtml` のみ) として表示する。`hljs.highlightAuto()` は使用しない (最大5MBの全文に対する自動検出は低速かつ推定が不安定なため。INV-18 段階5と同じ扱い)。非common言語の個別インポートはYAGNIとする (OS-17)。
+以下のすべての言語IDは highlight.js 11.12.0 に対して定義済み。ただし、GRSMDはnpm依存としてバンドルした **commonビルド** (`highlight.js/lib/common`) を使用しており、36言語のみが同梱されている。commonビルドに含まれない言語 (scala, powershell, elixir, erlang, haskell, clojure, dart, groovy, vim, latex, protobuf, dockerfile) は `hljs.getLanguage(lang)` が未定義となるため、ハイライトせずプレーンテキスト (`escapeHtml` のみ) として表示する。`hljs.highlightAuto()` は使用しない (最大5MBの全文に対する自動検出は低速かつ推定が不安定なため。INV-18 段階5と同じ扱い)。非common言語の個別インポートはYAGNIとする (OS-17)。
 
 `EXT_TO_HLJS` はシンタックスハイライト対象の定義テーブルとして機能する。ファイル受け入れ判定には `BINARY_EXTENSIONS` ブラックリストとnullバイト検査を併用する (INV-18)。
 
@@ -2512,12 +2514,12 @@ preprocessInput(rawText) {
 
 | ライブラリ             | バージョン | 取込方法                          |
 | ---------------------- | ---------- | --------------------------------- |
-| marked.js              | 18.0.5     | バンドル (npm)                    |
-| Mermaid.js             | 11.16.0    | バンドル (npm)                    |
-| highlight.js           | 11.11.1    | バンドル (npm, JS + CSSテーマ)    |
-| KaTeX                  | 0.17.0     | バンドル (npm, CSS + woff2フォント) |
-| marked-katex-extension | 5.1.10     | バンドル (npm)                    |
+| marked.js              | 18.1.0     | バンドル (npm)                    |
+| Mermaid.js             | 11.17.2    | バンドル (npm)                    |
+| highlight.js           | 11.12.0    | バンドル (npm, JS + CSSテーマ)    |
+| KaTeX                  | 0.18.11    | バンドル (npm, CSS + woff2フォント) |
+| marked-katex-extension | 5.1.13     | バンドル (npm)                    |
 | plantuml-encoder       | 1.4.0      | バンドル (npm)                    |
-| DOMPurify              | 3.4.12     | バンドル (npm、mermaidと同一コピーを共有) |
+| DOMPurify              | 3.4.16     | バンドル (npm、mermaidと同一コピーを共有) |
 
 2026-07-16より全ライブラリをnpm依存としてViteビルドに内包する (単一ファイル)。実行時のCDN取得およびSRIは廃止。バージョンを変更する場合は機能検証を行うこと (CON-02, CON-10)。外部通信はPlantUMLサーバ (同意付き) のみ。

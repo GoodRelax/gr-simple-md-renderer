@@ -11,6 +11,46 @@ re-hash.
 
 ---
 
+## [Unreleased] - 2026-10-10
+
+### Changed
+
+- Update bundled dependencies to the latest release within the same major
+  version (plantuml-encoder unchanged at 1.4.0, already the latest):
+
+  | Library | Version |
+  |---------|---------|
+  | marked | 18.0.5 -> 18.1.0 |
+  | mermaid | 11.16.0 -> 11.17.2 |
+  | highlight.js | 11.11.1 -> 11.12.0 |
+  | katex | 0.17.0 -> 0.18.11 |
+  | marked-katex-extension | 5.1.10 -> 5.1.13 |
+  | dompurify | 3.4.12 -> 3.4.16 (still deduped with mermaid's copy) |
+
+  - katex stays on 0.18.x: 0.19.0 is out, but marked-katex-extension 5.1.13
+    declares `katex >=0.16 <0.19` as its peer range.
+  - katex 0.18.0 prefixes its internal CSS classes (for example `base` ->
+    `katex-base`). GRSMD only styles `.katex`, which is unchanged. The font set
+    (20 faces) is unchanged, and the build still embeds woff2 only.
+  - katex 0.18.2 fixes GHSA-238p-pmpm-9mq7 (prototype pollution gadget) for the
+    top-level copy.
+  - highlight.js 11.12.0 keeps the same 36 languages in `lib/common`; the new
+    `freedesktop` grammar is not in the common build.
+  - Dev tooling (same major only): vite 7.3.6 -> 7.3.7,
+    vite-plugin-singlefile 2.3.0 -> 2.3.3, vitest 4.1.10 -> 4.1.11
+    (jsdom stays on 28.1.0, the latest 28.x).
+  - Single file: ~4.37 MB (gzip ~1.38 MB), about +10 KB.
+
+### Known issues
+
+- mermaid 11.17.2 still pins its own nested `katex ^0.16.47` (used only for
+  `$$...$$` math inside diagram labels, rendered as sanitized MathML). No
+  0.16.x release fixes GHSA-238p-pmpm-9mq7 (low severity), so
+  `npm audit --omit=dev` reports 2 low findings (katex, mermaid). mermaid 12.1.0
+  pins the same range.
+
+---
+
 ## [Unreleased] - 2026-07-16
 
 ### Changed
