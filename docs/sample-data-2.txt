@@ -884,3 +884,9 @@ classDiagram
 ```
 
 This structure allows for recursive evaluation of mathematical trees.
+
+## 9. Images
+
+A small inline image (SVG embedded as a data URI, so no network request is made):
+
+![GRSMD sample badge](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCAxNjAgNDgiPjxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSIxNTgiIGhlaWdodD0iNDYiIHJ4PSIxMCIgZmlsbD0iIzJiNmNiMCIgc3Ryb2tlPSIjMWEzNjVkIiBzdHJva2Utd2lkdGg9IjIiLz48Y2lyY2xlIGN4PSIyNCIgY3k9IjI0IiByPSIxMCIgZmlsbD0iI2Y2ZTA1ZSIvPjx0ZXh0IHg9IjQ0IiB5PSIzMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZmZmZmZmIj5HUlNNRDwvdGV4dD48L3N2Zz4K)
