@@ -1,0 +1,121 @@
+/**
+ * Local file read and write for Markdown documents (Adapter, spec 5.14.7).
+ * Uses only the File System Access API and blob: downloads: no network
+ * (CON-14) and no browser storage (CON-13).
+ */
+export default class MarkdownFileAccess {
+  /**
+   * @purity non-pure
+   * @param {{showSaveFilePicker?: Function}} [win] - window (injected for tests)
+   */
+  constructor(win = window) {
+    this._win = win;
+  }
+
+  /**
+   * True when the browser can write a chosen file in place (Chrome / Edge).
+   * @purity semi-pure-a
+   * @returns {boolean}
+   */
+  canWriteInPlace() {
+    return typeof this._win.showSaveFilePicker === "function";
+  }
+
+  /**
+   * Start the write-permission request. Call it synchronously inside the
+   * press handler, before any await, so the user activation is still valid (INV-33).
+   * @purity non-pure
+   * @param {object} fileHandle
+   * @returns {Promise<string>} "granted" | "denied" | "prompt"
+   */
+  startPermissionRequest(fileHandle) {
+    try {
+      if (typeof fileHandle.requestPermission !== "function") return Promise.resolve("granted");
+      return fileHandle.requestPermission({ mode: "readwrite" });
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Open the save dialog. Call it synchronously inside the press handler (INV-33).
+   * @purity non-pure
+   * @param {string} suggestedName
+   * @returns {Promise<object>} the chosen FileSystemFileHandle
+   */
+  startSavePicker(suggestedName) {
+    try {
+      return this._win.showSaveFilePicker({
+        suggestedName,
+        types: [{ description: "Markdown", accept: { "text/markdown": [".md"] } }],
+      });
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Read a file for Reload: the first bytes (to judge the BOM), the decoded
+   * text (File.text() drops the BOM) and lastModified.
+   * @purity semi-pure-b
+   * @param {object} fileHandle
+   * @returns {Promise<{bytesHead: Uint8Array, text: string, lastModified: number}>}
+   */
+  async readFile(fileHandle) {
+    const file = await fileHandle.getFile();
+    const bytesHead = new Uint8Array(await file.slice(0, 3).arrayBuffer());
+    const text = await file.text();
+    return { bytesHead, text, lastModified: file.lastModified };
+  }
+
+  /**
+   * @purity semi-pure-b
+   * @param {object} fileHandle
+   * @returns {Promise<number>} lastModified of the file on disk (NotFoundError passes through)
+   */
+  async readLastModified(fileHandle) {
+    const file = await fileHandle.getFile();
+    return file.lastModified;
+  }
+
+  /**
+   * Write the whole file. On a failed write the writable is aborted before
+   * the error is passed on, so no partial file is left open.
+   * @purity non-pure
+   * @param {object} fileHandle
+   * @param {string} fileText
+   * @returns {Promise<number>} lastModified after the write
+   */
+  async writeFile(fileHandle, fileText) {
+    const writable = await fileHandle.createWritable();
+    try {
+      await writable.write(fileText);
+    } catch (error) {
+      await writable.abort();
+      throw error;
+    }
+    await writable.close();
+    return this.readLastModified(fileHandle);
+  }
+
+  /**
+   * Download fileText as a .md file through a blob: URL. The link is clicked
+   * synchronously (inside the press handler, INV-33); the URL is revoked in
+   * a later task.
+   * @purity non-pure
+   * @param {string} suggestedName
+   * @param {string} fileText
+   */
+  startDownload(suggestedName, fileText) {
+    const blob = new Blob([fileText], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = suggestedName;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+}

@@ -56,6 +56,29 @@ export const CONFIG = {
       failed: "Copy failed.",
       blocked: "Browser denied copy.",
     },
+    edit: {
+      unsavedConfirm: "You have unsaved changes. Discard them?",
+      externalChangeConfirm:
+        "This file was changed outside GRSMD. Overwrite it?",
+      saved: (name) => `Saved: ${name}`,
+      downloadStarted: (name) =>
+        `Download started: ${name}. The tab stays marked unsaved.`,
+      savingInProgress: "Saving. Try again when the save finishes.",
+      reloadFailed: "Reload failed. The file could not be read.",
+      reloadCanceled: "Reload canceled. The document changed while reading.",
+      saveFailed: "Save failed. Your changes are kept.",
+      saveDenied: "Write permission was denied. Your changes are kept.",
+      saveNotFound: "The file was not found. Use Save as.",
+      saveActivationLost: "Save could not start. Press Save again.",
+      editorRenderedFirst:
+        "The top editor had unrendered changes. Rendered them first.",
+      plantumlPending: "PlantUML diagram (not sent)",
+      plantumlRenderButton: "Render",
+      hiddenLinkDefinition: "link definition",
+      hiddenHtml: "hidden HTML",
+      statusUnsaved: (name) => `${name} * unsaved`,
+      statusSaved: (name) => `${name} - saved`,
+    },
   },
   // New: smooth scroll physics parameters
   scroll: {
