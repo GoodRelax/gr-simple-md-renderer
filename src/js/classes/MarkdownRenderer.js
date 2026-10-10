@@ -164,7 +164,10 @@ export default class MarkdownRenderer {
     const elements = model
       .getBlocks()
       .map((block) => this._createWrapper(block, this._cachedHtml(block, model.links, signature)));
-    if (elements.length === 0) elements.push(this._createEmptyBlock());
+    if (elements.length === 0) {
+      this._emptyBlock = this._createEmptyBlock();
+      elements.push(this._emptyBlock);
+    }
     this.preview.replaceChildren(...elements);
     this._afterInsert(this.preview);
   }
@@ -243,6 +246,17 @@ export default class MarkdownRenderer {
    */
   getBlockElement(blockId) {
     return this._wrapperById.get(blockId) ?? null;
+  }
+
+  /**
+   * The empty block shown for an empty document (INV-49), or null. Only the
+   * element this renderer created counts (a user-written .md-block-empty
+   * does not).
+   * @purity semi-pure-b
+   * @returns {HTMLElement|null}
+   */
+  getEmptyBlockElement() {
+    return this._emptyBlock;
   }
 
   // ---- internals ----

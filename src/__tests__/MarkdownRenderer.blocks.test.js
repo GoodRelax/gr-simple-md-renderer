@@ -213,6 +213,20 @@ describe("MarkdownRenderer.renderBlocks / replaceBlocks (real marked, DOMPurify,
     expect(preview.firstElementChild.classList.contains("md-block-empty")).toBe(true);
   });
 
+  it("AT-MR-13 getEmptyBlockElement returns the renderer's own empty block only (by reference)", () => {
+    expect(renderer.getEmptyBlockElement()).toBeNull();
+    renderer.renderBlocks(model(""));
+    expect(renderer.getEmptyBlockElement()).toBe(preview.firstElementChild);
+    const m = model("");
+    const filled = m.withBody("Now text\n", lexer, MAX).model;
+    renderer.replaceBlocks(m, filled);
+    expect(renderer.getEmptyBlockElement()).toBeNull();
+    renderer.replaceBlocks(filled, filled.withBody("", lexer, MAX).model);
+    expect(renderer.getEmptyBlockElement()).toBe(preview.firstElementChild);
+    renderer.renderBlocks(model('<div class="md-block md-block-empty">user</div>\n'));
+    expect(renderer.getEmptyBlockElement()).toBeNull();
+  });
+
   it("AT-MR-14 block identity comes only from the renderer's own wrappers (Q1)", () => {
     const m = model(loadFixtureLf("spoof-block-id.md"));
     const paraA = m.getBlocks()[0];

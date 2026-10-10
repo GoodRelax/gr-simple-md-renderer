@@ -4,6 +4,21 @@ import { splitMarkdownWrapper } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
 
 /**
+ * INV-14: a key typed into an input, a textarea (the block editor included),
+ * a contenteditable element or a role="toolbar" (the edit palette) is not a
+ * document shortcut. The role is checked as written (ruling T2).
+ * @purity semi-pure-b
+ * @param {Element|null} el - the focused element
+ * @returns {boolean}
+ */
+function isTypingTarget(el) {
+  if (!el) return false;
+  if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") return true;
+  if (el.isContentEditable) return true;
+  return typeof el.closest === "function" && el.closest('[role="toolbar"]') !== null;
+}
+
+/**
  * Translates UI events into use-case calls.
  * Handles: render buttons, utility buttons, file drop (all files),
  * paste, keyboard shortcuts, modals, long-press.
@@ -434,8 +449,7 @@ export default class UIController {
   setupKeyboard() {
     /** @purity non-pure */
     document.addEventListener("keydown", (e) => {
-      const tag = document.activeElement?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (isTypingTarget(document.activeElement)) return; // INV-14
       if (e.ctrlKey || e.metaKey || e.altKey) return; // INV-14: modifier guard
 
       switch (e.key) {
