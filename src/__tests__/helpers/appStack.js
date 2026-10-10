@@ -54,7 +54,10 @@ export async function settle() {
  * The composed app on a real renderer stack.
  * @returns {Promise<object>}
  */
-export async function setupApp() {
+/**
+ * @param {{fileAccess?: object}} [opts] - fileAccess: a fake MarkdownFileAccess (save tests)
+ */
+export async function setupApp({ fileAccess: fakeAccess } = {}) {
   vi.stubGlobal("matchMedia", () => ({ matches: false }));
   document.title = BASE_TITLE;
   const elements = createUiElements({ attach: true });
@@ -81,7 +84,7 @@ export async function setupApp() {
     sourceFileRenderer,
   );
   const scrollEngine = { startScroll: vi.fn(), stopScroll: vi.fn(), destroy: vi.fn() };
-  const fileAccess = new MarkdownFileAccess(window);
+  const fileAccess = fakeAccess ?? new MarkdownFileAccess(window);
   const { result: ui, dispose } = trackGlobalListeners(
     () =>
       new UIController(orchestrator, state, elements, scrollEngine, {

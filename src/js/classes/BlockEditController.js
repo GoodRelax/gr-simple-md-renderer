@@ -107,6 +107,7 @@ export default class BlockEditController {
     this._editor = null; // { textarea, wrapper, blockId, blockType, original, savedNodes }
     this._press = null; // the pointerdown being followed
     this._composing = false;
+    this._lastOpenedBlockId = null;
     this._onPointerDown = (e) => this._handlePointerDown(e);
     this._onPointerUp = (e) => this._handlePointerUp(e);
     this._onPointerCancel = () => this._forgetPress();
@@ -155,7 +156,27 @@ export default class BlockEditController {
    * @returns {boolean}
    */
   isEditing() {
-    return this._state === EDITING;
+    // The editor itself, so a commit's onModelChanged (inside the transition)
+    // already sees the editor closed.
+    return this._editor !== null;
+  }
+
+  /**
+   * The open block is a table (Insert row / column, 5.15.5).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  isEditingTable() {
+    return this._editor !== null && this._editor.blockType === "table";
+  }
+
+  /**
+   * The last block an editor was opened on (INV-52: insert after it), or null.
+   * @purity semi-pure-b
+   * @returns {number|null}
+   */
+  getLastOpenedBlockId() {
+    return this._lastOpenedBlockId;
   }
 
   /**
@@ -361,7 +382,10 @@ export default class BlockEditController {
     wrapper.classList.add("md-block-editing");
     this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes };
     this._composing = false;
-    if (blockId !== null) this.orchestrator.holdBlock(blockId); // Q-d1
+    if (blockId !== null) {
+      this.orchestrator.holdBlock(blockId); // Q-d1
+      this._lastOpenedBlockId = blockId;
+    }
 
     textarea.addEventListener("keydown", this._onKeyDown);
     textarea.addEventListener("input", this._onInput);

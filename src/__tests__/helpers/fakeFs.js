@@ -106,6 +106,15 @@ export function fakeFileAccess(opts = {}) {
       this.writes.push({ handle, text });
       return opts.writtenLastModified ?? 2000;
     },
+    async readFile(handle) {
+      calls.push("readFile");
+      const file = await handle.getFile();
+      return {
+        bytesHead: new Uint8Array(await file.slice(0, 3).arrayBuffer()),
+        text: await file.text(),
+        lastModified: file.lastModified,
+      };
+    },
     startDownload(name, text) {
       calls.push(`startDownload:${name}`);
       this.downloads.push({ name, text });

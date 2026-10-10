@@ -66,6 +66,8 @@ export function fakeEditServices() {
     focusEditor: vi.fn(() => false),
     getSelectionRange: vi.fn(() => null),
     applyTextEdit: vi.fn(),
+    isEditingTable: vi.fn(() => false),
+    getLastOpenedBlockId: vi.fn(() => null),
   };
   return {
     fileAccess: { readFile: vi.fn() },

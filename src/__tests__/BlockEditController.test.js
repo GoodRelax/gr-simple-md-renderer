@@ -463,6 +463,20 @@ describe("AT-BEC editor value and life cycle", () => {
     expect([ta.selectionStart, ta.selectionEnd]).toEqual([2, 5]);
   });
 
+  it("isEditingTable and getLastOpenedBlockId (5.15.5, INV-52)", async () => {
+    s = await setupEdit("| A | B |\n|---|---|\n| x | y |\n\nPara.\n");
+    expect(s.bec.isEditingTable()).toBe(false);
+    expect(s.bec.getLastOpenedBlockId()).toBeNull();
+    const t = openBlock((b) => b.type === "table");
+    expect(s.bec.isEditingTable()).toBe(true);
+    keydown(t.ta, "Escape");
+    expect(s.bec.isEditingTable()).toBe(false);
+    expect(s.bec.getLastOpenedBlockId()).toBe(t.block.id);
+    const p = openBlock(isPara("Para"));
+    expect(s.bec.isEditingTable()).toBe(false);
+    expect(s.bec.getLastOpenedBlockId()).toBe(p.block.id);
+  });
+
   it("AT-BEC-22 listeners added on open are all removed on close; 10 open/close cycles add none", async () => {
     s = await setupEdit(DOC);
     const tracker = trackListeners();

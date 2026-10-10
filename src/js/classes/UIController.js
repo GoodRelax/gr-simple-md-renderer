@@ -5,6 +5,9 @@ import ModalController from "./ModalController.js";
 import DocumentSession from "./DocumentSession.js";
 import DocumentLocation from "./DocumentLocation.js";
 import BlockEditController from "./BlockEditController.js";
+import MarkdownTextOps from "./MarkdownTextOps.js";
+import SaveDocument from "./SaveDocument.js";
+import SaveDocumentAs from "./SaveDocumentAs.js";
 
 /**
  * INV-14: a key typed into an input, a textarea (the block editor included),
@@ -66,6 +69,45 @@ export function renderRouteFor(isCodeView, isPreRender) {
 }
 
 /**
+ * One cell of a transition table.
+ * @purity pure
+ */
+function cell(to, actions) {
+  return Object.freeze({ to, actions: Object.freeze(actions) });
+}
+
+/**
+ * Spec 11-e: event -> current state -> cell (null = no change). Only the save
+ * in progress is a state; "unsaved" is derived (_isDocumentDirty).
+ */
+export const saveOperationStateMachine = Object.freeze({
+  saveRequested: Object.freeze({
+    idle: cell("writingFile", ["startPermissionRequest", "commitOpenBlock", "applyEditorText", "runSaveDocument"]),
+    writingFile: null,
+  }),
+  saveAsRequested: Object.freeze({
+    idle: cell("writingFile", ["startSavePicker", "commitOpenBlock", "applyEditorText", "runSaveDocumentAs"]),
+    writingFile: null,
+  }),
+  fileWritten: Object.freeze({
+    idle: null,
+    writingFile: cell("idle", ["applyOutcomeIfSameDocument", "refreshDirtyMark", "showSavedToast"]),
+  }),
+  downloadStarted: Object.freeze({ idle: null, writingFile: cell("idle", ["showDownloadStartedToast"]) }),
+  writeFailed: Object.freeze({ idle: null, writingFile: cell("idle", ["showErrorToast"]) }),
+  saveCanceled: Object.freeze({ idle: null, writingFile: cell("idle", []) }),
+  replaceRequested: Object.freeze({ idle: null, writingFile: cell("writingFile", ["rejectReplace", "showSavingToast"]) }),
+});
+
+// SaveOutcome.status -> 11-e event
+const SAVE_EVENT_BY_STATUS = Object.freeze({
+  saved: "fileWritten",
+  downloadStarted: "downloadStarted",
+  failed: "writeFailed",
+  canceled: "saveCanceled",
+});
+
+/**
  * Translates UI events into use-case calls.
  * Handles: render buttons, utility buttons, file drop (all files),
  * paste, keyboard shortcuts, modals, long-press.
@@ -100,6 +142,8 @@ export default class UIController {
     this._saveOperationState = "idle"; // 11-e
     this._baseTitle = document.title;
     this._lastTap = null; // double tap on the empty preview (INV-31)
+    this.saveDocument = new SaveDocument(this.fileAccess, CONFIG.messages.edit, CONFIG.edit.defaultFileName);
+    this.saveDocumentAs = new SaveDocumentAs(this.fileAccess, CONFIG.messages.edit, CONFIG.edit.defaultFileName);
     this.palette = services.createPalette(this._paletteHost());
     this.blockEdit = services.createBlockEdit(this._blockEditHost());
     this.orchestrator.setModelChangedListener(this);
@@ -649,6 +693,16 @@ export default class UIController {
     this.elements.editor.addEventListener("focusin", () => {
       if (this.blockEdit.isEditing()) this.blockEdit.dispatch("editorFocused");
     });
+    // Bold / Italic follow the editor's selection (5.15.5). Capture also sees
+    // the event when it is fired at the textarea itself.
+    /** @purity non-pure */
+    document.addEventListener(
+      "selectionchange",
+      () => {
+        if (this.palette.isShown()) this._updatePaletteStates();
+      },
+      true,
+    );
   }
 
   /**
@@ -741,13 +795,25 @@ export default class UIController {
    */
   async _renderEditorIntoDocument(theme) {
     this.blockEdit.dispatch("fullRenderRequested"); // commits an open editor first
-    this.state.setMarkdownText(normalizeLineEndings(this.elements.editor.value));
-    this._editorChangedSinceRender = false; // taken into the model now (T32)
-    const rendering = this.orchestrator.reRender(theme);
-    this._refreshDirtyMark();
+    const rendering = this._takeEditorIntoModel(theme);
     this.setViewMode("markdown");
     this.showKeyHint("markdown");
     await rendering;
+  }
+
+  /**
+   * The #editor text becomes the model now (line endings normalized only,
+   * ruling T33); the full render is queued. The mark drops here (T32).
+   * @param {'light'|'dark'} theme
+   * @returns {Promise<void>} the queued render
+   * @purity non-pure
+   */
+  _takeEditorIntoModel(theme) {
+    this.state.setMarkdownText(normalizeLineEndings(this.elements.editor.value));
+    this._editorChangedSinceRender = false;
+    const rendering = this.orchestrator.reRender(theme);
+    this._refreshDirtyMark();
+    return rendering;
   }
 
   /**
@@ -820,6 +886,21 @@ export default class UIController {
     let status = "";
     if (this._session) status = dirty ? m.statusUnsaved(name) : m.statusSaved(name);
     this.palette.setStatusText(status);
+    this._updatePaletteStates();
+  }
+
+  /**
+   * Enable or disable the palette buttons (5.15.5).
+   * @purity non-pure
+   */
+  _updatePaletteStates() {
+    const range = this.blockEdit.getSelectionRange();
+    this.palette.setButtonStates(
+      this.blockEdit.isEditing(),
+      Boolean(range) && range.selStart !== range.selEnd,
+      this.blockEdit.isEditingTable(),
+      this.orchestrator.canUndo(),
+    );
   }
 
   /**
@@ -837,7 +918,7 @@ export default class UIController {
    * @returns {boolean} true when refused
    */
   _rejectWhileSaving() {
-    if (this._saveOperationState !== "writingFile") return false;
+    if (!saveOperationStateMachine.replaceRequested[this._saveOperationState]) return false;
     this._toast(CONFIG.messages.edit.savingInProgress);
     return true;
   }
@@ -874,8 +955,7 @@ export default class UIController {
   }
 
   /**
-   * EditPaletteHost (the port EditPalette calls back). The commands are
-   * wired in unit f2 (save and the editing commands).
+   * EditPaletteHost (the port EditPalette calls back).
    * @purity non-pure
    */
   _paletteHost() {
@@ -892,8 +972,168 @@ export default class UIController {
    * @param {string} [arg]
    */
   _runPaletteCommand(command, arg) {
-    void command;
-    void arg;
+    switch (command) {
+      case "save":
+        this.requestSave();
+        break;
+      case "saveAs":
+        this.requestSaveAs();
+        break;
+      case "bold":
+      case "italic":
+        this._editInBlock((r) =>
+          r.selStart === r.selEnd ? null : MarkdownTextOps.toggleWrap(r.text, r.selStart, r.selEnd, command === "bold" ? "**" : "*"),
+        );
+        break;
+      case "insertRow":
+        this._editInBlock((r) => MarkdownTextOps.insertTableRow(r.text, r.selStart));
+        break;
+      case "insertColumn":
+        this._editInBlock((r) => MarkdownTextOps.insertTableColumn(r.text, r.selStart));
+        break;
+      case "undo":
+        this._undo();
+        break;
+      case "insertTable":
+        this._insertBlock(CONFIG.edit.tableTemplate);
+        break;
+      case "insertMermaid":
+        this._insertBlock(CONFIG.edit.mermaidSamples[arg]);
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Change the open editor's text (not a commit; INV-52). edit(range)
+   * returns a TextEdit, or null for no change.
+   * @purity non-pure
+   */
+  _editInBlock(edit) {
+    const range = this.blockEdit.getSelectionRange();
+    const next = range ? edit(range) : null;
+    if (!next) return;
+    this.blockEdit.applyTextEdit(next);
+    this._refreshDirtyMark();
+  }
+
+  /**
+   * Undo (INV-48); #editor changes are rendered first instead (INV-45, T31).
+   * @purity non-pure
+   */
+  _undo() {
+    if (this.blockEdit.isEditing()) return;
+    if (this._editorChangedSinceRender) this._renderFromEditorFirst();
+    else this.orchestrator.undoLastCommit();
+  }
+
+  /**
+   * Insert table / Mermaid sample (INV-52): at the caret while editing,
+   * else after the last opened block (or at the end) as one model change.
+   * @param {string} blockText
+   * @purity non-pure
+   */
+  _insertBlock(blockText) {
+    if (this.blockEdit.isEditing()) {
+      this._editInBlock((r) => MarkdownTextOps.insertBlockText(r.text, r.selEnd, blockText));
+    } else if (this._editorChangedSinceRender) {
+      this._renderFromEditorFirst();
+    } else {
+      this.orchestrator.insertAfter(this.blockEdit.getLastOpenedBlockId(), blockText);
+    }
+  }
+
+  // ---- Save (11-e, spec 5.14.7) ----
+
+  /**
+   * Save: overwrite the file (Save as without a target). The steps up to the
+   * use case call run synchronously in the press handler (INV-33).
+   * @returns {Promise<void>} settles when the outcome is shown
+   * @purity non-pure
+   */
+  requestSave() {
+    return this._startSave("saveRequested");
+  }
+
+  /**
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  requestSaveAs() {
+    return this._startSave("saveAsRequested");
+  }
+
+  /**
+   * OverwriteConfirmPort (INV-39).
+   * @returns {Promise<boolean>}
+   * @purity non-pure
+   */
+  confirmOverwrite() {
+    return Promise.resolve(window.confirm(CONFIG.messages.edit.externalChangeConfirm));
+  }
+
+  /**
+   * INV-33 order, synchronous until the use case awaits: (1) start the
+   * permission request or the save dialog, (2) commit the open block and
+   * take in #editor, (3) run the use case (a download starts inside it).
+   * @param {"saveRequested"|"saveAsRequested"} event
+   * @purity non-pure
+   */
+  async _startSave(event) {
+    const next = saveOperationStateMachine[event][this._saveOperationState];
+    if (!next || !this._session) return; // a second press while writing is ignored
+    const isSaveAs = event === "saveAsRequested";
+    const location = this._location ?? new DocumentLocation(CONFIG.edit.defaultFileName, null);
+    const permissionOrPicker = this._startSaveAccess(isSaveAs, location);
+    this.blockEdit.dispatch(event); // commits an open editor (11-c)
+    if (this._editorChangedSinceRender) this._takeEditorIntoModel(this.state.currentTheme);
+    this._saveOperationState = next.to;
+    const request = {
+      session: this._session,
+      location,
+      bodyText: this.orchestrator.getBody(),
+      permissionOrPicker,
+      confirmer: this,
+    };
+    let outcome;
+    try {
+      outcome = await (isSaveAs ? this.saveDocumentAs : this.saveDocument).execute(request);
+    } catch (error) {
+      console.error("Save error:", error);
+      outcome = this.saveDocumentAs.outcome(request, "failed", CONFIG.messages.edit.saveFailed);
+    }
+    this._finishSave(outcome);
+  }
+
+  /**
+   * The permission request (Save with a target) or the save dialog; null
+   * when the browser cannot write files (download).
+   * @purity non-pure
+   */
+  _startSaveAccess(isSaveAs, location) {
+    if (!this.fileAccess.canWriteInPlace()) return null;
+    if (!isSaveAs && location.fileHandle) return this.fileAccess.startPermissionRequest(location.fileHandle);
+    return this.fileAccess.startSavePicker(location.fileName);
+  }
+
+  /**
+   * Show a SaveOutcome (11-e). The session and the target change only for the
+   * document the save started from (INV-54); a failure leaves it unsaved.
+   * @param {object} outcome - SaveOutcome
+   * @purity non-pure
+   */
+  _finishSave(outcome) {
+    const event = SAVE_EVENT_BY_STATUS[outcome.status] ?? "writeFailed";
+    const next = saveOperationStateMachine[event][this._saveOperationState];
+    if (!next) return;
+    this._saveOperationState = next.to;
+    if (event === "fileWritten" && this._session && outcome.documentId === this._session.documentId) {
+      this._session = outcome.session;
+      this._location = outcome.location;
+      this._refreshDirtyMark();
+    }
+    if (event !== "saveCanceled" && outcome.message) this._toast(outcome.message);
   }
 
   /** @purity non-pure */
