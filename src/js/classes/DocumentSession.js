@@ -8,6 +8,13 @@ import {
 const BOM = "\uFEFF";
 
 /**
+ * baselineLastModified after a write whose new lastModified could not be
+ * read: the next Save always asks (INV-39). Not null, which means a document
+ * that did not come from a file, and never equal to a file time.
+ */
+export const LAST_MODIFIED_UNKNOWN = Symbol("lastModifiedUnknown");
+
+/**
  * The values of the document being edited (Entity, immutable value).
  * Holds what is needed to tell "unsaved" and to rebuild the file on save:
  * the wrapper removed on load, the line ending, the BOM, and the baseline body.
@@ -23,7 +30,7 @@ export default class DocumentSession {
    * @param {"\n"|"\r\n"} v.lineEnding
    * @param {boolean} v.hasBom
    * @param {string} v.baselineBodyText
-   * @param {number|null} v.baselineLastModified
+   * @param {number|null|symbol} v.baselineLastModified - LAST_MODIFIED_UNKNOWN when unreadable
    */
   constructor(v) {
     this.documentId = v.documentId;
@@ -99,8 +106,8 @@ export default class DocumentSession {
 
   /**
    * The same document after a successful write. When the new lastModified
-   * could not be read (null), the previous baseline is kept, so the next Save
-   * still compares and asks rather than skipping the check (INV-39).
+   * could not be read (null), the baseline is recorded as unknown
+   * (LAST_MODIFIED_UNKNOWN), so the next Save asks (INV-39).
    * @purity pure
    * @param {string} bodyText - the body that was written
    * @param {number|null} lastModified - lastModified of the written file, or null
@@ -110,7 +117,7 @@ export default class DocumentSession {
     return new DocumentSession({
       ...this,
       baselineBodyText: bodyText,
-      baselineLastModified: lastModified ?? this.baselineLastModified,
+      baselineLastModified: lastModified ?? LAST_MODIFIED_UNKNOWN,
     });
   }
 

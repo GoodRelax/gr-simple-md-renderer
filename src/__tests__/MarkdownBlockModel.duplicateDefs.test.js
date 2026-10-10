@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import MarkdownBlockModel from "../js/classes/MarkdownBlockModel.js";
-import { makeLexer } from "./helpers/samples.js";
+import { makeLexer, makeDocWithDuplicateDefs } from "./helpers/samples.js";
 
 // marked skips a reference definition whose label is already
 // defined (case-insensitive) and adds the following newline to the previous
@@ -50,6 +50,56 @@ describe("INV-41 duplicate reference definitions keep the round trip (INV-41)", 
     expect(MarkdownBlockModel.toEditableText(second.raw)).toBe("[a]: /y");
     const next = m.replaceBlock(second.id, "[a]: /z", lexer, MAX).model;
     expect(next.toBody()).toBe("[a]: /x\n[a]: /z\n");
+  });
+});
+
+describe("duplicate definitions cost about one lexing of the body (R5.1, INV-51)", () => {
+  /** A lexer that counts the characters it is given. */
+  function countingLexer() {
+    const counter = { chars: 0 };
+    const lex = (src) => {
+      counter.chars += src.length;
+      return lexer(src);
+    };
+    return { lex, counter };
+  }
+
+  it("fromBody: 20 skipped definitions spread over ~380 KB lex the body about once, not once per definition", () => {
+    const body = makeDocWithDuplicateDefs(20);
+    const { lex, counter } = countingLexer();
+    const m = MarkdownBlockModel.fromBody(body, lex, 1);
+    expect(m.toBody()).toBe(body);
+    expect(m.isWholeDocument).toBe(false);
+    expect(types(m).filter((t) => t === "def")).toHaveLength(40);
+    expect(counter.chars).toBeLessThan(body.length * 1.1);
+  });
+
+  it("replaceBlock (one commit) also lexes the body about once", () => {
+    const body = makeDocWithDuplicateDefs(20);
+    const m = model(body);
+    const para = m.getBlocks().find((b) => b.type === "paragraph" && b.raw.length > 40);
+    const { lex, counter } = countingLexer();
+    const next = m.replaceBlock(para.id, para.raw.replace(/\w+/, "Changed"), lex, MAX).model;
+    expect(next.isWholeDocument).toBe(false);
+    expect(types(next).filter((t) => t === "def")).toHaveLength(40);
+    expect(counter.chars).toBeLessThan(body.length * 1.1);
+  });
+
+  it("consecutive definitions with no blank line after them", () => {
+    const lines = Array.from({ length: 300 }, (_, i) => `[${i % 2 ? "a" : "A"}${Math.floor(i / 2)}]: /u${i}`);
+    const body = `${lines.join("\n")}\ntail paragraph\n`;
+    const m = model(body);
+    expect(m.toBody()).toBe(body);
+    expect(m.isWholeDocument).toBe(false);
+    expect(types(m).filter((t) => t === "def")).toHaveLength(300);
+  });
+
+  it("a skipped definition with a very long title still round-trips as its own block", () => {
+    const body = `[a]: /x\n\n[a]: /y\n  "${"t".repeat(9000)}"\n\ntext\n`;
+    const m = model(body);
+    expect(m.toBody()).toBe(body);
+    expect(m.isWholeDocument).toBe(false);
+    expect(types(m)).toEqual(["def", "def", "paragraph"]);
   });
 });
 

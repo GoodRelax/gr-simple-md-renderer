@@ -1,4 +1,5 @@
 import SaveDocumentAs from "./SaveDocumentAs.js";
+import { LAST_MODIFIED_UNKNOWN } from "./DocumentSession.js";
 
 /**
  * Save (UseCase, spec 5.14.7): overwrite the document's own file.
@@ -50,7 +51,7 @@ export default class SaveDocument {
       return this.saveAs.outcome(request, "failed", this.saveAs.failureMessage(error));
     }
     const baseline = request.session.baselineLastModified;
-    if (baseline !== null && onDisk !== baseline) {
+    if (baseline === LAST_MODIFIED_UNKNOWN || (baseline !== null && onDisk !== baseline)) {
       const overwrite = await request.confirmer.confirmOverwrite();
       if (!overwrite) return this.saveAs.outcome(request, "canceled", null);
     }

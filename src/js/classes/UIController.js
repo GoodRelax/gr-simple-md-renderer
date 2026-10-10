@@ -842,15 +842,21 @@ export default class UIController {
   /**
    * INV-56: an empty #editor (whitespace only) taken into a document that is
    * not empty would empty the document; ask first. Called before anything
-   * changes, so Cancel leaves #editor, the model and the unsaved mark as they
-   * were.
+   * changes. Cancel puts the document back into #editor (a value assignment:
+   * no input event, so the mark stays down) and recomputes the unsaved mark;
+   * the model, an open block editor and the save state stay as they were.
    * @returns {boolean} true to go on
    * @purity non-pure
    */
   _confirmEditorIntoDocument() {
     const isEditorBlank = this.elements.editor.value.trim() === "";
     const isDocumentBlank = this.orchestrator.getBody().trim() === "";
-    return !isEditorBlank || isDocumentBlank || window.confirm(CONFIG.messages.edit.emptyEditorConfirm);
+    if (!isEditorBlank || isDocumentBlank) return true;
+    if (window.confirm(CONFIG.messages.edit.emptyEditorConfirm)) return true;
+    this.elements.editor.value = this.orchestrator.getBody();
+    this._editorChangedSinceRender = false;
+    this._refreshDirtyMark();
+    return false;
   }
 
   /**

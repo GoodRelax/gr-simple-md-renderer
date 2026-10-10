@@ -83,38 +83,97 @@ function rawAt(body, pos, raw) {
   return null;
 }
 
+// A skipped definition ends at the next blank line at the latest (a title
+// cannot contain one). Its gap is lexed on its own from a window up to that
+// blank line; a window that would be longer than this is not used.
+const GAP_WINDOW_MAX = 4096;
+
+/**
+ * The token that fills a gap at pos: the first token of a short window of the
+ * body (up to and including the next blank line), lexed on its own, when it is
+ * a reference definition or a blank. null when there is no such window or
+ * token.
+ * @purity pure
+ * @param {string} body
+ * @param {number} pos
+ * @param {(src: string) => object[]} lexer
+ * @returns {object|null}
+ */
+function gapToken(body, pos, lexer) {
+  const blank = body.slice(pos, pos + GAP_WINDOW_MAX).indexOf("\n\n");
+  if (blank < 0 && pos + GAP_WINDOW_MAX < body.length) return null;
+  const end = blank < 0 ? body.length : pos + blank + 2;
+  const first = lexer(body.slice(pos, end))[0];
+  if (!first || (first.type !== "def" && first.type !== "space")) return null;
+  const raw = rawAt(body, pos, first.raw);
+  return raw === null ? null : { ...first, raw };
+}
+
+/**
+ * Line up the tokens of one lexing (part, lexed from start) with the body.
+ * A gap that marked left (a skipped definition, or the blank after it) is
+ * filled with gap tokens, and the tokens of part go on after it. Stops where
+ * a gap cannot be filled that way.
+ * @purity pure
+ * @param {string} body
+ * @param {number} start
+ * @param {object[]} part
+ * @param {(src: string) => object[]} lexer
+ * @returns {{tokens: object[], pos: number}}
+ */
+function alignPart(body, start, part, lexer) {
+  const tokens = [];
+  let pos = start;
+  for (const token of part) {
+    let raw = rawAt(body, pos, token.raw);
+    while (raw === null) {
+      const filler = gapToken(body, pos, lexer);
+      if (!filler) return { tokens, pos };
+      tokens.push(filler);
+      pos += filler.raw.length;
+      raw = rawAt(body, pos, token.raw);
+    }
+    tokens.push(raw === token.raw ? token : { ...token, raw });
+    pos += raw.length;
+  }
+  while (pos < body.length) {
+    const filler = gapToken(body, pos, lexer);
+    if (!filler) break;
+    tokens.push(filler);
+    pos += filler.raw.length;
+  }
+  return { tokens, pos };
+}
+
 /**
  * Top-level tokens whose raws join back to the body (INV-41), or null.
  * marked skips a reference definition whose label is already defined
- * (case-insensitive) and adds the newline after it to the previous token, so
- * the raws no longer cover the body. Where a raw stops matching, the part
- * that matches is kept and the rest of the body is lexed again on its own;
- * the skipped definition then becomes a token of its own. The first
- * definition of a label wins in links, as in one parse of the whole body.
- * A body without such a gap is lexed once.
+ * (case-insensitive) and adds the newline after it to a neighbouring token,
+ * so the raws no longer cover the body. Each such gap is lexed on its own
+ * from a short window and becomes a token of its own (one per skipped
+ * definition, as marked gives one token per definition); the tokens of the
+ * whole-body lexing go on after it, so the body is lexed about once
+ * (R5.1). Only where a gap cannot be filled that way is the rest of the body
+ * lexed again. The first definition of a label wins in links, as in one
+ * parse of the whole body.
  * @purity pure
  * @param {string} body
  * @param {(src: string) => object[]} lexer
  * @returns {{tokens: object[], links: object}|null}
  */
 function lexAligned(body, lexer) {
-  const tokens = [];
+  let tokens = [];
   const links = {};
   let pos = 0;
   while (pos < body.length) {
-    const start = pos;
     const part = lexer(body.slice(pos));
     for (const [label, link] of Object.entries(part.links || {})) {
       if (!(label in links)) links[label] = link;
     }
-    for (const token of part) {
-      const raw = rawAt(body, pos, token.raw);
-      if (raw === null) break;
-      tokens.push(raw === token.raw ? token : { ...token, raw });
-      pos += raw.length;
-      if (raw !== token.raw) break; // the tokens after this one are suspect: lex again
-    }
-    if (pos === start) return null;
+    const aligned = alignPart(body, pos, part, lexer);
+    if (aligned.pos === pos) return null;
+    tokens = tokens.concat(aligned.tokens);
+    pos = aligned.pos;
   }
   return { tokens, links };
 }

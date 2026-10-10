@@ -1737,13 +1737,14 @@
 
 | 項目 | 詳細 |
 | --- | --- |
-| **前提条件** | `edit-html.md` を D&D し、パレットを表示。`#editor` の中身をすべて選択して Delete で消した (タブのタイトルに `* ` が付く) |
-| **手順** | 1. 段落をクリックする。確認ダイアログで Cancel を押す |
-| | 2. パレットの Save を押す。確認ダイアログで Cancel を押す |
-| | 3. `#editor` に空白と改行だけを入力し、上部バーの [Render Light] を押す。確認ダイアログで Cancel を押す |
-| | 4. もう一度 [Render Light] を押し、確認ダイアログで OK を押す |
+| **前提条件** | `edit-html.md` を D&D し、パレットを表示 |
+| **手順** | 1. `#editor` の中身をすべて選択して Delete で消し (タブのタイトルに `* ` が付く)、段落をクリックする。確認ダイアログで Cancel を押す |
+| | 2. もう一度その段落をクリックする |
+| | 3. 外側をクリックしてから、`#editor` の中身をすべて消し、パレットの Save を押す。確認ダイアログで Cancel を押す |
+| | 4. `#editor` に空白と改行だけを入力し、上部バーの [Render Light] を押す。確認ダイアログで OK を押す |
 | | 5. ページを新規に読み込み、`#editor` を空のままプレビューをダブルクリックして空の文書を始め、何も入力せずに上部バーの [Render Light] を押す |
-| **期待結果** | - 1〜3 で、毎回「The top editor is empty. Replace the whole document with an empty one?」が出る。Cancel の後、プレビュー・`#editor`・タブのタイトルは押す前のまま。トースト、保存ダイアログ、権限の確認は出ない |
+| **期待結果** | - 1 と 3 で、「The top editor is empty. OK: replace the whole document with an empty one. Cancel: put the document back into the top editor.」が出る。Cancel の後、`#editor` に文書の本文が戻り、プレビューは押す前のまま、タブのタイトルの `* ` は消える (ほかに未保存の変更が無い場合)。トースト、保存ダイアログ、権限の確認は出ない |
+| | - 2 で、確認ダイアログは出ず、段落の編集欄が開く |
 | | - 4 で、プレビューは空のブロック 1 つになる (従来の動作) |
 | | - 5 で、確認ダイアログは出ない |
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import DocumentSession from "../js/classes/DocumentSession.js";
+import DocumentSession, { LAST_MODIFIED_UNKNOWN } from "../js/classes/DocumentSession.js";
 
 const WRAPPED_CRLF = "```markdown\r\n# Title\r\n\r\nLine one\r\nLine two\r\n```\r\n";
 
@@ -50,6 +50,16 @@ describe("DocumentSession (Entity, immutable value)", () => {
     expect(s.isBodyChanged("abc\n")).toBe(false);
     expect(s.isBodyChanged("abd\n")).toBe(true);
     expect(s.isBodyChanged("abc")).toBe(true);
+  });
+
+  it("withSaved with an unreadable lastModified (null) records the baseline as unknown, which is neither null nor a number (INV-39)", () => {
+    const fromFile = DocumentSession.fromFileText("a\n", false, 1000, 1).withSaved("b\n", null);
+    const fromPaste = DocumentSession.fromPastedText("a\n", 2).withSaved("b\n", null);
+    expect(fromFile.baselineLastModified).toBe(LAST_MODIFIED_UNKNOWN);
+    expect(fromPaste.baselineLastModified).toBe(LAST_MODIFIED_UNKNOWN);
+    expect(LAST_MODIFIED_UNKNOWN).not.toBeNull();
+    expect(typeof LAST_MODIFIED_UNKNOWN).not.toBe("number");
+    expect(fromFile.baselineBodyText).toBe("b\n");
   });
 
   it("AT-SES-06 withSaved returns a new value with the same document id; the old one is unchanged (R7.5)", () => {

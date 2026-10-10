@@ -75,7 +75,7 @@ export const CONFIG = {
       blockSplitFailed:
         "This document could not be split into blocks. It is edited as one block.",
       emptyEditorConfirm:
-        "The top editor is empty. Replace the whole document with an empty one?",
+        "The top editor is empty. OK: replace the whole document with an empty one. Cancel: put the document back into the top editor.",
       plantumlPending: "PlantUML diagram (not sent)",
       plantumlRenderButton: "Render",
       hiddenLinkDefinition: "link definition",

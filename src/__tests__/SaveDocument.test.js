@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import SaveDocument from "../js/classes/SaveDocument.js";
 import SaveDocumentAs from "../js/classes/SaveDocumentAs.js";
-import DocumentSession from "../js/classes/DocumentSession.js";
+import DocumentSession, { LAST_MODIFIED_UNKNOWN } from "../js/classes/DocumentSession.js";
 import DocumentLocation from "../js/classes/DocumentLocation.js";
 import { CONFIG } from "../js/config.js";
 import { fakeFileAccess, fakeFileHandle, deferred, domError } from "./helpers/fakeFs.js";
@@ -243,23 +243,47 @@ describe("SaveDocument / SaveDocumentAs (UseCase)", () => {
 });
 
 describe("the file is written but its new lastModified cannot be read (INV-39)", () => {
-  it("Save: saved, and the previous baseline is kept, so the next Save still asks", async () => {
+  it("Save: saved; the baseline is recorded as unknown (not null)", async () => {
     const { access, save } = setup({ lastModified: 1000 });
     access.writeFile = vi.fn(async () => null);
     const outcome = await save.execute(request());
     expect(outcome.status).toBe("saved");
     expect(outcome.message).toBe(M.saved("doc.md"));
-    expect(outcome.session.baselineLastModified).toBe(request().session.baselineLastModified);
+    expect(outcome.session.baselineLastModified).toBe(LAST_MODIFIED_UNKNOWN);
     expect(outcome.session.baselineLastModified).not.toBeNull();
     expect(outcome.session.isBodyChanged("# Doc changed\n")).toBe(false);
   });
 
-  it("Save as: saved, and the previous baseline is kept", async () => {
+  it.each([
+    ["a file document (baseline 1000)", () => fileSession()],
+    ["a pasted document (no baseline, null)", () => DocumentSession.fromPastedText("# Doc\n", 9)],
+  ])("Save as of %s: saved; the baseline is recorded as unknown", async (_name, makeSession) => {
     const { access, saveAs } = setup();
     access.writeFile = vi.fn(async () => null);
-    const req = request({ permissionOrPicker: Promise.resolve(fakeFileHandle({ name: "p.md" })) });
+    const req = request({ session: makeSession(), permissionOrPicker: Promise.resolve(fakeFileHandle({ name: "p.md" })) });
     const outcome = await saveAs.execute(req);
     expect(outcome.status).toBe("saved");
-    expect(outcome.session.baselineLastModified).toBe(req.session.baselineLastModified);
+    expect(outcome.session.baselineLastModified).toBe(LAST_MODIFIED_UNKNOWN);
+  });
+
+  it.each([
+    [true, "saved", 1],
+    [false, "canceled", 0],
+  ])("the next Save with an unknown baseline always asks (answer %s -> %s), even when nothing changed outside", async (answer, status, writes) => {
+    const { access, save } = setup({ lastModified: 1000 });
+    const session = DocumentSession.fromPastedText("# Doc\n", 9).withSaved("# Doc\n", null);
+    const confirmer = { confirmOverwrite: vi.fn().mockResolvedValue(answer) };
+    const outcome = await save.execute(request({ session, confirmer }));
+    expect(confirmer.confirmOverwrite).toHaveBeenCalledTimes(1);
+    expect(outcome.status).toBe(status);
+    expect(access.calls.filter((c) => c.startsWith("writeFile"))).toHaveLength(writes);
+  });
+
+  it("a known baseline that matches the file does not ask (unchanged rule)", async () => {
+    const { save } = setup({ lastModified: 1000 });
+    const confirmer = { confirmOverwrite: vi.fn().mockResolvedValue(true) };
+    const outcome = await save.execute(request({ confirmer }));
+    expect(confirmer.confirmOverwrite).not.toHaveBeenCalled();
+    expect(outcome.status).toBe("saved");
   });
 });

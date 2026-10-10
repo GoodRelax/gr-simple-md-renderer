@@ -56,6 +56,24 @@ export function makeLexer() {
 }
 
 /**
+ * sample-data-2.md repeated `units` times; after each of the first
+ * `duplicates` copies, a reference definition and a second definition of the
+ * same label (case differs), which marked skips. Deterministic.
+ * @param {number} units
+ * @param {number} [duplicates] - defaults to units
+ * @returns {string}
+ */
+export function makeDocWithDuplicateDefs(units, duplicates = units) {
+  const unit = loadSampleLf("sample-data-2.md");
+  let doc = "";
+  for (let i = 0; i < units; i++) {
+    doc += `${unit}\n`;
+    if (i < duplicates) doc += `[dup${i}]: https://example.com/a${i}\n\n[DUP${i}]: https://example.com/b${i}\n\n`;
+  }
+  return doc;
+}
+
+/**
  * sample-data-2.md (LF) repeated with one newline between copies until the
  * text is at least 1 MiB, then cut at the first blank line after 1 MiB.
  * Deterministic (test-design 7.3).

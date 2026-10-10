@@ -25,8 +25,9 @@ import { tap, keydown } from "./helpers/editDom.js";
 import { fakeFileAccess, fakeFileHandle } from "./helpers/fakeFs.js";
 
 // INV-56: taking an empty #editor (whitespace only) into a document that is
-// not empty asks first. Cancel changes nothing: not #editor, not the model,
-// not the unsaved mark. OK goes on as before.
+// not empty asks first. Cancel puts the document back into #editor and
+// changes nothing else (model, open editor, save state, file access). OK goes
+// on as before.
 
 const M = CONFIG.messages.edit;
 const DOC = "# Title\n\nHello world.\n\nSecond para.\n";
@@ -65,15 +66,13 @@ function showPalette() {
   if (!app.ui.palette.isShown()) keydown(document.body, "e");
 }
 
-/** Everything that Cancel must leave as it was. */
+/** What Cancel must leave as it was (#editor and its mark are put back). */
 function snapshot() {
   return {
-    editor: app.elements.editor.value,
     body: app.orchestrator.getBody(),
-    title: document.title,
-    dirty: app.ui._isDocumentDirty(),
-    editorChanged: app.ui._editorChangedSinceRender,
+    canUndo: app.orchestrator.canUndo(),
     saveState: app.ui._saveOperationState,
+    session: app.ui._session,
   };
 }
 
@@ -113,19 +112,35 @@ describe("INV-56 an empty #editor taken into a non-empty document asks first", (
   });
 
   describe.each(PATHS)("%s", (_name, run) => {
-    it.each([[""], [" \n\t\n"]])("Cancel (#editor %j): nothing changes, no toast, no file access", async (blank) => {
+    it.each([[""], [" \n\t\n"]])("Cancel (#editor %j): #editor gets the document back, the mark drops; nothing else changes", async (blank) => {
       await withDocument();
       typeInEditor(blank);
+      expect(document.title).toBe(CONFIG.edit.titleUnsavedPrefix + BASE_TITLE);
       const before = snapshot();
       confirmSpy.mockReturnValue(false);
       await run();
       await settle();
       expect(confirmCalls()).toHaveLength(1);
+      expect(app.elements.editor.value).toBe(DOC);
+      expect(app.ui._editorChangedSinceRender).toBe(false);
+      expect(app.ui._isDocumentDirty()).toBe(false);
+      expect(document.title).toBe(BASE_TITLE);
       expect(snapshot()).toEqual(before);
-      expect(app.orchestrator.getBody()).toBe(DOC);
       expect(app.blockEditor()).toBeNull();
       expect(showToast).not.toHaveBeenCalledWith(M.editorRenderedFirst, expect.anything());
       expect(access.calls).toEqual([]);
+    });
+
+    it("after Cancel, the same operation goes on without asking again (the way out)", async () => {
+      await withDocument();
+      typeInEditor("");
+      confirmSpy.mockReturnValue(false);
+      await run();
+      await settle();
+      await run();
+      await settle();
+      expect(confirmCalls()).toHaveLength(1);
+      expect(app.orchestrator.getBody()).not.toBe("");
     });
 
     it("OK: goes on as before; the document becomes the empty #editor", async () => {
@@ -190,14 +205,41 @@ describe("INV-56 an empty #editor taken into a non-empty document asks first", (
     expect(app.orchestrator.getBody()).toBe(DOC);
   });
 
-  it("Cancel keeps the unsaved mark as it was (the title is the same)", async () => {
+  it("Cancel recomputes the mark: a committed but unsaved change keeps the '* '", async () => {
+    await withDocument();
+    showPalette();
+    tap(app.block(isPara("Hello")).el.firstElementChild);
+    const ta = app.blockEditor();
+    ta.value = "Changed.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    tap(app.block((b) => b.type === "heading").el.firstElementChild);
+    keydown(document.body, "Escape");
+    await settle();
+    const body = app.orchestrator.getBody();
+    expect(body).toContain("Changed.");
+    typeInEditor("");
+    confirmSpy.mockReturnValue(false);
+    await app.ui.handleRender("light");
+    await settle();
+    expect(confirmCalls()).toHaveLength(1);
+    expect(app.elements.editor.value).toBe(body);
+    expect(app.ui._editorChangedSinceRender).toBe(false);
+    expect(document.title).toBe(CONFIG.edit.titleUnsavedPrefix + BASE_TITLE);
+  });
+
+  it("the restore is a value assignment: no input event, and Undo / Redo from elsewhere stays blocked (5.7 (6))", async () => {
     await withDocument();
     typeInEditor("");
-    const title = document.title;
-    expect(title).toBe(CONFIG.edit.titleUnsavedPrefix + BASE_TITLE);
+    const inputs = vi.fn();
+    app.elements.editor.addEventListener("input", inputs);
     confirmSpy.mockReturnValue(false);
     keydown(document.body, "l");
     await settle();
-    expect(document.title).toBe(title);
+    expect(inputs).not.toHaveBeenCalled();
+    document.activeElement?.blur();
+    const undo = new InputEvent("beforeinput", { inputType: "historyUndo", bubbles: true, cancelable: true });
+    app.elements.editor.dispatchEvent(undo);
+    expect(undo.defaultPrevented).toBe(true);
+    expect(app.elements.editor.value).toBe(DOC);
   });
 });

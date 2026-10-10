@@ -18,7 +18,7 @@ import ApplicationState from "../js/classes/ApplicationState.js";
 import MarkdownBlockModel from "../js/classes/MarkdownBlockModel.js";
 import BlockDiff from "../js/classes/BlockDiff.js";
 import { CONFIG } from "../js/config.js";
-import { loadSampleLf, makeLexer, makeOneMegabyteDoc } from "./helpers/samples.js";
+import { loadSampleLf, makeLexer, makeOneMegabyteDoc, makeDocWithDuplicateDefs } from "./helpers/samples.js";
 
 // Heavy setup (whole-document renders in jsdom) gets an explicit timeout so CPU
 // load cannot fail it; the global 5 s default stays.
@@ -178,6 +178,30 @@ describe.runIf(PERF)("AT-PERF-02..04 timing (GRSMD_PERF=1 only)", () => {
     const ms = performance.now() - t0;
     console.log(`AT-PERF-03 diff (ms): ${ms.toFixed(1)}`);
     expect(ms).toBeLessThan(100);
+  }, PERF_TIMEOUT_MS);
+
+  it("AT-PERF-05 1 MB with 55 duplicate definitions spread over it: commit to DOM swap, median of 5 <= commitBudgetMs", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const stack = realStack();
+    const body = makeDocWithDuplicateDefs(58, 55);
+    expect(body.length).toBeGreaterThan(1024 * 1024);
+    await stack.orchestrator.loadMarkdown(body, "light");
+    expect(stack.orchestrator.getModel().isWholeDocument).toBe(false);
+    const paras = stack.orchestrator
+      .getModel()
+      .getBlocks()
+      .filter((b) => b.type === "paragraph" && b.raw.length > 40);
+    const times = [];
+    for (let i = 0; i < 5; i++) {
+      const p = paras[Math.floor(((i + 1) * paras.length) / 6)];
+      const t0 = performance.now();
+      await stack.orchestrator.commitBlock(p.id, p.raw.replace(/\w+/, `Changed${i}`));
+      times.push(performance.now() - t0);
+    }
+    times.sort((a, b) => a - b);
+    console.log(`AT-PERF-05 times (ms): ${times.map((t) => t.toFixed(1)).join(", ")}`);
+    expect(times[2]).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
+    stack.preview.remove();
   }, PERF_TIMEOUT_MS);
 
   it("AT-PERF-04 editing a reference definition (record only, outside INV-51)", async () => {

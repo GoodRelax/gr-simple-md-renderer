@@ -83,7 +83,7 @@ export default class MarkdownFileAccess {
    * before the error is passed on, so no partial file is left open; an abort
    * that fails too does not hide that error. Once the file is written, a
    * failure to read its new lastModified gives null instead of an error: the
-   * save itself succeeded (the caller keeps the previous baseline, INV-39).
+   * save itself succeeded (the baseline becomes unknown, INV-39).
    * @purity non-pure
    * @param {object} fileHandle
    * @param {string} fileText
