@@ -130,8 +130,8 @@ describe("UIController.preprocessInput", () => {
   it("does not strip opening fence for non-markdown languages", () => {
     const ctrl = createController();
     const input = "```python\nprint('hi')\n```";
-    // The opening regex only matches `markdown`, so ```python stays.
-    // The closing regex independently strips trailing ``` regardless.
+    // Only a `markdown` opening fence counts as a wrapper, so ```python stays.
+    // Without an opening wrapper the closing ``` is kept too (spec 5.13 rule 3).
     const result = ctrl.preprocessInput(input);
     expect(result).toContain("```python");
     expect(result).toContain("print('hi')");
@@ -165,5 +165,26 @@ describe("UIController.preprocessInput", () => {
     const input = "```markdown\n# Title\n\n## Section\n\n- item 1\n- item 2\n```";
     const expected = "# Title\n\n## Section\n\n- item 1\n- item 2";
     expect(ctrl.preprocessInput(input)).toBe(expected);
+  });
+
+  it.each([
+    ["wrapper", "```markdown\n# Hello\n```"],
+    ["leading blank lines", "\n  \n````markdown\n# A\n````\n"],
+    ["code block at the end, no wrapper", "# Doc\n\n```js\nx\n```\n"],
+    ["example block first, paragraph last", "```markdown\n# ex\n```\n\ntext\n"],
+    ["empty wrapper", "```markdown\n```"],
+    ["count mismatch", "```markdown\n# A\n````"],
+    ["plain text", "plain"],
+    ["empty", ""],
+  ])("AT-WRAP-18 delegates to splitMarkdownWrapper and returns its body (%s)", async (_name, input) => {
+    const { splitMarkdownWrapper } = await import("../js/textTransforms.js");
+    const ctrl = createController();
+    expect(ctrl.preprocessInput(input)).toBe(splitMarkdownWrapper(input).body);
+  });
+
+  it("AT-WRAP-18 keeps the closing fence of a document that ends with a code block (change 00 (a))", () => {
+    const ctrl = createController();
+    const input = "# Doc\n\n```js\nx\n```";
+    expect(ctrl.preprocessInput(input)).toBe(input);
   });
 });

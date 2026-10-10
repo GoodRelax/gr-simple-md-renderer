@@ -1,5 +1,6 @@
 import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
 import { applyTheme, applySystemTheme, systemTheme } from "../utils.js";
+import { splitMarkdownWrapper } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
 
 /**
@@ -48,13 +49,12 @@ export default class UIController {
 
   /**
    * Strip an optional ```markdown fenced wrapper that AI tools sometimes add.
+   * Delegates to splitMarkdownWrapper (spec 5.13): both fences must match.
    * @param {string} rawText
    * @returns {string}
    */
   preprocessInput(rawText) {
-    return rawText
-      .replace(/^(?:\s*\n)*`{3,}markdown\s*\n/i, "")
-      .replace(/\n`{3,}\s*$/i, "");
+    return splitMarkdownWrapper(rawText).body;
   }
 
   // ---- View mode management ----
