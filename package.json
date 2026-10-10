@@ -1,6 +1,7 @@
 {
   "name": "gr-simple-md-renderer",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

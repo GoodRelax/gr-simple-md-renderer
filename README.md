@@ -2,10 +2,10 @@
 
 **GRSMD (GoodRelax Simple Markdown Renderer & Viewer)** is a privacy-first Markdown renderer and viewer that runs entirely in the browser.
 
-- Client-side Markdown, Mermaid, and syntax highlighting
-- PlantUML rendering with explicit user consent
-- No backend, no data collection
-  
+- Client-side Markdown, math (KaTeX), Mermaid, and syntax highlighting
+- PlantUML and external images only with explicit user consent
+- No backend, no data collection, no storage
+
 ---
 
 ## Why
@@ -13,32 +13,36 @@
 Many online Markdown tools send your content to remote servers without making it clear.
 This tool was built to provide a **transparent, minimal, and privacy-respecting renderer**.
 
-- Markdown and Mermaid are rendered entirely in your browser
+- Markdown, math, and Mermaid are rendered entirely in your browser
 - PlantUML is rendered only after explicit user consent
+- External images are loaded only after explicit user consent
 - No backend, no tracking, no storage
 
 ---
 
 ## Features
 
-- 100% client-side Markdown rendering
-- Auto-render on paste (Ctrl+V / Cmd+V anywhere on the page)
-- File drag-and-drop support (.md / .txt)
-- Mermaid diagram support
-- PlantUML support with explicit consent prompt
+- 100% client-side Markdown rendering (tables, task lists, fenced code)
+- Math (LaTeX) rendering with KaTeX
+- Mermaid diagrams
+- PlantUML diagrams, with a consent prompt every time before data is sent
 - Syntax highlighting for code blocks
+- Code View: drop any text file (.py, .js, .c, ...) to view it with syntax highlighting and line numbers
+- Auto-render on paste (Ctrl+V / Cmd+V anywhere on the page) or file drop
+- Reload the current file from disk (browsers with the File System Access API)
 - Dark / Light theme rendering
-- Diagram zoom (Ctrl+Scroll) and pan (drag) on PC
+- Keyboard shortcuts and smooth arrow-key scrolling
+- Diagram zoom (Ctrl+Scroll), pan (drag), and copy as SVG / PNG on PC
 - Scroll position preservation during re-rendering
-- Designed for extensibility (renderer-based architecture)
+- A single self-contained HTML file: all libraries are bundled, no CDN, works offline after loading
 
 ---
 
 ## Demo
 
-You can run this tool locally by simply opening `index.html` in your browser.
-
 🔗 **Live Demo:** https://goodrelax.github.io/gr-simple-md-renderer/
+
+To use it locally, download [`docs/index.html`](docs/index.html) and open it in your browser. No server is needed.
 
 ---
 
@@ -47,12 +51,59 @@ You can run this tool locally by simply opening `index.html` in your browser.
 1. Open the application in your browser
 2. Any of the following triggers an automatic preview:
    - Paste text anywhere on the page (Ctrl+V / Cmd+V)
-   - Drop a `.md` / `.txt` file anywhere on the page
+   - Drop a `.md` file anywhere on the page (Markdown preview)
+   - Drop any other text file (Code View)
    - Type or paste directly into the `[Paste Markdown...]` box at the top
-3. To switch themes, click **Render Light** or **Render Dark**
-4. If your Markdown contains PlantUML blocks, you will be asked for permission before they are sent to the external server
+3. Buttons and keys:
 
-No content is sent to external servers without explicit user consent.
+   | Button | Key | Action |
+   |---|---|---|
+   | Render Light | `L` | Render / switch to the light theme |
+   | Render Dark | `D` | Render / switch to the dark theme |
+   | Reload | `R` | Reload the current file from disk |
+   | New Tab | `N` | Open GRSMD in a new tab |
+   | Clear | `C` | Clear and reset |
+   | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
+
+4. If your Markdown contains PlantUML blocks or external images, you will be asked for permission before anything is sent to an external server
+
+---
+
+## Privacy & Security
+
+- **Nothing is sent without consent.** The only external requests are:
+  - PlantUML: the diagram source is sent to the official PlantUML server, after a confirmation dialog, every time it renders.
+  - External images (`![](https://...)`): shown as placeholders until you click one and confirm. The consent lasts until `[Clear]` or a new file drop.
+- **Nothing is stored.** Your content is never written to localStorage, sessionStorage, or cookies.
+- **HTML in Markdown is sanitized** with DOMPurify. Scripts and event handlers are removed. Other remote references (video, audio, CSS `url()`, `<style>`) are removed.
+- **Content-Security-Policy:** the built file only runs its own script, and network access is limited to the PlantUML server.
+
+---
+
+## Development
+
+The source lives in `src/` (multiple files). Vite and vite-plugin-singlefile build it into one file, `docs/index.html`, which GitHub Pages serves.
+
+```bash
+npm ci
+```
+
+```bash
+npm run dev
+```
+
+```bash
+npm test
+```
+
+```bash
+npm run build
+```
+
+- `src/index.html`, `src/css/`, `src/js/` — the app (ES6+ classes, one class per file in `src/js/classes/`)
+- `src/__tests__/` — unit tests (Vitest + jsdom)
+- `spec/grsmd_gen2_spec_ja.md` — the specification (Japanese)
+- `CHANGELOG.md` — notable changes and dependency versions
 
 ---
 
@@ -60,6 +111,7 @@ No content is sent to external servers without explicit user consent.
 
 - Markdown rendering is handled by a dedicated `MarkdownRenderer`
 - Diagram rendering is separated into Mermaid and PlantUML renderers
+- Code View is handled by `SourceFileRenderer`
 - A central orchestrator coordinates rendering and scroll stability
 - Privacy and UX are treated as first-class design concerns
 
@@ -74,9 +126,9 @@ MIT License
 ---
 # GR Simple MD Renderer & Viewer
 
-Mermaid・PlantUML・シンタックスハイライトに対応した、
+Mermaid・PlantUML・数式・シンタックスハイライトに対応した、
 軽量でプライバシー重視の Markdown レンダラー＆ビューワーです。
-基本的にすべてクライアントサイドで動作し、外部通信は明示的な許可がある場合のみ行われます。
+すべてクライアントサイドで動作し、外部通信は明示的な許可がある場合のみ行われます。
 
 ---
 
@@ -85,32 +137,36 @@ Mermaid・PlantUML・シンタックスハイライトに対応した、
 多くのオンライン Markdown ツールは、内容を暗黙的にサーバーへ送信します。
 本ツールは、**透明性が高く、最小構成で、プライバシーを尊重するレンダラー**を目的として作られました。
 
-- Markdown と Mermaid は完全にブラウザ内でレンダリング
+- Markdown・数式・Mermaid は完全にブラウザ内でレンダリング
 - PlantUML は明示的なユーザー同意がある場合のみ外部通信
+- 外部画像も明示的なユーザー同意がある場合のみ読み込み
 - バックエンドなし、トラッキングなし、保存なし
 
 ---
 
 ## 特徴
 
-- 100% クライアントサイド Markdown レンダリング
-- ページ上どこでも貼り付け（Ctrl+V / Cmd+V）→ 自動プレビュー
-- `.md` / `.txt` ファイルのドラッグ＆ドロップ → 自動プレビュー
+- 100% クライアントサイド Markdown レンダリング（表、タスクリスト、コードブロック）
+- KaTeX による数式（LaTeX）表示
 - Mermaid 図のサポート
-- 明示的な許可確認付き PlantUML レンダリング
-- コードブロックのシンタックスハイライト対応
-- ダーク / ライトテーマ対応
-- PC: ダイアグラムの Zoom（Ctrl+Scroll）/ Pan（ドラッグ）対応
+- PlantUML 図のサポート（送信前に毎回、許可を確認）
+- コードブロックのシンタックスハイライト
+- コードビュー: テキスト系ファイル（.py、.js、.c など）をドロップすると、ハイライトと行番号付きで表示
+- ページ上どこでも貼り付け（Ctrl+V / Cmd+V）またはファイルのドロップで自動プレビュー
+- 表示中のファイルをディスクからリロード（File System Access API 対応ブラウザ）
+- ダーク / ライトテーマ
+- キーボードショートカットと矢印キーのスムーズスクロール
+- PC: ダイアグラムの Zoom（Ctrl+Scroll）/ Pan（ドラッグ）/ SVG・PNG コピー
 - 再レンダリング時のスクロール位置保持
-- 拡張を前提とした renderer ベース設計
+- 単一の自己完結 HTML ファイル: 全ライブラリを同梱、CDN 不使用、読み込み後はオフラインでも動作
 
 ---
 
 ## デモ
 
-`index.html` をブラウザで開くだけで、そのまま利用できます。
-
 🔗 **Live Demo:** https://goodrelax.github.io/gr-simple-md-renderer/
+
+ローカルで使う場合は、[`docs/index.html`](docs/index.html) をダウンロードしてブラウザで開くだけです。サーバーは不要です。
 
 ---
 
@@ -119,10 +175,59 @@ Mermaid・PlantUML・シンタックスハイライトに対応した、
 1. ブラウザでアプリケーションを開く
 2. 以下のいずれかで自動プレビューが開始されます:
    - ページ上どこでも貼り付け（Ctrl+V / Cmd+V）
-   - `.md` / `.txt` ファイルをページ上にドロップ
+   - `.md` ファイルをページ上にドロップ（Markdown プレビュー）
+   - その他のテキスト系ファイルをドロップ（コードビュー）
    - 画面上部の `[Paste Markdown...]` に直接ペースト
-3. テーマを切り替えるには **Render Light** / **Render Dark** をクリック
-4. Markdown に PlantUML ブロックが含まれる場合、外部サーバーへ送信する前に許可確認が表示されます
+3. ボタンとキー:
+
+   | ボタン | キー | 動作 |
+   |---|---|---|
+   | Render Light | `L` | レンダリング / ライトテーマに切替 |
+   | Render Dark | `D` | レンダリング / ダークテーマに切替 |
+   | Reload | `R` | 表示中のファイルをディスクからリロード |
+   | New Tab | `N` | 新しいタブで GRSMD を開く |
+   | Clear | `C` | 初期化 |
+   | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
+
+4. Markdown に PlantUML ブロックや外部画像が含まれる場合、外部サーバーへ送信する前に許可確認が表示されます
+
+---
+
+## プライバシーとセキュリティ
+
+- **同意なしには何も送信しません。** 外部への通信は次の 2 つだけです。
+  - PlantUML: 確認ダイアログの後に、図のソースを公式 PlantUML サーバーへ送信します（描画のたびに確認）。
+  - 外部画像（`![](https://...)`）: クリックして確認するまでプレースホルダーを表示します。同意は `[Clear]` または新しいファイルのドロップまで有効です。
+- **何も保存しません。** 入力内容を localStorage・sessionStorage・Cookie に書き込みません。
+- **Markdown 内の HTML は DOMPurify でサニタイズ**します。スクリプトとイベント属性を除去し、その他の外部参照（動画・音声・CSS の `url()`・`<style>`）も除去します。
+- **Content-Security-Policy:** ビルド成果物は自身のスクリプトしか実行せず、通信先も PlantUML サーバーだけに制限しています。
+
+---
+
+## 開発
+
+ソースは `src/`（複数ファイル）にあります。Vite と vite-plugin-singlefile で 1 ファイルの `docs/index.html` にビルドし、GitHub Pages で配信します。
+
+```bash
+npm ci
+```
+
+```bash
+npm run dev
+```
+
+```bash
+npm test
+```
+
+```bash
+npm run build
+```
+
+- `src/index.html`、`src/css/`、`src/js/` — アプリ本体（ES6+ クラス。`src/js/classes/` に 1 クラス 1 ファイル）
+- `src/__tests__/` — 単体テスト（Vitest + jsdom）
+- `spec/grsmd_gen2_spec_ja.md` — 仕様書
+- `CHANGELOG.md` — 主な変更点と依存ライブラリのバージョン
 
 ---
 
@@ -130,6 +235,7 @@ Mermaid・PlantUML・シンタックスハイライトに対応した、
 
 - Markdown は専用の `MarkdownRenderer` で処理
 - 図表レンダリングは Mermaid / PlantUML で分離
+- コードビューは `SourceFileRenderer` で処理
 - 中央のオーケストレーターが描画とスクロール安定性を制御
 - プライバシーと UX を最重要設計要素として扱っています
 

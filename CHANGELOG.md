@@ -13,7 +13,59 @@ re-hash.
 
 ## [Unreleased] - 2026-10-10
 
+### Security
+
+- Sanitize all Markdown output with DOMPurify before it is inserted into the
+  DOM. marked (v18) has no built-in sanitizer, so raw HTML such as
+  `<img src=x onerror=...>` in a Markdown file used to run script as soon as
+  it was rendered. Only the MathML `<semantics>` / `<annotation>` wrappers that
+  KaTeX emits are added to the allow list; `<style>` is forbidden.
+- Gate external images behind user consent, like PlantUML. External `img`
+  `src` / `srcset` are held back and shown as click-to-load placeholders.
+  Consent is kept in memory only and is revoked by Clear or a new file drop.
+  Other remote-loading attributes (media, `poster`, `background`, CSS `url()`,
+  SVG `image` href) are always removed, and `<img>` in Mermaid labels is
+  dropped.
+- Add a Content-Security-Policy `<meta>` to the built file (build-time sha256
+  hash of the inlined script, `default-src 'none'`, `connect-src` limited to
+  the PlantUML server).
+- Escape the error message on the Markdown parse-error path, and make
+  `escapeHtml` escape single quotes.
+
+### Fixed
+
+- Code View no longer imports highlight.js from cdnjs at runtime. That static
+  import made the whole app fail to start when cdnjs was unreachable (offline,
+  blocked proxy), and it had no SRI. Code View now uses the bundled
+  highlight.js instance shared with the Markdown renderer. A build check now
+  fails the build if the output still imports code from `http(s)://` or
+  mentions `cdnjs`.
+
+### Removed
+
+- `docs/bak-index.html`, the CDN-era build kept for rollback since
+  2026-07-16. It was still publicly served on GitHub Pages, loaded libraries
+  from CDNs, and did not sanitize HTML in Markdown.
+- The commented-out eruda debug loader in `src/index.html` (an unpinned CDN
+  script that the new CSP would block anyway).
+
+### Added
+
+- `docs/sample-data-2.md` / `.txt`: a "9. Images" section with a small SVG
+  embedded as a data URI.
+- The help text now mentions math (LaTeX) support.
+
 ### Changed
+
+- Code View: files with an unknown extension, and languages that are not in the
+  highlight.js common build, are shown as plaintext. `highlightAuto` is no
+  longer used (slow on large files, unreliable guesses).
+- `package.json` declares `"type": "module"` (silences the Vite 8 config
+  loader notice), and Vitest skips agent worktrees under `.claude/`.
+- README rewritten to match the current app (math, Code View, consent for
+  external images, CSP, development steps). The pre-release test spec
+  (`spec/gen2_prerelease_test_spec_ja.md`) is updated to v2.1 with a new
+  security section.
 
 - Update bundled dependencies to the latest release within the same major
   version (plantuml-encoder unchanged at 1.4.0, already the latest):
@@ -87,6 +139,8 @@ re-hash.
   - Permanently ends the recurring jsdelivr `/+esm` SRI breakage: those bundles
     are no longer fetched at runtime, so there are no more SRI hashes to chase.
   - Zero external CDN requests; the app works fully offline after load.
+    (Correction: Code View still imported highlight.js from cdnjs until
+    2026-10-10. See the Fixed section of that entry.)
   - katex fonts are embedded as data URIs in woff2 only. All glyph coverage is
     retained; the woff/ttf fallbacks are dropped because every browser that can
     run this app supports woff2.

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { defineConfig } from "vite";
+import { configDefaults } from "vitest/config";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { CONFIG } from "./src/js/config.js";
 
@@ -70,7 +71,7 @@ export const contentSecurityPolicy = {
     for (const file of Object.values(bundle)) {
       if (file.type !== "asset" || !file.fileName.endsWith(".html")) continue;
       const html = String(file.source);
-      // Comments may hold disabled snippets (e.g. the eruda debug loader).
+      // Comments may hold disabled snippets; they never execute.
       const live = html.replace(/<!--[\s\S]*?-->/g, "");
 
       const hashes = [];
@@ -122,5 +123,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     root: ".",
+    // Agent worktrees under .claude/ hold copies of the tests; skip them.
+    exclude: [...configDefaults.exclude, ".claude/**"],
   },
 });
