@@ -1,7 +1,10 @@
 import { CONFIG } from "../config.js";
 
 export default class DiagramZoomController {
-  /** @param {HTMLElement} preview */
+  /**
+   * @param {HTMLElement} preview
+   * @purity non-pure
+   */
   constructor(preview) {
     this.preview = preview;
     this.scales = new WeakMap();
@@ -10,9 +13,11 @@ export default class DiagramZoomController {
     this.setupListeners();
   }
 
+  /** @purity non-pure */
   setupListeners() {
     this.preview.addEventListener(
       "wheel",
+      /** @purity non-pure */
       (e) => {
         if (!e.ctrlKey) return;
         const diagram = this.findDiagramAt(e.target);
@@ -23,6 +28,7 @@ export default class DiagramZoomController {
       { passive: false },
     );
 
+    /** @purity non-pure */
     this.preview.addEventListener("dblclick", (e) => {
       const diagram = this.findDiagramAt(e.target);
       if (!diagram) return;
@@ -33,6 +39,7 @@ export default class DiagramZoomController {
   /**
    * @param {EventTarget} target
    * @returns {SVGSVGElement|HTMLImageElement|HTMLElement|null}
+   * @purity semi-pure-b
    */
   findDiagramAt(target) {
     const mermaidContainer = target.closest(".mermaid");
@@ -45,6 +52,7 @@ export default class DiagramZoomController {
   /**
    * @param {Element} el
    * @param {number} direction +1 = zoom in, -1 = zoom out
+   * @purity non-pure
    */
   zoom(el, direction) {
     if (!this.baseWidths.has(el)) {
@@ -63,7 +71,10 @@ export default class DiagramZoomController {
     this.applyScale(el, next);
   }
 
-  /** @param {Element} el */
+  /**
+   * @param {Element} el
+   * @purity non-pure
+   */
   resetZoom(el) {
     if (!this.baseWidths.has(el)) return;
     this.applyScale(el, 1.0);
@@ -75,6 +86,7 @@ export default class DiagramZoomController {
   /**
    * @param {Element} el
    * @param {number} scale
+   * @purity non-pure
    */
   applyScale(el, scale) {
     if (scale === 1.0) {

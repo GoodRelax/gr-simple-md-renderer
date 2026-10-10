@@ -22,6 +22,7 @@ export default class MarkdownRenderer {
    * @param {object} hljs
    * @param {object} purify - DOMPurify (marked has no built-in sanitizer)
    * @param {ExternalImageGate} [imageGate]
+   * @purity non-pure
    */
   constructor(
     preview,
@@ -37,17 +38,24 @@ export default class MarkdownRenderer {
     // bundled DOMPurify, and our hook must not change what mermaid sees.
     this.purify = purify(window);
     this.imageGate = imageGate;
+    /** @purity non-pure */
     this.purify.addHook("afterSanitizeAttributes", (node) => {
       this.imageGate.neutralize(node);
     });
   }
 
-  /** Forget external image consent (Clear, or a new document was loaded). */
+  /**
+   * Forget external image consent (Clear, or a new document was loaded).
+   * @purity non-pure
+   */
   resetExternalImageConsent() {
     this.imageGate.revoke();
   }
 
-  /** @param {string} markdownText */
+  /**
+   * @param {string} markdownText
+   * @purity non-pure
+   */
   async render(markdownText) {
     try {
       const html = this.marked.parse(markdownText);
@@ -59,6 +67,7 @@ export default class MarkdownRenderer {
           .querySelectorAll(
             "pre code:not(.language-mermaid):not(.language-plantuml):not(.language-puml)",
           )
+          /** @purity non-pure */
           .forEach((block) => {
             this.hljs.highlightElement(block);
           });

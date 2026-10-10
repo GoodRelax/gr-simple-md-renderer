@@ -1,16 +1,21 @@
 import { CONFIG } from "../config.js";
 
 export default class DiagramCopyController {
-  /** @param {HTMLElement} preview */
+  /**
+   * @param {HTMLElement} preview
+   * @purity non-pure
+   */
   constructor(preview) {
     this.preview = preview;
     this.observer = new MutationObserver(() => this.attachBars());
     this.observer.observe(this.preview, { childList: true, subtree: true });
   }
 
+  /** @purity non-pure */
   attachBars() {
     this.preview
       .querySelectorAll(".mermaid, .plantuml-wrapper")
+      /** @purity non-pure */
       .forEach((container) => {
         const prev = container.previousElementSibling;
         if (prev && prev.classList.contains("diagram-copy-bar")) return;
@@ -18,7 +23,10 @@ export default class DiagramCopyController {
       });
   }
 
-  /** @param {HTMLElement} container */
+  /**
+   * @param {HTMLElement} container
+   * @purity non-pure
+   */
   attachBar(container) {
     const bar = document.createElement("div");
     bar.className = "diagram-copy-bar";
@@ -26,6 +34,7 @@ export default class DiagramCopyController {
     const svgBtn = document.createElement("button");
     svgBtn.className = "diagram-copy-btn";
     svgBtn.textContent = "Copy SVG";
+    /** @purity non-pure */
     svgBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       this.copyAsSvg(container, svgBtn);
@@ -34,6 +43,7 @@ export default class DiagramCopyController {
     const pngBtn = document.createElement("button");
     pngBtn.className = "diagram-copy-btn";
     pngBtn.textContent = "Copy PNG";
+    /** @purity non-pure */
     pngBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       this.copyAsPng(container, pngBtn);
@@ -47,6 +57,7 @@ export default class DiagramCopyController {
   /**
    * @param {SVGSVGElement} svg
    * @returns {SVGSVGElement}
+   * @purity semi-pure-b
    */
   inlineSvgStyles(svg) {
     const clone = svg.cloneNode(true);
@@ -57,8 +68,10 @@ export default class DiagramCopyController {
       "font-family", "font-size", "font-weight", "font-style",
       "text-anchor", "dominant-baseline", "opacity", "visibility",
     ];
+    /** @purity non-pure */
     origEls.forEach((orig, i) => {
       const s = getComputedStyle(orig);
+      /** @purity non-pure */
       props.forEach((p) => {
         const v = s.getPropertyValue(p);
         if (v) cloneEls[i].setAttribute(p, v);
@@ -70,11 +83,13 @@ export default class DiagramCopyController {
   /**
    * @param {SVGSVGElement} svgClone
    * @param {SVGSVGElement} svgOrig
+   * @purity non-pure
    */
   convertForeignObjects(svgClone, svgOrig) {
     const origFOs = [...svgOrig.querySelectorAll("foreignObject")];
     const cloneFOs = [...svgClone.querySelectorAll("foreignObject")];
 
+    /** @purity non-pure */
     origFOs.forEach((origFO, i) => {
       const cloneFO = cloneFOs[i];
       if (!cloneFO) return;
@@ -110,6 +125,7 @@ export default class DiagramCopyController {
         const totalH = (lines.length - 1) * lineH;
         textEl.setAttribute("x", String(x + w / 2));
         textEl.setAttribute("y", String(y + h / 2 - totalH / 2));
+        /** @purity non-pure */
         lines.forEach((line, j) => {
           const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
           tspan.setAttribute("x", String(x + w / 2));
@@ -126,6 +142,7 @@ export default class DiagramCopyController {
   /**
    * @param {SVGSVGElement} svg
    * @returns {SVGSVGElement}
+   * @purity semi-pure-b
    */
   prepareSvg(svg) {
     const clone = this.inlineSvgStyles(svg);
@@ -138,12 +155,17 @@ export default class DiagramCopyController {
     return clone;
   }
 
-  /** @param {HTMLButtonElement} btn @param {string} msg @param {string} reset @param {number} [ms] */
+  /**
+   * @param {HTMLButtonElement} btn @param {string} msg @param {string} reset @param {number} [ms]
+   * @purity non-pure
+   */
   showFeedback(btn, msg, reset, ms = CONFIG.ui.copyFeedbackDuration) {
     btn.textContent = msg;
+    /** @purity non-pure */
     setTimeout(() => { btn.textContent = reset; }, ms);
   }
 
+  /** @purity non-pure */
   async copyAsSvg(container, btn) {
     try {
       let blob;
@@ -166,6 +188,7 @@ export default class DiagramCopyController {
     }
   }
 
+  /** @purity non-pure */
   async copyAsPng(container, btn) {
     try {
       let pngBlob;
@@ -179,6 +202,7 @@ export default class DiagramCopyController {
         const w = parseFloat(prepared.getAttribute("width")) * scale;
         const h = parseFloat(prepared.getAttribute("height")) * scale;
         const img = new Image();
+        /** @purity non-pure */
         await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
         URL.revokeObjectURL(url);
         const canvas = document.createElement("canvas");

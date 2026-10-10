@@ -1,5 +1,8 @@
 export default class ScrollMemento {
-  /** @param {HTMLElement} container */
+  /**
+   * @param {HTMLElement} container
+   * @purity non-pure
+   */
   constructor(container) {
     this.container = container;
     this.useDocumentScroll = window.matchMedia(
@@ -7,14 +10,20 @@ export default class ScrollMemento {
     ).matches;
   }
 
-  /** @returns {number} */
+  /**
+   * @returns {number}
+   * @purity semi-pure-b
+   */
   save() {
     return this.useDocumentScroll
       ? window.scrollY
       : this.container.scrollTop;
   }
 
-  /** @param {number} pos */
+  /**
+   * @param {number} pos
+   * @purity non-pure
+   */
   restore(pos) {
     if (this.useDocumentScroll) {
       window.scrollTo(0, pos);

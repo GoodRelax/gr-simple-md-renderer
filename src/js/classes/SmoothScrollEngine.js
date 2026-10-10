@@ -7,6 +7,7 @@ export default class SmoothScrollEngine {
   /**
    * @param {object} config - CONFIG.scroll reference
    * @param {HTMLElement} [scrollTarget] - element to scroll (defaults to window)
+   * @purity non-pure
    */
   constructor(config, scrollTarget) {
     this._cfg = config;
@@ -19,7 +20,10 @@ export default class SmoothScrollEngine {
     this._loop = this._loop.bind(this);
   }
 
-  /** Call on keydown ArrowUp (-1) or ArrowDown (+1) */
+  /**
+   * Call on keydown ArrowUp (-1) or ArrowDown (+1)
+   * @purity non-pure
+   */
   startScroll(direction) {
     this._direction = direction;
     this._keyHeld = true;
@@ -30,12 +34,18 @@ export default class SmoothScrollEngine {
     }
   }
 
-  /** Call on keyup ArrowUp or ArrowDown; inertia decays naturally */
+  /**
+   * Call on keyup ArrowUp or ArrowDown; inertia decays naturally
+   * @purity non-pure
+   */
   stopScroll() {
     this._keyHeld = false;
   }
 
-  /** Cancel animation and reset state. Call on page leave or Clear. */
+  /**
+   * Cancel animation and reset state. Call on page leave or Clear.
+   * @purity non-pure
+   */
   destroy() {
     if (this._rafId) cancelAnimationFrame(this._rafId);
     this._rafId = null;
@@ -44,12 +54,16 @@ export default class SmoothScrollEngine {
     this._setScrolling(false);
   }
 
-  /** Add/remove .scrolling class on scrollTarget to suppress hover flicker */
+  /**
+   * Add/remove .scrolling class on scrollTarget to suppress hover flicker
+   * @purity non-pure
+   */
   _setScrolling(active) {
     if (!this._scrollTarget) return;
     this._scrollTarget.classList.toggle("scrolling", active);
   }
 
+  /** @purity non-pure */
   _loop(ts) {
     if (this._lastTs !== null) {
       const dt = Math.min(ts - this._lastTs, 50); // cap at 50ms (FR-09)

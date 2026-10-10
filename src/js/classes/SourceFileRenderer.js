@@ -11,6 +11,7 @@ export default class SourceFileRenderer {
    * @param {object} config  - global CONFIG object
    * @param {HTMLElement} previewEl - #preview element
    * @param {object} hljs - bundled highlight.js instance (shared with MarkdownRenderer)
+   * @purity non-pure
    */
   constructor(config, previewEl, hljs) {
     this._cfg = config;
@@ -27,6 +28,7 @@ export default class SourceFileRenderer {
    * @param {FileSystemFileHandle|null} fileHandle
    * @param {'light'|'dark'} theme
    * @returns {Promise<CodeViewMeta>}
+   * @purity non-pure
    */
   async render(file, fileHandle, theme) {
     this._fileHandle = fileHandle;
@@ -52,6 +54,7 @@ export default class SourceFileRenderer {
    * Shows a toast if fileHandle is unavailable.
    * @param {'light'|'dark'} theme
    * @returns {Promise<CodeViewMeta|null>} null if fileHandle is unavailable
+   * @purity non-pure
    */
   async reload(theme) {
     if (!this._fileHandle) {
@@ -80,6 +83,7 @@ export default class SourceFileRenderer {
 
   /**
    * Clean up: clear previewEl, reset state.
+   * @purity non-pure
    */
   destroy() {
     this._previewEl.innerHTML = "";
@@ -95,6 +99,7 @@ export default class SourceFileRenderer {
    * @param {string} text
    * @param {File} file
    * @returns {{ html: string, lineCount: number, language: string }}
+   * @purity semi-pure-a
    */
   _buildCodeBody(text, file) {
     const fileName = file.name;
@@ -140,6 +145,7 @@ export default class SourceFileRenderer {
    * reopening <span> tags at each line boundary so line wrapping is valid.
    * @param {string} html
    * @returns {string[]}
+   * @purity pure
    */
   _splitHighlightedLines(html) {
     const rawLines = html.split("\n");
@@ -173,6 +179,7 @@ export default class SourceFileRenderer {
   /**
    * Apply theme to body and code view background.
    * @param {'light'|'dark'} theme
+   * @purity non-pure
    */
   _applyCodeTheme(theme) {
     applyTheme(theme);

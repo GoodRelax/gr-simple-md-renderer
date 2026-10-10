@@ -5,6 +5,7 @@ export default class MermaidRenderer extends DiagramRenderer {
   /**
    * @param {HTMLElement} preview
    * @param {object} mermaid
+   * @purity non-pure
    */
   constructor(preview, mermaid) {
     super();
@@ -12,7 +13,10 @@ export default class MermaidRenderer extends DiagramRenderer {
     this.mermaid = mermaid;
   }
 
-  /** @param {string} theme @param {boolean} [_skipRendering=false] */
+  /**
+   * @param {string} theme @param {boolean} [_skipRendering=false]
+   * @purity non-pure
+   */
   async render(theme, _skipRendering = false) {
     try {
       const blocks = this.preview.querySelectorAll(
@@ -28,7 +32,10 @@ export default class MermaidRenderer extends DiagramRenderer {
     }
   }
 
-  /** @param {string} theme */
+  /**
+   * @param {string} theme
+   * @purity non-pure
+   */
   initializeMermaid(theme) {
     this.mermaid.initialize({
       startOnLoad: false,
@@ -51,6 +58,7 @@ export default class MermaidRenderer extends DiagramRenderer {
     });
   }
 
+  /** @purity non-pure */
   async renderMermaid() {
     try {
       await this.mermaid.run({
@@ -64,6 +72,7 @@ export default class MermaidRenderer extends DiagramRenderer {
   /**
    * @param {HTMLElement} block
    * @returns {HTMLElement}
+   * @purity non-pure
    */
   convertCodeBlockToContainer(block) {
     const container = document.createElement("div");

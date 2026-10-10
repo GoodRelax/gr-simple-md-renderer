@@ -6,6 +6,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   /**
    * @param {HTMLElement} preview
    * @param {object} plantumlEncoder
+   * @purity non-pure
    */
   constructor(preview, plantumlEncoder) {
     super();
@@ -13,7 +14,10 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     this.encoder = plantumlEncoder;
   }
 
-  /** @param {string} theme */
+  /**
+   * @param {string} theme
+   * @purity non-pure
+   */
   async render(theme) {
     try {
       const blocks = this.preview.querySelectorAll(
@@ -35,6 +39,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
       );
 
       if (!permitted) {
+        /** @purity non-pure */
         blocks.forEach((block) => {
           const errorDiv = this.createErrorElement(
             CONFIG.messages.plantuml.canceled,
@@ -45,6 +50,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
       }
 
       const promises = [];
+      /** @purity non-pure */
       blocks.forEach((block) => {
         const promise = this.renderSingleBlock(block, theme);
         if (promise) promises.push(promise);
@@ -59,6 +65,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * @param {HTMLElement} block
    * @param {string} theme
    * @returns {Promise<boolean>|null}
+   * @purity non-pure
    */
   renderSingleBlock(block, theme) {
     try {
@@ -81,6 +88,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * @param {string} code
    * @param {string} theme
    * @returns {string}
+   * @purity semi-pure-a
    */
   applyTheme(code, theme) {
     if (theme === "dark" && !code.includes("!theme")) {
@@ -95,6 +103,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   /**
    * @param {string} code
    * @returns {HTMLImageElement}
+   * @purity non-pure
    */
   createImage(code) {
     const encoded = this.encoder.encode(code);
@@ -110,6 +119,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   /**
    * @param {HTMLImageElement} img
    * @returns {HTMLDivElement}
+   * @purity non-pure
    */
   createWrapper(img) {
     const wrapper = document.createElement("div");
@@ -122,9 +132,12 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * @param {HTMLImageElement} img
    * @param {number} timeout ms
    * @returns {Promise<boolean>}
+   * @purity non-pure
    */
   async waitForImageLoad(img, timeout) {
+    /** @purity non-pure */
     return new Promise((resolve) => {
+      /** @purity non-pure */
       const timer = setTimeout(() => {
         const errorDiv = this.createErrorElement(
           CONFIG.messages.plantuml.timeout(timeout / 1000),
@@ -133,11 +146,13 @@ export default class PlantUMLRenderer extends DiagramRenderer {
         resolve(false);
       }, timeout);
 
+      /** @purity non-pure */
       img.onload = () => {
         clearTimeout(timer);
         resolve(true);
       };
 
+      /** @purity non-pure */
       img.onerror = () => {
         clearTimeout(timer);
         const errorDiv = this.createErrorElement(
@@ -152,6 +167,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   /**
    * @param {string} message
    * @returns {HTMLDivElement}
+   * @purity semi-pure-a
    */
   createErrorElement(message) {
     const div = document.createElement("div");

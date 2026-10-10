@@ -1,14 +1,19 @@
 import { CONFIG } from "../config.js";
 
 export default class DiagramPanController {
-  /** @param {HTMLElement} preview */
+  /**
+   * @param {HTMLElement} preview
+   * @purity non-pure
+   */
   constructor(preview) {
     this.preview = preview;
     this.panState = null;
     this.setupListeners();
   }
 
+  /** @purity non-pure */
   setupListeners() {
+    /** @purity non-pure */
     this.preview.addEventListener("mousedown", (e) => {
       if (e.button !== 0) return;
       const container = this.findScrollContainerAt(e.target);
@@ -24,6 +29,7 @@ export default class DiagramPanController {
       };
     });
 
+    /** @purity non-pure */
     document.addEventListener("mousemove", (e) => {
       const s = this.panState;
       if (!s) return;
@@ -47,6 +53,7 @@ export default class DiagramPanController {
       s.lastY = e.clientY;
     });
 
+    /** @purity non-pure */
     document.addEventListener("mouseup", () => {
       if (!this.panState) return;
       if (this.panState.active) {
@@ -59,6 +66,7 @@ export default class DiagramPanController {
   /**
    * @param {HTMLElement} container
    * @param {boolean} active
+   * @purity non-pure
    */
   setCursor(container, active) {
     const cursor = active ? "grabbing" : "";
@@ -69,6 +77,7 @@ export default class DiagramPanController {
   /**
    * @param {EventTarget} target
    * @returns {HTMLElement|null}
+   * @purity semi-pure-b
    */
   findScrollContainerAt(target) {
     return (

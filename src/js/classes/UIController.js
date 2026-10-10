@@ -15,6 +15,7 @@ export default class UIController {
    * @param {ApplicationState} state
    * @param {object} elements
    * @param {SmoothScrollEngine} scrollEngine
+   * @purity non-pure
    */
   constructor(orchestrator, state, elements, scrollEngine) {
     this.orchestrator = orchestrator;
@@ -34,6 +35,7 @@ export default class UIController {
     this.setViewMode("initial");
   }
 
+  /** @purity non-pure */
   setupEventListeners() {
     this.setupRenderButtons();
     this.setupUtilityButtons();
@@ -52,6 +54,7 @@ export default class UIController {
    * Delegates to splitMarkdownWrapper (spec 5.13): both fences must match.
    * @param {string} rawText
    * @returns {string}
+   * @purity pure
    */
   preprocessInput(rawText) {
     return splitMarkdownWrapper(rawText).body;
@@ -63,6 +66,7 @@ export default class UIController {
    * Set the application view mode and update UI chrome accordingly.
    * @param {'initial'|'markdown'|'code'} mode
    * @param {CodeViewMeta} [metadata] - required when mode is 'code'
+   * @purity non-pure
    */
   setViewMode(mode, metadata) {
     // Set body class: view-initial / view-markdown / view-code
@@ -102,6 +106,7 @@ export default class UIController {
    * Show keyboard shortcut hints in #keyHint, then dismiss on
    * timeout (5s), keydown, scroll, or click.
    * @param {'initial'|'markdown'|'code'} mode
+   * @purity non-pure
    */
   showKeyHint(mode) {
     const hint = this.elements.keyHint;
@@ -118,6 +123,7 @@ export default class UIController {
     hint.style.opacity = "1";
     hint.style.display = "block";
 
+    /** @purity non-pure */
     const dismiss = () => {
       hint.style.opacity = "0";
       this._clearKeyHintDismiss();
@@ -134,6 +140,7 @@ export default class UIController {
 
   /**
    * Remove all keyHint dismissal listeners and clear timer.
+   * @purity non-pure
    */
   _clearKeyHintDismiss() {
     clearTimeout(this._keyHintTimer);
@@ -150,6 +157,7 @@ export default class UIController {
    * Format CodeViewMeta into a display string for #fileInfo.
    * @param {CodeViewMeta} metadata
    * @returns {string}
+   * @purity semi-pure-a
    */
   _formatFileInfo(metadata) {
     if (!metadata) return "";
@@ -164,6 +172,7 @@ export default class UIController {
   /**
    * Show affordance text in #preview. Called during initialization
    * and on clear to display the initial state hint.
+   * @purity non-pure
    */
   _showAffordance() {
     let el = this.elements.preview.querySelector("#affordanceText");
@@ -190,11 +199,13 @@ export default class UIController {
    * FS-16: Touch paste assist.
    * In pre-render state with empty editor, touching/clicking #preview
    * focuses the editor so the user can long-press to paste on iOS.
+   * @purity non-pure
    */
   setupTouchPasteAssist() {
     const preview = this.elements.preview;
     const editor = this.elements.editor;
 
+    /** @purity non-pure */
     preview.addEventListener("click", (e) => {
       if (!this.orchestrator.isPreRenderState()) return;
       if (editor.value.trim() !== "") return;
@@ -202,22 +213,29 @@ export default class UIController {
     });
   }
 
+  /** @purity non-pure */
   setupRenderButtons() {
+    /** @purity non-pure */
     this.elements.renderLightBtn.addEventListener("click", async () => {
       await this.handleRender("light");
     });
+    /** @purity non-pure */
     this.elements.renderDarkBtn.addEventListener("click", async () => {
       await this.handleRender("dark");
     });
   }
 
+  /** @purity non-pure */
   setupUtilityButtons() {
+    /** @purity non-pure */
     this.elements.reloadBtn.addEventListener("click", async () => {
       await this.handleReload();
     });
+    /** @purity non-pure */
     this.elements.newTabBtn.addEventListener("click", () => {
       window.open(window.location.href, "_blank");
     });
+    /** @purity non-pure */
     this.elements.clearBtn.addEventListener("click", () => {
       this.doClear();
     });
@@ -229,6 +247,7 @@ export default class UIController {
    * - Markdown view: re-render markdown with the new theme.
    * - Initial state with editor content: first render via loadMarkdown.
    * @param {'light'|'dark'} theme
+   * @purity non-pure
    */
   async handleRender(theme) {
     if (this.orchestrator.isCodeViewActive()) {
@@ -257,6 +276,7 @@ export default class UIController {
    * - Code view: reload via sourceFileRenderer.
    * - Markdown view: read file, preprocessInput, then loadMarkdown.
    * - Initial state: no-op.
+   * @purity non-pure
    */
   async handleReload() {
     if (this.orchestrator.isPreRenderState()) return;
@@ -278,6 +298,7 @@ export default class UIController {
   /**
    * Full clear: destroy view, clear editor, restore system theme,
    * set view mode to initial.
+   * @purity non-pure
    */
   doClear() {
     this.scrollEngine.destroy();
@@ -293,13 +314,16 @@ export default class UIController {
    * Routes by extension: .md -> Markdown Preview, all others -> Code View.
    * Follows CON-01: getAsFileSystemHandle() must be called synchronously
    * before the first await.
+   * @purity non-pure
    */
   setupFileDrop() {
+    /** @purity non-pure */
     document.addEventListener("dragover", (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
     });
 
+    /** @purity non-pure */
     document.addEventListener("drop", async (e) => {
       e.preventDefault();
 
@@ -374,8 +398,10 @@ export default class UIController {
 
   /**
    * Global paste handler: auto-render when in initial state and editor is empty.
+   * @purity non-pure
    */
   setupAutoRenderOnPaste() {
+    /** @purity non-pure */
     document.addEventListener("paste", async (e) => {
       const target = e.target;
       const isOtherInput =
@@ -403,8 +429,10 @@ export default class UIController {
    * l / d: render or reload with theme.
    * n: new tab.
    * c: clear.
+   * @purity non-pure
    */
   setupKeyboard() {
+    /** @purity non-pure */
     document.addEventListener("keydown", (e) => {
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
@@ -439,12 +467,14 @@ export default class UIController {
       }
     });
 
+    /** @purity non-pure */
     document.addEventListener("keyup", (e) => {
       if (e.key === "ArrowUp" || e.key === "ArrowDown")
         this.scrollEngine.stopScroll();
     });
   }
 
+  /** @purity non-pure */
   setupHelpButton() {
     this.elements.helpBtn.addEventListener("mousedown", (e) =>
       this.startPress(e),
@@ -459,6 +489,7 @@ export default class UIController {
     this.elements.helpBtn.addEventListener("touchstart", (e) =>
       this.startPress(e),
     );
+    /** @purity non-pure */
     this.elements.helpBtn.addEventListener("touchend", (e) => {
       this.cancelPress();
       if (!this.isLongPress) {
@@ -472,7 +503,9 @@ export default class UIController {
     );
   }
 
+  /** @purity non-pure */
   setupPromptButton() {
+    /** @purity non-pure */
     this.elements.copyPromptBtn.addEventListener("click", async () => {
       const text = this.elements.promptText.value;
       if (navigator.clipboard) {
@@ -502,6 +535,7 @@ export default class UIController {
     });
   }
 
+  /** @purity non-pure */
   setupModals() {
     const helpCloseBtn =
       this.elements.helpModal.querySelector(".close-btn");
@@ -513,6 +547,7 @@ export default class UIController {
     ]);
   }
 
+  /** @purity non-pure */
   setupPromptText() {
     const COPY_PAYLOAD = `
 ## Output Format
@@ -568,21 +603,29 @@ export default class UIController {
     this.elements.promptText.value = COPY_PAYLOAD;
   }
 
-  /** @param {Event} e */
+  /**
+   * @param {Event} e
+   * @purity non-pure
+   */
   startPress(e) {
     if (e.type === "mousedown" && e.button !== 0) return;
     this.isLongPress = false;
+    /** @purity non-pure */
     this.longPressTimer = setTimeout(() => {
       this.isLongPress = true;
       ModalController.show(this.elements.promptModal);
     }, CONFIG.ui.longPressDuration);
   }
 
+  /** @purity non-pure */
   cancelPress() {
     clearTimeout(this.longPressTimer);
   }
 
-  /** @param {Event} e */
+  /**
+   * @param {Event} e
+   * @purity non-pure
+   */
   handleHelpClick(e) {
     if (this.isLongPress) {
       e.preventDefault();
@@ -593,9 +636,11 @@ export default class UIController {
     ModalController.show(this.elements.helpModal);
   }
 
+  /** @purity non-pure */
   showCopySuccess() {
     const original = this.elements.copyPromptBtn.textContent;
     this.elements.copyPromptBtn.textContent = "Copied!";
+    /** @purity non-pure */
     setTimeout(() => {
       this.elements.copyPromptBtn.textContent = original;
       ModalController.hide(this.elements.promptModal);

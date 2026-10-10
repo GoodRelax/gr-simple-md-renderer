@@ -15,6 +15,7 @@ export default class RendererOrchestrator {
    * @param {ScrollMemento} scrollManager
    * @param {HTMLElement} preview
    * @param {SourceFileRenderer} sourceFileRenderer
+   * @purity non-pure
    */
   constructor(
     state,
@@ -38,12 +39,18 @@ export default class RendererOrchestrator {
 
   // ---- State queries (CQS: pure queries, no side effects) ----
 
-  /** @returns {boolean} */
+  /**
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
   isPreRenderState() {
     return this._viewState === "initial";
   }
 
-  /** @returns {boolean} */
+  /**
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
   isCodeViewActive() {
     return this._viewState === "code";
   }
@@ -55,6 +62,7 @@ export default class RendererOrchestrator {
    * @param {string} text - raw markdown text
    * @param {string} theme - 'light' | 'dark'
    * @param {FileSystemFileHandle|null} [fileHandle] - for reload support
+   * @purity non-pure
    */
   async loadMarkdown(text, theme, fileHandle = undefined) {
     if (fileHandle !== undefined) {
@@ -77,6 +85,7 @@ export default class RendererOrchestrator {
    * @param {File} file
    * @param {FileSystemFileHandle|null} fileHandle
    * @returns {Promise<CodeViewMeta>}
+   * @purity non-pure
    */
   async renderCodeView(file, fileHandle) {
     this._viewState = "code";
@@ -94,6 +103,7 @@ export default class RendererOrchestrator {
    * Destroy code/markdown view and return to initial state.
    * Caller is responsible for clearing the editor textarea,
    * restoring the system theme, and calling setViewMode('initial').
+   * @purity non-pure
    */
   clear() {
     this._viewState = "initial";
@@ -106,6 +116,7 @@ export default class RendererOrchestrator {
    * Facade: re-render markdown with a new theme (Sect 5.8).
    * Called by UIController.handleRender() for markdown view.
    * @param {'light'|'dark'} theme
+   * @purity non-pure
    */
   async reRender(theme) {
     this.state.setTheme(theme);
@@ -121,6 +132,7 @@ export default class RendererOrchestrator {
    * Returns CodeViewMeta for UIController to update #fileInfo.
    * @param {'light'|'dark'} theme
    * @returns {Promise<CodeViewMeta|null>}
+   * @purity non-pure
    */
   async reloadCodeView(theme) {
     return await this.sourceFileRenderer.reload(theme);
@@ -131,6 +143,7 @@ export default class RendererOrchestrator {
    * Returns raw text string, or null if unavailable (with toast).
    * Caller (UIController) is responsible for preprocessInput and loadMarkdown.
    * @returns {Promise<string|null>}
+   * @purity non-pure
    */
   async readMarkdownFile() {
     if (!this._mdFileHandle) {
@@ -147,6 +160,7 @@ export default class RendererOrchestrator {
   /**
    * Full markdown rendering pipeline: Markdown -> Mermaid -> PlantUML.
    * Uses state.markdownText and state.currentTheme.
+   * @purity non-pure
    */
   async renderAll() {
     try {

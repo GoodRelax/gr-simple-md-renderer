@@ -8,6 +8,7 @@ import { CONFIG } from "./config.js";
  * Escape HTML special characters to prevent injection in innerHTML.
  * @param {string} str
  * @returns {string}
+ * @purity pure
  */
 export function escapeHtml(str) {
   return str
@@ -22,6 +23,7 @@ export function escapeHtml(str) {
  * Format a timestamp (milliseconds since epoch) as 'YYYY-MM-DD HH:MM:SS'.
  * @param {number} ms
  * @returns {string}
+ * @purity semi-pure-a
  */
 export function formatDateTime(ms) {
   const d = new Date(ms);
@@ -36,6 +38,7 @@ export function formatDateTime(ms) {
  * Format a Date object as 'HH:MM:SS'.
  * @param {Date} date
  * @returns {string}
+ * @purity semi-pure-a
  */
 export function formatTime(date) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -46,6 +49,7 @@ export function formatTime(date) {
  * Show a transient toast message at the top-center of the viewport.
  * @param {string} msg
  * @param {number} durationMs
+ * @purity non-pure
  */
 export function showToast(msg, durationMs) {
   const container = document.getElementById("toastContainer");
@@ -60,6 +64,7 @@ export function showToast(msg, durationMs) {
 /**
  * Apply or remove the 'dark' class on document.body.
  * @param {'light'|'dark'} theme
+ * @purity non-pure
  */
 export function applyTheme(theme) {
   if (theme === "dark") {
@@ -72,6 +77,7 @@ export function applyTheme(theme) {
 /**
  * Read OS/browser color-scheme preference and apply it.
  * @returns {'light'|'dark'}
+ * @purity semi-pure-b
  */
 export function systemTheme() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -81,6 +87,7 @@ export function systemTheme() {
 
 /**
  * Apply the OS/browser color-scheme preference.
+ * @purity non-pure
  */
 export function applySystemTheme() {
   applyTheme(systemTheme());
@@ -91,23 +98,28 @@ export function applySystemTheme() {
  * @param {HTMLElement} element
  * @param {number} timeout
  * @returns {Promise<boolean>}
+ * @purity non-pure
  */
 export async function waitForDOMStability(
   element,
   timeout = CONFIG.rendering.stabilityTimeout,
 ) {
+  /** @purity non-pure */
   return new Promise((resolve) => {
     let resizeTimer;
     let timeoutTimer;
 
+    /** @purity non-pure */
     const resizeObserver = new ResizeObserver(() => {
       clearTimeout(resizeTimer);
+      /** @purity non-pure */
       resizeTimer = setTimeout(() => {
         cleanup();
         resolve(true);
       }, CONFIG.rendering.stabilityDebounce);
     });
 
+    /** @purity non-pure */
     const cleanup = () => {
       resizeObserver.disconnect();
       clearTimeout(resizeTimer);
@@ -116,6 +128,7 @@ export async function waitForDOMStability(
 
     resizeObserver.observe(element);
 
+    /** @purity non-pure */
     timeoutTimer = setTimeout(() => {
       cleanup();
       console.warn(
@@ -132,6 +145,7 @@ export async function waitForDOMStability(
  * Replace a code block element (and its pre parent if present) with newElement.
  * @param {HTMLElement} block
  * @param {HTMLElement} newElement
+ * @purity non-pure
  */
 export function replaceCodeBlock(block, newElement) {
   const pre = block.parentElement;
