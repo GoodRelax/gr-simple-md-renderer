@@ -188,8 +188,8 @@
               Click outside the block to apply the change; <code>Esc</code>
               cancels it. Only the changed blocks are rendered again.
               <code>Undo</code> reverts the last applied change.
-              After GRSMD rewrites the top editor, <code>Ctrl+Z</code> there works
-              only for what you type next.
+              After GRSMD rewrites the top editor, <code>Ctrl+Z</code> there does
+              nothing until you type; after you type, it may also undo older edits.
             </li>
             <li>
               Palette: Bold, Italic, Undo, Save, Save as, Insert table / row /
@@ -327,7 +327,7 @@
               初期画面で <code>[Edit]</code>、ダブルクリック、ダブルタップのいずれかで、空の文書を新しく始めます。
             </li>
             <li>
-              ブロックの外をクリックすると反映、<code>Esc</code> で取り消し。変わったブロックだけを描き直します。<code>Undo</code> で直前の反映を戻せます。GRSMD が上の入力欄を書き換えた後は、その欄の <code>Ctrl+Z</code> は、その後に入力した分だけを戻します。
+              ブロックの外をクリックすると反映、<code>Esc</code> で取り消し。変わったブロックだけを描き直します。<code>Undo</code> で直前の反映を戻せます。GRSMD が上部の入力欄を書き換えた後は、そこで入力するまで <code>Ctrl+Z</code> は何もしません。入力した後は、それより前の編集まで戻ることがあります。
             </li>
             <li>
               パレット: 太字、斜体、Undo、Save、Save as、表・行・列の挿入、Mermaid の雛形。ブロックから <code>Tab</code> でパレットへ移れます。グリップをドラッグする（またはボタンを押したまま外へずらす）とパレットが動きます。
