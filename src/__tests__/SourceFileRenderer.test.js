@@ -1,28 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 describe("SourceFileRenderer", () => {
   let SourceFileRenderer;
   let showToastMock;
+  let hljsMock;
 
   beforeEach(async () => {
     vi.resetModules();
 
     showToastMock = vi.fn();
 
-    // Mock hljs CDN import
-    vi.doMock(
-      "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js",
-      () => ({
-        default: {
-          highlight: vi.fn((text, opts) => ({
-            value: `<span class="hljs-keyword">${text}</span>`,
-          })),
-          highlightAuto: vi.fn((text) => ({
-            value: `<span class="hljs-auto">${text}</span>`,
-          })),
-        },
-      }),
-    );
+    // Injected hljs stub: only "python" is "bundled"
+    hljsMock = {
+      getLanguage: vi.fn((lang) => (lang === "python" ? {} : undefined)),
+      highlight: vi.fn((text, opts) => ({
+        value: `<span class="hljs-keyword">${text}</span>`,
+      })),
+      highlightAuto: vi.fn((text) => ({
+        value: `<span class="hljs-auto">${text}</span>`,
+      })),
+    };
 
     // Mock utils.js
     vi.doMock("../js/utils.js", () => ({
@@ -52,7 +51,11 @@ describe("SourceFileRenderer", () => {
       },
     };
     const previewEl = document.createElement("div");
-    return { renderer: new SourceFileRenderer(config, previewEl), previewEl, config };
+    return {
+      renderer: new SourceFileRenderer(config, previewEl, hljsMock),
+      previewEl,
+      config,
+    };
   }
 
   describe("constructor", () => {
@@ -64,6 +67,11 @@ describe("SourceFileRenderer", () => {
     it("stores previewEl reference", () => {
       const { renderer, previewEl } = createRenderer();
       expect(renderer._previewEl).toBe(previewEl);
+    });
+
+    it("stores injected hljs reference", () => {
+      const { renderer } = createRenderer();
+      expect(renderer._hljs).toBe(hljsMock);
     });
 
     it("initializes _fileHandle to null", () => {
@@ -109,6 +117,50 @@ describe("SourceFileRenderer", () => {
       renderer._lastScrollTop = 500;
       renderer.destroy();
       expect(renderer._lastScrollTop).toBe(0);
+    });
+  });
+
+  describe("_buildCodeBody()", () => {
+    it("highlights a bundled language", () => {
+      const { renderer } = createRenderer();
+      const result = renderer._buildCodeBody("x = 1", { name: "a.py" });
+      expect(hljsMock.highlight).toHaveBeenCalledWith("x = 1", {
+        language: "python",
+      });
+      expect(result.language).toBe("python");
+      expect(result.html).toContain("hljs-keyword");
+    });
+
+    it("shows unknown extension as plaintext without highlightAuto", () => {
+      const { renderer } = createRenderer();
+      const result = renderer._buildCodeBody("<b>", { name: "a.unknownext" });
+      expect(hljsMock.highlightAuto).not.toHaveBeenCalled();
+      expect(hljsMock.highlight).not.toHaveBeenCalled();
+      expect(result.language).toBe("plaintext");
+      expect(result.html).toContain("&lt;b&gt;");
+    });
+
+    it("shows a registered language missing from the bundle as plaintext", () => {
+      const { renderer } = createRenderer();
+      // .ps1 maps to "powershell", which the stub does not provide
+      const result = renderer._buildCodeBody("<b>", { name: "a.ps1" });
+      expect(hljsMock.getLanguage).toHaveBeenCalled();
+      expect(hljsMock.highlight).not.toHaveBeenCalled();
+      expect(hljsMock.highlightAuto).not.toHaveBeenCalled();
+      expect(result.language).toBe("plaintext");
+      expect(result.html).toContain("&lt;b&gt;");
+    });
+  });
+
+  describe("source guard", () => {
+    it("has no external https:// import", () => {
+      // Vitest root is the project root (vite.config.js test.root)
+      const src = readFileSync(
+        resolve(process.cwd(), "src/js/classes/SourceFileRenderer.js"),
+        "utf-8",
+      );
+      expect(src).not.toMatch(/import[^;]*from\s*["']https:\/\//);
+      expect(src).not.toContain("cdnjs");
     });
   });
 

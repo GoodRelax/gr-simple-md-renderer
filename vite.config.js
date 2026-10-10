@@ -14,6 +14,23 @@ const katexWoff2Only = {
   },
 };
 
+// Fail the build if the output still imports code from the network. All
+// libraries must be bundled; a leftover CDN import would make the app depend
+// on that host to start. Listed after viteSingleFile so it sees the final HTML.
+const noExternalImports = {
+  name: "no-external-imports",
+  generateBundle(_options, bundle) {
+    const remoteImport =
+      /\bimport\b[^;]*?\bfrom\s*["']https?:\/\/|\bimport\s*\(\s*["']https?:\/\//;
+    for (const file of Object.values(bundle)) {
+      const code = file.type === "chunk" ? file.code : String(file.source);
+      if (remoteImport.test(code) || code.includes("cdnjs")) {
+        this.error(`External import or "cdnjs" found in ${file.fileName}`);
+      }
+    }
+  },
+};
+
 export default defineConfig({
   root: "src",
   build: {
@@ -28,7 +45,7 @@ export default defineConfig({
       plugins: [katexWoff2Only],
     },
   },
-  plugins: [viteSingleFile()],
+  plugins: [viteSingleFile(), noExternalImports],
   test: {
     environment: "jsdom",
     root: ".",

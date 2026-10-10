@@ -1,4 +1,3 @@
-import hljs from "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/es/highlight.min.js";
 import { EXT_TO_HLJS } from "../config.js";
 import { escapeHtml, formatDateTime, applyTheme, showToast } from "../utils.js";
 
@@ -11,10 +10,12 @@ export default class SourceFileRenderer {
   /**
    * @param {object} config  - global CONFIG object
    * @param {HTMLElement} previewEl - #preview element
+   * @param {object} hljs - bundled highlight.js instance (shared with MarkdownRenderer)
    */
-  constructor(config, previewEl) {
+  constructor(config, previewEl, hljs) {
     this._cfg = config;
     this._previewEl = previewEl;
+    this._hljs = hljs;
     this._fileHandle = null;
     this._fileName = "";
     this._lastScrollTop = 0;
@@ -102,21 +103,20 @@ export default class SourceFileRenderer {
     const ext = fileName.includes(".")
       ? fileName.slice(fileName.lastIndexOf(".")).toLowerCase()
       : "";
-    const lang = EXT_TO_HLJS[ext] ?? EXT_TO_HLJS[fileName] ?? null;
+    const mapped = EXT_TO_HLJS[ext] ?? EXT_TO_HLJS[fileName] ?? null;
 
-    // Syntax highlight
+    // Highlight only languages present in the bundle. Unknown extensions and
+    // languages missing from the bundle are shown as plaintext (no
+    // highlightAuto: it is slow on large files and guesses unreliably).
+    let lang = mapped && this._hljs.getLanguage(mapped) ? mapped : null;
     let highlighted;
     try {
       highlighted = lang
-        ? hljs.highlight(text, { language: lang }).value
-        : hljs.highlightAuto(text).value;
+        ? this._hljs.highlight(text, { language: lang }).value
+        : escapeHtml(text);
     } catch (_) {
-      // Language not in hljs common bundle; fall back to auto-detection
-      try {
-        highlighted = hljs.highlightAuto(text).value;
-      } catch (_e) {
-        highlighted = escapeHtml(text);
-      }
+      lang = null;
+      highlighted = escapeHtml(text);
     }
 
     // Split into lines, properly reopening/closing spans at boundaries

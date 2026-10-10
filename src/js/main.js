@@ -68,6 +68,7 @@ const plantumlRenderer = new PlantUMLRenderer(
 const sourceFileRenderer = new SourceFileRenderer(
   CONFIG,
   elements.preview,
+  hljs,
 );
 
 const orchestrator = new RendererOrchestrator(

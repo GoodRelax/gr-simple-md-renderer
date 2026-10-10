@@ -44,7 +44,7 @@
    - 5.13 AI出力前処理 (preprocessInput)
    - 5.14 SW設計原則 準拠確認
 
-付録 A: CDN依存ライブラリ
+付録 A: バンドル依存ライブラリ
 
 ---
 
@@ -187,7 +187,7 @@ gr-simple-md-renderer/
 - GitHub Pages のソースディレクトリは `docs/` に設定する（URL変更なし）。
 - `sample-data.*` は `docs/` に配置する。ヘルプモーダル内のリンクが相対パスで参照するため。
 - クラスファイルに番号プレフィックスは付けない（例: `01_Foo.js` は不可）。
-- CDN依存ライブラリ (mermaid, hljs, katex 等) は外部URLインポートのままとし、vite-plugin-singlefile でインライン化されるのはローカルの CSS/JS のみ。
+- 描画ライブラリ (mermaid, hljs, katex 等) はnpm依存としてバンドルし、vite-plugin-singlefile で単一ファイルにインライン化する (2026-07-16改訂)。外部URLインポートは禁止で、出力に残っている場合はビルドを失敗させる (INV-07)。
 
 ### 1.5 スコープ
 
@@ -237,7 +237,7 @@ gr-simple-md-renderer/
 | OS-14 | HTMLサニタイゼーション（DOMPurify）                           | marked.js のビルトインサニタイズに依存。ローカル使用前提のためDOMPurifyは不要と判断。リスク受容済み。                 |
 | OS-15 | オフラインPWA                                                 | スコープ外                                                                                                            |
 | OS-16 | アクセシビリティ（ARIA、スクリーンリーダー対応）              | 将来のフェーズに延期。現時点ではキーボードナビゲーションのみ対応。                                                    |
-| OS-17 | highlight.js 非common言語の個別インポート                     | YAGNIとする。common バンドル (約38言語) で十分。非common言語はplaintextまたはhighlightAutoフォールバック（5.3参照）。 |
+| OS-17 | highlight.js 非common言語の個別インポート                     | YAGNIとする。バンドルした `highlight.js/lib/common` (36言語) で十分。非common言語はplaintext表示のみ (highlightAutoは使わない。5.3参照)。 |
 
 ### 1.6 制約事項
 
@@ -252,7 +252,7 @@ gr-simple-md-renderer/
 | CON-07 | 明示的な承認なしに新しいCDN依存を追加してはならない。                                                                                                                                     |
 | CON-08 | 受け入れ可能な最大ファイルサイズはMarkdownパス・コードビューパスの両方で5 MBとする。                                                                                                      |
 | CON-09 | JavaScriptはES6+クラスベースで記述すること。                                                                                                                                              |
-| CON-10 | CDNライブラリのバージョン変更は機能検証を必須とする。                                                                                                                                     |
+| CON-10 | バンドルしたライブラリ (npm依存) のバージョン変更は機能検証を必須とする。                                                                                                                 |
 | CON-11 | バックエンドを追加してはならない（サーバー処理、APIエンドポイント、Node.jsサーバー一切不可）。                                                                                            |
 | CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。                                                                                                      |
 
@@ -270,7 +270,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-04  | 常時         | システムはユーザー入力をlocalStorage、sessionStorage、Cookieに保存してはならない。                                                                                                                                                                                                                                                                                                                                                                                           |
 | INV-05  | 常時         | システムはMarkdown、Mermaid、シンタックスハイライト、KaTeX数式をすべてクライアントサイドでレンダリングすること。                                                                                                                                                                                                                                                                                                                                                             |
 | INV-06  | 常時         | 本番成果物はすべてのCSS、JavaScript、HTMLをインラインに含む単一HTMLファイルとすること。                                                                                                                                                                                                                                                                                                                                                                                      |
-| INV-07  | 常時         | システムはすべてのCDNリソースをSubresource Integrity (SRI) ハッシュ付きでロードすること。                                                                                                                                                                                                                                                                                                                                                                                    |
+| INV-07  | 常時         | システムは実行時にCDNからコードを取得しないこと (全ライブラリはバンドル済み)。ビルド出力に外部URLのimport (`import ... from "https://..."`) または文字列 `cdnjs` が残っている場合、ビルドは失敗すること (vite.config.js の `no-external-imports` プラグイン)。2026-07-16以前のSRI要件は廃止。                                                                                                                                                                                  |
 | INV-08  | 状態駆動     | プレレンダー状態（エディタ空、レンダリング済みコンテンツなし）において、ペーストまたはファイルドロップはシステムテーマで自動レンダリングをトリガーすること。                                                                                                                                                                                                                                                                                                                 |
 | INV-09  | イベント駆動 | レンダリングがトリガーされた場合、システムはレンダリングパイプライン完了後にスクロール位置を保存・復元すること。                                                                                                                                                                                                                                                                                                                                                             |
 | INV-10  | 異常系       | PlantUML画像が5秒以内にロードできなかった場合、システムはダイアグラムの代わりにタイムアウトエラー要素を表示すること。                                                                                                                                                                                                                                                                                                                                                        |
@@ -934,7 +934,7 @@ Feature: Quick Code View
     Given アプリケーションが任意の状態である
     When ユーザーが "Dockerfile" をドロップする
     Then EXT_TO_HLJSのファイル名ルックアップで言語が解決される
-    And ファイルがコードビューで表示される (hljs commonに含まれない言語はhighlightAutoフォールバック)
+    And ファイルがコードビューで表示される (hljs commonに含まれない言語はplaintext表示、highlightAutoは使わない)
 
   Scenario: 初回コードビュー読み込み時のキーボードヒント
     Given 非.mdファイルがドロップされた直後である
@@ -1434,7 +1434,7 @@ CONFIGはすべてのマジックナンバーとユーザー向けメッセー�
 
 ### 5.3 EXT_TO_HLJS マッピング
 
-以下のすべての言語IDは highlight.js 11.11.1 に対して定義済み。ただし、GRSMDはCDNのESM **commonバンドル** (`highlight.min.js`) を使用しており、約38言語のみが同梱されている。commonバンドルに含まれない言語 (scala, powershell, elixir, erlang, haskell, clojure, dart, groovy, vim, latex, protobuf, dockerfile) は `hljs.highlight()` が失敗し、`hljs.highlightAuto()` にフォールバックする。自動検出も失敗した場合、コンテンツはエラーなしにプレーンテキストとして表示される。非common言語の個別インポートはYAGNIとする (OS-17)。
+以下のすべての言語IDは highlight.js 11.11.1 に対して定義済み。ただし、GRSMDはnpm依存としてバンドルした **commonビルド** (`highlight.js/lib/common`) を使用しており、36言語のみが同梱されている。commonビルドに含まれない言語 (scala, powershell, elixir, erlang, haskell, clojure, dart, groovy, vim, latex, protobuf, dockerfile) は `hljs.getLanguage(lang)` が未定義となるため、ハイライトせずプレーンテキスト (`escapeHtml` のみ) として表示する。`hljs.highlightAuto()` は使用しない (最大5MBの全文に対する自動検出は低速かつ推定が不安定なため。INV-18 段階5と同じ扱い)。非common言語の個別インポートはYAGNIとする (OS-17)。
 
 `EXT_TO_HLJS` はシンタックスハイライト対象の定義テーブルとして機能する。ファイル受け入れ判定には `BINARY_EXTENSIONS` ブラックリストとnullバイト検査を併用する (INV-18)。
 
@@ -1699,9 +1699,11 @@ document.addEventListener("drop", async (e) => {
 
 ```javascript
 class SourceFileRenderer {
-  constructor(config, previewEl) {
+  // hljs: bundled highlight.js instance injected from main.js (shared with MarkdownRenderer)
+  constructor(config, previewEl, hljs) {
     this._cfg = config;
     this._previewEl = previewEl;
+    this._hljs = hljs;
     this._fileHandle = null;
     this._fileName = "";
     this._lastScrollTop = 0;
@@ -1779,7 +1781,7 @@ class SourceFileRenderer {
 
 1. 拡張子を抽出: `fileName.slice(fileName.lastIndexOf('.')).toLowerCase()`
 2. 言語を解決: `EXT_TO_HLJS[ext] ?? EXT_TO_HLJS[fileName] ?? null`
-3. ハイライト: 既知の言語は `hljs.highlight(text, { language: lang })` を使用、未知は `hljs.highlightAuto(text)` を使用
+3. ハイライト: 言語が解決され、かつ `hljs.getLanguage(lang)` が存在する場合のみ `hljs.highlight(text, { language: lang })` を使用。未知の拡張子、およびcommonビルドに含まれない言語は `escapeHtml(text)` によるplaintext表示とし、`language` は `"plaintext"` を返す (INV-18 段階5)。`hljs.highlightAuto()` は使用しない
 4. ハイライト済みHTMLを行に分割し、各行を `<span class="code-line">` で囲む。行境界をまたぐspanタグは閉じて再度開く処理を行う。
 5. `#codeViewBody` のみを含むHTML文字列を返す (ヘッダー、ステータスバー、キーヒントは生成しない)
 6. `{ html, lineCount, language }` オブジェクトを返す
