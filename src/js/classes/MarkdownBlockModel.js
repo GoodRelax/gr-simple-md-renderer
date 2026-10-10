@@ -129,6 +129,18 @@ export default class MarkdownBlockModel {
   }
 
   /**
+   * The same blocks with a next id at least n, so that ids given later never
+   * repeat an id given elsewhere (Undo keeps the app-wide counter, INV-48).
+   * @purity pure
+   * @param {number} n
+   * @returns {MarkdownBlockModel}
+   */
+  withNextBlockId(n) {
+    if (n <= this._nextBlockId) return this;
+    return new MarkdownBlockModel(this._leading, this._blocks, n, this.links);
+  }
+
+  /**
    * @purity pure
    * @param {number} blockId
    * @returns {number} index of the block, or -1

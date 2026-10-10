@@ -81,6 +81,16 @@ export default class MarkdownRenderer {
   // ---- HTML generation (no DOM writes) ----
 
   /**
+   * Top-level tokens of a body, with the same marked setup as rendering.
+   * @purity semi-pure-a
+   * @param {string} src
+   * @returns {object[]}
+   */
+  lex(src) {
+    return this.marked.lexer(src);
+  }
+
+  /**
    * Sanitized HTML of a whole document (marked.parse + private DOMPurify).
    * A parse error becomes an escaped error message (the caller logs it).
    * Generation only: it writes nothing to the page (F-A1). The DOMPurify hook

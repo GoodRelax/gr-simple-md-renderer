@@ -10,11 +10,18 @@ vi.mock("../js/utils.js", () => ({
 import RendererOrchestrator from "../js/classes/RendererOrchestrator.js";
 import ApplicationState from "../js/classes/ApplicationState.js";
 import { applyTheme, showToast, waitForDOMStability } from "../js/utils.js";
+import { makeLexer } from "./helpers/samples.js";
+
+const lexer = makeLexer();
 
 function createOrchestrator() {
   const state = new ApplicationState();
   const markdownRenderer = {
+    lex: (src) => lexer(src),
     render: vi.fn().mockResolvedValue(undefined),
+    renderBlocks: vi.fn(),
+    replaceBlocks: vi.fn().mockReturnValue([]),
+    getBlockElement: vi.fn().mockReturnValue(null),
     resetExternalImageConsent: vi.fn(),
   };
   const mermaidRenderer = { render: vi.fn().mockResolvedValue(undefined) };
@@ -121,7 +128,8 @@ describe("RendererOrchestrator", () => {
 
       expect(state.currentTheme).toBe("dark");
       expect(applyTheme).toHaveBeenCalledWith("dark");
-      expect(markdownRenderer.render).toHaveBeenCalledWith("# Hello");
+      // Full renders draw by block (spec 5.14.4).
+      expect(markdownRenderer.renderBlocks.mock.calls[0][0].toBody()).toBe("# Hello");
     });
 
     it("calls renderAll which invokes all three renderers", async () => {
@@ -133,7 +141,7 @@ describe("RendererOrchestrator", () => {
 
       await orchestrator.reRender("light");
 
-      expect(markdownRenderer.render).toHaveBeenCalledOnce();
+      expect(markdownRenderer.renderBlocks).toHaveBeenCalledOnce();
       expect(mermaidRenderer.render).toHaveBeenCalledOnce();
       expect(plantumlRenderer.render).toHaveBeenCalledOnce();
     });
@@ -195,7 +203,7 @@ describe("RendererOrchestrator", () => {
       await orchestrator.loadMarkdown("# First", "light", fakeHandle);
       expect(orchestrator._mdFileHandle).toBe(fakeHandle);
 
-      // Call without fileHandle — should preserve existing handle
+      // Call without fileHandle -- should preserve existing handle
       await orchestrator.loadMarkdown("# Second", "dark");
       expect(orchestrator._mdFileHandle).toBe(fakeHandle);
     });
@@ -205,7 +213,7 @@ describe("RendererOrchestrator", () => {
       const fakeHandle = { getFile: vi.fn() };
       await orchestrator.loadMarkdown("# First", "light", fakeHandle);
 
-      // Pass null explicitly — should clear handle
+      // Pass null explicitly -- should clear handle
       await orchestrator.loadMarkdown("# Second", "dark", null);
       expect(orchestrator._mdFileHandle).toBeNull();
     });
@@ -238,6 +246,7 @@ describe("RendererOrchestrator", () => {
       // readMarkdownFile does NOT render or apply theme
       expect(applyTheme).not.toHaveBeenCalled();
       expect(markdownRenderer.render).not.toHaveBeenCalled();
+      expect(markdownRenderer.renderBlocks).not.toHaveBeenCalled();
     });
   });
 

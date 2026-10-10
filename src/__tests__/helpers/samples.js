@@ -54,3 +54,17 @@ export function makeLexer() {
   marked.use(markedKatex({ throwOnError: false }));
   return (src) => marked.lexer(src);
 }
+
+/**
+ * sample-data-2.md (LF) repeated with one newline between copies until the
+ * text is at least 1 MiB, then cut at the first blank line after 1 MiB.
+ * Deterministic (test-design 7.3).
+ */
+export function makeOneMegabyteDoc() {
+  const unit = loadSampleLf("sample-data-2.md");
+  const MIB = 1024 * 1024;
+  let doc = "";
+  while (doc.length < MIB + unit.length) doc += unit + "\n";
+  const cut = doc.indexOf("\n\n", MIB);
+  return doc.slice(0, cut + 1);
+}
