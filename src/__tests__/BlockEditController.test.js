@@ -564,6 +564,63 @@ describe("AT-BEC editor value and life cycle", () => {
   });
 });
 
+describe("INV-52 edits from the palette and the table Enter are undoable (execCommand insertText)", () => {
+  /** A stand-in for the browser's insertText: replaces the selection of the focused textarea. */
+  function stubExecCommand(result = true) {
+    const calls = [];
+    document.execCommand = vi.fn((command, showUi, text) => {
+      const ta = document.activeElement;
+      calls.push({ command, showUi, text, selection: [ta.selectionStart, ta.selectionEnd] });
+      if (result) ta.setRangeText(text, ta.selectionStart, ta.selectionEnd, "end");
+      return result;
+    });
+    return calls;
+  }
+
+  afterEach(() => {
+    delete document.execCommand;
+  });
+
+  it("applyTextEdit selects only the changed range and inserts it with insertText; then sets the edit's selection", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = openBlock(isPara("Hello"));
+    const calls = stubExecCommand(true);
+    s.bec.applyTextEdit({ text: "Hello **world.**", selStart: 8, selEnd: 14 });
+    expect(calls).toEqual([{ command: "insertText", showUi: false, text: "**world.**", selection: [6, 12] }]);
+    expect(ta.value).toBe("Hello **world.**");
+    expect([ta.selectionStart, ta.selectionEnd]).toEqual([8, 14]);
+    expect(document.activeElement).toBe(ta);
+  });
+
+  it("when insertText is refused (false), the value is assigned instead", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = openBlock(isPara("Hello"));
+    stubExecCommand(false);
+    s.bec.applyTextEdit({ text: "Hello **world.**", selStart: 8, selEnd: 14 });
+    expect(ta.value).toBe("Hello **world.**");
+    expect([ta.selectionStart, ta.selectionEnd]).toEqual([8, 14]);
+  });
+
+  it("without execCommand (jsdom, old browsers) the value is assigned", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = openBlock(isPara("Hello"));
+    expect(document.execCommand).toBeUndefined();
+    s.bec.applyTextEdit({ text: "Hi world.", selStart: 2, selEnd: 2 });
+    expect(ta.value).toBe("Hi world.");
+  });
+
+  it("table Enter inserts <br> through insertText (undoable)", async () => {
+    s = await setupEdit("| A | B |\n|---|---|\n| x | y |\n");
+    const t = openBlock((b) => b.type === "table");
+    const calls = stubExecCommand(true);
+    const caret = t.ta.value.indexOf("x") + 1;
+    t.ta.setSelectionRange(caret, caret);
+    keydown(t.ta, "Enter");
+    expect(calls).toEqual([{ command: "insertText", showUi: false, text: "<br>", selection: [caret, caret] }]);
+    expect(t.ta.value).toBe("| A | B |\n|---|---|\n| x<br> | y |");
+  });
+});
+
 describe("Q-d1 the block being edited keeps its wrapper during partial renders", () => {
   const REF_DOC = "Use [x][d].\n\nOther [y][d].\n\n[d]: https://example.com/old\n";
 

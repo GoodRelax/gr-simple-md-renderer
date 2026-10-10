@@ -241,3 +241,25 @@ describe("SaveDocument / SaveDocumentAs (UseCase)", () => {
     expect(confirmer.confirmOverwrite).not.toHaveBeenCalled();
   });
 });
+
+describe("the file is written but its new lastModified cannot be read (INV-39)", () => {
+  it("Save: saved, and the previous baseline is kept, so the next Save still asks", async () => {
+    const { access, save } = setup({ lastModified: 1000 });
+    access.writeFile = vi.fn(async () => null);
+    const outcome = await save.execute(request());
+    expect(outcome.status).toBe("saved");
+    expect(outcome.message).toBe(M.saved("doc.md"));
+    expect(outcome.session.baselineLastModified).toBe(request().session.baselineLastModified);
+    expect(outcome.session.baselineLastModified).not.toBeNull();
+    expect(outcome.session.isBodyChanged("# Doc changed\n")).toBe(false);
+  });
+
+  it("Save as: saved, and the previous baseline is kept", async () => {
+    const { access, saveAs } = setup();
+    access.writeFile = vi.fn(async () => null);
+    const req = request({ permissionOrPicker: Promise.resolve(fakeFileHandle({ name: "p.md" })) });
+    const outcome = await saveAs.execute(req);
+    expect(outcome.status).toBe("saved");
+    expect(outcome.session.baselineLastModified).toBe(req.session.baselineLastModified);
+  });
+});

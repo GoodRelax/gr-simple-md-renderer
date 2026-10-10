@@ -190,6 +190,19 @@ describe("RendererOrchestrator", () => {
     });
   });
 
+  describe("full renders of an older generation are skipped (5.14.4)", () => {
+    it("two full renders queued back to back draw once, and PlantUML asks once", async () => {
+      const { orchestrator, state, markdownRenderer, plantumlRenderer } = createOrchestrator();
+      orchestrator._viewState = "markdown";
+      state.markdownText = "# a";
+      const first = orchestrator.renderAll();
+      const second = orchestrator.renderAll();
+      await Promise.all([first, second]);
+      expect(markdownRenderer.renderBlocks).toHaveBeenCalledTimes(1);
+      expect(plantumlRenderer.render).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("AT-ORC-24 the file handle moved to DocumentLocation (INV-55)", () => {
     it("has no _mdFileHandle and no readMarkdownFile; loadMarkdown takes (text, theme) only", () => {
       const { orchestrator } = createOrchestrator();

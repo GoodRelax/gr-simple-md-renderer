@@ -79,23 +79,34 @@ export default class MarkdownFileAccess {
   }
 
   /**
-   * Write the whole file. On a failed write the writable is aborted before
-   * the error is passed on, so no partial file is left open.
+   * Write the whole file. On a failed write or close the writable is aborted
+   * before the error is passed on, so no partial file is left open; an abort
+   * that fails too does not hide that error. Once the file is written, a
+   * failure to read its new lastModified gives null instead of an error: the
+   * save itself succeeded (the caller keeps the previous baseline, INV-39).
    * @purity non-pure
    * @param {object} fileHandle
    * @param {string} fileText
-   * @returns {Promise<number>} lastModified after the write
+   * @returns {Promise<number|null>} lastModified after the write, or null
    */
   async writeFile(fileHandle, fileText) {
     const writable = await fileHandle.createWritable();
     try {
       await writable.write(fileText);
+      await writable.close();
     } catch (error) {
-      await writable.abort();
+      try {
+        await writable.abort();
+      } catch {
+        // the write or close error is the one to report
+      }
       throw error;
     }
-    await writable.close();
-    return this.readLastModified(fileHandle);
+    try {
+      return await this.readLastModified(fileHandle);
+    } catch {
+      return null;
+    }
   }
 
   /**

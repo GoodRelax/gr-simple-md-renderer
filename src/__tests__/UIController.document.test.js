@@ -393,6 +393,44 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     expect(app.ui._session.lineEnding).toBe("\r\n");
   });
 
+  it("INV-41 duplicate reference definitions: clean right after loading; both stay after an edit", async () => {
+    app = await setupApp();
+    const md = "[a]: https://example.com/x\n\n[a]: https://example.com/y\n\nSee [a].\n";
+    await dropMd(md);
+    expect(app.orchestrator.getBody()).toBe(md);
+    expect(app.ui._isDocumentDirty()).toBe(false);
+    expect(document.title).toBe(BASE_TITLE);
+    editBlock("See", "See [a]. More.");
+    commitByPressingOutside();
+    expect(app.elements.editor.value).toBe("[a]: https://example.com/x\n\n[a]: https://example.com/y\n\nSee [a]. More.\n");
+  });
+
+  it("INV-41 fallback: a body the blocks cannot reproduce is kept whole, clean, and a toast says so", async () => {
+    app = await setupApp();
+    vi.spyOn(app.markdownRenderer, "lex").mockImplementation(() => Object.assign([{ type: "paragraph", raw: "zzz" }], { links: {} }));
+    await dropMd("# A\n\nB\n");
+    expect(app.orchestrator.getBody()).toBe("# A\n\nB\n");
+    expect(app.orchestrator.getModel().getBlocks()).toHaveLength(1);
+    expect(app.ui._isDocumentDirty()).toBe(false);
+    expect(showToast).toHaveBeenCalledWith(M.blockSplitFailed, CONFIG.codeView.toastDurationMs);
+  });
+
+  it("a parse exception shows 'Markdown Parse Error' again, keeps the body, and rejects nothing", async () => {
+    app = await setupApp();
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(app.markdownRenderer, "lex").mockImplementation(() => {
+      throw new Error("boom");
+    });
+    vi.spyOn(app.markdownRenderer.marked, "parser").mockImplementation(() => {
+      throw new Error("boom");
+    });
+    await dropMd("# A\n");
+    expect(app.preview.textContent).toContain("Markdown Parse Error: boom");
+    expect(app.orchestrator.getBody()).toBe("# A\n");
+    expect(app.ui._isDocumentDirty()).toBe(false);
+    expect(error).toHaveBeenCalled();
+  });
+
   it("AT-UI-33 a BOM + CRLF .md: the session keeps BOM and CRLF; #editor has the LF body", async () => {
     app = await setupApp();
     await dropMd(BOM + toCrlf("# A\n\nB\n"));

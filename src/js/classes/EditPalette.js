@@ -1,4 +1,5 @@
 import { CONFIG } from "../config.js";
+import { cell, row } from "../stateTable.js";
 
 const IDLE = "idle";
 const PRESS = "pressingButton";
@@ -54,33 +55,20 @@ const SAMPLES = [
   { arg: "class", label: "Class diagram", icon: "class" },
 ];
 
-/**
- * One cell of the transition table.
- * @purity pure
- */
-function cell(to, actions) {
-  return Object.freeze({ to, actions: Object.freeze(actions) });
-}
-
-/**
- * One row: the cell for each current state (null = no change).
- * @purity pure
- */
-function row(idle, pressing, dragging) {
-  return Object.freeze({ [IDLE]: idle, [PRESS]: pressing, [DRAG]: dragging });
-}
+const STATES = [IDLE, PRESS, DRAG];
+const transitions = (...cells) => row(STATES, cells);
 
 /** Spec 11-d: event -> current state -> cell. "[*]" ends the gesture handling (hidden). */
 export const paletteGestureStateMachine = Object.freeze({
-  enabledButtonPressed: row(cell(PRESS, ["capturePointer"]), null, null),
-  disabledButtonPressed: row(null, null, null),
-  gripOrGapPressed: row(cell(DRAG, ["capturePointer", "rememberOffset"]), null, null),
-  pointerMoved: row(null, null, cell(DRAG, ["movePaletteClamped"])),
-  pointerLeftPressedButton: row(null, cell(DRAG, ["rememberOffset"]), null),
-  pointerReleasedInsideButton: row(null, cell(IDLE, ["runButtonCommand"]), null),
-  pointerReleased: row(null, cell(IDLE, []), cell(IDLE, [])),
-  pointerCanceled: row(null, cell(IDLE, []), cell(IDLE, [])),
-  paletteHidden: row(
+  enabledButtonPressed: transitions(cell(PRESS, ["capturePointer"]), null, null),
+  disabledButtonPressed: transitions(null, null, null),
+  gripOrGapPressed: transitions(cell(DRAG, ["capturePointer", "rememberOffset"]), null, null),
+  pointerMoved: transitions(null, null, cell(DRAG, ["movePaletteClamped"])),
+  pointerLeftPressedButton: transitions(null, cell(DRAG, ["rememberOffset"]), null),
+  pointerReleasedInsideButton: transitions(null, cell(IDLE, ["runButtonCommand"]), null),
+  pointerReleased: transitions(null, cell(IDLE, []), cell(IDLE, [])),
+  pointerCanceled: transitions(null, cell(IDLE, []), cell(IDLE, [])),
+  paletteHidden: transitions(
     cell(END, ["releaseListeners"]),
     cell(END, ["releasePointer", "releaseListeners"]),
     cell(END, ["releasePointer", "releaseListeners"]),
@@ -98,15 +86,15 @@ function clamp(value, min, max) {
  * @purity non-pure
  */
 function createButton(id, label, iconHtml) {
-  const b = document.createElement("button");
-  b.type = "button";
-  if (id) b.id = id;
-  b.className = "edit-palette-btn";
-  b.title = label;
-  b.setAttribute("aria-label", label);
-  b.tabIndex = -1;
-  b.innerHTML = iconHtml; // static markup from ICONS only
-  return b;
+  const button = document.createElement("button");
+  button.type = "button";
+  if (id) button.id = id;
+  button.className = "edit-palette-btn";
+  button.title = label;
+  button.setAttribute("aria-label", label);
+  button.tabIndex = -1;
+  button.innerHTML = iconHtml; // static markup from ICONS only
+  return button;
 }
 
 /**
@@ -128,7 +116,7 @@ export default class EditPalette {
    */
   constructor(host) {
     this.host = host;
-    this._state = IDLE;
+    this._paletteGestureState = IDLE;
     this._shown = false;
     this._gesture = null; // { pointerId, button, el, offset }
     this._buttons = new Map(); // button element -> { command, arg }
@@ -161,10 +149,10 @@ export default class EditPalette {
     this._popover.style.position = "fixed";
     this._popover.hidden = true;
     for (const sample of SAMPLES) {
-      const b = createButton(null, sample.label, ICONS[sample.icon]);
-      this._buttons.set(b, { command: "insertMermaid", arg: sample.arg });
-      this._sampleButtons.push(b);
-      this._popover.appendChild(b);
+      const button = createButton(null, sample.label, ICONS[sample.icon]);
+      this._buttons.set(button, { command: "insertMermaid", arg: sample.arg });
+      this._sampleButtons.push(button);
+      this._popover.appendChild(button);
     }
 
     this._onPointerDown = (e) => this._handlePointerDown(e);
@@ -194,12 +182,12 @@ export default class EditPalette {
   show() {
     if (this._shown) return;
     this._shown = true;
-    this._state = IDLE;
+    this._paletteGestureState = IDLE;
     this._root.hidden = false;
     document.body.classList.add("edit-mode"); // CSS: bands and the empty block (INV-41, INV-49)
-    const r = this._root.getBoundingClientRect();
+    const rect = this._root.getBoundingClientRect();
     const margin = CONFIG.edit.paletteMarginPx;
-    this._placeAt(window.innerWidth - r.width - margin, window.innerHeight - r.height - margin);
+    this._placeAt(window.innerWidth - rect.width - margin, window.innerHeight - rect.height - margin);
     document.addEventListener("pointermove", this._onPointerMove);
     document.addEventListener("pointerup", this._onPointerUp);
     document.addEventListener("pointercancel", this._onPointerCancel);
@@ -217,14 +205,6 @@ export default class EditPalette {
     this._root.hidden = true;
     this._shown = false;
     document.body.classList.remove("edit-mode");
-  }
-
-  /**
-   * @purity non-pure
-   */
-  toggle() {
-    if (this._shown) this.hide();
-    else this.show();
   }
 
   /**
@@ -291,13 +271,13 @@ export default class EditPalette {
    * @param {{pointerId?: number, x?: number, y?: number, button?: HTMLElement|null, el?: Element}} [input]
    */
   dispatch(event, input = {}) {
-    const transitions = paletteGestureStateMachine[event];
-    if (!transitions) throw new Error(`Unknown palette gesture event: ${event}`);
-    const next = transitions[this._state];
+    const cells = paletteGestureStateMachine[event];
+    if (!cells) throw new Error(`Unknown palette gesture event: ${event}`);
+    const next = cells[this._paletteGestureState];
     if (!next) return;
     for (const action of next.actions) this._runAction(action, input);
-    this._state = next.to === END ? IDLE : next.to;
-    if (this._state === IDLE) this._gesture = null;
+    this._paletteGestureState = next.to === END ? IDLE : next.to;
+    if (this._paletteGestureState === IDLE) this._gesture = null;
   }
 
   // ---- internals: actions ----
@@ -316,8 +296,8 @@ export default class EditPalette {
         }
         break;
       case "rememberOffset": {
-        const p = this._position();
-        this._gesture.offset = { x: input.x - p.left, y: input.y - p.top };
+        const position = this._position();
+        this._gesture.offset = { x: input.x - position.left, y: input.y - position.top };
         break;
       }
       case "movePaletteClamped":
@@ -384,13 +364,13 @@ export default class EditPalette {
    */
   _handlePointerMove(e) {
     const input = { pointerId: e.pointerId, x: e.clientX, y: e.clientY };
-    if (this._state === IDLE) {
+    if (this._paletteGestureState === IDLE) {
       this.dispatch("pointerMoved", input);
       return;
     }
     if (e.pointerId !== this._gesture.pointerId) return;
     // Outside the pressed button by coordinates, not pointerleave (capture).
-    const left = this._state === PRESS && !this._isInside(this._gesture.button, e);
+    const left = this._paletteGestureState === PRESS && !this._isInside(this._gesture.button, e);
     this.dispatch(left ? "pointerLeftPressedButton" : "pointerMoved", input);
   }
 
@@ -398,8 +378,8 @@ export default class EditPalette {
    * @purity non-pure
    */
   _handlePointerUp(e) {
-    if (this._state !== IDLE && e.pointerId !== this._gesture.pointerId) return;
-    const inside = this._state === PRESS && this._isInside(this._gesture.button, e);
+    if (this._paletteGestureState !== IDLE && e.pointerId !== this._gesture.pointerId) return;
+    const inside = this._paletteGestureState === PRESS && this._isInside(this._gesture.button, e);
     this.dispatch(inside ? "pointerReleasedInsideButton" : "pointerReleased");
   }
 
@@ -407,7 +387,7 @@ export default class EditPalette {
    * @purity non-pure
    */
   _handlePointerCancel(e) {
-    if (this._state !== IDLE && e.pointerId !== this._gesture.pointerId) return;
+    if (this._paletteGestureState !== IDLE && e.pointerId !== this._gesture.pointerId) return;
     this.dispatch("pointerCanceled");
   }
 
@@ -424,16 +404,16 @@ export default class EditPalette {
    * @purity semi-pure-b
    */
   _buttonAt(node) {
-    const b = node instanceof Element ? node.closest("button") : null;
-    return b && this._buttons.has(b) ? b : null;
+    const button = node instanceof Element ? node.closest("button") : null;
+    return button && this._buttons.has(button) ? button : null;
   }
 
   /**
    * @purity semi-pure-b
    */
   _isInside(el, e) {
-    const r = el.getBoundingClientRect();
-    return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    const rect = el.getBoundingClientRect();
+    return e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
   }
 
   // ---- internals: layout (INV-32, INV-37) ----
@@ -442,8 +422,8 @@ export default class EditPalette {
    * @purity semi-pure-b
    */
   _position() {
-    const r = this._root.getBoundingClientRect();
-    return { left: r.left, top: r.top };
+    const rect = this._root.getBoundingClientRect();
+    return { left: rect.left, top: rect.top };
   }
 
   /**
@@ -451,9 +431,9 @@ export default class EditPalette {
    * @purity non-pure
    */
   _placeAt(left, top) {
-    const r = this._root.getBoundingClientRect();
-    this._root.style.left = `${clamp(left, 0, window.innerWidth - r.width)}px`;
-    this._root.style.top = `${clamp(top, 0, window.innerHeight - r.height)}px`;
+    const rect = this._root.getBoundingClientRect();
+    this._root.style.left = `${clamp(left, 0, window.innerWidth - rect.width)}px`;
+    this._root.style.top = `${clamp(top, 0, window.innerHeight - rect.height)}px`;
     if (!this._popover.hidden) this._placePopover();
   }
 
@@ -462,12 +442,12 @@ export default class EditPalette {
    * @purity non-pure
    */
   _placePopover() {
-    const p = this._root.getBoundingClientRect();
-    const r = this._popover.getBoundingClientRect();
-    let left = p.right + POPOVER_GAP_PX;
-    if (left + r.width > window.innerWidth) left = p.left - POPOVER_GAP_PX - r.width;
-    this._popover.style.left = `${clamp(left, 0, window.innerWidth - r.width)}px`;
-    this._popover.style.top = `${clamp(p.top, 0, window.innerHeight - r.height)}px`;
+    const paletteRect = this._root.getBoundingClientRect();
+    const popoverRect = this._popover.getBoundingClientRect();
+    let left = paletteRect.right + POPOVER_GAP_PX;
+    if (left + popoverRect.width > window.innerWidth) left = paletteRect.left - POPOVER_GAP_PX - popoverRect.width;
+    this._popover.style.left = `${clamp(left, 0, window.innerWidth - popoverRect.width)}px`;
+    this._popover.style.top = `${clamp(paletteRect.top, 0, window.innerHeight - popoverRect.height)}px`;
   }
 
   /**
@@ -581,10 +561,10 @@ export default class EditPalette {
         grip.innerHTML = ICONS.grip;
         rowEl.appendChild(grip);
       } else {
-        const b = createButton(item.id, item.label, ICONS[item.icon]);
-        this._buttons.set(b, { command: item.command, arg: undefined });
-        this._paletteButtons.push(b);
-        rowEl.appendChild(b);
+        const button = createButton(item.id, item.label, ICONS[item.icon]);
+        this._buttons.set(button, { command: item.command, arg: undefined });
+        this._paletteButtons.push(button);
+        rowEl.appendChild(button);
       }
     }
     return rowEl;

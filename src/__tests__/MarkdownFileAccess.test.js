@@ -131,3 +131,57 @@ describe("MarkdownFileAccess (Adapter: local file read/write, no network)", () =
     expect(sendBeacon).not.toHaveBeenCalled();
   });
 });
+
+describe("writeFile clean-up and the lastModified read", () => {
+  function handle({ writeError, closeError, abortError, getFileError } = {}) {
+    const calls = [];
+    return {
+      calls,
+      name: "doc.md",
+      async createWritable() {
+        calls.push("createWritable");
+        return {
+          async write() {
+            calls.push("write");
+            if (writeError) throw writeError;
+          },
+          async close() {
+            calls.push("close");
+            if (closeError) throw closeError;
+          },
+          async abort() {
+            calls.push("abort");
+            if (abortError) throw abortError;
+          },
+        };
+      },
+      async getFile() {
+        calls.push("getFile");
+        if (getFileError) throw getFileError;
+        return new File(["x"], "doc.md", { lastModified: 42 });
+      },
+    };
+  }
+
+  it("a failed close aborts the writable and throws the close error", async () => {
+    const h = handle({ closeError: new Error("close failed") });
+    await expect(new MarkdownFileAccess(window).writeFile(h, "x")).rejects.toThrow("close failed");
+    expect(h.calls).toEqual(["createWritable", "write", "close", "abort"]);
+  });
+
+  it("an abort that throws does not hide the write error", async () => {
+    const h = handle({ writeError: new Error("disk full"), abortError: new Error("abort failed") });
+    await expect(new MarkdownFileAccess(window).writeFile(h, "x")).rejects.toThrow("disk full");
+  });
+
+  it("an abort that throws does not hide the close error", async () => {
+    const h = handle({ closeError: new Error("close failed"), abortError: new Error("abort failed") });
+    await expect(new MarkdownFileAccess(window).writeFile(h, "x")).rejects.toThrow("close failed");
+  });
+
+  it("after a successful write, a failing lastModified read gives null (the file is written)", async () => {
+    const h = handle({ getFileError: new Error("gone") });
+    await expect(new MarkdownFileAccess(window).writeFile(h, "x")).resolves.toBeNull();
+    expect(h.calls).toEqual(["createWritable", "write", "close", "getFile"]);
+  });
+});

@@ -179,3 +179,21 @@ describe("MarkdownTextOps (pure; marked is the reference for tables)", () => {
     expect(MarkdownTextOps.insertBlockText("x", 1, "y")).toEqual(MarkdownTextOps.insertBlockText("x", 1, "y"));
   });
 });
+
+describe("MarkdownTextOps.changedRange (replace only the changed range, INV-52)", () => {
+  const apply = (before, r) => before.slice(0, r.start) + r.text + before.slice(r.end);
+
+  it.each([
+    ["bold around a word", "Hello word here.", "Hello **word** here.", { start: 6, end: 10, text: "**word**" }],
+    ["insert in the middle", "ab", "aXb", { start: 1, end: 1, text: "X" }],
+    ["delete in the middle", "aXb", "ab", { start: 1, end: 2, text: "" }],
+    ["append to a repeated run", "aaa", "aaaa", { start: 3, end: 3, text: "a" }],
+    ["no change", "same", "same", { start: 4, end: 4, text: "" }],
+    ["from empty", "", "new", { start: 0, end: 0, text: "new" }],
+    ["to empty", "old", "", { start: 0, end: 3, text: "" }],
+  ])("%s", (_name, before, after, expected) => {
+    const r = MarkdownTextOps.changedRange(before, after);
+    expect(r).toEqual(expected);
+    expect(apply(before, r)).toBe(after);
+  });
+});

@@ -8,6 +8,7 @@ import BlockEditController from "./BlockEditController.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
 import SaveDocument from "./SaveDocument.js";
 import SaveDocumentAs from "./SaveDocumentAs.js";
+import { cell } from "../stateTable.js";
 
 /**
  * INV-14: a key typed into an input, a textarea (the block editor included),
@@ -66,14 +67,6 @@ export function hasNullByte(bytes) {
 export function renderRouteFor(isCodeView, isPreRender) {
   if (isCodeView) return "theme";
   return isPreRender ? "newDocument" : "editorIntoDocument";
-}
-
-/**
- * One cell of a transition table.
- * @purity pure
- */
-function cell(to, actions) {
-  return Object.freeze({ to, actions: Object.freeze(actions) });
 }
 
 /**
@@ -375,7 +368,8 @@ export default class UIController {
    * Dispatch render / theme switch based on current view state (Sect 5.8).
    * - Code view: CSS-only toggle (no DOM rebuild).
    * - Markdown view: the #editor text into the same document (an open block
-   *   editor is committed first; no confirm, INV-45).
+   *   editor is committed first; no unsaved confirm, INV-45; an empty
+   *   #editor over a non-empty document asks first, INV-56).
    * - Initial state with editor content: a new document.
    * @param {'light'|'dark'} theme
    * @purity non-pure
@@ -390,6 +384,7 @@ export default class UIController {
       applyTheme(theme);
       this.state.setTheme(theme);
     } else if (route === "editorIntoDocument") {
+      if (!this._confirmEditorIntoDocument()) return;
       await this._renderEditorIntoDocument(theme);
     } else {
       await this._startPastedDocument(this.elements.editor.value, theme);
@@ -679,11 +674,29 @@ export default class UIController {
   }
 
   /**
+   * ModelChangedPort: the body could not be split into blocks, so it is
+   * edited as one block (INV-41).
+   * @purity non-pure
+   */
+  onBlockSplitFailed() {
+    this._toast(CONFIG.messages.edit.blockSplitFailed);
+  }
+
+  /**
    * #editor input marks unrendered changes (5.7 (2), INV-45); a focus moving
    * into #editor commits an open block editor (5.7 (5), editorFocused).
+   * The browser's Undo / Redo can act on #editor while the focus is elsewhere
+   * (Chromium sends historyUndo to the last edited textarea): keep the block
+   * editor's undo history away from #editor, so only an Undo / Redo typed in
+   * #editor itself may change it (5.7 (6)).
    * @purity non-pure
    */
   setupEditorSync() {
+    /** @purity non-pure */
+    this.elements.editor.addEventListener("beforeinput", (e) => {
+      const isHistory = e.inputType === "historyUndo" || e.inputType === "historyRedo";
+      if (isHistory && document.activeElement !== this.elements.editor) e.preventDefault();
+    });
     /** @purity non-pure */
     this.elements.editor.addEventListener("input", () => {
       this._editorChangedSinceRender = true;
@@ -722,7 +735,7 @@ export default class UIController {
         this._lastTap = null;
         return;
       }
-      const tap = { time: Date.now(), x: e.clientX, y: e.clientY };
+      const tap = { time: performance.now(), x: e.clientX, y: e.clientY };
       if (BlockEditController.isDoubleTap(this._lastTap, tap)) {
         this._lastTap = null;
         this._startEmptyDocument();
@@ -821,8 +834,23 @@ export default class UIController {
    * @purity non-pure
    */
   _renderFromEditorFirst() {
+    if (!this._confirmEditorIntoDocument()) return;
     this._renderEditorIntoDocument(this.state.currentTheme);
     this._toast(CONFIG.messages.edit.editorRenderedFirst);
+  }
+
+  /**
+   * INV-56: an empty #editor (whitespace only) taken into a document that is
+   * not empty would empty the document; ask first. Called before anything
+   * changes, so Cancel leaves #editor, the model and the unsaved mark as they
+   * were.
+   * @returns {boolean} true to go on
+   * @purity non-pure
+   */
+  _confirmEditorIntoDocument() {
+    const isEditorBlank = this.elements.editor.value.trim() === "";
+    const isDocumentBlank = this.orchestrator.getBody().trim() === "";
+    return !isEditorBlank || isDocumentBlank || window.confirm(CONFIG.messages.edit.emptyEditorConfirm);
   }
 
   /**
@@ -981,15 +1009,17 @@ export default class UIController {
         break;
       case "bold":
       case "italic":
-        this._editInBlock((r) =>
-          r.selStart === r.selEnd ? null : MarkdownTextOps.toggleWrap(r.text, r.selStart, r.selEnd, command === "bold" ? "**" : "*"),
+        this._editInBlock((range) =>
+          range.selStart === range.selEnd
+            ? null
+            : MarkdownTextOps.toggleWrap(range.text, range.selStart, range.selEnd, command === "bold" ? "**" : "*"),
         );
         break;
       case "insertRow":
-        this._editInBlock((r) => MarkdownTextOps.insertTableRow(r.text, r.selStart));
+        this._editInBlock((range) => MarkdownTextOps.insertTableRow(range.text, range.selStart));
         break;
       case "insertColumn":
-        this._editInBlock((r) => MarkdownTextOps.insertTableColumn(r.text, r.selStart));
+        this._editInBlock((range) => MarkdownTextOps.insertTableColumn(range.text, range.selStart));
         break;
       case "undo":
         this._undo();
@@ -1036,7 +1066,7 @@ export default class UIController {
    */
   _insertBlock(blockText) {
     if (this.blockEdit.isEditing()) {
-      this._editInBlock((r) => MarkdownTextOps.insertBlockText(r.text, r.selEnd, blockText));
+      this._editInBlock((range) => MarkdownTextOps.insertBlockText(range.text, range.selEnd, blockText));
     } else if (this._editorChangedSinceRender) {
       this._renderFromEditorFirst();
     } else {
@@ -1074,15 +1104,18 @@ export default class UIController {
   }
 
   /**
-   * INV-33 order, synchronous until the use case awaits: (1) start the
-   * permission request or the save dialog, (2) commit the open block and
-   * take in #editor, (3) run the use case (a download starts inside it).
+   * INV-33 order, synchronous until the use case awaits: (0) the INV-56
+   * confirm when #editor is about to be taken in (Cancel: nothing starts),
+   * (1) start the permission request or the save dialog, (2) commit the open
+   * block and take in #editor, (3) run the use case (a download starts inside
+   * it).
    * @param {"saveRequested"|"saveAsRequested"} event
    * @purity non-pure
    */
   async _startSave(event) {
     const next = saveOperationStateMachine[event][this._saveOperationState];
     if (!next || !this._session) return; // a second press while writing is ignored
+    if (this._editorChangedSinceRender && !this._confirmEditorIntoDocument()) return;
     const isSaveAs = event === "saveAsRequested";
     const location = this._location ?? new DocumentLocation(CONFIG.edit.defaultFileName, null);
     const permissionOrPicker = this._startSaveAccess(isSaveAs, location);

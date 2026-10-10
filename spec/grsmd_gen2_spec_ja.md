@@ -330,7 +330,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-30 | イベント駆動 | ブロック編集中に「外側」(ブロック編集欄、編集パレット、パレットのポップオーバー、以外の要素) で、マウスでは `pointerdown` が、タッチとペンでは `pointerdown` から `pointerup` までの移動が `CONFIG.pan.activationThresholdPx` 以下の `pointerup` が起きた場合 (タッチでのスクロールの開始では確定しない)、システムは編集中のブロックを確定すること。ブロック編集中に `#editor` にフォーカスが入った場合 (キーボード操作を含む) も、その時点で確定すること (5.7 (5))。その対象が別のブロックで、INV-29 のジェスチャが成立した場合は、確定の後で、クリックされたブロックをブロック ID でモデル上の位置に解決し直してから、その編集欄を開くこと (確定で消えたブロックなら開かない)。 |
 | INV-31 | イベント駆動 | 初期状態 (`_viewState === 'initial'`) で `#editor.value.trim() === ""` のときに、プレビューがダブルクリックまたはダブルタップされた場合、または [Edit] が押された場合、システムは空の文書を開始し (`startEmptyDocument`)、編集パレットを表示し、空の最初のブロックの編集欄を開いてフォーカスを移し、`_viewState` を `"markdown"` にすること。1 回目のクリックで FS-16 により `#editor` へ移ったフォーカスは、ブロック編集欄へ移し直すこと。初期状態で `#editor` が空でないときに [Edit] または `e` が押された場合は、`#editor` の内容をシステムテーマで描画してから編集パレットを表示すること (ダブルクリック / ダブルタップは、`#editor` が空のときだけ扱う)。 |
 | INV-32 | イベント駆動 | 編集パレットを表示する場合、システムは毎回ビューポートの右下 (`CONFIG.edit.paletteMarginPx` の余白) に表示すること。移動後の位置を記憶してはならない (CON-13)。 |
-| INV-33 | イベント駆動 | Save または Save as が押された場合、システムは、押下のハンドラの中で同期的に、(1) 書き込み権限の要求 (`requestPermission`) または保存ダイアログ (`showSaveFilePicker`) を開始し、(2) 開いているブロック編集欄を確定してモデルを更新し (INV-47 によりモデルの更新は同期)、続けて `#editor` に未描画の変更があれば、その内容 (改行の正規化だけを行った文字列。`splitMarkdownWrapper` はかけない。5.14.1) を同期的にモデルに取り込み (Markdown 表示中の `#editor` からの描画と同じ扱い。セッションは変えず、全体描画はキューに入れる)、その後で (3) 権限またはダイアログの結果を待って書き込むこと。書き込み API が無い場合のダウンロードは、(2) に続けて同じハンドラの中で同期的に始めること。描画のキューの完了は待たない。 |
+| INV-33 | イベント駆動 | Save または Save as が押された場合、システムは、押下のハンドラの中で同期的に、(0) INV-56 の確認が要る場合はそれを表示し (Cancel なら以降を何も行わない)、(1) 書き込み権限の要求 (`requestPermission`) または保存ダイアログ (`showSaveFilePicker`) を開始し、(2) 開いているブロック編集欄を確定してモデルを更新し (INV-47 によりモデルの更新は同期)、続けて `#editor` に未描画の変更があれば、その内容 (改行の正規化だけを行った文字列。`splitMarkdownWrapper` はかけない。5.14.1) を同期的にモデルに取り込み (Markdown 表示中の `#editor` からの描画と同じ扱い。セッションは変えず、全体描画はキューに入れる)、その後で (3) 権限またはダイアログの結果を待って書き込むこと。書き込み API が無い場合のダウンロードは、(2) に続けて同じハンドラの中で同期的に始めること。描画のキューの完了は待たない。 |
 | INV-34 | イベント駆動 | 編集パレット (ポップオーバーを含む) のボタンが押された場合、システムは押した時点では機能を実行しないこと。押されてから離されるまでの間、ポインタが一度もそのボタンの外に出なかったときに限り、離された時点で機能を実行すること。ブラウザ標準の `click` イベントで機能を実行してはならない。キーボード操作 (フォーカスして Enter / Space) では即時に実行してよい。無効なボタンの押下では機能を実行せず、移動もしないこと。 |
 | INV-35 | イベント駆動 | 編集パレット (ポップオーバーを含む) の有効なボタンが押されたまま、ポインタがそのボタンの外に出た場合、システムはパレットの移動に切り替え、離されるまでパレットをポインタに追従させ、離された時点で機能を実行しないこと (元のボタンの上に戻ってから離した場合も実行しない)。グリップ、またはボタン以外の部分 (隙間・枠) が押された場合は、最初から移動として扱うこと。 |
 | INV-36 | 常時 | 編集パレットとポップオーバーの操作 (押す・離す・移動) は、ブロック編集の「外側」として扱わないこと。編集欄のフォーカスと選択範囲を保ったまま機能を適用すること。 |
@@ -342,7 +342,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-42 | イベント駆動 | ブロックの確定または Undo が行われた場合、システムは新しい本文全体を字句解析し直し、ブロックの列を前の列と原文の一致で対応付けること (前後の一致を先に除き、残りの区間だけを LCS で対応付ける。区間の表が `CONFIG.edit.diffMaxCells` を超える場合は、その区間を全部置き換えとして扱う。5.14.2)。対応したブロックはブロック ID と DOM を引き継ぎ、描画結果の HTML が変わったブロックだけ DOM を差し替えること。Mermaid と PlantUML の処理は差し替えた範囲だけに行うこと。差し替えなかったブロックの DOM (描画済みの図、ズーム状態、PlantUML の画像を含む) は変更しないこと。 |
 | INV-43 | イベント駆動 | 部分描画で差し替えるブロックにも、INV-19 の外部画像の同意制を適用すること (同じ sanitize のフックと代替表示)。ブロックの編集・確定・Undo によって外部画像の同意を失効させてはならない。失効は従来どおり Clear と新しい `.md` ファイルのドロップに限り、`.md` のドロップでは置き換えの手順 (INV-21 の (5)) の中で `markdownRenderer.resetExternalImageConsent()` を明示的に呼ぶこと。Reload、`#editor` からの描画、保存、非 `.md` のドロップでは同意を維持すること (CON-12。5.14.11 の表)。 |
 | INV-44 | イベント駆動 | ファイルを読み込んだ場合、システムは UTF-8 の BOM の有無と改行コード (CRLF と LF の出現数の多い方。同数なら LF) を記録し、CRLF と単独の CR を LF に正規化してから扱うこと。保存時には、記録した改行コードに変換し、BOM があった場合は先頭に付け直して書き込むこと。単独の CR が主だったファイルは LF で保存する。ペーストした文書は LF・BOM なしとして扱う。 |
-| INV-45 | イベント駆動 | 編集モードでブロックの開始ジェスチャが行われたとき、`#editor` に未描画の変更がある (最後の全体描画またはブロックの確定の後に `#editor` で `input` イベントが起きた) 場合、システムはブロックを開かず、`#editor` の内容で全体を描画し直し、その旨をトーストで表示すること。`#editor` からの全体の描画 ([Render] / `l` / `d`) では、未保存であっても確認ダイアログを表示しないこと (`#editor` の内容が文書そのものであるため)。パレットの Undo、または編集中でないときの挿入 (Insert table / Mermaid の雛形) が押されたときも、`#editor` に未描画の変更があれば、システムはその操作を行わず、`#editor` の内容で全体を描画し直し、同じトーストを表示すること (全体描画で Undo の記録は空になる。裁定 T31)。 |
+| INV-45 | イベント駆動 | 編集モードでブロックの開始ジェスチャが行われたとき、`#editor` に未描画の変更がある (最後の全体描画またはブロックの確定の後に `#editor` で `input` イベントが起きた) 場合、システムはブロックを開かず、`#editor` の内容で全体を描画し直し、その旨をトーストで表示すること。`#editor` からの全体の描画 ([Render] / `l` / `d`) では、未保存であっても確認ダイアログを表示しないこと (`#editor` の内容が文書そのものであるため。ただし `#editor` が空の場合は INV-56)。パレットの Undo、または編集中でないときの挿入 (Insert table / Mermaid の雛形) が押されたときも、`#editor` に未描画の変更があれば、システムはその操作を行わず、`#editor` の内容で全体を描画し直し、同じトーストを表示すること (全体描画で Undo の記録は空になる。裁定 T31)。 |
 | INV-46 | イベント駆動 | ブロック編集欄を開くとき、ブロックを確定して差し替えるとき、および Undo のとき、システムは基準のブロックの上端の画面上の位置が、前後で ±1 px 以内に保たれるようにスクロール位置を補正すること。基準は、開く・確定するブロックとする (確定で分割されたら最初のブロック、削除されたら次のブロック、次が無ければ前のブロック)。確定と Undo の結果 (`ModelChange`) は、新しいモデルでの基準のブロック ID (`anchorBlockId`) を返し、描画の時点ではその ID の要素を基準にすること。複数の確定が 1 回の描画にまとまった場合は、最後の要求のアンカーを使うこと。Mermaid などの非同期の描画で高さが後から変わる場合は、DOM が安定した後にもう一度補正すること。編集中でないときの挿入 (`insertAfter`) では、挿入の位置の前のブロック (挿入の基準のブロック) を基準とする。基準のブロックが無い場合 (先頭や末尾への挿入で、基準のブロックが無いとき) は、挿入したブロックを基準とする。 |
 | INV-47 | 常時 | システムは、ブロックの確定・挿入・Undo によるモデルの更新と、それに伴う `#editor.value` の書き換えと未保存の印の更新を、その操作のイベントハンドラの中で同期的に行うこと (後から遅れて `#editor` を書き換えない)。DOM の描画 (全体描画と部分描画) だけを 1 本の直列のキューで処理し、前の描画が完了するまで次の描画を始めないこと。各描画は、最後に描画したモデルから、その時点の現在のモデルへ、ブロック ID で対応付けて DOM を更新すること。Reload、`.md` のドロップは INV-21 の順序に従い、確認の直後にモデル・セッション・保存先を同期的に置き換え、全体描画をキューに入れること (描画のキューの完了を待ってから置き換えない)。Clear と非 `.md` のドロップ (文書が無くなる場合) は、確認の直後に同期的にモデル・セッション・保存先を無しにし、キューの中の部分描画とそのアンカーを捨て、DOM は既存の処理 (アフォーダンスの表示、コードビューの描画) で置き換えること (全体描画はキューに入れない)。Render (`l` / `d`) とパレットを閉じる操作は、開いている編集欄を同期的に確定してから処理し、Render の全体描画はキューに入れること。文書を作り直した後 (文書 ID が変わった後) の最初の描画は全体描画とし、それより前に入っていた部分描画とそのアンカーは捨てること。文書を作り直さない全体描画 (Markdown 表示中の `l` / `d` / [Render]) も、同じく描画の世代を進め、それより前に入っていた部分描画とそのアンカーを捨てること。ブロック編集欄が開いている間は、そのブロックの外枠 (INV-41 の `.md-block`) を部分描画で差し替えないこと (別のブロックの確定で、参照リンクの定義が変わるなどしてそのブロックの HTML が変わっても、外枠を残し、古い描画であることを記録する)。編集欄を閉じたとき (確定でも取消でも) に古い描画になっていれば、そのブロックだけを部分描画し直すこと。 |
 | INV-48 | イベント駆動 | パレットの Undo が押された場合 (`#editor` に未描画の変更があるときは INV-45 に従い、Undo を行わない)、システムはモデルを、直前 1 回の「本文を変えた確定」または「編集中でないときの挿入」の直前のモデルに戻し、INV-42 の部分描画を行い、Undo の記録を空にすること。Undo の記録は 1 件だけ保持し、本文を変えた確定と編集中でないときの挿入のたびに上書きし、全体描画・文書の作り直し (INV-55)・Clear で空にすること。ブロック ID はアプリ全体で単調に増やし、文書をまたいでも、Undo の後でも再利用しないこと (Undo で戻したモデルにも現在の `nextBlockId` を引き継ぐ。ID のカウンタは RendererOrchestrator が持つアプリ全体の値 (`_nextBlockId`) とし、新しい文書のモデルはそこから振り始め、モデルを作るたびにカウンタを進める (Clear やコードビューの後も、カウンタは戻さない))。原文の変わらない確定は確定として数えず、モデル・DOM・Undo の記録・未保存の印を変えないこと。ブロック編集中と記録が空のときは、Undo ボタンを無効にすること。 |
@@ -353,6 +353,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-53 | イベント駆動 | 編集パレットの要素は、プレビューの外 (`body` の直下) に置き、移動しないこと。ブロック編集欄で Tab (Shift なし、IME の変換中を除く) が押された場合、システムはパレットの現在のボタン (ロービングタブインデックス) へフォーカスを移すこと。パレット (`role="toolbar"`) の内側では、左右の矢印キーでボタン間を移動し、Enter / Space で実行し、Shift+Tab または Esc で、編集欄が開いていれば編集欄へフォーカスを戻し、開いていなければ (Esc の場合) パレットを閉じること。キーボードで B / I を実行した場合は、編集欄が保持している選択範囲に適用し、フォーカスを編集欄へ戻すこと。印刷ではパレット、ポップオーバー、ブロック編集欄の枠、不可視ブロックの帯を表示しないこと。 |
 | INV-54 | イベント駆動 | 保存処理中 (`saveOperationState` が `writingFile`) に、文書を作り直す出来事 (5.14.11 で新しい文書 ID になるもの、または文書が無くなるもの: `.md` と非 `.md` のドロップ、Reload、初期状態からのペーストと `#editor` からの描画、空の文書の開始、Clear) が要求された場合 (テーマの切り替えと、Markdown 表示中の `#editor` からの描画は対象外)、システムはそれを実行せず、保存中である旨をトーストで表示すること。保存の結果 (`SaveOutcome`) は、保存を始めたときの文書 ID が現在の文書 ID と一致する場合に限り反映すること。 |
 | INV-55 | イベント駆動 | 文書を作り直す出来事 (`.md` のドロップ、Reload、初期状態からのペーストまたは `#editor` からの描画、空の文書の開始、Clear、非 `.md` のドロップ) では、システムは 5.14.11 の表のとおりに `DocumentSession` と `DocumentLocation` を作り直す (または無しにする) こと。保存先は `DocumentLocation` だけを正とし、ほかの場所に fileHandle を持たないこと。 |
+| INV-56 | イベント駆動 | `#editor` の内容をモデルに取り込む操作 (Markdown 表示中の [Render Light] / [Render Dark] / `l` / `d`、INV-45 の自動の全体描画 (ブロックの開始ジェスチャ、パレットの Undo、編集中でないときの挿入)、Save / Save as での取り込み (INV-33)) の前に、`#editor` が空 (空白文字だけを含む場合を含む) で、現在の本文が空でない (空白文字以外を含む) 場合、システムは、何かを変える前に確認ダイアログ (`messages.edit.emptyEditorConfirm`) を表示すること。OK ならその操作を従来どおり行い (本文は空になる)、Cancel なら何も変えないこと (`#editor`、モデル、未保存の印、開いているブロック編集欄、テーマ、保存の状態を変えず、トーストも出さず、権限の要求も保存ダイアログも始めない)。`#editor` が空でも本文も空なら、確認を表示しないこと。Save / Save as では、`#editor` を取り込まない場合 (未描画の変更が無い場合) は確認を表示しないこと。 |
 
 ---
 
@@ -635,6 +636,7 @@ classDiagram
         -blocks : MarkdownBlock[]
         -nextBlockId : number
         +links : object
+        +isWholeDocument : boolean
         +fromBody(bodyText, lexer, firstBlockId)$ MarkdownBlockModel
         +withBody(bodyText, lexer, maxCells) ModelChange
         +replaceBlock(blockId, newRaw, lexer, maxCells) ModelChange
@@ -670,6 +672,7 @@ classDiagram
         +insertTableColumn(tableRaw, caretOffset)$ TextEdit
         +insertBlockText(text, caretOffset, blockText)$ TextEdit
         +insertTextAt(text, caretOffset, insertText)$ TextEdit
+        +changedRange(before, after)$ object
     }
     class TextEdit {
         +text : string
@@ -704,6 +707,7 @@ classDiagram
     }
     class ModelChangedPort {
         +onModelChanged(change) void
+        +onBlockSplitFailed() void
     }
     class OverwriteConfirmPort {
         +confirmOverwrite() Promise~boolean~
@@ -742,9 +746,6 @@ classDiagram
     }
     class BlockEditController {
         -blockEditState : string
-        +open(blockId) void
-        +commit() void
-        +cancel() void
         +isEditing() boolean
         +hasUncommittedChange() boolean
         +getSelectionRange() TextEdit
@@ -774,7 +775,6 @@ classDiagram
         -paletteGestureState : string
         +show() void
         +hide() void
-        +toggle() void
         +isShown() boolean
         +setButtonStates(isInBlock, hasSelection, isInTable, canUndo) void
         +setStatusText(text) void
@@ -900,7 +900,7 @@ classDiagram
 | `ExternalImageGate` | `apply(root)` (適用範囲を引数で取る。省略時は preview 全体。INV-43) |
 | `ScrollMemento` | `+captureAnchor(element) ScrollAnchor` (`@purity semi-pure-b`。要素の上端の画面上の位置を読む) / `+restoreAnchor(anchor, element) void` (基準の要素は呼び出し側が `anchorBlockId` で探して渡す。要素が無ければ補正しない) (INV-46。タッチ端末では document のスクロールを使う既存の切り替えに従う) |
 | `ScrollAnchor` (新しい値の型) | `{ offsetTop : number }` (押下・確定の時点の、基準のブロックの上端の画面上の位置)。描画の時点の基準の要素は `ModelChange.anchorBlockId` で決める (INV-46) |
-| `UIController` | `+toggleEditPalette() void` / `+requestSave() Promise` / `+requestSaveAs() Promise` / `+confirmOverwrite() Promise~boolean~` (`OverwriteConfirmPort` の実装。`window.confirm` を出す) / `+onModelChanged(change) void` (`ModelChangedPort` の実装。同期で `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろし、未保存の印を更新する) / `-_confirmDiscardIfDirty() boolean` / `-_isDocumentDirty() boolean` / `-_session : DocumentSession` / `-_location : DocumentLocation` / `-_nextDocumentId : number` / `-_editorChangedSinceRender : boolean` (INV-45) |
+| `UIController` | `+toggleEditPalette() void` / `+requestSave() Promise` / `+requestSaveAs() Promise` / `+confirmOverwrite() Promise~boolean~` (`OverwriteConfirmPort` の実装。`window.confirm` を出す) / `+onModelChanged(change) void` (`ModelChangedPort` の実装。同期で `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろし、未保存の印を更新する) / `+onBlockSplitFailed() void` (`ModelChangedPort` の実装。本文をブロックに分けられず全体を 1 ブロックにしたことを `messages.edit.blockSplitFailed` のトーストで知らせる。5.14.2) / `-_confirmDiscardIfDirty() boolean` / `-_isDocumentDirty() boolean` / `-_session : DocumentSession` / `-_location : DocumentLocation` / `-_nextDocumentId : number` / `-_editorChangedSinceRender : boolean` (INV-45) |
 
 **実装で確定したメンバと決めごと (その場編集):**
 
@@ -1028,7 +1028,9 @@ stateDiagram-v2
 | fullRenderRequested (`#editor` からの全体描画: [Render Light] / [Render Dark] / `l` / `d`。テーマの切り替えを含む) | → browsingPreview / enqueueFullRender | → editModeIdle / enqueueFullRender | → editModeIdle / commitBlock, enqueueFullRender (INV-47、5.7 (3)) |
 | editorFocused (`#editor` の `focusin`。キーボードによるフォーカスの移動を含む) | — | — | → editModeIdle / commitBlock (5.7 (5)。マウスでは先に pointerPressedOutside で確定しているので、この交点に来るのはキーボードの場合だけ) |
 
-注: `documentReplaced` / `documentCleared` は、INV-21 の確認で OK が選ばれた後にだけ起きる。`fullRenderRequested` は確認を出さない (INV-45)。編集欄を開いたまま、Shift+Tab などでフォーカスを編集欄の外 (本体) へ移した場合も、キーは document に届く。そのときの `l` / `d` / [Render] (キーボードでの押下を含む) は `fullRenderRequested`、`e` は `paletteHidden`、`r` / `c` / ドロップは INV-21 の確認を経て `documentReplaced` / `documentCleared` / `viewSwitchedToCode` になる (裁定 T1)。本体にフォーカスがある間の Esc は、5.11 の「ブロック編集中」の列のとおり `escapePressed` (編集の取消) になる。`#editor` にフォーカスが入ると `editorFocused` で確定する (裁定 T19)。`emptyDocumentStarted` は INV-31。`blockTapped` と `blockTappedWithUnrenderedEditor` は、開始ジェスチャ (INV-29) の時点で `_editorChangedSinceRender` が偽か真かで分かれる。`pointerPressedOutside` は、マウスでは `pointerdown`、タッチとペンでは移動の少ない `pointerup` で起きる (INV-30)。Undo は UIController が RendererOrchestrator に直接頼むので、この状態機械を動かさない (ブロック編集中は Undo ボタンが無効)。`#editor` に未描画の変更があるときの Undo と挿入は、INV-45 により `fullRenderRequested` と同じ全体描画 (editModeIdle の自己遷移) になる。`commitBlock` は同期でモデルを更新する (INV-47)。
+注: `documentReplaced` / `documentCleared` は、INV-21 の確認で OK が選ばれた後にだけ起きる。`fullRenderRequested` は未保存の確認を出さない (INV-45)。`#editor` が空で本文が空でない場合は、INV-56 の確認で OK が選ばれた後にだけ `fullRenderRequested` が起きる (Cancel なら出来事は起きない)。`renderFromEditor` も、INV-56 の確認で Cancel なら何もしない (全体描画もトーストも行わず、editModeIdle のまま)。編集欄を開いたまま、Shift+Tab などでフォーカスを編集欄の外 (本体) へ移した場合も、キーは document に届く。そのときの `l` / `d` / [Render] (キーボードでの押下を含む) は `fullRenderRequested`、`e` は `paletteHidden`、`r` / `c` / ドロップは INV-21 の確認を経て `documentReplaced` / `documentCleared` / `viewSwitchedToCode` になる (裁定 T1)。本体にフォーカスがある間の Esc は、5.11 の「ブロック編集中」の列のとおり `escapePressed` (編集の取消) になる。`#editor` にフォーカスが入ると `editorFocused` で確定する (裁定 T19)。`emptyDocumentStarted` は INV-31。`blockTapped` と `blockTappedWithUnrenderedEditor` は、開始ジェスチャ (INV-29) の時点で `_editorChangedSinceRender` が偽か真かで分かれる。`pointerPressedOutside` は、マウスでは `pointerdown`、タッチとペンでは移動の少ない `pointerup` で起きる (INV-30)。Undo は UIController が RendererOrchestrator に直接頼むので、この状態機械を動かさない (ブロック編集中は Undo ボタンが無効)。`#editor` に未描画の変更があるときの Undo と挿入は、INV-45 により `fullRenderRequested` と同じ全体描画 (editModeIdle の自己遷移) になる。`commitBlock` は同期でモデルを更新する (INV-47)。
+
+通知の契約: 編集欄を閉じる処理 (`commitBlock`、`restoreOriginalRaw`、`discardBlockEditor`) は、`dispatch` の処理の途中で `BlockEditHost.onEditStateChanged()` と、確定でモデルが変わった場合の `onModelChanged` を呼ぶ。これらの通知は、`blockEditState` を表の次の状態に更新する **前** に出る。通知の受け手は `blockEditState` を読まず、編集欄が開いているかどうか (`isEditing()`。編集欄を閉じた時点で偽になる) だけを読むこと。
 
 実装では、この表を `blockEditStateMachine` というデータとして持ち、出来事の入口 (`BlockEditController.dispatch`) が表を引いて動く。表の `enqueueFullRender` は、`dispatch` が戻った後で呼び出し側 (UIController) が行い、`showToast` は `renderFromEditor` に含まれる。`emptyDocumentStarted` は、全体描画が終わるまで editModeIdle に留まり、空の最初のブロックの編集欄を開いた時点で editingBlock になる。UI から到達しない交点 (例: editModeIdle × emptyDocumentStarted) も、`dispatch` を直接呼べば表のとおりに動く。
 
@@ -1101,7 +1103,7 @@ stateDiagram-v2
 | saveCanceled | — | → idle |
 | replaceRequested (5.14.11 で文書を作り直す出来事。テーマの切り替えは含まない) | — (この状態機械は関与しない。INV-21 / INV-55 で処理する) | → writingFile / rejectReplace, showSavingToast (INV-54) |
 
-`applyOutcomeIfSameDocument` は、`SaveOutcome.documentId` が現在の `DocumentSession.documentId` と一致するときだけ、セッションと保存先を置き換え、未保存の印を再計算する (INV-54)。保存のトースト (`messages.edit.saved`) は、別の文書の結果でも出す。ファイルは実際に書かれたので、それを知らせない方が利用者を惑わせるためである。実装では、この表を `saveOperationStateMachine` というデータとして持つ。
+`saveRequested` / `saveAsRequested` は、`#editor` を取り込む場合 (`applyEditorText` が要る場合) に INV-56 の確認が要るなら、OK が選ばれた後にだけ起きる (Cancel なら idle のまま、権限の要求も保存ダイアログも始めない。確認は同期なので、(1) の開始は最初の `await` より前のままである。INV-33)。writingFile の間の押下は、確認を出さずに無視する。`applyOutcomeIfSameDocument` は、`SaveOutcome.documentId` が現在の `DocumentSession.documentId` と一致するときだけ、セッションと保存先を置き換え、未保存の印を再計算する (INV-54)。保存のトースト (`messages.edit.saved`) は、別の文書の結果でも出す。ファイルは実際に書かれたので、それを知らせない方が利用者を惑わせるためである。実装では、この表を `saveOperationStateMachine` というデータとして持つ。
 
 ### 3.4 シーケンス図
 
@@ -1281,7 +1283,7 @@ sequenceDiagram
     User->>EditPalette : Press and release Save
     EditPalette->>UIController : requestSave()
     UIController->>MarkdownFileAccess : startPermissionRequest(fileHandle) in the gesture
-    UIController->>BlockEditController : commit() if editing (model updated synchronously)
+    UIController->>BlockEditController : dispatch(saveRequested) if editing (commitBlock, model updated synchronously)
     UIController->>SaveDocument : execute(request with OverwriteConfirmPort as confirmer)
     SaveDocument->>SaveDocument : Await permission
     SaveDocument->>MarkdownFileAccess : readLastModified(fileHandle)
@@ -2389,6 +2391,10 @@ const CONFIG = {
       saveActivationLost: "Save could not start. Press Save again.",
       editorRenderedFirst:
         "The top editor had unrendered changes. Rendered them first.",
+      blockSplitFailed:
+        "This document could not be split into blocks. It is edited as one block.",
+      emptyEditorConfirm:
+        "The top editor is empty. Replace the whole document with an empty one?",
       plantumlPending: "PlantUML diagram (not sent)",
       plantumlRenderButton: "Render",
       hiddenLinkDefinition: "link definition",
@@ -2856,7 +2862,7 @@ class SmoothScrollEngine {
 
 `_viewState === 'markdown'` の中には、ブロック編集の状態 (`blockEditState`: `browsingPreview` / `editModeIdle` / `editingBlock`。3.3 の 11-c) がある。`_viewState` の値は増やさない。
 
-`#editor` (上部の入力欄) はペーストの入口として残す。`#editor` と文書は次の規則で同期する: (1) ブロックの確定・Undo・挿入では、その操作のイベントハンドラの中で同期的にモデルを更新し、`onModelChanged` で UIController が `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろす (INV-47)。描画を待ってから書き換えることはしないので、確定の直後に `#editor` へ打ち込んだ文字は上書きされない。(2) `#editor` の `input` イベントで `_editorChangedSinceRender` を立てる。(3) `#editor` からの全体描画 ([Render] / `l` / `d`) は、開いている編集欄を同期的に確定してから行い (描画はキューに入れる)、確認は出さない (INV-45)。`_editorChangedSinceRender` は、`#editor` の内容をモデルに取り込んだ時点で (同期。描画の完了は待たない) 下ろす。 また、システムが `#editor.value` を書き換えるとき (確定・Undo・挿入の `onModelChanged`、文書の作り直し (`.md` のドロップ、Reload、初期状態からのペーストと描画、空の文書の開始)、Clear、コードビューへの切り替え) にも同期的に下ろす (INV-45 の「最後の全体描画またはブロックの確定の後の `input`」の定義にそろえる)。その後の `#editor` の `input` は、描画中であっても印をもう一度立てる (裁定 T32)。(4) 編集モードでブロックの開始ジェスチャが行われたとき、`_editorChangedSinceRender` が立っていれば、先に `#editor` の内容で全体を描画し直す (INV-45)。 (5) ブロック編集欄を開いたまま `#editor` にフォーカスが入った場合 (Shift+Tab などのキーボード操作を含む) は、その `focusin` のハンドラの中で編集欄を同期的に確定する (`#editor` への入力が、後の確定による `#editor.value` の書き換えで失われないため。裁定 T19)。
+`#editor` (上部の入力欄) はペーストの入口として残す。`#editor` と文書は次の規則で同期する: (1) ブロックの確定・Undo・挿入では、その操作のイベントハンドラの中で同期的にモデルを更新し、`onModelChanged` で UIController が `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろす (INV-47)。描画を待ってから書き換えることはしないので、確定の直後に `#editor` へ打ち込んだ文字は上書きされない。(2) `#editor` の `input` イベントで `_editorChangedSinceRender` を立てる。(3) `#editor` からの全体描画 ([Render] / `l` / `d`) は、開いている編集欄を同期的に確定してから行い (描画はキューに入れる)、未保存の確認は出さない (INV-45)。ただし `#editor` が空で本文が空でない場合は、確定より前に INV-56 の確認を出し、Cancel なら何もしない。`_editorChangedSinceRender` は、`#editor` の内容をモデルに取り込んだ時点で (同期。描画の完了は待たない) 下ろす。 また、システムが `#editor.value` を書き換えるとき (確定・Undo・挿入の `onModelChanged`、文書の作り直し (`.md` のドロップ、Reload、初期状態からのペーストと描画、空の文書の開始)、Clear、コードビューへの切り替え) にも同期的に下ろす (INV-45 の「最後の全体描画またはブロックの確定の後の `input`」の定義にそろえる)。その後の `#editor` の `input` は、描画中であっても印をもう一度立てる (裁定 T32)。(4) 編集モードでブロックの開始ジェスチャが行われたとき、`_editorChangedSinceRender` が立っていれば、先に `#editor` の内容で全体を描画し直す (INV-45)。 (5) ブロック編集欄を開いたまま `#editor` にフォーカスが入った場合 (Shift+Tab などのキーボード操作を含む) は、その `focusin` のハンドラの中で編集欄を同期的に確定する (`#editor` への入力が、後の確定による `#editor.value` の書き換えで失われないため。裁定 T19)。(6) ブラウザの Undo / Redo の履歴は、ページの中で 1 本である (Chromium では、ブロック編集欄の履歴が尽きた後の Ctrl+Z が、以前に入力した `#editor` に `historyUndo` として届き、フォーカスも `#editor` へ移る)。システムが `#editor.value` を代入すると、それより前の `#editor` の Undo の履歴は文書と対応しなくなる。そこで UIController は `#editor` の `beforeinput` で、`inputType` が `historyUndo` / `historyRedo` で、かつフォーカス (`document.activeElement`) が `#editor` でないものを `preventDefault()` する (`#editor` の中で押した Undo / Redo と、それ以外の入力は妨げない)。ブロック編集欄・パレット・本体での Ctrl+Z が、`#editor` と文書をずらすことはない (INV-45、INV-47、PRT-U36)。
 
 **RendererOrchestrator ビュー状態:**
 
@@ -3492,6 +3498,8 @@ UIController.preprocessInput() は、AIツールが出力する外側のMarkdown
 
 - `fromBody(bodyText, lexer)`: 最上位トークンからブロックの列を作る。開始タグが閉じていない `html` トークンは、タグが閉じるまでの後続トークンと合わせる (INV-41。タグの釣り合いは `html` トークンの中の非 void 要素の開始タグと終了タグを数えて判定する)。`space` トークンは直前のブロックの `separatorAfter` に入れる (先頭の `space` は先頭の空ブロックの区切りとして保持する)。
 - 不変条件: `toBody() === 全ブロックの (raw + separatorAfter) の連結` (INV-41)。
+- 原文との突き合わせ: marked は、ラベルが既に定義された参照リンク定義 (大文字小文字を区別しない) をトークンに積まずに読み飛ばし、その後の改行を直前のトークンの `raw` に足す [検証済: marked 18.1.0]。そこで `fromBody` / `withBody` は、各トークンの `raw` を本文の該当位置と突き合わせ (`raw` の末尾の、本文に無い改行は除く)、一致しなくなった位置から後ろを改めて字句解析する。読み飛ばされた定義は、それだけで字句解析されて、独立した `def` ブロックになる。`links` は、本文全体を 1 回で解析した場合と同じく、先に出た定義を優先する。`links` の各項目は `{href, title}` の凍結した写しとし、marked のオブジェクトを共有しない。
+- 退避: それでもブロックの連結が本文と一致しない場合と、字句解析が例外を投げた場合は、本文全体を 1 つのブロック (種類 `document`) とし、`isWholeDocument` を真にする (本文を書き換えない)。そのブロックの描画は、ブロック単位の描画と同じ経路で行い、解析の例外は従来どおり `Markdown Parse Error` として表示する。モデルが 1 ブロックの扱いに変わったとき、RendererOrchestrator は `console.error` に記録し、`ModelChangedPort.onBlockSplitFailed()` を呼ぶ (UIController がトーストを出す)。空の本文は退避ではない (ブロック 0 個)。
 - ブロック ID: `fromBody(bodyText, lexer, firstBlockId)` は `firstBlockId` から振る (新しい文書では、RendererOrchestrator が持つアプリ全体のカウンタ `_nextBlockId` の値を渡す。起動時は 1。ID はアプリ全体で単調に増え、文書をまたいでも、Clear やコードビューの後でも再利用しない。INV-48)。`withBody` / `replaceBlock` / `insertAfter` は新しい本文を字句解析し、`BlockDiff.diffBlocks` で前の列と対応付け、対応したブロックは ID を引き継ぎ、それ以外には `nextBlockId` から新しい ID を振る。自身は変更せず、`ModelChange` (新しいモデルと、本文が変わったかどうか) を返す (R7.5)。
 - `diffBlocks(oldBlocks, newBlocks, maxCells)` (`@purity pure`): (1) 先頭から原文の一致するブロックを除く。(2) 末尾から同様に除く。(3) 残った区間の大きさが k × m のとき、k·m が `maxCells` (`CONFIG.edit.diffMaxCells`) 以下なら、その区間だけを LCS で対応付ける。超える場合は、区間のブロックをすべて新しいブロックとして扱う。計算量は O(n + k·m) で、k·m は上限で抑えられる。1 回の確定で変わるブロックは通常 1〜数個なので、k と m は小さい。1 MB の文書 (約 9,300 ブロック) でも、(1) と (2) は線形の比較で済む。
 - 末尾の改行: トークンの種類によって `raw` が末尾の改行を含むかが異なる [検証済]。編集欄に表示するときは末尾の改行を除き、確定時に付け直す。
@@ -3520,31 +3528,32 @@ UIController.preprocessInput() は、AIツールが出力する外側のMarkdown
 
 #### 5.14.4 全体描画 (`renderAll`) の変更
 
-全体描画 (初回、ドロップ、Reload、`l` / `d`、`#editor` からの描画) でも、ブロックごとに `.md-block` を作って描画する。生 HTML のまとめ (INV-41) によって、`<details>` などの表示は従来の `marked.parse` と同じになる。PlantUML は従来どおり `mode: "consent"` で描画する。全体描画では HTML のキャッシュと Undo の記録を空にする。空の文書 (ブロックが 0 個) では、ID を持たない空のブロック (`.md-block.md-block-empty`) を 1 つ置く (INV-49)。編集モードでそれを開いた編集欄の確定は、本文が空白だけでなければ `insertAfter(null, text)` で入れ、空白だけなら何もしない。
+全体描画 (初回、ドロップ、Reload、`l` / `d`、`#editor` からの描画) でも、ブロックごとに `.md-block` を作って描画する。生 HTML のまとめ (INV-41) によって、`<details>` などの表示は従来の `marked.parse` と同じになる。PlantUML は従来どおり `mode: "consent"` で描画する。全体描画では HTML のキャッシュと Undo の記録を空にする。全体描画も、キューに入れた時点の描画の世代を持ち、実行の時点で世代が進んでいれば何もしない (続けて入った全体描画は最後の 1 回だけが描き、PlantUML の確認も 1 回だけ出る)。空の文書 (ブロックが 0 個) では、ID を持たない空のブロック (`.md-block.md-block-empty`) を 1 つ置く (INV-49)。編集モードでそれを開いた編集欄の確定は、本文が空白だけでなければ `insertAfter(null, text)` で入れ、空白だけなら何もしない。
 
 #### 5.14.5 テキスト操作 (`MarkdownTextOps`, `@purity pure`)
 
-CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選択が空なら変更しない)、`insertTableRow` / `insertTableColumn` (列はバックスラッシュの付かない縦棒だけで区切る。コードスパンの中の縦棒も区切りとして数える。区切り行にも区切りのセルを足し、配置指定は既定とする)、`insertBlockText` (前後に空行が無ければ補って挿入する。INV-52)、`insertTextAt` (`<br>` の挿入に使う)。
+CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選択が空なら変更しない)、`insertTableRow` / `insertTableColumn` (列はバックスラッシュの付かない縦棒だけで区切る。コードスパンの中の縦棒も区切りとして数える。区切り行にも区切りのセルを足し、配置指定は既定とする)、`insertBlockText` (前後に空行が無ければ補って挿入する。INV-52)、`insertTextAt` (`<br>` の挿入に使う)、`changedRange(before, after)` (2 つの文字列の共通の先頭と末尾を除いた、置き換える 1 つの区間 `{start, end, text}`。5.14.6 の Undo の対象にする挿入に使う)。
 
 #### 5.14.6 編集の開始ジェスチャと「外側」(BlockEditController)
 
 - 開始ジェスチャ (INV-29): 編集モードの間に、プレビュー内で主ボタンの `pointerdown` から `pointerup` までの移動が `CONFIG.pan.activationThresholdPx` 以下で、`pointerup` の時点で `window.getSelection()` が空で、対象が INV-29 の除外対象の内側でない場合 (除外対象の列挙は INV-29 だけに置く)。ブロック ID は `pointerdown` の時点で取る (INV-29)。
 - 外側 (INV-30): ブロック編集欄、編集パレット、ポップオーバー以外の要素 (上部バー、スクロールバー以外のプレビュー、モーダル、トーストを含む)。マウスでは `pointerdown` で、タッチとペン (`pointerType !== "mouse"`) では移動が閾値以下の `pointerup` で確定する (指でのスクロールでは確定しない)。
-- `commit()` は同期でモデルを更新する (描画の完了は待たない。INV-47)。
-- `#editor` の `focusin` は UIController が受け (`#editor` を持つのは UIController)、ブロック編集中なら `BlockEditController.commit()` を呼ぶ (5.7 (5)、INV-30)。
+- 確定 (11-c の `commitBlock`) は同期でモデルを更新する (描画の完了は待たない。INV-47)。確定・取消は `dispatch` で表を通してだけ行う (表の外で状態を変える入口は持たない)。
+- `#editor` の `focusin` は UIController が受け (`#editor` を持つのは UIController)、ブロック編集中なら `BlockEditController.dispatch("editorFocused")` で確定する (5.7 (5)、INV-30)。
 - Tab: 編集欄の `keydown` で Tab (Shift なし、IME の変換中を除く) を受けたら `preventDefault()` し、パレットの現在のボタンへフォーカスを移す (INV-53)。
 - `getSelectionRange()` / `applyTextEdit(edit)` で選択範囲と文字列だけを受け渡し、編集欄の要素は外へ渡さない (LoD)。
+- 編集欄の Undo の対象 (INV-52、OS-18): `applyTextEdit` (パレットの書式・挿入) と表の中の Enter (`<br>`) は、`MarkdownTextOps.changedRange` で変わる区間だけを `setSelectionRange` で選び、`document.execCommand("insertText", false, text)` で入れる (ブラウザの編集欄の Undo の履歴に載る。非推奨の API だが代わりが無い)。`execCommand` が無い、`false` を返す、例外を投げる、または入れた結果が求める文字列と違う場合は、`value` の代入にフォールバックする (その場合はその変更を Ctrl+Z で戻せない)。その後で選択範囲を `edit` のとおりにする。
 - IME: `compositionstart` から `compositionend` までと、`event.isComposing` が真、または `keyCode === 229` の `keydown` は処理しない (INV-27 / INV-28)。
 
 - 編集欄は外枠 (`.md-block`) の中に置き、外枠の元の子要素は退避して、閉じるときに戻す (外枠は残るので、ブロックの特定は変わらない)。編集中の外枠には `.md-block-editing` を付ける。`font-family: monospace` と `overflow-y: hidden` は CSSOM で設定し、高さは `scrollHeight` に枠の幅を足した値にする (CSS は `box-sizing: border-box`、`width: 100%`。INV-40)。
 - INV-29 の除外対象の「入力要素」は `input`、`textarea`、`select` とする。編集中のブロックの外枠そのものの上の押下は、編集欄の内側として扱う。
 - スクロールバーの判定: 押下の対象が `#preview` または `document.documentElement` で、`offsetX > clientWidth` または `offsetY > clientHeight` のとき、スクロールバーの上とみなす (外側としない。INV-30)。
 - `pointerType` が `"mouse"` 以外 (空文字を含む) の押下は、タッチとペンの扱いにする。
-- ダブルタップ (INV-31) は、タッチの `pointerup` の時刻 (`Date.now()`) と座標で判定する (`BlockEditController.isDoubleTap`)。ダブルクリックは `dblclick` の事象で判定する。
+- ダブルタップ (INV-31) は、タッチの `pointerup` の時刻 (単調時計の `performance.now()`。壁時計の `Date.now()` は使わない) と座標で判定する (`BlockEditController.isDoubleTap`)。ダブルクリックは `dblclick` の事象で判定する。
 
 #### 5.14.7 保存 (`SaveDocument` / `SaveDocumentAs`、UseCase 層)
 
-- 押下のハンドラの中で同期的に、`MarkdownFileAccess.startPermissionRequest(location.fileHandle)` (Save) または `startSavePicker(location.fileName)` (Save as) を始め、続けて開いている編集欄を確定し、`#editor` に未描画の変更があればそれをモデルに取り込む (`applyEditorText`。どちらも同期。INV-33)。その後で `SaveRequest` (セッション、保存先、本文、権限またはダイアログの Promise、`confirmOverwrite` ポート) を組み立てて `execute` に渡す。アクティベーションが失効していた場合 (`SecurityError` 等) は `failed` とし、`saveActivationLost` のトーストを出す (INV-25)。
+- 押下のハンドラの中で同期的に、(`#editor` を取り込む場合は先に INV-56 の確認を出し、Cancel なら何も始めずに終える) `MarkdownFileAccess.startPermissionRequest(location.fileHandle)` (Save) または `startSavePicker(location.fileName)` (Save as) を始め、続けて開いている編集欄を確定し、`#editor` に未描画の変更があればそれをモデルに取り込む (`applyEditorText`。どちらも同期。INV-33)。その後で `SaveRequest` (セッション、保存先、本文、権限またはダイアログの Promise、`confirmOverwrite` ポート) を組み立てて `execute` に渡す。アクティベーションが失効していた場合 (`SecurityError` 等) は `failed` とし、`saveActivationLost` のトーストを出す (INV-25)。
 - SaveDocument は UI を直接扱わない。外部変更の確認は、`SaveRequest.confirmer` (UIController が実装する `OverwriteConfirmPort`) の `confirmOverwrite()` (`Promise<boolean>` を返す) を通して行う (INV-39)。
 - Save: 保存先 (`location.fileHandle`) が無い、または書き込み API が無い場合は Save as と同じ動作にする。権限 → `readLastModified` (`NotFoundError` は `failed`) → 基準と異なれば `confirmOverwrite` → `toFileText` → `writeFile` → `withSaved`。
 - Save as: 保存ダイアログで得た handle と名前で、新しい `DocumentLocation` を返す (以後の Save と Reload の対象)。書き込み API が無い場合は `startDownload` で Blob (`text/markdown;charset=utf-8`) をダウンロードし、`downloadStarted` を返す。ダウンロードでは保存先も基準も変えない (INV-26)。Blob URL は `<a>` の click の後のタスクで `URL.revokeObjectURL` する。ダウンロードは、押下のハンドラの中で、確定 (同期) に続けて同期的に始める (INV-33。ユーザーアクティベーションの中で始まる)。それでも止められた場合 **[一般知識・未検証: iOS Safari など]** は、INV-26 により基準は変わらず、安全側に倒れる (PRT-W06 を iOS Safari でも行う)。
@@ -3555,6 +3564,7 @@ CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選�
 
 - 保存先が無い Save は、仮の保存先 `DocumentLocation(defaultFileName, null)` で、保存ダイアログを使う Save as と同じに動く。書き込み API が無い場合は、権限の要求もダイアログも始めず (`permissionOrPicker` は無し)、ダウンロードにする。
 - use case が想定外の例外を投げた場合は、`failed` (`saveFailed`) として扱う (未保存のまま)。
+- `MarkdownFileAccess.writeFile`: `write()` または `close()` が失敗したら `abort()` してから元のエラーを投げる (`abort()` 自体の失敗は無視し、元のエラーを隠さない)。書き込みと `close()` が成功した後の `lastModified` の読み直しが失敗した場合は、エラーではなく `null` を返す (保存は成功で、`saved` とする)。そのとき `DocumentSession.withSaved` は前の基準の `lastModified` を保つ (書き込み後のファイルの `lastModified` は前の基準と異なるので、次の Save では INV-39 の確認が 1 回余分に出るが、外部の変更の確認は省かれない)。
 
 #### 5.14.8 未保存の判定とタブのタイトル
 

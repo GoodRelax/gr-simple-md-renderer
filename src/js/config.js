@@ -72,6 +72,10 @@ export const CONFIG = {
       saveActivationLost: "Save could not start. Press Save again.",
       editorRenderedFirst:
         "The top editor had unrendered changes. Rendered them first.",
+      blockSplitFailed:
+        "This document could not be split into blocks. It is edited as one block.",
+      emptyEditorConfirm:
+        "The top editor is empty. Replace the whole document with an empty one?",
       plantumlPending: "PlantUML diagram (not sent)",
       plantumlRenderButton: "Render",
       hiddenLinkDefinition: "link definition",

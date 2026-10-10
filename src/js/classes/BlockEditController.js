@@ -1,6 +1,7 @@
 import { CONFIG } from "../config.js";
 import MarkdownBlockModel from "./MarkdownBlockModel.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
+import { cell, row } from "../stateTable.js";
 
 const BROWSING = "browsingPreview";
 const IDLE = "editModeIdle";
@@ -22,27 +23,8 @@ const OPEN_EXCLUDED_SELECTOR = [
   ".diagram-copy-btn",
 ].join(", ");
 
-/**
- * One cell of the transition table.
- * @purity pure
- * @param {string} to - next state
- * @param {string[]} actions
- * @param {string} [guard]
- * @returns {Readonly<{to: string, actions: ReadonlyArray<string>, guard?: string}>}
- */
-function cell(to, actions, guard) {
-  const c = { to, actions: Object.freeze(actions) };
-  if (guard) c.guard = guard;
-  return Object.freeze(c);
-}
-
-/**
- * One row of the table: the cell for each current state (null = no change).
- * @purity pure
- */
-function row(browsing, idle, editing) {
-  return Object.freeze({ [BROWSING]: browsing, [IDLE]: idle, [EDITING]: editing });
-}
+const STATES = [BROWSING, IDLE, EDITING];
+const transitions = (...cells) => row(STATES, cells);
 
 /**
  * Spec 11-c: event -> current state -> cell. "enqueueFullRender" is done by
@@ -50,29 +32,29 @@ function row(browsing, idle, editing) {
  * host.renderFromEditor() (INV-45).
  */
 export const blockEditStateMachine = Object.freeze({
-  paletteShown: row(cell(IDLE, []), null, null),
-  paletteHidden: row(null, cell(BROWSING, []), cell(BROWSING, ["commitBlock"])),
-  emptyDocumentStarted: row(
+  paletteShown: transitions(cell(IDLE, []), null, null),
+  paletteHidden: transitions(null, cell(BROWSING, []), cell(BROWSING, ["commitBlock"])),
+  emptyDocumentStarted: transitions(
     cell(EDITING, ["startEmptyDocument", "showPalette", "openBlockEditor"]),
     cell(EDITING, ["startEmptyDocument", "openBlockEditor"]),
     null,
   ),
-  blockTapped: row(null, cell(EDITING, ["openBlockEditor"]), null),
-  blockTappedWithUnrenderedEditor: row(null, cell(IDLE, ["renderFromEditor", "showToast"]), null),
-  otherBlockTapped: row(null, null, cell(EDITING, ["commitBlock", "resolveBlockById", "openBlockEditor"])),
-  pointerPressedOutside: row(null, null, cell(IDLE, ["commitBlock"])),
-  escapePressed: row(null, cell(BROWSING, ["hidePalette"]), cell(IDLE, ["restoreOriginalRaw"], "isImeIdle")),
-  saveRequested: row(null, null, cell(IDLE, ["commitBlock"])),
-  saveAsRequested: row(null, null, cell(IDLE, ["commitBlock"])),
-  documentReplaced: row(null, null, cell(IDLE, ["discardBlockEditor"])),
-  documentCleared: row(null, cell(BROWSING, ["hidePalette"]), cell(BROWSING, ["discardBlockEditor", "hidePalette"])),
-  viewSwitchedToCode: row(null, cell(BROWSING, ["hidePalette"]), cell(BROWSING, ["discardBlockEditor", "hidePalette"])),
-  fullRenderRequested: row(
+  blockTapped: transitions(null, cell(EDITING, ["openBlockEditor"]), null),
+  blockTappedWithUnrenderedEditor: transitions(null, cell(IDLE, ["renderFromEditor", "showToast"]), null),
+  otherBlockTapped: transitions(null, null, cell(EDITING, ["commitBlock", "resolveBlockById", "openBlockEditor"])),
+  pointerPressedOutside: transitions(null, null, cell(IDLE, ["commitBlock"])),
+  escapePressed: transitions(null, cell(BROWSING, ["hidePalette"]), cell(IDLE, ["restoreOriginalRaw"], "isImeIdle")),
+  saveRequested: transitions(null, null, cell(IDLE, ["commitBlock"])),
+  saveAsRequested: transitions(null, null, cell(IDLE, ["commitBlock"])),
+  documentReplaced: transitions(null, null, cell(IDLE, ["discardBlockEditor"])),
+  documentCleared: transitions(null, cell(BROWSING, ["hidePalette"]), cell(BROWSING, ["discardBlockEditor", "hidePalette"])),
+  viewSwitchedToCode: transitions(null, cell(BROWSING, ["hidePalette"]), cell(BROWSING, ["discardBlockEditor", "hidePalette"])),
+  fullRenderRequested: transitions(
     cell(BROWSING, ["enqueueFullRender"]),
     cell(IDLE, ["enqueueFullRender"]),
     cell(IDLE, ["commitBlock", "enqueueFullRender"]),
   ),
-  editorFocused: row(null, null, cell(IDLE, ["commitBlock"])),
+  editorFocused: transitions(null, null, cell(IDLE, ["commitBlock"])),
 });
 
 /**
@@ -103,7 +85,7 @@ export default class BlockEditController {
     this.blockLocator = blockLocator;
     this.scrollMemento = scrollMemento;
     this.host = host;
-    this._state = BROWSING;
+    this._blockEditState = BROWSING;
     this._editor = null; // { textarea, wrapper, blockId, blockType, original, savedNodes }
     this._press = null; // the pointerdown being followed
     this._composing = false;
@@ -143,9 +125,9 @@ export default class BlockEditController {
    * @returns {Promise<void>|undefined}
    */
   dispatch(event, target = null) {
-    const transitions = blockEditStateMachine[event];
-    if (!transitions) throw new Error(`Unknown block edit event: ${event}`);
-    const next = transitions[this._state];
+    const cells = blockEditStateMachine[event];
+    if (!cells) throw new Error(`Unknown block edit event: ${event}`);
+    const next = cells[this._blockEditState];
     if (!next) return undefined;
     if (next.guard === "isImeIdle" && this._composing) return undefined;
     return this._run(next, target);
@@ -189,57 +171,24 @@ export default class BlockEditController {
   }
 
   /**
-   * Open the editor on a block (editModeIdle only).
-   * @purity non-pure
-   * @param {number} blockId
-   */
-  open(blockId) {
-    if (this._state !== IDLE) return;
-    this._openBlockEditor({ kind: "block", id: blockId });
-    this._settle(EDITING);
-  }
-
-  /**
-   * Commit the open editor (synchronous model update, INV-47).
-   * @purity non-pure
-   */
-  commit() {
-    if (this._state !== EDITING) return;
-    this._commitBlock();
-    this._settle(IDLE);
-  }
-
-  /**
-   * Close the open editor without committing (INV-28).
-   * @purity non-pure
-   */
-  cancel() {
-    if (this._state !== EDITING) return;
-    this._closeEditor();
-    this._settle(IDLE);
-  }
-
-  /**
    * @purity semi-pure-b
    * @returns {{text: string, selStart: number, selEnd: number}|null}
    */
   getSelectionRange() {
     if (!this._editor) return null;
-    const t = this._editor.textarea;
-    return { text: t.value, selStart: t.selectionStart, selEnd: t.selectionEnd };
+    const { textarea } = this._editor;
+    return { text: textarea.value, selStart: textarea.selectionStart, selEnd: textarea.selectionEnd };
   }
 
   /**
    * Put text and selection into the editor; focus stays, nothing is committed.
+   * The change goes in as one undoable step of the editor (INV-52, OS-18).
    * @purity non-pure
    * @param {{text: string, selStart: number, selEnd: number}} edit
    */
   applyTextEdit(edit) {
     if (!this._editor) return;
-    const t = this._editor.textarea;
-    t.value = edit.text;
-    t.setSelectionRange(edit.selStart, edit.selEnd);
-    t.focus({ preventScroll: true });
+    this._replaceText(edit);
     this._fitHeight();
   }
 
@@ -309,7 +258,7 @@ export default class BlockEditController {
    * @purity non-pure
    */
   _openEmptyAfterRender() {
-    if (this._state !== IDLE || this._editor) return;
+    if (this._blockEditState !== IDLE || this._editor) return;
     this._openBlockEditor({ kind: "empty" });
     this._settle(EDITING);
   }
@@ -321,8 +270,8 @@ export default class BlockEditController {
    */
   _settle(to) {
     const next = to === EDITING && !this._editor ? IDLE : to;
-    const wasBrowsing = this._state === BROWSING;
-    this._state = next;
+    const wasBrowsing = this._blockEditState === BROWSING;
+    this._blockEditState = next;
     if (wasBrowsing && next !== BROWSING) {
       document.addEventListener("pointerdown", this._onPointerDown, true);
       document.addEventListener("pointerup", this._onPointerUp, true);
@@ -403,20 +352,20 @@ export default class BlockEditController {
    * @returns {{blockId: number|null, text: string, original: string}|null}
    */
   _closeEditor() {
-    const ed = this._editor;
-    if (!ed) return null;
-    const t = ed.textarea;
-    t.removeEventListener("keydown", this._onKeyDown);
-    t.removeEventListener("input", this._onInput);
-    t.removeEventListener("compositionstart", this._onCompositionStart);
-    t.removeEventListener("compositionend", this._onCompositionEnd);
-    ed.wrapper.replaceChildren(...ed.savedNodes);
-    ed.wrapper.classList.remove("md-block-editing");
+    const openEditor = this._editor;
+    if (!openEditor) return null;
+    const { textarea } = openEditor;
+    textarea.removeEventListener("keydown", this._onKeyDown);
+    textarea.removeEventListener("input", this._onInput);
+    textarea.removeEventListener("compositionstart", this._onCompositionStart);
+    textarea.removeEventListener("compositionend", this._onCompositionEnd);
+    openEditor.wrapper.replaceChildren(...openEditor.savedNodes);
+    openEditor.wrapper.classList.remove("md-block-editing");
     this._editor = null;
     this._composing = false;
     this.orchestrator.releaseBlock();
     this.host.onEditStateChanged();
-    return { blockId: ed.blockId, text: t.value, original: ed.original };
+    return { blockId: openEditor.blockId, text: textarea.value, original: openEditor.original };
   }
 
   /**
@@ -468,7 +417,7 @@ export default class BlockEditController {
     const moved = Math.hypot(e.clientX - press.x, e.clientY - press.y);
     if (moved > CONFIG.pan.activationThresholdPx) return;
     const isTap = press.target !== null && this._isSelectionEmpty();
-    if (this._state === EDITING && press.outside && press.pointerType !== "mouse") {
+    if (this._blockEditState === EDITING && press.outside && press.pointerType !== "mouse") {
       this.dispatch(isTap ? "otherBlockTapped" : "pointerPressedOutside", press.target);
       return;
     }
@@ -503,8 +452,8 @@ export default class BlockEditController {
    * @purity semi-pure-b
    */
   _isInEditor(node) {
-    const ed = this._editor;
-    return ed !== null && (node === ed.wrapper || ed.textarea.contains(node));
+    const openEditor = this._editor;
+    return openEditor !== null && (node === openEditor.wrapper || openEditor.textarea.contains(node));
   }
 
   /**
@@ -550,13 +499,37 @@ export default class BlockEditController {
    * @purity non-pure
    */
   _insertTableLineBreak() {
-    const t = this._editor.textarea;
-    const start = t.selectionStart;
-    const text = t.value.slice(0, start) + t.value.slice(t.selectionEnd);
-    const edit = MarkdownTextOps.insertTextAt(text, start, CONFIG.edit.tableLineBreak);
-    t.value = edit.text;
-    t.setSelectionRange(edit.selStart, edit.selEnd);
+    const { textarea } = this._editor;
+    const start = textarea.selectionStart;
+    const text = textarea.value.slice(0, start) + textarea.value.slice(textarea.selectionEnd);
+    this._replaceText(MarkdownTextOps.insertTextAt(text, start, CONFIG.edit.tableLineBreak));
     this._handleInput();
+  }
+
+  /**
+   * Replace the editor text with edit.text as one undoable step: only the
+   * changed range is selected and inserted with execCommand("insertText"),
+   * which the browser puts on the editor's own undo history (INV-52, OS-18).
+   * Where that is refused or missing, the value is assigned instead.
+   * @purity non-pure
+   * @param {{text: string, selStart: number, selEnd: number}} edit
+   */
+  _replaceText(edit) {
+    const { textarea } = this._editor;
+    if (textarea.value !== edit.text) {
+      const range = MarkdownTextOps.changedRange(textarea.value, edit.text);
+      textarea.focus({ preventScroll: true });
+      textarea.setSelectionRange(range.start, range.end);
+      let inserted = false;
+      try {
+        inserted = typeof document.execCommand === "function" && document.execCommand("insertText", false, range.text);
+      } catch {
+        inserted = false;
+      }
+      if (!inserted || textarea.value !== edit.text) textarea.value = edit.text;
+    }
+    textarea.setSelectionRange(edit.selStart, edit.selEnd);
+    textarea.focus({ preventScroll: true });
   }
 
   /**
@@ -579,9 +552,9 @@ export default class BlockEditController {
    * @purity non-pure
    */
   _fitHeight() {
-    const t = this._editor.textarea;
-    t.style.height = "auto";
+    const { textarea } = this._editor;
+    textarea.style.height = "auto";
     // box-sizing: border-box (style.css): the height includes the borders
-    t.style.height = `${t.scrollHeight + t.offsetHeight - t.clientHeight}px`;
+    textarea.style.height = `${textarea.scrollHeight + textarea.offsetHeight - textarea.clientHeight}px`;
   }
 }

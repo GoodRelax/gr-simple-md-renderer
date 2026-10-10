@@ -65,6 +65,101 @@ function tokensToBlocks(tokens) {
 }
 
 /**
+ * The longest form of a token raw that the body has at pos: the raw itself, or
+ * the raw without trailing newlines that are not in the body. null if none.
+ * @purity pure
+ * @param {string} body
+ * @param {number} pos
+ * @param {string} raw
+ * @returns {string|null}
+ */
+function rawAt(body, pos, raw) {
+  let candidate = raw;
+  while (candidate.length > 0) {
+    if (body.startsWith(candidate, pos)) return candidate;
+    if (!candidate.endsWith("\n")) return null;
+    candidate = candidate.slice(0, -1);
+  }
+  return null;
+}
+
+/**
+ * Top-level tokens whose raws join back to the body (INV-41), or null.
+ * marked skips a reference definition whose label is already defined
+ * (case-insensitive) and adds the newline after it to the previous token, so
+ * the raws no longer cover the body. Where a raw stops matching, the part
+ * that matches is kept and the rest of the body is lexed again on its own;
+ * the skipped definition then becomes a token of its own. The first
+ * definition of a label wins in links, as in one parse of the whole body.
+ * A body without such a gap is lexed once.
+ * @purity pure
+ * @param {string} body
+ * @param {(src: string) => object[]} lexer
+ * @returns {{tokens: object[], links: object}|null}
+ */
+function lexAligned(body, lexer) {
+  const tokens = [];
+  const links = {};
+  let pos = 0;
+  while (pos < body.length) {
+    const start = pos;
+    const part = lexer(body.slice(pos));
+    for (const [label, link] of Object.entries(part.links || {})) {
+      if (!(label in links)) links[label] = link;
+    }
+    for (const token of part) {
+      const raw = rawAt(body, pos, token.raw);
+      if (raw === null) break;
+      tokens.push(raw === token.raw ? token : { ...token, raw });
+      pos += raw.length;
+      if (raw !== token.raw) break; // the tokens after this one are suspect: lex again
+    }
+    if (pos === start) return null;
+  }
+  return { tokens, links };
+}
+
+/**
+ * Split a body into blocks. If the blocks cannot reproduce the body (or the
+ * lexer throws), the whole body becomes one block, so the body is never
+ * rewritten (INV-41).
+ * @purity pure
+ * @param {string} body
+ * @param {(src: string) => object[]} lexer
+ * @returns {{leading: string, blocks: object[], links: object, isWholeDocument: boolean}}
+ */
+function splitBody(body, lexer) {
+  let aligned = null;
+  try {
+    aligned = lexAligned(body, lexer);
+  } catch {
+    aligned = null;
+  }
+  if (aligned) {
+    const { leading, blocks } = tokensToBlocks(aligned.tokens);
+    const joined = leading + blocks.map((b) => b.raw + b.separatorAfter).join("");
+    if (joined === body) return { leading, blocks, links: aligned.links, isWholeDocument: false };
+  }
+  const whole = body === "" ? [] : [{ type: "document", raw: body, separatorAfter: "" }];
+  return { leading: "", blocks: whole, links: aligned ? aligned.links : {}, isWholeDocument: body !== "" };
+}
+
+/**
+ * A deep, frozen copy of the reference definitions: no entry is shared
+ * with the lexer's own objects.
+ * @purity pure
+ * @param {object} links
+ * @returns {object}
+ */
+function freezeLinks(links) {
+  const copy = {};
+  for (const [label, link] of Object.entries(links || {})) {
+    copy[label] = Object.freeze({ href: link.href, title: link.title });
+  }
+  return Object.freeze(copy);
+}
+
+/**
  * Markdown source as a list of blocks (Entity, immutable value; spec 5.14.2).
  * Invariant: toBody() === leading + every (raw + separatorAfter) (INV-41).
  * Block ids are never reused: new blocks take ids from nextBlockId (INV-48).
@@ -76,12 +171,14 @@ export default class MarkdownBlockModel {
    * @param {{id: number, type: string, raw: string, separatorAfter: string}[]} blocks
    * @param {number} nextBlockId
    * @param {object} links - reference link definitions (marked tokens.links)
+   * @param {boolean} [isWholeDocument] - the body could not be split (one block)
    */
-  constructor(leading, blocks, nextBlockId, links) {
+  constructor(leading, blocks, nextBlockId, links, isWholeDocument = false) {
     this._leading = leading;
     this._blocks = Object.freeze(blocks.map((b) => Object.freeze({ ...b })));
     this._nextBlockId = nextBlockId;
-    this.links = Object.freeze({ ...(links || {}) });
+    this.links = freezeLinks(links);
+    this.isWholeDocument = isWholeDocument;
     Object.freeze(this);
   }
 
@@ -94,11 +191,10 @@ export default class MarkdownBlockModel {
    * @returns {MarkdownBlockModel}
    */
   static fromBody(bodyText, lexer, firstBlockId = 1) {
-    const tokens = lexer(bodyText);
-    const { leading, blocks } = tokensToBlocks(tokens);
+    const { leading, blocks, links, isWholeDocument } = splitBody(bodyText, lexer);
     let id = firstBlockId;
     const numbered = blocks.map((b) => ({ id: id++, ...b }));
-    return new MarkdownBlockModel(leading, numbered, id, tokens.links);
+    return new MarkdownBlockModel(leading, numbered, id, links, isWholeDocument);
   }
 
   /**
@@ -137,7 +233,7 @@ export default class MarkdownBlockModel {
    */
   withNextBlockId(n) {
     if (n <= this._nextBlockId) return this;
-    return new MarkdownBlockModel(this._leading, this._blocks, n, this.links);
+    return new MarkdownBlockModel(this._leading, this._blocks, n, this.links, this.isWholeDocument);
   }
 
   /**
@@ -258,12 +354,11 @@ export default class MarkdownBlockModel {
    * @purity pure
    */
   _relex(bodyText, lexer, maxCells) {
-    const tokens = lexer(bodyText);
-    const { leading, blocks } = tokensToBlocks(tokens);
+    const { leading, blocks, links, isWholeDocument } = splitBody(bodyText, lexer);
     const matches = BlockDiff.diffBlocks(this._blocks, blocks, maxCells);
     const keep = new Map(matches.map((m) => [m.newIndex, this._blocks[m.oldIndex].id]));
     let next = this._nextBlockId;
     const numbered = blocks.map((b, i) => ({ id: keep.has(i) ? keep.get(i) : next++, ...b }));
-    return new MarkdownBlockModel(leading, numbered, next, tokens.links);
+    return new MarkdownBlockModel(leading, numbered, next, links, isWholeDocument);
   }
 }

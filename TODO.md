@@ -30,6 +30,7 @@
 - [ ] F-B2 `DiagramCopyController.inlineSvgStyles` / `convertForeignObjects`：複製を組み立てるループの中で `getComputedStyle` を読んでいる（R7.4）。`convertForeignObjects` は文字の配置の計算（R7.2）と DOM の生成も混ざっている。読み取りと計算と生成を分ける
 - [ ] F-B3 `SmoothScrollEngine._loop`：速度と摩擦の物理計算が `scrollBy` と `requestAnimationFrame` と混ざっている。計算を純粋関数に切り出す（R7.2）
 
-### 保存（`MarkdownFileAccess.writeFile`）
-- [ ] 書き込みストリームの `close()` が失敗したときに `abort()` を呼んでいない（Low）
-- [ ] `abort()` 自体が例外を投げると、元の書き込みのエラーが失われる（Low）。元のエラーを優先して投げ直す
+### 構造の整理（その場編集のコードレビューで受容した指摘）
+- [ ] `UIController` の責務が多い（約 1,300 行）。UI の配線に加え、文書の作り直し（`_session` / `_location` の置き換え）・保存の状態機械・未保存の判定・パレットの機能の振り分けを持つ。「文書のライフサイクル」（セッション・保存先・保存の状態）を別のクラスへ分ける（R2.2 / R2.10）
+- [ ] `SaveDocument` が内部で `SaveDocumentAs` を作り、その `outcome` / `failureMessage` を借りている（UIController も例外の経路で使う）。両方の use case が使う純粋な関数（例：`saveOutcome.js`）に出し、`SaveDocument` には `SaveDocumentAs` を注入する（R2.7 / R2.2）
+- [ ] メンバの並び：`BlockEditController` の non-pure の `dispatch` が semi-pure-b のクエリより前にある。`UIController.js` の先頭の純粋関数（`classifyDroppedFile` / `hasNullByte` / `renderRouteFor`）を別ファイル（例：`dropClassification.js`）へ移す（R7.7 / R7.9）

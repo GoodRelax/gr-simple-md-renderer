@@ -151,6 +151,28 @@ export default class MarkdownTextOps {
     return { text: text.slice(0, o) + insertText + text.slice(o), selStart: end, selEnd: end };
   }
 
+  /**
+   * The one range that differs between two texts: replacing before[start, end)
+   * with text gives after (only this range goes through the browser's
+   * undoable insertText, INV-52).
+   * @purity pure
+   * @param {string} before
+   * @param {string} after
+   * @returns {{start: number, end: number, text: string}}
+   */
+  static changedRange(before, after) {
+    let start = 0;
+    const limit = Math.min(before.length, after.length);
+    while (start < limit && before[start] === after[start]) start++;
+    let endBefore = before.length;
+    let endAfter = after.length;
+    while (endBefore > start && endAfter > start && before[endBefore - 1] === after[endAfter - 1]) {
+      endBefore--;
+      endAfter--;
+    }
+    return { start, end: endBefore, text: after.slice(start, endAfter) };
+  }
+
   // ---- helpers (pure) ----
 
   /**

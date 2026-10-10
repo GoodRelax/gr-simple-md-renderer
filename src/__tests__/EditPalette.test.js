@@ -544,11 +544,11 @@ describe("AT-PAL states, status, life cycle, security", () => {
     expect(document.body.classList.contains("edit-mode")).toBe(false);
   });
 
-  it("toggle and isShown", () => {
+  it("isShown follows show and hide", () => {
     expect(palette.isShown()).toBe(false);
-    palette.toggle();
+    palette.show();
     expect(palette.isShown()).toBe(true);
-    palette.toggle();
+    palette.hide();
     expect(palette.isShown()).toBe(false);
   });
 });

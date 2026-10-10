@@ -455,6 +455,45 @@ describe("AT-SSM 11-e save operation (14 cells), with UI stimuli", () => {
   });
 });
 
+describe("the handwritten save steps follow the 11-e action names", () => {
+  // commitOpenBlock runs only with an open block editor; applyEditorText only
+  // with unrendered #editor text (a commit's onModelChanged already took #editor in).
+  const CONDITIONAL = new Set(["commitOpenBlock", "applyEditorText"]);
+
+  it.each([
+    ["saveRequested", "paletteSave", "open block editor"],
+    ["saveRequested", "paletteSave", "unrendered #editor"],
+    ["saveAsRequested", "paletteSaveAs", "open block editor"],
+    ["saveAsRequested", "paletteSaveAs", "unrendered #editor"],
+  ])("%s (%s, with an %s): the observed steps are the cell's actions, in order", async (event, button, condition) => {
+    const permission = deferred();
+    await withDocument({ permission: permission.promise });
+    if (condition === "open block editor") openChanged();
+    else {
+      showPalette();
+      typeInEditor(app.elements.editor.value + "typed\n");
+    }
+    const steps = [];
+    const original = { ...access };
+    access.startPermissionRequest = (h) => (steps.push("startPermissionRequest"), original.startPermissionRequest.call(access, h));
+    access.startSavePicker = (n) => (steps.push("startSavePicker"), original.startSavePicker.call(access, n));
+    vi.spyOn(app.orchestrator, "commitBlock").mockImplementation(function (...args) {
+      steps.push("commitOpenBlock");
+      return Object.getPrototypeOf(app.orchestrator).commitBlock.apply(app.orchestrator, args);
+    });
+    vi.spyOn(app.ui, "_takeEditorIntoModel").mockImplementation(function (...args) {
+      steps.push("applyEditorText");
+      return Object.getPrototypeOf(app.ui)._takeEditorIntoModel.apply(app.ui, args);
+    });
+    vi.spyOn(app.ui.saveDocument, "execute").mockImplementation(() => (steps.push("runSaveDocument"), new Promise(() => {})));
+    vi.spyOn(app.ui.saveDocumentAs, "execute").mockImplementation(() => (steps.push("runSaveDocumentAs"), new Promise(() => {})));
+    press(paletteButton(button));
+    const expected = saveOperationStateMachine[event].idle.actions.filter((a) => !CONDITIONAL.has(a) || steps.includes(a));
+    expect(steps).toEqual(expected);
+    expect(steps.some((a) => CONDITIONAL.has(a))).toBe(true);
+  });
+});
+
 describe("AT-BSM-09 / 10 Save and Save as while editing commit the open block", () => {
   it.each(["paletteSave", "paletteSaveAs"])("%s: editingBlock -> editModeIdle, committed text is saved", async (button) => {
     await withDocument();

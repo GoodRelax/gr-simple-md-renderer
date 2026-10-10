@@ -143,7 +143,7 @@ export default class RendererOrchestrator {
   // ---- Commands ----
 
   /**
-   * @param {{onModelChanged: Function}|null} listener - ModelChangedPort
+   * @param {{onModelChanged: Function, onBlockSplitFailed: Function}|null} listener - ModelChangedPort
    * @purity non-pure
    */
   setModelChangedListener(listener) {
@@ -267,8 +267,11 @@ export default class RendererOrchestrator {
     this._generation++;
     this._pendingAnchor = null;
     this._previousModel = null;
+    const previous = this._currentModel;
     this._currentModel = this._newModel(this.state.markdownText);
-    return this._enqueue(() => this._renderFull());
+    this._noticeWholeDocument(previous, this._currentModel);
+    const generation = this._generation;
+    return this._enqueue(() => this._renderFull(generation));
   }
 
   /**
@@ -390,13 +393,29 @@ export default class RendererOrchestrator {
    * @purity non-pure
    */
   _applyChange(change, scroll, anchorBlockId) {
+    const previous = this._currentModel;
     this._currentModel = change.model;
     this._nextBlockId = Math.max(this._nextBlockId, change.model.getNextBlockId());
     this.state.setMarkdownText(change.model.toBody());
     this._pendingAnchor = scroll && anchorBlockId !== null ? { scroll, blockId: anchorBlockId } : null;
     if (this._modelChangedListener) this._modelChangedListener.onModelChanged(change);
+    this._noticeWholeDocument(previous, change.model);
     const generation = this._generation;
     return this._enqueue(() => this._renderPartial(generation));
+  }
+
+  /**
+   * A body that could not be split into blocks is kept whole and never
+   * rewritten (INV-41); this is logged and told to the user once, when the
+   * model becomes whole.
+   * @purity non-pure
+   * @param {MarkdownBlockModel|null} previous
+   * @param {MarkdownBlockModel} model
+   */
+  _noticeWholeDocument(previous, model) {
+    if (!model.isWholeDocument || previous?.isWholeDocument) return;
+    console.error("Markdown block split failed: the document is edited as one block.");
+    if (this._modelChangedListener) this._modelChangedListener.onBlockSplitFailed();
   }
 
   /**
@@ -415,9 +434,13 @@ export default class RendererOrchestrator {
 
   /**
    * Full render by block, PlantUML with consent (spec 5.14.4, INV-02).
+   * A full render queued for an older generation is skipped: the newer one
+   * draws the same model, and PlantUML asks once.
    * @purity non-pure
+   * @param {number} generation
    */
-  async _renderFull() {
+  async _renderFull(generation) {
+    if (generation !== this._generation) return;
     const model = this._currentModel;
     if (!model) return;
     const scrollTop = this.scrollManager.save();

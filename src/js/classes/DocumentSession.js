@@ -98,17 +98,19 @@ export default class DocumentSession {
   }
 
   /**
-   * The same document after a successful write.
+   * The same document after a successful write. When the new lastModified
+   * could not be read (null), the previous baseline is kept, so the next Save
+   * still compares and asks rather than skipping the check (INV-39).
    * @purity pure
    * @param {string} bodyText - the body that was written
-   * @param {number} lastModified - lastModified of the written file
+   * @param {number|null} lastModified - lastModified of the written file, or null
    * @returns {DocumentSession}
    */
   withSaved(bodyText, lastModified) {
     return new DocumentSession({
       ...this,
       baselineBodyText: bodyText,
-      baselineLastModified: lastModified,
+      baselineLastModified: lastModified ?? this.baselineLastModified,
     });
   }
 

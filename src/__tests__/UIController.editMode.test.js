@@ -172,14 +172,17 @@ describe("AT-UI e / [Edit], double click, double tap (INV-31, OS-06)", () => {
     [300, 24, true],
     [301, 0, false],
     [0, 25, false],
-  ])("AT-UI-22 double tap: %i ms apart, %i px apart -> starts: %s", async (ms, px, starts) => {
+  ])("AT-UI-22 double tap: %i ms apart, %i px apart -> starts: %s (monotonic clock)", async (ms, px, starts) => {
     app = await setupApp();
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(10000);
+    let now = 10000;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    // The wall clock jumps a minute at each read: a tap timed by it would never be double.
+    let wall = 0;
+    vi.spyOn(Date, "now").mockImplementation(() => (wall += 60000));
     pointer(app.preview, "pointerup", { x: 100, y: 100, pointerType: "touch" });
-    vi.setSystemTime(10000 + ms);
+    now += ms;
     pointer(app.preview, "pointerup", { x: 100, y: 100 + px, pointerType: "touch" });
-    vi.useRealTimers();
+    vi.mocked(Date.now).mockRestore();
     await settle();
     expect(app.orchestrator.isPreRenderState()).toBe(!starts);
   });
@@ -191,6 +194,46 @@ describe("AT-UI e / [Edit], double click, double tap (INV-31, OS-06)", () => {
     await settle();
     expect(app.orchestrator.isPreRenderState()).toBe(true);
     expect(app.ui.palette.isShown()).toBe(false);
+  });
+});
+
+describe("the browser's Undo / Redo never reaches #editor from elsewhere (5.7 (6))", () => {
+  const historyEvent = (inputType) => new InputEvent("beforeinput", { inputType, bubbles: true, cancelable: true });
+
+  it.each(["historyUndo", "historyRedo"])("%s on #editor while the block editor has the focus is cancelled", async (inputType) => {
+    await withDocument();
+    const ta = openChanged();
+    expect(document.activeElement).toBe(ta);
+    const e = historyEvent(inputType);
+    app.elements.editor.dispatchEvent(e);
+    expect(e.defaultPrevented).toBe(true);
+    expect(app.blockEditor()).toBe(ta);
+  });
+
+  it("also while the focus is on the palette or the body", async () => {
+    await withDocument();
+    keydown(document.body, "e");
+    app.ui.palette.focus();
+    const fromPalette = historyEvent("historyUndo");
+    app.elements.editor.dispatchEvent(fromPalette);
+    expect(fromPalette.defaultPrevented).toBe(true);
+    document.activeElement.blur();
+    const fromBody = historyEvent("historyUndo");
+    app.elements.editor.dispatchEvent(fromBody);
+    expect(fromBody.defaultPrevented).toBe(true);
+  });
+
+  it("Undo typed in #editor itself is left to the browser; other input types are never touched", async () => {
+    await withDocument();
+    app.elements.editor.focus();
+    const own = historyEvent("historyUndo");
+    app.elements.editor.dispatchEvent(own);
+    expect(own.defaultPrevented).toBe(false);
+    app.elements.editor.blur();
+    openChanged();
+    const typing = new InputEvent("beforeinput", { inputType: "insertText", data: "x", bubbles: true, cancelable: true });
+    app.elements.editor.dispatchEvent(typing);
+    expect(typing.defaultPrevented).toBe(false);
   });
 });
 
