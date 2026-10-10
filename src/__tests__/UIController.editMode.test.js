@@ -1,0 +1,466 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+vi.mock("../js/utils.js", async () => {
+  const actual = await vi.importActual("../js/utils.js");
+  return {
+    ...actual,
+    applyTheme: vi.fn(),
+    applySystemTheme: vi.fn(),
+    showToast: vi.fn(),
+    waitForDOMStability: vi.fn().mockResolvedValue(true),
+  };
+});
+vi.mock("../js/config.js", async () => ({
+  ...(await vi.importActual("../js/config.js")),
+  FILE_SYSTEM_HANDLE_SUPPORTED: true,
+}));
+vi.mock("../js/classes/ModalController.js", () => ({
+  default: { setupModal: vi.fn(), show: vi.fn(), hide: vi.fn() },
+}));
+
+import { CONFIG } from "../js/config.js";
+import { setupApp, dropEvent, settle } from "./helpers/appStack.js";
+import { tap, pointer, keydown } from "./helpers/editDom.js";
+import { fakeFileHandle } from "./helpers/fakeFs.js";
+
+const DOC = "# Title\n\nHello world.\n\nSecond para.\n";
+const isPara = (start) => (b) => b.type === "paragraph" && b.raw.startsWith(start);
+
+let app;
+let confirmSpy;
+
+beforeEach(() => {
+  confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+  vi.spyOn(window, "alert").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  app?.teardown();
+  app = null;
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+async function withDocument(md = DOC) {
+  app = await setupApp();
+  const handle = fakeFileHandle({ name: "doc.md", content: [md] });
+  document.dispatchEvent(dropEvent(new File([md], "doc.md", { lastModified: 1000 }), handle));
+  await settle();
+  return app;
+}
+
+/** Open block A with a change (palette shown). */
+function openChanged(start = "Hello", text = "Changed A.") {
+  if (!app.ui.palette.isShown()) keydown(document.body, "e");
+  tap(app.block(isPara(start)).el.firstElementChild);
+  const ta = app.blockEditor();
+  ta.value = text;
+  ta.dispatchEvent(new Event("input", { bubbles: true }));
+  return ta;
+}
+
+function spyShortcuts() {
+  return {
+    handleRender: vi.spyOn(app.ui, "handleRender"),
+    handleReload: vi.spyOn(app.ui, "handleReload"),
+    doClear: vi.spyOn(app.ui, "doClear"),
+    toggleEditPalette: vi.spyOn(app.ui, "toggleEditPalette"),
+    open: vi.spyOn(window, "open").mockImplementation(() => null),
+    startScroll: app.scrollEngine.startScroll,
+    dispatch: vi.spyOn(app.ui.blockEdit, "dispatch"),
+  };
+}
+
+describe("AT-UI-19 key guards (INV-14)", () => {
+  const KEYS = ["l", "d", "r", "n", "c", "e", "Escape", "ArrowUp", "ArrowDown"];
+  const TARGETS = {
+    INPUT: () => {
+      const i = document.createElement("input");
+      document.body.appendChild(i);
+      return i;
+    },
+    "#editor": () => app.elements.editor,
+    "block editor": () => openChanged(),
+    contenteditable: () => {
+      const d = document.createElement("div");
+      d.tabIndex = 0;
+      Object.defineProperty(d, "isContentEditable", { value: true });
+      document.body.appendChild(d);
+      return d;
+    },
+    "palette (role=toolbar)": () => {
+      keydown(document.body, "e");
+      return app.paletteRoot().querySelector("#paletteSave");
+    },
+  };
+  const CASES = Object.keys(TARGETS).flatMap((t) => KEYS.map((k) => [t, k]));
+
+  it.each(CASES)("focus on %s, key %s: no document shortcut", async (target, key) => {
+    await withDocument();
+    const el = TARGETS[target]();
+    el.focus();
+    expect(document.activeElement).toBe(el);
+    app.scrollEngine.startScroll.mockClear();
+    const spies = spyShortcuts();
+    // Fire on the document so only the document handler can react.
+    document.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+    for (const [name, spy] of Object.entries(spies)) expect(spy, name).not.toHaveBeenCalled();
+    if (el.parentNode === document.body && el !== app.elements.editor) el.remove();
+  });
+
+  it("modifier keys still pass through (Ctrl+L)", async () => {
+    await withDocument();
+    const spies = spyShortcuts();
+    keydown(document.body, "l", { ctrlKey: true });
+    expect(spies.handleRender).not.toHaveBeenCalled();
+  });
+});
+
+describe("AT-UI e / [Edit], double click, double tap (INV-31, OS-06)", () => {
+  it("AT-UI-20 markdown view: e and [Edit] toggle the palette", async () => {
+    await withDocument();
+    keydown(document.body, "e");
+    expect(app.ui.palette.isShown()).toBe(true);
+    app.elements.editBtn.click();
+    expect(app.ui.palette.isShown()).toBe(false);
+  });
+
+  it("AT-UI-20 initial, empty #editor: [Edit] starts an empty document with the palette and the editor", async () => {
+    app = await setupApp();
+    app.elements.editBtn.click();
+    await settle();
+    expect(app.orchestrator.isPreRenderState()).toBe(false);
+    expect(app.ui.palette.isShown()).toBe(true);
+    expect(app.blockEditor()).not.toBeNull();
+    expect(document.activeElement).toBe(app.blockEditor());
+  });
+
+  it("AT-UI-20 initial, #editor not empty: e renders it with the system theme, then shows the palette", async () => {
+    app = await setupApp();
+    app.elements.editor.value = "# From editor";
+    keydown(document.body, "e");
+    await settle();
+    expect(app.preview.querySelector("h1").textContent).toBe("From editor");
+    expect(app.ui.palette.isShown()).toBe(true);
+    expect(app.blockEditor()).toBeNull();
+  });
+
+  it("AT-UI-34 code view: palette hidden, editBtn disabled, e does nothing", async () => {
+    await withDocument();
+    keydown(document.body, "e");
+    document.dispatchEvent(dropEvent(new File(["print(1)"], "a.py"), null));
+    await settle();
+    expect(app.ui.palette.isShown()).toBe(false);
+    expect(app.elements.editBtn.disabled).toBe(true);
+    keydown(document.body, "e");
+    expect(app.ui.palette.isShown()).toBe(false);
+  });
+
+  it("AT-UI-21 initial, empty #editor: a click (focus to #editor, FS-16) then dblclick opens the empty block's editor", async () => {
+    app = await setupApp();
+    app.preview.click();
+    expect(document.activeElement).toBe(app.elements.editor);
+    app.preview.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    await settle();
+    expect(app.ui.palette.isShown()).toBe(true);
+    expect(document.activeElement).toBe(app.blockEditor());
+    expect(app.orchestrator.isPreRenderState()).toBe(false);
+  });
+
+  it.each([
+    [300, 24, true],
+    [301, 0, false],
+    [0, 25, false],
+  ])("AT-UI-22 double tap: %i ms apart, %i px apart -> starts: %s", async (ms, px, starts) => {
+    app = await setupApp();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(10000);
+    pointer(app.preview, "pointerup", { x: 100, y: 100, pointerType: "touch" });
+    vi.setSystemTime(10000 + ms);
+    pointer(app.preview, "pointerup", { x: 100, y: 100 + px, pointerType: "touch" });
+    vi.useRealTimers();
+    await settle();
+    expect(app.orchestrator.isPreRenderState()).toBe(!starts);
+  });
+
+  it("AT-UI-23 #editor not empty: a double click does nothing", async () => {
+    app = await setupApp();
+    app.elements.editor.value = "text";
+    app.preview.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    await settle();
+    expect(app.orchestrator.isPreRenderState()).toBe(true);
+    expect(app.ui.palette.isShown()).toBe(false);
+  });
+});
+
+describe("AT-UI-24 Esc and AT-UI-25 Ctrl+S", () => {
+  it("palette shown, no editor: Esc on the palette hides it (T3)", async () => {
+    await withDocument();
+    keydown(document.body, "e");
+    app.ui.palette.focus();
+    keydown(document.activeElement, "Escape");
+    expect(app.ui.palette.isShown()).toBe(false);
+  });
+
+  it("palette shown, focus on the body: Esc hides it", async () => {
+    await withDocument();
+    keydown(document.body, "e");
+    keydown(document.body, "Escape");
+    expect(app.ui.palette.isShown()).toBe(false);
+  });
+
+  it("focus on #editor: Esc does not hide the palette", async () => {
+    await withDocument();
+    keydown(document.body, "e");
+    app.elements.editor.focus();
+    keydown(app.elements.editor, "Escape");
+    expect(app.ui.palette.isShown()).toBe(true);
+  });
+
+  it("initial state and code view: Esc does nothing", async () => {
+    app = await setupApp();
+    const dispatch = vi.spyOn(app.ui.blockEdit, "dispatch");
+    keydown(document.body, "Escape");
+    document.dispatchEvent(dropEvent(new File(["x"], "a.py"), null));
+    await settle();
+    dispatch.mockClear();
+    keydown(document.body, "Escape");
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("Esc in the block editor cancels the edit only: the palette stays (the key does not reach the shortcuts)", async () => {
+    await withDocument();
+    const ta = openChanged();
+    keydown(ta, "Escape");
+    expect(app.blockEditor()).toBeNull();
+    expect(app.ui.palette.isShown()).toBe(true);
+  });
+
+  it("Esc on a palette button with an open editor returns to the editor only", async () => {
+    await withDocument();
+    const ta = openChanged();
+    app.ui.palette.focus();
+    keydown(document.activeElement, "Escape");
+    expect(document.activeElement).toBe(ta);
+    expect(app.ui.palette.isShown()).toBe(true);
+    expect(app.blockEditor()).toBe(ta);
+  });
+
+  it("AT-UI-25 Ctrl+S is never taken", async () => {
+    await withDocument();
+    expect(keydown(document.body, "s", { ctrlKey: true }).defaultPrevented).toBe(false);
+    const ta = openChanged();
+    expect(keydown(ta, "s", { ctrlKey: true }).defaultPrevented).toBe(false);
+  });
+});
+
+describe("AT-UI-42 the editor stays open while the focus is on the body", () => {
+  it.each([
+    ["l", () => keydown(document.body, "l")],
+    ["d", () => keydown(document.body, "d")],
+    ["[Render] click()", () => app.elements.renderDarkBtn.click()],
+  ])("%s: commits A, then renders, no confirm", async (_name, act) => {
+    await withDocument();
+    const ta = openChanged();
+    ta.blur();
+    const rerender = vi.spyOn(app.orchestrator, "reRender");
+    act();
+    expect(app.orchestrator.getBody()).toContain("Changed A.");
+    expect(rerender).toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled();
+    await settle();
+    expect(app.blockEditor()).toBeNull();
+  });
+
+  it("e: commits A, then hides the palette", async () => {
+    await withDocument();
+    openChanged().blur();
+    keydown(document.body, "e");
+    expect(app.orchestrator.getBody()).toContain("Changed A.");
+    expect(app.ui.palette.isShown()).toBe(false);
+  });
+
+  it("Esc: cancels the edit (original raw)", async () => {
+    await withDocument();
+    openChanged().blur();
+    keydown(document.body, "Escape");
+    expect(app.blockEditor()).toBeNull();
+    expect(app.orchestrator.getBody()).toBe(DOC);
+    expect(app.ui.palette.isShown()).toBe(true);
+  });
+
+  it.each([
+    ["r", async () => app.ui.handleReload()],
+    ["c", async () => keydown(document.body, "c")],
+    [".md drop", async () => { document.dispatchEvent(dropEvent(new File(["# N\n"], "n.md"), null)); await settle(); }],
+  ])("%s: confirm; Cancel keeps the editor and its text, OK discards without commit", async (_name, act) => {
+    await withDocument();
+    const ta = openChanged();
+    ta.blur();
+    const commit = vi.spyOn(app.orchestrator, "commitBlock");
+    confirmSpy.mockReturnValueOnce(false);
+    await act();
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(app.blockEditor()).toBe(ta);
+    expect(ta.value).toBe("Changed A.");
+    await act();
+    expect(confirmSpy).toHaveBeenCalledTimes(2);
+    expect(app.blockEditor()).toBeNull();
+    expect(commit).not.toHaveBeenCalled();
+  });
+});
+
+describe("AT-UI-43 focus moving into #editor commits the open editor", () => {
+  async function focusEditorAndType() {
+    await withDocument();
+    openChanged();
+    app.elements.editor.focus();
+    expect(app.blockEditor()).toBeNull();
+    expect(app.elements.editor.value).toContain("Changed A.");
+    app.elements.editor.value += "XYZ\n";
+    app.elements.editor.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(document.title.startsWith(CONFIG.edit.titleUnsavedPrefix)).toBe(true);
+  }
+
+  it("(a) Render then includes XYZ", async () => {
+    await focusEditorAndType();
+    await app.ui.handleRender("light");
+    expect(app.orchestrator.getBody()).toContain("XYZ");
+    expect(app.orchestrator.getBody()).toContain("Changed A.");
+  });
+
+  it.each([
+    ["Reload", async () => app.ui.handleReload()],
+    ["Clear", async () => app.ui.doClear()],
+    [".md drop", async () => { document.dispatchEvent(dropEvent(new File(["# N\n"], "n.md"), null)); await settle(); }],
+  ])("(c) %s asks first (XYZ is never lost silently)", async (_name, act) => {
+    await focusEditorAndType();
+    confirmSpy.mockReturnValue(false);
+    await act();
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(app.elements.editor.value).toContain("XYZ");
+  });
+});
+
+describe("AT-UI-40 the palette stays directly under body", () => {
+  it("after a commit, an undo and a full render", async () => {
+    await withDocument();
+    openChanged();
+    pointer(document.body, "pointerdown");
+    await settle();
+    expect(app.paletteRoot().parentNode).toBe(document.body);
+    app.orchestrator.undoLastCommit();
+    await settle();
+    expect(app.paletteRoot().parentNode).toBe(document.body);
+    await app.ui.handleRender("dark");
+    expect(app.paletteRoot().parentNode).toBe(document.body);
+    expect(app.preview.contains(app.paletteRoot())).toBe(false);
+  });
+});
+
+describe("AT-BSM stimuli from the UI (Q-d2)", () => {
+  const state = () => {
+    if (app.ui.blockEdit.isEditing()) return "editingBlock";
+    return app.ui.palette.isShown() ? "editModeIdle" : "browsingPreview";
+  };
+
+  it("AT-BSM-01 / 02 e and [Edit]: browsingPreview <-> editModeIdle; while editing, hiding commits first", async () => {
+    await withDocument();
+    expect(state()).toBe("browsingPreview");
+    keydown(document.body, "e");
+    expect(state()).toBe("editModeIdle");
+    app.elements.editBtn.click();
+    expect(state()).toBe("browsingPreview");
+    keydown(document.body, "e");
+    openChanged();
+    pointer(app.elements.editBtn, "pointerdown");
+    app.elements.editBtn.click();
+    expect(state()).toBe("browsingPreview");
+    expect(app.orchestrator.getBody()).toContain("Changed A.");
+  });
+
+  it("AT-BSM-03 a double click on the empty initial preview: browsingPreview -> editingBlock", async () => {
+    app = await setupApp();
+    app.preview.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    await settle();
+    expect(state()).toBe("editingBlock");
+  });
+
+  it("AT-BSM-08 Esc on the body: editModeIdle -> browsingPreview; editingBlock -> editModeIdle (cancel)", async () => {
+    await withDocument();
+    keydown(document.body, "e");
+    openChanged().blur();
+    keydown(document.body, "Escape");
+    expect(state()).toBe("editModeIdle");
+    keydown(document.body, "Escape");
+    expect(state()).toBe("browsingPreview");
+  });
+
+  it.each([
+    ["AT-BSM-11 Reload", async () => app.ui.handleReload(), "editModeIdle"],
+    ["AT-BSM-11 .md drop", async () => { document.dispatchEvent(dropEvent(new File(["# N\n\nP.\n"], "n.md"), null)); await settle(); }, "editModeIdle"],
+    ["AT-BSM-12 Clear", async () => keydown(document.body, "c"), "browsingPreview"],
+    ["AT-BSM-13 a .py drop", async () => { document.dispatchEvent(dropEvent(new File(["x"], "a.py"), null)); await settle(); }, "browsingPreview"],
+  ])("%s while editing (OK): editor discarded, state %s", async (_name, act, next) => {
+    await withDocument();
+    const ta = openChanged();
+    ta.blur();
+    const commit = vi.spyOn(app.orchestrator, "commitBlock");
+    await act();
+    await settle();
+    expect(commit).not.toHaveBeenCalled();
+    expect(state()).toBe(next);
+  });
+
+  it("AT-BSM-14 (a) a mouse press on [Render] commits first, then the full render includes it", async () => {
+    await withDocument();
+    openChanged();
+    pointer(app.elements.renderLightBtn, "pointerdown");
+    expect(state()).toBe("editModeIdle");
+    app.elements.renderLightBtn.click();
+    await settle();
+    expect(app.preview.textContent).toContain("Changed A.");
+  });
+
+  it("AT-BSM-14 (b) focus on the body by blur(), then l: commit and render", async () => {
+    await withDocument();
+    openChanged().blur();
+    keydown(document.body, "l");
+    expect(state()).toBe("editModeIdle");
+    await settle();
+    expect(app.preview.textContent).toContain("Changed A.");
+  });
+
+  it("AT-BSM-14 (c) [Render] focused and pressed by keyboard (click() without pointer events)", async () => {
+    await withDocument();
+    openChanged();
+    app.elements.renderDarkBtn.focus();
+    app.elements.renderDarkBtn.click();
+    expect(state()).toBe("editModeIdle");
+    await settle();
+    expect(app.preview.textContent).toContain("Changed A.");
+  });
+
+  it("AT-BSM-16 #editor.focus() while editing: editingBlock -> editModeIdle with a commit", async () => {
+    await withDocument();
+    openChanged();
+    app.elements.editor.focus();
+    expect(state()).toBe("editModeIdle");
+    expect(app.orchestrator.getBody()).toContain("Changed A.");
+  });
+});
+
+describe("AT-CFG-04 / 05 text and key hints", () => {
+  it("AT-CFG-04 messages.edit is ASCII only (functions called with 'a.md')", () => {
+    for (const [key, value] of Object.entries(CONFIG.messages.edit)) {
+      const text = typeof value === "function" ? value("a.md") : value;
+      expect(/^[\x20-\x7e]*$/.test(text), key).toBe(true);
+    }
+  });
+
+  it("AT-CFG-05 keyHints.markdown has '[E] Edit;' exactly once; keyHints.code has none", () => {
+    expect(CONFIG.keyHints.markdown.split("[E] Edit;").length - 1).toBe(1);
+    expect(CONFIG.keyHints.code).not.toContain("[E] Edit;");
+  });
+});

@@ -1,5 +1,5 @@
-import { CONFIG, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
-import { applyTheme, waitForDOMStability, showToast } from "../utils.js";
+import { CONFIG } from "../config.js";
+import { applyTheme, waitForDOMStability } from "../utils.js";
 import MarkdownBlockModel from "./MarkdownBlockModel.js";
 
 /**
@@ -43,7 +43,6 @@ export default class RendererOrchestrator {
     this.preview = preview;
     this.sourceFileRenderer = sourceFileRenderer;
     this._viewState = "initial"; // 'initial' | 'markdown' | 'code'
-    this._mdFileHandle = null;
     // Block editing state (INV-47, INV-48)
     this._currentModel = null;
     this._renderedModel = null;
@@ -53,6 +52,7 @@ export default class RendererOrchestrator {
     this._pendingAnchor = null; // { scroll, blockId } of the latest request
     this._nextBlockId = 1; // app-wide block id counter, never goes back
     this._modelChangedListener = null;
+    this._heldBlockId = null; // block with an open editor: its wrapper is kept (Q-d1)
     this._lexer = (src) => this.markdownRenderer.lex(src);
   }
 
@@ -110,23 +110,25 @@ export default class RendererOrchestrator {
 
   /**
    * Load and render a markdown text string.
-   * @param {string} text - raw markdown text
+   * @param {string} text - markdown body
    * @param {string} theme - 'light' | 'dark'
-   * @param {FileSystemFileHandle|null} [fileHandle] - for reload support
    * @purity non-pure
    */
-  async loadMarkdown(text, theme, fileHandle = undefined) {
-    if (fileHandle !== undefined) {
-      this._mdFileHandle = fileHandle;
-      // A dropped file is a new document: ask again before contacting the
-      // image hosts it names. Reload and theme switches keep the consent.
-      this.markdownRenderer.resetExternalImageConsent();
-    }
+  async loadMarkdown(text, theme) {
     this._viewState = "markdown";
     this.state.setMarkdownText(text);
     this.state.setTheme(theme);
     applyTheme(theme);
     await this.renderAll();
+  }
+
+  /**
+   * A new document from another source: ask again before contacting the
+   * image hosts it names (INV-43). Reload and theme switches keep the consent.
+   * @purity non-pure
+   */
+  resetExternalImageConsent() {
+    this.markdownRenderer.resetExternalImageConsent();
   }
 
   /**
@@ -185,7 +187,6 @@ export default class RendererOrchestrator {
   clear() {
     this.clearDocument();
     this._viewState = "initial";
-    this._mdFileHandle = null;
     this.markdownRenderer.resetExternalImageConsent();
     this.sourceFileRenderer.destroy();
   }
@@ -211,25 +212,6 @@ export default class RendererOrchestrator {
    */
   async reloadCodeView(theme) {
     return await this.sourceFileRenderer.reload(theme);
-  }
-
-  /**
-   * Read the .md file from stored fileHandle.
-   * Returns raw text string, or null if unavailable (with toast).
-   * Caller (UIController) is responsible for preprocessInput and loadMarkdown.
-   * @returns {Promise<string|null>}
-   * @purity non-pure
-   */
-  async readMarkdownFile() {
-    if (!this._mdFileHandle) {
-      const msg = FILE_SYSTEM_HANDLE_SUPPORTED
-        ? CONFIG.codeView.reloadNoFileMsg
-        : CONFIG.codeView.reloadUnavailableMsg;
-      showToast(msg, CONFIG.codeView.toastDurationMs);
-      return null;
-    }
-    const file = await this._mdFileHandle.getFile();
-    return await file.text();
   }
 
   /**
@@ -316,6 +298,28 @@ export default class RendererOrchestrator {
     return this._applyChange(change, scroll, anchorBlockId);
   }
 
+  /**
+   * The block with an open editor keeps its wrapper in partial renders even
+   * when its HTML changed (Q-d1); it is redrawn when released.
+   * @param {number} blockId
+   * @purity non-pure
+   */
+  holdBlock(blockId) {
+    this._heldBlockId = blockId;
+  }
+
+  /**
+   * The editor closed: redraw the held block if a render skipped it.
+   * @purity non-pure
+   */
+  releaseBlock() {
+    const id = this._heldBlockId;
+    this._heldBlockId = null;
+    if (id === null || !this.markdownRenderer.isStale(id)) return;
+    const generation = this._generation;
+    this._enqueue(() => this._renderPartial(generation, true));
+  }
+
   // ---- internals ----
 
   /**
@@ -382,15 +386,16 @@ export default class RendererOrchestrator {
   /**
    * Partial render from the last rendered model to the current one (spec
    * 5.14.3 steps 6-8). PlantUML is never sent here: placeholder mode (INV-23).
+   * force: run even when the model did not change (a held block was released).
    * @purity non-pure
    */
-  async _renderPartial(generation) {
+  async _renderPartial(generation, force = false) {
     if (generation !== this._generation) return;
     const target = this._currentModel;
-    if (!target || !this._renderedModel || target === this._renderedModel) return;
+    if (!target || !this._renderedModel || (target === this._renderedModel && !force)) return;
     const anchor = this._pendingAnchor;
     this._pendingAnchor = null;
-    const replaced = this.markdownRenderer.replaceBlocks(this._renderedModel, target);
+    const replaced = this.markdownRenderer.replaceBlocks(this._renderedModel, target, this._heldBlockId);
     this._renderedModel = target;
     this._restoreAnchor(anchor, generation);
     if (replaced.length > 0) {

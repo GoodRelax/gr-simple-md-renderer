@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
 describe("UIController.handleRender", () => {
   let UIController;
@@ -11,7 +12,9 @@ describe("UIController.handleRender", () => {
     vi.resetModules();
 
     // Mock utils.js
-    vi.doMock("../js/utils.js", () => ({
+    vi.doMock("../js/utils.js", async () => ({
+      ...(await vi.importActual("../js/utils.js")),
+      showToast: vi.fn(),
       applyTheme: vi.fn(),
       applySystemTheme: vi.fn(),
       systemTheme: vi.fn().mockReturnValue("light"),
@@ -65,6 +68,7 @@ describe("UIController.handleRender", () => {
       renderDarkBtn: document.createElement("button"),
       reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
+      editBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
@@ -87,7 +91,7 @@ describe("UIController.handleRender", () => {
   }
 
   function createController() {
-    return new UIController(mockOrchestrator, mockState, mockElements, mockScrollEngine);
+    return new UIController(withEditMethods(mockOrchestrator), mockState, mockElements, mockScrollEngine, fakeEditServices());
   }
 
   it("applies CSS-only theme toggle when code view is active (no DOM rebuild)", async () => {
@@ -158,15 +162,26 @@ describe("UIController.handleRender", () => {
     expect(applyTheme).not.toHaveBeenCalled();
   });
 
-  it("preprocesses input before passing to reRender", async () => {
+  it("markdown view: the wrapper is NOT stripped, only line endings are normalized (ruling T33)", async () => {
     mockOrchestrator.isCodeViewActive.mockReturnValue(false);
     mockOrchestrator.isPreRenderState.mockReturnValue(false);
-    mockElements.editor.value = "```markdown\n# Hello\n```";
+    mockElements.editor.value = "```markdown\r\n# Hello\r\n```";
 
     const ctrl = createController();
     await ctrl.handleRender("light");
 
-    // preprocessInput should strip the markdown fence
-    expect(mockState.setMarkdownText).toHaveBeenCalledWith("# Hello");
+    expect(mockState.setMarkdownText).toHaveBeenCalledWith("```markdown\n# Hello\n```");
+  });
+
+  it("initial state: line endings are normalized, then the wrapper is stripped (AT-UI-46 comparison)", async () => {
+    mockOrchestrator.isCodeViewActive.mockReturnValue(false);
+    mockOrchestrator.isPreRenderState.mockReturnValue(true);
+    mockElements.editor.value = "```markdown\r\n# Hello\r\n```";
+
+    const ctrl = createController();
+    await ctrl.handleRender("light");
+
+    expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# Hello", "light");
+    expect(mockElements.editor.value).toBe("# Hello");
   });
 });

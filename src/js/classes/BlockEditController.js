@@ -85,7 +85,8 @@ export const blockEditStateMachine = Object.freeze({
  *   showPalette(), hidePalette(), isPaletteNode(node) (palette and popovers,
  *   by reference), focusPalette(), isEditorChangedSinceRender(),
  *   renderFromEditor() (full render from #editor and the toast, INV-45),
- *   onEditorInput() (refresh the unsaved mark).
+ *   onEditorInput() (refresh the unsaved mark), onEditStateChanged() (an
+ *   editor opened or closed: unsaved mark and palette buttons).
  */
 export default class BlockEditController {
   /**
@@ -360,6 +361,7 @@ export default class BlockEditController {
     wrapper.classList.add("md-block-editing");
     this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes };
     this._composing = false;
+    if (blockId !== null) this.orchestrator.holdBlock(blockId); // Q-d1
 
     textarea.addEventListener("keydown", this._onKeyDown);
     textarea.addEventListener("input", this._onInput);
@@ -368,6 +370,7 @@ export default class BlockEditController {
     this._fitHeight();
     textarea.focus({ preventScroll: true });
     this.scrollMemento.restoreAnchor(anchor, wrapper);
+    this.host.onEditStateChanged();
   }
 
   /**
@@ -387,6 +390,8 @@ export default class BlockEditController {
     ed.wrapper.classList.remove("md-block-editing");
     this._editor = null;
     this._composing = false;
+    this.orchestrator.releaseBlock();
+    this.host.onEditStateChanged();
     return { blockId: ed.blockId, text: t.value, original: ed.original };
   }
 

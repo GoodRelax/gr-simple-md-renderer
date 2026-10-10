@@ -545,6 +545,39 @@ describe("AT-BEC editor value and life cycle", () => {
   });
 });
 
+describe("Q-d1 the block being edited keeps its wrapper during partial renders", () => {
+  const REF_DOC = "Use [x][d].\n\nOther [y][d].\n\n[d]: https://example.com/old\n";
+
+  it.each(["Escape", "commit"])(
+    "editing the definition, then B: B's editor stays through the render; after %s B shows the new definition",
+    async (close) => {
+      s = await setupEdit(REF_DOC);
+      const def = openBlock((b) => b.type === "def");
+      def.ta.value = "[d]: https://example.com/new";
+      const b = s.block(isPara("Other"));
+      tap(b.el.firstElementChild, { pointerType: "touch" }); // commits the definition, opens B
+      const ta = s.editor();
+      expect(b.el.contains(ta)).toBe(true);
+      await flush();
+      expect(s.editor()).toBe(ta);
+      expect(ta.isConnected).toBe(true);
+      expect(s.markdownRenderer.getBlockElement(b.block.id)).toBe(b.el);
+      const useLink = s.block(isPara("Use")).el.querySelector("a");
+      expect(useLink.getAttribute("href")).toBe("https://example.com/new");
+
+      if (close === "Escape") keydown(ta, "Escape");
+      else {
+        ta.value = "Other [z][d].";
+        pointer(document.body, "pointerdown");
+      }
+      await flush();
+      const bEl = s.markdownRenderer.getBlockElement(s.block(isPara("Other")).block.id);
+      expect(bEl.querySelector("a").getAttribute("href")).toBe("https://example.com/new");
+      expect(bEl.querySelector("textarea")).toBeNull();
+    },
+  );
+});
+
 describe("AT-BEC-28 spoofed attributes have no effect (Q1, T2)", () => {
   const SPOOF = loadFixtureLf("spoof-block-id.md");
   const htmlBlock = (needle) => (b) => b.type === "html" && b.raw.includes(needle);

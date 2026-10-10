@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
 /**
  * Each UIController constructor adds document-level event listeners (drop, dragover,
@@ -18,7 +19,9 @@ describe("UIController.setupFileDrop", () => {
     vi.resetModules();
 
     // Mock utils.js
-    vi.doMock("../js/utils.js", () => ({
+    vi.doMock("../js/utils.js", async () => ({
+      ...(await vi.importActual("../js/utils.js")),
+      showToast: vi.fn(),
       applyTheme: vi.fn(),
       applySystemTheme: vi.fn(),
       systemTheme: vi.fn().mockReturnValue("light"),
@@ -73,6 +76,7 @@ describe("UIController.setupFileDrop", () => {
       renderDarkBtn: document.createElement("button"),
       reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
+      editBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
@@ -101,7 +105,7 @@ describe("UIController.setupFileDrop", () => {
   }
 
   function createController() {
-    return new UIController(mockOrchestrator, mockState, mockElements, mockScrollEngine);
+    return new UIController(withEditMethods(mockOrchestrator), mockState, mockElements, mockScrollEngine, fakeEditServices());
   }
 
   function createDropEvent(fileName, fileSize = 100) {

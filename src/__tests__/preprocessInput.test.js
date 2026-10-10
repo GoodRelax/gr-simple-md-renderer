@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
 describe("UIController.preprocessInput", () => {
   let UIController;
@@ -7,7 +8,9 @@ describe("UIController.preprocessInput", () => {
     vi.resetModules();
 
     // Mock utils.js
-    vi.doMock("../js/utils.js", () => ({
+    vi.doMock("../js/utils.js", async () => ({
+      ...(await vi.importActual("../js/utils.js")),
+      showToast: vi.fn(),
       applyTheme: vi.fn(),
       applySystemTheme: vi.fn(),
       systemTheme: vi.fn().mockReturnValue("light"),
@@ -62,6 +65,7 @@ describe("UIController.preprocessInput", () => {
       renderDarkBtn: document.createElement("button"),
       reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
+      editBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
@@ -76,12 +80,7 @@ describe("UIController.preprocessInput", () => {
       destroy: vi.fn(),
     };
 
-    return new UIController(
-      mockOrchestrator,
-      mockState,
-      mockElements,
-      mockScrollEngine,
-    );
+    return new UIController(withEditMethods(mockOrchestrator), mockState, mockElements, mockScrollEngine, fakeEditServices());
   }
 
   it("strips triple-backtick markdown wrapper", () => {

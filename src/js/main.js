@@ -27,6 +27,9 @@ import RendererOrchestrator from "./classes/RendererOrchestrator.js";
 import DiagramZoomController from "./classes/DiagramZoomController.js";
 import DiagramPanController from "./classes/DiagramPanController.js";
 import DiagramCopyController from "./classes/DiagramCopyController.js";
+import MarkdownFileAccess from "./classes/MarkdownFileAccess.js";
+import EditPalette from "./classes/EditPalette.js";
+import BlockEditController from "./classes/BlockEditController.js";
 import UIController from "./classes/UIController.js";
 
 // ========================================
@@ -42,6 +45,7 @@ const elements = {
   renderDarkBtn: document.getElementById("renderDark"),
   reloadBtn: document.getElementById("reloadBtn"),
   newTabBtn: document.getElementById("newTabBtn"),
+  editBtn: document.getElementById("editBtn"),
   clearBtn: document.getElementById("clearBtn"),
   helpBtn: document.getElementById("helpBtn"),
   helpModal: document.getElementById("helpModal"),
@@ -86,8 +90,14 @@ const orchestrator = new RendererOrchestrator(
 // SmoothScrollEngine: used by UIController keyboard handler
 const scrollEngine = new SmoothScrollEngine(CONFIG.scroll, elements.preview);
 
-// UIController wires all events and initializes view
-new UIController(orchestrator, state, elements, scrollEngine);
+// UIController wires all events and initializes view. It owns the in-place
+// editing parts and is their host (BlockEditHost, EditPaletteHost).
+new UIController(orchestrator, state, elements, scrollEngine, {
+  fileAccess: new MarkdownFileAccess(window),
+  createPalette: (host) => new EditPalette(host),
+  createBlockEdit: (host) =>
+    new BlockEditController(elements.preview, orchestrator, markdownRenderer, scrollManager, host),
+});
 
 // Diagram controllers: fine-pointer (mouse/trackpad) devices only
 const isTouchCapable = window.matchMedia("(any-pointer: coarse)").matches;

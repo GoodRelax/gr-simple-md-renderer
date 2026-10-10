@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
 describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
   let UIController;
@@ -9,7 +10,9 @@ describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("../js/utils.js", () => ({
+    vi.doMock("../js/utils.js", async () => ({
+      ...(await vi.importActual("../js/utils.js")),
+      showToast: vi.fn(),
       applyTheme: vi.fn(),
       applySystemTheme: vi.fn(),
       systemTheme: vi.fn().mockReturnValue("light"),
@@ -65,6 +68,7 @@ describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
       renderDarkBtn: document.createElement("button"),
       reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
+      editBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
@@ -77,12 +81,7 @@ describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
       setTheme: vi.fn(),
       setMarkdownText: vi.fn(),
     };
-    return new UIController(
-      mockOrchestrator,
-      mockState,
-      mockElements,
-      mockScrollEngine,
-    );
+    return new UIController(withEditMethods(mockOrchestrator), mockState, mockElements, mockScrollEngine, fakeEditServices());
   }
 
   it("dismisses keyHint on preview scroll (PC)", () => {

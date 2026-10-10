@@ -1,7 +1,10 @@
 import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
-import { applyTheme, applySystemTheme, systemTheme } from "../utils.js";
-import { splitMarkdownWrapper } from "../textTransforms.js";
+import { applyTheme, applySystemTheme, systemTheme, showToast } from "../utils.js";
+import { splitMarkdownWrapper, normalizeLineEndings, hasUtf8Bom } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
+import DocumentSession from "./DocumentSession.js";
+import DocumentLocation from "./DocumentLocation.js";
+import BlockEditController from "./BlockEditController.js";
 
 /**
  * INV-14: a key typed into an input, a textarea (the block editor included),
@@ -19,6 +22,50 @@ function isTypingTarget(el) {
 }
 
 /**
+ * How a dropped file is handled, decided before anything is read (INV-11,
+ * INV-18): "sniff" means an unknown extension whose first 8 KB must be
+ * checked for a null byte.
+ * @purity semi-pure-a
+ * @param {string} fileName
+ * @param {number} fileSize
+ * @returns {"tooLarge"|"markdown"|"code"|"binary"|"sniff"}
+ */
+export function classifyDroppedFile(fileName, fileSize) {
+  if (fileSize > CONFIG.fileDrop.maxBytes) return "tooLarge";
+  const ext = fileName.includes(".")
+    ? fileName.slice(fileName.lastIndexOf(".")).toLowerCase()
+    : "";
+  if (CONFIG.fileDrop.markdownExtensions.includes(ext)) return "markdown";
+  if (EXT_TO_HLJS[ext] || EXT_TO_HLJS[fileName]) return "code";
+  if (BINARY_EXTENSIONS.has(ext)) return "binary";
+  return "sniff";
+}
+
+/**
+ * @purity pure
+ * @param {Uint8Array} bytes
+ * @returns {boolean}
+ */
+export function hasNullByte(bytes) {
+  return bytes.some((b) => b === 0);
+}
+
+/**
+ * What [Render] / l / d does in each view (Sect 5.8, spec 5.14.1):
+ * "theme" (code view: CSS only), "editorIntoDocument" (markdown view: the
+ * same document, line endings normalized, no wrapper split, ruling T33) or
+ * "newDocument" (initial state: normalize, then split the wrapper).
+ * @purity pure
+ * @param {boolean} isCodeView
+ * @param {boolean} isPreRender
+ * @returns {"theme"|"editorIntoDocument"|"newDocument"}
+ */
+export function renderRouteFor(isCodeView, isPreRender) {
+  if (isCodeView) return "theme";
+  return isPreRender ? "newDocument" : "editorIntoDocument";
+}
+
+/**
  * Translates UI events into use-case calls.
  * Handles: render buttons, utility buttons, file drop (all files),
  * paste, keyboard shortcuts, modals, long-press.
@@ -30,9 +77,12 @@ export default class UIController {
    * @param {ApplicationState} state
    * @param {object} elements
    * @param {SmoothScrollEngine} scrollEngine
+   * @param {object} services - in-place editing parts (composed in main.js):
+   *   fileAccess (MarkdownFileAccess), createPalette(host) -> EditPalette,
+   *   createBlockEdit(host) -> BlockEditController
    * @purity non-pure
    */
-  constructor(orchestrator, state, elements, scrollEngine) {
+  constructor(orchestrator, state, elements, scrollEngine, services) {
     this.orchestrator = orchestrator;
     this.state = state;
     this.elements = elements;
@@ -40,6 +90,19 @@ export default class UIController {
     this.longPressTimer = null;
     this.isLongPress = false;
     this._keyHintTimer = null;
+
+    // Document session and save target (INV-55): the only place of the file handle
+    this.fileAccess = services.fileAccess;
+    this._session = null; // DocumentSession
+    this._location = null; // DocumentLocation
+    this._nextDocumentId = 1;
+    this._editorChangedSinceRender = false; // INV-45
+    this._saveOperationState = "idle"; // 11-e
+    this._baseTitle = document.title;
+    this._lastTap = null; // double tap on the empty preview (INV-31)
+    this.palette = services.createPalette(this._paletteHost());
+    this.blockEdit = services.createBlockEdit(this._blockEditHost());
+    this.orchestrator.setModelChangedListener(this);
 
     this.setupEventListeners();
     this.setupModals();
@@ -60,6 +123,9 @@ export default class UIController {
     this.setupAutoRenderOnPaste();
     this.setupKeyboard();
     this.setupTouchPasteAssist();
+    this.setupEditorSync();
+    this.setupEmptyDocumentGestures();
+    this.setupUnloadGuard();
     // Apply OS color-scheme preference on first load
     applySystemTheme();
   }
@@ -91,6 +157,7 @@ export default class UIController {
     const fileInfo = this.elements.fileInfo;
     const editor = this.elements.editor;
     const affordance = document.getElementById("affordanceText");
+    this.elements.editBtn.disabled = mode === "code"; // OS-06
 
     switch (mode) {
       case "code":
@@ -254,42 +321,42 @@ export default class UIController {
     this.elements.clearBtn.addEventListener("click", () => {
       this.doClear();
     });
+    /** @purity non-pure */
+    this.elements.editBtn.addEventListener("click", () => {
+      this.toggleEditPalette();
+    });
   }
 
   /**
    * Dispatch render / theme switch based on current view state (Sect 5.8).
    * - Code view: CSS-only toggle (no DOM rebuild).
-   * - Markdown view: re-render markdown with the new theme.
-   * - Initial state with editor content: first render via loadMarkdown.
+   * - Markdown view: the #editor text into the same document (an open block
+   *   editor is committed first; no confirm, INV-45).
+   * - Initial state with editor content: a new document.
    * @param {'light'|'dark'} theme
    * @purity non-pure
    */
   async handleRender(theme) {
-    if (this.orchestrator.isCodeViewActive()) {
+    const route = renderRouteFor(
+      this.orchestrator.isCodeViewActive(),
+      this.orchestrator.isPreRenderState(),
+    );
+    if (route === "theme") {
       // Code view: hljs uses CSS classes, so just toggle body.dark
       applyTheme(theme);
       this.state.setTheme(theme);
-    } else if (!this.orchestrator.isPreRenderState()) {
-      const content = this.preprocessInput(this.elements.editor.value);
-      this.state.setMarkdownText(content);
-      await this.orchestrator.reRender(theme);
-      this.setViewMode("markdown");
-      this.showKeyHint("markdown");
+    } else if (route === "editorIntoDocument") {
+      await this._renderEditorIntoDocument(theme);
     } else {
-      // Initial state: render if editor has content (paste / manual input)
-      const content = this.preprocessInput(this.elements.editor.value);
-      if (content.trim()) {
-        await this.orchestrator.loadMarkdown(content, theme);
-        this.setViewMode("markdown");
-        this.showKeyHint("markdown");
-      }
+      await this._startPastedDocument(this.elements.editor.value, theme);
     }
   }
 
   /**
-   * Reload the current file from its FileSystemFileHandle (Sect 5.8).
+   * Reload the current file (Sect 5.8, INV-21 Reload order, INV-55).
    * - Code view: reload via sourceFileRenderer.
-   * - Markdown view: read file, preprocessInput, then loadMarkdown.
+   * - Markdown view: read the file from the save target first, then check
+   *   saving and unsaved changes, then replace the document synchronously.
    * - Initial state: no-op.
    * @purity non-pure
    */
@@ -299,29 +366,57 @@ export default class UIController {
     if (this.orchestrator.isCodeViewActive()) {
       const metadata = await this.orchestrator.reloadCodeView(theme);
       if (metadata) this.setViewMode("code", metadata);
-    } else {
-      const rawText = await this.orchestrator.readMarkdownFile();
-      if (rawText === null) return;
-      const text = this.preprocessInput(rawText);
-      this.elements.editor.value = text;
-      await this.orchestrator.loadMarkdown(text, theme);
-      this.setViewMode("markdown");
-      this.showKeyHint("markdown");
+      return;
     }
+    const location = this._location;
+    if (!location || !location.fileHandle) {
+      const msg = FILE_SYSTEM_HANDLE_SUPPORTED
+        ? CONFIG.codeView.reloadNoFileMsg
+        : CONFIG.codeView.reloadUnavailableMsg;
+      this._toast(msg);
+      return;
+    }
+    const documentId = this._session?.documentId;
+    let loaded;
+    try {
+      loaded = await this.fileAccess.readFile(location.fileHandle);
+    } catch {
+      this._toast(CONFIG.messages.edit.reloadFailed);
+      return;
+    }
+    if (this._location !== location || this._session?.documentId !== documentId) {
+      this._toast(CONFIG.messages.edit.reloadCanceled);
+      return;
+    }
+    if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
+    this.blockEdit.dispatch("documentReplaced");
+    this._session = DocumentSession.fromFileText(
+      loaded.text,
+      hasUtf8Bom(loaded.bytesHead),
+      loaded.lastModified,
+      this._newDocumentId(),
+    );
+    await this._showSessionBody(theme);
   }
 
   /**
    * Full clear: destroy view, clear editor, restore system theme,
-   * set view mode to initial.
+   * set view mode to initial. Asks first when unsaved (INV-21).
    * @purity non-pure
    */
   doClear() {
+    if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
+    this.blockEdit.dispatch("documentCleared");
+    this._session = null;
+    this._location = null;
+    this._editorChangedSinceRender = false;
     this.scrollEngine.destroy();
     this.orchestrator.clear();
     this.elements.editor.value = "";
     applySystemTheme();
     this._showAffordance();
     this.setViewMode("initial");
+    this._refreshDirtyMark();
   }
 
   /**
@@ -352,63 +447,69 @@ export default class UIController {
 
       const file = e.dataTransfer.files[0];
       if (!file) return;
+      await this._handleDroppedFile(file, handlePromise);
+    });
+  }
 
-      if (file.size > CONFIG.fileDrop.maxBytes) {
-        alert(CONFIG.fileDrop.messages.tooLarge);
-        return;
-      }
-
-      const ext = file.name.includes(".")
-        ? file.name.slice(file.name.lastIndexOf(".")).toLowerCase()
-        : "";
-
-      if (CONFIG.fileDrop.markdownExtensions.includes(ext)) {
-        // (1) .md -> Markdown Preview (with preprocessInput)
-        const fileHandle = handlePromise ? await handlePromise : null;
-        let text;
-        try {
-          text = await file.text();
-        } catch (_) {
-          alert(CONFIG.fileDrop.messages.readError);
-          return;
-        }
-        text = this.preprocessInput(text);
-        this.elements.editor.value = text;
-        await this.orchestrator.loadMarkdown(text, systemTheme(), fileHandle);
-        this.setViewMode("markdown");
-        this.showKeyHint("markdown");
-      } else if (EXT_TO_HLJS[ext] || EXT_TO_HLJS[file.name]) {
-        // (2) Known text extension -> Code View
-        this.elements.editor.value = ""; // RTC2-07: clear editor before code view
-        const fileHandle = handlePromise ? await handlePromise : null;
-        const metadata = await this.orchestrator.renderCodeView(file, fileHandle);
-        this.setViewMode("code", metadata);
-        this.showKeyHint("code");
-      } else if (BINARY_EXTENSIONS.has(ext)) {
-        // (3) Known binary extension -> reject
-        alert(CONFIG.fileDrop.messages.binaryFile);
-      } else {
-        // (4)/(5) Unknown extension -> null byte check on first 8KB
-        let bytes;
-        try {
-          const slice = file.slice(0, 8192);
-          bytes = new Uint8Array(await slice.arrayBuffer());
-        } catch (_) {
-          alert(CONFIG.fileDrop.messages.readError);
-          return;
-        }
-        if (bytes.some((b) => b === 0)) {
+  /**
+   * INV-21 order: (2) classify and read, (3) refuse while saving, (4) ask
+   * when unsaved, (5) replace synchronously right after the answer.
+   * .md -> Markdown preview (new session and save target); other text ->
+   * code view (no document).
+   * @param {File} file
+   * @param {Promise|null} handlePromise - taken before the first await (CON-01)
+   * @purity non-pure
+   */
+  async _handleDroppedFile(file, handlePromise) {
+    let kind = classifyDroppedFile(file.name, file.size);
+    if (kind === "tooLarge") {
+      alert(CONFIG.fileDrop.messages.tooLarge);
+      return;
+    }
+    if (kind === "binary") {
+      alert(CONFIG.fileDrop.messages.binaryFile);
+      return;
+    }
+    let text = "";
+    let hasBom = false;
+    try {
+      if (kind === "sniff") {
+        const bytes = new Uint8Array(await file.slice(0, 8192).arrayBuffer());
+        if (hasNullByte(bytes)) {
           alert(CONFIG.fileDrop.messages.binaryFile);
           return;
         }
-        // Text file with unknown extension -> Code View (plaintext)
-        this.elements.editor.value = ""; // RTC2-07: clear editor before code view
-        const fileHandle = handlePromise ? await handlePromise : null;
-        const metadata = await this.orchestrator.renderCodeView(file, fileHandle);
-        this.setViewMode("code", metadata);
-        this.showKeyHint("code");
+        kind = "code";
       }
-    });
+      if (kind === "markdown") {
+        hasBom = hasUtf8Bom(new Uint8Array(await file.slice(0, 3).arrayBuffer()));
+        text = await file.text();
+      }
+    } catch (_) {
+      alert(CONFIG.fileDrop.messages.readError);
+      return;
+    }
+    const fileHandle = handlePromise ? await handlePromise : null;
+
+    if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
+    if (kind === "markdown") {
+      this.blockEdit.dispatch("documentReplaced");
+      this._session = DocumentSession.fromFileText(text, hasBom, file.lastModified, this._newDocumentId());
+      this._location = new DocumentLocation(file.name, fileHandle);
+      this.orchestrator.resetExternalImageConsent(); // INV-43
+      await this._showSessionBody(systemTheme());
+      return;
+    }
+    this.blockEdit.dispatch("viewSwitchedToCode");
+    this._session = null;
+    this._location = null;
+    this._editorChangedSinceRender = false;
+    this.elements.editor.value = ""; // RTC2-07: clear editor before code view
+    const rendering = this.orchestrator.renderCodeView(file, fileHandle);
+    this._refreshDirtyMark();
+    const metadata = await rendering;
+    this.setViewMode("code", metadata);
+    this.showKeyHint("code");
   }
 
   /**
@@ -430,11 +531,9 @@ export default class UIController {
       )
         return;
       const raw = e.clipboardData.getData("text/plain");
-      if (!raw) return;
+      if (!raw || !raw.trim()) return;
       e.preventDefault();
-      const text = this.preprocessInput(raw);
-      this.elements.editor.value = text;
-      await this.handleRender(systemTheme());
+      await this._startPastedDocument(raw, systemTheme());
     });
   }
 
@@ -449,7 +548,9 @@ export default class UIController {
   setupKeyboard() {
     /** @purity non-pure */
     document.addEventListener("keydown", (e) => {
-      if (isTypingTarget(document.activeElement)) return; // INV-14
+      // INV-14. The event target counts too: Esc in the block editor closes
+      // it, so the focus has already left when the key reaches the document.
+      if (isTypingTarget(document.activeElement) || isTypingTarget(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return; // INV-14: modifier guard
 
       switch (e.key) {
@@ -478,6 +579,15 @@ export default class UIController {
         case "c":
           this.doClear();
           break;
+        case "e":
+          this.toggleEditPalette();
+          break;
+        case "Escape":
+          // Markdown view: hide the palette, or cancel the open block editor
+          // when the focus is outside it (5.11, 11-c escapePressed).
+          if (!this.orchestrator.isPreRenderState() && !this.orchestrator.isCodeViewActive())
+            this.blockEdit.dispatch("escapePressed");
+          break;
       }
     });
 
@@ -486,6 +596,304 @@ export default class UIController {
       if (e.key === "ArrowUp" || e.key === "ArrowDown")
         this.scrollEngine.stopScroll();
     });
+  }
+
+  // ---- In-place editing (SC-22 to SC-24) ----
+
+  /**
+   * [Edit] / e (5.11, INV-31): toggle the palette in the markdown view; in
+   * the initial state start an empty document (empty #editor) or render
+   * #editor with the system theme first; nothing in code view (OS-06).
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  async toggleEditPalette() {
+    if (this.orchestrator.isCodeViewActive()) return;
+    if (this.orchestrator.isPreRenderState()) {
+      if (this.elements.editor.value.trim() === "") {
+        await this._startEmptyDocument();
+        return;
+      }
+      await this.handleRender(systemTheme());
+      if (!this.orchestrator.isPreRenderState() && !this.palette.isShown()) this._showPalette();
+      return;
+    }
+    if (this.palette.isShown()) this._hidePalette();
+    else this._showPalette();
+  }
+
+  /**
+   * ModelChangedPort (INV-47): a commit, insert or undo changed the model
+   * inside the current event handler; #editor follows at once.
+   * @param {{model: MarkdownBlockModel}} change
+   * @purity non-pure
+   */
+  onModelChanged(change) {
+    this.elements.editor.value = change.model.toBody();
+    this._editorChangedSinceRender = false;
+    this._refreshDirtyMark();
+  }
+
+  /**
+   * #editor input marks unrendered changes (5.7 (2), INV-45); a focus moving
+   * into #editor commits an open block editor (5.7 (5), editorFocused).
+   * @purity non-pure
+   */
+  setupEditorSync() {
+    /** @purity non-pure */
+    this.elements.editor.addEventListener("input", () => {
+      this._editorChangedSinceRender = true;
+      this._refreshDirtyMark();
+    });
+    /** @purity non-pure */
+    this.elements.editor.addEventListener("focusin", () => {
+      if (this.blockEdit.isEditing()) this.blockEdit.dispatch("editorFocused");
+    });
+  }
+
+  /**
+   * INV-31: a double click or a double tap on the empty initial preview
+   * starts an empty document.
+   * @purity non-pure
+   */
+  setupEmptyDocumentGestures() {
+    const preview = this.elements.preview;
+    /** @purity non-pure */
+    preview.addEventListener("dblclick", () => {
+      if (this._canStartEmptyDocument()) this._startEmptyDocument();
+    });
+    /** @purity non-pure */
+    preview.addEventListener("pointerup", (e) => {
+      if (e.pointerType !== "touch" || !this._canStartEmptyDocument()) {
+        this._lastTap = null;
+        return;
+      }
+      const tap = { time: Date.now(), x: e.clientX, y: e.clientY };
+      if (BlockEditController.isDoubleTap(this._lastTap, tap)) {
+        this._lastTap = null;
+        this._startEmptyDocument();
+      } else {
+        this._lastTap = tap;
+      }
+    });
+  }
+
+  /**
+   * INV-22: registered once; it asks only while the document is unsaved.
+   * @purity non-pure
+   */
+  setupUnloadGuard() {
+    /** @purity non-pure */
+    window.addEventListener("beforeunload", (e) => {
+      if (!this._isDocumentDirty()) return;
+      e.preventDefault();
+      e.returnValue = "";
+    });
+  }
+
+  /**
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  _canStartEmptyDocument() {
+    return this.orchestrator.isPreRenderState() && this.elements.editor.value.trim() === "";
+  }
+
+  /**
+   * INV-31: a new empty document with the palette and the first block's editor.
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  _startEmptyDocument() {
+    if (this._rejectWhileSaving()) return Promise.resolve();
+    this._session = DocumentSession.fromPastedText("", this._newDocumentId());
+    this._location = null;
+    this.elements.editor.value = "";
+    this._editorChangedSinceRender = false;
+    this.setViewMode("markdown");
+    this.showKeyHint("markdown");
+    const opening = this.blockEdit.dispatch("emptyDocumentStarted");
+    this._refreshDirtyMark();
+    return opening ?? Promise.resolve();
+  }
+
+  /**
+   * Initial state: a new document from pasted text or #editor. Line endings
+   * are normalized before the wrapper is split (spec 5.14.1).
+   * @param {string} rawText
+   * @param {'light'|'dark'} theme
+   * @purity non-pure
+   */
+  async _startPastedDocument(rawText, theme) {
+    const body = this.preprocessInput(normalizeLineEndings(rawText));
+    if (!body.trim() || this._rejectWhileSaving()) return;
+    this._session = DocumentSession.fromPastedText(body, this._newDocumentId());
+    this._location = null;
+    await this._showSessionBody(theme);
+  }
+
+  /**
+   * Markdown view: the #editor text becomes the document body. Only line
+   * endings are normalized; the wrapper is not split again (ruling T33).
+   * The session and its baseline stay (5.14.11).
+   * @param {'light'|'dark'} theme
+   * @purity non-pure
+   */
+  async _renderEditorIntoDocument(theme) {
+    this.blockEdit.dispatch("fullRenderRequested"); // commits an open editor first
+    this.state.setMarkdownText(normalizeLineEndings(this.elements.editor.value));
+    this._editorChangedSinceRender = false; // taken into the model now (T32)
+    const rendering = this.orchestrator.reRender(theme);
+    this._refreshDirtyMark();
+    this.setViewMode("markdown");
+    this.showKeyHint("markdown");
+    await rendering;
+  }
+
+  /**
+   * INV-45: a block tap (or Undo / insert) found unrendered #editor changes.
+   * @purity non-pure
+   */
+  _renderFromEditorFirst() {
+    this._renderEditorIntoDocument(this.state.currentTheme);
+    this._toast(CONFIG.messages.edit.editorRenderedFirst);
+  }
+
+  /**
+   * Show the new session's body in #editor and queue its full render.
+   * Everything up to the render runs synchronously (INV-21, INV-47).
+   * @param {'light'|'dark'} theme
+   * @purity non-pure
+   */
+  async _showSessionBody(theme) {
+    const body = this._session.getBodyText();
+    this.elements.editor.value = body;
+    this._editorChangedSinceRender = false;
+    const rendering = this.orchestrator.loadMarkdown(body, theme);
+    this._refreshDirtyMark();
+    this.setViewMode("markdown");
+    this.showKeyHint("markdown");
+    await rendering;
+  }
+
+  /**
+   * @purity non-pure
+   */
+  _showPalette() {
+    this.palette.show();
+    this.blockEdit.dispatch("paletteShown");
+    this._refreshDirtyMark();
+  }
+
+  /**
+   * Hide the palette; an open block editor is committed first (11-c).
+   * @purity non-pure
+   */
+  _hidePalette() {
+    this.blockEdit.dispatch("paletteHidden");
+    this.palette.hide();
+  }
+
+  /**
+   * Unsaved (glossary, 11-e): a derived value, never stored.
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  _isDocumentDirty() {
+    if (!this._session) return false;
+    return (
+      this._session.isBodyChanged(this.orchestrator.getBody()) ||
+      this.blockEdit.hasUncommittedChange() ||
+      this._editorChangedSinceRender
+    );
+  }
+
+  /**
+   * Title prefix and palette status (INV-50). No file name in the title.
+   * @purity non-pure
+   */
+  _refreshDirtyMark() {
+    const dirty = this._isDocumentDirty();
+    document.title = dirty ? CONFIG.edit.titleUnsavedPrefix + this._baseTitle : this._baseTitle;
+    const m = CONFIG.messages.edit;
+    const name = this._location?.fileName ?? CONFIG.edit.defaultFileName;
+    let status = "";
+    if (this._session) status = dirty ? m.statusUnsaved(name) : m.statusSaved(name);
+    this.palette.setStatusText(status);
+  }
+
+  /**
+   * INV-21: ask before replacing an unsaved document.
+   * @purity non-pure
+   * @returns {boolean} true to go on
+   */
+  _confirmDiscardIfDirty() {
+    return !this._isDocumentDirty() || window.confirm(CONFIG.messages.edit.unsavedConfirm);
+  }
+
+  /**
+   * INV-54: a document is not rebuilt while a save is running.
+   * @purity non-pure
+   * @returns {boolean} true when refused
+   */
+  _rejectWhileSaving() {
+    if (this._saveOperationState !== "writingFile") return false;
+    this._toast(CONFIG.messages.edit.savingInProgress);
+    return true;
+  }
+
+  /**
+   * @purity non-pure
+   */
+  _newDocumentId() {
+    return this._nextDocumentId++;
+  }
+
+  /**
+   * @purity non-pure
+   */
+  _toast(message) {
+    showToast(message, CONFIG.codeView.toastDurationMs);
+  }
+
+  /**
+   * BlockEditHost (the port BlockEditController calls back).
+   * @purity non-pure
+   */
+  _blockEditHost() {
+    return {
+      showPalette: () => this.palette.show(),
+      hidePalette: () => this.palette.hide(),
+      isPaletteNode: (node) => this.palette.contains(node),
+      focusPalette: () => this.palette.focus(),
+      isEditorChangedSinceRender: () => this._editorChangedSinceRender,
+      renderFromEditor: () => this._renderFromEditorFirst(),
+      onEditorInput: () => this._refreshDirtyMark(),
+      onEditStateChanged: () => this._refreshDirtyMark(),
+    };
+  }
+
+  /**
+   * EditPaletteHost (the port EditPalette calls back). The commands are
+   * wired in unit f2 (save and the editing commands).
+   * @purity non-pure
+   */
+  _paletteHost() {
+    return {
+      runCommand: (command, arg) => this._runPaletteCommand(command, arg),
+      focusEditor: () => this.blockEdit.focusEditor(),
+      requestHide: () => this._hidePalette(),
+    };
+  }
+
+  /**
+   * @purity non-pure
+   * @param {string} command
+   * @param {string} [arg]
+   */
+  _runPaletteCommand(command, arg) {
+    void command;
+    void arg;
   }
 
   /** @purity non-pure */

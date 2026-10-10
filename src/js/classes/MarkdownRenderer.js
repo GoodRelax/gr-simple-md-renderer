@@ -67,6 +67,7 @@ export default class MarkdownRenderer {
     this._wrapperById = new Map(); // block id -> wrapper element
     this._htmlById = new Map(); // block id -> HTML shown in that wrapper
     this._idByWrapper = new WeakMap(); // wrapper element -> block id
+    this._staleIds = new Set(); // kept wrappers that show older HTML (Q-d1)
     this._emptyBlock = null;
   }
 
@@ -177,12 +178,15 @@ export default class MarkdownRenderer {
    * a block whose HTML did not change keeps its element (and its diagrams,
    * zoom state and images). Changed and new blocks get new wrappers; removed
    * blocks leave the DOM. Returns the new wrappers only.
+   * The kept block (an open editor, Q-d1) keeps its wrapper even when its
+   * HTML changed; it stays stale until a later call without keepBlockId.
    * @purity non-pure
    * @param {MarkdownBlockModel} renderedModel - the model now on screen
    * @param {MarkdownBlockModel} currentModel - the model to show
+   * @param {number|null} [keepBlockId]
    * @returns {HTMLElement[]}
    */
-  replaceBlocks(renderedModel, currentModel) {
+  replaceBlocks(renderedModel, currentModel, keepBlockId = null) {
     void renderedModel; // the wrappers on screen are tracked by id
     const signature = linksSignature(currentModel.links);
     const replaced = [];
@@ -191,7 +195,10 @@ export default class MarkdownRenderer {
     for (const block of currentModel.getBlocks()) {
       const html = this._cachedHtml(block, currentModel.links, signature);
       let el = this._wrapperById.get(block.id);
-      if (!el || this._htmlById.get(block.id) !== html) {
+      const changed = !el || this._htmlById.get(block.id) !== html;
+      if (changed && el && block.id === keepBlockId) {
+        this._staleIds.add(block.id);
+      } else if (changed) {
         if (el) {
           el.remove();
           this._dropWrapper(block.id);
@@ -199,6 +206,7 @@ export default class MarkdownRenderer {
         el = this._createWrapper(block, html);
         replaced.push(el);
       }
+      if (!changed) this._staleIds.delete(block.id);
       keep.add(block.id);
       order.push(el);
     }
@@ -257,6 +265,16 @@ export default class MarkdownRenderer {
    */
   getEmptyBlockElement() {
     return this._emptyBlock;
+  }
+
+  /**
+   * A kept block whose wrapper shows older HTML (Q-d1).
+   * @purity semi-pure-b
+   * @param {number} blockId
+   * @returns {boolean}
+   */
+  isStale(blockId) {
+    return this._staleIds.has(blockId);
   }
 
   // ---- internals ----
@@ -340,6 +358,7 @@ export default class MarkdownRenderer {
     if (el) this._idByWrapper.delete(el);
     this._wrapperById.delete(id);
     this._htmlById.delete(id);
+    this._staleIds.delete(id);
   }
 
   /**
@@ -351,6 +370,7 @@ export default class MarkdownRenderer {
     this._wrapperById.clear();
     this._htmlById.clear();
     this._idByWrapper = new WeakMap();
+    this._staleIds.clear();
     this._emptyBlock = null;
   }
 

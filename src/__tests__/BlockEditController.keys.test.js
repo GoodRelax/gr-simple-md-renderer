@@ -6,6 +6,7 @@ vi.mock("../js/utils.js", async () => {
     ...actual,
     applyTheme: vi.fn(),
     applySystemTheme: vi.fn(),
+    showToast: vi.fn(),
     waitForDOMStability: vi.fn().mockResolvedValue(true),
   };
 });
@@ -18,6 +19,7 @@ import UIController from "../js/classes/UIController.js";
 import { setupEdit } from "./helpers/editStack.js";
 import { tap, keydown } from "./helpers/editDom.js";
 import { loadFixtureLf } from "./helpers/samples.js";
+import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
 // INV-14: keys typed into the block editor, a contenteditable element or a
 // role="toolbar" (the edit palette, or any element with that role) are not
@@ -42,6 +44,7 @@ beforeAll(() => {
     renderDarkBtn: document.createElement("button"),
     reloadBtn: document.createElement("button"),
     newTabBtn: document.createElement("button"),
+    editBtn: document.createElement("button"),
     clearBtn: document.createElement("button"),
     helpBtn: document.createElement("button"),
     helpModal: modal(),
@@ -54,13 +57,18 @@ beforeAll(() => {
     isPreRenderState: vi.fn().mockReturnValue(false),
     reRender: vi.fn().mockResolvedValue(undefined),
     reloadCodeView: vi.fn().mockResolvedValue(undefined),
-    readMarkdownFile: vi.fn().mockResolvedValue(null),
     loadMarkdown: vi.fn().mockResolvedValue(undefined),
     renderCodeView: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn(),
   };
   scrollEngine = { startScroll: vi.fn(), stopScroll: vi.fn(), destroy: vi.fn() };
-  ui = new UIController(orchestrator, { setTheme: vi.fn(), setMarkdownText: vi.fn() }, elements, scrollEngine);
+  ui = new UIController(
+    withEditMethods(orchestrator),
+    { setTheme: vi.fn(), setMarkdownText: vi.fn() },
+    elements,
+    scrollEngine,
+    fakeEditServices(),
+  );
 });
 
 afterEach(() => {

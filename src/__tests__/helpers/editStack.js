@@ -41,6 +41,7 @@ export function fakeHost() {
     isEditorChangedSinceRender: vi.fn(() => host.editorChanged),
     renderFromEditor: vi.fn(),
     onEditorInput: vi.fn(),
+    onEditStateChanged: vi.fn(),
   };
   return host;
 }
