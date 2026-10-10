@@ -117,6 +117,29 @@ describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
     expect(mockElements.keyHint.style.opacity).toBe("0");
   });
 
+  it("PRT-D01 the click that shows the hint (a button's handler) does not dismiss it; the next click does", () => {
+    const ctrl = createController();
+    const button = document.createElement("button");
+    document.body.appendChild(button);
+    button.addEventListener("click", () => ctrl.showKeyHint("markdown"));
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(mockElements.keyHint.style.opacity).toBe("1");
+    document.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(mockElements.keyHint.style.opacity).toBe("0");
+    button.remove();
+  });
+
+  it("PRT-D01 a key handled on an element that shows the hint does not dismiss it; the next key does", () => {
+    const ctrl = createController();
+    document.body.appendChild(mockElements.editor);
+    mockElements.editor.addEventListener("keydown", () => ctrl.showKeyHint("markdown"));
+    mockElements.editor.dispatchEvent(new KeyboardEvent("keydown", { key: "x", bubbles: true }));
+    expect(mockElements.keyHint.style.opacity).toBe("1");
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+    expect(mockElements.keyHint.style.opacity).toBe("0");
+    mockElements.editor.remove();
+  });
+
   it("dismisses keyHint on keydown", () => {
     const ctrl = createController();
     ctrl.showKeyHint("markdown");

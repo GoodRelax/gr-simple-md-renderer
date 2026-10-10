@@ -212,6 +212,9 @@ export default class BlockEditController {
   _run(next, target) {
     let resolved = target;
     let rendering = null;
+    // INV-46: where the tapped block was before an open editor above it
+    // closed and changed the layout (PRT-U07).
+    const tapped = this._tappedPlace(next, target);
     for (const action of next.actions) {
       switch (action) {
         case "commitBlock":
@@ -235,7 +238,7 @@ export default class BlockEditController {
           resolved = this._resolve(resolved);
           break;
         case "openBlockEditor":
-          if (!rendering) this._openBlockEditor(resolved);
+          if (!rendering) this._openBlockEditor(resolved, tapped);
           break;
         case "renderFromEditor":
           this.host.renderFromEditor();
@@ -285,6 +288,29 @@ export default class BlockEditController {
   }
 
   /**
+   * The tapped block's element and its place on screen before anything of
+   * the tap changed the layout: taken at pointerdown (a mouse press outside
+   * commits there, INV-30), or else before the actions of the cell run. null
+   * when the cell opens no block.
+   * @purity semi-pure-b
+   * @returns {{wrapper: Element, anchor: object}|null}
+   */
+  _tappedPlace(next, target) {
+    if (!target || target.kind !== "block" || !next.actions.includes("openBlockEditor")) return null;
+    return target.place ?? this._placeOf(target.id);
+  }
+
+  /**
+   * A block's element and where its top is on screen now.
+   * @purity semi-pure-b
+   * @returns {{wrapper: Element, anchor: object}|null}
+   */
+  _placeOf(blockId) {
+    const wrapper = this.blockLocator.getBlockElement(blockId);
+    return wrapper ? { wrapper, anchor: this.scrollMemento.captureAnchor(wrapper) } : null;
+  }
+
+  /**
    * The tapped block, if it is still in the current model (INV-30).
    * @purity semi-pure-b
    */
@@ -296,9 +322,13 @@ export default class BlockEditController {
 
   /**
    * Put the editor in place of the block's rendered content (INV-46 anchor).
+   * tapped: the place the block had before this cell closed another editor;
+   * the block goes back there, and a queued render keeps it there.
    * @purity non-pure
+   * @param {{kind: string, id?: number}|null} target
+   * @param {{wrapper: Element, anchor: object}|null} [tapped]
    */
-  _openBlockEditor(target) {
+  _openBlockEditor(target, tapped = null) {
     if (!target || this._editor) return;
     let wrapper;
     let raw = "";
@@ -318,7 +348,7 @@ export default class BlockEditController {
     }
     if (!wrapper) return;
 
-    const anchor = this.scrollMemento.captureAnchor(wrapper);
+    const anchor = tapped && tapped.wrapper === wrapper ? tapped.anchor : this.scrollMemento.captureAnchor(wrapper);
     const textarea = document.createElement("textarea");
     textarea.className = "md-block-editor";
     textarea.spellcheck = false;
@@ -343,6 +373,7 @@ export default class BlockEditController {
     this._fitHeight();
     textarea.focus({ preventScroll: true });
     this.scrollMemento.restoreAnchor(anchor, wrapper);
+    if (blockId !== null) this.orchestrator.retargetPendingAnchor(blockId);
     this.host.onEditStateChanged();
   }
 
@@ -395,14 +426,17 @@ export default class BlockEditController {
     const inPalette = this.host.isPaletteNode(node);
     const onScrollbar = this._isScrollbarPress(e);
     const outside = !inEditor && !inPalette && !onScrollbar;
+    // The block id and its place on screen are taken now; layout may move
+    // before pointerup (a mouse press commits an open editor below).
+    const target = outside && e.button === 0 ? this._targetAt(node) : null;
+    if (target && target.kind === "block") target.place = this._placeOf(target.id);
     this._press = {
       pointerId: e.pointerId,
       x: e.clientX,
       y: e.clientY,
       pointerType: e.pointerType,
       outside,
-      // The block id is taken now; layout may move before pointerup.
-      target: outside && e.button === 0 ? this._targetAt(node) : null,
+      target,
     };
     if (outside && e.pointerType === "mouse") this.dispatch("pointerPressedOutside");
   }

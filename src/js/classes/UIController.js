@@ -253,19 +253,26 @@ export default class UIController {
     hint.style.opacity = "1";
     hint.style.display = "block";
 
+    // The hint can be shown inside the handler of a click or key (a render
+    // starts synchronously, INV-47). That same event still bubbles to
+    // document, so it must not dismiss the hint (PRT-D01).
+    const showingEvent = window.event;
     /** @purity non-pure */
-    const dismiss = () => {
+    const dismiss = (e) => {
+      if (e && e === showingEvent) return;
       hint.style.opacity = "0";
       this._clearKeyHintDismiss();
     };
 
     this._keyHintTimer = setTimeout(dismiss, CONFIG.codeView.keyHintDurationMs);
 
+    // No { once: true }: the showing event may reach a listener first.
+    // _clearKeyHintDismiss removes them all.
     this._keyHintDismissHandler = dismiss;
-    document.addEventListener("keydown", dismiss, { once: true });
-    this.elements.preview.addEventListener("scroll", dismiss, { once: true });
-    document.addEventListener("click", dismiss, { once: true });
-    document.addEventListener("touchmove", dismiss, { once: true });
+    document.addEventListener("keydown", dismiss);
+    this.elements.preview.addEventListener("scroll", dismiss);
+    document.addEventListener("click", dismiss);
+    document.addEventListener("touchmove", dismiss);
   }
 
   /**

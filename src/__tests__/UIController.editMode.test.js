@@ -22,6 +22,7 @@ import { CONFIG } from "../js/config.js";
 import { setupApp, dropEvent, settle } from "./helpers/appStack.js";
 import { tap, pointer, keydown } from "./helpers/editDom.js";
 import { fakeFileHandle } from "./helpers/fakeFs.js";
+import { fakePaletteLayout } from "./helpers/paletteLayout.js";
 
 const DOC = "# Title\n\nHello world.\n\nSecond para.\n";
 const isPara = (start) => (b) => b.type === "paragraph" && b.raw.startsWith(start);
@@ -157,6 +158,24 @@ describe("AT-UI e / [Edit], double click, double tap (INV-31, OS-06)", () => {
     expect(app.ui.palette.isShown()).toBe(false);
   });
 
+  it.each([
+    ["a double click", () => app.preview.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }))],
+    ["[Edit]", () => app.elements.editBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }))],
+  ])("PRT-U16 an empty document started by %s: the palette keeps the 16 px bottom margin after its status arrives (INV-32)", async (_name, start) => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 768 });
+    const layout = fakePaletteLayout({ statusHeight: 11 });
+    app = await setupApp();
+    start();
+    await settle();
+    const root = app.paletteRoot();
+    expect(root.querySelector("#paletteStatus").textContent).not.toBe("");
+    const box = root.getBoundingClientRect();
+    expect(768 - box.bottom).toBe(CONFIG.edit.paletteMarginPx);
+    expect(1024 - box.right).toBe(CONFIG.edit.paletteMarginPx);
+    layout.restore();
+  });
+
   it("AT-UI-21 initial, empty #editor: a click (focus to #editor, FS-16) then dblclick opens the empty block's editor", async () => {
     app = await setupApp();
     app.preview.click();
@@ -289,6 +308,28 @@ describe("#editor's own Undo / Redo waits for the user's own input after a syste
     await settle();
     expect(app.elements.editor.value).toBe("");
     expect(ownUndoPrevented()).toBe(true);
+  });
+});
+
+describe("PRT-D01 the key hint stays after a button click that renders", () => {
+  const click = (el) => el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  const hintShown = () => app.elements.keyHint.style.display === "block" && app.elements.keyHint.style.opacity === "1";
+
+  it.each([
+    ["[Render Light] in the initial state", "renderLightBtn", false],
+    ["[Render Dark] in the markdown view", "renderDarkBtn", true],
+    ["[Edit] in the initial state with #editor text (U30)", "editBtn", false],
+  ])("%s: the hint is shown and the same click does not hide it; a later click does", async (_name, button, withDoc) => {
+    if (withDoc) await withDocument();
+    else {
+      app = await setupApp();
+      app.elements.editor.value = "# Test\n";
+    }
+    click(app.elements[button]);
+    await settle();
+    expect(hintShown()).toBe(true);
+    click(document.body);
+    expect(app.elements.keyHint.style.opacity).toBe("0");
   });
 });
 

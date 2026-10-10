@@ -30,6 +30,11 @@
 - [ ] F-B2 `DiagramCopyController.inlineSvgStyles` / `convertForeignObjects`：複製を組み立てるループの中で `getComputedStyle` を読んでいる（R7.4）。`convertForeignObjects` は文字の配置の計算（R7.2）と DOM の生成も混ざっている。読み取りと計算と生成を分ける
 - [ ] F-B3 `SmoothScrollEngine._loop`：速度と摩擦の物理計算が `scrollBy` と `requestAnimationFrame` と混ざっている。計算を純粋関数に切り出す（R7.2）
 
+### 表示の既存の不具合（その場編集の手動テストで見つかった、main と同じもの）
+- [ ] KaTeX の文字の大きさが 1.5em にならず 1.21em になる：ビルドの CSS で KaTeX の `.katex{font:1.21em ...}` が、アプリの `.katex{font-size:1.5em}` より後ろに来る（CSS の順序）。試験仕様 PRT-M04
+- [ ] ダーク表示で本文のリンクの色が既定の青（rgb(0,0,238)）のままで、暗い背景で読みにくい（`.dark a` の規則が無い）
+- [ ] `<meta name="viewport">` が無い：幅 768px 未満の端末では 980px のレイアウトになる（スマートフォンでの表示）
+
 ### 構造の整理（その場編集のコードレビューで受容した指摘）
 - [ ] `UIController` の責務が多い（約 1,300 行）。UI の配線に加え、文書の作り直し（`_session` / `_location` の置き換え）・保存の状態機械・未保存の判定・パレットの機能の振り分けを持つ。「文書のライフサイクル」（セッション・保存先・保存の状態）を別のクラスへ分ける（R2.2 / R2.10）
 - [ ] `SaveDocument` が内部で `SaveDocumentAs` を作り、その `outcome` / `failureMessage` を借りている（UIController も例外の経路で使う）。両方の use case が使う純粋な関数（例：`saveOutcome.js`）に出し、`SaveDocument` には `SaveDocumentAs` を注入する（R2.7 / R2.2）

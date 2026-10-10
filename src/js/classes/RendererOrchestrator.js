@@ -92,6 +92,7 @@ export default class RendererOrchestrator {
     this._renderQueue = Promise.resolve();
     this._generation = 0; // bumped when the document is rebuilt or dropped
     this._pendingAnchor = null; // { scroll, blockId } of the latest request
+    this._renderingAnchor = null; // the anchor of the partial render in progress
     this._nextBlockId = 1; // app-wide block id counter, never goes back
     this._modelChangedListener = null;
     this._heldBlockId = null; // block with an open editor: its wrapper is kept (Q-d1)
@@ -369,6 +370,24 @@ export default class RendererOrchestrator {
     this._enqueue(() => this._renderPartial(generation, true));
   }
 
+  /**
+   * The block just opened becomes the anchor of the partial render of the
+   * commit before it, queued or already running (with a mouse the commit
+   * happens at pointerdown, and its render can be waiting for the DOM when
+   * pointerup opens the block): the opened block keeps its place on screen
+   * (INV-46). Without such an anchor nothing changes.
+   * @param {number} blockId
+   * @purity non-pure
+   */
+  retargetPendingAnchor(blockId) {
+    if (!this._pendingAnchor && !this._renderingAnchor) return;
+    const element = this.markdownRenderer.getBlockElement(blockId);
+    if (!element) return;
+    const anchor = { scroll: this.scrollManager.captureAnchor(element), blockId };
+    if (this._pendingAnchor) this._pendingAnchor = anchor;
+    if (this._renderingAnchor) this._renderingAnchor = anchor;
+  }
+
   // ---- internals ----
 
   /**
@@ -462,19 +481,24 @@ export default class RendererOrchestrator {
     if (generation !== this._generation) return;
     const target = this._currentModel;
     if (!target || !this._renderedModel || (target === this._renderedModel && !force)) return;
-    const anchor = this._pendingAnchor;
+    this._renderingAnchor = this._pendingAnchor;
     this._pendingAnchor = null;
     const replaced = this.markdownRenderer.replaceBlocks(this._renderedModel, target, this._heldBlockId);
     measureCommit();
     this._renderedModel = target;
-    this._restoreAnchor(anchor, generation);
-    if (replaced.length > 0) {
-      const theme = this.state.currentTheme;
-      await this.mermaidRenderer.render(theme, replaced);
-      await this.plantumlRenderer.render(theme, replaced, "placeholder");
+    this._restoreAnchor(this._renderingAnchor, generation);
+    try {
+      if (replaced.length > 0) {
+        const theme = this.state.currentTheme;
+        await this.mermaidRenderer.render(theme, replaced);
+        await this.plantumlRenderer.render(theme, replaced, "placeholder");
+      }
+      await waitForDOMStability(this.preview);
+      // Read again: an editor opened meanwhile may have retargeted it.
+      this._restoreAnchor(this._renderingAnchor, generation);
+    } finally {
+      this._renderingAnchor = null;
     }
-    await waitForDOMStability(this.preview);
-    this._restoreAnchor(anchor, generation);
   }
 
   /**

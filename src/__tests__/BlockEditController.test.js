@@ -6,6 +6,7 @@ vi.mock("../js/utils.js", async () => {
 });
 
 import BlockEditController from "../js/classes/BlockEditController.js";
+import { waitForDOMStability } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
 import { setupEdit, flush } from "./helpers/editStack.js";
 import { pointer, tap, keydown, trackListeners } from "./helpers/editDom.js";
@@ -147,6 +148,97 @@ describe("AT-BEC opening the editor (INV-29)", () => {
     tap(old);
     expect(s.editor()).toBeNull();
     expect(s.bec.isEditing()).toBe(false);
+  });
+});
+
+describe("INV-46 opening another block keeps the tapped block where it was (PRT-U07)", () => {
+  /**
+   * A fake vertical layout of the preview: the blocks stack from the top,
+   * shifted by a fake scrollTop. "Hello" is a tall block: 710 px rendered,
+   * 2680 px while it holds the editor; after its commit ("Changed") it renders
+   * 300 px, as a diagram that changed size. Other blocks: 100 px, 120 px
+   * while editing.
+   */
+  function fakeLayout(preview) {
+    let scroll = 0;
+    Object.defineProperty(preview, "scrollTop", {
+      configurable: true,
+      get: () => scroll,
+      set: (v) => {
+        scroll = v;
+      },
+    });
+    const heightOf = (el) => {
+      const ta = el.querySelector("textarea");
+      if (ta) return /Hello|Changed/.test(ta.value) ? 2680 : 120;
+      if (/Changed/.test(el.textContent)) return 300;
+      return /Hello/.test(el.textContent) ? 710 : 100;
+    };
+    const original = Element.prototype.getBoundingClientRect;
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function () {
+      if (!this.classList.contains("md-block")) return original.call(this);
+      let top = -scroll;
+      for (const el of preview.querySelectorAll(":scope > .md-block")) {
+        const height = heightOf(el);
+        if (el === this) return { top, bottom: top + height, height, left: 0, right: 800, width: 800, x: 0, y: top };
+        top += height;
+      }
+      return original.call(this);
+    });
+    return {
+      topOf: (el) => el.getBoundingClientRect().top,
+      setScroll: (v) => {
+        scroll = v;
+      },
+    };
+  }
+
+  it.each([
+    ["mouse, changed (a partial render follows)", "Changed A.", "mouse"],
+    ["mouse, unchanged (nothing to render)", "Hello world.", "mouse"],
+    ["touch, changed (commit and open in one tap)", "Changed A.", "touch"],
+    ["touch, unchanged", "Hello world.", "touch"],
+  ])("a tall editor is open; tapping a block below it (%s): the tapped block stays at its place", async (_name, text, pointerType) => {
+    s = await setupEdit(DOC);
+    const layout = fakeLayout(s.preview);
+    const { ta } = openBlock(isPara("Hello"));
+    ta.value = text;
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    const third = s.block(isPara("Third")).el;
+    layout.setScroll(100 + 2680 + 100 - 411); // Third's top at 411 px
+    expect(layout.topOf(third)).toBe(411);
+    tap(third.firstElementChild, { pointerType });
+    expect(s.editor().value).toBe("Third para.");
+    expect(layout.topOf(third)).toBe(411);
+    await flush();
+    expect(s.block(isPara("Third")).el).toBe(third);
+    expect(layout.topOf(third)).toBe(411);
+  });
+
+  it("mouse: the commit's render is already running when the tap opens the block; its last correction keeps the opened block", async () => {
+    s = await setupEdit(DOC);
+    const layout = fakeLayout(s.preview);
+    const { ta } = openBlock(isPara("Hello"));
+    ta.value = "Changed A.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    const third = s.block(isPara("Third")).el;
+    layout.setScroll(100 + 2680 + 100 - 411);
+    let settleDom;
+    waitForDOMStability.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          settleDom = resolve;
+        }),
+    );
+    pointer(third.firstElementChild, "pointerdown", { x: 10, y: 10, pointerType: "mouse" });
+    await flush(); // the commit's partial render runs until it waits for the DOM
+    expect(settleDom).toBeTypeOf("function");
+    pointer(third.firstElementChild, "pointerup", { x: 10, y: 10, pointerType: "mouse" });
+    expect(s.editor().value).toBe("Third para.");
+    expect(layout.topOf(third)).toBe(411);
+    settleDom(true);
+    await flush();
+    expect(layout.topOf(third)).toBe(411);
   });
 });
 

@@ -243,7 +243,16 @@ export default class EditPalette {
    * @param {string} text
    */
   setStatusText(text) {
+    if (this._status.textContent === text) return;
+    const before = this._shown ? this._root.getBoundingClientRect() : null;
     this._status.textContent = text;
+    if (!before) return;
+    // The text can change the size of the shown palette (an empty document
+    // gets its status right after show). Keep the bottom-right corner, so the
+    // margin of INV-32 stays (PRT-U16); _placeAt keeps it inside the viewport.
+    const after = this._root.getBoundingClientRect();
+    if (after.width === before.width && after.height === before.height) return;
+    this._placeAt(before.right - after.width, before.bottom - after.height);
   }
 
   /**

@@ -20,25 +20,30 @@ function rect(left, top, width, height) {
   return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON() {} };
 }
 
-function boxOf(el) {
+function boxOf(el, statusHeight) {
   const left = parseFloat(el.style.left) || 0;
   const top = parseFloat(el.style.top) || 0;
-  const size = el.classList.contains("edit-palette") ? PALETTE_SIZE : POPOVER_SIZE;
-  return rect(left, top, size.width, size.height);
+  if (!el.classList.contains("edit-palette")) return rect(left, top, POPOVER_SIZE.width, POPOVER_SIZE.height);
+  const hasStatus = (el.querySelector("#paletteStatus")?.textContent ?? "") !== "";
+  return rect(left, top, PALETTE_SIZE.width, PALETTE_SIZE.height + (hasStatus ? statusHeight : 0));
 }
 
-/** Stub getBoundingClientRect and pointer capture. Restore with vi.restoreAllMocks. */
-export function fakePaletteLayout() {
+/**
+ * Stub getBoundingClientRect and pointer capture. Restore with vi.restoreAllMocks.
+ * @param {{statusHeight?: number}} [opts] - the palette grows by this much while
+ *   its status text is not empty (default 0: a fixed size)
+ */
+export function fakePaletteLayout({ statusHeight = 0 } = {}) {
   const original = Element.prototype.getBoundingClientRect;
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function () {
     if (this.classList.contains("edit-palette") || this.classList.contains("edit-palette-popover")) {
-      return boxOf(this);
+      return boxOf(this, statusHeight);
     }
     const container = this.closest(".edit-palette, .edit-palette-popover");
     if (container && (this.tagName === "BUTTON" || this.classList.contains("edit-palette-grip"))) {
       const items = [...container.querySelectorAll("button, .edit-palette-grip")];
       const i = items.indexOf(this);
-      const box = boxOf(container);
+      const box = boxOf(container, statusHeight);
       return rect(box.left + 4 + BUTTON_STEP * i, box.top + 4, BUTTON_SIZE, BUTTON_SIZE);
     }
     return original.call(this);

@@ -81,6 +81,45 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
     expect(palette.isShown()).toBe(true);
   });
 
+  describe("PRT-U16 a status text that changes the size keeps the bottom-right corner (INV-32)", () => {
+    const STATUS_H = 11;
+    beforeEach(() => {
+      vi.restoreAllMocks();
+      layout.restore();
+      layout = fakePaletteLayout({ statusHeight: STATUS_H });
+    });
+
+    it("shown with no status, then the status arrives: the bottom margin stays 16 px", () => {
+      palette.show();
+      palette.setStatusText("untitled.md - saved");
+      expect(positionOf(root)).toEqual({
+        left: W - PALETTE_SIZE.width - MARGIN,
+        top: H - (PALETTE_SIZE.height + STATUS_H) - MARGIN,
+      });
+    });
+
+    it("a palette the user moved keeps its bottom edge too", () => {
+      palette.show();
+      const grip = root.querySelector(".edit-palette-grip");
+      const c = centerOf(grip);
+      pointer(grip, "pointerdown", { x: c.x, y: c.y });
+      pointer(grip, "pointermove", { x: c.x - 300, y: c.y - 200 });
+      pointer(grip, "pointerup", { x: c.x - 300, y: c.y - 200 });
+      const before = positionOf(root);
+      palette.setStatusText("doc.md * unsaved");
+      expect(positionOf(root)).toEqual({ left: before.left, top: before.top - STATUS_H });
+    });
+
+    it("the same text again, or a hidden palette, does not move it", () => {
+      palette.setStatusText("untitled.md - saved"); // hidden: nothing placed
+      expect(root.style.top).toBe("");
+      palette.show();
+      const shown = positionOf(root);
+      palette.setStatusText("untitled.md - saved");
+      expect(positionOf(root)).toEqual(shown);
+    });
+  });
+
   it("AT-PAL-02 the position is not remembered, and nothing is stored", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     palette.show();
