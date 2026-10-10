@@ -30,6 +30,7 @@ This tool was built to provide a **transparent, minimal, and privacy-respecting 
 - Code View: drop any text file (.py, .js, .c, ...) to view it with syntax highlighting and line numbers
 - Auto-render on paste (Ctrl+V / Cmd+V anywhere on the page) or file drop
 - Reload the current file from disk (browsers with the File System Access API)
+- Edit the preview block by block and save to a file (no autosave; Save as / download where writing files is not supported)
 - Dark / Light theme rendering
 - Keyboard shortcuts and smooth arrow-key scrolling
 - Diagram zoom (Ctrl+Scroll), pan (drag), and copy as SVG / PNG on PC
@@ -62,6 +63,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Render Dark | `D` | Render / switch to the dark theme |
    | Reload | `R` | Reload the current file from disk |
    | New Tab | `N` | Open GRSMD in a new tab |
+   | Edit | `E` | Show / hide the edit palette; click a block to edit its Markdown in place |
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
 
@@ -75,6 +77,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
   - PlantUML: the diagram source is sent to the official PlantUML server, after a confirmation dialog, every time it renders.
   - External images (`![](https://...)`): shown as placeholders until you click one and confirm. The consent lasts until `[Clear]` or a new file drop.
 - **Nothing is stored.** Your content is never written to localStorage, sessionStorage, or cookies.
+- **Edits are not stored in the browser either.** They live only in the open page until you save them to a file.
 - **HTML in Markdown is sanitized** with DOMPurify. Scripts and event handlers are removed. Other remote references (video, audio, CSS `url()`, `<style>`) are removed.
 - **Content-Security-Policy:** the built file only runs its own script, and network access is limited to the PlantUML server.
 
@@ -154,6 +157,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 - コードビュー: テキスト系ファイル（.py、.js、.c など）をドロップすると、ハイライトと行番号付きで表示
 - ページ上どこでも貼り付け（Ctrl+V / Cmd+V）またはファイルのドロップで自動プレビュー
 - 表示中のファイルをディスクからリロード（File System Access API 対応ブラウザ）
+- プレビュー上でのブロック単位の編集と、ファイルへの保存（自動保存はしない。ファイルを書き込めないブラウザではダウンロード）
 - ダーク / ライトテーマ
 - キーボードショートカットと矢印キーのスムーズスクロール
 - PC: ダイアグラムの Zoom（Ctrl+Scroll）/ Pan（ドラッグ）/ SVG・PNG コピー
@@ -186,6 +190,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | Render Dark | `D` | レンダリング / ダークテーマに切替 |
    | Reload | `R` | 表示中のファイルをディスクからリロード |
    | New Tab | `N` | 新しいタブで GRSMD を開く |
+   | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリックすると、その場で Markdown を編集 |
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
 
@@ -199,6 +204,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
   - PlantUML: 確認ダイアログの後に、図のソースを公式 PlantUML サーバーへ送信します（描画のたびに確認）。
   - 外部画像（`![](https://...)`）: クリックして確認するまでプレースホルダーを表示します。同意は `[Clear]` または新しいファイルのドロップまで有効です。
 - **何も保存しません。** 入力内容を localStorage・sessionStorage・Cookie に書き込みません。
+- **編集内容もブラウザに保存しません。** ファイルに保存するまでは、開いているページの中にだけあります。
 - **Markdown 内の HTML は DOMPurify でサニタイズ**します。スクリプトとイベント属性を除去し、その他の外部参照（動画・音声・CSS の `url()`・`<style>`）も除去します。
 - **Content-Security-Policy:** ビルド成果物は自身のスクリプトしか実行せず、通信先も PlantUML サーバーだけに制限しています。
 

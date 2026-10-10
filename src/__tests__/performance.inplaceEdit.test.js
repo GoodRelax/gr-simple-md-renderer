@@ -87,6 +87,33 @@ describe("AT-PERF-01 deterministic cost checks (always run; INV-51, INV-42)", ()
     expect(stack.preview.innerHTML).not.toContain(CONFIG.plantuml.serverUrl);
   }, HEAVY_TEST_TIMEOUT_MS);
 
+  it("PRT-U25 marker: a commit leaves one 'grsmd-commit' measure (commit start to replaceBlocks) and no marks; an unchanged commit adds none", async () => {
+    stack = realStack();
+    await stack.orchestrator.loadMarkdown("Para one.\n\nPara two.\n", "light");
+    performance.clearMarks();
+    performance.clearMeasures();
+    const order = [];
+    const replace = stack.markdownRenderer.replaceBlocks.bind(stack.markdownRenderer);
+    vi.spyOn(stack.markdownRenderer, "replaceBlocks").mockImplementation((...args) => {
+      order.push(`replace(marks=${performance.getEntriesByName("grsmd-commit-start", "mark").length})`);
+      return replace(...args);
+    });
+    const [a, b] = stack.orchestrator.getModel().getBlocks();
+    await stack.orchestrator.commitBlock(a.id, "Para one changed.");
+    await stack.orchestrator.commitBlock(b.id, "Para two changed.");
+    const measures = performance.getEntriesByName("grsmd-commit", "measure");
+    expect(order).toEqual(["replace(marks=1)", "replace(marks=1)"]);
+    expect(measures).toHaveLength(1);
+    expect(measures[0].duration).toBeGreaterThanOrEqual(0);
+    expect(performance.getEntriesByName("grsmd-commit-start", "mark")).toHaveLength(0);
+
+    const last = measures[0];
+    const current = stack.orchestrator.getModel().getBlocks()[0];
+    await stack.orchestrator.commitBlock(current.id, current.raw); // unchanged
+    expect(performance.getEntriesByName("grsmd-commit", "measure")).toEqual([last]);
+    expect(performance.getEntriesByName("grsmd-commit-start", "mark")).toHaveLength(0);
+  });
+
   describe("(b) 1 MB document, model only (no DOM)", () => {
     let doc;
     let lexer;

@@ -3512,6 +3512,8 @@ UIController.preprocessInput() は、AIツールが出力する外側のMarkdown
 7. 差し替えた要素に対して hljs → `ExternalImageGate.apply(root)` → Mermaid → PlantUML (`mode: "placeholder"`) を行う。
 8. 差し替えの直後と、DOM の安定後 (`waitForDOMStability`) に `restoreAnchor` を行う (基準の要素は `anchorBlockId` で探す。まとまった描画では最後の要求のアンカーを使う)。`_renderedModel` を、この描画で使った現在のモデルにする。
 
+計測の目印 (PRT-U25): `commitBlock` の同期の部分の始めに `performance.mark("grsmd-commit-start")` を置き (直前の同名の mark を消してから)、その確定を含む部分描画の `replaceBlocks` の直後に `performance.measure("grsmd-commit", "grsmd-commit-start")` を作る (直前の同名の measure を消してから作り、作った後で mark を消す。最後の 1 件だけが残る)。原文の変わらない確定では mark を消す。どちらも通信も保存もしない。
+
 複数の確定がキューに溜まった場合も、各描画は「最後に描画したモデル」から「その時点の現在のモデル」へ更新するので、中間のモデルを描画する必要はない。参照リンクの定義が変わった場合は署名が変わるので、全ブロックの HTML を作り直して比べる (変わったものだけ差し替える。この場合は INV-51 の 300 ms の対象外とする)。
 
 文書が作り直された場合 (`DocumentSession.documentId` が変わった場合) は、キューの中の、それより前の部分描画とアンカーを捨て、新しい文書の全体描画だけを行う (INV-47)。文書が無くなった場合 (Clear、コードビュー) も、キューの中の部分描画とアンカーを捨てる (全体描画は行わない)。ブロック ID は文書をまたいで再利用しないので、描画の待ちの間に画面に残った古い文書の要素の ID は、新しいモデルに存在せず、クリックしても開かない (INV-29)。

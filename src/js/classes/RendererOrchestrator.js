@@ -2,6 +2,48 @@ import { CONFIG } from "../config.js";
 import { applyTheme, waitForDOMStability } from "../utils.js";
 import MarkdownBlockModel from "./MarkdownBlockModel.js";
 
+// Performance marker for PRT-U25 (spec 5.14.3): from the start of a commit to
+// the DOM swap of its partial render. Only the last measure is kept; nothing
+// leaves the page.
+const COMMIT_MARK = "grsmd-commit-start";
+const COMMIT_MEASURE = "grsmd-commit";
+
+/**
+ * @purity semi-pure-b
+ * @returns {boolean} the User Timing API is there
+ */
+function canMeasure() {
+  return typeof performance !== "undefined" && typeof performance.mark === "function" && typeof performance.measure === "function";
+}
+
+/**
+ * Start (or restart) the commit mark; at most one mark exists.
+ * @purity non-pure
+ */
+function markCommitStart() {
+  if (!canMeasure()) return;
+  performance.clearMarks(COMMIT_MARK);
+  performance.mark(COMMIT_MARK);
+}
+
+/**
+ * @purity non-pure
+ */
+function clearCommitMark() {
+  if (canMeasure()) performance.clearMarks(COMMIT_MARK);
+}
+
+/**
+ * Replace the last commit measure, if a commit mark is waiting.
+ * @purity non-pure
+ */
+function measureCommit() {
+  if (!canMeasure() || performance.getEntriesByName(COMMIT_MARK, "mark").length === 0) return;
+  performance.clearMeasures(COMMIT_MEASURE);
+  performance.measure(COMMIT_MEASURE, COMMIT_MARK);
+  performance.clearMarks(COMMIT_MARK);
+}
+
 /**
  * Coordinates the full rendering pipeline.
  * Owns: all renderer instances, view state, scroll manager, and the block
@@ -240,9 +282,13 @@ export default class RendererOrchestrator {
   commitBlock(blockId, newRaw) {
     const model = this._currentModel;
     if (!model || model.findIndexById(blockId) < 0) return Promise.resolve();
+    markCommitStart();
     const scroll = this._capture(this.markdownRenderer.getBlockElement(blockId));
     const change = model.replaceBlock(blockId, newRaw, this._lexer, CONFIG.edit.diffMaxCells);
-    if (!change.isChanged) return Promise.resolve();
+    if (!change.isChanged) {
+      clearCommitMark();
+      return Promise.resolve();
+    }
     this._previousModel = model;
     return this._applyChange(change, scroll, change.anchorBlockId);
   }
@@ -396,6 +442,7 @@ export default class RendererOrchestrator {
     const anchor = this._pendingAnchor;
     this._pendingAnchor = null;
     const replaced = this.markdownRenderer.replaceBlocks(this._renderedModel, target, this._heldBlockId);
+    measureCommit();
     this._renderedModel = target;
     this._restoreAnchor(anchor, generation);
     if (replaced.length > 0) {
