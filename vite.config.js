@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
 import { defineConfig } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
+import { CONFIG } from "./src/js/config.js";
 
 // Keep only the woff2 source in each @font-face rule, dropping the woff/ttf
 // fallback copies. woff2 is supported by every browser that can run this app
@@ -31,6 +33,76 @@ const noExternalImports = {
   },
 };
 
+// Content-Security-Policy for the built single file (INV-20), as defense in
+// depth behind DOMPurify. vite-plugin-singlefile inlines the module script, so
+// script-src allows exactly that script by its sha256 hash. Listed after
+// viteSingleFile so it hashes the final inlined code. Build only: the dev
+// server serves the script from a URL and injects its own client.
+//
+// img-src allows https: because external images load after the user consents
+// (INV-19) and a <meta> CSP cannot change at runtime. The consent gate is
+// what keeps them from loading earlier; the CSP still blocks http: images,
+// media, frames, plugins, remote fonts and any fetch except to PlantUML.
+const PLANTUML_ORIGIN = new URL(CONFIG.plantuml.serverUrl).origin;
+const SCRIPT_TYPES = new Set(["", "module", "text/javascript", "application/javascript"]);
+
+export function buildCsp(scriptHashes) {
+  return [
+    "default-src 'none'",
+    `script-src ${scriptHashes.map((h) => `'sha256-${h}'`).join(" ")}`,
+    // KaTeX and Mermaid write inline style attributes and <style> elements.
+    "style-src 'self' 'unsafe-inline'",
+    `img-src 'self' data: blob: ${PLANTUML_ORIGIN} https:`,
+    "font-src data:",
+    // DiagramCopyController fetches the PlantUML image to copy it.
+    `connect-src ${PLANTUML_ORIGIN}`,
+    "base-uri 'none'",
+    "form-action 'none'",
+  ].join("; ");
+}
+
+export const contentSecurityPolicy = {
+  name: "content-security-policy",
+  apply: "build",
+  enforce: "post",
+  generateBundle(_options, bundle) {
+    for (const file of Object.values(bundle)) {
+      if (file.type !== "asset" || !file.fileName.endsWith(".html")) continue;
+      const html = String(file.source);
+      // Comments may hold disabled snippets (e.g. the eruda debug loader).
+      const live = html.replace(/<!--[\s\S]*?-->/g, "");
+
+      const hashes = [];
+      // Inlined code has "</script" and "<!--" escaped by viteSingleFile, so
+      // each match is one real <script> element.
+      for (const [, attrs, body] of live.matchAll(
+        /<script\b([^>]*)>([\s\S]*?)<\/script>/gi,
+      )) {
+        if (/\ssrc\s*=/i.test(attrs)) {
+          this.error(`${file.fileName}: <script src> is not allowed (inline only)`);
+        }
+        const type = /\stype\s*=\s*["']?([^"'\s>]*)/i.exec(attrs)?.[1] ?? "";
+        // Data blocks such as application/ld+json never execute.
+        if (!SCRIPT_TYPES.has(type.toLowerCase())) continue;
+        // The HTML parser turns CR LF / CR into LF before the browser hashes.
+        const source = body.replace(/\r\n?/g, "\n");
+        hashes.push(createHash("sha256").update(source, "utf8").digest("base64"));
+      }
+      if (hashes.length === 0) {
+        this.error(`${file.fileName}: no inline script found to hash`);
+      }
+
+      // A <meta> CSP only governs what comes after it: put it first in <head>.
+      const meta = `<meta http-equiv="Content-Security-Policy" content="${buildCsp(hashes)}" />`;
+      const charset = /<meta\s+charset\s*=[^>]*>/i;
+      if (!charset.test(html)) {
+        this.error(`${file.fileName}: <meta charset> not found; cannot place the CSP`);
+      }
+      file.source = html.replace(charset, (tag) => `${tag}\n    ${meta}`);
+    }
+  },
+};
+
 export default defineConfig({
   root: "src",
   build: {
@@ -45,7 +117,7 @@ export default defineConfig({
       plugins: [katexWoff2Only],
     },
   },
-  plugins: [viteSingleFile(), noExternalImports],
+  plugins: [viteSingleFile(), noExternalImports, contentSecurityPolicy],
   test: {
     environment: "jsdom",
     root: ".",

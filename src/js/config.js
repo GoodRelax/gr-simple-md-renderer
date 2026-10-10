@@ -12,6 +12,10 @@ export const CONFIG = {
     serverUrl: "https://www.plantuml.com/plantuml/svg/",
     darkTheme: "cyborg",
   },
+  // External images in Markdown are consent-gated (CON-12, INV-19)
+  externalImage: {
+    maxHostsInDialog: 10,
+  },
   ui: {
     longPressDuration: 300,
     copyFeedbackDuration: 250,
@@ -42,6 +46,11 @@ export const CONFIG = {
       encodingFailed: "PlantUML encoding failed",
       timeout: (seconds) => `PlantUML timeout (${seconds}s)`,
       serverError: "PlantUML server error",
+    },
+    externalImage: {
+      placeholder: (alt, hosts) =>
+        `External image${alt ? `: ${alt}` : ""} (${hosts}) - click to load`,
+      placeholderTitle: "Click to load external images (asks for consent first)",
     },
     copy: {
       failed: "Copy failed.",

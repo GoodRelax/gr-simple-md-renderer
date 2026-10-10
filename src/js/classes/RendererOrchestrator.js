@@ -57,7 +57,12 @@ export default class RendererOrchestrator {
    * @param {FileSystemFileHandle|null} [fileHandle] - for reload support
    */
   async loadMarkdown(text, theme, fileHandle = undefined) {
-    if (fileHandle !== undefined) this._mdFileHandle = fileHandle;
+    if (fileHandle !== undefined) {
+      this._mdFileHandle = fileHandle;
+      // A dropped file is a new document: ask again before contacting the
+      // image hosts it names. Reload and theme switches keep the consent.
+      this.markdownRenderer.resetExternalImageConsent();
+    }
     this._viewState = "markdown";
     this.state.setMarkdownText(text);
     this.state.setTheme(theme);
@@ -93,6 +98,7 @@ export default class RendererOrchestrator {
   clear() {
     this._viewState = "initial";
     this._mdFileHandle = null;
+    this.markdownRenderer.resetExternalImageConsent();
     this.sourceFileRenderer.destroy();
   }
 

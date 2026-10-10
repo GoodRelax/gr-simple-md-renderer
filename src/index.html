@@ -10,7 +10,7 @@
 
     <meta
       name="description"
-      content="Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer and viewer in your browser. Privacy-focused, client-side rendering tool with dark mode support. No data leaves your browser unless you explicitly allow PlantUML rendering."
+      content="Free online Markdown, Math (LaTeX), Mermaid, and PlantUML renderer and viewer in your browser. Privacy-focused, client-side rendering tool with dark mode support. No data leaves your browser unless you explicitly allow PlantUML rendering or external images."
     />
     <meta
       name="keywords"
@@ -70,8 +70,10 @@
 
     <!-- All rendering libraries (marked, mermaid, highlight.js, katex + fonts,
          marked-katex-extension, plantuml-encoder) are bundled into this file at
-         build time. No runtime CDN fetch. The only external call is the optional
-         PlantUML server, which still requires explicit user consent. -->
+         build time. No runtime CDN fetch. The only external calls are the
+         optional PlantUML server and external images in the document, both of
+         which require explicit user consent. A Content-Security-Policy <meta>
+         is injected at build time (vite.config.js). -->
   </head>
 
   <body>
@@ -177,13 +179,23 @@
           <h3>Privacy &amp; Security</h3>
           <ul>
             <li>
-              PlantUML is the only exception to client-side-only operation. This
+              PlantUML is an exception to client-side-only operation. This
               tool shows a confirmation dialog before sending any PlantUML data
-              to the official server.
+              to the official server, every time it renders.
             </li>
             <li>
-              HTML embedded in Markdown is not sanitized. Paste only content you
-              trust.
+              External images (<code>![](https://...)</code>,
+              <code>&lt;img src="https://..."&gt;</code>) are not loaded until you
+              click a placeholder and confirm. Loading them tells the image
+              servers your IP address and that the document was opened. The
+              consent lasts until <code>[Clear]</code> or a new file drop, and is
+              never stored. Other remote references (video, audio, CSS
+              <code>url()</code>, <code>&lt;style&gt;</code>) are removed.
+            </li>
+            <li>
+              HTML embedded in Markdown is sanitized with DOMPurify (scripts and
+              event handlers are removed). A Content-Security-Policy also blocks
+              any script other than this app's own.
             </li>
           </ul>
         </div>
@@ -260,10 +272,14 @@
           <ul>
             <li>
               PlantUML:
-              クライアントサイド動作の唯一の例外。公式サーバーにPlantUMLデータを送信する前に、このツールが確認ダイアログを表示します。
+              クライアントサイド動作の例外。公式サーバーにPlantUMLデータを送信する前に、描画のたびに確認ダイアログを表示します。
             </li>
             <li>
-              Markdown内のHTMLはサニタイズされません。信頼できるコンテンツのみ貼り付けること。
+              外部画像 (<code>![](https://...)</code>、<code>&lt;img src="https://..."&gt;</code>):
+              プレースホルダーをクリックして確認するまで読み込みません。読み込むと、画像サーバーにIPアドレスと文書を開いたことが伝わります。同意は <code>[Clear]</code> または新しいファイルのドロップまで有効で、保存はしません。その他の外部参照 (動画・音声・CSSの <code>url()</code>・<code>&lt;style&gt;</code>) は除去します。
+            </li>
+            <li>
+              Markdown内のHTMLはDOMPurifyでサニタイズします (スクリプトとイベント属性を除去)。さらにContent-Security-Policyで、本アプリ以外のスクリプトの実行を禁止します。
             </li>
           </ul>
         </div>

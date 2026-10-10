@@ -238,6 +238,20 @@ blockquote {
   font-size: 13px;
 }
 
+/* External image not loaded yet (CON-12, INV-19). Inline: badges sit in text. */
+.external-image-placeholder {
+  display: inline-block;
+  border: 2px dashed #868e96;
+  padding: 2px 8px;
+  margin: 2px 0;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  color: #495057;
+  font-family: monospace;
+  font-size: 13px;
+  cursor: pointer;
+}
+
 .modal {
   display: none;
   position: fixed;
@@ -371,6 +385,12 @@ body.dark {
   background-color: #2d1f1f;
   color: #ff8787;
   border-color: #ff6b6b;
+}
+
+.dark .external-image-placeholder {
+  background-color: #2b2b2b;
+  color: #ced4da;
+  border-color: #868e96;
 }
 
 .dark #preview th,

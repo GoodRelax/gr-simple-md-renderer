@@ -13,7 +13,10 @@ import { applyTheme, showToast, waitForDOMStability } from "../js/utils.js";
 
 function createOrchestrator() {
   const state = new ApplicationState();
-  const markdownRenderer = { render: vi.fn().mockResolvedValue(undefined) };
+  const markdownRenderer = {
+    render: vi.fn().mockResolvedValue(undefined),
+    resetExternalImageConsent: vi.fn(),
+  };
   const mermaidRenderer = { render: vi.fn().mockResolvedValue(undefined) };
   const plantumlRenderer = { render: vi.fn().mockResolvedValue(undefined) };
   const scrollManager = { save: vi.fn().mockReturnValue(0), restore: vi.fn() };
@@ -82,6 +85,27 @@ describe("RendererOrchestrator", () => {
       orchestrator.clear();
       expect(orchestrator.isPreRenderState()).toBe(true);
       expect(orchestrator.isCodeViewActive()).toBe(false);
+    });
+
+    it("revokes external image consent", () => {
+      const { orchestrator, markdownRenderer } = createOrchestrator();
+      orchestrator.clear();
+      expect(markdownRenderer.resetExternalImageConsent).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe("external image consent scope", () => {
+    it("is revoked when a new file is loaded (fileHandle given)", async () => {
+      const { orchestrator, markdownRenderer } = createOrchestrator();
+      await orchestrator.loadMarkdown("# a", "light", null);
+      expect(markdownRenderer.resetExternalImageConsent).toHaveBeenCalledOnce();
+    });
+
+    it("is kept on reload / first render without a fileHandle", async () => {
+      const { orchestrator, markdownRenderer } = createOrchestrator();
+      await orchestrator.loadMarkdown("# a", "light");
+      await orchestrator.reRender("dark");
+      expect(markdownRenderer.resetExternalImageConsent).not.toHaveBeenCalled();
     });
   });
 

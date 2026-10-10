@@ -33,6 +33,21 @@ export default class MermaidRenderer extends DiagramRenderer {
     this.mermaid.initialize({
       startOnLoad: false,
       theme: theme === "dark" ? "dark" : "default",
+      // Labels are inserted (even for text measurement) by mermaid itself, out
+      // of reach of the external image gate, so <img> in labels is dropped
+      // (CON-12, INV-19). "style" is mermaid's own default.
+      dompurifyConfig: { FORBID_TAGS: ["style", "img"] },
+      // Mermaid's default secure keys, plus dompurifyConfig so that an
+      // %%{init}%% directive in the document cannot loosen it.
+      secure: [
+        "secure",
+        "securityLevel",
+        "startOnLoad",
+        "maxTextSize",
+        "suppressErrorRendering",
+        "maxEdges",
+        "dompurifyConfig",
+      ],
     });
   }
 
