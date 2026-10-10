@@ -221,6 +221,18 @@ export default class BlockEditController {
     this._fitHeight();
   }
 
+  /**
+   * Move the focus back to the open editor (INV-53: Shift+Tab / Esc on the
+   * palette). The textarea keeps its own selection.
+   * @purity non-pure
+   * @returns {boolean} false when no editor is open
+   */
+  focusEditor() {
+    if (!this._editor) return false;
+    this._editor.textarea.focus({ preventScroll: true });
+    return true;
+  }
+
   // ---- internals: actions ----
 
   /**

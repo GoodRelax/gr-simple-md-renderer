@@ -452,6 +452,17 @@ describe("AT-BEC editor value and life cycle", () => {
     expect(s.bec.hasUncommittedChange()).toBe(true);
   });
 
+  it("focusEditor (INV-53): focuses the open editor and returns true; without an editor returns false", async () => {
+    s = await setupEdit(DOC);
+    expect(s.bec.focusEditor()).toBe(false);
+    const { ta } = openBlock(isPara("Hello"));
+    ta.setSelectionRange(2, 5);
+    ta.blur();
+    expect(s.bec.focusEditor()).toBe(true);
+    expect(document.activeElement).toBe(ta);
+    expect([ta.selectionStart, ta.selectionEnd]).toEqual([2, 5]);
+  });
+
   it("AT-BEC-22 listeners added on open are all removed on close; 10 open/close cycles add none", async () => {
     s = await setupEdit(DOC);
     const tracker = trackListeners();
