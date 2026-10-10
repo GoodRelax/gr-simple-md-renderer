@@ -71,6 +71,29 @@ export const CONFIG = {
     reloadUnavailableMsg: "Reload not available (Chrome/Edge 86+ required)",
     reloadNoFileMsg: "No file to reload. Drop a file to enable reload.",
   },
+  // In-place Markdown editing (SC-22 to SC-24)
+  edit: {
+    paletteMarginPx: 16, // gap from viewport bottom-right (INV-32)
+    doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
+    doubleTapMaxDistancePx: 24,
+    defaultFileName: "untitled.md",
+    commitBudgetMs: 300, // performance target for 1 MB (INV-51), used by tests
+    diffMaxCells: 250000, // max LCS table cells for the middle range (INV-42)
+    titleUnsavedPrefix: "* ", // document.title prefix while dirty (INV-50)
+    tableTemplate:
+      "| Col1 | Col2 | Col3 |\n|---|---|---|\n|  |  |  |\n|  |  |  |\n|  |  |  |",
+    tableLineBreak: "<br>", // inserted on Enter inside a table (INV-27)
+    mermaidSamples: {
+      flowchart:
+        "```mermaid\nflowchart TD\n    Start([Start]) -->|input| Check{Valid}\n    Check -->|yes| Process[Process_data]\n    Check -->|no| Error[Show_error]\n    Process -->|done| End([End])\n    Error -->|retry| Start\n```",
+      sequence:
+        "```mermaid\nsequenceDiagram\n    participant User\n    participant App\n    participant Server\n    User->>App: Click_button\n    App->>Server: Send_request\n    Server-->>App: Return_result\n    App-->>User: Show_result\n```",
+      state:
+        "```mermaid\nstateDiagram-v2\n    [*] --> Idle : start\n    Idle --> Running : run\n    Running --> Paused : pause\n    Paused --> Running : resume\n    Running --> Idle : stop\n    Idle --> [*] : exit\n```",
+      class:
+        "```mermaid\nclassDiagram\n    class Animal {\n        +String name\n        +move() void\n    }\n    class Dog {\n        +bark() void\n    }\n    class Owner {\n        +String name\n    }\n    Animal <|-- Dog : inherits\n    Owner \"1\" --> \"*\" Dog : owns\n```",
+    },
+  },
   // Editor background colors per view mode and theme (CSS-driven via body class)
   editorColors: {
     markdown: { light: "#FFF8F0", dark: "#2D2520" },
