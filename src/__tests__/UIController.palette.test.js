@@ -55,6 +55,7 @@ async function withDocument() {
 }
 
 const btn = (id) => app.paletteRoot().querySelector(`#${id}`);
+const off = (el) => el.getAttribute("aria-disabled") === "true";
 const popoverButton = (label) =>
   document.body.querySelector(`:scope > div.edit-palette-popover button[aria-label="${label}"]`);
 
@@ -84,28 +85,28 @@ describe("button states follow the editor (5.15.5)", () => {
   it("not editing: Bold / Italic / Row / Column disabled; Undo disabled without a record", async () => {
     await withDocument();
     for (const id of ["paletteBold", "paletteItalic", "paletteRow", "paletteColumn", "paletteUndo"]) {
-      expect(btn(id).disabled, id).toBe(true);
+      expect(off(btn(id)), id).toBe(true);
     }
     for (const id of ["paletteTable", "paletteMermaid", "paletteSave", "paletteSaveAs"]) {
-      expect(btn(id).disabled, id).toBe(false);
+      expect(off(btn(id)), id).toBe(false);
     }
   });
 
   it("editing a paragraph: Bold needs a selection; Row / Column stay disabled", async () => {
     await withDocument();
     const ta = open(isPara("Hello"));
-    expect(btn("paletteBold").disabled).toBe(true);
+    expect(off(btn("paletteBold"))).toBe(true);
     selectInEditor(ta, 6, 10);
-    expect(btn("paletteBold").disabled).toBe(false);
-    expect(btn("paletteItalic").disabled).toBe(false);
-    expect(btn("paletteRow").disabled).toBe(true);
+    expect(off(btn("paletteBold"))).toBe(false);
+    expect(off(btn("paletteItalic"))).toBe(false);
+    expect(off(btn("paletteRow"))).toBe(true);
   });
 
   it("editing a table: Row and Column enabled", async () => {
     await withDocument();
     open((b) => b.type === "table");
-    expect(btn("paletteRow").disabled).toBe(false);
-    expect(btn("paletteColumn").disabled).toBe(false);
+    expect(off(btn("paletteRow"))).toBe(false);
+    expect(off(btn("paletteColumn"))).toBe(false);
   });
 });
 
@@ -147,17 +148,101 @@ describe("Bold / Italic / Insert row / column (INV-52, INV-36)", () => {
   });
 });
 
+describe("palette wiring of unit A (5.15.5, INV-68)", () => {
+  it("Format is enabled while a block editor is open; the not yet wired buttons stay disabled", async () => {
+    await withDocument();
+    expect(off(btn("paletteFormat"))).toBe(true);
+    open(isPara("Hello"));
+    expect(off(btn("paletteFormat"))).toBe(false);
+    for (const id of ["paletteRowDelete", "paletteColumnDelete", "paletteTableOptions"]) expect(off(btn(id)), id).toBe(true);
+  });
+
+  it("Esc with the Format popover open closes only the popover; the next Esc cancels the editor (INV-53, PRT-V12)", async () => {
+    await withDocument();
+    const ta = open(isPara("Hello"));
+    ta.value = "Changed.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    press(btn("paletteFormat"));
+    const menu = document.getElementById("paletteFormatMenu");
+    expect(menu.hidden).toBe(false);
+    const first = keydown(ta, "Escape");
+    expect(first.defaultPrevented).toBe(true);
+    expect(menu.hidden).toBe(true);
+    expect(app.blockEditor()).toBe(ta);
+    expect(ta.value).toBe("Changed.");
+    expect(app.ui.palette.isShown()).toBe(true);
+    keydown(ta, "Escape");
+    expect(app.blockEditor()).toBeNull();
+    expect(app.orchestrator.getBody()).toBe(DOC);
+    expect(app.ui.palette.isShown()).toBe(true);
+  });
+
+  it("INV-68: minimizing keeps the open editor, its text and edit mode; the dot follows unsaved (cancel, commit, Undo)", async () => {
+    await withDocument();
+    const root = app.paletteRoot();
+    const grip = root.querySelector(".edit-palette-grip");
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const longPress = () => {
+      pointer(grip, "pointerdown", { x: 0, y: 0 });
+      vi.advanceTimersByTime(CONFIG.edit.paletteLongPressMs);
+      pointer(grip, "pointerup", { x: 0, y: 0 });
+    };
+    try {
+      let ta = open(isPara("Hello"));
+      ta.value = "Changed.";
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+      longPress();
+      expect(app.ui.palette.isMinimized()).toBe(true);
+      expect(app.blockEditor()).toBe(ta); // the editor stays open
+      expect(ta.value).toBe("Changed.");
+      expect(document.body.classList.contains("edit-mode")).toBe(true);
+      expect(app.ui.palette.isShown()).toBe(true);
+      expect(root.classList.contains("edit-palette-unsaved")).toBe(true);
+
+      keydown(ta, "Escape"); // cancel: nothing unsaved any more
+      expect(app.blockEditor()).toBeNull();
+      expect(app.ui.palette.isMinimized()).toBe(true);
+      expect(root.classList.contains("edit-palette-unsaved")).toBe(false);
+
+      ta = open(isPara("Hello"));
+      ta.value = "Changed again.";
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+      pointer(document.body, "pointerdown"); // commit
+      expect(app.orchestrator.getBody()).toContain("Changed again.");
+      expect(root.classList.contains("edit-palette-unsaved")).toBe(true);
+
+      longPress(); // restore, then Undo
+      expect(app.ui.palette.isMinimized()).toBe(false);
+      press(btn("paletteUndo"));
+      expect(app.orchestrator.getBody()).toBe(DOC);
+      expect(root.classList.contains("edit-palette-unsaved")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("the unsaved dot of the minimized palette follows the unsaved mark", async () => {
+    await withDocument();
+    const root = app.paletteRoot();
+    expect(root.classList.contains("edit-palette-unsaved")).toBe(false);
+    const ta = open(isPara("Hello"));
+    ta.value = "Changed.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(root.classList.contains("edit-palette-unsaved")).toBe(true);
+  });
+});
+
 describe("AT-UI-35 Undo", () => {
   it("disabled while editing and without a record; enabled after a commit; press undoes and disables it", async () => {
     await withDocument();
     const ta = open(isPara("Hello"));
     ta.value = "Changed.";
-    expect(btn("paletteUndo").disabled).toBe(true);
+    expect(off(btn("paletteUndo"))).toBe(true);
     pointer(document.body, "pointerdown");
-    expect(btn("paletteUndo").disabled).toBe(false);
+    expect(off(btn("paletteUndo"))).toBe(false);
     press(btn("paletteUndo"));
     expect(app.orchestrator.getBody()).toBe(DOC);
-    expect(btn("paletteUndo").disabled).toBe(true);
+    expect(off(btn("paletteUndo"))).toBe(true);
   });
 
   it("with unrendered #editor changes: no undo; #editor is rendered (its text stays), toast, the record is empty", async () => {

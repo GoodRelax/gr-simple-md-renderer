@@ -744,13 +744,20 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   user-select: none;
 }
 
+.edit-palette,
+.edit-palette-popover {
+  -webkit-touch-callout: none; /* INV-68: no callout on a touch long press */
+}
+
 .edit-palette[hidden],
 .edit-palette-popover[hidden] {
   display: none;
 }
 
+/* 7 columns x 2 rows, no separators (5.15.1) */
 .edit-palette-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(7, 28px);
   align-items: center;
   gap: 4px;
 }
@@ -784,13 +791,8 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   height: 5px;
 }
 
-.edit-palette-btn:hover:not(:disabled) {
+.edit-palette-btn:hover:not([aria-disabled="true"]) {
   background: rgba(0, 0, 0, 0.06);
-}
-
-.edit-palette-btn:focus-visible {
-  outline: 2px solid #1f7a3a;
-  outline-offset: 1px;
 }
 
 .edit-palette-btn[aria-pressed="true"] {
@@ -798,14 +800,33 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   color: #ffffff;
 }
 
-.edit-palette-btn:disabled {
+/* aria-disabled, not :disabled: a disabled palette button still moves the palette (INV-35) */
+.edit-palette-btn[aria-disabled="true"] {
   color: #b5b8bc;
   border-color: #e1e3e6;
+  cursor: move;
+}
+
+.edit-palette-popover .edit-palette-btn[aria-disabled="true"] {
   cursor: default;
 }
 
+/* Text color swatches (5.15.2): the light values of CONFIG.edit.textColors */
+.edit-palette-swatch-red:not([aria-disabled="true"]) {
+  color: #B84F00;
+}
+
+.edit-palette-swatch-blue:not([aria-disabled="true"]) {
+  color: #0072B2;
+}
+
+.edit-palette-swatch-green:not([aria-disabled="true"]) {
+  color: #007A58;
+}
+
 .edit-palette-grip {
-  width: 18px;
+  position: relative;
+  width: 28px;
   height: 28px;
   display: inline-flex;
   align-items: center;
@@ -819,15 +840,30 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   height: 17px;
 }
 
-.edit-palette-sep {
-  width: 1px;
-  height: 20px;
-  margin: 0 2px;
-  background: #d9dbde;
+/* Minimized (INV-68, 11-f): the grip only; a dot while unsaved */
+.edit-palette.edit-palette-minimized .edit-palette-row:first-child {
+  grid-template-columns: 28px;
+}
+
+.edit-palette.edit-palette-minimized .edit-palette-row > :not(.edit-palette-grip),
+.edit-palette.edit-palette-minimized .edit-palette-row + .edit-palette-row,
+.edit-palette.edit-palette-minimized .edit-palette-status {
+  display: none;
+}
+
+.edit-palette.edit-palette-minimized.edit-palette-unsaved .edit-palette-grip::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0969da;
 }
 
 .edit-palette-status {
-  max-width: 230px;
+  max-width: 220px; /* the 7-column grid: 7 x 28 px + 6 x 4 px */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -864,12 +900,8 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   border-color: #5a5d62;
 }
 
-.dark .edit-palette-btn:hover:not(:disabled) {
+.dark .edit-palette-btn:hover:not([aria-disabled="true"]) {
   background: rgba(255, 255, 255, 0.08);
-}
-
-.dark .edit-palette-btn:focus-visible {
-  outline-color: #6fd08c;
 }
 
 .dark .edit-palette-btn[aria-pressed="true"] {
@@ -877,7 +909,7 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   color: #10301b;
 }
 
-.dark .edit-palette-btn:disabled {
+.dark .edit-palette-btn[aria-disabled="true"] {
   color: #5f6267;
   border-color: #3e4044;
 }
@@ -886,8 +918,20 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   color: #e8e8e8;
 }
 
-.dark .edit-palette-sep {
-  background: #45474b;
+.dark .edit-palette-swatch-red:not([aria-disabled="true"]) {
+  color: #E0661A;
+}
+
+.dark .edit-palette-swatch-blue:not([aria-disabled="true"]) {
+  color: #56B4E9;
+}
+
+.dark .edit-palette-swatch-green:not([aria-disabled="true"]) {
+  color: #009E73;
+}
+
+.dark .edit-palette.edit-palette-minimized.edit-palette-unsaved .edit-palette-grip::after {
+  background: #1f6feb;
 }
 
 .dark .edit-palette-status {

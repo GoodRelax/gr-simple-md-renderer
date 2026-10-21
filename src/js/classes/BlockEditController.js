@@ -65,7 +65,7 @@ export const blockEditStateMachine = Object.freeze({
  *
  * host (BlockEditHost, implemented by UIController):
  *   showPalette(), hidePalette(), isPaletteNode(node) (palette and popovers,
- *   by reference), focusPalette(), isEditorChangedSinceRender(),
+ *   by reference), isEditorChangedSinceRender(),
  *   renderFromEditor() (full render from #editor and the toast, INV-45),
  *   onEditorInput() (refresh the unsaved mark), onEditStateChanged() (an
  *   editor opened or closed: unsaved mark and palette buttons).
@@ -190,18 +190,6 @@ export default class BlockEditController {
     if (!this._editor) return;
     this._replaceText(edit);
     this._fitHeight();
-  }
-
-  /**
-   * Move the focus back to the open editor (INV-53: Shift+Tab / Esc on the
-   * palette). The textarea keeps its own selection.
-   * @purity non-pure
-   * @returns {boolean} false when no editor is open
-   */
-  focusEditor() {
-    if (!this._editor) return false;
-    this._editor.textarea.focus({ preventScroll: true });
-    return true;
   }
 
   // ---- internals: actions ----
@@ -517,8 +505,9 @@ export default class BlockEditController {
   // ---- internals: editor keys and size ----
 
   /**
-   * Esc cancels, Enter in a table inserts the line break text, Tab goes to
-   * the palette. Nothing is done during IME composition (INV-27, INV-28, INV-53).
+   * Esc cancels, Enter in a table inserts the line break text. Tab is left
+   * to the browser (INV-53). Nothing is done during IME composition (INV-27,
+   * INV-28).
    * @purity non-pure
    */
   _handleKeyDown(e) {
@@ -529,9 +518,6 @@ export default class BlockEditController {
     } else if (e.key === "Enter" && this._editor.blockType === "table") {
       e.preventDefault();
       this._insertTableLineBreak();
-    } else if (e.key === "Tab" && !e.shiftKey) {
-      e.preventDefault();
-      this.host.focusPalette();
     }
   }
 

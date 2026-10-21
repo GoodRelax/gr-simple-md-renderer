@@ -497,18 +497,14 @@ describe("AT-BEC keys in the editor (INV-27, INV-28, INV-53)", () => {
     expect(t.ta.value).toBe(before);
   });
 
-  it("AT-BEC-18 Tab moves the focus to the palette; Shift+Tab and Tab during IME are not taken", async () => {
+  it("AT-BEC-18 Tab is not taken (INV-53): Tab, Shift+Tab and Tab during IME are left to the browser", async () => {
     s = await setupEdit(DOC);
     const { ta } = openBlock(isPara("Hello"));
-    const shift = keydown(ta, "Tab", { shiftKey: true });
-    expect(shift.defaultPrevented).toBe(false);
-    const ime = keydown(ta, "Tab", { isComposing: true });
-    expect(ime.defaultPrevented).toBe(false);
-    expect(s.host.focusPalette).not.toHaveBeenCalled();
-    const e = keydown(ta, "Tab");
-    expect(e.defaultPrevented).toBe(true);
-    expect(s.host.focusPalette).toHaveBeenCalledTimes(1);
-    expect(s.host.palette.contains(document.activeElement)).toBe(true);
+    for (const init of [{}, { shiftKey: true }, { isComposing: true }]) {
+      const e = keydown(ta, "Tab", init);
+      expect(e.defaultPrevented, JSON.stringify(init)).toBe(false);
+    }
+    expect(s.host.palette.contains(document.activeElement)).toBe(false);
     expect(s.bec.isEditing()).toBe(true);
   });
 });
@@ -567,17 +563,6 @@ describe("AT-BEC editor value and life cycle", () => {
     expect(commit).not.toHaveBeenCalled();
     expect(s.bec.isEditing()).toBe(true);
     expect(s.bec.hasUncommittedChange()).toBe(true);
-  });
-
-  it("focusEditor (INV-53): focuses the open editor and returns true; without an editor returns false", async () => {
-    s = await setupEdit(DOC);
-    expect(s.bec.focusEditor()).toBe(false);
-    const { ta } = openBlock(isPara("Hello"));
-    ta.setSelectionRange(2, 5);
-    ta.blur();
-    expect(s.bec.focusEditor()).toBe(true);
-    expect(document.activeElement).toBe(ta);
-    expect([ta.selectionStart, ta.selectionEnd]).toEqual([2, 5]);
   });
 
   it("isEditingTable and getLastOpenedBlockId (5.15.5, INV-52)", async () => {

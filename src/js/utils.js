@@ -167,3 +167,16 @@ export function replaceCodeBlock(block, newElement) {
     block.replaceWith(newElement);
   }
 }
+
+/**
+ * The platform whose primary shortcut modifier is Cmd (INV-14): macOS, iOS
+ * and iPadOS.
+ * @purity pure
+ * @param {{userAgentData?: {platform?: string}, platform?: string}} nav - navigator
+ * @returns {boolean}
+ */
+export function isApplePlatform(nav) {
+  const platform = nav?.userAgentData?.platform;
+  if (platform) return platform === "macOS";
+  return /Mac|iPhone|iPad/.test(nav?.platform ?? "");
+}

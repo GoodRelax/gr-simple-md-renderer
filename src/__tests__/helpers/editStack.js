@@ -37,7 +37,6 @@ export function fakeHost() {
       host.shown = false;
     }),
     isPaletteNode: vi.fn((node) => palette.contains(node) || popover.contains(node)),
-    focusPalette: vi.fn(() => palette.querySelector("button").focus()),
     isEditorChangedSinceRender: vi.fn(() => host.editorChanged),
     renderFromEditor: vi.fn(),
     onEditorInput: vi.fn(),

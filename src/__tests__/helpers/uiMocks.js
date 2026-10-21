@@ -55,15 +55,14 @@ export function fakeEditServices() {
     toggle: vi.fn(),
     isShown: vi.fn(() => false),
     contains: vi.fn(() => false),
-    focus: vi.fn(),
     setStatusText: vi.fn(),
+    setUnsaved: vi.fn(),
     setButtonStates: vi.fn(),
   };
   const blockEdit = {
     dispatch: vi.fn(),
     isEditing: vi.fn(() => false),
     hasUncommittedChange: vi.fn(() => false),
-    focusEditor: vi.fn(() => false),
     getSelectionRange: vi.fn(() => null),
     applyTextEdit: vi.fn(),
     isEditingTable: vi.fn(() => false),

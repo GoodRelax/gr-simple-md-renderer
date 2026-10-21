@@ -5,28 +5,51 @@ import { dirname, resolve } from "node:path";
 import EditPalette from "../js/classes/EditPalette.js";
 import { CONFIG } from "../js/config.js";
 import { pointer, keydown, trackListeners } from "./helpers/editDom.js";
-import { fakePaletteLayout, paletteElements, centerOf, positionOf, PALETTE_SIZE, POPOVER_SIZE } from "./helpers/paletteLayout.js";
+import {
+  fakePaletteLayout,
+  paletteElements,
+  removePaletteElements,
+  centerOf,
+  positionOf,
+  PALETTE_SIZE,
+  POPOVER_SIZE,
+  MINIMIZED_SIZE,
+} from "./helpers/paletteLayout.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const jsDir = resolve(here, "../js");
+const css = readFileSync(resolve(here, "../css/style.css"), "utf8");
 
 const MARGIN = CONFIG.edit.paletteMarginPx;
 const W = 1024;
 const H = 768;
+
+// Every key of setButtonStates (5.15.5) true.
+const ALL_ON = {
+  bold: true,
+  italic: true,
+  format: true,
+  textColor: true,
+  linkPaste: true,
+  linkRemove: true,
+  insertTable: true,
+  insertMermaid: true,
+  undo: true,
+  insertRow: true,
+  insertColumn: true,
+  rowDelete: true,
+  columnDelete: true,
+  tableOptions: true,
+  alignment: null,
+};
 
 let palette;
 let host;
 let layout;
 let root;
 let popover;
-
-function fakeHost() {
-  return {
-    runCommand: vi.fn(),
-    focusEditor: vi.fn(() => false),
-    requestHide: vi.fn(),
-  };
-}
+let formatMenu;
+let tableMenu;
 
 function setViewport(width, height) {
   Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
@@ -36,21 +59,23 @@ function setViewport(width, height) {
 beforeEach(() => {
   setViewport(W, H);
   layout = fakePaletteLayout();
-  host = fakeHost();
+  host = { runCommand: vi.fn() };
   palette = new EditPalette(host);
-  ({ root, popover } = paletteElements());
+  ({ root, popover, formatMenu, tableMenu } = paletteElements());
 });
 
 afterEach(() => {
   palette.hide();
-  root?.remove();
-  popover?.remove();
+  removePaletteElements();
   layout.restore();
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
 const btn = (id) => root.querySelector(`#${id}`);
 const popBtn = (label) => [...popover.querySelectorAll("button")].find((b) => b.getAttribute("aria-label") === label);
+const off = (el) => el.getAttribute("aria-disabled") === "true";
+const grip = () => root.querySelector(".edit-palette-grip");
 
 /** pointerdown at the center of el, then pointerup moved by (dx, dy) from there. */
 function press(el, { dx = 0, dy = 0, upEl = el } = {}) {
@@ -61,7 +86,15 @@ function press(el, { dx = 0, dy = 0, upEl = el } = {}) {
 }
 
 function enableAll() {
-  palette.setButtonStates(true, true, true, false);
+  palette.setButtonStates(ALL_ON);
+}
+
+/** Press the grip, wait the long press time, release (fake timers must be on). */
+function longPressGrip() {
+  const c = centerOf(grip());
+  pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+  vi.advanceTimersByTime(CONFIG.edit.paletteLongPressMs);
+  pointer(grip(), "pointerup", { x: c.x, y: c.y });
 }
 
 describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
@@ -110,11 +143,10 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
 
     it("a palette the user moved keeps its bottom edge too", async () => {
       palette.show();
-      const grip = root.querySelector(".edit-palette-grip");
-      const c = centerOf(grip);
-      pointer(grip, "pointerdown", { x: c.x, y: c.y });
-      pointer(grip, "pointermove", { x: c.x - 300, y: c.y - 200 });
-      pointer(grip, "pointerup", { x: c.x - 300, y: c.y - 200 });
+      const c = centerOf(grip());
+      pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+      pointer(grip(), "pointermove", { x: c.x - 300, y: c.y - 200 });
+      pointer(grip(), "pointerup", { x: c.x - 300, y: c.y - 200 });
       const before = positionOf(root);
       palette.setStatusText("doc.md * unsaved");
       await nextFrame();
@@ -145,11 +177,10 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
   it("AT-PAL-02 the position is not remembered, and nothing is stored", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     palette.show();
-    const grip = root.querySelector(".edit-palette-grip");
-    const c = centerOf(grip);
-    pointer(grip, "pointerdown", { x: c.x, y: c.y });
-    pointer(grip, "pointermove", { x: 50, y: 50 });
-    pointer(grip, "pointerup", { x: 50, y: 50 });
+    const c = centerOf(grip());
+    pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+    pointer(grip(), "pointermove", { x: 50, y: 50 });
+    pointer(grip(), "pointerup", { x: 50, y: 50 });
     expect(positionOf(root).left).toBeLessThan(200);
     palette.hide();
     expect(root.hidden).toBe(true);
@@ -158,24 +189,37 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
     expect(setItem).not.toHaveBeenCalled();
   });
 
-  it("AT-PAL-03 the 9 buttons, the grip and the status, in two rows; labels and inline SVG only", () => {
+  it("AT-PAL-03 7 x 2: the grip and 13 buttons in two rows, no separators; labels and inline SVG only", () => {
     const rows = [...root.querySelectorAll(".edit-palette-row")];
     expect(rows).toHaveLength(2);
-    const ids = (r) => [...r.querySelectorAll("button, .edit-palette-grip")].map((el) => el.id);
-    expect(ids(rows[0])).toEqual(["paletteGrip", "paletteBold", "paletteItalic", "paletteUndo", "paletteSave", "paletteSaveAs"]);
-    expect(ids(rows[1])).toEqual(["paletteTable", "paletteRow", "paletteColumn", "paletteMermaid"]);
+    const ids = (r) => [...r.children].map((el) => el.id);
+    expect(ids(rows[0])).toEqual(["paletteGrip", "paletteBold", "paletteItalic", "paletteFormat", "paletteMermaid", "paletteSave", "paletteSaveAs"]);
+    expect(ids(rows[1])).toEqual([
+      "paletteTable",
+      "paletteRow",
+      "paletteRowDelete",
+      "paletteColumn",
+      "paletteColumnDelete",
+      "paletteTableOptions",
+      "paletteUndo",
+    ]);
+    expect(root.querySelector(".edit-palette-sep")).toBeNull();
     expect(root.querySelector("#paletteStatus")).not.toBeNull();
     const labels = {
-      paletteGrip: "Move palette",
-      paletteBold: "Bold",
-      paletteItalic: "Italic",
-      paletteUndo: "Undo",
-      paletteSave: "Save",
-      paletteSaveAs: "Save as",
+      paletteGrip: "Move palette (long press: minimize / restore)",
+      paletteBold: "Bold (Ctrl+B)",
+      paletteItalic: "Italic (Ctrl+I)",
+      paletteFormat: "Text format",
+      paletteMermaid: "Insert Mermaid sample",
+      paletteSave: "Save (Ctrl+S)",
+      paletteSaveAs: "Save as (Ctrl+Shift+S)",
       paletteTable: "Insert table",
       paletteRow: "Insert row",
+      paletteRowDelete: "Delete row",
       paletteColumn: "Insert column",
-      paletteMermaid: "Insert Mermaid sample",
+      paletteColumnDelete: "Delete column",
+      paletteTableOptions: "Table options",
+      paletteUndo: "Undo (Ctrl+Z)",
     };
     for (const [id, label] of Object.entries(labels)) {
       const el = root.querySelector(`#${id}`);
@@ -183,8 +227,12 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
       expect(el.getAttribute("aria-label"), id).toBe(label);
       expect(el.querySelector("svg"), id).not.toBeNull();
     }
-    expect(btn("paletteMermaid").querySelectorAll("svg")).toHaveLength(2); // icon + submenu mark
-    for (const el of [root, popover]) {
+    for (const id of ["paletteMermaid", "paletteFormat", "paletteTableOptions"]) {
+      expect(btn(id).querySelectorAll("svg"), id).toHaveLength(2); // icon + submenu mark
+      expect(btn(id).hasAttribute("aria-haspopup"), id).toBe(false); // the popover is a toolbar, not a menu
+      expect(btn(id).getAttribute("aria-expanded"), id).toBe("false");
+    }
+    for (const el of [root, popover, formatMenu, tableMenu]) {
       expect(el.querySelector("img, use, image, script, foreignObject")).toBeNull();
       for (const node of el.querySelectorAll("*")) {
         expect(node.hasAttribute("href")).toBe(false);
@@ -195,8 +243,53 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
     }
   });
 
+  it("AT-PAL-03 the three popovers: ids, labels and buttons (7.1, 5.15.3)", () => {
+    expect(popover.getAttribute("aria-label")).toBe("Mermaid samples");
+    expect(formatMenu.getAttribute("aria-label")).toBe("Text format");
+    expect(tableMenu.getAttribute("aria-label")).toBe("Table options");
+    for (const el of [popover, formatMenu, tableMenu]) {
+      expect(el.parentNode).toBe(document.body);
+      expect(el.getAttribute("role")).toBe("toolbar");
+      expect(el.style.position).toBe("fixed");
+      expect(el.hidden).toBe(true);
+    }
+    const items = (el) => [...el.querySelectorAll("button")].map((b) => [b.id, b.getAttribute("aria-label")]);
+    expect(items(formatMenu)).toEqual([
+      ["paletteColorRed", "Text color: Red"],
+      ["paletteColorBlue", "Text color: Blue"],
+      ["paletteColorGreen", "Text color: Green"],
+      ["paletteColorNone", "Remove text color"],
+      ["paletteLinkPaste", "Paste link from clipboard"],
+      ["paletteLinkRemove", "Remove link"],
+    ]);
+    expect(items(tableMenu)).toEqual([
+      ["paletteAlignLeft", "Align left"],
+      ["paletteAlignCenter", "Align center"],
+      ["paletteAlignRight", "Align right"],
+      ["paletteAlignNone", "Default alignment"],
+    ]);
+    for (const color of ["red", "blue", "green"]) {
+      const b = formatMenu.querySelector(`.edit-palette-swatch-${color}`);
+      expect(b.classList.contains("edit-palette-swatch")).toBe(true);
+      expect(b.querySelector("svg").getAttribute("fill")).toBe("currentColor");
+    }
+    for (const b of [...formatMenu.querySelectorAll("button"), ...tableMenu.querySelectorAll("button")]) {
+      expect(b.getAttribute("title")).toBe(b.getAttribute("aria-label"));
+      expect(b.querySelector("svg")).not.toBeNull();
+    }
+  });
+
+  it("AT-PAL-03 on Apple platforms the tooltips say Cmd (INV-14 platform test)", () => {
+    removePaletteElements();
+    palette = new EditPalette(host, { isApple: true });
+    ({ root } = paletteElements());
+    expect(btn("paletteBold").title).toBe("Bold (Cmd+B)");
+    expect(btn("paletteSaveAs").title).toBe("Save as (Cmd+Shift+S)");
+    expect(btn("paletteUndo").getAttribute("aria-label")).toBe("Undo (Cmd+Z)");
+  });
+
   it("AT-PAL-04 there is no minimize button and no Redo button", () => {
-    const text = [...root.querySelectorAll("[aria-label]")].map((el) => el.getAttribute("aria-label").toLowerCase());
+    const text = [...root.querySelectorAll("button[aria-label]")].map((el) => el.getAttribute("aria-label").toLowerCase());
     expect(text.some((t) => t.includes("minim"))).toBe(false);
     expect(text.some((t) => t.includes("redo"))).toBe(false);
   });
@@ -258,28 +351,64 @@ describe("AT-PAL gestures (INV-34, INV-35, INV-36)", () => {
     expect(host.runCommand).toHaveBeenCalledWith("bold");
   });
 
-  it.each(["grip", "gap"])("AT-PAL-10 pressing the %s moves from the start; release runs nothing", (which) => {
-    const target = which === "grip" ? root.querySelector(".edit-palette-grip") : root;
-    const start = which === "grip" ? centerOf(target) : { x: positionOf(root).left + 190, y: positionOf(root).top + 70 };
+  it("AT-PAL-10 pressing the gap moves from the start; release runs nothing", () => {
+    const start = { x: positionOf(root).left + 190, y: positionOf(root).top + 70 };
     const before = positionOf(root);
-    pointer(target, "pointerdown", { x: start.x, y: start.y });
-    pointer(target, "pointermove", { x: start.x - 30, y: start.y - 20 });
+    pointer(root, "pointerdown", { x: start.x, y: start.y });
+    pointer(root, "pointermove", { x: start.x - 3, y: start.y - 2 });
+    expect(positionOf(root)).toEqual({ left: before.left - 3, top: before.top - 2 });
+    pointer(root, "pointermove", { x: start.x - 30, y: start.y - 20 });
     expect(positionOf(root)).toEqual({ left: before.left - 30, top: before.top - 20 });
-    pointer(target, "pointerup", { x: start.x - 30, y: start.y - 20 });
+    pointer(root, "pointerup", { x: start.x - 30, y: start.y - 20 });
     expect(host.runCommand).not.toHaveBeenCalled();
   });
 
-  it("AT-PAL-11 a disabled button: press and release run nothing and do not move", () => {
-    palette.setButtonStates(false, false, false, false);
+  it("AT-PAL-10 pressing the grip moves once the pointer goes beyond the threshold (INV-68); release runs nothing", () => {
+    const start = centerOf(grip());
+    const before = positionOf(root);
+    const t = CONFIG.pan.activationThresholdPx;
+    pointer(grip(), "pointerdown", { x: start.x, y: start.y });
+    pointer(grip(), "pointermove", { x: start.x - t, y: start.y }); // at the threshold: not yet
+    expect(positionOf(root)).toEqual(before);
+    pointer(grip(), "pointermove", { x: start.x - 30, y: start.y - 20 });
+    expect(positionOf(root)).toEqual({ left: before.left - 30, top: before.top - 20 });
+    pointer(grip(), "pointerup", { x: start.x - 30, y: start.y - 20 });
+    expect(host.runCommand).not.toHaveBeenCalled();
+  });
+
+  it("AT-PAL-11 a disabled palette button: pressing it moves the palette from the start (INV-35); nothing runs", () => {
+    palette.setButtonStates({});
     const b = btn("paletteBold");
-    expect(b.disabled).toBe(true);
+    expect(off(b)).toBe(true);
+    expect(b.disabled).toBe(false); // aria-disabled: the button still gets the pointer events
     const c = centerOf(b);
     const before = positionOf(root);
     pointer(b, "pointerdown", { x: c.x, y: c.y });
+    pointer(b, "pointermove", { x: c.x - 3, y: c.y - 2 }); // a move inside the button already moves
+    expect(positionOf(root)).toEqual({ left: before.left - 3, top: before.top - 2 });
     pointer(b, "pointermove", { x: c.x - 100, y: c.y - 100 });
     pointer(b, "pointerup", { x: c.x - 100, y: c.y - 100 });
     expect(host.runCommand).not.toHaveBeenCalled();
+    expect(positionOf(root)).toEqual({ left: before.left - 100, top: before.top - 100 });
+  });
+
+  it("AT-PAL-11 a disabled popover button and the popover gap: nothing runs and nothing moves (INV-34, INV-35)", () => {
+    press(btn("paletteFormat"));
+    palette.setButtonStates({ ...ALL_ON, textColor: false });
+    expect(formatMenu.hidden).toBe(false);
+    const red = formatMenu.querySelector("#paletteColorRed");
+    const before = positionOf(root);
+    for (const [el, x, y] of [
+      [red, centerOf(red).x, centerOf(red).y],
+      [formatMenu, positionOf(formatMenu).left + 150, positionOf(formatMenu).top + 140],
+    ]) {
+      pointer(el, "pointerdown", { x, y });
+      pointer(el, "pointermove", { x: x - 80, y: y - 50 });
+      pointer(el, "pointerup", { x: x - 80, y: y - 50 });
+    }
+    expect(host.runCommand).not.toHaveBeenCalled();
     expect(positionOf(root)).toEqual(before);
+    expect(formatMenu.hidden).toBe(false);
   });
 
   it.each(["pressing", "dragging"])("AT-PAL-12 pointercancel while %s returns to idle and runs nothing", (mode) => {
@@ -312,7 +441,7 @@ describe("AT-PAL gestures (INV-34, INV-35, INV-36)", () => {
     ta.setSelectionRange(6, 10);
     const down = press(btn("paletteBold"));
     expect(down.defaultPrevented).toBe(true);
-    const gripDown = press(root.querySelector(".edit-palette-grip"));
+    const gripDown = press(grip());
     expect(gripDown.defaultPrevented).toBe(true);
     expect(document.activeElement).toBe(ta);
     expect([ta.selectionStart, ta.selectionEnd]).toEqual([6, 10]);
@@ -320,14 +449,13 @@ describe("AT-PAL gestures (INV-34, INV-35, INV-36)", () => {
   });
 
   it("AT-PAL-15 dragging past the viewport stops at the edges", () => {
-    const grip = root.querySelector(".edit-palette-grip");
-    const c = centerOf(grip);
-    pointer(grip, "pointerdown", { x: c.x, y: c.y });
-    pointer(grip, "pointermove", { x: -5000, y: -5000 });
+    const c = centerOf(grip());
+    pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+    pointer(grip(), "pointermove", { x: -5000, y: -5000 });
     expect(positionOf(root)).toEqual({ left: 0, top: 0 });
-    pointer(grip, "pointermove", { x: 9000, y: 9000 });
+    pointer(grip(), "pointermove", { x: 9000, y: 9000 });
     expect(positionOf(root)).toEqual({ left: W - PALETTE_SIZE.width, top: H - PALETTE_SIZE.height });
-    pointer(grip, "pointerup", { x: 9000, y: 9000 });
+    pointer(grip(), "pointerup", { x: 9000, y: 9000 });
   });
 
   it("AT-PAL-16 a smaller viewport (resize) moves the palette back inside", () => {
@@ -335,20 +463,30 @@ describe("AT-PAL gestures (INV-34, INV-35, INV-36)", () => {
     window.dispatchEvent(new Event("resize"));
     expect(positionOf(root)).toEqual({ left: 500 - PALETTE_SIZE.width, top: 300 - PALETTE_SIZE.height });
   });
+
+  it("AT-PAL-16 a resize keeps an open popover open and inside the viewport (11-f viewportResized)", () => {
+    press(btn("paletteFormat"));
+    setViewport(500, 300);
+    window.dispatchEvent(new Event("resize"));
+    expect(formatMenu.hidden).toBe(false);
+    const pop = positionOf(formatMenu);
+    expect(pop.left + POPOVER_SIZE.width).toBeLessThanOrEqual(500);
+    expect(pop.top + POPOVER_SIZE.height).toBeLessThanOrEqual(300);
+  });
 });
 
-describe("AT-PAL Mermaid popover (5.15.1, INV-37)", () => {
+describe("AT-PAL popovers (5.15.1, 11-f, INV-37, INV-53)", () => {
   beforeEach(() => {
     palette.show();
+    enableAll();
   });
 
   function moveRootTo(left, top) {
-    const grip = root.querySelector(".edit-palette-grip");
-    const c = centerOf(grip);
+    const c = centerOf(grip());
     const p = positionOf(root);
-    pointer(grip, "pointerdown", { x: c.x, y: c.y });
-    pointer(grip, "pointermove", { x: c.x + left - p.left, y: c.y + top - p.top });
-    pointer(grip, "pointerup", { x: c.x + left - p.left, y: c.y + top - p.top });
+    pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+    pointer(grip(), "pointermove", { x: c.x + left - p.left, y: c.y + top - p.top });
+    pointer(grip(), "pointerup", { x: c.x + left - p.left, y: c.y + top - p.top });
   }
 
   it("AT-PAL-17 at the right edge the popover opens on the left; at the left edge on the right; always inside", () => {
@@ -374,14 +512,17 @@ describe("AT-PAL Mermaid popover (5.15.1, INV-37)", () => {
 
   it.each([
     ["choosing a sample", () => press(popBtn("Flowchart"))],
-    ["Esc in the popover", () => keydown(popBtn("Sequence diagram"), "Escape")],
+    ["Esc (document capture, INV-53)", () => keydown(document.body, "Escape")],
     ["a pointerdown outside palette and popover", () => pointer(document.body, "pointerdown")],
     ["hiding the palette", () => palette.hide()],
+    ["the opener becoming disabled", () => palette.setButtonStates({ ...ALL_ON, insertMermaid: false })],
   ])("AT-PAL-18 closes on %s", (_name, act) => {
     press(btn("paletteMermaid"));
     expect(popover.hidden).toBe(false);
+    expect(btn("paletteMermaid").getAttribute("aria-expanded")).toBe("true");
     act();
     expect(popover.hidden).toBe(true);
+    expect(btn("paletteMermaid").getAttribute("aria-expanded")).toBe("false");
   });
 
   it("AT-PAL-18 a pointerdown on the palette or the popover keeps it open", () => {
@@ -393,7 +534,47 @@ describe("AT-PAL Mermaid popover (5.15.1, INV-37)", () => {
     expect(popover.hidden).toBe(false);
   });
 
-  it("AT-PAL-19 four sample buttons; press and release runs; moving away moves the palette", () => {
+  it("AT-PAL-18 one popover at a time: another opener switches; a disabled item keeps it open", () => {
+    press(btn("paletteMermaid"));
+    press(btn("paletteFormat"));
+    expect(popover.hidden).toBe(true);
+    expect(formatMenu.hidden).toBe(false);
+    press(btn("paletteTableOptions"));
+    expect(formatMenu.hidden).toBe(true);
+    expect(tableMenu.hidden).toBe(false);
+    palette.setButtonStates({ ...ALL_ON, alignment: "left" }); // the items stay enabled
+    expect(tableMenu.hidden).toBe(false);
+    press(btn("paletteTableOptions"));
+    expect(tableMenu.hidden).toBe(true);
+  });
+
+  it("AT-PAL-18 Esc in a popover goes no further: not to an editor, not to the document; IME Esc is left alone", () => {
+    const ta = document.createElement("textarea");
+    document.body.appendChild(ta);
+    ta.focus();
+    const seen = vi.fn();
+    ta.addEventListener("keydown", seen);
+    document.addEventListener("keydown", seen);
+    press(btn("paletteFormat"));
+    const ime = keydown(ta, "Escape", { isComposing: true });
+    expect(ime.defaultPrevented).toBe(false);
+    expect(formatMenu.hidden).toBe(false);
+    const ime229 = keydown(ta, "Escape", { keyCode: 229 });
+    expect(ime229.defaultPrevented).toBe(false);
+    expect(seen).toHaveBeenCalledTimes(4);
+    seen.mockClear();
+    const e = keydown(ta, "Escape");
+    expect(e.defaultPrevented).toBe(true);
+    expect(seen).not.toHaveBeenCalled();
+    expect(formatMenu.hidden).toBe(true);
+    const next = keydown(ta, "Escape"); // no popover open: not taken
+    expect(next.defaultPrevented).toBe(false);
+    expect(seen).toHaveBeenCalledTimes(2);
+    document.removeEventListener("keydown", seen);
+    ta.remove();
+  });
+
+  it("AT-PAL-19 four sample buttons; press and release runs; moving away does nothing (INV-35)", () => {
     press(btn("paletteMermaid"));
     const labels = [...popover.querySelectorAll("button")].map((b) => b.getAttribute("aria-label"));
     expect(labels).toEqual(["Flowchart", "Sequence diagram", "State diagram", "Class diagram"]);
@@ -411,10 +592,13 @@ describe("AT-PAL Mermaid popover (5.15.1, INV-37)", () => {
     const before = positionOf(root);
     pointer(b, "pointerdown", { x: c.x, y: c.y });
     pointer(b, "pointermove", { x: c.x - 60, y: c.y });
+    expect(layout.release).toHaveBeenCalledWith(1); // 11-d: idle / releasePointer
     pointer(b, "pointermove", { x: c.x - 80, y: c.y - 30 });
-    pointer(b, "pointerup", { x: c.x - 80, y: c.y - 30 });
+    pointer(b, "pointermove", { x: c.x, y: c.y }); // back on the button
+    pointer(b, "pointerup", { x: c.x, y: c.y });
     expect(host.runCommand).toHaveBeenCalledTimes(1);
-    expect(positionOf(root)).toEqual({ left: before.left - 20, top: before.top - 30 });
+    expect(positionOf(root)).toEqual(before);
+    expect(popover.hidden).toBe(false);
   });
 
   it.each([
@@ -428,104 +612,210 @@ describe("AT-PAL Mermaid popover (5.15.1, INV-37)", () => {
     press(popBtn(label));
     expect(host.runCommand).toHaveBeenCalledWith("insertMermaid", key);
   });
+
+  it("AT-PAL-19 the format and table items run with their command and argument, and close the popover", () => {
+    const cases = [
+      ["paletteFormat", formatMenu, "paletteColorRed", ["textColor", "red"]],
+      ["paletteFormat", formatMenu, "paletteColorBlue", ["textColor", "blue"]],
+      ["paletteFormat", formatMenu, "paletteColorGreen", ["textColor", "green"]],
+      ["paletteFormat", formatMenu, "paletteColorNone", ["textColor", "none"]],
+      ["paletteFormat", formatMenu, "paletteLinkPaste", ["linkPaste", undefined]],
+      ["paletteFormat", formatMenu, "paletteLinkRemove", ["linkRemove", undefined]],
+      ["paletteTableOptions", tableMenu, "paletteAlignLeft", ["alignColumn", "left"]],
+      ["paletteTableOptions", tableMenu, "paletteAlignCenter", ["alignColumn", "center"]],
+      ["paletteTableOptions", tableMenu, "paletteAlignRight", ["alignColumn", "right"]],
+      ["paletteTableOptions", tableMenu, "paletteAlignNone", ["alignColumn", "none"]],
+    ];
+    for (const [opener, menu, id, args] of cases) {
+      host.runCommand.mockClear();
+      press(btn(opener));
+      expect(menu.hidden, id).toBe(false);
+      press(menu.querySelector(`#${id}`));
+      expect(host.runCommand, id).toHaveBeenCalledTimes(1);
+      expect(host.runCommand, id).toHaveBeenCalledWith(...args);
+      expect(menu.hidden, id).toBe(true);
+    }
+  });
 });
 
-describe("AT-PAL keyboard (INV-53)", () => {
+describe("AT-PAL minimize (INV-68, 11-f)", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     palette.show();
+    enableAll();
   });
 
-  const tabStops = () => [...root.querySelectorAll("button")].filter((b) => b.tabIndex === 0);
+  it("AT-PAL-30 a long press on the grip minimizes at the time, keeping the grip in place; another restores", () => {
+    const gripBefore = grip().getBoundingClientRect();
+    const c = centerOf(grip());
+    pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+    vi.advanceTimersByTime(CONFIG.edit.paletteLongPressMs - 1);
+    expect(palette.isMinimized()).toBe(false);
+    vi.advanceTimersByTime(1);
+    expect(palette.isMinimized()).toBe(true); // before the release
+    expect(root.classList.contains("edit-palette-minimized")).toBe(true);
+    expect(grip().getBoundingClientRect().left).toBe(gripBefore.left);
+    expect(grip().getBoundingClientRect().top).toBe(gripBefore.top);
+    const before = positionOf(root);
+    pointer(grip(), "pointermove", { x: c.x - 100, y: c.y - 100 }); // no move until the release
+    expect(positionOf(root)).toEqual(before);
+    pointer(grip(), "pointerup", { x: c.x - 100, y: c.y - 100 });
+    expect(host.runCommand).not.toHaveBeenCalled();
 
-  it("AT-PAL-20 one roving tab stop; arrows move it (wrapping, skipping disabled); Enter and Space run at once", () => {
-    palette.setButtonStates(false, false, false, false);
-    expect(tabStops()).toHaveLength(1);
-    palette.focus();
-    expect(document.activeElement).toBe(tabStops()[0]);
-    expect(document.activeElement.disabled).toBe(false);
-    const enabled = [...root.querySelectorAll("button")].filter((b) => !b.disabled);
-    expect(enabled.map((b) => b.id)).toEqual(["paletteSave", "paletteSaveAs", "paletteTable", "paletteMermaid"]);
-    palette.focus();
-    let current = document.activeElement;
-    for (let i = 0; i < enabled.length; i++) {
-      const e = keydown(current, "ArrowRight");
-      expect(e.defaultPrevented).toBe(true);
-      current = document.activeElement;
-      expect(tabStops()).toEqual([current]);
+    longPressGrip();
+    expect(palette.isMinimized()).toBe(false);
+    expect(root.classList.contains("edit-palette-minimized")).toBe(false);
+    expect(grip().getBoundingClientRect().left).toBe(gripBefore.left);
+  });
+
+  it("AT-PAL-31 a short press, or a move beyond the threshold before the time, does not minimize", () => {
+    press(grip());
+    vi.advanceTimersByTime(CONFIG.edit.paletteLongPressMs * 2);
+    expect(palette.isMinimized()).toBe(false);
+
+    const c = centerOf(grip());
+    pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+    pointer(grip(), "pointermove", { x: c.x - CONFIG.pan.activationThresholdPx - 1, y: c.y });
+    vi.advanceTimersByTime(CONFIG.edit.paletteLongPressMs * 2);
+    expect(palette.isMinimized()).toBe(false);
+    pointer(grip(), "pointerup", { x: c.x - 20, y: c.y });
+
+    pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+    pointer(grip(), "pointermove", { x: c.x - CONFIG.pan.activationThresholdPx, y: c.y }); // within: still a long press
+    vi.advanceTimersByTime(CONFIG.edit.paletteLongPressMs);
+    expect(palette.isMinimized()).toBe(true);
+    pointer(grip(), "pointerup", { x: c.x, y: c.y });
+  });
+
+  it("AT-PAL-31 only the grip: a long press on a button, a disabled button or the gap does not minimize", () => {
+    palette.setButtonStates({ ...ALL_ON, bold: false });
+    const gap = { x: positionOf(root).left + 228, y: positionOf(root).top + 76 };
+    for (const [el, x, y] of [
+      [btn("paletteTable"), centerOf(btn("paletteTable")).x, centerOf(btn("paletteTable")).y],
+      [btn("paletteBold"), centerOf(btn("paletteBold")).x, centerOf(btn("paletteBold")).y],
+      [root, gap.x, gap.y],
+    ]) {
+      pointer(el, "pointerdown", { x, y });
+      vi.advanceTimersByTime(CONFIG.edit.paletteLongPressMs * 2);
+      expect(palette.isMinimized(), el.id || "gap").toBe(false);
+      pointer(el, "pointerup", { x, y });
     }
-    expect(current).toBe(tabStops()[0]);
-    const startIndex = enabled.indexOf(current);
-    keydown(current, "ArrowLeft");
-    expect(document.activeElement).toBe(enabled[(startIndex - 1 + enabled.length) % enabled.length]);
-
-    btn("paletteTable").focus();
-    const enter = keydown(btn("paletteTable"), "Enter");
-    expect(enter.defaultPrevented).toBe(true);
-    expect(host.runCommand).toHaveBeenLastCalledWith("insertTable");
-    keydown(btn("paletteSave"), " ");
-    expect(host.runCommand).toHaveBeenLastCalledWith("save");
-    expect(host.runCommand).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("AT-PAL-20 a tab stop that becomes disabled moves to an enabled button", () => {
-    palette.setButtonStates(true, true, false, false);
-    btn("paletteBold").focus();
-    keydown(btn("paletteBold"), "ArrowLeft");
-    keydown(document.activeElement, "ArrowRight");
-    expect(tabStops()).toEqual([btn("paletteBold")]);
-    palette.setButtonStates(false, false, false, false);
-    expect(tabStops()).toHaveLength(1);
-    expect(tabStops()[0].disabled).toBe(false);
+  it.each([
+    ["pointercancel", () => pointer(grip(), "pointercancel")],
+    ["hide", () => palette.hide()],
+  ])("AT-PAL-32 the long press timer stops on %s", (_name, act) => {
+    const c = centerOf(grip());
+    pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+    act();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.advanceTimersByTime(CONFIG.edit.paletteLongPressMs * 2);
+    expect(palette.isMinimized()).toBe(false);
   });
 
-  it("AT-PAL-20 Enter on Mermaid opens the popover and focuses its first button; Enter there runs", () => {
-    btn("paletteMermaid").focus();
-    keydown(btn("paletteMermaid"), "Enter");
-    expect(popover.hidden).toBe(false);
-    expect(document.activeElement).toBe(popBtn("Flowchart"));
-    keydown(popBtn("Flowchart"), "ArrowDown");
-    expect(document.activeElement).toBe(popBtn("Sequence diagram"));
-    keydown(document.activeElement, "Enter");
-    expect(host.runCommand).toHaveBeenCalledWith("insertMermaid", "sequence");
-    expect(popover.hidden).toBe(true);
+  it("AT-PAL-33 minimizing closes an open popover; the unsaved dot is a class; showing again is not minimized, bottom-right", () => {
+    press(btn("paletteFormat"));
+    expect(formatMenu.hidden).toBe(false);
+    longPressGrip();
+    expect(formatMenu.hidden).toBe(true);
+    expect(btn("paletteFormat").getAttribute("aria-expanded")).toBe("false");
+    palette.setUnsaved(true);
+    expect(root.classList.contains("edit-palette-unsaved")).toBe(true);
+    palette.setUnsaved(false);
+    expect(root.classList.contains("edit-palette-unsaved")).toBe(false);
+    palette.hide();
+    expect(root.classList.contains("edit-palette-minimized")).toBe(false);
+    palette.show();
+    expect(palette.isMinimized()).toBe(false);
+    expect(positionOf(root)).toEqual({ left: W - PALETTE_SIZE.width - MARGIN, top: H - PALETTE_SIZE.height - MARGIN });
   });
 
-  it("AT-PAL-21 Shift+Tab or Esc returns to the open editor", () => {
-    host.focusEditor.mockReturnValue(true);
-    palette.focus();
-    const shiftTab = keydown(document.activeElement, "Tab", { shiftKey: true });
-    expect(shiftTab.defaultPrevented).toBe(true);
-    palette.focus();
-    keydown(document.activeElement, "Escape");
-    expect(host.focusEditor).toHaveBeenCalledTimes(2);
-    expect(host.requestHide).not.toHaveBeenCalled();
+  it("AT-PAL-34 restoring near the edge keeps the expanded palette inside the viewport (clampIntoViewport)", () => {
+    longPressGrip();
+    // Move the minimized palette to the bottom-right corner.
+    const c = centerOf(grip());
+    pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+    pointer(grip(), "pointermove", { x: 9000, y: 9000 });
+    pointer(grip(), "pointerup", { x: 9000, y: 9000 });
+    expect(positionOf(root)).toEqual({ left: W - MINIMIZED_SIZE.width, top: H - MINIMIZED_SIZE.height });
+    longPressGrip();
+    expect(palette.isMinimized()).toBe(false);
+    expect(positionOf(root)).toEqual({ left: W - PALETTE_SIZE.width, top: H - PALETTE_SIZE.height });
   });
 
-  it("AT-PAL-21 without an editor: Esc asks to hide the palette (T3); Shift+Tab is left to the browser", () => {
-    palette.focus();
-    const shiftTab = keydown(document.activeElement, "Tab", { shiftKey: true });
-    expect(shiftTab.defaultPrevented).toBe(false);
-    expect(host.requestHide).not.toHaveBeenCalled();
-    keydown(document.activeElement, "Escape");
-    expect(host.requestHide).toHaveBeenCalledTimes(1);
+  it("AT-PAL-35 no context menu on the palette and the popovers; -webkit-touch-callout is none (INV-68)", () => {
+    for (const el of [grip(), btn("paletteBold"), popover, formatMenu, tableMenu]) {
+      const e = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+      el.dispatchEvent(e);
+      expect(e.defaultPrevented).toBe(true);
+    }
+    const rule = /\.edit-palette,\s*\.edit-palette-popover\s*\{[^}]*\}/.exec(css)?.[0] ?? "";
+    expect(rule).toContain("-webkit-touch-callout: none");
   });
 });
 
 describe("AT-PAL states, status, life cycle, security", () => {
-  it("AT-PAL-23 setButtonStates: all 16 combinations follow 5.15.5", () => {
+  it("AT-PAL-23 setButtonStates: each key enables its buttons only; a missing key is false (5.15.5)", () => {
     palette.show();
-    const ALWAYS = ["paletteTable", "paletteMermaid", "paletteSave", "paletteSaveAs"];
-    for (let bits = 0; bits < 16; bits++) {
-      const [isInBlock, hasSelection, isInTable, canUndo] = [8, 4, 2, 1].map((m) => (bits & m) !== 0);
-      palette.setButtonStates(isInBlock, hasSelection, isInTable, canUndo);
-      const label = JSON.stringify({ isInBlock, hasSelection, isInTable, canUndo });
-      expect(btn("paletteBold").disabled, label).toBe(!(isInBlock && hasSelection));
-      expect(btn("paletteItalic").disabled, label).toBe(!(isInBlock && hasSelection));
-      expect(btn("paletteUndo").disabled, label).toBe(!(!isInBlock && canUndo));
-      expect(btn("paletteRow").disabled, label).toBe(!(isInBlock && isInTable));
-      expect(btn("paletteColumn").disabled, label).toBe(!(isInBlock && isInTable));
-      for (const id of ALWAYS) expect(btn(id).disabled, `${label} ${id}`).toBe(false);
+    const BUTTONS = {
+      bold: ["paletteBold"],
+      italic: ["paletteItalic"],
+      format: ["paletteFormat"],
+      textColor: ["paletteColorRed", "paletteColorBlue", "paletteColorGreen", "paletteColorNone"],
+      linkPaste: ["paletteLinkPaste"],
+      linkRemove: ["paletteLinkRemove"],
+      insertTable: ["paletteTable"],
+      insertMermaid: ["paletteMermaid"],
+      undo: ["paletteUndo"],
+      insertRow: ["paletteRow"],
+      insertColumn: ["paletteColumn"],
+      rowDelete: ["paletteRowDelete"],
+      columnDelete: ["paletteColumnDelete"],
+      tableOptions: ["paletteTableOptions", "paletteAlignLeft", "paletteAlignCenter", "paletteAlignRight", "paletteAlignNone"],
+    };
+    const ALWAYS = ["paletteSave", "paletteSaveAs"];
+    const any = (id) => document.getElementById(id);
+    for (const [key, ids] of Object.entries(BUTTONS)) {
+      palette.setButtonStates({ [key]: true });
+      for (const [otherKey, otherIds] of Object.entries(BUTTONS)) {
+        for (const id of otherIds) expect(off(any(id)), `${key}: ${id}`).toBe(otherKey !== key);
+      }
+      for (const id of ALWAYS) expect(off(any(id)), `${key}: ${id}`).toBe(false);
+      for (const b of popover.querySelectorAll("button")) expect(off(b), `${key}: sample`).toBe(false);
+      expect(Object.keys(BUTTONS).flatMap((k) => BUTTONS[k]).length + ALWAYS.length).toBe(
+        root.querySelectorAll("button").length + formatMenu.querySelectorAll("button").length + tableMenu.querySelectorAll("button").length,
+      );
     }
+    palette.setButtonStates({});
+    for (const ids of Object.values(BUTTONS)) for (const id of ids) expect(off(any(id)), id).toBe(true);
+    for (const id of ALWAYS) expect(off(any(id)), id).toBe(false);
+    for (const b of [...root.querySelectorAll("button"), ...formatMenu.querySelectorAll("button")]) {
+      expect(b.disabled, b.id).toBe(false); // never the disabled attribute (INV-35)
+    }
+  });
+
+  it("AT-PAL-23 alignment marks one alignment button with aria-pressed (7.1)", () => {
+    palette.show();
+    const ALIGN = { left: "paletteAlignLeft", center: "paletteAlignCenter", right: "paletteAlignRight", none: "paletteAlignNone" };
+    for (const [value, id] of Object.entries(ALIGN)) {
+      palette.setButtonStates({ tableOptions: true, alignment: value });
+      for (const otherId of Object.values(ALIGN)) {
+        expect(tableMenu.querySelector(`#${otherId}`).getAttribute("aria-pressed"), `${value} ${otherId}`).toBe(String(otherId === id));
+      }
+    }
+    palette.setButtonStates({ tableOptions: true, alignment: null });
+    for (const id of Object.values(ALIGN)) expect(tableMenu.querySelector(`#${id}`).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("AT-PAL-23 a disabled button runs nothing even through its command path", () => {
+    palette.show();
+    palette.setButtonStates({});
+    for (const id of ["paletteBold", "paletteUndo", "paletteRowDelete"]) press(btn(id));
+    expect(host.runCommand).not.toHaveBeenCalled();
+    press(btn("paletteSave"));
+    expect(host.runCommand).toHaveBeenCalledWith("save");
   });
 
   it("AT-PAL-24 setStatusText changes the status line", () => {
@@ -535,14 +825,15 @@ describe("AT-PAL states, status, life cycle, security", () => {
     expect(root.querySelector("#paletteStatus").textContent).toBe("notes.md - saved");
   });
 
-  it("AT-PAL-25 move / up / resize listeners come with show and go with hide; 10 cycles add none", () => {
+  it("AT-PAL-25 move / up / cancel / down / key / resize listeners come with show and go with hide; 10 cycles add none", () => {
     const tracker = trackListeners();
     const onGlobal = (t) => t === document || t === window;
     const before = tracker.active(onGlobal);
     palette.show();
-    expect(tracker.active(onGlobal)).toBeGreaterThanOrEqual(before + 3);
+    expect(tracker.active(onGlobal)).toBeGreaterThanOrEqual(before + 5); // document: move, up, cancel, down, key
     palette.hide();
     expect(tracker.active(onGlobal)).toBe(before);
+    enableAll();
     for (let i = 0; i < 10; i++) {
       palette.show();
       press(btn("paletteMermaid"));
@@ -552,10 +843,12 @@ describe("AT-PAL states, status, life cycle, security", () => {
     tracker.restore();
   });
 
-  it("AT-PAL-26 no inline on* handler attributes in the palette or the popover", () => {
+  it("AT-PAL-26 no inline on* handler attributes in the palette or the popovers", () => {
     palette.show();
+    enableAll();
     press(btn("paletteMermaid"));
-    for (const el of [root, popover, ...root.querySelectorAll("*"), ...popover.querySelectorAll("*")]) {
+    const all = [root, popover, formatMenu, tableMenu];
+    for (const el of [...all, ...all.flatMap((c) => [...c.querySelectorAll("*")])]) {
       for (const attr of el.attributes) expect(attr.name.startsWith("on"), `${el.tagName} ${attr.name}`).toBe(false);
     }
   });
@@ -566,11 +859,10 @@ describe("AT-PAL states, status, life cycle, security", () => {
     document.body.insertBefore(fake, document.body.firstChild);
     const fakePalette = fake.firstElementChild;
     palette.show();
-    const grip = root.querySelector(".edit-palette-grip");
-    const c = centerOf(grip);
-    pointer(grip, "pointerdown", { x: c.x, y: c.y });
-    pointer(grip, "pointermove", { x: c.x - 100, y: c.y - 100 });
-    pointer(grip, "pointerup", { x: c.x - 100, y: c.y - 100 });
+    const c = centerOf(grip());
+    pointer(grip(), "pointerdown", { x: c.x, y: c.y });
+    pointer(grip(), "pointermove", { x: c.x - 100, y: c.y - 100 });
+    pointer(grip(), "pointerup", { x: c.x - 100, y: c.y - 100 });
     palette.hide();
     expect(fakePalette.getAttribute("style")).toBeNull();
     expect(fakePalette.hidden).toBe(false);
@@ -584,16 +876,19 @@ describe("AT-PAL states, status, life cycle, security", () => {
     }
   });
 
-  it("contains(node) recognizes the palette and the popover by reference only", () => {
+  it("contains(node) recognizes the palette and the popovers by reference only", () => {
     palette.show();
     expect(palette.contains(btn("paletteBold"))).toBe(true);
     expect(palette.contains(popBtn("Flowchart"))).toBe(true);
+    expect(palette.contains(formatMenu.querySelector("#paletteLinkPaste"))).toBe(true);
+    expect(palette.contains(tableMenu)).toBe(true);
     const fake = document.createElement("div");
     fake.id = "editPalette";
     fake.setAttribute("role", "toolbar");
     document.body.appendChild(fake);
     expect(palette.contains(fake)).toBe(false);
     expect(palette.contains(document.body)).toBe(false);
+    expect(palette.contains(null)).toBe(false);
     fake.remove();
   });
 

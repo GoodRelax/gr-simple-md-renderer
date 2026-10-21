@@ -28,3 +28,28 @@ export function row(states, cells) {
   for (let index = 0; index < states.length; index++) byState[states[index]] = cells[index] ?? null;
   return Object.freeze(byState);
 }
+
+/**
+ * Guarded alternatives of one cell, tried in order (spec 11-b: guards are
+ * evaluated top to bottom). The last one may have no guard ("else").
+ * @purity pure
+ * @param {...object} cells - made with cell()
+ * @returns {ReadonlyArray<object>}
+ */
+export function choice(...cells) {
+  return Object.freeze(cells);
+}
+
+/**
+ * The transition a table entry takes: the first alternative whose guard is
+ * true (an alternative without a guard always matches), or null.
+ * @purity pure
+ * @param {object|ReadonlyArray<object>|null} entry - a cell, a choice() or null
+ * @param {(guard: string) => boolean} isGuardTrue
+ * @returns {object|null}
+ */
+export function selectCell(entry, isGuardTrue) {
+  if (!entry) return null;
+  const alternatives = Array.isArray(entry) ? entry : [entry];
+  return alternatives.find((c) => !c.guard || isGuardTrue(c.guard)) ?? null;
+}

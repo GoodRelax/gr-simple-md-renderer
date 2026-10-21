@@ -16,6 +16,7 @@ import "katex/dist/katex.min.css";
 // Local Imports
 // ========================================
 import { CONFIG } from "./config.js";
+import { isApplePlatform } from "./utils.js";
 import ApplicationState from "./classes/ApplicationState.js";
 import ScrollMemento from "./classes/ScrollMemento.js";
 import MarkdownRenderer from "./classes/MarkdownRenderer.js";
@@ -94,7 +95,7 @@ const scrollEngine = new SmoothScrollEngine(CONFIG.scroll, elements.preview);
 // editing parts and is their host (BlockEditHost, EditPaletteHost).
 new UIController(orchestrator, state, elements, scrollEngine, {
   fileAccess: new MarkdownFileAccess(window),
-  createPalette: (host) => new EditPalette(host),
+  createPalette: (host) => new EditPalette(host, { isApple: isApplePlatform(navigator) }),
   createBlockEdit: (host) =>
     new BlockEditController(elements.preview, orchestrator, markdownRenderer, scrollManager, host),
 });

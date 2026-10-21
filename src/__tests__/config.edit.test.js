@@ -7,6 +7,7 @@ describe("CONFIG.edit (spec 5.2)", () => {
   it("AT-CFG-01 holds the agreed values", () => {
     const e = CONFIG.edit;
     expect(e.paletteMarginPx).toBe(16);
+    expect(e.paletteLongPressMs).toBe(500); // INV-68
     expect(e.doubleTapMaxIntervalMs).toBe(300);
     expect(e.doubleTapMaxDistancePx).toBe(24);
     expect(e.defaultFileName).toBe("untitled.md");

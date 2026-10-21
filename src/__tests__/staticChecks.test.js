@@ -207,6 +207,25 @@ describe("style.css for in-place editing", () => {
     }
   });
 
+  it("the palette is a 7-column grid with no separators; minimized and swatch rules exist (5.15.1, INV-68)", () => {
+    expect(css).not.toContain("edit-palette-sep");
+    expect(ruleBody(css, ".edit-palette-row")).toMatch(/grid-template-columns:\s*repeat\(7, 28px\)/);
+    expect(css).toMatch(/\.edit-palette\.edit-palette-minimized\.edit-palette-unsaved \.edit-palette-grip::after/);
+    // Minimized: everything but the grip is hidden (the other buttons, the second row, the status).
+    const hiding = ruleBody(css, ".edit-palette.edit-palette-minimized .edit-palette-row > :not(.edit-palette-grip)");
+    expect(hiding).toMatch(/display:\s*none/);
+    expect(ruleBody(css, ".edit-palette.edit-palette-minimized .edit-palette-row + .edit-palette-row")).toBe(hiding);
+    expect(ruleBody(css, ".edit-palette.edit-palette-minimized .edit-palette-status")).toBe(hiding);
+    expect(ruleBody(css, ".edit-palette-status")).toMatch(/max-width:\s*220px/);
+    expect(css).toMatch(/\.edit-palette-btn\[aria-disabled="true"\]/);
+    expect(css).not.toMatch(/edit-palette-btn:disabled|edit-palette-btn:focus-visible/);
+    for (const [color, light, dark] of [["red", "#B84F00", "#E0661A"], ["blue", "#0072B2", "#56B4E9"], ["green", "#007A58", "#009E73"]]) {
+      const sel = `.edit-palette-swatch-${color}:not([aria-disabled="true"])`;
+      expect(ruleBody(css, sel), sel).toContain(`color: ${light};`);
+      expect(ruleBody(css, `.dark ${sel}`), sel).toContain(`color: ${dark};`);
+    }
+  });
+
   it("no url() in the editing rules (CSP, no external fetch)", () => {
     const editing = css.split("\n").filter((line) => /edit-palette|md-block|plantuml-pending/.test(line)).join("\n");
     expect(editing).not.toMatch(/url\(/);

@@ -242,7 +242,7 @@ gr-simple-md-renderer/
 | SC-20 | タッチデバイスレスポンシブレイアウト                                                            |
 | SC-21 | プレレンダー状態のアフォーダンステキスト                                                        |
 | SC-22 | ブロック単位のその場編集: 編集モードの間、Markdown プレビュー上のブロックをクリック (タップ) すると原文の編集欄に切り替わる。外側のクリックで確定、Esc で取消。確定すると変わったブロックだけを再描画する。直前 1 回の確定は Undo できる |
-| SC-23 | 編集パレット: 上部バーの [Edit] ボタン (`editBtn`) または `e` キーで表示・非表示を切り替える。アイコンのみ。ドラッグで移動できる (位置は記憶しない)。表示中は編集モードになる |
+| SC-23 | 編集パレット: 上部バーの [Edit] ボタン (`editBtn`) または `e` キーで表示・非表示を切り替える。アイコンのみ。ドラッグで移動できる (位置は記憶しない)。グリップの長押しで最小化・復活 (INV-68)。キーボードでは操作しない (INV-53)。表示中は編集モードになる |
 | SC-24 | 明示保存: Save (元ファイルへ上書き。Chrome/Edge) と Save as (保存ダイアログ。非対応ブラウザはダウンロード) |
 
 #### スコープ外
@@ -284,7 +284,7 @@ gr-simple-md-renderer/
 | CON-10 | バンドルしたライブラリ (npm依存) のバージョン変更は機能検証を必須とする。                                                                                                                 |
 | CON-11 | バックエンドを追加してはならない（サーバー処理、APIエンドポイント、Node.jsサーバー一切不可）。                                                                                            |
 | CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。 |
-| CON-13 | 編集内容を自動保存してはならない。localStorage、sessionStorage、Cookie、IndexedDB、Origin Private File System、Cache Storage のいずれにも、編集内容・ファイル名・パレットの位置を書いてはならない。保存はユーザーの明示操作 (SC-24) によるローカルファイルへの書き込み、またはダウンロードに限る。`document.title` にファイル名を入れてはならない (ブラウザの履歴に残るため。INV-50) |
+| CON-13 | 編集内容を自動保存してはならない。localStorage、sessionStorage、Cookie、IndexedDB、Origin Private File System、Cache Storage のいずれにも、編集内容・ファイル名・パレットの位置・パレットの最小化の状態を書いてはならない。保存はユーザーの明示操作 (SC-24) によるローカルファイルへの書き込み、またはダウンロードに限る。`document.title` にファイル名を入れてはならない (ブラウザの履歴に残るため。INV-50) |
 | CON-14 | 保存処理はネットワーク通信を行ってはならない。File System Access API の書き込み、または `blob:` URL によるダウンロードのみを用いる |
 | CON-15 | 製品コード (`src/js/`) のすべての関数とメソッドは、JSDoc のコメント内に `@purity` タグをちょうど 1 つ持つこと。値は `pure` / `semi-pure-a` / `semi-pure-b` / `non-pure` の 4 値とする (レビュー規約 R7.1 / R7.6)。既存コードにも適用する。数え方と検査の方法は 5.16 に定める |
 
@@ -329,10 +329,10 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-29 | イベント駆動 | 編集モードの間 (パレットの表示中)、プレビュー上でブロック編集の開始ジェスチャ (5.14.6 の定義: 主ボタンの押下から解放までの移動が `CONFIG.pan.activationThresholdPx` 以下、解放時に選択範囲が空、対象がリンク・ボタン・入力要素・`summary`・`[role=button]`・`.external-image-placeholder`・`.plantuml-pending`・図のコピーボタン・編集パレット・ポップオーバー・ブロック編集欄の内側でない) が行われた場合、システムはそのブロックの編集欄を開くこと。対象のブロック ID は `pointerdown` の時点のポインタの下の要素から取り、`pointerup` ではその ID と移動量・選択範囲だけを判定すること (その間に配置が動いても、押したブロックを開く)。その ID が現在のモデルに無い場合 (描画の待ちの間に残った古い要素など) は開かないこと。編集モードでない間は、プレビューのクリックで編集欄を開かず、既存の操作 (リンク、選択、外部画像の同意、図のパン・ズーム解除・コピー) をそのまま動かすこと。ブロック ID は MarkdownRenderer が作った外枠 (`#preview` の直下の `.md-block`) だけから取り、ブロック編集欄と編集パレット (ポップオーバーを含む) の内側かどうかは要素の参照で判定すること (利用者の HTML に書かれた `class` や `data-block-id` は sanitize を通るので、開くブロックの ID の決定と、編集欄・パレットの内側かどうかの判定 (INV-30 の「外側」と INV-36) に影響させてはならない。上に列挙した除外対象の判定と、INV-14 の `role="toolbar"` のガードは、列挙した要素・class・role のままとする)。 |
 | INV-30 | イベント駆動 | ブロック編集中に「外側」(ブロック編集欄、編集パレット、パレットのポップオーバー、以外の要素) で、マウスでは `pointerdown` が、タッチとペンでは `pointerdown` から `pointerup` までの移動が `CONFIG.pan.activationThresholdPx` 以下の `pointerup` が起きた場合 (タッチでのスクロールの開始では確定しない)、システムは編集中のブロックを確定すること。ブロック編集中に `#editor` にフォーカスが入った場合 (キーボード操作を含む) も、その時点で確定すること (5.7 (5))。その対象が別のブロックで、INV-29 のジェスチャが成立した場合は、確定の後で、クリックされたブロックをブロック ID でモデル上の位置に解決し直してから、その編集欄を開くこと (確定で消えたブロックなら開かない)。 |
 | INV-31 | イベント駆動 | 初期状態 (`_viewState === 'initial'`) で `#editor.value.trim() === ""` のときに、プレビューがダブルクリックまたはダブルタップされた場合、または [Edit] が押された場合、システムは空の文書を開始し (`startEmptyDocument`)、編集パレットを表示し、空の最初のブロックの編集欄を開いてフォーカスを移し、`_viewState` を `"markdown"` にすること。1 回目のクリックで FS-16 により `#editor` へ移ったフォーカスは、ブロック編集欄へ移し直すこと。初期状態で `#editor` が空でないときに [Edit] または `e` が押された場合は、`#editor` の内容をシステムテーマで描画してから編集パレットを表示すること (ダブルクリック / ダブルタップは、`#editor` が空のときだけ扱う)。 |
-| INV-32 | イベント駆動 | 編集パレットを表示する場合、システムは毎回ビューポートの右下 (`CONFIG.edit.paletteMarginPx` の余白) に表示すること。表示中に状態表示の文字が変わってパレットの大きさが変わった場合は、パレットの右下の角の位置を保つこと (空の文書を始めた直後に状態表示が入る場合を含む)。移動後の位置を記憶してはならない (CON-13)。 |
+| INV-32 | イベント駆動 | 編集パレットを表示する場合、システムは毎回ビューポートの右下 (`CONFIG.edit.paletteMarginPx` の余白) に表示すること。表示中に状態表示の文字が変わってパレットの大きさが変わった場合は、パレットの右下の角の位置を保つこと (空の文書を始めた直後に状態表示が入る場合を含む)。移動後の位置を記憶してはならない (CON-13)。パレットを表示するたびに、最小化していない状態で表示すること (11-f)。 |
 | INV-33 | イベント駆動 | Save または Save as が押された場合、システムは、押下のハンドラの中で同期的に、(0) INV-56 の確認が要る場合はそれを表示し (Cancel なら以降を何も行わない)、(1) 書き込み権限の要求 (`requestPermission`) または保存ダイアログ (`showSaveFilePicker`) を開始し、(2) 開いているブロック編集欄を確定してモデルを更新し (INV-47 によりモデルの更新は同期)、続けて `#editor` に未描画の変更があれば、その内容 (改行の正規化だけを行った文字列。`splitMarkdownWrapper` はかけない。5.14.1) を同期的にモデルに取り込み (Markdown 表示中の `#editor` からの描画と同じ扱い。セッションは変えず、全体描画はキューに入れる)、その後で (3) 権限またはダイアログの結果を待って書き込むこと。書き込み API が無い場合のダウンロードは、(2) に続けて同じハンドラの中で同期的に始めること。描画のキューの完了は待たない。 |
-| INV-34 | イベント駆動 | 編集パレット (ポップオーバーを含む) のボタンが押された場合、システムは押した時点では機能を実行しないこと。押されてから離されるまでの間、ポインタが一度もそのボタンの外に出なかったときに限り、離された時点で機能を実行すること。ブラウザ標準の `click` イベントで機能を実行してはならない。キーボード操作 (フォーカスして Enter / Space) では即時に実行してよい。無効なボタンの押下では機能を実行せず、移動もしないこと。 |
-| INV-35 | イベント駆動 | 編集パレット (ポップオーバーを含む) の有効なボタンが押されたまま、ポインタがそのボタンの外に出た場合、システムはパレットの移動に切り替え、離されるまでパレットをポインタに追従させ、離された時点で機能を実行しないこと (元のボタンの上に戻ってから離した場合も実行しない)。グリップ、またはボタン以外の部分 (隙間・枠) が押された場合は、最初から移動として扱うこと。 |
+| INV-34 | イベント駆動 | 編集パレット (ポップオーバーを含む) のボタンが押された場合、システムは押した時点では機能を実行しないこと。押されてから離されるまでの間、ポインタが一度もそのボタンの外に出なかったときに限り、離された時点で機能を実行すること。ブラウザ標準の `click` イベントで機能を実行してはならない。パレットのボタンはキーボードのフォーカスを受けない (INV-53)。パレット本体の無効なボタンの押下は、機能を実行せず、パレットの移動として扱うこと (INV-35)。ポップオーバーの無効なボタンの押下では、何もしないこと。 |
+| INV-35 | イベント駆動 | 編集パレット本体の有効なボタンが押されたまま、ポインタがそのボタンの外に出た場合、システムはパレットの移動に切り替え、離されるまでパレットをポインタに追従させ、離された時点で機能を実行しないこと (元のボタンの上に戻ってから離した場合も実行しない)。ポップオーバーの有効なボタンの場合は、移動に切り替えず、離された時点で機能を実行しないこと (11-d)。グリップ (長押しは INV-68)、パレット本体の無効なボタン、またはボタン以外の部分 (隙間・枠) が押された場合は、最初から移動として扱うこと。ポップオーバーの無効なボタンと隙間は移動にしない。 |
 | INV-36 | 常時 | 編集パレットとポップオーバーの操作 (押す・離す・移動) は、ブロック編集の「外側」として扱わないこと。編集欄のフォーカスと選択範囲を保ったまま機能を適用すること。 |
 | INV-37 | 常時 | 編集パレットとポップオーバーはビューポートの外に出さず、移動をビューポートの端で止めること。ビューポートの大きさが変わった場合も、ビューポート内に収まるよう位置を補正すること。ポップオーバーは、パレットの左右のうちビューポートに収まる側に開くこと。 |
 | INV-38 | イベント駆動 | 保存する場合、システムは、ファイルから読み込んだ文書 (`.md` のドロップと Reload) について、読み込み時に `splitMarkdownWrapper` が除去した `prefix` と `suffix` を、本文の前後に元どおりに付け直して書き込むこと (5.13)。初期状態からのペーストと初期状態の `#editor` からの描画で除去したラッパーは戻さない (保存するのは本文だけ。ペーストした AI 出力をラッパー無しで保存できる。Markdown 表示中の `#editor` からの描画では除去しない。5.14.1)。Markdown 表示中の `#editor` からの描画では、セッションのラッパー (ファイルから読み込んだもの) を変えない。 |
@@ -350,10 +350,11 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-50 | 状態駆動 | 未保存の間、システムは `document.title` の先頭に `* ` を付け、未保存でなくなったら外すこと。`document.title` にファイル名を入れてはならない (CON-13)。パレット下端の状態表示 (`paletteStatus`) も同じ判定で更新すること。 |
 | INV-51 | 常時 | 1 MB の文書で、ブロックの確定から DOM の差し替えの完了までを 300 ms 以内とすること (Mermaid と PlantUML の描画を除く。最新の Chrome、一般的な PC で計測する)。 |
 | INV-52 | イベント駆動 | パレットの各機能は次のとおり振る舞うこと (編集中でないときの挿入で、`#editor` に未描画の変更があるときは INV-45 に従い、挿入を行わない)。Bold / Italic: 選択範囲を `**` / `*` で囲む (既に囲まれていれば外す。選択が空なら無効)。Insert table / Mermaid の雛形: ブロック編集中ならカーソル位置に、そうでなければ最後に開いたブロックの後ろに、それも無ければ文書の末尾に挿入し、前後に空行が無ければ補うこと。Insert row / Insert column: 表のブロックの編集中だけ有効とし、カーソルのある行の下・列の右に空のセルを挿入すること (列はバックスラッシュの付かない縦棒だけで区切る)。ブロック編集中の挿入は編集欄の文字列の変更とし (確定しない。編集欄の Ctrl+Z の対象)、編集中でないときの挿入は 1 回のモデルの変更として扱う (INV-48 の Undo の対象)。 |
-| INV-53 | イベント駆動 | 編集パレットの要素は、プレビューの外 (`body` の直下) に置き、移動しないこと。ブロック編集欄で Tab (Shift なし、IME の変換中を除く) が押された場合、システムはパレットの現在のボタン (ロービングタブインデックス) へフォーカスを移すこと。パレット (`role="toolbar"`) の内側では、左右の矢印キーでボタン間を移動し、Enter / Space で実行し、Shift+Tab または Esc で、編集欄が開いていれば編集欄へフォーカスを戻し、開いていなければ (Esc の場合) パレットを閉じること。キーボードで B / I を実行した場合は、編集欄が保持している選択範囲に適用し、フォーカスを編集欄へ戻すこと。印刷ではパレット、ポップオーバー、ブロック編集欄の枠、不可視ブロックの帯を表示しないこと。 |
+| INV-53 | イベント駆動 | 編集パレットの要素は、プレビューの外 (`body` の直下) に置き、移動しないこと。パレットとポップオーバーのボタンは `tabindex="-1"` とし、キーボードのフォーカスを受けず、キーボードで操作しないこと (Tab での移動、矢印キー、Enter / Space を扱わない)。ブロック編集欄の Tab は横取りしない (ブラウザの既定)。ポップオーバーを開いている間の Esc は、IME の変換中 (`isComposing` または `keyCode === 229`) でなければ、ポップオーバーだけを閉じ (11-f)、その事象をブロック編集欄・document に渡さないこと (document の capture で処理して `preventDefault()` と `stopPropagation()`)。IME の変換中の Esc は横取りしない (変換の取消になる)。印刷ではパレット、ポップオーバー、ブロック編集欄の枠、不可視ブロックの帯を表示しないこと。 |
 | INV-54 | イベント駆動 | 保存処理中 (`saveOperationState` が `writingFile`) に、文書を作り直す出来事 (5.14.11 で新しい文書 ID になるもの、または文書が無くなるもの: `.md` と非 `.md` のドロップ、Reload、初期状態からのペーストと `#editor` からの描画、空の文書の開始、Clear) が要求された場合 (テーマの切り替えと、Markdown 表示中の `#editor` からの描画は対象外)、システムはそれを実行せず、保存中である旨をトーストで表示すること。保存の結果 (`SaveOutcome`) は、保存を始めたときの文書 ID が現在の文書 ID と一致する場合に限り反映すること。 |
 | INV-55 | イベント駆動 | 文書を作り直す出来事 (`.md` のドロップ、Reload、初期状態からのペーストまたは `#editor` からの描画、空の文書の開始、Clear、非 `.md` のドロップ) では、システムは 5.14.11 の表のとおりに `DocumentSession` と `DocumentLocation` を作り直す (または無しにする) こと。保存先は `DocumentLocation` だけを正とし、ほかの場所に fileHandle を持たないこと。 |
 | INV-56 | イベント駆動 | `#editor` の内容をモデルに取り込む操作 (Markdown 表示中の [Render Light] / [Render Dark] / `l` / `d`、INV-45 の自動の全体描画 (ブロックの開始ジェスチャ、パレットの Undo、編集中でないときの挿入)、Save / Save as での取り込み (INV-33)) の前に、`#editor` が空 (空白文字だけを含む場合を含む) で、現在の本文が空でない (空白文字以外を含む) 場合、システムは、何かを変える前に確認ダイアログ (`messages.edit.emptyEditorConfirm`) を表示すること。OK ならその操作を従来どおり行い (本文は空になる)、Cancel なら `#editor` を現在の本文に戻し (値の代入。`input` イベントは起きない)、`#editor` の未描画の変更の印を下ろし、未保存の印を再計算すること。それ以外は何も変えないこと (モデル、開いているブロック編集欄、テーマ、保存の状態を変えず、トーストも出さず、権限の要求も保存ダイアログも始めない)。Cancel の後は `#editor` に未描画の変更が無いので、同じ操作をもう一度行うと確認なしに進む。`#editor` が空でも本文も空なら、確認を表示しないこと。Save / Save as では、`#editor` を取り込まない場合 (未描画の変更が無い場合) は確認を表示しないこと。 |
+| INV-68 | イベント駆動 | 編集パレットのグリップが `CONFIG.edit.paletteLongPressMs` 以上押され、その間の移動が `CONFIG.pan.activationThresholdPx` 以下だった場合、システムは 11-f の `minimizeToggled` を起こすこと (時間が来た時点で切り替え、離すまで移動しない。11-d)。それより前に閾値を超えて動いた場合は移動とすること。最小化している間はグリップだけを表示し、未保存なら印 (点) を付けること。グリップの画面上の位置は変えないこと (ビューポートの外に出る場合は INV-37 で補正する)。最小化しても編集モード、開いている編集欄、ショートカットはそのままとすること。最小化の状態は記憶しないこと (CON-13)。タッチの長押しで文脈メニューや選択が出ないようにすること (`contextmenu` を止め、`-webkit-touch-callout: none`)。 |
 
 ---
 
@@ -751,7 +752,6 @@ classDiagram
         +getSelectionRange() TextEdit
         +applyTextEdit(edit) void
         +dispatch(event, target) Promise
-        +focusEditor() boolean
         +isEditingTable() boolean
         +getLastOpenedBlockId() number
         +isDoubleTap(first, second, limits)$ boolean
@@ -760,7 +760,6 @@ classDiagram
         +showPalette() void
         +hidePalette() void
         +isPaletteNode(node) boolean
-        +focusPalette() void
         +isEditorChangedSinceRender() boolean
         +renderFromEditor() void
         +onEditorInput() void
@@ -768,19 +767,20 @@ classDiagram
     }
     class EditPaletteHost {
         +runCommand(command, arg) void
-        +focusEditor() boolean
-        +requestHide() void
     }
     class EditPalette {
         -paletteGestureState : string
+        -paletteDisplayState : string
         +show() void
         +hide() void
         +isShown() boolean
-        +setButtonStates(isInBlock, hasSelection, isInTable, canUndo) void
+        +isMinimized() boolean
+        +setButtonStates(states) void
         +setStatusText(text) void
-        +focus() void
+        +setUnsaved(isUnsaved) void
         +contains(node) boolean
         +dispatch(event, input) void
+        +dispatchDisplay(event, input) void
     }
 
     namespace Legend {
@@ -913,9 +913,9 @@ classDiagram
 | `DiagramRenderer` / `MermaidRenderer` / `PlantUMLRenderer` | `render(theme, root)` の `root` は `Element` または `Element[]` (省略時は preview 全体)。要素の収集は `utils.queryAllIn(roots, selector)`。Mermaid は変換したコンテナだけを `mermaid.run` に渡す |
 | `RendererOrchestrator` | `+getModel() MarkdownBlockModel\|null` / `+resetExternalImageConsent() void` (`.md` のドロップで UIController が呼ぶ。INV-43) / `+holdBlock(blockId)` / `+releaseBlock()` (編集中のブロックの外枠の保持。INV-47)。`clear()` は `clearDocument()` を呼ぶ。`renderCodeView()` も最初に `clearDocument()` を呼ぶ (`state.markdownText` は `""` になる) |
 | `BlockEditController` | コンストラクタ `(preview, orchestrator, blockLocator, scrollMemento, host)`。`blockLocator` は MarkdownRenderer、`host` は `BlockEditHost`。11-c の遷移表を `blockEditStateMachine` (出来事 → 状態 → `{to, actions, guard}`) として持ち、出来事の入口は `dispatch(event, target)` 1 つとする。`emptyDocumentStarted` だけは、全体描画の後で編集欄を開くまでの Promise を返す (それまでの状態は editModeIdle)。`isEditing()` は編集欄が開いているかどうかを返す。`isDoubleTap(first, second, limits)` は `CONFIG.edit` の値で判定する (INV-31) |
-| `BlockEditHost` (UIController が実装するポート) | `isPaletteNode(node)` はパレットとポップオーバーを参照で判定する。`renderFromEditor()` は INV-45 の全体描画とトーストを行う。`onEditorInput()` は編集欄の `input` で、`onEditStateChanged()` は編集欄の開閉で呼ばれる (未保存の印とパレットのボタンを更新する) |
-| `EditPalette` | コンストラクタ `(host)`。11-d の遷移表を `paletteGestureStateMachine` として持ち、入口は `dispatch(event, input)`。`focus()` はロービングの現在のボタンへフォーカスを移す (`BlockEditHost.focusPalette` の実体)。`contains(node)` はパレットとポップオーバーを参照で判定する (`isPaletteNode` の実体)。表示中は `body` に class `edit-mode` を付ける (帯と空のブロックを編集モードの間だけ見せる CSS のため) |
-| `EditPaletteHost` (UIController が実装するポート) | `runCommand(command, arg)`。`command` は `bold` / `italic` / `undo` / `save` / `saveAs` / `insertTable` / `insertRow` / `insertColumn` / `insertMermaid`。`arg` は `insertMermaid` のときの `CONFIG.edit.mermaidSamples` のキー。`focusEditor()` は編集欄が無ければ偽を返す。`requestHide()` は編集欄が無いときのパレット上の Esc (5.15.6) |
+| `BlockEditHost` (UIController が実装するポート) | `isPaletteNode(node)` はパレットと 3 つのポップオーバーを参照で判定する。`renderFromEditor()` は INV-45 の全体描画とトーストを行う。`onEditorInput()` は編集欄の `input` で、`onEditStateChanged()` は編集欄の開閉で呼ばれる (未保存の印とパレットのボタンを更新する) |
+| `EditPalette` | コンストラクタ `(host, {isApple})` (`isApple` は tooltip を `Cmd` で書くか。INV-14 の判定式で main.js が `utils.isApplePlatform(navigator)` から決める)。7 列 × 2 段、ポップオーバー 3 つ (`paletteMermaidMenu` / `paletteFormatMenu` / `paletteTableMenu`)。11-d の遷移表を `paletteGestureStateMachine`、11-f の遷移表を `paletteDisplayStateMachine` として持ち、入口は `dispatch(event, input)` (11-d) と `dispatchDisplay(event, input)` (11-f)。表示・最小化・ポップオーバーは 11-f の状態 (`paletteDisplayState`) だけで決める。`setButtonStates(states)` は 5.15.5 の表の値をそのまま受け取る (キーが無ければ無効。Save / Save as と Mermaid の雛形は常に有効。`alignment` は配置のボタンの `aria-pressed`)。`setUnsaved(isUnsaved)` は最小化中の未保存の点。`isMinimized()`。`contains(node)` はパレットとポップオーバーを参照で判定する (`isPaletteNode` の実体)。無効なボタンは `disabled` 属性ではなく `aria-disabled="true"` で示す (パレット本体の無効なボタンの押下を移動にするため、ポインタの事象を受ける必要がある。INV-35)。キーボードの処理は持たない (INV-53)。表示中は `body` に class `edit-mode` を付ける (帯と空のブロックを編集モードの間だけ見せる CSS のため) |
+| `EditPaletteHost` (UIController が実装するポート) | `runCommand(command, arg)` だけ。`command` は `bold` / `italic` / `undo` / `save` / `saveAs` / `insertTable` / `insertRow` / `rowDelete` / `insertColumn` / `columnDelete` / `insertMermaid` / `textColor` / `linkPaste` / `linkRemove` / `alignColumn`。`arg` は `insertMermaid` のときの `CONFIG.edit.mermaidSamples` のキー、`textColor` のときの `red` / `blue` / `green` / `none`、`alignColumn` のときの `left` / `center` / `right` / `none` |
 | `UIController` | コンストラクタの第 5 引数 `services` = `{fileAccess, createPalette(host), createBlockEdit(host)}` (main.js が組み立てる)。SaveDocument / SaveDocumentAs は `fileAccess` から UIController が作る。11-e の遷移表を `saveOperationStateMachine` として持ち、`SaveOutcome.status` を出来事に対応させる (`saved` → fileWritten、`downloadStarted` → downloadStarted、`failed` → writeFailed、`canceled` → saveCanceled)。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8) |
 | `SaveDocument` / `SaveDocumentAs` | コンストラクタ `(fileAccess, messages, defaultFileName)`。SaveDocument は、保存先 (handle) か書き込み API が無いときは、内部の SaveDocumentAs に任せる。`outcome(request, status, message)` はセッションと保存先を変えない結果を作る。`failureMessage(error)` は `SecurityError` → `saveActivationLost`、`NotFoundError` → `saveNotFound`、それ以外 → `saveFailed`。`SaveOutcome.status` は `saved` / `downloadStarted` / `canceled` / `failed` の 4 つ |
 | `MarkdownFileAccess` | コンストラクタ `(win = window)`。書き込み API の有無 (`canWriteInPlace`) は `win.showSaveFilePicker` の有無で判定する |
@@ -1028,7 +1028,7 @@ stateDiagram-v2
 | fullRenderRequested (`#editor` からの全体描画: [Render Light] / [Render Dark] / `l` / `d`。テーマの切り替えを含む) | → browsingPreview / enqueueFullRender | → editModeIdle / enqueueFullRender | → editModeIdle / commitBlock, enqueueFullRender (INV-47、5.7 (3)) |
 | editorFocused (`#editor` の `focusin`。キーボードによるフォーカスの移動を含む) | — | — | → editModeIdle / commitBlock (5.7 (5)。マウスでは先に pointerPressedOutside で確定しているので、この交点に来るのはキーボードの場合だけ) |
 
-注: `documentReplaced` / `documentCleared` は、INV-21 の確認で OK が選ばれた後にだけ起きる。`fullRenderRequested` は未保存の確認を出さない (INV-45)。`#editor` が空で本文が空でない場合は、INV-56 の確認で OK が選ばれた後にだけ `fullRenderRequested` が起きる (Cancel なら出来事は起きない)。`renderFromEditor` も、INV-56 の確認で Cancel なら `#editor` を本文に戻すだけで、全体描画もトーストも行わない (editModeIdle のまま)。編集欄を開いたまま、Shift+Tab などでフォーカスを編集欄の外 (本体) へ移した場合も、キーは document に届く。そのときの `l` / `d` / [Render] (キーボードでの押下を含む) は `fullRenderRequested`、`e` は `paletteHidden`、`r` / `c` / ドロップは INV-21 の確認を経て `documentReplaced` / `documentCleared` / `viewSwitchedToCode` になる (裁定 T1)。本体にフォーカスがある間の Esc は、5.11 の「ブロック編集中」の列のとおり `escapePressed` (編集の取消) になる。`#editor` にフォーカスが入ると `editorFocused` で確定する (裁定 T19)。`emptyDocumentStarted` は INV-31。`blockTapped` と `blockTappedWithUnrenderedEditor` は、開始ジェスチャ (INV-29) の時点で `_editorChangedSinceRender` が偽か真かで分かれる。`pointerPressedOutside` は、マウスでは `pointerdown`、タッチとペンでは移動の少ない `pointerup` で起きる (INV-30)。Undo は UIController が RendererOrchestrator に直接頼むので、この状態機械を動かさない (ブロック編集中は Undo ボタンが無効)。`#editor` に未描画の変更があるときの Undo と挿入は、INV-45 により `fullRenderRequested` と同じ全体描画 (editModeIdle の自己遷移) になる。`commitBlock` は同期でモデルを更新する (INV-47)。
+注: `documentReplaced` / `documentCleared` は、INV-21 の確認で OK が選ばれた後にだけ起きる。`fullRenderRequested` は未保存の確認を出さない (INV-45)。`#editor` が空で本文が空でない場合は、INV-56 の確認で OK が選ばれた後にだけ `fullRenderRequested` が起きる (Cancel なら出来事は起きない)。`renderFromEditor` も、INV-56 の確認で Cancel なら `#editor` を本文に戻すだけで、全体描画もトーストも行わない (editModeIdle のまま)。編集欄を開いたまま、Tab または Shift+Tab などでフォーカスを編集欄の外 (本体) へ移した場合も (Tab はパレットへ移らない。INV-53)、キーは document に届く。そのときの `l` / `d` / [Render] (キーボードでの押下を含む) は `fullRenderRequested`、`e` は `paletteHidden`、`r` / `c` / ドロップは INV-21 の確認を経て `documentReplaced` / `documentCleared` / `viewSwitchedToCode` になる (裁定 T1)。本体にフォーカスがある間の Esc は、5.11 の「ブロック編集中」の列のとおり `escapePressed` (編集の取消) になる。`#editor` にフォーカスが入ると `editorFocused` で確定する (裁定 T19)。`emptyDocumentStarted` は INV-31。`blockTapped` と `blockTappedWithUnrenderedEditor` は、開始ジェスチャ (INV-29) の時点で `_editorChangedSinceRender` が偽か真かで分かれる。`pointerPressedOutside` は、マウスでは `pointerdown`、タッチとペンでは移動の少ない `pointerup` で起きる (INV-30)。Undo は UIController が RendererOrchestrator に直接頼むので、この状態機械を動かさない (ブロック編集中は Undo ボタンが無効)。`#editor` に未描画の変更があるときの Undo と挿入は、INV-45 により `fullRenderRequested` と同じ全体描画 (editModeIdle の自己遷移) になる。`commitBlock` は同期でモデルを更新する (INV-47)。ポップオーバーを開いている間の Esc は 11-f で処理し、この表の `escapePressed` は起きない (INV-53)。
 
 通知の契約: 編集欄を閉じる処理 (`commitBlock`、`restoreOriginalRaw`、`discardBlockEditor`) は、`dispatch` の処理の途中で `BlockEditHost.onEditStateChanged()` と、確定でモデルが変わった場合の `onModelChanged` を呼ぶ。これらの通知は、`blockEditState` を表の次の状態に更新する **前** に出る。通知の受け手は `blockEditState` を読まず、編集欄が開いているかどうか (`isEditing()`。編集欄を閉じた時点で偽になる) だけを読むこと。
 
@@ -1036,7 +1036,7 @@ stateDiagram-v2
 
 **11-d パレットのジェスチャの状態機械**
 
-定義の名前は `paletteGestureStateMachine`、今の状態を持つ変数は `paletteGestureState` (`EditPalette` が持つ)。
+定義の名前は `paletteGestureStateMachine`、今の状態を持つ変数は `paletteGestureState` (`EditPalette` が持つ)。状態: `idle` / `pressingButton` / `pressingGrip` / `draggingPalette` / `longPressHandled`。
 
 **Palette gesture state machine:**
 
@@ -1044,34 +1044,49 @@ stateDiagram-v2
 stateDiagram-v2
     [*] --> idle : paletteShown
     idle --> pressingButton : enabledButtonPressed
-    idle --> draggingPalette : gripOrGapPressed
+    idle --> draggingPalette : disabledButtonPressed
+    idle --> pressingGrip : gripPressed
+    idle --> draggingPalette : gapPressed
     pressingButton --> idle : pointerReleasedInsideButton
-    pressingButton --> draggingPalette : pointerLeftPressedButton
-    pressingButton --> idle : pointerCanceled
-    draggingPalette --> draggingPalette : pointerMoved
+    pressingButton --> draggingPalette : pointerLeftPressedButton if isPaletteButton
+    pressingButton --> idle : pointerLeftPressedButton else
     pressingButton --> idle : pointerReleased
+    pressingButton --> idle : pointerCanceled
+    pressingGrip --> draggingPalette : pointerMoved if hasMovedBeyondThreshold
+    pressingGrip --> longPressHandled : longPressElapsed
+    pressingGrip --> idle : pointerReleased
+    pressingGrip --> idle : pointerCanceled
+    draggingPalette --> draggingPalette : pointerMoved
     draggingPalette --> idle : pointerReleased
     draggingPalette --> idle : pointerCanceled
+    longPressHandled --> idle : pointerReleased
+    longPressHandled --> idle : pointerCanceled
     idle --> [*] : paletteHidden
     pressingButton --> [*] : paletteHidden
+    pressingGrip --> [*] : paletteHidden
     draggingPalette --> [*] : paletteHidden
+    longPressHandled --> [*] : paletteHidden
 ```
 
-| 出来事 \ 今の状態 | idle | pressingButton | draggingPalette |
-| --- | --- | --- | --- |
-| enabledButtonPressed | → pressingButton / capturePointer | — | — |
-| disabledButtonPressed | — (何もしない。INV-34) | — | — |
-| gripOrGapPressed | → draggingPalette / capturePointer, rememberOffset | — | — |
-| pointerMoved | — | — (押したボタンの内側での移動) | → draggingPalette / movePaletteClamped |
-| pointerLeftPressedButton | — | → draggingPalette / rememberOffset | — |
-| pointerReleasedInsideButton | — | → idle / runButtonCommand | — |
-| pointerReleased (押したボタンの矩形の外で離した) | — | → idle (機能は実行しない。移動の事象を経ずに外で離した場合。INV-34) | → idle (機能は実行しない) |
-| pointerCanceled | — | → idle | → idle |
-| paletteHidden | → (終了) / releaseListeners | → (終了) / releasePointer, releaseListeners | → (終了) / releasePointer, releaseListeners |
+| 出来事 \ 今の状態 | idle | pressingButton | pressingGrip | draggingPalette | longPressHandled |
+| --- | --- | --- | --- | --- | --- |
+| enabledButtonPressed | → pressingButton / capturePointer | — | — | — | — |
+| disabledButtonPressed (パレット本体) | → draggingPalette / capturePointer, rememberOffset | — | — | — | — |
+| disabledPopoverButtonPressed | — (何もしない。INV-34) | — | — | — | — |
+| gripPressed | → pressingGrip / capturePointer, rememberOffset, startLongPressTimer | — | — | — | — |
+| gapPressed (パレット本体の隙間・枠) | → draggingPalette / capturePointer, rememberOffset | — | — | — | — |
+| popoverGapPressed | — | — | — | — | — |
+| pointerMoved | — | — (押したボタンの内側) | [hasMovedBeyondThreshold] → draggingPalette / cancelLongPressTimer, movePaletteClamped | → draggingPalette / movePaletteClamped | — |
+| longPressElapsed | — | — | → longPressHandled / requestMinimizeToggle (11-f の minimizeToggled) | — | — |
+| pointerLeftPressedButton | — | [isPaletteButton] → draggingPalette / rememberOffset・[else] → idle / releasePointer (ポップオーバーのボタンからずれたら機能を実行せず、ポインタの capture を解く) | — | — | — |
+| pointerReleasedInsideButton | — | → idle / runButtonCommand | — | — | — |
+| pointerReleased (押したボタンの矩形の外で離した、など) | — | → idle (機能は実行しない。INV-34) | → idle / cancelLongPressTimer | → idle | → idle |
+| pointerCanceled | — | → idle | → idle / cancelLongPressTimer | → idle | → idle |
+| paletteHidden | → (終了) / releaseListeners | → (終了) / releasePointer, releaseListeners | → (終了) / cancelLongPressTimer, releasePointer, releaseListeners | → (終了) / releasePointer, releaseListeners | → (終了) / releasePointer, releaseListeners |
 
-`pointerLeftPressedButton` は、`pointermove` の座標が押したボタンの矩形の外に出たときに起きる (pointer capture 中は `pointerleave` に頼らない)。機能を実行するのは `pointerReleasedInsideButton` の遷移だけである (INV-34)。
+ガードは上から順に評価する (`・` で区切った順)。`hasMovedBeyondThreshold` は、押した位置からの移動が `CONFIG.pan.activationThresholdPx` を超えたこと。`isPaletteButton` は、押したボタンがパレット本体のボタン (ポップオーバーのボタンでない) であること。`pointerLeftPressedButton` は、`pointermove` の座標が押したボタンの矩形の外に出たときに起きる (pointer capture 中は `pointerleave` に頼らない)。機能を実行するのは `pointerReleasedInsideButton` の遷移だけである (INV-34)。`longPressElapsed` は `startLongPressTimer` の時間 (`CONFIG.edit.paletteLongPressMs`) が来たときに起き、11-f の `minimizeToggled` を起こす (2 つの状態機械の間は出来事で結ぶ)。長押しのタイマーは、移動の開始・`pointercancel`・離す・`hide()` で止める。
 
-実装では、この表を `paletteGestureStateMachine` というデータとして持つ。paletteHidden の行き先「(終了)」は、定義では `[*]` とし、`hide()` の後は次の `show()` に備えて idle に戻る。ポップオーバーのボタンも同じ表で動き、押したボタンの外へずらすと、パレットを移動する (開いているポップオーバーはパレットに追従する)。
+実装では、この表を `paletteGestureStateMachine` というデータとして持つ。paletteHidden の行き先「(終了)」は、定義では `[*]` とし、`hide()` の後は次の `show()` に備えて idle に戻る。ポップオーバーのボタンも同じ表で動くが、押したボタンの外へずらしても、パレットは移動しない (INV-35。`pointerLeftPressedButton` の [else])。`releaseListeners` は、`show()` で登録した document と window のリスナー (11-f の分を含む) をすべて外す。
 
 **11-e 保存処理の状態機械**
 
@@ -1104,6 +1119,75 @@ stateDiagram-v2
 | replaceRequested (5.14.11 で文書を作り直す出来事。テーマの切り替えは含まない) | — (この状態機械は関与しない。INV-21 / INV-55 で処理する) | → writingFile / rejectReplace, showSavingToast (INV-54) |
 
 `saveRequested` / `saveAsRequested` は、`#editor` を取り込む場合 (`applyEditorText` が要る場合) に INV-56 の確認が要るなら、OK が選ばれた後にだけ起きる (Cancel なら `#editor` を本文に戻すだけで idle のまま、権限の要求も保存ダイアログも始めない。確認は同期なので、(1) の開始は最初の `await` より前のままである。INV-33)。writingFile の間の押下は、確認を出さずに無視する。`applyOutcomeIfSameDocument` は、`SaveOutcome.documentId` が現在の `DocumentSession.documentId` と一致するときだけ、セッションと保存先を置き換え、未保存の印を再計算する (INV-54)。保存のトースト (`messages.edit.saved`) は、別の文書の結果でも出す。ファイルは実際に書かれたので、それを知らせない方が利用者を惑わせるためである。実装では、この表を `saveOperationStateMachine` というデータとして持つ。
+
+**11-f パレットの表示とポップオーバーの状態機械**
+
+定義の名前は `paletteDisplayStateMachine`、今の状態を持つ変数は `paletteDisplayState` (`EditPalette` が持つ)。表示の状態とポップオーバーを 1 つの列挙にする (最小化中と非表示ではポップオーバーは開かない)。状態: `hidden` / `expanded` (ポップオーバーなし) / `mermaidMenuOpen` / `formatMenuOpen` / `tableMenuOpen` / `minimized`。
+
+**Palette display state machine:**
+
+```mermaid
+stateDiagram-v2
+    [*] --> hidden : appStarted
+    hidden --> expanded : paletteShown
+    expanded --> hidden : paletteHidden
+    mermaidMenuOpen --> hidden : paletteHidden
+    formatMenuOpen --> hidden : paletteHidden
+    tableMenuOpen --> hidden : paletteHidden
+    minimized --> hidden : paletteHidden
+    expanded --> minimized : minimizeToggled
+    mermaidMenuOpen --> minimized : minimizeToggled
+    formatMenuOpen --> minimized : minimizeToggled
+    tableMenuOpen --> minimized : minimizeToggled
+    minimized --> expanded : minimizeToggled
+    expanded --> mermaidMenuOpen : mermaidButtonRun
+    mermaidMenuOpen --> expanded : mermaidButtonRun
+    formatMenuOpen --> mermaidMenuOpen : mermaidButtonRun
+    tableMenuOpen --> mermaidMenuOpen : mermaidButtonRun
+    expanded --> formatMenuOpen : formatButtonRun
+    mermaidMenuOpen --> formatMenuOpen : formatButtonRun
+    formatMenuOpen --> expanded : formatButtonRun
+    tableMenuOpen --> formatMenuOpen : formatButtonRun
+    expanded --> tableMenuOpen : tableOptionsButtonRun
+    mermaidMenuOpen --> tableMenuOpen : tableOptionsButtonRun
+    formatMenuOpen --> tableMenuOpen : tableOptionsButtonRun
+    tableMenuOpen --> expanded : tableOptionsButtonRun
+    mermaidMenuOpen --> expanded : popoverItemRun
+    formatMenuOpen --> expanded : popoverItemRun
+    tableMenuOpen --> expanded : popoverItemRun
+    mermaidMenuOpen --> expanded : popoverEscapePressed
+    formatMenuOpen --> expanded : popoverEscapePressed
+    tableMenuOpen --> expanded : popoverEscapePressed
+    mermaidMenuOpen --> expanded : pointerPressedOutsidePalette
+    formatMenuOpen --> expanded : pointerPressedOutsidePalette
+    tableMenuOpen --> expanded : pointerPressedOutsidePalette
+    mermaidMenuOpen --> expanded : openerDisabled
+    formatMenuOpen --> expanded : openerDisabled
+    tableMenuOpen --> expanded : openerDisabled
+    expanded --> expanded : viewportResized
+    mermaidMenuOpen --> mermaidMenuOpen : viewportResized
+    formatMenuOpen --> formatMenuOpen : viewportResized
+    tableMenuOpen --> tableMenuOpen : viewportResized
+    minimized --> minimized : viewportResized
+```
+
+| 出来事 \ 今の状態 | hidden | expanded | mermaidMenuOpen | formatMenuOpen | tableMenuOpen | minimized |
+| --- | --- | --- | --- | --- | --- | --- |
+| paletteShown | → expanded / placeAtBottomRight | — | — | — | — | — |
+| paletteHidden | — | → hidden | → hidden / closePopover | → hidden / closePopover | → hidden / closePopover | → hidden / restoreExpandedLayout |
+| minimizeToggled | — | → minimized / keepGripPosition | → minimized / closePopover, keepGripPosition | → minimized / closePopover, keepGripPosition | → minimized / closePopover, keepGripPosition | → expanded / keepGripPosition, clampIntoViewport |
+| mermaidButtonRun | — | → mermaidMenuOpen / openPopover | → expanded / closePopover | → mermaidMenuOpen / closePopover, openPopover | → mermaidMenuOpen / closePopover, openPopover | — |
+| formatButtonRun | — | → formatMenuOpen / openPopover | → formatMenuOpen / closePopover, openPopover | → expanded / closePopover | → formatMenuOpen / closePopover, openPopover | — |
+| tableOptionsButtonRun | — | → tableMenuOpen / openPopover | → tableMenuOpen / closePopover, openPopover | → tableMenuOpen / closePopover, openPopover | → expanded / closePopover | — |
+| popoverItemRun | — | — | → expanded / closePopover, runItemCommand | → expanded / closePopover, runItemCommand | → expanded / closePopover, runItemCommand | — |
+| popoverEscapePressed | — | — | → expanded / closePopover | → expanded / closePopover | → expanded / closePopover | — |
+| pointerPressedOutsidePalette | — | — | → expanded / closePopover | → expanded / closePopover | → expanded / closePopover | — |
+| openerDisabled (開いているポップオーバーの開き手のボタンが無効になった) | — | — | → expanded / closePopover | → expanded / closePopover | → expanded / closePopover | — |
+| viewportResized | — | → expanded / clampIntoViewport | → mermaidMenuOpen / clampIntoViewport, placePopover | → formatMenuOpen / clampIntoViewport, placePopover | → tableMenuOpen / clampIntoViewport, placePopover | → minimized / clampIntoViewport |
+
+注: `popoverEscapePressed` は INV-53 の Esc (document の capture。IME の変換中を除く)。`viewportResized` では、ポップオーバーを閉じずに、パレットとポップオーバーの位置を INV-37 のとおり補正する (スマートフォンのアドレスバーや画面のキーボードの出し入れで閉じないため)。`openerDisabled` は、例えば書式のポップオーバーを開いたまま Ctrl+S で編集欄が確定して閉じ、書式のボタン (編集中だけ有効。5.15.5) が無効になった場合や、Table options のポップオーバーを開いたまま、最後の行の Enter や Ctrl+S で表の編集が終わり、Table options のボタンが無効になった場合 (`setButtonStates` が起こす)。ポップオーバーの中の各ボタン (色・配置) の無効は、ポップオーバーを閉じない (押しても何もしない。INV-34)。`*ButtonRun` は開き手のボタン (Mermaid / Format / Table options) の 11-d の `runButtonCommand`、`popoverItemRun` はポップオーバーの中のボタンの `runButtonCommand` で起きる。`minimizeToggled` は 11-d の `longPressElapsed` で起きる。
+
+表示は状態だけで決める: `hidden` ではパレットを隠し、`minimized` ではグリップだけを表示し (class `edit-palette-minimized`。`keepGripPosition` が付け外しする)、`*MenuOpen` ではその状態のポップオーバーだけを開く。`keepGripPosition` は、次の状態の配置 (最小化か、元の大きさか) に切り替え、その前と後でグリップの画面上の位置が同じになるようにパレットを動かす (ビューポートの中に収める。INV-37)。`restoreExpandedLayout` は、最小化の配置を外す (次に表示するときに元の大きさで出すため)。`closePopover` は前の状態のポップオーバーを、`openPopover` と `placePopover` は次の状態のポップオーバーを扱う。実装では、この表を `paletteDisplayStateMachine` というデータとして持つ。
 
 ### 3.4 シーケンス図
 
@@ -2065,16 +2149,27 @@ Feature: 編集パレット
     And 編集欄のフォーカスと選択は保たれる
     And ブロックは確定されない
 
-  Scenario: キーボードでBoldを使う
-    Given ブロックを編集中で文字列 "word" を選択している
-    When ユーザーが Tab でパレットへ移り、矢印キーでBoldを選んで Enter を押す
-    Then 選択範囲が "**word**" になる
-    And フォーカスが編集欄に戻る
+  Scenario: パレットはキーボードで操作しない
+    Given ブロックを編集中である
+    When ユーザーが Tab を押す
+    Then フォーカスはパレットへ移らない
 
-  Scenario: パレットにフォーカスがある間は文字のショートカットが効かない
-    Given パレットのボタンにフォーカスがある
-    When ユーザーが "c" を押す
-    Then クリアは発生しない
+  Scenario: 無効なボタンを押してずらすとパレットが動く
+    Given 編集していないので Bold が無効である
+    When ユーザーが Bold を押したまま動かして離す
+    Then パレットが移動する
+
+  Scenario: グリップの長押しで最小化
+    Given パレットが表示されている
+    When ユーザーがグリップを 0.5 秒押し続ける
+    Then パレットはグリップだけになり、グリップの位置は変わらない
+    When もう一度 0.5 秒押し続ける
+    Then パレットが元に戻る
+
+  Scenario: ポップオーバーを開いたままの Esc
+    Given ブロックを編集中で、書式のポップオーバーを開いている
+    When ユーザーが Esc を押す
+    Then ポップオーバーだけが閉じ、編集欄の内容は残る
 
   Scenario: 押したまま外に出るとパレットの移動になる
     Given パレットが表示されている
@@ -2092,9 +2187,9 @@ Feature: 編集パレット
     When ユーザーがグリップをビューポートの外までドラッグする
     Then パレットはビューポートの端で止まる
 
-  Scenario: 表の外では行と列の挿入が無効
+  Scenario: 表の外では行・列の挿入と削除、Table options が無効
     Given 段落ブロックを編集中である
-    Then Insert row と Insert column のボタンは無効表示である
+    Then Insert row・Delete row・Insert column・Delete column・Table options のボタンは無効表示である
 
   Scenario: 表と雛形の挿入位置
     Given 段落ブロックを編集中で、カーソルが段落の途中にある
@@ -2265,10 +2360,12 @@ Feature: 未保存の保護
 | `affordanceText` | div  | `_viewState === 'initial'` 時に `#preview` 内に表示されるデフォルトヒントテキスト。UIController.setViewMode('initial') で表示。               |
 | `codeViewBody`   | div  | ハイライト済みコード＋行番号のスクロール可能領域。SourceFileRenderer.\_buildCodeBody() が生成。                                               |
 | `toastContainer` | div  | トースト通知用の固定コンテナ (ビューポート上部中央, top: 60px)                                                                                |
-| `editPalette` | div | 編集パレット。`position: fixed`。毎回ビューポートの右下に表示する (INV-32)。`role="toolbar"`、`aria-label="Edit palette"`。`body` の直下に置き、プレビューの中へは移さない (INV-53)。印刷では表示しない。EditPalette が生成・管理する |
-| `paletteGrip` | div | グリップ (移動できることを示すアフォーダンス)。押すと最初から移動として扱う (INV-35) |
-| `paletteBold` / `paletteItalic` / `paletteUndo` / `paletteSave` / `paletteSaveAs` / `paletteTable` / `paletteRow` / `paletteColumn` / `paletteMermaid` | button | パレットのボタン。アイコン (インライン SVG) のみ。`title` と `aria-label` を必ず持つ。機能は INV-34 の判定で実行する |
+| `editPalette` | div | 編集パレット。`position: fixed`。毎回ビューポートの右下に表示する (INV-32)。`role="toolbar"`、`aria-label="Edit palette"`。`body` の直下に置き、プレビューの中へは移さない (INV-53)。表示・最小化・ポップオーバーは 11-f。印刷では表示しない。EditPalette が生成・管理する。`role="toolbar"` は残す (INV-14 のガードが参照する)。フォーカスできる要素の無い toolbar は ARIA の型に合わないが、OS-16 の後退として受け入れる |
+| `paletteGrip` | div | グリップ (移動できることを示すアフォーダンス)。押して動かすと移動 (INV-35)、長押しで最小化・復活 (INV-68) |
+| `paletteBold` / `paletteItalic` / `paletteFormat` / `paletteMermaid` / `paletteSave` / `paletteSaveAs` / `paletteTable` / `paletteRow` / `paletteRowDelete` / `paletteColumn` / `paletteColumnDelete` / `paletteTableOptions` / `paletteUndo` | button | パレットのボタン。アイコン (インライン SVG) のみ。`title` と `aria-label` を必ず持つ。`tabindex="-1"` (INV-53)。機能は INV-34 の判定で実行する |
 | `paletteMermaidMenu` | div | Mermaid の雛形のポップオーバー。Flowchart / Sequence diagram / State diagram / Class diagram の 4 ボタン |
+| `paletteFormatMenu` | div | 書式のポップオーバー: `paletteColorRed` / `paletteColorBlue` / `paletteColorGreen` / `paletteColorNone` / `paletteLinkPaste` / `paletteLinkRemove` |
+| `paletteTableMenu` | div | Table options のポップオーバー: `paletteAlignLeft` / `paletteAlignCenter` / `paletteAlignRight` / `paletteAlignNone`。今の列の配置に `aria-pressed="true"` |
 | `paletteStatus` | div | パレット下端の状態表示。`<file name> * unsaved` / `<file name> - saved` (ASCII) |
 | `.md-block` | div (クラス) | 描画結果の 1 ブロックの外枠。`data-block-id` を持つ。MarkdownRenderer が生成する (外枠は sanitize の対象外のコード生成で、中身は sanitize 済み) |
 | `.md-block-hidden` | div (クラス) | 描画結果が空または不可視のブロックの帯。編集モードの間だけ表示し、ホバーで種類 ("link definition" / "hidden HTML") を出す (INV-41) |
@@ -2334,6 +2431,7 @@ const CONFIG = {
   // In-place Markdown editing (SC-22 to SC-24)
   edit: {
     paletteMarginPx: 16, // gap from viewport bottom-right (INV-32)
+    paletteLongPressMs: 500, // grip long press toggles minimized (INV-68)
     doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
     doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",
@@ -3276,8 +3374,9 @@ setupTouchPasteAssist() {
 | キー | プレレンダー | Markdownプレビュー | ブロック編集中 | コードビュー |
 | --- | --- | --- | --- | --- |
 | `e` / [Edit] | `#editor` が空なら空の文書を開始、空でなければ `#editor` の内容を描画して編集モードにする (INV-31) | 編集パレットの表示 / 非表示 | (文字入力。[Edit] ボタンは有効) | 無動作 (OS-06) |
-| `Esc` | 無動作 | 編集パレットを閉じる (パレットにフォーカスがある場合は INV-53) | ブロック編集を取消 (IME の変換中を除く。INV-28) | 無動作 |
-| `Tab` | — | — | パレットの現在のボタンへフォーカスを移す (IME の変換中を除く。INV-53) | — |
+| `Esc` | 無動作 | 編集パレットを閉じる | ブロック編集を取消 (IME の変換中を除く。INV-28) | 無動作 |
+| `Esc` (ポップオーバーを開いている) | — | ポップオーバーだけを閉じる (INV-53) | ポップオーバーだけを閉じる (INV-53) | — |
+| `Tab` / `Shift+Tab` | — | — | ブラウザ既定 (INV-53) | — |
 | Enter | — | — | 改行 (表のブロックでは `<br>`。IME の変換中を除く。INV-27) | — |
 | Ctrl+S | ブラウザ既定 | ブラウザ既定 (横取りしない) | ブラウザ既定 | ブラウザ既定 |
 
@@ -3546,7 +3645,6 @@ CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選�
 - 外側 (INV-30): ブロック編集欄、編集パレット、ポップオーバー以外の要素 (上部バー、スクロールバー以外のプレビュー、モーダル、トーストを含む)。マウスでは `pointerdown` で、タッチとペン (`pointerType !== "mouse"`) では移動が閾値以下の `pointerup` で確定する (指でのスクロールでは確定しない)。
 - 確定 (11-c の `commitBlock`) は同期でモデルを更新する (描画の完了は待たない。INV-47)。確定・取消は `dispatch` で表を通してだけ行う (表の外で状態を変える入口は持たない)。
 - `#editor` の `focusin` は UIController が受け (`#editor` を持つのは UIController)、ブロック編集中なら `BlockEditController.dispatch("editorFocused")` で確定する (5.7 (5)、INV-30)。
-- Tab: 編集欄の `keydown` で Tab (Shift なし、IME の変換中を除く) を受けたら `preventDefault()` し、パレットの現在のボタンへフォーカスを移す (INV-53)。
 - `getSelectionRange()` / `applyTextEdit(edit)` で選択範囲と文字列だけを受け渡し、編集欄の要素は外へ渡さない (LoD)。
 - 編集欄の Undo の対象 (INV-52、OS-18): `applyTextEdit` (パレットの書式・挿入) と表の中の Enter (`<br>`) は、`MarkdownTextOps.changedRange` で変わる区間だけを `setSelectionRange` で選び、`document.execCommand("insertText", false, text)` で入れる (ブラウザの編集欄の Undo の履歴に載る。非推奨の API だが代わりが無い)。`execCommand` が無い、`false` を返す、例外を投げる、または入れた結果が求める文字列と違う場合は、`value` の代入にフォールバックする (その場合はその変更を Ctrl+Z で戻せない)。その後で選択範囲を `edit` のとおりにする。
 - IME: `compositionstart` から `compositionend` までと、`event.isComposing` が真、または `keyCode === 229` の `keydown` は処理しない (INV-27 / INV-28)。
@@ -3606,9 +3704,9 @@ CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選�
 
 #### 5.15.1 配置
 
-2 段構成。1 段目は [grip][Bold][Italic] | [Undo] | [Save][Save as]、2 段目は [Insert table][Insert row][Insert column][Mermaid]。ボタンは 28px 角、角丸 6px、アイコン 17px、線幅 1.7 前後のアウトライン。最小化ボタンは置かない。下端に状態表示 (`paletteStatus`)。Mermaid ボタンには右下に小さな三角 (サブメニューの印) を付け、押すとポップオーバー (`paletteMermaidMenu`) を、パレットの左右のうちビューポートに収まる側に開く (INV-37)。ポップオーバーは、雛形を選んだとき、Esc、ポップオーバーとパレットの外での `pointerdown`、パレットを閉じたときに閉じる。ポップオーバーのボタンにも INV-34 / INV-35 / INV-36 を適用する。
+7 列 × 2 段の格子。1 段目は [grip][Bold][Italic][Format][Mermaid][Save][Save as]、2 段目は [Insert table][Insert row][Delete row][Insert column][Delete column][Table options][Undo]。区切りは置かない。グリップもボタンと同じ 28px の枠に置く。ボタンは 28px 角、角丸 6px、アイコン 17px、線幅 1.7 前後のアウトライン。下端に状態表示 (`paletteStatus`)。Mermaid / Format / Table options のボタンには右下に小さな三角 (サブメニューの印) を付け、押すとポップオーバー (`paletteMermaidMenu` / `paletteFormatMenu` / `paletteTableMenu`) を、パレットの左右のうちビューポートに収まる側に開く (INV-37)。開閉は 11-f。ポップオーバーは、項目を選んだとき、開き手をもう一度押したとき、別の開き手を押したとき、Esc、ポップオーバーとパレットの外での `pointerdown`、開き手が無効になったとき、最小化したとき、パレットを閉じたときに閉じる。ポップオーバーのボタンにも INV-34 / INV-36 を適用する (INV-35 の移動はしない)。最小化の間はグリップだけを表示し (class `edit-palette-minimized`)、未保存なら右上に点を付ける (class `edit-palette-unsaved`)。
 
-ポップオーバーも `role="toolbar"` (`aria-label="Mermaid samples"`) とし、フォーカスがある間は INV-14 のガードを効かせる。ポップオーバーはパレットの右に 4 px の間隔で開き、ビューポートに収まらなければ左に開く。縦はパレットの上端にそろえ、ビューポートの中に収める。CSS の class は `edit-palette` / `edit-palette-row` / `edit-palette-btn` / `edit-palette-sep` / `edit-palette-grip` / `edit-palette-status` / `edit-palette-popover` / `edit-palette-submenu`。
+ポップオーバーも `role="toolbar"` (`aria-label` は `Mermaid samples` / `Text format` / `Table options`) とし、フォーカスがある間は INV-14 のガードを効かせる。開き手のボタンは `aria-expanded` (開いていれば `true`) だけを持ち、`aria-haspopup` は付けない (`aria-haspopup="true"` は menu を意味し、ポップオーバーは toolbar のため)。ポップオーバーはパレットの右に 4 px の間隔で開き、ビューポートに収まらなければ左に開く。縦はパレットの上端にそろえ、ビューポートの中に収める。CSS の class は `edit-palette` / `edit-palette-row` / `edit-palette-btn` / `edit-palette-grip` / `edit-palette-status` / `edit-palette-popover` / `edit-palette-submenu` / `edit-palette-swatch` (`edit-palette-swatch-red` / `-blue` / `-green`) / `edit-palette-minimized` / `edit-palette-unsaved`。
 
 **[要検証]** ボタンの 28px は、タッチ端末の操作の目安 (44px 前後とされる [一般知識]) より小さい。タッチ端末 (`any-pointer: coarse`) では 36px 以上に広げるかを PRT-V09 で確認して決める。
 
@@ -3625,14 +3723,20 @@ CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選�
 
 #### 5.15.3 アイコン
 
-次の SVG シンボル (`viewBox="0 0 24 24"` (`i-submenu` だけは `0 0 6 6`)、`stroke="currentColor"`。色はテーマ側の CSS で決める) を用いる。最小化のシンボル (`i-min`) は使わない。Flowchart のアイコンは `i-mermaid` を兼ねる。tooltip / aria-label: Bold, Italic, Undo, Insert table, Insert row, Insert column, Insert Mermaid sample, Save, Save as, Move palette (グリップ)、ポップオーバーは Flowchart, Sequence diagram, State diagram, Class diagram。
+次の SVG シンボル (`viewBox="0 0 24 24"` (`i-submenu` だけは `0 0 6 6`)、`stroke="currentColor"`。色はテーマ側の CSS で決める) を用いる。各ボタンの中にインラインで書く (`<use>` は使わない)。最小化のシンボル (`i-min`) は使わない。Flowchart のアイコンは `i-mermaid` を兼ねる。
+
+tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Undo (Ctrl+Z)`、`Save (Ctrl+S)`、`Save as (Ctrl+Shift+S)`、`Insert table`、`Insert row`、`Delete row`、`Insert column`、`Delete column`、`Table options`、`Insert Mermaid sample`、`Move palette (long press: minimize / restore)` (グリップ)。ポップオーバーは、Mermaid が `Flowchart` / `Sequence diagram` / `State diagram` / `Class diagram`、書式が `Text color: Red` / `Text color: Blue` / `Text color: Green` / `Remove text color` / `Paste link from clipboard` / `Remove link`、Table options が `Align left` / `Align center` / `Align right` / `Default alignment`。Mac (INV-14 の判定式) では `Ctrl` を `Cmd` と表示する。
 
 ```xml
 <symbol id="i-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round"><path d="M7 5h5.5a3.5 3.5 0 0 1 0 7H7zM7 12h6.5a3.5 3.5 0 0 1 0 7H7z"/></symbol>
 <symbol id="i-italic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M11 5h7M6 19h7M15 5l-6 14"/></symbol>
+<symbol id="i-format"><path d="M6.5 16L12 3.5 17.5 16M8.6 11.5h6.8"/><path d="M4 20.5h16" stroke-width="2.6"/></symbol>
 <symbol id="i-table" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path d="M3.5 9.5h17M3.5 14.2h17M9.2 5v14M14.8 5v14"/></symbol>
 <symbol id="i-row" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3" width="17" height="10" rx="1.5"/><path d="M3.5 8h17M9.2 3v10M14.8 3v10M12 15.5v6M9 18.5h6"/></symbol>
+<symbol id="i-row-delete"><rect x="3.5" y="3" width="17" height="10" rx="1.5"/><path d="M3.5 8h17M9.2 3v10M14.8 3v10M8.5 18.5h7"/></symbol>
 <symbol id="i-col" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="10" height="17" rx="1.5"/><path d="M8 3.5v17M3 9.2h10M3 14.8h10M15.5 12h6M18.5 9v6"/></symbol>
+<symbol id="i-col-delete"><rect x="3" y="3.5" width="10" height="17" rx="1.5"/><path d="M8 3.5v17M3 9.2h10M3 14.8h10M15 12h7"/></symbol>
+<symbol id="i-table-options"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></symbol>
 <symbol id="i-mermaid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M6 16v-4h12v4"/></symbol>
 <symbol id="i-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></symbol>
 <symbol id="i-saveas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 20H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h10l3 3v3.5"/><path d="M8 4v5h7V4M8 20v-6h4"/><path d="M14 21l.7-2.8 4.8-4.8a1.4 1.4 0 0 1 2 2l-4.8 4.8z"/></symbol>
@@ -3642,33 +3746,47 @@ CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選�
 <symbol id="i-submenu" viewBox="0 0 6 6" fill="currentColor"><path d="M6 0v6H0z"/></symbol>
 <symbol id="i-class" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="9" rx="1"/><path d="M7 5.5h10M7 8.5h10"/><rect x="2.5" y="16" width="7" height="5.5" rx="1"/><rect x="14.5" y="16" width="7" height="5.5" rx="1"/><path d="M12 11.5l-1.7 2.6h3.4z"/><path d="M12 14.1v.4M6 16v-1.5h12V16"/></symbol>
 <symbol id="i-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+<symbol id="i-color-none"><path d="M6.5 18L12 5.5 17.5 18M8.6 13.5h6.8M4 21L20 3"/></symbol>
+<symbol id="i-color-swatch"><circle cx="12" cy="12" r="7"/></symbol>
+<symbol id="i-link-paste"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></symbol>
+<symbol id="i-link-remove"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/><path d="M4 4l16 16"/></symbol>
+<symbol id="i-align-left"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></symbol>
+<symbol id="i-align-center"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></symbol>
+<symbol id="i-align-right"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></symbol>
+<symbol id="i-align-none"><path d="M3 12h4M10 12h4M17 12h4"/></symbol>
 ```
+
+属性を書いていないシンボル (`i-format` 以降の追加分) は、`viewBox="0 0 24 24"`、`fill="none"`、`stroke="currentColor"`、線幅 1.7、`stroke-linecap` / `stroke-linejoin` は `round` とする。`i-color-swatch` だけは `fill="currentColor"`、`stroke="none"` とし、色は見本の class (`edit-palette-swatch-red` など) の CSS で決める。
 
 #### 5.15.4 ジェスチャ
 
-3.3 の 11-d に従う。`pointerdown` で `setPointerCapture` し、`preventDefault()` で編集欄のフォーカスと選択を保つ (INV-36)。移動中は、パレットとポップオーバーの矩形がビューポートに収まるように位置を補正する (INV-37)。
+3.3 の 11-d に従う。`pointerdown` で `setPointerCapture` し、`preventDefault()` で編集欄のフォーカスと選択を保つ (INV-36)。移動中は、パレットとポップオーバーの矩形がビューポートに収まるように位置を補正する (INV-37)。グリップの長押しは INV-68。タッチでは `contextmenu` を止め (パレットとポップオーバー)、`-webkit-touch-callout: none` とする。
 
 #### 5.15.5 有効・無効
 
 | ボタン | 有効になる条件 |
 | --- | --- |
-| Bold / Italic | ブロック編集中で、選択範囲がある |
-| Undo | ブロック編集中でなく、Undo の記録がある (INV-48) |
-| Insert row / Insert column | 表のブロックを編集中 |
-| Insert table / Mermaid | 常に有効 (挿入位置は INV-52) |
+| Bold / Italic / 文字色 / 色を外す | 編集中 (ブロック編集欄、セル) で、選択範囲があり、INV-67 の (6) の条件を満たす |
+| Format (書式のポップオーバーの開き手) | 編集中 |
+| リンクを貼る | 編集中で、選択が無いか、INV-67 の (6) の条件を満たす |
+| リンクを外す | 編集中で、カーソルまたは選択がリンクの中 |
+| Mermaid / Insert table | セルの編集中でない |
 | Save / Save as | 常に有効 (処理中の二重押しは 11-e で無視する) |
+| Undo | Undo の記録があるか、開いている編集欄・セルに変更がある (INV-48) |
+| Insert row / Insert column | 表のブロックの原文を編集中、またはセルの編集中 |
+| Delete row | セルの編集中で、今の行が見出しの行でない |
+| Delete column | セルの編集中で、列が 2 つ以上 |
+| Table options (とその配置) | セルの編集中 |
 
-ボタンの有効・無効は、未保存の印を更新するたびと、編集欄の選択範囲が変わるたび (document の `selectionchange` を capture で受ける) に更新する。編集中の挿入 (Insert table / Mermaid の雛形) は、カーソル位置 (選択の終わり) に入れる。Bold / Italic は、選択が空なら何もしない。
+`EditPalette.setButtonStates(states)` は、この表の判定の結果を、キー `bold` / `italic` / `format` / `textColor` / `linkPaste` / `linkRemove` / `insertTable` / `insertMermaid` / `undo` / `insertRow` / `insertColumn` / `rowDelete` / `columnDelete` / `tableOptions` の真偽と、`alignment` (今の列の配置。`left` / `center` / `right` / `none`、または `null`) で受け取る。判定は UIController が行う。ボタンの有効・無効は、未保存の印を更新するたびと、編集欄の選択範囲が変わるたび (document の `selectionchange` を capture で受ける) に更新する。判定は INV-51 のとおり、`requestAnimationFrame` で 1 フレームに 1 回にまとめて行う。編集中の挿入 (Insert table / Mermaid の雛形) は、カーソル位置 (選択の終わり) に入れる。Bold / Italic は、選択が空なら何もしない。
 
 #### 5.15.6 キーボード操作とタブ順
 
-INV-53 のとおり。パレット (`role="toolbar"`) は `body` の直下に置き、プレビューの中へは移さない (確定でブロックの要素が外れても影響を受けず、プレビューに委譲されたリスナーもパレットの操作を受け取らない)。ロービングタブインデックス (ツールバーの中で 1 つのボタンだけが `tabindex="0"`) とし、編集欄からは Tab の自前の処理で移る。パレットの内側にフォーカスがある間は、document の文字のショートカットを無効にする (INV-14)。`@media print` でパレット・ポップオーバー・不可視ブロックの帯を隠す。
-
-ポップオーバーの中では、上下左右の矢印で 4 つのボタンを巡回し、Enter / Space で実行する (実行の後はポップオーバーを閉じ、フォーカスは Mermaid のボタンへ戻る)。ポップオーバーの Esc はポップオーバーを閉じ、Mermaid のボタンへフォーカスを戻す。パレットの Mermaid のボタンで Enter / Space を押すと、ポップオーバーを開き、先頭のボタンへフォーカスを移す。パレット上の Esc は、ポップオーバーが開いていれば閉じてから、INV-53 の動作をする。
+パレット (`role="toolbar"`) は `body` の直下に置き、プレビューの中へは移さない (確定でブロックの要素が外れても影響を受けず、プレビューに委譲されたリスナーもパレットの操作を受け取らない)。パレットとポップオーバーのボタンは `tabindex="-1"` とし、キーボードでは操作しない (INV-53、OS-16)。ロービングタブインデックス、矢印キー、Enter / Space は扱わない。ポップオーバーを開いている間の Esc は 11-f の `popoverEscapePressed` (document の capture。IME の変換中を除く)。INV-14 の `role="toolbar"` のガードは残す。`@media print` でパレット・ポップオーバー・不可視ブロックの帯を隠す。
 
 #### 5.15.7 資源の生存期間
 
-パレットの `pointermove` / `pointerup` / `resize` のリスナーは `show()` で登録し、`hide()` で外す。ブロック編集欄のリスナーは編集欄を開いたときに登録し、閉じたときに外す。Clear とコードビューへの切り替えではパレットを閉じる (11-c)。
+パレットの `pointermove` / `pointerup` / `pointercancel` / `pointerdown` (capture) / `keydown` (capture。ポップオーバーの Esc) / `resize` のリスナーは `show()` で登録し、`hide()` で外す。長押しのタイマーは `hide()` と `pointercancel` で止める。ブロック編集欄のリスナーは編集欄を開いたときに登録し、閉じたときに外す。Clear とコードビューへの切り替えではパレットを閉じる (11-c)。
 
 ### 5.16 SW設計原則 準拠確認
 

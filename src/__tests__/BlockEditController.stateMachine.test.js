@@ -53,7 +53,7 @@ function spyAll() {
     startEmptyDocument: vi.spyOn(s.orchestrator, "startEmptyDocument"),
     replaceBlocks: vi.spyOn(s.markdownRenderer, "replaceBlocks"),
   };
-  for (const name of ["showPalette", "hidePalette", "focusPalette", "renderFromEditor", "onEditorInput"]) {
+  for (const name of ["showPalette", "hidePalette", "renderFromEditor", "onEditorInput"]) {
     s.host[name].mockClear();
     spies[name] = s.host[name];
   }

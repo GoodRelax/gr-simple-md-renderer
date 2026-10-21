@@ -103,6 +103,7 @@ export const CONFIG = {
   // In-place Markdown editing (SC-22 to SC-24)
   edit: {
     paletteMarginPx: 16, // gap from viewport bottom-right (INV-32)
+    paletteLongPressMs: 500, // grip long press toggles minimized (INV-68)
     doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
     doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",

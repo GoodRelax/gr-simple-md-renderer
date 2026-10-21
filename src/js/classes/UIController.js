@@ -988,6 +988,7 @@ export default class UIController {
     let status = "";
     if (this._session) status = dirty ? m.statusUnsaved(name) : m.statusSaved(name);
     this.palette.setStatusText(status);
+    this.palette.setUnsaved(dirty);
     this._updatePaletteStates();
   }
 
@@ -997,12 +998,19 @@ export default class UIController {
    */
   _updatePaletteStates() {
     const range = this.blockEdit.getSelectionRange();
-    this.palette.setButtonStates(
-      this.blockEdit.isEditing(),
-      Boolean(range) && range.selStart !== range.selEnd,
-      this.blockEdit.isEditingTable(),
-      this.orchestrator.canUndo(),
-    );
+    const isEditing = this.blockEdit.isEditing();
+    const hasSelection = isEditing && Boolean(range) && range.selStart !== range.selEnd;
+    const isInTableSource = isEditing && this.blockEdit.isEditingTable();
+    this.palette.setButtonStates({
+      bold: hasSelection,
+      italic: hasSelection,
+      format: isEditing,
+      insertTable: true,
+      insertMermaid: true,
+      undo: !isEditing && this.orchestrator.canUndo(),
+      insertRow: isInTableSource,
+      insertColumn: isInTableSource,
+    });
   }
 
   /**
@@ -1048,7 +1056,6 @@ export default class UIController {
       showPalette: () => this.palette.show(),
       hidePalette: () => this.palette.hide(),
       isPaletteNode: (node) => this.palette.contains(node),
-      focusPalette: () => this.palette.focus(),
       isEditorChangedSinceRender: () => this._editorChangedSinceRender,
       renderFromEditor: () => this._renderFromEditorFirst(),
       onEditorInput: () => this._refreshDirtyMark(),
@@ -1063,8 +1070,6 @@ export default class UIController {
   _paletteHost() {
     return {
       runCommand: (command, arg) => this._runPaletteCommand(command, arg),
-      focusEditor: () => this.blockEdit.focusEditor(),
-      requestHide: () => this._hidePalette(),
     };
   }
 

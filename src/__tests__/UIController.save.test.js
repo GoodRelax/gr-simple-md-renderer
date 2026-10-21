@@ -152,14 +152,6 @@ describe("AT-UI-26 INV-33: the steps before the first await of the press handler
     // SaveDocument hands over to its own SaveDocumentAs, which starts the download.
     expect(steps).toEqual(["commit", "execute", "startDownload:doc.md"]);
   });
-
-  it("keyboard Enter on Save behaves the same (synchronous start)", async () => {
-    await withDocument();
-    showPalette();
-    const steps = recordSteps();
-    keydown(paletteButton("paletteSave"), "Enter");
-    expect(steps).toEqual(["startPermissionRequest", "execute"]);
-  });
 });
 
 describe("AT-UI-44 unrendered #editor changes are taken in before saving", () => {

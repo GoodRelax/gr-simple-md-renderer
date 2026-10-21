@@ -1,19 +1,32 @@
 import { vi } from "vitest";
 
-// Fake layout for EditPalette (jsdom has none). The palette and the popover
-// are placed by their style.left / style.top; their buttons sit in one line
-// inside them, 28 px square every 32 px, starting 4 px from the corner.
-export const PALETTE_SIZE = { width: 200, height: 80 };
-export const POPOVER_SIZE = { width: 160, height: 150 };
+// Fake layout for EditPalette (jsdom has none). The palette and the popovers
+// are placed by their style.left / style.top. The palette's grip and buttons
+// sit in a grid of 7 columns, 28 px square every 32 px, starting 4 px from
+// the corner; a popover's buttons sit in one line. The minimized palette
+// (grip only) is MINIMIZED_SIZE, with its grip 6 px from the corner (so that
+// keeping the grip in place moves the palette by 2 px).
+export const PALETTE_SIZE = { width: 232, height: 80 };
+export const POPOVER_SIZE = { width: 200, height: 150 };
+export const MINIMIZED_SIZE = { width: 40, height: 40 };
 const BUTTON_SIZE = 28;
 const BUTTON_STEP = 32;
+const COLUMNS = 7;
 
-/** The palette root and the popover (children of body that EditPalette appended). */
+/** The palette root and the popovers (children of body that EditPalette appended). */
 export function paletteElements() {
+  const byId = (id) => [...document.body.children].find((el) => el.id === id && el.classList.contains("edit-palette-popover")) ?? null;
   return {
     root: document.body.querySelector(":scope > div.edit-palette"),
-    popover: document.body.querySelector(":scope > div.edit-palette-popover"),
+    popover: byId("paletteMermaidMenu"),
+    formatMenu: byId("paletteFormatMenu"),
+    tableMenu: byId("paletteTableMenu"),
   };
+}
+
+/** Remove every palette element EditPalette appended to body. */
+export function removePaletteElements() {
+  for (const el of document.body.querySelectorAll(":scope > div.edit-palette, :scope > div.edit-palette-popover")) el.remove();
 }
 
 function rect(left, top, width, height) {
@@ -24,6 +37,7 @@ function boxOf(el, statusHeight) {
   const left = parseFloat(el.style.left) || 0;
   const top = parseFloat(el.style.top) || 0;
   if (!el.classList.contains("edit-palette")) return rect(left, top, POPOVER_SIZE.width, POPOVER_SIZE.height);
+  if (el.classList.contains("edit-palette-minimized")) return rect(left, top, MINIMIZED_SIZE.width, MINIMIZED_SIZE.height);
   const hasStatus = (el.querySelector("#paletteStatus")?.textContent ?? "") !== "";
   return rect(left, top, PALETTE_SIZE.width, PALETTE_SIZE.height + (hasStatus ? statusHeight : 0));
 }
@@ -44,7 +58,11 @@ export function fakePaletteLayout({ statusHeight = 0 } = {}) {
       const items = [...container.querySelectorAll("button, .edit-palette-grip")];
       const i = items.indexOf(this);
       const box = boxOf(container, statusHeight);
-      return rect(box.left + 4 + BUTTON_STEP * i, box.top + 4, BUTTON_SIZE, BUTTON_SIZE);
+      if (container.classList.contains("edit-palette-minimized")) return rect(box.left + 6, box.top + 6, BUTTON_SIZE, BUTTON_SIZE);
+      const columns = container.classList.contains("edit-palette") ? COLUMNS : items.length;
+      const col = i % columns;
+      const line = Math.floor(i / columns);
+      return rect(box.left + 4 + BUTTON_STEP * col, box.top + 4 + BUTTON_STEP * line, BUTTON_SIZE, BUTTON_SIZE);
     }
     return original.call(this);
   });

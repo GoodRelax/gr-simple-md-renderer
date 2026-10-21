@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme } from "../js/utils.js";
+import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform } from "../js/utils.js";
 
 describe("escapeHtml", () => {
   it("escapes < and >", () => {
@@ -98,5 +98,22 @@ describe("systemTheme", () => {
     });
     const result = systemTheme();
     expect(["light", "dark"]).toContain(result);
+  });
+});
+
+describe("isApplePlatform (INV-14: Cmd is the primary modifier)", () => {
+  it.each([
+    [{ userAgentData: { platform: "macOS" } }, true],
+    [{ userAgentData: { platform: "Windows" }, platform: "MacIntel" }, false], // userAgentData wins
+    [{ userAgentData: { platform: "" }, platform: "MacIntel" }, true], // empty: fall back to platform
+    [{ platform: "MacIntel" }, true],
+    [{ platform: "iPhone" }, true],
+    [{ platform: "iPad" }, true],
+    [{ platform: "Win32" }, false],
+    [{ platform: "Linux x86_64" }, false],
+    [{}, false],
+    [undefined, false],
+  ])("%j -> %s", (nav, expected) => {
+    expect(isApplePlatform(nav)).toBe(expected);
   });
 });

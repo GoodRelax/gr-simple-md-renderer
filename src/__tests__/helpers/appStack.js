@@ -105,7 +105,7 @@ export async function setupApp({ fileAccess: fakeAccess } = {}) {
     ui.blockEdit.dispatch("documentCleared");
     ui.palette.hide();
     app.paletteRoot()?.remove();
-    document.body.querySelector(":scope > div.edit-palette-popover")?.remove();
+    for (const el of document.body.querySelectorAll(":scope > div.edit-palette-popover")) el.remove();
     elements._bar.remove();
     preview.remove();
     document.title = BASE_TITLE;

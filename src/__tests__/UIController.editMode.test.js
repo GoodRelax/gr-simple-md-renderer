@@ -232,7 +232,7 @@ describe("the browser's Undo / Redo never reaches #editor from elsewhere (5.7 (6
   it("also while the focus is on the palette or the body", async () => {
     await withDocument();
     keydown(document.body, "e");
-    app.ui.palette.focus();
+    app.paletteRoot().querySelector("#paletteSave").focus(); // only by script: tabindex -1 (INV-53)
     const fromPalette = historyEvent("historyUndo");
     app.elements.editor.dispatchEvent(fromPalette);
     expect(fromPalette.defaultPrevented).toBe(true);
@@ -334,14 +334,6 @@ describe("PRT-D01 the key hint stays after a button click that renders", () => {
 });
 
 describe("AT-UI-24 Esc and AT-UI-25 Ctrl+S", () => {
-  it("palette shown, no editor: Esc on the palette hides it (T3)", async () => {
-    await withDocument();
-    keydown(document.body, "e");
-    app.ui.palette.focus();
-    keydown(document.activeElement, "Escape");
-    expect(app.ui.palette.isShown()).toBe(false);
-  });
-
   it("palette shown, focus on the body: Esc hides it", async () => {
     await withDocument();
     keydown(document.body, "e");
@@ -374,16 +366,6 @@ describe("AT-UI-24 Esc and AT-UI-25 Ctrl+S", () => {
     keydown(ta, "Escape");
     expect(app.blockEditor()).toBeNull();
     expect(app.ui.palette.isShown()).toBe(true);
-  });
-
-  it("Esc on a palette button with an open editor returns to the editor only", async () => {
-    await withDocument();
-    const ta = openChanged();
-    app.ui.palette.focus();
-    keydown(document.activeElement, "Escape");
-    expect(document.activeElement).toBe(ta);
-    expect(app.ui.palette.isShown()).toBe(true);
-    expect(app.blockEditor()).toBe(ta);
   });
 
   it("AT-UI-25 Ctrl+S is never taken", async () => {
