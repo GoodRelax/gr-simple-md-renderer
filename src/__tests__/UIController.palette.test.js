@@ -71,9 +71,20 @@ function open(pred) {
   return app.blockEditor();
 }
 
-function selectInEditor(ta, start, end) {
+/** One animation frame (the button states are batched per frame, INV-51). */
+const nextFrame = () =>
+  new Promise((resolve) => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(() => resolve()) : setTimeout(resolve, 16)));
+
+async function selectInEditor(ta, start, end) {
   ta.setSelectionRange(start, end);
   document.dispatchEvent(new Event("selectionchange"));
+  await nextFrame();
+}
+
+/** Type into the open block editor (an input event, as the browser sends). */
+function typeInBlock(ta, text) {
+  ta.value = text;
+  ta.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function typeInEditor(text) {
@@ -96,7 +107,7 @@ describe("button states follow the editor (5.15.5)", () => {
     await withDocument();
     const ta = open(isPara("Hello"));
     expect(off(btn("paletteBold"))).toBe(true);
-    selectInEditor(ta, 6, 10);
+    await selectInEditor(ta, 6, 10);
     expect(off(btn("paletteBold"))).toBe(false);
     expect(off(btn("paletteItalic"))).toBe(false);
     expect(off(btn("paletteRow"))).toBe(true);
@@ -114,7 +125,7 @@ describe("Bold / Italic / Insert row / column (INV-52, INV-36)", () => {
   it("Bold wraps the selection; the editor keeps the focus; nothing is committed", async () => {
     await withDocument();
     const ta = open(isPara("Hello"));
-    selectInEditor(ta, 6, 10);
+    await selectInEditor(ta, 6, 10);
     const commit = vi.spyOn(app.orchestrator, "commitBlock");
     const down = press(btn("paletteBold"));
     expect(down.defaultPrevented).toBe(true);
@@ -127,11 +138,61 @@ describe("Bold / Italic / Insert row / column (INV-52, INV-36)", () => {
   it("Italic on an italic selection removes it", async () => {
     await withDocument();
     const ta = open(isPara("Hello"));
-    selectInEditor(ta, 6, 10);
+    await selectInEditor(ta, 6, 10);
     press(btn("paletteItalic"));
     expect(ta.value).toBe("Hello *word* here.");
-    selectInEditor(ta, ta.selectionStart, ta.selectionEnd);
+    await selectInEditor(ta, ta.selectionStart, ta.selectionEnd);
     press(btn("paletteItalic"));
+    expect(ta.value).toBe("Hello word here.");
+  });
+
+  it("the states follow the selection once per frame (INV-51)", async () => {
+    await withDocument();
+    const ta = open(isPara("Hello"));
+    const states = vi.spyOn(app.ui.palette, "setButtonStates");
+    states.mockClear();
+    ta.setSelectionRange(6, 10);
+    document.dispatchEvent(new Event("selectionchange"));
+    ta.setSelectionRange(6, 9);
+    document.dispatchEvent(new Event("selectionchange"));
+    expect(states).not.toHaveBeenCalled();
+    await nextFrame();
+    expect(states).toHaveBeenCalledTimes(1);
+    expect(off(btn("paletteBold"))).toBe(false);
+  });
+
+  it("Bold / Italic / colors are disabled where no inline range holds the selection (INV-67 (6))", async () => {
+    await withDocument();
+    const ta = open(isPara("Hello"));
+    typeInBlock(ta, "a\n\nb");
+    await selectInEditor(ta, 0, 4);
+    for (const id of ["paletteBold", "paletteItalic"]) expect(off(btn(id)), id).toBe(true);
+    for (const label of ["Text color: Red", "Remove text color"]) expect(off(popoverButton(label)), label).toBe(true);
+    await selectInEditor(ta, 0, 1);
+    for (const id of ["paletteBold", "paletteItalic"]) expect(off(btn(id)), id).toBe(false);
+    for (const label of ["Text color: Red", "Remove text color"]) expect(off(popoverButton(label)), label).toBe(false);
+  });
+
+  it("Bold where the selection crosses markers keeps the rest of the text (INV-67 (7))", async () => {
+    await withDocument();
+    const ta = open(isPara("Hello"));
+    typeInBlock(ta, "x __y__ z");
+    await selectInEditor(ta, 8, 9);
+    press(btn("paletteBold"));
+    expect(ta.value).toBe("x __y__ **z**");
+  });
+
+  it("a text color from the format popover; Remove text color takes it away (INV-66)", async () => {
+    await withDocument();
+    const ta = open(isPara("Hello"));
+    await selectInEditor(ta, 6, 10);
+    press(btn("paletteFormat"));
+    press(popoverButton("Text color: Red"));
+    expect(ta.value).toBe(`Hello <span style="color: ${CONFIG.edit.textColors.red.light}">word</span> here.`);
+    expect(document.activeElement).toBe(ta);
+    await selectInEditor(ta, ta.selectionStart, ta.selectionEnd);
+    press(btn("paletteFormat"));
+    press(popoverButton("Remove text color"));
     expect(ta.value).toBe("Hello word here.");
   });
 
@@ -139,7 +200,7 @@ describe("Bold / Italic / Insert row / column (INV-52, INV-36)", () => {
     await withDocument();
     const ta = open((b) => b.type === "table");
     const caret = ta.value.indexOf("x") + 1;
-    selectInEditor(ta, caret, caret);
+    await selectInEditor(ta, caret, caret);
     press(btn("paletteRow"));
     expect(ta.value.split("\n")).toHaveLength(4);
     press(btn("paletteColumn"));
@@ -239,6 +300,7 @@ describe("AT-UI-35 Undo", () => {
     expect(off(btn("paletteUndo"))).toBe(true);
     ta.value = "Changed.";
     ta.dispatchEvent(new Event("input", { bubbles: true }));
+    await nextFrame(); // typing: the states follow in the next frame (INV-51)
     expect(off(btn("paletteUndo"))).toBe(false);
     pointer(document.body, "pointerdown");
     expect(off(btn("paletteUndo"))).toBe(false);
@@ -295,7 +357,7 @@ describe("AT-UI-36 / 37 Insert table and Mermaid samples", () => {
   it("while editing: only the editor text changes; the undo record is unchanged", async () => {
     await withDocument();
     const ta = open(isPara("Second"));
-    selectInEditor(ta, ta.value.length, ta.value.length);
+    await selectInEditor(ta, ta.value.length, ta.value.length);
     press(btn("paletteTable"));
     expect(ta.value).toContain(CONFIG.edit.tableTemplate);
     expect(app.orchestrator.getBody()).toBe(DOC);

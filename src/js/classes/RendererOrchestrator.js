@@ -299,6 +299,23 @@ export default class RendererOrchestrator {
   }
 
   /**
+   * The lexers the block editor's text edits use (INV-67, INV-71): blocks
+   * only (as the model), inline tokens with the document's reference
+   * definitions, blocks and inline tokens, and marked.walkTokens.
+   * @purity semi-pure-b
+   * @returns {{lexBlocks: Function, lexInline: Function, lexFull: Function, walkTokens: Function}}
+   */
+  textLexers() {
+    const renderer = this.markdownRenderer;
+    return {
+      lexBlocks: this._lexer,
+      lexInline: (src) => renderer.lexInline(src, this._currentModel?.links),
+      lexFull: (src) => renderer.lexFull(src),
+      walkTokens: (tokens, fn) => renderer.walkTokens(tokens, fn),
+    };
+  }
+
+  /**
    * The edited text of a table block with its tables aligned (INV-61). The
    * text is lexed alone, with the same lexer as the model.
    * @purity semi-pure-b

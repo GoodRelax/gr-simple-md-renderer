@@ -324,7 +324,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-24 | イベント駆動 | ファイルへの書き込み (上書き、または保存ダイアログで選んだファイルへの書き込み) に成功した場合、システムは基準を保存した本文に更新し (未保存の印は INV-50 により消える)、保存先のファイル名をトーストで表示すること。 |
 | INV-25 | 異常系 | 保存で、書き込み権限が拒否された場合、保存ダイアログがキャンセルされた場合、ユーザーアクティベーションが失効していた場合、ファイルが見つからない場合 (`NotFoundError`)、または書き込みに失敗した場合、システムは文書を変更せず、基準を更新しないこと (未保存のまま)。キャンセル以外は、理由をトーストで表示すること (アクティベーションの失効では「もう一度 Save を押す」案内を出す)。 |
 | INV-26 | イベント駆動 | 書き込み API が無いためにダウンロードで保存した場合、システムはダウンロードの開始だけを伝え、未保存の印が残ることも伝えるトースト (`messages.edit.downloadStarted`) を表示し、基準を更新しないこと (未保存の印は消さず、INV-22 の離脱確認も残る)。 |
-| INV-27 | イベント駆動 | 表のブロックを編集中に Enter が押された場合、IME の変換中 (`event.isComposing` が真、または `keyCode === 229`) でなければ、システムは改行の代わりに `<br>` をカーソル位置に挿入すること。IME の変換中の Enter は処理しないこと。 |
+| INV-27 | イベント駆動 | 表のブロックを編集中に Enter が押された場合、IME の変換中 (`event.isComposing` が真、または `keyCode === 229`) でなければ、システムは改行の代わりに `<br>` をカーソル位置に挿入すること。IME の変換中の Enter は処理しないこと。この INV は表のブロックの原文の編集欄に適用する。セルの編集 (INV-62) の Enter は INV-64、表以外のブロックの編集欄の Enter / Shift+Enter は INV-71 に従う。 |
 | INV-28 | イベント駆動 | ブロック編集中に Esc が押された場合、IME の変換中でなければ、システムはそのブロックの原文を開いた時点の内容に戻し、編集欄を閉じて元の描画結果を表示すること。IME の変換中の Esc は処理しないこと。 |
 | INV-29 | イベント駆動 | 編集モードの間 (パレットの表示中)、プレビュー上でブロック編集の開始ジェスチャ (5.14.6 の定義: 主ボタンの押下から解放までの移動が `CONFIG.pan.activationThresholdPx` 以下、解放時に選択範囲が空、対象がリンク・ボタン・入力要素・`summary`・`[role=button]`・`.external-image-placeholder`・`.plantuml-pending`・図のコピーボタン・編集パレット・ポップオーバー・ブロック編集欄の内側でない) が行われた場合、システムはそのブロックの編集欄を開くこと。対象のブロック ID は `pointerdown` の時点のポインタの下の要素から取り、`pointerup` ではその ID と移動量・選択範囲だけを判定すること (その間に配置が動いても、押したブロックを開く)。その ID が現在のモデルに無い場合 (描画の待ちの間に残った古い要素など) は開かないこと。編集モードでない間は、プレビューのクリックで編集欄を開かず、既存の操作 (リンク、選択、外部画像の同意、図のパン・ズーム解除・コピー) をそのまま動かすこと。ブロック ID は MarkdownRenderer が作った外枠 (`#preview` の直下の `.md-block`) だけから取り、ブロック編集欄と編集パレット (ポップオーバーを含む) の内側かどうかは要素の参照で判定すること (利用者の HTML に書かれた `class` や `data-block-id` は sanitize を通るので、開くブロックの ID の決定と、編集欄・パレットの内側かどうかの判定 (INV-30 の「外側」と INV-36) に影響させてはならない。上に列挙した除外対象の判定と、INV-14 の `role="toolbar"` のガードは、列挙した要素・class・role のままとする)。 |
 | INV-30 | イベント駆動 | ブロック編集中に「外側」(ブロック編集欄、編集パレット、パレットのポップオーバー、以外の要素) で、マウスでは `pointerdown` が、タッチとペンでは `pointerdown` から `pointerup` までの移動が `CONFIG.pan.activationThresholdPx` 以下の `pointerup` が起きた場合 (タッチでのスクロールの開始では確定しない)、システムは編集中のブロックを確定すること。ブロック編集中に `#editor` にフォーカスが入った場合 (キーボード操作を含む) も、その時点で確定すること (5.7 (5))。その対象が別のブロックで、INV-29 のジェスチャが成立した場合は、確定の後で、クリックされたブロックをブロック ID でモデル上の位置に解決し直してから、その編集欄を開くこと (確定で消えたブロックなら開かない)。 |
@@ -349,8 +349,8 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-49 | イベント駆動 | 確定によって本文が空 (ブロックが 0 個) になった場合、システムは `_viewState` を `"markdown"` のまま保ち、編集モードの間は空の最初のブロックを 1 つ表示すること。 |
 | INV-50 | 状態駆動 | 未保存の間、システムは `document.title` の先頭に `* ` を付け、未保存でなくなったら外すこと。`document.title` にファイル名を入れてはならない (CON-13)。パレット下端の状態表示 (`paletteStatus`) も同じ判定で更新すること。 |
 | INV-51 | 常時 | 1 MB の文書で、ブロックの確定から DOM の差し替えの完了までを 300 ms 以内とすること (Mermaid と PlantUML の描画を除く。最新の Chrome、一般的な PC で計測する)。 |
-| INV-52 | イベント駆動 | パレットの各機能は次のとおり振る舞うこと (編集中でないときの挿入で、`#editor` に未描画の変更があるときは INV-45 に従い、挿入を行わない)。Bold / Italic: 選択範囲を `**` / `*` で囲む (既に囲まれていれば外す。選択が空なら無効)。Insert table / Mermaid の雛形: ブロック編集中ならカーソル位置に、そうでなければ最後に開いたブロックの後ろに、それも無ければ文書の末尾に挿入し、前後に空行が無ければ補うこと。Insert row / Insert column: 表のブロックの編集中だけ有効とし、カーソルのある行の下・列の右に空のセルを挿入すること (列はバックスラッシュの付かない縦棒だけで区切る)。ブロック編集中の挿入は編集欄の文字列の変更とし (確定しない。編集欄の Ctrl+Z の対象)、編集中でないときの挿入は 1 回のモデルの変更として扱う (INV-48 の Undo の対象)。 |
-| INV-53 | イベント駆動 | 編集パレットの要素は、プレビューの外 (`body` の直下) に置き、移動しないこと。パレットとポップオーバーのボタンは `tabindex="-1"` とし、キーボードのフォーカスを受けず、キーボードで操作しないこと (Tab での移動、矢印キー、Enter / Space を扱わない)。ブロック編集欄の Tab は横取りしない (ブラウザの既定)。ポップオーバーを開いている間の Esc は、IME の変換中 (`isComposing` または `keyCode === 229`) でなければ、ポップオーバーだけを閉じ (11-f)、その事象をブロック編集欄・document に渡さないこと (document の capture で処理して `preventDefault()` と `stopPropagation()`)。IME の変換中の Esc は横取りしない (変換の取消になる)。印刷ではパレット、ポップオーバー、ブロック編集欄の枠、不可視ブロックの帯を表示しないこと。 |
+| INV-52 | イベント駆動 | パレットの各機能は次のとおり振る舞うこと (編集中でないときの挿入で、`#editor` に未描画の変更があるときは INV-45 に従い、挿入を行わない)。Bold / Italic / 書式 (色・リンク): INV-66 / 67 / 69 に従う (選択の条件は 5.15.5)。Insert table / Mermaid の雛形: ブロック編集中ならカーソル位置に、そうでなければ最後に開いたブロックの後ろに、それも無ければ文書の末尾に挿入し、前後に空行が無ければ補うこと。Insert row / Insert column: 表のブロックの編集中だけ有効とし、カーソルのある行の下・列の右に空のセルを挿入すること (列はバックスラッシュの付かない縦棒だけで区切る)。ブロック編集中の挿入は編集欄の文字列の変更とし (確定しない。編集欄の Ctrl+Z の対象)、編集中でないときの挿入は 1 回のモデルの変更として扱う (INV-48 の Undo の対象)。 |
+| INV-53 | イベント駆動 | 編集パレットの要素は、プレビューの外 (`body` の直下) に置き、移動しないこと。パレットとポップオーバーのボタンは `tabindex="-1"` とし、キーボードのフォーカスを受けず、キーボードで操作しないこと (Tab での移動、矢印キー、Enter / Space を扱わない)。ブロック編集欄の Tab は横取りしない (ブラウザの既定)。ポップオーバーを開いている間の Esc は、IME の変換中 (`isComposing` または `keyCode === 229`) でなければ、ポップオーバーだけを閉じ (11-f)、その事象をブロック編集欄・document に渡さないこと (document の capture で処理して `preventDefault()` と `stopPropagation()`)。IME の変換中の Esc は横取りしない (変換の取消になる)。印刷ではパレット、ポップオーバー、ブロック編集欄の枠、不可視ブロックの帯、見えない文字の印 (INV-70) を表示しないこと。 |
 | INV-54 | イベント駆動 | 保存処理中 (`saveOperationState` が `writingFile`) に、文書を作り直す出来事 (5.14.11 で新しい文書 ID になるもの、または文書が無くなるもの: `.md` と非 `.md` のドロップ、Reload、初期状態からのペーストと `#editor` からの描画、空の文書の開始、Clear) が要求された場合 (テーマの切り替えと、Markdown 表示中の `#editor` からの描画は対象外)、システムはそれを実行せず、保存中である旨をトーストで表示すること。保存の結果 (`SaveOutcome`) は、保存を始めたときの文書 ID が現在の文書 ID と一致する場合に限り反映すること。 |
 | INV-55 | イベント駆動 | 文書を作り直す出来事 (`.md` のドロップ、Reload、初期状態からのペーストまたは `#editor` からの描画、空の文書の開始、Clear、非 `.md` のドロップ) では、システムは 5.14.11 の表のとおりに `DocumentSession` と `DocumentLocation` を作り直す (または無しにする) こと。保存先は `DocumentLocation` だけを正とし、ほかの場所に fileHandle を持たないこと。 |
 | INV-56 | イベント駆動 | `#editor` の内容をモデルに取り込む操作 (Markdown 表示中の [Render Light] / [Render Dark] / `l` / `d`、INV-45 の自動の全体描画 (ブロックの開始ジェスチャ、パレットの Undo、編集中でないときの挿入)、Save / Save as での取り込み (INV-33)) の前に、`#editor` が空 (空白文字だけを含む場合を含む) で、現在の本文が空でない (空白文字以外を含む) 場合、システムは、何かを変える前に確認ダイアログ (`messages.edit.emptyEditorConfirm`) を表示すること。OK ならその操作を従来どおり行い (本文は空になる)、Cancel なら `#editor` を現在の本文に戻し (値の代入。`input` イベントは起きない)、`#editor` の未描画の変更の印を下ろし、未保存の印を再計算すること。それ以外は何も変えないこと (モデル、開いているブロック編集欄、テーマ、保存の状態を変えず、トーストも出さず、権限の要求も保存ダイアログも始めない)。Cancel の後は `#editor` に未描画の変更が無いので、同じ操作をもう一度行うと確認なしに進む。`#editor` が空でも本文も空なら、確認を表示しないこと。Save / Save as では、`#editor` を取り込まない場合 (未描画の変更が無い場合) は確認を表示しないこと。 |
@@ -359,7 +359,12 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-59 | イベント駆動 | 編集モードの間 (パレットの表示中。最小化を含む) に主の修飾キー + Z (Shift なし) が押された場合、システムは次のとおりにすること。(a) フォーカスが `#editor`、またはブロック編集欄・セル以外の入力要素にあれば、横取りしない (ブラウザの既定)。(b) ブロック編集欄にあり、その内容が開いた時点の原文と異なれば、横取りしない (ブラウザの文字単位の Undo。裁定 Q2)。(c) それ以外 (ブロック編集欄で変更が無い、セルの中、編集欄の外) は、ブラウザの既定の動作を止め、パレットの Undo と同じ処理 (11-c の `undoRequested`) を行うこと。セルの中では、主の修飾キー + Shift + Z と Ctrl+Y (Mac 以外) も止め、何もしないこと (Redo は無い。OS-18)。編集モードでないときは横取りしない (裁定 Q3)。 |
 | INV-60 | イベント駆動 | ブロック編集欄またはセルの編集中に主の修飾キー + B / I (Shift なし。主 + Shift + B / I はブラウザの既定のまま。オーナーの裁定 2026-10-21) が押された場合、システムはブラウザの既定の動作を止め、選択が 5.15.5 の条件を満たせば Bold / Italic (INV-67) を行うこと (満たさなければ何もしない)。編集中でないときと `#editor` では横取りしないこと。 |
 | INV-61 | イベント駆動 | 種類が `table` のブロックを、原文の編集欄の確定、セルの確定、または INV-65 の操作で本文を変えて確定する場合、確定の結果が GFM の表として解釈できるなら、システムは表を次の形に整えてからモデルに入れること: 各行の両端に縦棒を置き、セルの前後に空白を 1 つ置き、列ごとに最も幅の広いセルに合わせて右に空白を足す。幅は East Asian Width の F / W を 2、結合文字 (Mn / Me) と幅 0 の文字 (Cf の一部、異体字セレクタ) を 0、それ以外 (Ambiguous、タブを含む) を 1 として数える。区切り行は列の幅 (最小 3) の `-` で作り、配置の `:` を保つ。セルの数が見出しより少ない行は空のセルを補い、多い行は余るセルを元のまま後ろに残す。内容を変えずに閉じた場合は整えないこと。幅の数え方の限界 (5.14.13) は既知の制約とする。 |
+| INV-66 | イベント駆動 | ブロック編集欄またはセルで文字を選び、書式のポップオーバーで色を選んだ場合、システムは選んだ文字だけに INV-67 の規則で文字色を付けること (「色を外す」では外す)。原文には `<span style="color: #RRGGBB">…</span>` と書き、値は `CONFIG.edit.textColors` のライトの値 (5.14.14) とすること。ダークでは、その 3 値を CSS でダークの値に読み替えて表示すること (原文は変えない)。DOMPurify・ExternalImageGate・CSP は変更しないこと **[確認済: `style` 属性は DOMPurify の既定で通り、`url()` などを含む `style` は ExternalImageGate が除く]**。GitHub では `style` が除かれるので、色は消え、文字は残る **[確認済: レビュー UIR-38]**。文書の利用者が書いた任意の `style` 属性は改訂の前から通る (今回は広げも絞りもしない。絞る件は範囲外として別に検討する。裁定 Q4)。 |
+| INV-67 | イベント駆動 | Bold / Italic / 文字色 / リンクを適用する場合、システムは次の規則で書式の並びを変え、書き出すこと。(1) **正規形**: 書式の種類を外から順に、色 → リンク → 取り消し線 → 太字 → 斜体 とし、コード・改行・文字は最も内側に置く。同じ種類の書式は入れ子にしない (分割と結合で扱う)。違う種類の入れ子は、この順でだけ作る (例と書き方は 5.14.14 の表)。(2) 隣り合う同じ書式はまとめる。(3) Bold / Italic は、選んだ範囲の文字がすべてその書式なら外し、そうでなければ範囲全体に付ける。(4) 強調の記号 (`**` / `*` / `~~`) の内側の両端に空白を置かない (端の空白は記号の外に出す)。(5) **約物**: 強調の範囲の端の文字が、CommonMark 0.31.2 の左右の区切りの規則 (Unicode の空白と、Unicode の P / S に属する約物で判定する。marked も同じ判定 **[確認済: marked 18.1.0 の `[\s\p{P}\p{S}]`]**) を満たさず記号が効かない場合は、その端の文字を 1 文字ずつ範囲から外し、効くようになるまで繰り返す。範囲が空になれば、その書式を付けない。HTML (`<strong>` など) では書かない (裁定 E1)。WYSIWYG のセルでは、適用した時点でこの結果を表示に反映する。(6) **範囲**: 選択の端がコードスパンまたはリンクの途中にある場合は、範囲をそのコードスパン・リンク全体に広げる。選択が 1 つのインラインの範囲 (用語集) に収まらない場合は、適用せず、ボタンを無効にする (空行をまたぐ選択を含む)。(7) **原文の編集欄**では、選択を含むインラインの範囲を字句解析し、選択に重なるトークンの範囲だけを (1)〜(5) の形で書き直し、それ以外の文字は変えない。(8) **検証**: 書き出した結果を marked で解析し直し、並びが意図と一致することを単体テストで確かめる (5.14.14 の表のすべての例)。 |
 | INV-68 | イベント駆動 | 編集パレットのグリップが `CONFIG.edit.paletteLongPressMs` 以上押され、その間の移動が `CONFIG.pan.activationThresholdPx` 以下だった場合、システムは 11-f の `minimizeToggled` を起こすこと (時間が来た時点で切り替え、離すまで移動しない。11-d)。それより前に閾値を超えて動いた場合は移動とすること。最小化している間はグリップだけを表示し、未保存なら印 (点) を付けること。グリップの画面上の位置は変えないこと (ビューポートの外に出る場合は INV-37 で補正する)。最小化しても編集モード、開いている編集欄、ショートカットはそのままとすること。最小化の状態は記憶しないこと (CON-13)。タッチの長押しで文脈メニューや選択が出ないようにすること (`contextmenu` を止め、`-webkit-touch-callout: none`)。 |
+| INV-70 | 状態駆動 | ブロック編集欄またはセルの編集中、システムは次の文字に薄い背景の印を付けて表示すること: U+00A0、U+2007、U+202F、U+200B、U+200C、U+2060、U+FEFF、U+00AD、および INV-71 の対象のブロック (段落・リスト・引用) の編集欄の行末の 2 つ以上の空白 (改行の印)。コードブロック・HTML などの行末の空白には印を付けない。U+200D (ZWJ) と異体字セレクタは、絵文字の表示を崩さないため印を付けない。印は文字の幅を変えない (背景だけ)。**(ブロック編集欄)** `textarea` の文字には色を付けられないので、同じ文字列を同じフォント・幅・折り返しで描いた背景の層を編集欄の真後ろに重ね、その層の印の位置に背景を付ける。層は `textContent` と要素の生成だけで作り (利用者の文字を HTML として解釈しない)、`inert`、`aria-hidden="true"`、`pointer-events: none`、文字の色を透明にする (支援技術とページ内検索に二重に当たらないため。**[要検証: ブラウザのページ内検索が `inert` の中を除くこと]**。除かない場合は既知の制約とする)。作り直しは `requestAnimationFrame` で 1 フレームに 1 回にまとめる。編集欄の文字数が `CONFIG.edit.invisibleMarkMaxChars` (50,000) を超える場合は層を作らない (大きなブロックで打鍵を遅くしないため。印は出ない)。**(セル)** 印の文字を、描画側が作った要素で囲む (要素の参照で判定し、書き出しでは文字として扱う。INV-63)。ファイルには文字のまま書くこと (実体参照に変えない。裁定 V1)。プレビュー・印刷・編集モードでない表示では印を付けないこと。 |
+| INV-71 | イベント駆動 | 種類が段落・リスト・引用のブロックの編集欄で、IME の変換中でなく、Enter または Shift+Enter (修飾キーは Shift だけ) が押された場合、システムは次のとおりにすること。(1) **文脈**: 編集欄の文字列を字句解析し (`lexer`)、カーソルの行が段落の文字 (リストの項目・引用の中の段落を含む) にある場合だけ、(2)〜(5) を行う。コードブロック (フェンス・インデント。リスト・引用の中を含む)、HTML、数式のブロックの行では、普通の改行とする。字句解析の結果が編集欄の文字列に戻らず、行の文脈が決まらない場合も、普通の改行とする。段落の文字の行でも、カーソル (選択の両端) が次の場所にある場合は、普通の改行とする (空白 2 つを入れない。コードや属性の値、URL に空白を入れないため): (i) コードスパンの中、(ii) インラインの HTML のタグの中、(iii) インラインの数式の中 (以上、オーナーの裁定 R4、2026-10-22)、(iv) 実体参照の途中、(v) エスケープ (`\*` など) の途中、(vi) 自動リンク (`<URL>` と裸の URL) の途中、(vii) リンクの行き先 `(…)` と参照のラベル `[…]` (リンクの文字の `]` の直後から、閉じの括弧まで)、(viii) 強調の記号 (`**` / `*` / `~~`) の途中と、そのすぐ内側の端、(ix) 画像 (`![…](…)`) の途中、(x) リンクの文字の括弧のすぐ内側 (`[` の直後と `]` の直前)、(xi) そのほか 1 つの部品として扱うトークン (改行 `br` など) の途中と、1 つの文字 (サロゲートの組) の途中 (利用者の操作では起きない) (以上、オーナーの裁定 R5、2026-10-22)。行の先頭 (カーソルの前が空白と引用の印だけ) の Enter でも、カーソルが (i)〜(xi) の場所 (行をまたぐコードスパンや属性の値の中など) にあれば、普通の改行とする (前の行の末尾の空白も取り除かない)。選択の両端が別の段落 (リストの別の項目、引用の別の段落など) にある場合と、カーソルが行の先頭のリストの印の中またはその直後 (段落の文字の前) にある場合も、普通の改行とする。(2) **選択**: 選択が空でなければ、選択した文字を消してから (3) を行う (選択を置き換える)。(3) **改行の印**: カーソルの前の、その行の部分が空白以外を含めば「空白 2 つ + 改行」を入れる。空 (空白だけ、または引用の印 `>` と空白だけ) なら改行だけを入れ、前の行の末尾の 2 つ以上の空白 (改行の印) を取り除く (段落の区切りになる)。(4) **引用**: カーソルの行が引用の中なら、改行の後に、その行の先頭の引用の印 (`> `、入れ子なら `> > ` など、行の先頭の `>` と空白の並びをそのまま) を補う。(5) **リスト**: 項目の印は補わない (新しい項目は利用者が `- ` などを打つ。項目の自動の継続は次の改善。裁定 UIR-47)。(6) **確定のときの後始末**: 種類が段落・リスト・引用のブロックを確定するとき、行末の 2 つ以上の空白のうち、改行 (`br`) を生じていないものだけを取り除く。判定は候補ごとに行い、その行末の空白だけを取り除く前と後の本文を同じ lexer で字句解析し、`marked.walkTokens` で `type === "br"` のトークンを数え、その数が変わらない候補だけを取り除く (行末の空白はトークンの `text` に残るので、トークンの列の一致では判定できない **[確認済: marked 18.1.0]**)。ただし、行末がコードスパン・インラインの HTML・リンクや画像の題名などの中にある候補は取り除かない (行をまたぐコードスパンの中身や、行をまたぐ属性の値が変わるため)。判定は、同じ `walkTokens` で、`type` が `text` と `space` のトークン (どちらもトークンごと除く。行末の空白が独立した `text` のトークンや、リストの最後の行の後ろの `space` のトークンとして現れ、取り除くとトークンが消えて列が変わるため) を除くすべてのトークンについて、`type` と、`raw` 以外の文字列・数値・真偽の属性 (子のトークン (`tokens`) を持つトークンの `text` を除く。`codespan` の `text`、`html` の `text`、`link` / `image` の `href` と `title` を含む) を出現順に集めた列を、取り除く前と後で比べ、一致しない候補は取り除かないことで行う (型を列挙せずに一般化する。拡張のトークン (KaTeX など) も含まれ、取りこぼした場合も空白を残す側に倒れる)。字句解析の対象は、確定するブロックの原文だけでよい (ブロックが大きい場合も、本文全体を解析しない)。例 **[確認済: marked 18.1.0]**: `- a␣␣` / `- b`、`abc␣␣` / 空行 / `def`、`abc␣␣` (最後の行)、`abc␣␣` / `# H` は `br` が 0 のまま変わらないので取り除く。`abc␣␣` / `2. x`、`abc␣␣` / `def`、`> a␣␣` / `> b`、`- a␣␣` / `␣␣b` は `br` が 1 から 0 に変わるので残す (改行の意味がある)。行をまたぐコードスパン (`` x `a␣␣`` / ``b` y ``。中身は `a   b` で、取り除くと `a b` になる) と、行をまたぐ HTML の属性の値 (`x <span title="a␣␣` / `b">y</span> z`) は、`br` は 0 のままだが、コードスパン・HTML の列が変わるので残す。同じ行に閉じたコードスパンがあるだけの行 (`` x `c` d␣␣`` / `- e`) は列が変わらないので取り除く。行をまたぐリンク・画像の題名 (`[a](u "t␣␣` / `x")`、`![a](u "t␣␣` / `x")`) は、`br` は 0 のままだが `title` が変わるので残す **[確認済: marked 18.1.0 (KaTeX の拡張あり)]**。ブロックの最後の行がリストの項目の場合 (`- a` / `- b␣␣`、`- b␣␣`、`1. a` / `2. b␣␣`) は、取り除く **[確認済: 同]**。コードブロックの中の行は変えない。(7) 入れ方は 5.14.6 の `execCommand("insertText")` の方式 (ブラウザの Undo の履歴に載る) とする。表のブロックの編集欄は INV-27、それ以外の種類 (見出し、コードブロック、数式、HTML、参照リンクの定義) の編集欄では、普通の改行とすること。空行を入れるとリストが「ゆるいリスト」 (各項目が段落になり、間が空く) になるのは Markdown の通常の動きとし、ヘルプ (日英) に書く。 |
+| INV-72 | 常時 | WYSIWYG のセルの書き出しでは、システムは表記を次のとおり保つこと。(a) リンク: 開く時点で、セルの原文をインラインの字句解析し、リンクのトークンを出現順に描画の `a` 要素と対応付け (数が合わなければ原文のセルにする)、要素ごとに種類と元の表記 (普通 `[文字](URL)`・参照 `[文字][ラベル]` / `[文字][]` / `[文字]`・`<URL>`・裸の URL) を記録する。書き出しでは、普通のリンクは `[文字](URL)`、参照リンクは `[文字][ラベル]` (省略形で文字が変わった場合は元の文字をラベルとして `[新しい文字][元の文字]`)、`<URL>` と裸の URL は、文字が変わっていなければ元の表記、変わっていれば新しい文字を URL として同じ形 (新しい文字が INV-69 の URL の条件を満たさなければ `[文字](元の URL)`) とする。INV-69 で作ったリンクは普通のリンクとする。(b) 実体参照は文字として書く (`&nbsp;` は U+00A0)。(c) 見えない文字は文字のまま書く (INV-70)。(d) 文字の逃がし: `\`、`` ` ``、`*`、`_` (単語の中を除く)、`[`、`]`、`<`、`|`、`~`、`$`、`&` を `\` で逃がす **[確認済: `\$` は KaTeX の拡張を入れた marked で数式にならない]**。表のセルでは、コードスパンの中の `|` も `\|` と書く (marked の表は `\|` を `|` に戻してからセルを解析する **[確認済]**。`inlineHtml` も同じ前処理をする)。 |
 
 ---
 
@@ -403,6 +408,8 @@ graph TB
             BLOCKMODEL["MarkdownBlockModel<br/>(Source as blocks)"]:::entity
             TEXTOPS["MarkdownTextOps<br/>(Pure text edits)"]:::entity
             TABLE["MarkdownTable and textWidth<br/>(Pure table format, INV-61)"]:::entity
+            INLINE["InlineRuns<br/>(Pure inline formats, INV-67)"]:::entity
+            MARKS["InvisibleCharOverlay<br/>(Marks behind the editor, INV-70)"]:::framework
             SESSION["DocumentSession<br/>(Document values)"]:::entity
             SAVER["MarkdownFileAccess<br/>(Local file read and write)"]:::adapter
         end
@@ -441,6 +448,8 @@ graph TB
     BLOCKEDIT -->|"format edits"| TEXTOPS
     ORCH -->|"align tables (INV-61)"| TABLE
     TABLE -->|"split cells"| TEXTOPS
+    TEXTOPS -->|"rewrites formats (INV-67)"| INLINE
+    BLOCKEDIT -->|"marks layer (INV-70)"| MARKS
     PALETTE -->|"invokes commands"| UI
     ORCH -->|"owns"| BLOCKMODEL
     ORCH -->|"notifies through"| PORTS
@@ -676,12 +685,32 @@ classDiagram
         +newIndex : number
     }
     class MarkdownTextOps {
-        +toggleWrap(text, selStart, selEnd, marker)$ TextEdit
+        +formatRange(text, selStart, selEnd, op, context)$ TextEdit
+        +canFormatRange(text, selStart, selEnd, lexBlocks)$ boolean
+        +insertHardBreak(text, selStart, selEnd, lexers)$ TextEdit
+        +stripMeaninglessHardBreaks(raw, lexFull, walkTokens)$ string
+        +hardBreakLines(text, lexBlocks)$ boolean[]
         +insertTableRow(tableRaw, caretOffset)$ TextEdit
         +insertTableColumn(tableRaw, caretOffset)$ TextEdit
         +insertBlockText(text, caretOffset, blockText)$ TextEdit
         +insertTextAt(text, caretOffset, insertText)$ TextEdit
         +changedRange(before, after)$ object
+    }
+    class InlineRuns {
+        +fromTokens(tokens, options)$ object[]
+        +apply(runs, start, end, op, context)$ object
+        +applyUnits(runs, from, to, op, context)$ object
+        +expandRange(runs, from, to)$ object
+        +serialize(runs, options)$ string
+        +layout(runs, options)$ object
+        +signature(runs)$ object[]
+        +unitRangeOfSource(runs, srcFrom, srcTo)$ object
+    }
+    class InvisibleCharOverlay {
+        +attach() void
+        +detach() void
+        +refresh() void
+        +segments(text, lineEndFlags)$ object[]
     }
     class MarkdownTable {
         +parse(raw)$ object
@@ -769,6 +798,8 @@ classDiagram
         +hasUncommittedChange() boolean
         +getSelectionRange() TextEdit
         +applyTextEdit(edit) void
+        +canFormatSelection() boolean
+        +formatSelection(op) boolean
         +dispatch(event, target) Promise
         +isEditingTable() boolean
         +getLastOpenedBlockId() number
@@ -843,6 +874,8 @@ classDiagram
     BlockEditController ..> MarkdownTextOps : uses
     RendererOrchestrator ..> MarkdownTable : formats tables
     MarkdownTable ..> MarkdownTextOps : splitTableRow
+    MarkdownTextOps ..> InlineRuns : rewrites formats
+    BlockEditController --> InvisibleCharOverlay : marks layer
     RendererOrchestrator --> ModelChangedPort : notifies
     SaveDocument --> OverwriteConfirmPort : asks
     UIController ..|> ModelChangedPort : implements
@@ -880,6 +913,8 @@ classDiagram
     style DiagramCopyController fill:#87CEEB,stroke:#333,color:#000
     style MarkdownBlockModel fill:#FF8C00,stroke:#333,color:#000
     style MarkdownTable fill:#FF8C00,stroke:#333,color:#000
+    style InlineRuns fill:#FF8C00,stroke:#333,color:#000
+    style InvisibleCharOverlay fill:#87CEEB,stroke:#333,color:#000
     style ModelChange fill:#FF8C00,stroke:#333,color:#000
     style MarkdownBlock fill:#FF8C00,stroke:#333,color:#000
     style BlockDiff fill:#FF8C00,stroke:#333,color:#000
@@ -930,12 +965,14 @@ classDiagram
 | `textTransforms.js` | `splitMarkdownWrapper(text)` / `detectLineEnding(text)` / `normalizeLineEndings(text)` / `convertLineEndings(lfText, lineEnding)` / `hasUtf8Bom(bytes)`。すべて `@purity pure` (5.13、5.14.1) |
 | `textWidth.js` | `displayWidth(text)` / `codePointWidth(cp)` (`@purity pure`。INV-61、5.14.13。範囲表は Unicode 16.0.0 から作った定数) |
 | `MarkdownTable` | `+parse(raw)$` / `+format(table)$` / `+formatTablesIn(text, lexer)$` / `+insertRow$` / `+deleteRow$` / `+insertColumn$` / `+deleteColumn$` / `+setAlignment$` (すべて `@purity pure`。5.14.13) |
+| `InlineRuns` | `+fromTokens(tokens, {colors, offset})$` (marked のインラインのトークンから並びを作る。各要素に原文の位置 `srcFrom` / `srcTo` と最上位のトークンの番号 `top`) / `+apply(runs, start, end, op, context)$` (表示の文字の位置で。セル用) / `+applyUnits(runs, from, to, op, context)$` (要素の番号で。原文の編集欄用) / `+expandRange(runs, from, to)$` (INV-67 (6) の切らないものを含むように範囲を広げる) / `+serialize(runs, options)$` / `+layout(runs, options)$` (書き出しと、各要素と強調の記号の位置) / `+signature(runs)$` (marked が示すものだけの列。書き直しの照合に使う) / `+unitRangeOfSource(runs, srcFrom, srcTo)$`。すべて `@purity pure`、CONFIG を読まない (色の値は引数)。5.14.14。`fromNodes` (セルの DOM の写しから) は単位 E で足す |
+| `InvisibleCharOverlay` | コンストラクタ `(textarea, {maxChars, lineEndMarks(text), requestFrame})`。`attach()` / `detach()` / `refresh()` (次のフレームで 1 回だけ描き直す) / `+segments(text, lineEndFlags)$` (`@purity pure`)。INV-70、5.14.6 |
 | `MarkdownBlockModel` | `+toEditableText(raw)$` (末尾の改行を除いた、編集欄に入れる文字列。`replaceBlock` が元の末尾の改行を付け直す) / `+getNextBlockId()` / `+withNextBlockId(nextBlockId)` (Undo で戻したモデルに現在のカウンタを引き継ぐ。INV-48) |
-| `MarkdownRenderer` | `+lex(src)` (RendererOrchestrator がモデルを作るときの lexer。ブロックの字句解析だけを行い、インラインの解析はしない。ブロックの境界と参照リンクの定義は全体の解析と同じ。各ブロックの HTML は `blockHtml` がそのブロックを全体で解析して作る) / `+documentHtml(markdownText)` / `+blockHtml(raw, links)` (どちらも `{html, error}` を返し、DOM に書かない) / `+findBlockIdAt(node) number\|null` / `+getBlockElement(blockId) HTMLElement\|null` / `+getEmptyBlockElement() HTMLElement\|null` (ブロックの特定は、レンダラーが作った外枠の参照だけで行う。INV-29) / `+isStale(blockId) boolean` (編集中で差し替えなかった外枠が古い描画のままか。INV-47)。外枠の印: 不可視のブロックは `.md-block-hidden` と `data-hidden-kind` (`link` / `html`) と `title` (`messages.edit.hiddenLinkDefinition` / `hiddenHtml`)。空の文書は ID を持たない `.md-block.md-block-empty`。編集中は `.md-block-editing` |
+| `MarkdownRenderer` | `+lex(src)` (RendererOrchestrator がモデルを作るときの lexer。ブロックの字句解析だけを行い、インラインの解析はしない。ブロックの境界と参照リンクの定義は全体の解析と同じ。各ブロックの HTML は `blockHtml` がそのブロックを全体で解析して作る) / `+lexInline(src, links)` / `+lexFull(src)` / `+walkTokens(tokens, fn)` (同じ marked の設定。INV-67 / INV-71) / `+documentHtml(markdownText)` / `+blockHtml(raw, links)` (どちらも `{html, error}` を返し、DOM に書かない) / `+findBlockIdAt(node) number\|null` / `+getBlockElement(blockId) HTMLElement\|null` / `+getEmptyBlockElement() HTMLElement\|null` (ブロックの特定は、レンダラーが作った外枠の参照だけで行う。INV-29) / `+isStale(blockId) boolean` (編集中で差し替えなかった外枠が古い描画のままか。INV-47)。外枠の印: 不可視のブロックは `.md-block-hidden` と `data-hidden-kind` (`link` / `html`) と `title` (`messages.edit.hiddenLinkDefinition` / `hiddenHtml`)。空の文書は ID を持たない `.md-block.md-block-empty`。編集中は `.md-block-editing` |
 | `PlantUMLRenderer` | `+askConsent()` / `+createPendingElement(code, theme)` (`.plantuml-pending`: `messages.edit.plantumlPending` の文と `plantumlRenderButton` のボタン)。[Render] の確認で Cancel を選んだ場合は、プレースホルダを残す (もう一度押せる) |
 | `DiagramRenderer` / `MermaidRenderer` / `PlantUMLRenderer` | `render(theme, root)` の `root` は `Element` または `Element[]` (省略時は preview 全体)。要素の収集は `utils.queryAllIn(roots, selector)`。Mermaid は変換したコンテナだけを `mermaid.run` に渡す |
-| `RendererOrchestrator` | `+formatTableText(text) string` (表のブロックの編集欄の文字列の中の表を整える。モデルと同じ lexer で、その文字列だけを字句解析する。INV-61) / `+getModel() MarkdownBlockModel\|null` / `+resetExternalImageConsent() void` (`.md` のドロップで UIController が呼ぶ。INV-43) / `+holdBlock(blockId)` / `+releaseBlock()` (編集中のブロックの外枠の保持。INV-47)。`clear()` は `clearDocument()` を呼ぶ。`renderCodeView()` も最初に `clearDocument()` を呼ぶ (`state.markdownText` は `""` になる) |
-| `BlockEditController` | コンストラクタ `(preview, orchestrator, blockLocator, scrollMemento, host)`。`blockLocator` は MarkdownRenderer、`host` は `BlockEditHost`。11-c の遷移表を `blockEditStateMachine` (出来事 → 状態 → `{to, actions, guard}`) として持ち、出来事の入口は `dispatch(event, target)` 1 つとする。`emptyDocumentStarted` だけは、全体描画の後で編集欄を開くまでの Promise を返す (それまでの状態は editModeIdle)。`isEditing()` は編集欄が開いているかどうかを返す。`isEditorElement(node)` は開いている編集欄の textarea かどうか (参照で判定。INV-59 (b))。`doubleClickTarget(event)` は INV-57 の対象 (11-c。ダブルクリックの `dblclick`、またはダブルタップの 2 回目の `pointerup` を受ける)。`isDoubleTap(first, second, limits)` は `CONFIG.edit` の値で判定する (INV-31) |
+| `RendererOrchestrator` | `+textLexers()` (`{lexBlocks, lexInline, lexFull, walkTokens}`: ブロックだけ (モデルと同じ)、文書の参照リンクの定義を入れたインライン、ブロックとインライン、`marked.walkTokens`。INV-67 / INV-71) / `+formatTableText(text) string` (表のブロックの編集欄の文字列の中の表を整える。モデルと同じ lexer で、その文字列だけを字句解析する。INV-61) / `+getModel() MarkdownBlockModel\|null` / `+resetExternalImageConsent() void` (`.md` のドロップで UIController が呼ぶ。INV-43) / `+holdBlock(blockId)` / `+releaseBlock()` (編集中のブロックの外枠の保持。INV-47)。`clear()` は `clearDocument()` を呼ぶ。`renderCodeView()` も最初に `clearDocument()` を呼ぶ (`state.markdownText` は `""` になる) |
+| `BlockEditController` | コンストラクタ `(preview, orchestrator, blockLocator, scrollMemento, host, createOverlay)`。`blockLocator` は MarkdownRenderer、`host` は `BlockEditHost`、`createOverlay(textarea, options)` は INV-70 の層を作る (既定は `InvisibleCharOverlay`)。`canFormatSelection()` (5.15.5) / `formatSelection(op)` (INV-66 / 67。編集欄の文字列の変更で、確定しない)。11-c の遷移表を `blockEditStateMachine` (出来事 → 状態 → `{to, actions, guard}`) として持ち、出来事の入口は `dispatch(event, target)` 1 つとする。`emptyDocumentStarted` だけは、全体描画の後で編集欄を開くまでの Promise を返す (それまでの状態は editModeIdle)。`isEditing()` は編集欄が開いているかどうかを返す。`isEditorElement(node)` は開いている編集欄の textarea かどうか (参照で判定。INV-59 (b))。`doubleClickTarget(event)` は INV-57 の対象 (11-c。ダブルクリックの `dblclick`、またはダブルタップの 2 回目の `pointerup` を受ける)。`isDoubleTap(first, second, limits)` は `CONFIG.edit` の値で判定する (INV-31) |
 | `BlockEditHost` (UIController が実装するポート) | `isPaletteNode(node)` はパレットと 3 つのポップオーバーを参照で判定する。`renderFromEditor()` は INV-45 の全体描画とトーストを行う。`onEditorInput()` は編集欄の `input` で、`onEditStateChanged()` は編集欄の開閉で呼ばれる (未保存の印とパレットのボタンを更新する) |
 | `EditPalette` | コンストラクタ `(host, {isApple})` (`isApple` は tooltip を `Cmd` で書くか。INV-14 の判定式で main.js が `utils.isApplePlatform(navigator)` から決める)。7 列 × 2 段、ポップオーバー 3 つ (`paletteMermaidMenu` / `paletteFormatMenu` / `paletteTableMenu`)。11-d の遷移表を `paletteGestureStateMachine`、11-f の遷移表を `paletteDisplayStateMachine` として持ち、入口は `dispatch(event, input)` (11-d) と `dispatchDisplay(event, input)` (11-f)。表示・最小化・ポップオーバーは 11-f の状態 (`paletteDisplayState`) だけで決める。`setButtonStates(states)` は 5.15.5 の表の値をそのまま受け取る (キーが無ければ無効。Save / Save as と Mermaid の雛形は常に有効。`alignment` は配置のボタンの `aria-pressed`)。`setUnsaved(isUnsaved)` は最小化中の未保存の点。`isMinimized()`。`contains(node)` はパレットとポップオーバーを参照で判定する (`isPaletteNode` の実体)。無効なボタンは `disabled` 属性ではなく `aria-disabled="true"` で示す (パレット本体の無効なボタンの押下を移動にするため、ポインタの事象を受ける必要がある。INV-35)。キーボードの処理は持たない (INV-53)。表示中は `body` に class `edit-mode` を付ける (帯と空のブロックを編集モードの間だけ見せる CSS のため) |
 | `EditPaletteHost` (UIController が実装するポート) | `runCommand(command, arg)` だけ。`command` は `bold` / `italic` / `undo` / `save` / `saveAs` / `insertTable` / `insertRow` / `rowDelete` / `insertColumn` / `columnDelete` / `insertMermaid` / `textColor` / `linkPaste` / `linkRemove` / `alignColumn`。`arg` は `insertMermaid` のときの `CONFIG.edit.mermaidSamples` のキー、`textColor` のときの `red` / `blue` / `green` / `none`、`alignColumn` のときの `left` / `center` / `right` / `none` |
@@ -2152,6 +2189,32 @@ Feature: ブロック単位のその場編集
     When ユーザーが何も変えずに外側をクリックする
     Then 原文は変わらない
 
+  Scenario: 色の分割
+    Given 段落 "bbbbaaaabbbb" の全体が赤である
+    When ユーザーが "aaaa" を選び、書式から青を選ぶ
+    Then 原文は赤の "bbbb"、青の "aaaa"、赤の "bbbb" の3つの span になり、span は入れ子にならない
+
+  Scenario: 約物の前後の太字
+    Given 段落 "日本語「太字」です" がある
+    When ユーザーが "「太字」" を選んで Bold を押す
+    Then 原文は "日本語「**太字**」です" になり、描画で "太字" が太字になる
+
+  Scenario: 本文の Enter で改行する
+    Given 段落の編集欄で "abc" の後ろにカーソルがある
+    When ユーザーが Enter を押して "def" と打つ
+    Then 原文は "abc  " と "def" の2行になり、描画では "abc" の後で改行される
+    And 行末の空白2つには薄い背景の印が付いている
+
+  Scenario: リストの項目の改行と新しい項目
+    Given リスト "- a" の編集欄で "a" の後ろにカーソルがある
+    When ユーザーが Enter を押して "- b" と打ち、外側をクリックする
+    Then 原文は "- a" と "- b" の2行になり、"- a" の行末に空白は残らない
+
+  Scenario: 引用の中の改行
+    Given 引用 "> abc" の編集欄で "abc" の後ろにカーソルがある
+    When ユーザーが Enter を押して "def" と打つ
+    Then 原文は "> abc  " と "> def" の2行になる
+
   Scenario: ブロック編集欄の Ctrl+Z は文字単位
     Given 段落の編集欄で "abc" と打った
     When ユーザーが Ctrl+Z を押す
@@ -2445,6 +2508,8 @@ Feature: 未保存の保護
 | `.md-block` | div (クラス) | 描画結果の 1 ブロックの外枠。`data-block-id` を持つ。MarkdownRenderer が生成する (外枠は sanitize の対象外のコード生成で、中身は sanitize 済み) |
 | `.md-block-hidden` | div (クラス) | 描画結果が空または不可視のブロックの帯。編集モードの間だけ表示し、ホバーで種類 ("link definition" / "hidden HTML") を出す (INV-41) |
 | `.md-block-editor` | textarea (クラス) | ブロック編集欄。`font-family` は 5.14.13 の等幅フォントの並び (`#editor` と同じ。INV-61)。高さは自動 (INV-40) |
+| `.md-invisible-overlay` | div (クラス) | ブロック編集欄の真後ろの印の層 (INV-70)。`inert`、`aria-hidden="true"`、`pointer-events: none`、文字は透明。InvisibleCharOverlay が作り、参照で持つ |
+| `.grsmd-invisible` | span (クラス) | 見えない文字と改行の印 (INV-70)。背景だけ (文字の幅を変えない)。ライト `#fff8c5`、ダーク `#bb800926` |
 | `.plantuml-pending` | div (クラス) | 未送信の PlantUML ブロックのプレースホルダ。[Render] ボタン付き (INV-23) |
 
 **[要検証]** `#controls` のボタンが 6 個 (`helpBtn` を含めると上部バーで 7 個) になるので、iPhone (幅 375px) で折り返しや欠けが起きないかを PRT-V11 で確認する。
@@ -2507,6 +2572,12 @@ const CONFIG = {
   edit: {
     paletteMarginPx: 16, // gap from viewport bottom-right (INV-32)
     paletteLongPressMs: 500, // grip long press toggles minimized (INV-68)
+    textColors: { // INV-66; the light value is written in the source
+      red: { light: "#B84F00", dark: "#E0661A" },
+      blue: { light: "#0072B2", dark: "#56B4E9" },
+      green: { light: "#007A58", dark: "#009E73" },
+    },
+    invisibleMarkMaxChars: 50000, // INV-70: no marks layer above this length
     doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
     doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",
@@ -3452,7 +3523,7 @@ setupTouchPasteAssist() {
 | `Esc` | 無動作 | 編集パレットを閉じる | ブロック編集を取消 (IME の変換中を除く。INV-28) | 無動作 |
 | `Esc` (ポップオーバーを開いている) | — | ポップオーバーだけを閉じる (INV-53) | ポップオーバーだけを閉じる (INV-53) | — |
 | `Tab` / `Shift+Tab` | — | — | ブラウザ既定 (INV-53) | — |
-| Enter | — | — | 改行 (表のブロックでは `<br>`。IME の変換中を除く。INV-27) | — |
+| Enter / Shift+Enter | — | — | 段落・リスト・引用では改行の印 (空白 2 つ + 改行。INV-71)。表のブロックでは `<br>` (INV-27)。それ以外 (見出し、コード、数式、HTML) と、Ctrl / Alt / Meta との組み合わせは普通の改行。IME の変換中を除く | — |
 | ダブルクリック / ダブルタップ | INV-31 | 編集モードでなければ INV-57、編集モードでは開始ジェスチャ 2 回 | — | — |
 | 主 + S / 主 + Shift + S | 止めて何もしない (INV-58) | Save / Save as (INV-58。パレットが閉じていても) | Save / Save as | 止めて何もしない (INV-58) |
 | 主 + Z | ブラウザ既定 | 編集モードでなければブラウザ既定 (裁定 Q3)、編集モードなら Undo (INV-59 (c)) | 変更あり: フォーカスが編集欄の中ならブラウザ既定 (文字単位)、外なら変更の取消 (INV-48 (1)) / 変更なし: Undo (INV-59) | ブラウザ既定 |
@@ -3717,7 +3788,12 @@ UIController.preprocessInput() は、AIツールが出力する外側のMarkdown
 
 #### 5.14.5 テキスト操作 (`MarkdownTextOps`, `@purity pure`)
 
-CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選択が空なら変更しない)、`insertTableRow` / `insertTableColumn` (列はバックスラッシュの付かない縦棒だけで区切る。コードスパンの中の縦棒も区切りとして数える。区切り行にも区切りのセルを足し、配置指定は既定とする)、`insertBlockText` (前後に空行が無ければ補って挿入する。INV-52)、`insertTextAt` (`<br>` の挿入に使う)、`changedRange(before, after)` (2 つの文字列の共通の先頭と末尾を除いた、置き換える 1 つの区間 `{start, end, text}`。5.14.6 の Undo の対象にする挿入に使う)。
+CONFIG を読まず、必要な値は引数で受け取る。`formatRange(text, selStart, selEnd, op, {lexBlocks, lexInline, colors})` (Bold / Italic / 文字色。INV-66 / 67。5.14.14)、`canFormatRange(text, selStart, selEnd, lexBlocks)` (5.15.5)、`insertHardBreak(text, selStart, selEnd, {lexBlocks, lexInline})` (INV-71 の (1)〜(5))、`stripMeaninglessHardBreaks(raw, lexFull, walkTokens)` (INV-71 の (6))、`hardBreakLines(text, lexBlocks)` (INV-70 の行末の印を付ける行)、`insertTableRow` / `insertTableColumn` (列はバックスラッシュの付かない縦棒だけで区切る。コードスパンの中の縦棒も区切りとして数える。区切り行にも区切りのセルを足し、配置指定は既定とする)、`insertBlockText` (前後に空行が無ければ補って挿入する。INV-52)、`insertTextAt` (`<br>` の挿入に使う)、`changedRange(before, after)` (2 つの文字列の共通の先頭と末尾を除いた、置き換える 1 つの区間 `{start, end, text}`。5.14.6 の Undo の対象にする挿入に使う)。
+
+- 行の文脈: `lexBlocks` (モデルと同じブロックだけの字句解析) のトークンを、リストの項目と引用の中までたどり、行ごとに、その行が属する末端のブロック (段落、リストの項目の文字、見出し、コード、HTML、数式、表など) と、行の先頭のリスト・引用の印の長さを求める。末端のブロックの行が編集欄の行の末尾に見つからない場合 (行末の空白を除いて比べる) は、その行の文脈は不明とする (書式は無効、Enter は普通の改行)。
+- インラインの範囲 (INV-67 (6)): 選択の両端が同じ末端のブロックにあり、その種類が段落・リストの項目の文字・見出し・表である場合だけ。段落は各行のリスト・引用の印の後ろ、見出しは `#` の印と閉じの `#` を除いた文字 (セットテキストは下線の行を除く)、表は 1 つのセル (区切り行を除く。前後の空白とタブを除く)。選択の端の改行は除き、行の印の上の端はその隣の文字へ寄せる。
+- `insertHardBreak`: カーソルの行の文脈が段落の文字のときだけ働き、それ以外は `null` (ブラウザの改行)。カーソルの前に、空白・タブと引用の印 (`>`) 以外があれば「空白 2 つ + 改行」と、引用の中ならその行の先頭の引用の印 (`>` と空白の並び) を入れる。無ければ (空の行、または段落の行の先頭)、前の行が段落の文字なら、その行の末尾の 2 つ以上の空白を除き、改行と、カーソルの前の引用の印を入れる (段落の区切り)。選択は置き換える。 カーソル (選択の両端) が INV-71 (1) の (i)〜(xi) の場所にあれば `null` (段落を `lexInline` で解析し、1 つの部品として扱うトークンの内側と、強調・リンクの文字を囲む記号の内側の端を除く。裁定 R4 / R5)。
+- `stripMeaninglessHardBreaks`: 候補 (行末の 2 つ以上の空白。末端のブロックがコード・HTML・数式などインラインでない行と、文脈の不明な行は候補にしない) について、その空白を除いた本文を `lexFull` で字句解析し、`br` の数 (空白の `br` の数も。`abc\` の後ろの空白を除くと逃がしの `br` に変わるため) と、`text` と `space` を除く各トークンの `type` と、`raw` 以外の文字列・数値・真偽の属性 (子のトークンを持つトークンの `text` を除く) の列が、除く前と同じなら除く (INV-71 (6))。空白の `br` の数が候補の数と同じなら (どの候補も改行を生じている)、くり返さずに返す。そうでなければ、候補を「段落の文字の、段落の最後でない行」(改行を生じるはず) とそれ以外に分け、それぞれをまとめて試し、同じでなければ半分ずつに分けて試す (1 行まで)。ふつうのブロックは 2〜3 回の字句解析で済む。字句解析は 1 つのブロックで 8 回まで (`STRIP_MAX_LEXES`) とし、それまでに決まらなかった候補はそのまま残す (表示は変わらない側。INV-51。取り除けない候補の多い最悪の場合も含め、1,000 行のブロックで 300 ms 以内を単体テストで確かめる)。
 
 #### 5.14.6 編集の開始ジェスチャと「外側」(BlockEditController)
 
@@ -3727,13 +3803,15 @@ CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選�
 - 確定 (11-c の `commitBlock`) は同期でモデルを更新する (描画の完了は待たない。INV-47)。確定・取消は `dispatch` で表を通してだけ行う (表の外で状態を変える入口は持たない)。
 - `#editor` の `focusin` は UIController が受け (`#editor` を持つのは UIController)、ブロック編集中なら `BlockEditController.dispatch("editorFocused")` で確定する (5.7 (5)、INV-30)。
 - `getSelectionRange()` / `applyTextEdit(edit)` で選択範囲と文字列だけを受け渡し、編集欄の要素は外へ渡さない (LoD)。
-- 編集欄の Undo の対象 (INV-52、OS-18): `applyTextEdit` (パレットの書式・挿入) と表の中の Enter (`<br>`) は、`MarkdownTextOps.changedRange` で変わる区間だけを `setSelectionRange` で選び、`document.execCommand("insertText", false, text)` で入れる (ブラウザの編集欄の Undo の履歴に載る。非推奨の API だが代わりが無い)。`execCommand` が無い、`false` を返す、例外を投げる、または入れた結果が求める文字列と違う場合は、`value` の代入にフォールバックする (その場合はその変更を Ctrl+Z で戻せない)。その後で選択範囲を `edit` のとおりにする。
+- 編集欄の Undo の対象 (INV-52、OS-18): `applyTextEdit` (パレットの書式・挿入)、表の中の Enter (`<br>`)、段落・リスト・引用の Enter / Shift+Enter (INV-71 の改行の印) は、`MarkdownTextOps.changedRange` で変わる区間だけを `setSelectionRange` で選び、`document.execCommand("insertText", false, text)` で入れる (ブラウザの編集欄の Undo の履歴に載る。非推奨の API だが代わりが無い)。`execCommand` が無い、`false` を返す、例外を投げる、または入れた結果が求める文字列と違う場合は、`value` の代入にフォールバックする (その場合はその変更を Ctrl+Z で戻せない)。その後で選択範囲を `edit` のとおりにする。
 - IME: `compositionstart` から `compositionend` までと、`event.isComposing` が真、または `keyCode === 229` の `keydown` は処理しない (INV-27 / INV-28)。
 
-- 編集欄は外枠 (`.md-block`) の中に置き、外枠の元の子要素は退避して、閉じるときに戻す (外枠は残るので、ブロックの特定は変わらない)。編集中の外枠には `.md-block-editing` を付ける。`font-family: monospace` と `overflow-y: hidden` は CSSOM で設定し、高さは `scrollHeight` に枠の幅を足した値にする (CSS は `box-sizing: border-box`、`width: 100%`。INV-40)。
+- 編集欄は外枠 (`.md-block`) の中に置き、外枠の元の子要素は退避して、閉じるときに戻す (外枠は残るので、ブロックの特定は変わらない)。編集中の外枠には `.md-block-editing` を付ける (`position: relative`。INV-70 の層の基準)。`font-family` は CSS (5.14.13)。`overflow-y: hidden` は CSSOM で設定し、高さは `scrollHeight` に枠の幅を足した値にする (CSS は `box-sizing: border-box`、`width: 100%`。INV-40)。
 - INV-29 の除外対象の「入力要素」は `input`、`textarea`、`select` とする。編集中のブロックの外枠そのものの上の押下は、編集欄の内側として扱う。
 - スクロールバーの判定: 押下の対象が `#preview` または `document.documentElement` で、`offsetX > clientWidth` または `offsetY > clientHeight` のとき、スクロールバーの上とみなす (外側としない。INV-30)。
 - `pointerType` が `"mouse"` 以外 (空文字を含む) の押下は、タッチとペンの扱いにする。
+- 見えない文字の印 (INV-70): 編集欄を開くと `InvisibleCharOverlay` を作り (`createOverlay`)、閉じると外す。層は編集欄の直前の兄弟で、編集欄と同じ位置・大きさ (`offsetTop` / `offsetLeft` / `offsetWidth` / `offsetHeight`)、同じフォント・大きさ・行の高さ・`padding`・枠の幅 (透明)・`white-space: pre-wrap`・`overflow-wrap: break-word` で、地は編集欄の地 (編集欄の地は透明にし、層を `z-index` で後ろに置く)。描き直しは編集欄の `input` と、編集欄の大きさの変化 (`ResizeObserver`。無ければウィンドウの `resize`) で、`requestAnimationFrame` で 1 フレームに 1 回にまとめる (`applyTextEdit` で値を代入した場合も描き直す)。行末の印は、種類が段落・リスト・引用のブロックで、`MarkdownTextOps.hardBreakLines` が真の行だけ。文字数が `CONFIG.edit.invisibleMarkMaxChars` を超えたら層を外す (地は編集欄に戻る)。0 幅の文字の印は、背景の代わりに `box-shadow` (同じ色、幅 1px) で見える。
+- 確定のときの後始末 (INV-71 (6)): 種類が段落・リスト・引用のブロックは、`commitBlock` の前に `stripMeaninglessHardBreaks` を通す。その結果が開いた時点の原文と同じなら確定しない (表の整形 (INV-61) の結果が同じ場合も同じ)。
 - ダブルタップ (INV-31) は、タッチの `pointerup` の時刻 (単調時計の `performance.now()`。壁時計の `Date.now()` は使わない) と座標で判定する (`BlockEditController.isDoubleTap`)。ダブルクリックは `dblclick` の事象で判定する。
 
 #### 5.14.7 保存 (`SaveDocument` / `SaveDocumentAs`、UseCase 層)
@@ -3790,6 +3868,38 @@ CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選�
 - 幅 (`textWidth.js` の `displayWidth(text)`、`@purity pure`): コードポイントごとに、East_Asian_Width が F / W なら 2、General_Category が Mn / Me、または Cf (表示される前置の結合記号 U+0600〜U+0605・U+06DD・U+070F・U+0890・U+0891・U+08E2・U+110BD・U+110CD を除く) なら 0、それ以外 (Ambiguous、タブ、制御文字を含む) は 1。両方に当たる文字 (U+3099 など) は 0。範囲表は Unicode 16.0.0 の `EastAsianWidth.txt` と `DerivedGeneralCategory.txt` から開発時に 1 回だけ作った定数 (製品は実行時に通信しない)。版と作り方は `textWidth.js` の冒頭に書く。セルの幅は書かれたとおりの文字列 (`\|` は 2) で数える (等幅フォントで原文を見たときにそろうため)。
 - 幅の数え方の既知の制約: (1) 和文の等幅フォントは Ambiguous の文字 (○ ① α ※ × など) を全角で描くことがあり、その場合は縦棒がずれる。(2) 絵文字の ZWJ の列と、肌の色の修飾 (U+1F3FB〜U+1F3FF、W) の付いた絵文字は W を足し合わせて数えるので、表示 (2) より広く数える。(3) VS16 の付いた絵文字 (❤️ など) は 1 と数えるが、表示は 2。(4) タブは 1 と数える。いずれも縦棒の見た目がずれるだけで、表の意味は変わらない。
 - 等幅フォント: `.md-block-editor` と `#editor` は `"BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace` (システムのフォントだけ。`@font-face` は使わない)。合否の基準と既知の制約は PRT-X07。
+
+#### 5.14.14 書式の正規形と文字色 (INV-66 / 67 / 72)
+
+- 並び (`InlineRuns`、`@purity pure`): インラインの書式を、1 文字・1 つのコードスパン・1 つの改行・1 つの「そのままの片」(インラインの HTML、画像、数式など。原文のまま書く) の要素の並びとして持つ。各要素は書式 `{color, link, del, strong, em}` を持ち、リンクは同じリンクの要素で 1 つの値 (表記の情報。INV-72 (a)) を共有する。原文から作った要素は原文の表記 (`src`) を持ち、書き出しではそれをそのまま使う (逃がし `\*` や実体参照は変わらない)。表記の無い新しい文字 (セル、単位 E) は INV-72 (d) で逃がす。
+- 色の `span`: `<span style="color: #RRGGBB">` の形で、値が `CONFIG.edit.textColors` のライトの値 (大文字・小文字を問わない) のものだけを色として読み、書いたときの値のまま持つ。それ以外の `span` と、対になる閉じのタグの無いものは、そのままの片として残す。
+- 適用 (`apply` / `applyUnits`): 範囲の端がリンクの途中なら、そのリンク全体へ広げる (コードスパンとそのままの片は 1 つの要素なので、途中から選んでも全体)。Bold / Italic は、範囲の空白以外の文字がすべてその書式なら外し、そうでなければ範囲全体に付ける (空白だけなら何もしない)。文字色は範囲に値を入れる (「色を外す」は空)。その後、強調の記号 (`~~` / `**` / `*`) の内側の端の空白と改行を記号の外へ出し、`**` / `*` が CommonMark の左右の区切りの規則 (前後の文字を `[\s\p{P}\p{S}]` で判定。続く `*` は 1 つの区切りの並び。並びの外の文字は書き出しの周りの原文 `context.before` / `after`) を満たさない端は、その端の 1 要素から書式を外すことを、満たすまでくり返す (INV-67 (4)(5))。
+- 書き出し (`serialize`): 外から 色 → リンク → 取り消し線 → 太字 → 斜体 の順に、同じ書式の隣り合う要素をまとめて書く (同じ種類は入れ子にしない)。リンクは、普通のリンクと完全参照は元の行き先・ラベルを保ち、省略形の参照・`<URL>`・裸の URL は、文字の書き出しが元と同じなら元の形、違えば省略形の参照は `[新しい文字][元の文字]`、`<URL>` と裸の URL は `[文字](元の URL)` (新しい文字が URL の条件 `isLinkableUrl` を満たし書式が無ければ元の形)。
+- 原文の編集欄 (`MarkdownTextOps.formatRange`): インラインの範囲 (5.14.5) を `lexInline` (文書の参照リンクの定義を入れた字句解析) で解析し、選択に重なる最上位のトークン (色の `span` は開きから閉じまでを 1 組) だけを書き直す。選択の端がトークンの端にあり、書式を付けるときに、その隣の要素が同じ書式 (Bold / Italic ではその書式、色では同じ色) を持つときだけ、隣のトークンも書き直す (まとめるため。INV-67 (2))。それ以外の隣と、書き直した範囲の外の文字は、表記も変えない (INV-67 (7))。ただし、そのままでは下の照合に合わない場合 (例: `__a__**b**` の `b` の Bold を外すと `__a__b` になり、marked は `a` を太字と読まない) に限り、その書式を持つ隣も書き直してもう一度試す (`**a**b`)。書き直したインラインの範囲を `lexInline` で解析し直し、`InlineRuns.signature` (marked が示す文字・書式・リンクの区切りだけの列) が意図と一致しなければ適用しない (`null`。INV-67 (8))。書き直した結果は 1 回の `execCommand("insertText")` で入れる (Ctrl+Z で戻せる)。選択は、書式を適用した文字 (記号の内側) にする。書式を付けた場合は、その書式を持つ文字だけ (INV-67 (4)(5) で外した端の空白・約物を除く) を選ぶ。同じボタンをもう一度押すと外れ、元に戻る。
+- 切らないもの (INV-67 (6)、`InlineRuns.expandRange`): リンク、コードスパン、そのままの片、実体参照 (`&amp;`、`&#x41;` など。1 つの要素)、インラインの HTML の要素 (開きと閉じのタグを名前で対にし、範囲が片方に触れれば両方を含める。`br` などの空要素と `/>` で閉じるタグは対にしない)。
+- 正規形の帰結: 裸の URL と `<URL>` に書式を付けると、リンクを外側に置くため普通のリンク (`[**https://x.example/**](https://x.example/)`) になる。約物だけの範囲も、記号が効く位置 (行の端、空白の隣) なら書式が付く (INV-67 (5)。`「」` だけの段落の Bold は `**「」**`)。
+
+正規形の例 (marked 18.1.0 で描画が意図どおり。単体テストで確かめる):
+
+| 書式の並び | 書き出し |
+| --- | --- |
+| 太字の中に斜体 | `**a *b* c**` |
+| 太字かつ斜体 | `***x***` |
+| 取り消し線の中に太字 | `~~**x**~~` |
+| 色の中に太字 | `<span style="color: #0072B2">**AA**</span>bb` |
+| 色の範囲が太字の境界をまたぐ | `**bb**<span style="color: #0072B2">**AA**cc</span>` |
+| リンクの中に太字 | `[**a**](u)` |
+| 色の中にリンク | `<span style="color: #0072B2">[a](u)</span>` |
+| 約物の前後 (E1) | `日本語「**太字**」です` |
+| コードを太字 | `` **`x`** `` |
+
+| 色 | ライト (原文に書く値) | `#ffffff` / `#fffdf5` / `#f6f8fa` 上 | ダーク (表示) | `#0d1117` / `#010409` / `#151b23` 上 |
+| --- | --- | --- | --- | --- |
+| 赤 (朱色) | `#B84F00` | 5.05 / 4.96 / 4.75 | `#E0661A` | 5.48 / 5.95 / 5.02 |
+| 青 | `#0072B2` | 5.19 / 5.09 / 4.87 | `#56B4E9` | 8.20 / 8.90 / 7.50 |
+| 緑 (青みの緑) | `#007A58` | 5.35 / 5.25 / 5.03 | `#009E73` | 5.53 / 6.00 / 5.06 |
+
+コントラスト比は WCAG の式による (単体テストで、すべて 4.5 以上を確かめる)。ダークの読み替えは `body.dark #preview span[style*="#B84F00" i] { color: #E0661A !important; }` の形 (3 色分。`url()` を含まない)。原文は変えない。
 
 ### 5.15 編集パレット
 
@@ -3869,7 +3979,7 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | Delete column | セルの編集中で、列が 2 つ以上 |
 | Table options (とその配置) | セルの編集中 |
 
-`EditPalette.setButtonStates(states)` は、この表の判定の結果を、キー `bold` / `italic` / `format` / `textColor` / `linkPaste` / `linkRemove` / `insertTable` / `insertMermaid` / `undo` / `insertRow` / `insertColumn` / `rowDelete` / `columnDelete` / `tableOptions` の真偽と、`alignment` (今の列の配置。`left` / `center` / `right` / `none`、または `null`) で受け取る。判定は UIController が行う。ボタンの有効・無効は、未保存の印を更新するたびと、編集欄の選択範囲が変わるたび (document の `selectionchange` を capture で受ける) に更新する。判定は INV-51 のとおり、`requestAnimationFrame` で 1 フレームに 1 回にまとめて行う。編集中の挿入 (Insert table / Mermaid の雛形) は、カーソル位置 (選択の終わり) に入れる。Bold / Italic は、選択が空なら何もしない。
+`EditPalette.setButtonStates(states)` は、この表の判定の結果を、キー `bold` / `italic` / `format` / `textColor` / `linkPaste` / `linkRemove` / `insertTable` / `insertMermaid` / `undo` / `insertRow` / `insertColumn` / `rowDelete` / `columnDelete` / `tableOptions` の真偽と、`alignment` (今の列の配置。`left` / `center` / `right` / `none`、または `null`) で受け取る。判定は UIController が行う。ボタンの有効・無効は、未保存の印を更新するたびと、編集欄の選択範囲が変わるたび (document の `selectionchange` を capture で受ける) に更新する。編集欄の入力と選択の変化では次のフレームに 1 回 (`_schedulePaletteStates`)、編集欄の開閉・確定などでは、その場で更新する。判定は INV-51 のとおり、`requestAnimationFrame` で 1 フレームに 1 回にまとめて行う。編集中の挿入 (Insert table / Mermaid の雛形) は、カーソル位置 (選択の終わり) に入れる。Bold / Italic / 文字色の判定 (INV-67 (6)) は `BlockEditController.canFormatSelection()` で、編集欄の文字列のブロックの字句解析だけを使う (同じ文字列の解析は使い回す。インラインの字句解析はしない)。ブロック編集欄の Bold / Italic / 文字色は `formatSelection` で、`MarkdownTextOps.formatRange` が `null` なら何もしない。
 
 #### 5.15.6 キーボード操作とタブ順
 
@@ -3887,7 +3997,7 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | **YAGNI**    | 検索、差分、プラグインシステム、マルチファイルタブは実装しない。指定された機能のみ実装する。                                                                                                                                                                                                                        |
 | **DRY**      | EXT_TO_HLJSは単一のルックアップテーブル。テーマ適用は `applyTheme()`。トーストは `showToast()`。`handleRender()` はキーとボタンで共用。                                                                                                                                                                             |
 | **SoC**      | SourceFileRenderer: コード本体レンダリングのみ（UI chrome は UIController に委譲）。SmoothScrollEngine: アニメーション物理のみ。UIController: イベント配線 + ビューモード管理（setViewMode, showKeyHint）。RendererOrchestrator: レンダリングパイプライン調整のみ（DOM classList 操作なし）。CONFIG: 全定数を集約。 |
-| **SRP**      | 各クラスは変更理由がちょうど1つ。SourceFileRendererはコード描画変更時のみ変更。UIControllerはUI表示変更時のみ変更。RendererOrchestratorはパイプライン変更時のみ変更。 **(その場編集。2026-xx-xx 追記)** MarkdownBlockModel: 本文とブロックの対応だけ。BlockDiff: ブロック列の対応付けだけ。MarkdownTextOps: 文字列の書式操作だけ。MarkdownTable: 表の解析と整形だけ (幅は textWidth.js)。DocumentSession: 保存に関わる値だけ。SaveDocument / SaveDocumentAs: 保存の手順だけ。MarkdownFileAccess: ローカルファイルへの入出力だけ。BlockEditController: ブロック編集の UI イベントだけ。EditPalette: パレットの表示とジェスチャだけ (機能の実行はコールバックで UIController へ) |
+| **SRP**      | 各クラスは変更理由がちょうど1つ。SourceFileRendererはコード描画変更時のみ変更。UIControllerはUI表示変更時のみ変更。RendererOrchestratorはパイプライン変更時のみ変更。 **(その場編集。2026-xx-xx 追記)** MarkdownBlockModel: 本文とブロックの対応だけ。BlockDiff: ブロック列の対応付けだけ。MarkdownTextOps: 文字列の書式操作だけ。MarkdownTable: 表の解析と整形だけ (幅は textWidth.js)。InlineRuns: インラインの書式の並びと書き出しだけ。InvisibleCharOverlay: 編集欄の後ろの印の層だけ。DocumentSession: 保存に関わる値だけ。SaveDocument / SaveDocumentAs: 保存の手順だけ。MarkdownFileAccess: ローカルファイルへの入出力だけ。BlockEditController: ブロック編集の UI イベントだけ。EditPalette: パレットの表示とジェスチャだけ (機能の実行はコールバックで UIController へ) |
 | **OCP**      | EXT_TO_HLJSへの拡張子追加にロジック変更は不要。新レンダラーはUIControllerを変更せずRendererOrchestratorに追加可能。                                                                                                                                                                                                 |
 | **LSP**      | MermaidRendererとPlantUMLRendererは共にDiagramRendererを継承し、互換性のある `render()` インターフェースを持つ。                                                                                                                                                                                                    |
 | **ISP**      | 不要なインターフェースへの依存を強制するクラスはない。SourceFileRendererはダイアグラムレンダリングインターフェースに依存しない。                                                                                                                                                                                    |
@@ -3897,8 +4007,8 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | **CQS**      | `isPreRenderState()` / `isCodeViewActive()` は純粋なクエリ（副作用なし）。`render()` / `reload()` はコマンド + CodeViewMeta 返却（CQS の実用的例外: レンダリング副作用とメタデータ返却を分離すると呼び出し側が複雑化するため）。`destroy()` / `setViewMode()` は純粋なコマンド。 **(その場編集。2026-xx-xx 追記)** `isBodyChanged()` / `toFileText()` / `diffBlocks()` / `toBody()` は副作用の無いクエリ。`isEditing()` / `hasUncommittedChange()` / `canUndo()` は副作用は無いが可変の状態を読むクエリ (純粋ではない) |
 | **POLA**     | `L` = ライト、`D` = ダーク — 両ビューで一貫。`C` = 常にクリア。`N` = 常に新規タブ。Ctrl+C = ブラウザネイティブコピー（修飾キーガードにより bare key ショートカットと衝突しない）。`setViewMode()` で全ビュー切替を統一API化。リロードはファイルが読み込まれている場合のみ発火。 **(その場編集。2026-xx-xx 追記)** パレットのボタンは「押して離した」ときだけ動き、ずらすと移動になる。Esc は常に「取消 / 閉じる」。閲覧中 (編集モードでない) のプレビューの操作は従来どおり |
 | **PIE**      | 自己説明的な命名: SourceFileRenderer、SmoothScrollEngine、EXT_TO_HLJS、keyHintDurationMs。CONFIGのキーは自然な英語として読める。                                                                                                                                                                                    |
-| **CA**       | 依存の方向は内側へ: Framework(UIController) → UseCase(Orchestrator) → Entity(Renderers, ApplicationState)。Renderers はドメインコアレンダリングのため Entity に分類。循環依存なし。CONFIGは境界上の純粋データオブジェクト。**意図的逸脱:** ScrollMemento は Adapter 層だが UseCase(Orchestrator) が直接所有する。2メソッドのクラスに対して Interface を挟むのはオーバーエンジニアリングのため、実用上許容する。 **(その場編集。2026-xx-xx 追記)** Entity: MarkdownBlockModel / BlockDiff / MarkdownTextOps / MarkdownTable / DocumentSession (文書の値だけで、ブラウザの型を持たない)。UseCase: RendererOrchestrator / SaveDocument / SaveDocumentAs / DocumentLocation (保存先の値。fileHandle は不透明な参照として扱い、Entity からは使わない)。Adapter: MarkdownFileAccess / ScrollMemento。Framework: BlockEditController / EditPalette / UIController。UseCase の SaveDocument は UI を直接扱わず、`confirmOverwrite` のポートを通す。依存は内向き |
-| **純粋性 (R7)** | **(その場編集。2026-xx-xx 追加)** `pure`: MarkdownBlockModel / BlockDiff / MarkdownTextOps / MarkdownTable / DocumentSession (不変の値) / `splitMarkdownWrapper` 等の変換関数 / `textWidth.js` の `displayWidth`。`semi-pure-b`: `ScrollMemento.captureAnchor`、`MarkdownFileAccess.readLastModified`。`non-pure`: 状態を持つコントローラ、書き込み、DOM の更新。純粋な core と非純粋な shell は別ファイル (R7.9) |
+| **CA**       | 依存の方向は内側へ: Framework(UIController) → UseCase(Orchestrator) → Entity(Renderers, ApplicationState)。Renderers はドメインコアレンダリングのため Entity に分類。循環依存なし。CONFIGは境界上の純粋データオブジェクト。**意図的逸脱:** ScrollMemento は Adapter 層だが UseCase(Orchestrator) が直接所有する。2メソッドのクラスに対して Interface を挟むのはオーバーエンジニアリングのため、実用上許容する。 **(その場編集。2026-xx-xx 追記)** Entity: MarkdownBlockModel / BlockDiff / MarkdownTextOps / MarkdownTable / InlineRuns / DocumentSession (文書の値だけで、ブラウザの型を持たない)。UseCase: RendererOrchestrator / SaveDocument / SaveDocumentAs / DocumentLocation (保存先の値。fileHandle は不透明な参照として扱い、Entity からは使わない)。Adapter: MarkdownFileAccess / ScrollMemento。Framework: BlockEditController / EditPalette / UIController / InvisibleCharOverlay。UseCase の SaveDocument は UI を直接扱わず、`confirmOverwrite` のポートを通す。依存は内向き |
+| **純粋性 (R7)** | **(その場編集。2026-xx-xx 追加)** `pure`: MarkdownBlockModel / BlockDiff / MarkdownTextOps / MarkdownTable / InlineRuns / DocumentSession (不変の値) / `splitMarkdownWrapper` 等の変換関数 / `textWidth.js` の `displayWidth`。`semi-pure-b`: `ScrollMemento.captureAnchor`、`MarkdownFileAccess.readLastModified`。`non-pure`: 状態を持つコントローラ、書き込み、DOM の更新。純粋な core と非純粋な shell は別ファイル (R7.9) |
 | **命名規則** | CSS: 既存のcamelCase ID規約を維持。JS: メソッドはcamelCase、クラスはPascalCase、モジュールレベル定数はUPPER_SNAKE。                                                                                                                                                                                                 |
 
 #### 5.16.1 最小構成との比較 (R2.18)

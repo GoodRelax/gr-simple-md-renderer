@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import mermaid from "mermaid";
 import { CONFIG } from "../js/config.js";
 import { makeLexer } from "./helpers/samples.js";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 
 describe("CONFIG.edit (spec 5.2)", () => {
   it("AT-CFG-01 holds the agreed values", () => {
@@ -38,5 +41,50 @@ describe("CONFIG.edit (spec 5.2)", () => {
 
   it("AT-CFG-03 (check of the check) mermaid.parse rejects broken syntax in this environment", async () => {
     await expect(mermaid.parse("flowchart TD\n    A -->|x B")).rejects.toThrow();
+  });
+});
+
+/** WCAG 2 relative luminance of #rrggbb. */
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+const contrast = (a, b) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+
+describe("CONFIG.edit text colors and invisible marks (INV-66, INV-70, 5.14.14)", () => {
+  it("AT-CFG-06 the agreed values", () => {
+    expect(CONFIG.edit.textColors).toEqual({
+      red: { light: "#B84F00", dark: "#E0661A" },
+      blue: { light: "#0072B2", dark: "#56B4E9" },
+      green: { light: "#007A58", dark: "#009E73" },
+    });
+    expect(CONFIG.edit.invisibleMarkMaxChars).toBe(50000);
+  });
+
+  // The grounds text can be on: page, block editor, table header (light);
+  // page, block editor (inset), muted (dark).
+  const GROUNDS = { light: ["#ffffff", "#fffdf5", "#f6f8fa"], dark: ["#0d1117", "#010409", "#151b23"] };
+  it.each(
+    Object.entries(CONFIG.edit.textColors).flatMap(([name, c]) =>
+      ["light", "dark"].flatMap((theme) => GROUNDS[theme].map((ground) => [name, theme, c[theme], ground])),
+    ),
+  )("AT-CFG-07 %s (%s) %s on %s has a contrast of 4.5 or more", (_name, _theme, color, ground) => {
+    expect(contrast(color, ground)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("AT-CFG-07 (check of the check) the formula gives 21 for black on white", () => {
+    expect(contrast("#000000", "#ffffff")).toBeCloseTo(21, 5);
+  });
+});
+
+describe("the dark text colors in style.css (INV-66, 5.14.14)", () => {
+  const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../css/style.css"), "utf8");
+  it.each(Object.entries(CONFIG.edit.textColors))("AT-CFG-08 %s: the light value shows as its dark pair", (_name, { light, dark }) => {
+    const rule = new RegExp(`body\\.dark #preview span\\[style\\*="${light}" i\\] \\{\\s*color: ${dark} !important;\\s*\\}`);
+    expect(css).toMatch(rule);
   });
 });

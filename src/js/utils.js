@@ -180,3 +180,23 @@ export function isApplePlatform(nav) {
   if (platform) return platform === "macOS";
   return /Mac|iPhone|iPad/.test(nav?.platform ?? "");
 }
+
+/**
+ * Run cb in the next animation frame (a short timer where there is none,
+ * e.g. jsdom). Returns the id for cancelFrame.
+ * @purity non-pure
+ * @param {() => void} cb
+ * @returns {number}
+ */
+export function nextFrame(cb) {
+  return typeof requestAnimationFrame === "function" ? requestAnimationFrame(cb) : setTimeout(cb, 16);
+}
+
+/**
+ * @purity non-pure
+ * @param {number} id - from nextFrame
+ */
+export function cancelFrame(id) {
+  if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(id);
+  else clearTimeout(id);
+}

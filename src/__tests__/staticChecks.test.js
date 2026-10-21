@@ -65,6 +65,8 @@ const NEW_FILES = [
   "classes/BlockEditController.js",
   "classes/EditPalette.js",
   "classes/MarkdownTable.js",
+  "classes/InlineRuns.js",
+  "classes/InvisibleCharOverlay.js",
   "textTransforms.js",
   "textWidth.js",
 ];
@@ -75,6 +77,7 @@ const ENTITY_FILES = [
   "classes/MarkdownTextOps.js",
   "classes/DocumentSession.js",
   "classes/MarkdownTable.js",
+  "classes/InlineRuns.js",
   "textTransforms.js",
   "textWidth.js",
 ];
@@ -242,5 +245,36 @@ describe("style.css for in-place editing", () => {
   it("no url() in the editing rules (CSP, no external fetch)", () => {
     const editing = css.split("\n").filter((line) => /edit-palette|md-block|plantuml-pending/.test(line)).join("\n");
     expect(editing).not.toMatch(/url\(/);
+  });
+});
+
+describe("style.css: the marks layer has the block editor's text box (INV-70)", () => {
+  /** The declarations of a rule as {property: value}. */
+  function declarations(selector) {
+    const body = ruleBody(css, selector);
+    expect(body, selector).not.toBe(null);
+    const out = {};
+    for (const m of body.matchAll(/([a-z-]+)\s*:\s*([^;]+);/g)) out[m[1]] = m[2].trim();
+    return out;
+  }
+
+  it("AT-STA-08 the same font, size, line height, padding, border width and radius, box, wrapping and tab size", () => {
+    const editor = declarations(".md-block-editor");
+    const layer = declarations(".md-invisible-overlay");
+    for (const key of ["font-family", "font-size", "line-height", "padding", "border-radius", "box-sizing", "white-space", "overflow-wrap", "tab-size"]) {
+      expect(layer[key], key).toBe(editor[key]);
+    }
+    expect(layer.border.split(/\s+/)[0]).toBe(editor.border.split(/\s+/)[0]);
+    expect(layer.border).toMatch(/transparent$/);
+  });
+
+  it("AT-STA-09 the layer has the editor's ground (light and dark); the overlaid editor is transparent", () => {
+    expect(declarations(".md-invisible-overlay").background).toBe(declarations(".md-block-editor").background);
+    expect(declarations(".dark .md-invisible-overlay").background).toBe(declarations(".dark .md-block-editor").background);
+    expect(declarations(".md-block-editor.md-block-editor-overlaid").background).toBe("transparent");
+  });
+
+  it("AT-STA-10 print hides the layer (INV-53)", () => {
+    expect(ruleBody(printBlocks(css), ".md-invisible-overlay")).toMatch(/display:\s*none/);
   });
 });

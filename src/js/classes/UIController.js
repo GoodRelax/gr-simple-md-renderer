@@ -1,5 +1,5 @@
 import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
-import { applyTheme, applySystemTheme, systemTheme, showToast } from "../utils.js";
+import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame } from "../utils.js";
 import { splitMarkdownWrapper, normalizeLineEndings, hasUtf8Bom } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
 import DocumentSession from "./DocumentSession.js";
@@ -185,6 +185,7 @@ export default class UIController {
     this._location = null; // DocumentLocation
     this._nextDocumentId = 1;
     this._editorChangedSinceRender = false; // INV-45
+    this._paletteStatesPending = false; // a frame is asked for (INV-51)
     this._saveOperationState = "idle"; // 11-e
     this._baseTitle = document.title;
     this._lastTap = null; // double tap on the empty preview (INV-31)
@@ -849,13 +850,13 @@ export default class UIController {
       if (this.blockEdit.isEditing()) this.blockEdit.dispatch("editorFocused");
       this._syncEditorText(); // before the user can type (INV-47)
     });
-    // Bold / Italic follow the editor's selection (5.15.5). Capture also sees
-    // the event when it is fired at the textarea itself.
+    // Bold / Italic follow the editor's selection (5.15.5), once per frame
+    // (INV-51). Capture also sees the event when it is fired at the textarea.
     /** @purity non-pure */
     document.addEventListener(
       "selectionchange",
       () => {
-        if (this.palette.isShown()) this._updatePaletteStates();
+        if (this.palette.isShown()) this._schedulePaletteStates();
       },
       true,
     );
@@ -1114,9 +1115,11 @@ export default class UIController {
 
   /**
    * Title prefix and palette status (INV-50). No file name in the title.
+   * The button states follow now, or in the next frame (deferButtonStates).
    * @purity non-pure
+   * @param {{deferButtonStates?: boolean}} [options]
    */
-  _refreshDirtyMark() {
+  _refreshDirtyMark(options = {}) {
     const dirty = this._isDocumentDirty();
     document.title = dirty ? CONFIG.edit.titleUnsavedPrefix + this._baseTitle : this._baseTitle;
     const m = CONFIG.messages.edit;
@@ -1125,7 +1128,8 @@ export default class UIController {
     if (this._session) status = dirty ? m.statusUnsaved(name) : m.statusSaved(name);
     this.palette.setStatusText(status);
     this.palette.setUnsaved(dirty);
-    this._updatePaletteStates();
+    if (options.deferButtonStates) this._schedulePaletteStates();
+    else this._updatePaletteStates();
   }
 
   /**
@@ -1137,19 +1141,35 @@ export default class UIController {
   }
 
   /**
+   * _updatePaletteStates in the next frame, once for all the selection
+   * changes before it (INV-51).
+   * @purity non-pure
+   */
+  _schedulePaletteStates() {
+    if (this._paletteStatesPending) return;
+    this._paletteStatesPending = true;
+    /** @purity non-pure */
+    nextFrame(() => {
+      this._paletteStatesPending = false;
+      if (this.palette.isShown()) this._updatePaletteStates();
+    });
+  }
+
+  /**
    * The 5.15.5 table (the keys of EditPalette.setButtonStates). Also the
    * condition of INV-60 for primary + B / I.
    * @purity semi-pure-b
    * @returns {object}
    */
   _paletteStates() {
-    const range = this.blockEdit.getSelectionRange();
     const isEditing = this.blockEdit.isEditing();
-    const hasSelection = isEditing && Boolean(range) && range.selStart !== range.selEnd;
+    // A selection in one inline range (INV-67 (6)).
+    const canFormat = isEditing && this.blockEdit.canFormatSelection();
     const isInTableSource = isEditing && this.blockEdit.isEditingTable();
     return {
-      bold: hasSelection,
-      italic: hasSelection,
+      bold: canFormat,
+      italic: canFormat,
+      textColor: canFormat,
       format: isEditing,
       insertTable: true,
       insertMermaid: true,
@@ -1204,7 +1224,8 @@ export default class UIController {
       isPaletteNode: (node) => this.palette.contains(node),
       isEditorChangedSinceRender: () => this._editorChangedSinceRender,
       renderFromEditor: () => this._renderFromEditorFirst(),
-      onEditorInput: () => this._refreshDirtyMark(),
+      // typing: the button states once per frame (INV-51)
+      onEditorInput: () => this._refreshDirtyMark({ deferButtonStates: true }),
       onEditStateChanged: () => this._refreshDirtyMark(),
     };
   }
@@ -1234,11 +1255,11 @@ export default class UIController {
         break;
       case "bold":
       case "italic":
-        this._editInBlock((range) =>
-          range.selStart === range.selEnd
-            ? null
-            : MarkdownTextOps.toggleWrap(range.text, range.selStart, range.selEnd, command === "bold" ? "**" : "*"),
-        );
+        this._formatInBlock({ kind: command === "bold" ? "strong" : "em" }); // INV-67
+        break;
+      case "textColor":
+        // INV-66: the light value goes into the source; "none" removes the color
+        this._formatInBlock({ kind: "color", value: CONFIG.edit.textColors[arg]?.light ?? null });
         break;
       case "insertRow":
         this._editInBlock((range) => MarkdownTextOps.insertTableRow(range.text, range.selStart));
@@ -1272,6 +1293,15 @@ export default class UIController {
     if (!next) return;
     this.blockEdit.applyTextEdit(next);
     this._refreshDirtyMark();
+  }
+
+  /**
+   * A format on the open editor's selection (not a commit; INV-52).
+   * @purity non-pure
+   * @param {{kind: string, value?: string|null}} op
+   */
+  _formatInBlock(op) {
+    if (this.blockEdit.formatSelection(op)) this._refreshDirtyMark();
   }
 
   /**

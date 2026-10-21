@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import MarkdownTextOps from "../js/classes/MarkdownTextOps.js";
 import { CONFIG } from "../js/config.js";
 import { makeLexer } from "./helpers/samples.js";
+import { Marked } from "marked";
+import markedKatex from "marked-katex-extension";
 
 const lex = makeLexer();
 const blockTokens = (text) => lex(text).filter((t) => t.type !== "space");
@@ -15,8 +17,21 @@ const cellTexts = (row) => row.map((c) => c.text);
 const caretIn = (text, needle, delta = 1) => text.indexOf(needle) + delta;
 
 describe("MarkdownTextOps (pure; marked is the reference for tables)", () => {
+  // Bold / Italic go through formatRange (INV-67; toggleWrap was replaced).
+  const lexBlocks = (src) => lex(src);
+  const ctx = {
+    lexBlocks,
+    lexInline: (src) => {
+      const marked = new Marked();
+      marked.use(markedKatex({ throwOnError: false }));
+      return new marked.Lexer(marked.defaults).inlineTokens(src);
+    },
+    colors: [],
+  };
+  const wrap = (text, s, e, kind) => MarkdownTextOps.formatRange(text, s, e, { kind }, ctx);
+
   it("AT-TXT-01 wraps the selection with ** and keeps the word selected", () => {
-    expect(MarkdownTextOps.toggleWrap("a word b", 2, 6, "**")).toEqual({
+    expect(wrap("a word b", 2, 6, "strong")).toEqual({
       text: "a **word** b",
       selStart: 4,
       selEnd: 8,
@@ -24,12 +39,12 @@ describe("MarkdownTextOps (pure; marked is the reference for tables)", () => {
   });
 
   it("AT-TXT-02 unwraps when the markers surround the selection, or are inside it (Q6 a)", () => {
-    expect(MarkdownTextOps.toggleWrap("a **word** b", 4, 8, "**")).toEqual({
+    expect(wrap("a **word** b", 4, 8, "strong")).toEqual({
       text: "a word b",
       selStart: 2,
       selEnd: 6,
     });
-    expect(MarkdownTextOps.toggleWrap("a **word** b", 2, 10, "**")).toEqual({
+    expect(wrap("a **word** b", 2, 10, "strong")).toEqual({
       text: "a word b",
       selStart: 2,
       selEnd: 6,
@@ -37,21 +52,17 @@ describe("MarkdownTextOps (pure; marked is the reference for tables)", () => {
   });
 
   it("AT-TXT-03 does the same with * for italic, and does not take a bold marker as italic", () => {
-    expect(MarkdownTextOps.toggleWrap("a word b", 2, 6, "*").text).toBe("a *word* b");
-    expect(MarkdownTextOps.toggleWrap("a *word* b", 3, 7, "*")).toEqual({
+    expect(wrap("a word b", 2, 6, "em").text).toBe("a *word* b");
+    expect(wrap("a *word* b", 3, 7, "em")).toEqual({
       text: "a word b",
       selStart: 2,
       selEnd: 6,
     });
-    expect(MarkdownTextOps.toggleWrap("a **word** b", 4, 8, "*").text).toBe("a ***word*** b");
+    expect(wrap("a **word** b", 4, 8, "em").text).toBe("a ***word*** b");
   });
 
-  it("AT-TXT-04 an empty selection changes nothing", () => {
-    expect(MarkdownTextOps.toggleWrap("a word b", 3, 3, "**")).toEqual({
-      text: "a word b",
-      selStart: 3,
-      selEnd: 3,
-    });
+  it("AT-TXT-04 an empty selection changes nothing (null)", () => {
+    expect(wrap("a word b", 3, 3, "strong")).toBe(null);
   });
 
   const T = "| A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |";
@@ -171,10 +182,9 @@ describe("MarkdownTextOps (pure; marked is the reference for tables)", () => {
   });
 
   it("AT-TXT-16 same arguments give the same result; inputs are not changed", () => {
-    const args = ["a word b", 2, 6, "**"];
-    const copy = [...args];
-    expect(MarkdownTextOps.toggleWrap(...args)).toEqual(MarkdownTextOps.toggleWrap(...args));
-    expect(args).toEqual(copy);
+    const args = ["a word b", 2, 6, { kind: "strong" }, ctx];
+    expect(MarkdownTextOps.formatRange(...args)).toEqual(MarkdownTextOps.formatRange(...args));
+    expect(args[3]).toEqual({ kind: "strong" });
     expect(MarkdownTextOps.insertTableColumn(T, 3)).toEqual(MarkdownTextOps.insertTableColumn(T, 3));
     expect(MarkdownTextOps.insertBlockText("x", 1, "y")).toEqual(MarkdownTextOps.insertBlockText("x", 1, "y"));
   });

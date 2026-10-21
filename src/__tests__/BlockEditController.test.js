@@ -467,8 +467,8 @@ describe("AT-BEC keys in the editor (INV-27, INV-28, INV-53)", () => {
     expect(s.editor()).toBeNull();
   });
 
-  it("AT-BEC-16 Enter in a table inserts the line break text at the caret and stops the default; not in a paragraph", async () => {
-    s = await setupEdit("| A | B |\n|---|---|\n| x | y |\n\nPlain para.\n");
+  it("AT-BEC-16 Enter in a table inserts the line break text at the caret and stops the default; not in a heading (a paragraph: INV-71)", async () => {
+    s = await setupEdit("| A | B |\n|---|---|\n| x | y |\n\n# Plain head\n");
     const t = openBlock((b) => b.type === "table");
     const caret = t.ta.value.indexOf("x") + 1;
     t.ta.setSelectionRange(caret, caret);
@@ -481,7 +481,7 @@ describe("AT-BEC keys in the editor (INV-27, INV-28, INV-53)", () => {
     expect(s.host.onEditorInput).toHaveBeenCalled();
 
     keydown(t.ta, "Escape");
-    const p = openBlock(isPara("Plain"));
+    const p = openBlock((b) => b.type === "heading");
     const before = p.ta.value;
     const e2 = keydown(p.ta, "Enter");
     expect(e2.defaultPrevented).toBe(false);

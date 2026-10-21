@@ -1,4 +1,5 @@
 import { CONFIG } from "../config.js";
+import { nextFrame, cancelFrame } from "../utils.js";
 import { cell, row, choice, selectCell } from "../stateTable.js";
 
 // 11-d gesture states
@@ -20,10 +21,6 @@ const MINIMIZED = "minimized";
 const POPOVER_GAP_PX = 4;
 const MINIMIZED_CLASS = "edit-palette-minimized";
 const UNSAVED_CLASS = "edit-palette-unsaved";
-
-// The next animation frame (a short timer where there is none, e.g. jsdom).
-const nextFrame = (cb) => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(cb) : setTimeout(cb, 16));
-const cancelFrame = (id) => (typeof cancelAnimationFrame === "function" ? cancelAnimationFrame(id) : clearTimeout(id));
 
 const STROKE = 'fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
 

@@ -611,6 +611,8 @@ body.view-code.dark #editor {
   resize: none;
   overflow-y: hidden;
   white-space: pre-wrap;
+  overflow-wrap: break-word; /* as the marks layer (INV-70) */
+  tab-size: 8;
 }
 
 .md-block-editor:focus {
@@ -626,6 +628,79 @@ body.view-code.dark #editor {
 
 .dark .md-block-editor:focus {
   outline-color: #6fd08c;
+}
+
+/* Invisible character marks (INV-70): a layer right behind the block
+   editor with the same text box (font, size, padding, border width,
+   wrapping); its text is transparent, only the marks show through the
+   editor, whose own background is then transparent. */
+.md-block-editing {
+  position: relative;
+}
+
+.md-invisible-overlay {
+  position: absolute;
+  z-index: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 6px 8px;
+  font-family: "BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: transparent;
+  background: #fffdf5;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  tab-size: 8;
+  /* what the textarea's own style sets, not inherited from #preview */
+  font-weight: normal;
+  font-style: normal;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-indent: 0;
+  text-transform: none;
+  text-align: start;
+  pointer-events: none;
+  user-select: none;
+}
+
+.dark .md-invisible-overlay {
+  background: #1b1d1f;
+}
+
+.md-block-editor.md-block-editor-overlaid {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+/* The mark: a background only, so the width does not change; the shadow
+   shows a zero-width character too. */
+.grsmd-invisible {
+  background: #fff8c5;
+  box-shadow: 0 0 0 1px #fff8c5;
+}
+
+.dark .grsmd-invisible {
+  background: #bb800926;
+  box-shadow: 0 0 0 1px #bb800926;
+}
+
+/* Text colors (INV-66): the source holds the light value of
+   CONFIG.edit.textColors; the dark theme shows its pair. */
+body.dark #preview span[style*="#B84F00" i] {
+  color: #E0661A !important;
+}
+
+body.dark #preview span[style*="#0072B2" i] {
+  color: #56B4E9 !important;
+}
+
+body.dark #preview span[style*="#007A58" i] {
+  color: #009E73 !important;
 }
 
 /* In edit mode a block shows where a click opens it */
@@ -946,7 +1021,8 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   .edit-palette,
   .edit-palette-popover,
   .md-block-hidden,
-  .md-block-empty {
+  .md-block-empty,
+  .md-invisible-overlay {
     display: none !important;
   }
 

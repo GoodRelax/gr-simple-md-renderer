@@ -104,6 +104,12 @@ export const CONFIG = {
   edit: {
     paletteMarginPx: 16, // gap from viewport bottom-right (INV-32)
     paletteLongPressMs: 500, // grip long press toggles minimized (INV-68)
+    textColors: { // INV-66; the light value is written in the source
+      red: { light: "#B84F00", dark: "#E0661A" },
+      blue: { light: "#0072B2", dark: "#56B4E9" },
+      green: { light: "#007A58", dark: "#009E73" },
+    },
+    invisibleMarkMaxChars: 50000, // INV-70: no marks layer above this length
     doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
     doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",

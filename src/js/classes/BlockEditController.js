@@ -1,6 +1,7 @@
 import { CONFIG } from "../config.js";
 import MarkdownBlockModel from "./MarkdownBlockModel.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
+import InvisibleCharOverlay from "./InvisibleCharOverlay.js";
 import { cell, row, choice, selectCell } from "../stateTable.js";
 
 const BROWSING = "browsingPreview";
@@ -22,6 +23,9 @@ const OPEN_EXCLUDED_SELECTOR = [
   ".plantuml-pending",
   ".diagram-copy-btn",
 ].join(", ");
+
+// Block types whose Enter inserts a line break mark (INV-71).
+const HARD_BREAK_TYPES = new Set(["paragraph", "list", "blockquote"]);
 
 // A double click here keeps its own meaning (zoom reset of a diagram, INV-57).
 const DIAGRAM_SELECTOR = [".mermaid", ".plantuml-wrapper", ".plantuml-diagram", ".plantuml-pending"].join(", ");
@@ -95,16 +99,26 @@ export default class BlockEditController {
    * @param {MarkdownRenderer} blockLocator - block wrappers by reference
    * @param {ScrollMemento} scrollMemento - anchor on open (INV-46)
    * @param {object} host - BlockEditHost
+   * @param {(textarea: HTMLTextAreaElement, options: object) => InvisibleCharOverlay} [createOverlay] - INV-70
    * @purity non-pure
    */
-  constructor(preview, orchestrator, blockLocator, scrollMemento, host) {
+  constructor(
+    preview,
+    orchestrator,
+    blockLocator,
+    scrollMemento,
+    host,
+    createOverlay = (textarea, options) => new InvisibleCharOverlay(textarea, options),
+  ) {
     this.preview = preview;
     this.orchestrator = orchestrator;
     this.blockLocator = blockLocator;
     this.scrollMemento = scrollMemento;
     this.host = host;
+    this.createOverlay = createOverlay;
     this._blockEditState = BROWSING;
-    this._editor = null; // { textarea, wrapper, blockId, blockType, original, savedNodes }
+    this._editor = null; // { textarea, wrapper, blockId, blockType, original, savedNodes, overlay }
+    this._lexers = null; // the orchestrator's text lexers, block lexing cached per text
     this._press = null; // the pointerdown being followed
     this._composing = false;
     this._lastOpenedBlockId = null;
@@ -227,6 +241,36 @@ export default class BlockEditController {
   }
 
   /**
+   * The selection is in one inline range of the open editor (5.15.5: Bold /
+   * Italic / colors; INV-67 (6)).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  canFormatSelection() {
+    const range = this.getSelectionRange();
+    if (!range || range.selStart === range.selEnd) return false;
+    return MarkdownTextOps.canFormatRange(range.text, range.selStart, range.selEnd, this._textLexers().lexBlocks);
+  }
+
+  /**
+   * Bold / Italic / text color on the editor's selection (INV-66, INV-67):
+   * an editor change (not a commit), one undoable step of the editor.
+   * @purity non-pure
+   * @param {{kind: "strong"|"em"|"color", value?: string|null}} op
+   * @returns {boolean} true when the text changed
+   */
+  formatSelection(op) {
+    const range = this.getSelectionRange();
+    if (!range) return false;
+    const { lexBlocks, lexInline } = this._textLexers();
+    const colors = Object.values(CONFIG.edit.textColors).map((c) => c.light);
+    const edit = MarkdownTextOps.formatRange(range.text, range.selStart, range.selEnd, op, { lexBlocks, lexInline, colors });
+    if (!edit) return false;
+    this.applyTextEdit(edit);
+    return true;
+  }
+
+  /**
    * Put text and selection into the editor; focus stays, nothing is committed.
    * The change goes in as one undoable step of the editor (INV-52, OS-18).
    * @purity non-pure
@@ -239,6 +283,26 @@ export default class BlockEditController {
   }
 
   // ---- internals: guards and actions ----
+
+  /**
+   * The orchestrator's lexers; the block lexing of the last text is kept
+   * (the button states ask once per frame, INV-51).
+   * @purity non-pure
+   */
+  _textLexers() {
+    if (this._lexers) return this._lexers;
+    const lexers = this.orchestrator.textLexers();
+    let cache = null;
+    this._lexers = {
+      ...lexers,
+      /** @purity non-pure */
+      lexBlocks: (src) => {
+        if (cache?.src !== src) cache = { src, tokens: lexers.lexBlocks(src) };
+        return cache.tokens;
+      },
+    };
+    return this._lexers;
+  }
 
   /**
    * The 11-c guards.
@@ -422,7 +486,7 @@ export default class BlockEditController {
     const savedNodes = [...wrapper.childNodes];
     wrapper.replaceChildren(textarea);
     wrapper.classList.add("md-block-editing");
-    this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes };
+    this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes, overlay: null };
     this._composing = false;
     if (blockId !== null) {
       this.orchestrator.holdBlock(blockId); // Q-d1
@@ -434,6 +498,7 @@ export default class BlockEditController {
     textarea.addEventListener("compositionstart", this._onCompositionStart);
     textarea.addEventListener("compositionend", this._onCompositionEnd);
     this._fitHeight();
+    this._attachOverlay(textarea, blockType);
     textarea.focus({ preventScroll: true });
     this.scrollMemento.restoreAnchor(anchor, wrapper);
     if (blockId !== null) this.orchestrator.retargetPendingAnchor(blockId);
@@ -453,10 +518,12 @@ export default class BlockEditController {
     textarea.removeEventListener("input", this._onInput);
     textarea.removeEventListener("compositionstart", this._onCompositionStart);
     textarea.removeEventListener("compositionend", this._onCompositionEnd);
+    openEditor.overlay?.detach();
     openEditor.wrapper.replaceChildren(...openEditor.savedNodes);
     openEditor.wrapper.classList.remove("md-block-editing");
     this._editor = null;
     this._composing = false;
+    this._lexers = null; // the kept block lexing goes with the editor
     this.orchestrator.releaseBlock();
     this.host.onEditStateChanged();
     return { blockId: openEditor.blockId, blockType: openEditor.blockType, text: textarea.value, original: openEditor.original };
@@ -476,14 +543,45 @@ export default class BlockEditController {
     const anchor = open && open.blockId !== null ? this.scrollMemento.captureAnchor(open.wrapper) : undefined;
     const closed = this._closeEditor();
     if (!closed || closed.text === closed.original) return;
-    // INV-61: a table block committed with a change is aligned (only then).
-    const text = closed.blockType === "table" ? this.orchestrator.formatTableText(closed.text) : closed.text;
+    const text = this._committedText(closed);
+    if (text === closed.original) return;
     if (closed.blockId === null) {
       // The empty first block of an empty document (INV-31, INV-49).
       if (closed.text.trim() !== "") void this.orchestrator.insertAfter(null, closed.text);
       return;
     }
     void this.orchestrator.commitBlock(closed.blockId, text, anchor);
+  }
+
+  /**
+   * The text a changed block is committed with: a table is aligned
+   * (INV-61); in a paragraph, list or quote the line ends of spaces that
+   * make no line break go (INV-71 (6)).
+   * @purity semi-pure-b
+   * @param {{blockType: string|null, text: string}} closed
+   * @returns {string}
+   */
+  _committedText(closed) {
+    if (closed.blockType === "table") return this.orchestrator.formatTableText(closed.text);
+    if (!HARD_BREAK_TYPES.has(closed.blockType)) return closed.text;
+    const { lexFull, walkTokens } = this._textLexers();
+    return MarkdownTextOps.stripMeaninglessHardBreaks(closed.text, lexFull, walkTokens);
+  }
+
+  /**
+   * The marks layer behind the editor (INV-70); line end marks only in the
+   * blocks of INV-71.
+   * @purity non-pure
+   */
+  _attachOverlay(textarea, blockType) {
+    /** @purity non-pure */
+    const lineEndMarks = (value) => MarkdownTextOps.hardBreakLines(value, this._textLexers().lexBlocks);
+    const overlay = this.createOverlay(textarea, {
+      maxChars: CONFIG.edit.invisibleMarkMaxChars,
+      lineEndMarks: HARD_BREAK_TYPES.has(blockType) ? lineEndMarks : null,
+    });
+    this._editor.overlay = overlay;
+    overlay.attach();
   }
 
   // ---- internals: pointer (INV-29, INV-30) ----
@@ -583,9 +681,10 @@ export default class BlockEditController {
   // ---- internals: editor keys and size ----
 
   /**
-   * Esc cancels, Enter in a table inserts the line break text. Tab is left
-   * to the browser (INV-53). Nothing is done during IME composition (INV-27,
-   * INV-28).
+   * Esc cancels, Enter in a table inserts the line break text, Enter /
+   * Shift+Enter in a paragraph, list or quote the line break mark (INV-71;
+   * with Ctrl / Alt / Meta it is the browser's). Tab is left to the browser
+   * (INV-53). Nothing is done during IME composition (INV-27, INV-28).
    * @purity non-pure
    */
   _handleKeyDown(e) {
@@ -596,7 +695,23 @@ export default class BlockEditController {
     } else if (e.key === "Enter" && this._editor.blockType === "table") {
       e.preventDefault();
       this._insertTableLineBreak();
+    } else if (e.key === "Enter" && !e.ctrlKey && !e.altKey && !e.metaKey && HARD_BREAK_TYPES.has(this._editor.blockType)) {
+      this._insertHardBreak(e);
     }
+  }
+
+  /**
+   * INV-71: the line break mark through the editor's undoable insert; a
+   * line that is not paragraph text keeps the browser's newline.
+   * @purity non-pure
+   * @param {KeyboardEvent} e
+   */
+  _insertHardBreak(e) {
+    const { textarea } = this._editor;
+    const edit = MarkdownTextOps.insertHardBreak(textarea.value, textarea.selectionStart, textarea.selectionEnd, this._textLexers());
+    if (!edit) return;
+    e.preventDefault();
+    if (!this._replaceText(edit)) this._handleInput();
   }
 
   /**
@@ -606,8 +721,7 @@ export default class BlockEditController {
     const { textarea } = this._editor;
     const start = textarea.selectionStart;
     const text = textarea.value.slice(0, start) + textarea.value.slice(textarea.selectionEnd);
-    this._replaceText(MarkdownTextOps.insertTextAt(text, start, CONFIG.edit.tableLineBreak));
-    this._handleInput();
+    if (!this._replaceText(MarkdownTextOps.insertTextAt(text, start, CONFIG.edit.tableLineBreak))) this._handleInput();
   }
 
   /**
@@ -617,9 +731,11 @@ export default class BlockEditController {
    * Where that is refused or missing, the value is assigned instead.
    * @purity non-pure
    * @param {{text: string, selStart: number, selEnd: number}} edit
+   * @returns {boolean} true when the browser inserted it (its input event has run)
    */
   _replaceText(edit) {
     const { textarea } = this._editor;
+    let byBrowser = false;
     if (textarea.value !== edit.text) {
       const range = MarkdownTextOps.changedRange(textarea.value, edit.text);
       textarea.focus({ preventScroll: true });
@@ -630,10 +746,13 @@ export default class BlockEditController {
       } catch {
         inserted = false;
       }
-      if (!inserted || textarea.value !== edit.text) textarea.value = edit.text;
+      byBrowser = inserted && textarea.value === edit.text;
+      if (!byBrowser) textarea.value = edit.text;
     }
     textarea.setSelectionRange(edit.selStart, edit.selEnd);
     textarea.focus({ preventScroll: true });
+    this._editor.overlay?.refresh(); // an assigned value fires no input event
+    return byBrowser;
   }
 
   /**

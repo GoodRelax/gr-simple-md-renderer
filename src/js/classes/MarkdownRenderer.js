@@ -102,6 +102,40 @@ export default class MarkdownRenderer {
   }
 
   /**
+   * Inline tokens of one inline range (INV-67 (7)), with the reference
+   * definitions of the document (links).
+   * @purity semi-pure-a
+   * @param {string} src
+   * @param {object} [links] - MarkdownBlockModel.links
+   * @returns {object[]}
+   */
+  lexInline(src, links) {
+    const lexer = new this.marked.Lexer(this.marked.defaults);
+    Object.assign(lexer.tokens.links, links || {});
+    return lexer.inlineTokens(src);
+  }
+
+  /**
+   * Block and inline tokens of one block's text (INV-71 (6)).
+   * @purity semi-pure-a
+   * @param {string} src
+   * @returns {object[]}
+   */
+  lexFull(src) {
+    return new this.marked.Lexer(this.marked.defaults).lex(src);
+  }
+
+  /**
+   * marked.walkTokens over tokens (INV-71 (6)).
+   * @purity semi-pure-a
+   * @param {object[]} tokens
+   * @param {(token: object) => void} fn
+   */
+  walkTokens(tokens, fn) {
+    this.marked.walkTokens(tokens, fn);
+  }
+
+  /**
    * Sanitized HTML of a whole document (marked.parse + private DOMPurify).
    * A parse error becomes an escaped error message (the caller logs it).
    * Generation only: it writes nothing to the page (F-A1). The DOMPurify hook
