@@ -7,9 +7,10 @@ vi.mock("../js/utils.js", async () => {
 
 import { blockEditStateMachine } from "../js/classes/BlockEditController.js";
 import { setupEdit, flush } from "./helpers/editStack.js";
+import { diagramTransitions, tableTransitions } from "./helpers/specDiagram.js";
 import { pointer, tap, keydown } from "./helpers/editDom.js";
 
-// Spec 11-c: every cell of the 15 x 3 table (AT-BSM-01..16; 15 is the
+// Spec 11-c: every cell of the 17 x 3 table (AT-BSM-01..18; 15 is the
 // definition check). The state is judged from outside only:
 //   browsingPreview = a tap on a block opens nothing
 //   editModeIdle    = not editing, and a tap on a block opens it
@@ -52,6 +53,7 @@ function spyAll() {
     insertAfter: vi.spyOn(s.orchestrator, "insertAfter"),
     startEmptyDocument: vi.spyOn(s.orchestrator, "startEmptyDocument"),
     replaceBlocks: vi.spyOn(s.markdownRenderer, "replaceBlocks"),
+    undoLastCommit: vi.spyOn(s.orchestrator, "undoLastCommit"),
   };
   for (const name of ["showPalette", "hidePalette", "renderFromEditor", "onEditorInput"]) {
     s.host[name].mockClear();
@@ -116,6 +118,10 @@ const TABLE = {
   viewSwitchedToCode: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [B, ["hidePalette"]] },
   fullRenderRequested: { [B]: [B, []], [I]: [I, []], [E]: [I, ["commitBlock"]] },
   editorFocused: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]] },
+  // E has a change: [hasUncommittedChange] restores (the else cell is in the details)
+  undoRequested: { [B]: null, [I]: [I, ["undoLastCommit"]], [E]: [I, []] },
+  // no target: [else] -> editModeIdle / clearSelection, showPalette
+  previewDoubleClicked: { [B]: [I, ["showPalette"]], [I]: null, [E]: null },
 };
 
 const IDS = {
@@ -134,15 +140,17 @@ const IDS = {
   viewSwitchedToCode: "AT-BSM-13",
   fullRenderRequested: "AT-BSM-14",
   editorFocused: "AT-BSM-16",
+  undoRequested: "AT-BSM-17",
+  previewDoubleClicked: "AT-BSM-18",
 };
 
 const CELLS = Object.entries(TABLE).flatMap(([event, row]) =>
   STATES.map((state) => [IDS[event], event, state, row[state]]),
 );
 
-describe("AT-BSM 11-c block edit state machine: all 45 cells", () => {
-  it("covers 15 events x 3 states", () => {
-    expect(CELLS).toHaveLength(45);
+describe("AT-BSM 11-c block edit state machine: all 51 cells", () => {
+  it("covers 17 events x 3 states", () => {
+    expect(CELLS).toHaveLength(51);
   });
 
   it.each(CELLS)("%s %s in %s", async (_id, event, state, cell) => {
@@ -164,6 +172,28 @@ describe("AT-BSM 11-c block edit state machine: all 45 cells", () => {
     const [next, effects] = cell;
     expect(calledNames(spies).filter((n) => !["insertAfter", "replaceBlocks", "onEditorInput"].includes(n))).toEqual(effects);
     expect(observedState()).toBe(next);
+  });
+});
+
+describe("AT-BSM-15 the blockEditStateMachine definition matches the spec", () => {
+  it("11-b: the spec diagram shows exactly the transitions of the table", () => {
+    expect(diagramTransitions("11-c")).toEqual(tableTransitions(blockEditStateMachine));
+  });
+
+  it("guards are evaluated in the order of the spec", () => {
+    const u = blockEditStateMachine.undoRequested[E];
+    expect(u.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+      [I, "hasUncommittedChange", ["restoreOriginalRaw"]],
+      [I, "else", ["commitBlock", "undoLastUnit"]],
+    ]);
+    const d = blockEditStateMachine.previewDoubleClicked[B];
+    expect(d.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+      [I, "hasUnrenderedEditor", ["clearSelection", "showPalette", "renderFromEditor", "showToast"]],
+      [E, "isEmptyDocument", ["clearSelection", "showPalette", "openBlockEditor"]],
+      [E, "isBlockTarget", ["clearSelection", "showPalette", "openBlockEditor"]],
+      [I, "else", ["clearSelection", "showPalette"]],
+    ]);
+    expect(blockEditStateMachine.undoRequested[I]).toMatchObject({ to: I, actions: ["undoLastUnit"] });
   });
 });
 
@@ -249,6 +279,79 @@ describe("AT-BSM cell details", () => {
     expect(s.orchestrator.getBody()).toBe("# Title\n\nHello changed.\n\nSecond para.\n");
   });
 
+  it("AT-BSM-17 undoRequested in editingBlock without a change: commitBlock (nothing) then undoLastUnit", async () => {
+    s = await setupEdit(DOC);
+    tap(helloEl().firstElementChild);
+    s.editor().value = "Hello changed.";
+    pointer(document.body, "pointerdown"); // commit: the undo record
+    tap(secondEl().firstElementChild); // open without a change
+    expect(s.bec.hasUncommittedChange()).toBe(false);
+    const commit = vi.spyOn(s.orchestrator, "commitBlock");
+    s.bec.dispatch("undoRequested");
+    expect(commit).not.toHaveBeenCalled(); // the unchanged raw commits nothing
+    expect(s.editor()).toBeNull();
+    expect(s.orchestrator.getBody()).toBe(DOC);
+    expect(observedState()).toBe(I);
+  });
+
+  it("AT-BSM-17 undoRequested in editingBlock with a change restores the raw and keeps the record (INV-48 (1))", async () => {
+    s = await setupEdit(DOC);
+    tap(helloEl().firstElementChild);
+    s.editor().value = "Hello changed.";
+    pointer(document.body, "pointerdown");
+    tap(secondEl().firstElementChild);
+    s.editor().value = "Second changed.";
+    s.bec.dispatch("undoRequested");
+    expect(s.editor()).toBeNull();
+    expect(s.orchestrator.getBody()).toBe("# Title\n\nHello changed.\n\nSecond para.\n");
+    expect(s.orchestrator.canUndo()).toBe(true);
+  });
+
+  it("AT-BSM-17 undoLastUnit with unrendered #editor changes renders from #editor instead (INV-45)", async () => {
+    await inState(I);
+    const undo = vi.spyOn(s.orchestrator, "undoLastCommit");
+    s.host.editorChanged = true;
+    s.bec.dispatch("undoRequested");
+    expect(s.host.renderFromEditor).toHaveBeenCalledTimes(1);
+    expect(undo).not.toHaveBeenCalled();
+  });
+
+  it("AT-BSM-18 previewDoubleClicked guards in order: unrendered editor, empty document, block, else", async () => {
+    s = await setupEdit(DOC, { editMode: false });
+    const sel = window.getSelection();
+    const select = () => {
+      sel.removeAllRanges();
+      const r = document.createRange();
+      r.selectNodeContents(helloEl().firstElementChild);
+      sel.addRange(r);
+    };
+    // [hasUnrenderedEditor] wins over a block target
+    select();
+    s.host.editorChanged = true;
+    s.bec.dispatch("previewDoubleClicked", { kind: "block", id: helloEl().dataset.blockId * 1 });
+    expect(s.host.renderFromEditor).toHaveBeenCalledTimes(1);
+    expect(s.host.showPalette).toHaveBeenCalledTimes(1);
+    expect(s.editor()).toBeNull();
+    expect(sel.isCollapsed).toBe(true);
+    s.teardown();
+
+    s = await setupEdit(DOC, { editMode: false });
+    select();
+    const id = s.block((b) => b.raw.startsWith("Hello")).block.id;
+    s.bec.dispatch("previewDoubleClicked", { kind: "block", id });
+    expect(s.editor()).not.toBeNull();
+    expect(s.editor().value).toBe("Hello world.");
+    expect(s.host.showPalette).toHaveBeenCalledTimes(1);
+    expect(window.getSelection().isCollapsed).toBe(true);
+    s.teardown();
+
+    s = await setupEdit("", { editMode: false });
+    await flush();
+    s.bec.dispatch("previewDoubleClicked", { kind: "empty" });
+    expect(s.editor()).not.toBeNull();
+    expect(s.editor().value).toBe("");
+  });
+
   it("leaving edit mode removes the document pointer listeners: a tap then opens nothing", async () => {
     await inState(I);
     s.host.shown = false;
@@ -259,13 +362,17 @@ describe("AT-BSM cell details", () => {
 });
 
 describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () => {
-  it("has the same 15 events, and the same next state in all 45 cells", () => {
+  it("has the same 17 events, and the same next state in all 51 cells (the first alternative of a choice)", () => {
     expect(Object.keys(blockEditStateMachine).sort()).toEqual(Object.keys(TABLE).sort());
     for (const [event, row] of Object.entries(TABLE)) {
       for (const state of STATES) {
         const def = blockEditStateMachine[event][state];
         if (row[state] === null) expect(def, `${event} x ${state}`).toBeNull();
-        else expect(def.to, `${event} x ${state}`).toBe(row[state][0]);
+        else {
+          const cells = Array.isArray(def) ? def : [def];
+          const expected = event === "previewDoubleClicked" ? cells[cells.length - 1] : cells[0];
+          expect(expected.to, `${event} x ${state}`).toBe(row[state][0]);
+        }
       }
     }
   });

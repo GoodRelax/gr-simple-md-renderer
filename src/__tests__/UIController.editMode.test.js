@@ -333,7 +333,7 @@ describe("PRT-D01 the key hint stays after a button click that renders", () => {
   });
 });
 
-describe("AT-UI-24 Esc and AT-UI-25 Ctrl+S", () => {
+describe("AT-UI-24 Esc (Ctrl+S: UIController.shortcuts.test.js)", () => {
   it("palette shown, focus on the body: Esc hides it", async () => {
     await withDocument();
     keydown(document.body, "e");
@@ -366,13 +366,6 @@ describe("AT-UI-24 Esc and AT-UI-25 Ctrl+S", () => {
     keydown(ta, "Escape");
     expect(app.blockEditor()).toBeNull();
     expect(app.ui.palette.isShown()).toBe(true);
-  });
-
-  it("AT-UI-25 Ctrl+S is never taken", async () => {
-    await withDocument();
-    expect(keydown(document.body, "s", { ctrlKey: true }).defaultPrevented).toBe(false);
-    const ta = openChanged();
-    expect(keydown(ta, "s", { ctrlKey: true }).defaultPrevented).toBe(false);
   });
 });
 

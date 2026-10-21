@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
+import { fakeEditServices, withEditMethods, trackGlobalListeners } from "./helpers/uiMocks.js";
 
 describe("UIController.setupKeyboard (modifier guard)", () => {
   let UIController;
   let mockOrchestrator;
   let mockScrollEngine;
+  let disposeListeners = () => {};
 
   beforeEach(async () => {
     vi.resetModules();
@@ -47,6 +48,10 @@ describe("UIController.setupKeyboard (modifier guard)", () => {
   });
 
   afterEach(() => {
+    // One controller per test: a document keydown listener left from an
+    // earlier test would take the key first (INV-14 (1): defaultPrevented).
+    disposeListeners();
+    disposeListeners = () => {};
     vi.restoreAllMocks();
   });
 
@@ -79,7 +84,11 @@ describe("UIController.setupKeyboard (modifier guard)", () => {
       setTheme: vi.fn(),
       setMarkdownText: vi.fn(),
     };
-    return new UIController(withEditMethods(mockOrchestrator), mockState, mockElements, mockScrollEngine, fakeEditServices());
+    const { result, dispose } = trackGlobalListeners(
+      () => new UIController(withEditMethods(mockOrchestrator), mockState, mockElements, mockScrollEngine, fakeEditServices()),
+    );
+    disposeListeners = dispose;
+    return result;
   }
 
   function dispatchKey(key, modifiers = {}) {

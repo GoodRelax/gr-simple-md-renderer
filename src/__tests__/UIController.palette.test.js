@@ -233,16 +233,46 @@ describe("palette wiring of unit A (5.15.5, INV-68)", () => {
 });
 
 describe("AT-UI-35 Undo", () => {
-  it("disabled while editing and without a record; enabled after a commit; press undoes and disables it", async () => {
+  it("INV-48: disabled without a record and without a change; enabled by a change in the open editor; enabled after a commit; press undoes and disables it", async () => {
     await withDocument();
     const ta = open(isPara("Hello"));
-    ta.value = "Changed.";
     expect(off(btn("paletteUndo"))).toBe(true);
+    ta.value = "Changed.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(off(btn("paletteUndo"))).toBe(false);
     pointer(document.body, "pointerdown");
     expect(off(btn("paletteUndo"))).toBe(false);
     press(btn("paletteUndo"));
     expect(app.orchestrator.getBody()).toBe(DOC);
     expect(off(btn("paletteUndo"))).toBe(true);
+  });
+
+  it("INV-48 (1): Undo with a changed open editor cancels the change and closes it; the record stays", async () => {
+    await withDocument();
+    let ta = open(isPara("Hello"));
+    ta.value = "Changed.";
+    pointer(document.body, "pointerdown"); // the record
+    ta = open(isPara("Second"));
+    ta.value = "Second changed.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    press(btn("paletteUndo"));
+    expect(app.blockEditor()).toBeNull();
+    expect(app.orchestrator.getBody()).toContain("Changed.");
+    expect(app.orchestrator.getBody()).not.toContain("Second changed.");
+    expect(off(btn("paletteUndo"))).toBe(false);
+    press(btn("paletteUndo")); // (2): the record
+    expect(app.orchestrator.getBody()).toBe(DOC);
+  });
+
+  it("INV-48 (2): Undo with an unchanged open editor closes it and undoes the record", async () => {
+    await withDocument();
+    let ta = open(isPara("Hello"));
+    ta.value = "Changed.";
+    pointer(document.body, "pointerdown");
+    ta = open(isPara("Second"));
+    press(btn("paletteUndo"));
+    expect(app.blockEditor()).toBeNull();
+    expect(app.orchestrator.getBody()).toBe(DOC);
   });
 
   it("with unrendered #editor changes: no undo; #editor is rendered (its text stays), toast, the record is empty", async () => {

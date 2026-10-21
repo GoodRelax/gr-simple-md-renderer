@@ -93,9 +93,12 @@ const scrollEngine = new SmoothScrollEngine(CONFIG.scroll, elements.preview);
 
 // UIController wires all events and initializes view. It owns the in-place
 // editing parts and is their host (BlockEditHost, EditPaletteHost).
+// INV-14: Cmd is the primary shortcut modifier on Apple platforms.
+const isApple = isApplePlatform(navigator);
 new UIController(orchestrator, state, elements, scrollEngine, {
   fileAccess: new MarkdownFileAccess(window),
-  createPalette: (host) => new EditPalette(host, { isApple: isApplePlatform(navigator) }),
+  isApple,
+  createPalette: (host) => new EditPalette(host, { isApple }),
   createBlockEdit: (host) =>
     new BlockEditController(elements.preview, orchestrator, markdownRenderer, scrollManager, host),
 });

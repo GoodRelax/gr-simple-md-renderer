@@ -309,7 +309,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-11  | イベント駆動 | ファイルがドロップされた場合、システムはCONFIG.fileDrop.maxBytes (5 MB) に対してファイルサイズを検証し、超過ファイルはアラートで拒否すること。                                                                                                                                                                                                                                                                                                                               |
 | INV-12  | 常時         | システムは初回ページロード時およびクリア時にOSのカラースキーム設定（prefers-color-scheme）を適用すること。                                                                                                                                                                                                                                                                                                                                                                   |
 | INV-13 | イベント駆動 | ユーザーが [Clear] ボタンまたは `c` キーを押した場合、システムはプレレンダー状態にリセットすること: エディタtextareaクリア、現在のビュー破棄、OSカラースキーム復元、アフォーダンステキスト表示。**ただし INV-21 の確認でユーザーがキャンセルした場合は、何も変更しない。** |
-| INV-14 | イベント駆動 | キーボードショートカットキー (l, d, r, n, c, e, Esc, ArrowUp, ArrowDown) が、INPUT 要素、TEXTAREA 要素 (ブロック編集欄を含む)、`isContentEditable` が真の要素、または編集パレット (`role="toolbar"`) の内側にフォーカスがある状態で押された場合、システムはそのキーイベントを document のショートカットとしてインターセプトしないこと。修飾キー (Ctrl, Meta, Alt) が同時に押されている場合もインターセプトしないこと (例: Ctrl+C はブラウザのネイティブコピー動作に委ねる)。この判定は、フォーカスのある要素に加えて、キーの事象の対象 (`event.target`) にも行うこと (ブロック編集欄の Esc で編集欄が閉じてフォーカスが外れた後に、同じキーが document に届いても、ショートカットとして動かないため)。 |
+| INV-14 | イベント駆動 | キーボードショートカットキー (l, d, r, n, c, e, Esc, ArrowUp, ArrowDown) が、INPUT 要素、TEXTAREA 要素 (ブロック編集欄を含む)、`isContentEditable` が真の要素、または編集パレット (`role="toolbar"`) の内側にフォーカスがある状態で押された場合、システムはそのキーイベントを document のショートカットとしてインターセプトしないこと。修飾キー (Ctrl, Meta, Alt) が同時に押されている場合もインターセプトしないこと (例: Ctrl+C はブラウザのネイティブコピー動作に委ねる)。この判定は、フォーカスのある要素に加えて、キーの事象の対象 (`event.target`) にも行うこと (ブロック編集欄の Esc で編集欄が閉じてフォーカスが外れた後に、同じキーが document に届いても、ショートカットとして動かないため)。次の 2 点を加える。(1) ブロック編集欄・セル・パレットの処理が既に処理したキーの事象 (`event.defaultPrevented` が真) は、document のショートカットとして扱わない。(2) INV-58〜60 の修飾キーの組み合わせは、この INV のガードより先に、次の判定式で処理する。主の修飾キーは、Mac (`navigator.userAgentData?.platform === "macOS"`、無ければ `/Mac|iPhone|iPad/.test(navigator.platform)`) では `metaKey && !ctrlKey`、それ以外では `ctrlKey && !metaKey`。`altKey` が真なら処理しない (Windows の AltGr は Ctrl+Alt として届くため)。`event.repeat` が真 (キーを押し続けた繰り返し) なら、横取りする場面ではブラウザの既定の動作だけを止め、機能は実行しない (押し続けても機能は 1 回。オーナーの裁定 2026-10-21)。文字は `event.key` を小文字にしたもので比べ、それがラテン文字 (`a`〜`z`) でない場合 (ロシア語などの配列) だけ `event.code` (`KeyS` など) で比べる。IME の変換中 (`isComposing` または `keyCode === 229`) は処理しない。 |
 | INV-15  | 異常系       | ブラウザがFileSystemFileHandleをサポートしていない場合、システムはグレースフルデグレードすること: コードビューはファイルを通常通り表示し、ユーザーがリロードを試みた場合にのみトースト通知を表示する。                                                                                                                                                                                                                                                                       |
 | INV-16  | 状態駆動     | デバイスが `pointer: fine` を持つ場合、ダイアグラムのズーム (DiagramZoomController) およびコピー (DiagramCopyController) をアクティブにすること。`pointer: fine` を持たないデバイスではこれらをインスタンス化しないこと。                                                                                                                                                                                                                                                    |
 | INV-16b | 状態駆動     | ダイアグラムのパンコントローラー (DiagramPanController) は、デバイスが `pointer: fine` を持ち、かつ `any-pointer: coarse` を持たない場合（純粋PC環境）にのみアクティブにすること。                                                                                                                                                                                                                                                                                           |
@@ -342,10 +342,10 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-42 | イベント駆動 | ブロックの確定または Undo が行われた場合、システムは新しい本文全体を字句解析し直し、ブロックの列を前の列と原文の一致で対応付けること (前後の一致を先に除き、残りの区間だけを LCS で対応付ける。区間の表が `CONFIG.edit.diffMaxCells` を超える場合は、その区間を全部置き換えとして扱う。5.14.2)。対応したブロックはブロック ID と DOM を引き継ぎ、描画結果の HTML が変わったブロックだけ DOM を差し替えること。Mermaid と PlantUML の処理は差し替えた範囲だけに行うこと。差し替えなかったブロックの DOM (描画済みの図、ズーム状態、PlantUML の画像を含む) は変更しないこと。 |
 | INV-43 | イベント駆動 | 部分描画で差し替えるブロックにも、INV-19 の外部画像の同意制を適用すること (同じ sanitize のフックと代替表示)。ブロックの編集・確定・Undo によって外部画像の同意を失効させてはならない。失効は従来どおり Clear と新しい `.md` ファイルのドロップに限り、`.md` のドロップでは置き換えの手順 (INV-21 の (5)) の中で `markdownRenderer.resetExternalImageConsent()` を明示的に呼ぶこと。Reload、`#editor` からの描画、保存、非 `.md` のドロップでは同意を維持すること (CON-12。5.14.11 の表)。 |
 | INV-44 | イベント駆動 | ファイルを読み込んだ場合、システムは UTF-8 の BOM の有無と改行コード (CRLF と LF の出現数の多い方。同数なら LF) を記録し、CRLF と単独の CR を LF に正規化してから扱うこと。保存時には、記録した改行コードに変換し、BOM があった場合は先頭に付け直して書き込むこと。単独の CR が主だったファイルは LF で保存する。ペーストした文書は LF・BOM なしとして扱う。 |
-| INV-45 | イベント駆動 | 編集モードでブロックの開始ジェスチャが行われたとき、`#editor` に未描画の変更がある (最後の全体描画またはブロックの確定の後に `#editor` で `input` イベントが起きた) 場合、システムはブロックを開かず、`#editor` の内容で全体を描画し直し、その旨をトーストで表示すること。`#editor` からの全体の描画 ([Render] / `l` / `d`) では、未保存であっても確認ダイアログを表示しないこと (`#editor` の内容が文書そのものであるため。ただし `#editor` が空の場合は INV-56)。パレットの Undo、または編集中でないときの挿入 (Insert table / Mermaid の雛形) が押されたときも、`#editor` に未描画の変更があれば、システムはその操作を行わず、`#editor` の内容で全体を描画し直し、同じトーストを表示すること (全体描画で Undo の記録は空になる。裁定 T31)。 |
+| INV-45 | イベント駆動 | 編集モードでブロックの開始ジェスチャ、または編集モードでないときのダブルクリック (INV-57) が行われたとき、`#editor` に未描画の変更がある (最後の全体描画またはブロックの確定の後に `#editor` で `input` イベントが起きた) 場合、システムはそれを開かず (INV-56 の確認が要る場合は、その確認の後。Cancel なら全体描画もトーストも行わない)、`#editor` の内容で全体を描画し直し、その旨をトーストで表示すること。`#editor` からの全体の描画 ([Render] / `l` / `d`) では、未保存であっても確認ダイアログを表示しないこと (`#editor` の内容が文書そのものであるため。ただし `#editor` が空の場合は INV-56)。パレットの Undo と INV-59 (c) の Ctrl+Z、または編集中でないときの挿入 (Insert table / Mermaid の雛形) が押されたときも、`#editor` に未描画の変更があれば、システムはその操作を行わず、`#editor` の内容で全体を描画し直し、同じトーストを表示すること (全体描画で Undo の記録は空になる。裁定 T31)。 |
 | INV-46 | イベント駆動 | ブロック編集欄を開くとき、ブロックを確定して差し替えるとき、および Undo のとき、システムは基準のブロックの上端の画面上の位置が、前後で ±1 px 以内に保たれるようにスクロール位置を補正すること。基準は、開く・確定するブロックとする (確定で分割されたら最初のブロック、削除されたら次のブロック、次が無ければ前のブロック)。確定と Undo の結果 (`ModelChange`) は、新しいモデルでの基準のブロック ID (`anchorBlockId`) を返し、描画の時点ではその ID の要素を基準にすること。複数の確定が 1 回の描画にまとまった場合は、最後の要求のアンカーを使うこと。Mermaid などの非同期の描画で高さが後から変わる場合は、DOM が安定した後にもう一度補正すること。編集中でないときの挿入 (`insertAfter`) では、挿入の位置の前のブロック (挿入の基準のブロック) を基準とする。ブロック編集欄を開いたまま別のブロックをタップした場合 (前の編集欄を閉じ、確定して、タップしたブロックを開く) は、タップしたブロックを基準とし、前の編集欄を閉じる前 (マウスでは確定の起きる `pointerdown` の時点) の画面上の位置に保つこと。その確定による部分描画も、開いたブロックを基準にすること。基準のブロックが無い場合 (先頭や末尾への挿入で、基準のブロックが無いとき) は、挿入したブロックを基準とする。 |
 | INV-47 | 常時 | システムは、ブロックの確定・挿入・Undo によるモデルの更新と、それに伴う `#editor.value` の書き換えと未保存の印の更新を、その操作のイベントハンドラの中で同期的に行うこと (後から遅れて `#editor` を書き換えない)。ただし、本文が `CONFIG.edit.editorSyncMaxChars` (100,000 文字) を超える場合は、`#editor.value` の書き換えを、利用者が `#editor` を使えるようになる前 (`#editor` の `focusin`、`dragenter`) まで遅らせてよい (1 MB の文字を表示中の textarea に入れ直すと、確定のたびに約 0.5 秒のレイアウトがかかるため)。その間 `#editor` は古い文字を表示し、システムは `#editor` の内容として本文 (モデル) を読むこと (`#editor` からの描画、INV-56 の確認)。フォーカスもドラッグも無いまま `#editor` に入力が来た場合は、それを拒んで本文を書き込むこと (古い文字への入力を防ぐ)。DOM の描画 (全体描画と部分描画) だけを 1 本の直列のキューで処理し、前の描画が完了するまで次の描画を始めないこと。各描画は、最後に描画したモデルから、その時点の現在のモデルへ、ブロック ID で対応付けて DOM を更新すること。Reload、`.md` のドロップは INV-21 の順序に従い、確認の直後にモデル・セッション・保存先を同期的に置き換え、全体描画をキューに入れること (描画のキューの完了を待ってから置き換えない)。Clear と非 `.md` のドロップ (文書が無くなる場合) は、確認の直後に同期的にモデル・セッション・保存先を無しにし、キューの中の部分描画とそのアンカーを捨て、DOM は既存の処理 (アフォーダンスの表示、コードビューの描画) で置き換えること (全体描画はキューに入れない)。Render (`l` / `d`) とパレットを閉じる操作は、開いている編集欄を同期的に確定してから処理し、Render の全体描画はキューに入れること。文書を作り直した後 (文書 ID が変わった後) の最初の描画は全体描画とし、それより前に入っていた部分描画とそのアンカーは捨てること。文書を作り直さない全体描画 (Markdown 表示中の `l` / `d` / [Render]) も、同じく描画の世代を進め、それより前に入っていた部分描画とそのアンカーを捨てること。ブロック編集欄が開いている間は、そのブロックの外枠 (INV-41 の `.md-block`) を部分描画で差し替えないこと (別のブロックの確定で、参照リンクの定義が変わるなどしてそのブロックの HTML が変わっても、外枠を残し、古い描画であることを記録する)。編集欄を閉じたとき (確定でも取消でも) に古い描画になっていれば、そのブロックだけを部分描画し直すこと。 |
-| INV-48 | イベント駆動 | パレットの Undo が押された場合 (`#editor` に未描画の変更があるときは INV-45 に従い、Undo を行わない)、システムはモデルを、直前 1 回の「本文を変えた確定」または「編集中でないときの挿入」の直前のモデルに戻し、INV-42 の部分描画を行い、Undo の記録を空にすること。Undo の記録は 1 件だけ保持し、本文を変えた確定と編集中でないときの挿入のたびに上書きし、全体描画・文書の作り直し (INV-55)・Clear で空にすること。ブロック ID はアプリ全体で単調に増やし、文書をまたいでも、Undo の後でも再利用しないこと (Undo で戻したモデルにも現在の `nextBlockId` を引き継ぐ。ID のカウンタは RendererOrchestrator が持つアプリ全体の値 (`_nextBlockId`) とし、新しい文書のモデルはそこから振り始め、モデルを作るたびにカウンタを進める (Clear やコードビューの後も、カウンタは戻さない))。原文の変わらない確定は確定として数えず、モデル・DOM・Undo の記録・未保存の印を変えないこと。ブロック編集中と記録が空のときは、Undo ボタンを無効にすること。 |
+| INV-48 | イベント駆動 | パレットの Undo、またはセルの中の Ctrl+Z、またはブロック編集欄の外と変更の無いブロック編集欄での Ctrl+Z (INV-59) が押された場合 (`#editor` に未描画の変更があるときは INV-45 に従い、Undo を行わない)、システムは次のとおりにすること。(1) ブロック編集欄またはセルが開いていて、その内容を開いた時点から変えている場合 (ブロック編集欄では、パレットの Undo と、フォーカスが編集欄の外にあるときの Ctrl+Z。編集欄の中の Ctrl+Z はブラウザの文字単位の Undo になる。INV-59) は、その変更を取り消して閉じる (Esc と同じ。セルなら表の編集も終える)。Undo の記録は変えない。(2) それ以外は、開いているブロック編集欄・セルを (変更なしで) 閉じてから、モデルを直前 1 回の変更の単位 (用語集) の直前のモデルに戻し、INV-42 の部分描画を行い、Undo の記録を空にすること。Undo の記録は 1 件だけ保持し、変更の単位のたびに上書きし、全体描画・文書の作り直し (INV-55)・Clear で空にすること。ブロック ID はアプリ全体で単調に増やし、文書をまたいでも、Undo の後でも再利用しないこと (Undo で戻したモデルにも現在の `nextBlockId` を引き継ぐ。ID のカウンタは RendererOrchestrator が持つアプリ全体の値 (`_nextBlockId`) とし、新しい文書のモデルはそこから振り始め、モデルを作るたびにカウンタを進める (Clear やコードビューの後も、カウンタは戻さない))。原文の変わらない確定は確定として数えず、モデル・DOM・Undo の記録・未保存の印を変えないこと。Undo ボタンは、記録があるとき、または開いている編集欄・セルに変更があるときに有効とすること。 |
 | INV-49 | イベント駆動 | 確定によって本文が空 (ブロックが 0 個) になった場合、システムは `_viewState` を `"markdown"` のまま保ち、編集モードの間は空の最初のブロックを 1 つ表示すること。 |
 | INV-50 | 状態駆動 | 未保存の間、システムは `document.title` の先頭に `* ` を付け、未保存でなくなったら外すこと。`document.title` にファイル名を入れてはならない (CON-13)。パレット下端の状態表示 (`paletteStatus`) も同じ判定で更新すること。 |
 | INV-51 | 常時 | 1 MB の文書で、ブロックの確定から DOM の差し替えの完了までを 300 ms 以内とすること (Mermaid と PlantUML の描画を除く。最新の Chrome、一般的な PC で計測する)。 |
@@ -354,6 +354,10 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-54 | イベント駆動 | 保存処理中 (`saveOperationState` が `writingFile`) に、文書を作り直す出来事 (5.14.11 で新しい文書 ID になるもの、または文書が無くなるもの: `.md` と非 `.md` のドロップ、Reload、初期状態からのペーストと `#editor` からの描画、空の文書の開始、Clear) が要求された場合 (テーマの切り替えと、Markdown 表示中の `#editor` からの描画は対象外)、システムはそれを実行せず、保存中である旨をトーストで表示すること。保存の結果 (`SaveOutcome`) は、保存を始めたときの文書 ID が現在の文書 ID と一致する場合に限り反映すること。 |
 | INV-55 | イベント駆動 | 文書を作り直す出来事 (`.md` のドロップ、Reload、初期状態からのペーストまたは `#editor` からの描画、空の文書の開始、Clear、非 `.md` のドロップ) では、システムは 5.14.11 の表のとおりに `DocumentSession` と `DocumentLocation` を作り直す (または無しにする) こと。保存先は `DocumentLocation` だけを正とし、ほかの場所に fileHandle を持たないこと。 |
 | INV-56 | イベント駆動 | `#editor` の内容をモデルに取り込む操作 (Markdown 表示中の [Render Light] / [Render Dark] / `l` / `d`、INV-45 の自動の全体描画 (ブロックの開始ジェスチャ、パレットの Undo、編集中でないときの挿入)、Save / Save as での取り込み (INV-33)) の前に、`#editor` が空 (空白文字だけを含む場合を含む) で、現在の本文が空でない (空白文字以外を含む) 場合、システムは、何かを変える前に確認ダイアログ (`messages.edit.emptyEditorConfirm`) を表示すること。OK ならその操作を従来どおり行い (本文は空になる)、Cancel なら `#editor` を現在の本文に戻し (値の代入。`input` イベントは起きない)、`#editor` の未描画の変更の印を下ろし、未保存の印を再計算すること。それ以外は何も変えないこと (モデル、開いているブロック編集欄、テーマ、保存の状態を変えず、トーストも出さず、権限の要求も保存ダイアログも始めない)。Cancel の後は `#editor` に未描画の変更が無いので、同じ操作をもう一度行うと確認なしに進む。`#editor` が空でも本文も空なら、確認を表示しないこと。Save / Save as では、`#editor` を取り込まない場合 (未描画の変更が無い場合) は確認を表示しないこと。 |
+| INV-57 | イベント駆動 | Markdown 表示中で編集モードでないときに、プレビューがダブルクリックまたはダブルタップされた場合、対象が INV-29 の除外対象と図 (Mermaid の図、PlantUML の図とプレースホルダ) の内側でなければ、システムはブラウザが作った選択を解除し、11-c の `previewDoubleClicked` のとおりにすること: `#editor` に未描画の変更があれば INV-45。対象がセル (INV-29 の (a)) で、その表がセルの編集の条件 (INV-62 の構造の確認) を満たせば、編集パレットを表示してそのセルの編集を開く (カーソルはダブルクリックの位置)。対象がブロック (表のブロックの余白を除く) なら、編集パレットを表示してそのブロックの編集欄を開く (カーソルの位置は現行の開始ジェスチャと同じ)。文書が空 (ブロックが 0 個) なら、編集パレットを表示して空のブロックの編集欄を開く。それ以外 (ブロックの外の余白、表のブロックの余白) なら、編集パレットを表示するだけとする。図の上のダブルクリックは従来どおり (ズームのリセット)。 |
+| INV-58 | イベント駆動 | Markdown 表示中に主の修飾キー + S (INV-14 の判定式) が押された場合、システムはブラウザの既定の動作を止め、[Save] と同じ処理 (INV-33) を行うこと。Shift も押されていれば [Save as] と同じ処理を行うこと。パレットが表示されていなくても行うこと。初期状態とコードビューでも、主の修飾キー + S と主 + Shift + S はブラウザの既定の動作 (ページを保存) を止め、何もしないこと (GRSMD のタブでは常に占有する。オーナーの裁定 2026-10-21)。保存処理中は 11-e のとおり無視すること。**[要検証]** `keydown` の中で始めた `requestPermission` / `showSaveFilePicker` がユーザーアクティベーションの不足で拒まれないこと (PRT-W01 / W08) |
+| INV-59 | イベント駆動 | 編集モードの間 (パレットの表示中。最小化を含む) に主の修飾キー + Z (Shift なし) が押された場合、システムは次のとおりにすること。(a) フォーカスが `#editor`、またはブロック編集欄・セル以外の入力要素にあれば、横取りしない (ブラウザの既定)。(b) ブロック編集欄にあり、その内容が開いた時点の原文と異なれば、横取りしない (ブラウザの文字単位の Undo。裁定 Q2)。(c) それ以外 (ブロック編集欄で変更が無い、セルの中、編集欄の外) は、ブラウザの既定の動作を止め、パレットの Undo と同じ処理 (11-c の `undoRequested`) を行うこと。セルの中では、主の修飾キー + Shift + Z と Ctrl+Y (Mac 以外) も止め、何もしないこと (Redo は無い。OS-18)。編集モードでないときは横取りしない (裁定 Q3)。 |
+| INV-60 | イベント駆動 | ブロック編集欄またはセルの編集中に主の修飾キー + B / I (Shift なし。主 + Shift + B / I はブラウザの既定のまま。オーナーの裁定 2026-10-21) が押された場合、システムはブラウザの既定の動作を止め、選択が 5.15.5 の条件を満たせば Bold / Italic (INV-67) を行うこと (満たさなければ何もしない)。編集中でないときと `#editor` では横取りしないこと。 |
 | INV-68 | イベント駆動 | 編集パレットのグリップが `CONFIG.edit.paletteLongPressMs` 以上押され、その間の移動が `CONFIG.pan.activationThresholdPx` 以下だった場合、システムは 11-f の `minimizeToggled` を起こすこと (時間が来た時点で切り替え、離すまで移動しない。11-d)。それより前に閾値を超えて動いた場合は移動とすること。最小化している間はグリップだけを表示し、未保存なら印 (点) を付けること。グリップの画面上の位置は変えないこと (ビューポートの外に出る場合は INV-37 で補正する)。最小化しても編集モード、開いている編集欄、ショートカットはそのままとすること。最小化の状態は記憶しないこと (CON-13)。タッチの長押しで文脈メニューや選択が出ないようにすること (`contextmenu` を止め、`-webkit-touch-callout: none`)。 |
 
 ---
@@ -912,11 +916,11 @@ classDiagram
 | `PlantUMLRenderer` | `+askConsent()` / `+createPendingElement(code, theme)` (`.plantuml-pending`: `messages.edit.plantumlPending` の文と `plantumlRenderButton` のボタン)。[Render] の確認で Cancel を選んだ場合は、プレースホルダを残す (もう一度押せる) |
 | `DiagramRenderer` / `MermaidRenderer` / `PlantUMLRenderer` | `render(theme, root)` の `root` は `Element` または `Element[]` (省略時は preview 全体)。要素の収集は `utils.queryAllIn(roots, selector)`。Mermaid は変換したコンテナだけを `mermaid.run` に渡す |
 | `RendererOrchestrator` | `+getModel() MarkdownBlockModel\|null` / `+resetExternalImageConsent() void` (`.md` のドロップで UIController が呼ぶ。INV-43) / `+holdBlock(blockId)` / `+releaseBlock()` (編集中のブロックの外枠の保持。INV-47)。`clear()` は `clearDocument()` を呼ぶ。`renderCodeView()` も最初に `clearDocument()` を呼ぶ (`state.markdownText` は `""` になる) |
-| `BlockEditController` | コンストラクタ `(preview, orchestrator, blockLocator, scrollMemento, host)`。`blockLocator` は MarkdownRenderer、`host` は `BlockEditHost`。11-c の遷移表を `blockEditStateMachine` (出来事 → 状態 → `{to, actions, guard}`) として持ち、出来事の入口は `dispatch(event, target)` 1 つとする。`emptyDocumentStarted` だけは、全体描画の後で編集欄を開くまでの Promise を返す (それまでの状態は editModeIdle)。`isEditing()` は編集欄が開いているかどうかを返す。`isDoubleTap(first, second, limits)` は `CONFIG.edit` の値で判定する (INV-31) |
+| `BlockEditController` | コンストラクタ `(preview, orchestrator, blockLocator, scrollMemento, host)`。`blockLocator` は MarkdownRenderer、`host` は `BlockEditHost`。11-c の遷移表を `blockEditStateMachine` (出来事 → 状態 → `{to, actions, guard}`) として持ち、出来事の入口は `dispatch(event, target)` 1 つとする。`emptyDocumentStarted` だけは、全体描画の後で編集欄を開くまでの Promise を返す (それまでの状態は editModeIdle)。`isEditing()` は編集欄が開いているかどうかを返す。`isEditorElement(node)` は開いている編集欄の textarea かどうか (参照で判定。INV-59 (b))。`doubleClickTarget(event)` は INV-57 の対象 (11-c。ダブルクリックの `dblclick`、またはダブルタップの 2 回目の `pointerup` を受ける)。`isDoubleTap(first, second, limits)` は `CONFIG.edit` の値で判定する (INV-31) |
 | `BlockEditHost` (UIController が実装するポート) | `isPaletteNode(node)` はパレットと 3 つのポップオーバーを参照で判定する。`renderFromEditor()` は INV-45 の全体描画とトーストを行う。`onEditorInput()` は編集欄の `input` で、`onEditStateChanged()` は編集欄の開閉で呼ばれる (未保存の印とパレットのボタンを更新する) |
 | `EditPalette` | コンストラクタ `(host, {isApple})` (`isApple` は tooltip を `Cmd` で書くか。INV-14 の判定式で main.js が `utils.isApplePlatform(navigator)` から決める)。7 列 × 2 段、ポップオーバー 3 つ (`paletteMermaidMenu` / `paletteFormatMenu` / `paletteTableMenu`)。11-d の遷移表を `paletteGestureStateMachine`、11-f の遷移表を `paletteDisplayStateMachine` として持ち、入口は `dispatch(event, input)` (11-d) と `dispatchDisplay(event, input)` (11-f)。表示・最小化・ポップオーバーは 11-f の状態 (`paletteDisplayState`) だけで決める。`setButtonStates(states)` は 5.15.5 の表の値をそのまま受け取る (キーが無ければ無効。Save / Save as と Mermaid の雛形は常に有効。`alignment` は配置のボタンの `aria-pressed`)。`setUnsaved(isUnsaved)` は最小化中の未保存の点。`isMinimized()`。`contains(node)` はパレットとポップオーバーを参照で判定する (`isPaletteNode` の実体)。無効なボタンは `disabled` 属性ではなく `aria-disabled="true"` で示す (パレット本体の無効なボタンの押下を移動にするため、ポインタの事象を受ける必要がある。INV-35)。キーボードの処理は持たない (INV-53)。表示中は `body` に class `edit-mode` を付ける (帯と空のブロックを編集モードの間だけ見せる CSS のため) |
 | `EditPaletteHost` (UIController が実装するポート) | `runCommand(command, arg)` だけ。`command` は `bold` / `italic` / `undo` / `save` / `saveAs` / `insertTable` / `insertRow` / `rowDelete` / `insertColumn` / `columnDelete` / `insertMermaid` / `textColor` / `linkPaste` / `linkRemove` / `alignColumn`。`arg` は `insertMermaid` のときの `CONFIG.edit.mermaidSamples` のキー、`textColor` のときの `red` / `blue` / `green` / `none`、`alignColumn` のときの `left` / `center` / `right` / `none` |
-| `UIController` | コンストラクタの第 5 引数 `services` = `{fileAccess, createPalette(host), createBlockEdit(host)}` (main.js が組み立てる)。SaveDocument / SaveDocumentAs は `fileAccess` から UIController が作る。11-e の遷移表を `saveOperationStateMachine` として持ち、`SaveOutcome.status` を出来事に対応させる (`saved` → fileWritten、`downloadStarted` → downloadStarted、`failed` → writeFailed、`canceled` → saveCanceled)。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8) |
+| `UIController` | コンストラクタの第 5 引数 `services` = `{fileAccess, isApple, createPalette(host), createBlockEdit(host)}` (main.js が組み立てる。`isApple` は `utils.isApplePlatform(navigator)`)。モジュール関数 `shortcutLetter(event, isApple)` (`@purity pure`) は INV-14 の判定式で主の修飾キーの文字 (`a`〜`z`) か `null` を返す。SaveDocument / SaveDocumentAs は `fileAccess` から UIController が作る。11-e の遷移表を `saveOperationStateMachine` として持ち、`SaveOutcome.status` を出来事に対応させる (`saved` → fileWritten、`downloadStarted` → downloadStarted、`failed` → writeFailed、`canceled` → saveCanceled)。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8) |
 | `SaveDocument` / `SaveDocumentAs` | コンストラクタ `(fileAccess, messages, defaultFileName)`。SaveDocument は、保存先 (handle) か書き込み API が無いときは、内部の SaveDocumentAs に任せる。`outcome(request, status, message)` はセッションと保存先を変えない結果を作る。`failureMessage(error)` は `SecurityError` → `saveActivationLost`、`NotFoundError` → `saveNotFound`、それ以外 → `saveFailed`。`SaveOutcome.status` は `saved` / `downloadStarted` / `canceled` / `failed` の 4 つ |
 | `MarkdownFileAccess` | コンストラクタ `(win = window)`。書き込み API の有無 (`canWriteInPlace`) は `win.showSaveFilePicker` の有無で判定する |
 
@@ -997,7 +1001,7 @@ stateDiagram-v2
     editModeIdle --> browsingPreview : escapePressed
     editingBlock --> editModeIdle : pointerPressedOutside
     editingBlock --> editingBlock : otherBlockTapped
-    editingBlock --> editModeIdle : escapePressed
+    editingBlock --> editModeIdle : escapePressed if isImeIdle
     editingBlock --> editModeIdle : saveRequested
     editingBlock --> editModeIdle : saveAsRequested
     editingBlock --> editModeIdle : documentReplaced
@@ -1008,6 +1012,13 @@ stateDiagram-v2
     editingBlock --> browsingPreview : paletteHidden
     editingBlock --> browsingPreview : documentCleared
     editingBlock --> browsingPreview : viewSwitchedToCode
+    editModeIdle --> editModeIdle : undoRequested
+    editingBlock --> editModeIdle : undoRequested if hasUncommittedChange
+    editingBlock --> editModeIdle : undoRequested else
+    browsingPreview --> editModeIdle : previewDoubleClicked if hasUnrenderedEditor
+    browsingPreview --> editingBlock : previewDoubleClicked if isEmptyDocument
+    browsingPreview --> editingBlock : previewDoubleClicked if isBlockTarget
+    browsingPreview --> editModeIdle : previewDoubleClicked else
 ```
 
 | 出来事 \ 今の状態 | browsingPreview | editModeIdle | editingBlock |
@@ -1027,8 +1038,12 @@ stateDiagram-v2
 | viewSwitchedToCode | — | → browsingPreview / hidePalette | → browsingPreview / discardBlockEditor, hidePalette |
 | fullRenderRequested (`#editor` からの全体描画: [Render Light] / [Render Dark] / `l` / `d`。テーマの切り替えを含む) | → browsingPreview / enqueueFullRender | → editModeIdle / enqueueFullRender | → editModeIdle / commitBlock, enqueueFullRender (INV-47、5.7 (3)) |
 | editorFocused (`#editor` の `focusin`。キーボードによるフォーカスの移動を含む) | — | — | → editModeIdle / commitBlock (5.7 (5)。マウスでは先に pointerPressedOutside で確定しているので、この交点に来るのはキーボードの場合だけ) |
+| undoRequested (パレットの Undo、INV-59 (c) の Ctrl+Z) | — | → editModeIdle / undoLastUnit | [hasUncommittedChange] → editModeIdle / restoreOriginalRaw・[else] → editModeIdle / commitBlock, undoLastUnit |
+| previewDoubleClicked (INV-57) | [hasUnrenderedEditor] → editModeIdle / clearSelection, showPalette, renderFromEditor, showToast・[isEmptyDocument] → editingBlock / clearSelection, showPalette, openBlockEditor・[isBlockTarget] → editingBlock / clearSelection, showPalette, openBlockEditor・[else] → editModeIdle / clearSelection, showPalette | — | — |
 
-注: `documentReplaced` / `documentCleared` は、INV-21 の確認で OK が選ばれた後にだけ起きる。`fullRenderRequested` は未保存の確認を出さない (INV-45)。`#editor` が空で本文が空でない場合は、INV-56 の確認で OK が選ばれた後にだけ `fullRenderRequested` が起きる (Cancel なら出来事は起きない)。`renderFromEditor` も、INV-56 の確認で Cancel なら `#editor` を本文に戻すだけで、全体描画もトーストも行わない (editModeIdle のまま)。編集欄を開いたまま、Tab または Shift+Tab などでフォーカスを編集欄の外 (本体) へ移した場合も (Tab はパレットへ移らない。INV-53)、キーは document に届く。そのときの `l` / `d` / [Render] (キーボードでの押下を含む) は `fullRenderRequested`、`e` は `paletteHidden`、`r` / `c` / ドロップは INV-21 の確認を経て `documentReplaced` / `documentCleared` / `viewSwitchedToCode` になる (裁定 T1)。本体にフォーカスがある間の Esc は、5.11 の「ブロック編集中」の列のとおり `escapePressed` (編集の取消) になる。`#editor` にフォーカスが入ると `editorFocused` で確定する (裁定 T19)。`emptyDocumentStarted` は INV-31。`blockTapped` と `blockTappedWithUnrenderedEditor` は、開始ジェスチャ (INV-29) の時点で `_editorChangedSinceRender` が偽か真かで分かれる。`pointerPressedOutside` は、マウスでは `pointerdown`、タッチとペンでは移動の少ない `pointerup` で起きる (INV-30)。Undo は UIController が RendererOrchestrator に直接頼むので、この状態機械を動かさない (ブロック編集中は Undo ボタンが無効)。`#editor` に未描画の変更があるときの Undo と挿入は、INV-45 により `fullRenderRequested` と同じ全体描画 (editModeIdle の自己遷移) になる。`commitBlock` は同期でモデルを更新する (INV-47)。ポップオーバーを開いている間の Esc は 11-f で処理し、この表の `escapePressed` は起きない (INV-53)。
+ガードは上から順に評価する (`・` で区切った順)。ガード (すべて `is` / `has` / `can` で始める): `isImeIdle` (IME の変換中でない)、`hasUncommittedChange` (開いている編集欄の内容が開いた時点と異なる)、`hasUnrenderedEditor` (`#editor` に未描画の変更がある。INV-45)、`isEmptyDocument` / `isBlockTarget` (INV-57 の対象の分類。`BlockEditController.doubleClickTarget(event)` が `{kind: "empty"}` / `{kind: "block", id}` / `{kind: "none"}` を返し、プレビューのスクロールバーでの押下 (`offsetX` / `offsetY` が `clientWidth` / `clientHeight` を超える。INV-30 の判定と同じ)、除外対象と図の内側では `null` を返して出来事を起こさない)。処理 `undoLastUnit` は、INV-45 の分岐を含む (`#editor` に未描画の変更があれば `renderFromEditor`、無ければ `RendererOrchestrator.undoLastCommit()`)。`clearSelection` は、ダブルクリックでブラウザが作った選択を解除する。
+
+注: `documentReplaced` / `documentCleared` は、INV-21 の確認で OK が選ばれた後にだけ起きる。`fullRenderRequested` は未保存の確認を出さない (INV-45)。`#editor` が空で本文が空でない場合は、INV-56 の確認で OK が選ばれた後にだけ `fullRenderRequested` が起きる (Cancel なら出来事は起きない)。`renderFromEditor` も、INV-56 の確認で Cancel なら `#editor` を本文に戻すだけで、全体描画もトーストも行わない (editModeIdle のまま)。編集欄を開いたまま、Tab または Shift+Tab などでフォーカスを編集欄の外 (本体) へ移した場合も (Tab はパレットへ移らない。INV-53)、キーは document に届く。そのときの `l` / `d` / [Render] (キーボードでの押下を含む) は `fullRenderRequested`、`e` は `paletteHidden`、`r` / `c` / ドロップは INV-21 の確認を経て `documentReplaced` / `documentCleared` / `viewSwitchedToCode` になる (裁定 T1)。本体にフォーカスがある間の Esc は、5.11 の「ブロック編集中」の列のとおり `escapePressed` (編集の取消) になる。`#editor` にフォーカスが入ると `editorFocused` で確定する (裁定 T19)。`emptyDocumentStarted` は INV-31。`blockTapped` と `blockTappedWithUnrenderedEditor` は、開始ジェスチャ (INV-29) の時点で `_editorChangedSinceRender` が偽か真かで分かれる。`pointerPressedOutside` は、マウスでは `pointerdown`、タッチとペンでは移動の少ない `pointerup` で起きる (INV-30)。Undo (パレットの Undo、INV-59 の (c) の Ctrl+Z) は `undoRequested` としてこの表を通す。browsingPreview では起きない (パレットが無く、Ctrl+Z は横取りしない。裁定 Q3)。editingBlock の [hasUncommittedChange] の交点は、パレットの Undo か、編集欄の外にフォーカスがあるときの Ctrl+Z から起きる (編集欄の中の Ctrl+Z はブラウザの文字単位の Undo。INV-59 の (b))。`previewDoubleClicked` は browsingPreview の列にだけ交点がある (編集モードのダブルクリックは開始ジェスチャ 2 回)。`#editor` に未描画の変更があるときの Undo と挿入は、INV-45 により `fullRenderRequested` と同じ全体描画 (editModeIdle の自己遷移) になる。`commitBlock` は同期でモデルを更新する (INV-47)。ポップオーバーを開いている間の Esc は 11-f で処理し、この表の `escapePressed` は起きない (INV-53)。
 
 通知の契約: 編集欄を閉じる処理 (`commitBlock`、`restoreOriginalRaw`、`discardBlockEditor`) は、`dispatch` の処理の途中で `BlockEditHost.onEditStateChanged()` と、確定でモデルが変わった場合の `onModelChanged` を呼ぶ。これらの通知は、`blockEditState` を表の次の状態に更新する **前** に出る。通知の受け手は `blockEditState` を読まず、編集欄が開いているかどうか (`isEditing()`。編集欄を閉じた時点で偽になる) だけを読むこと。
 
@@ -2090,7 +2105,28 @@ Feature: ブロック単位のその場編集
     Given ブロックを確定した直後である
     When ユーザーがパレットの Undo を押す
     Then 確定の前の内容に戻る
-    And Undo ボタンは無効になる
+    And Undo の記録は空になる (開いている編集欄・セルに変更が無ければ Undo ボタンは無効)
+
+  Scenario: 編集モードでないときのダブルクリックで開く
+    Given _viewStateが "markdown" で、編集パレットが表示されていない
+    When ユーザーが段落の語をダブルクリックする
+    Then 編集パレットが表示され、その段落の編集欄が開く
+    And 語の選択は残っていない
+
+  Scenario: 余白のダブルクリックは編集モードに入るだけ
+    Given 編集パレットが表示されていない
+    When ユーザーがブロックの間の余白をダブルクリックする
+    Then 編集パレットが表示され、編集欄は開かない
+
+  Scenario: 図のダブルクリックはズームのリセットのまま
+    Given 編集パレットが表示されていない
+    When ユーザーがMermaidの図をダブルクリックする
+    Then 図のズームがリセットされ、編集パレットは表示されない
+
+  Scenario: ブロック編集欄の Ctrl+Z は文字単位
+    Given 段落の編集欄で "abc" と打った
+    When ユーザーが Ctrl+Z を押す
+    Then ブラウザの文字単位の Undo になり、編集欄は開いたままである
 
   Scenario: 変えずに閉じた確定はUndoの記録を変えない
     Given ブロックAを変更して確定した
@@ -2148,6 +2184,11 @@ Feature: 編集パレット
     Then 選択範囲が "**word**" になる
     And 編集欄のフォーカスと選択は保たれる
     And ブロックは確定されない
+
+  Scenario: Ctrl+B で Bold
+    Given ブロックを編集中で文字列 "word" を選択している
+    When ユーザーが Ctrl+B を押す
+    Then 選択範囲が "**word**" になる
 
   Scenario: パレットはキーボードで操作しない
     Given ブロックを編集中である
@@ -2271,6 +2312,11 @@ Feature: 保存
     Given 書き込み権限の確認が表示されている
     When ユーザーが拒否する
     Then 文書は変わらず、未保存のままで、エラーがトーストで表示される
+
+  Scenario: Ctrl+S で保存する
+    Given .md ファイルをドロップして編集した (パレットは閉じている)
+    When ユーザーが Ctrl+S を押す
+    Then Save と同じ動作になり、ブラウザの「ページを保存」は開かない
 ```
 
 ### FS-20: 未保存の保護
@@ -3378,14 +3424,20 @@ setupTouchPasteAssist() {
 | `Esc` (ポップオーバーを開いている) | — | ポップオーバーだけを閉じる (INV-53) | ポップオーバーだけを閉じる (INV-53) | — |
 | `Tab` / `Shift+Tab` | — | — | ブラウザ既定 (INV-53) | — |
 | Enter | — | — | 改行 (表のブロックでは `<br>`。IME の変換中を除く。INV-27) | — |
-| Ctrl+S | ブラウザ既定 | ブラウザ既定 (横取りしない) | ブラウザ既定 | ブラウザ既定 |
+| ダブルクリック / ダブルタップ | INV-31 | 編集モードでなければ INV-57、編集モードでは開始ジェスチャ 2 回 | — | — |
+| 主 + S / 主 + Shift + S | 止めて何もしない (INV-58) | Save / Save as (INV-58。パレットが閉じていても) | Save / Save as | 止めて何もしない (INV-58) |
+| 主 + Z | ブラウザ既定 | 編集モードでなければブラウザ既定 (裁定 Q3)、編集モードなら Undo (INV-59 (c)) | 変更あり: フォーカスが編集欄の中ならブラウザ既定 (文字単位)、外なら変更の取消 (INV-48 (1)) / 変更なし: Undo (INV-59) | ブラウザ既定 |
+| 主 + Shift + Z / Ctrl+Y | ブラウザ既定 | ブラウザ既定 | ブラウザ既定 | ブラウザ既定 |
+| 主 + B / I (Shift なし) | ブラウザ既定 | ブラウザ既定 | Bold / Italic (INV-60) | ブラウザ既定 |
 
-`#editor` にフォーカスがある間の Esc は、パレットを閉じない (INV-14 のガード)。
+「主」は INV-14 の判定式 (Mac は Cmd、それ以外は Ctrl)。横取りする場面でキーを押し続けた繰り返し (`event.repeat`) は、既定の動作だけを止め、機能は実行しない (INV-14)。`#editor` にフォーカスがあるときの主 + Z / B / I は、どの列でもブラウザ既定。`#editor` にフォーカスがある間の Esc は、パレットを閉じない (INV-14 のガード)。
 
 **キーボードハンドラ スケルトン (UIController.setupKeyboard() 内):**
 
 ```javascript
 document.addEventListener("keydown", (e) => {
+  if (e.defaultPrevented) return; // INV-14 (1): an editor already handled it
+  if (this._handlePrimaryShortcut(e)) return; // INV-14 (2), INV-58 to INV-60 (shortcutLetter)
   const active = document.activeElement;
   const tag = active?.tagName;
   if (
@@ -3679,6 +3731,8 @@ CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選�
 **既知の制約 (bfcache):** `beforeunload` のリスナーは起動時から常に登録されている。Firefox などは、このリスナーがあるページを bfcache (戻る・進むのキャッシュ) に入れないので、戻る・進むでページが読み込み直されることがある。未保存でない間だけリスナーを外す方式は採らない。
 
 #### 5.14.9 Undo (INV-48)
+
+パレットの Undo と INV-59 (c) の Ctrl+Z は、UIController が 11-c の `undoRequested` を起こす。開いている編集欄に変更があれば取り消して閉じ (`restoreOriginalRaw`、記録は変えない)、そうでなければ変更なしで閉じてから `undoLastUnit` (`#editor` に未描画の変更があれば INV-45 の全体描画、無ければ `RendererOrchestrator.undoLastCommit()`) を行う。Undo ボタンは、記録があるとき、または開いている編集欄に変更があるときに有効。
 
 `_previousModel` に、直前 1 回の「本文を変えた確定」または「編集中でないときの挿入」の前のモデルを持つ。Undo は、同期で基準のアンカー (戻す範囲の最初のブロックの上端。その要素がまだ描画されていない場合は、DOM に残っている対応する位置の要素 (確定前のブロックの要素) の上端。どちらも無ければアンカーを取らず、補正しない) を取り、`_previousModel` に現在の `nextBlockId` を引き継いだモデルを現在のモデルにして (ID を再利用しない。INV-48) `_previousModel` を空にし、`anchorBlockId` を戻した範囲の最初のブロックとし (戻した結果、文書が空なら `anchorBlockId` は無しとし、補正しない。INV-49)、`onModelChanged` を呼び、描画をキューに入れる (5.14.3 の手順 6〜8)。Redo は無い (OS-18)。原文の変わらない確定と、編集中の挿入 (編集欄の文字列の変更) は、記録を変えない。
 

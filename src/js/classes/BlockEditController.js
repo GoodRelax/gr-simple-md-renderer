@@ -1,7 +1,7 @@
 import { CONFIG } from "../config.js";
 import MarkdownBlockModel from "./MarkdownBlockModel.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
-import { cell, row } from "../stateTable.js";
+import { cell, row, choice, selectCell } from "../stateTable.js";
 
 const BROWSING = "browsingPreview";
 const IDLE = "editModeIdle";
@@ -23,13 +23,16 @@ const OPEN_EXCLUDED_SELECTOR = [
   ".diagram-copy-btn",
 ].join(", ");
 
+// A double click here keeps its own meaning (zoom reset of a diagram, INV-57).
+const DIAGRAM_SELECTOR = [".mermaid", ".plantuml-wrapper", ".plantuml-diagram", ".plantuml-pending"].join(", ");
+
 const STATES = [BROWSING, IDLE, EDITING];
 const transitions = (...cells) => row(STATES, cells);
 
 /**
- * Spec 11-c: event -> current state -> cell. "enqueueFullRender" is done by
- * the caller (UIController) after dispatch returns; "showToast" is part of
- * host.renderFromEditor() (INV-45).
+ * Spec 11-c: event -> current state -> cell (or guarded alternatives, tried
+ * in order). "enqueueFullRender" is done by the caller (UIController) after
+ * dispatch returns; "showToast" is part of host.renderFromEditor() (INV-45).
  */
 export const blockEditStateMachine = Object.freeze({
   paletteShown: transitions(cell(IDLE, []), null, null),
@@ -55,6 +58,21 @@ export const blockEditStateMachine = Object.freeze({
     cell(IDLE, ["commitBlock", "enqueueFullRender"]),
   ),
   editorFocused: transitions(null, null, cell(IDLE, ["commitBlock"])),
+  undoRequested: transitions(
+    null,
+    cell(IDLE, ["undoLastUnit"]),
+    choice(cell(IDLE, ["restoreOriginalRaw"], "hasUncommittedChange"), cell(IDLE, ["commitBlock", "undoLastUnit"])),
+  ),
+  previewDoubleClicked: transitions(
+    choice(
+      cell(IDLE, ["clearSelection", "showPalette", "renderFromEditor", "showToast"], "hasUnrenderedEditor"),
+      cell(EDITING, ["clearSelection", "showPalette", "openBlockEditor"], "isEmptyDocument"),
+      cell(EDITING, ["clearSelection", "showPalette", "openBlockEditor"], "isBlockTarget"),
+      cell(IDLE, ["clearSelection", "showPalette"]),
+    ),
+    null,
+    null,
+  ),
 });
 
 /**
@@ -127,10 +145,38 @@ export default class BlockEditController {
   dispatch(event, target = null) {
     const cells = blockEditStateMachine[event];
     if (!cells) throw new Error(`Unknown block edit event: ${event}`);
-    const next = cells[this._blockEditState];
+    const next = selectCell(cells[this._blockEditState], (guard) => this._isGuardTrue(guard, target));
     if (!next) return undefined;
-    if (next.guard === "isImeIdle" && this._composing) return undefined;
     return this._run(next, target);
+  }
+
+  /**
+   * What a double click opens (INV-57), for previewDoubleClicked: null on
+   * the scroll bar, inside the INV-29 exclusions and the diagrams (nothing
+   * happens); {kind: "empty"} when the document has no block;
+   * {kind: "block", id}; or {kind: "none"} (the margin: edit mode only).
+   * @purity semi-pure-b
+   * @param {MouseEvent|PointerEvent} e - the dblclick, or the pointerup of a double tap
+   * @returns {{kind: string, id?: number}|null}
+   */
+  doubleClickTarget(e) {
+    const node = e.target;
+    if (!(node instanceof Element) || !this.preview.contains(node)) return null;
+    if (this._isScrollbarPress(e)) return null;
+    if (node.closest(OPEN_EXCLUDED_SELECTOR) || node.closest(DIAGRAM_SELECTOR)) return null;
+    const model = this.orchestrator.getModel();
+    if (model && model.getBlocks().length === 0) return { kind: "empty" };
+    return this._targetAt(node) ?? { kind: "none" };
+  }
+
+  /**
+   * The node is the open block editor's textarea (INV-59 (b), by reference).
+   * @purity semi-pure-b
+   * @param {Node|null} node
+   * @returns {boolean}
+   */
+  isEditorElement(node) {
+    return this._editor !== null && node === this._editor.textarea;
   }
 
   /**
@@ -192,7 +238,28 @@ export default class BlockEditController {
     this._fitHeight();
   }
 
-  // ---- internals: actions ----
+  // ---- internals: guards and actions ----
+
+  /**
+   * The 11-c guards.
+   * @purity semi-pure-b
+   */
+  _isGuardTrue(guard, target) {
+    switch (guard) {
+      case "isImeIdle":
+        return !this._composing;
+      case "hasUncommittedChange":
+        return this.hasUncommittedChange();
+      case "hasUnrenderedEditor":
+        return this.host.isEditorChangedSinceRender();
+      case "isEmptyDocument":
+        return target?.kind === "empty";
+      case "isBlockTarget":
+        return target?.kind === "block";
+      default:
+        throw new Error(`Unknown block edit guard: ${guard}`);
+    }
+  }
 
   /**
    * @purity non-pure
@@ -230,6 +297,15 @@ export default class BlockEditController {
           break;
         case "renderFromEditor":
           this.host.renderFromEditor();
+          break;
+        case "clearSelection":
+          // The word a double click selected (INV-57).
+          window.getSelection()?.removeAllRanges();
+          break;
+        case "undoLastUnit":
+          // INV-48 (2); #editor changes are rendered first instead (INV-45).
+          if (this.host.isEditorChangedSinceRender()) this.host.renderFromEditor();
+          else this.orchestrator.undoLastCommit();
           break;
         default:
           // showToast: inside renderFromEditor; enqueueFullRender: by the caller
@@ -485,7 +561,8 @@ export default class BlockEditController {
   }
 
   /**
-   * A press on the scroll bar of the preview (or of the page) is not "outside".
+   * A press on the scroll bar of the preview (or of the page): not "outside",
+   * and not a double click on the preview.
    * @purity semi-pure-b
    */
   _isScrollbarPress(e) {

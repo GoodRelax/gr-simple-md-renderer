@@ -36,6 +36,47 @@ function isTypingTarget(el) {
 }
 
 /**
+ * A shortcut that is taken and does nothing (INV-58 outside the Markdown view).
+ * @purity pure
+ */
+function noAction() {}
+
+/**
+ * A text entry other than the block editor (INV-59 (a)): an input, a
+ * textarea, a select or a contenteditable element.
+ * @purity semi-pure-b
+ * @param {Element|null} el
+ * @returns {boolean}
+ */
+function isTextEntry(el) {
+  if (!el) return false;
+  return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable === true;
+}
+
+/**
+ * INV-14 (2): the letter of a primary-modifier shortcut (INV-58 to INV-60),
+ * or null. The primary modifier is Cmd alone on Apple platforms and Ctrl
+ * alone elsewhere; Alt (also AltGr, which arrives as Ctrl+Alt) and IME
+ * composition are never shortcuts. The letter is event.key in lower case;
+ * only when that is not a Latin letter (Russian and other layouts) is
+ * event.code (KeyS ...) used. A repeat still has its letter: the caller
+ * stops its default and runs nothing (owner ruling, 2026-10-21).
+ * @purity pure
+ * @param {{key: string, code?: string, ctrlKey: boolean, metaKey: boolean,
+ *   altKey: boolean, isComposing?: boolean, keyCode?: number}} e
+ * @param {boolean} isApple
+ * @returns {string|null} "a" to "z"
+ */
+export function shortcutLetter(e, isApple) {
+  const primary = isApple ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
+  if (!primary || e.altKey || e.isComposing || e.keyCode === 229) return null;
+  const key = typeof e.key === "string" ? e.key.toLowerCase() : "";
+  if (/^[a-z]$/.test(key)) return key;
+  const m = /^Key([A-Z])$/.exec(e.code ?? "");
+  return m ? m[1].toLowerCase() : null;
+}
+
+/**
  * How a dropped file is handled, decided before anything is read (INV-11,
  * INV-18): "sniff" means an unknown extension whose first 8 KB must be
  * checked for a null byte.
@@ -124,7 +165,8 @@ export default class UIController {
    * @param {SmoothScrollEngine} scrollEngine
    * @param {object} services - in-place editing parts (composed in main.js):
    *   fileAccess (MarkdownFileAccess), createPalette(host) -> EditPalette,
-   *   createBlockEdit(host) -> BlockEditController
+   *   createBlockEdit(host) -> BlockEditController, isApple (Cmd is the
+   *   primary shortcut modifier, INV-14)
    * @purity non-pure
    */
   constructor(orchestrator, state, elements, scrollEngine, services) {
@@ -138,6 +180,7 @@ export default class UIController {
 
     // Document session and save target (INV-55): the only place of the file handle
     this.fileAccess = services.fileAccess;
+    this._isApple = Boolean(services.isApple);
     this._session = null; // DocumentSession
     this._location = null; // DocumentLocation
     this._nextDocumentId = 1;
@@ -173,7 +216,7 @@ export default class UIController {
     this.setupKeyboard();
     this.setupTouchPasteAssist();
     this.setupEditorSync();
-    this.setupEmptyDocumentGestures();
+    this.setupDoubleClickGestures();
     this.setupUnloadGuard();
     // Apply OS color-scheme preference on first load
     applySystemTheme();
@@ -606,6 +649,10 @@ export default class UIController {
   setupKeyboard() {
     /** @purity non-pure */
     document.addEventListener("keydown", (e) => {
+      // INV-14 (1): a key an editor, a cell or the palette already handled.
+      if (e.defaultPrevented) return;
+      // INV-14 (2): the primary-modifier shortcuts come before the guard.
+      if (this._handlePrimaryShortcut(e)) return;
       // INV-14. The event target counts too: Esc in the block editor closes
       // it, so the focus has already left when the key reaches the document.
       if (isTypingTarget(document.activeElement) || isTypingTarget(e.target)) return;
@@ -654,6 +701,65 @@ export default class UIController {
       if (e.key === "ArrowUp" || e.key === "ArrowDown")
         this.scrollEngine.stopScroll();
     });
+  }
+
+  /**
+   * INV-58 to INV-60. Returns true when the key was taken: its default is
+   * stopped, and the function runs unless the key is a repeat (a held key
+   * runs it once; owner ruling, 2026-10-21).
+   * @purity non-pure
+   * @param {KeyboardEvent} e
+   * @returns {boolean}
+   */
+  _handlePrimaryShortcut(e) {
+    const run = this._primaryShortcutAction(shortcutLetter(e, this._isApple), e);
+    if (!run) return false;
+    e.preventDefault();
+    if (!e.repeat) run();
+    return true;
+  }
+
+  /**
+   * What a primary-modifier shortcut does here, or null when it is left to
+   * the browser (INV-58 to INV-60).
+   * @purity semi-pure-b
+   * @param {string|null} letter
+   * @param {KeyboardEvent} e
+   * @returns {(() => void)|null}
+   */
+  _primaryShortcutAction(letter, e) {
+    if (letter === "s") {
+      // INV-58: taken in every view (owner ruling, 2026-10-21); it saves in
+      // the Markdown view only, started inside the keydown (INV-33).
+      if (this.orchestrator.isPreRenderState() || this.orchestrator.isCodeViewActive()) return noAction;
+      /** @purity non-pure */
+      return () => (e.shiftKey ? this.requestSaveAs() : this.requestSave());
+    }
+    if (letter === "z" && !e.shiftKey) {
+      // INV-59: edit mode only (ruling Q3).
+      if (!this.palette.isShown()) return null;
+      const active = document.activeElement;
+      if (this.blockEdit.isEditorElement(active)) {
+        if (this.blockEdit.hasUncommittedChange()) return null; // (b) the browser's character Undo
+      } else if (active === this.elements.editor || isTextEntry(active)) {
+        return null; // (a)
+      }
+      /** @purity non-pure */
+      return () => {
+        this.blockEdit.dispatch("undoRequested"); // (c)
+        this._refreshDirtyMark();
+      };
+    }
+    if ((letter === "b" || letter === "i") && !e.shiftKey) {
+      // INV-60 (Shift not pressed): only while an editor is open.
+      if (!this.blockEdit.isEditing() || document.activeElement === this.elements.editor) return null;
+      const command = letter === "b" ? "bold" : "italic";
+      /** @purity non-pure */
+      return () => {
+        if (this._paletteStates()[command]) this._runPaletteCommand(command);
+      };
+    }
+    return null;
   }
 
   // ---- In-place editing (SC-22 to SC-24) ----
@@ -756,30 +862,60 @@ export default class UIController {
   }
 
   /**
-   * INV-31: a double click or a double tap on the empty initial preview
-   * starts an empty document.
+   * A double click or a double tap on the preview: on the empty initial
+   * preview it starts an empty document (INV-31); in the Markdown view
+   * outside edit mode it enters edit mode and opens what was double-clicked
+   * (INV-57, 11-c previewDoubleClicked).
    * @purity non-pure
    */
-  setupEmptyDocumentGestures() {
+  setupDoubleClickGestures() {
     const preview = this.elements.preview;
     /** @purity non-pure */
-    preview.addEventListener("dblclick", () => {
-      if (this._canStartEmptyDocument()) this._startEmptyDocument();
-    });
+    preview.addEventListener("dblclick", (e) => this._handlePreviewDoubleClick(e));
     /** @purity non-pure */
     preview.addEventListener("pointerup", (e) => {
-      if (e.pointerType !== "touch" || !this._canStartEmptyDocument()) {
+      if (e.pointerType !== "touch" || !this._acceptsDoubleClick()) {
         this._lastTap = null;
         return;
       }
       const tap = { time: performance.now(), x: e.clientX, y: e.clientY };
       if (BlockEditController.isDoubleTap(this._lastTap, tap)) {
         this._lastTap = null;
-        this._startEmptyDocument();
+        this._handlePreviewDoubleClick(e);
       } else {
         this._lastTap = tap;
       }
     });
+  }
+
+  /**
+   * The preview takes a double click: the empty initial state (INV-31) or
+   * the Markdown view (INV-57). Not the code view.
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  _acceptsDoubleClick() {
+    if (this._canStartEmptyDocument()) return true;
+    return !this.orchestrator.isPreRenderState() && !this.orchestrator.isCodeViewActive();
+  }
+
+  /**
+   * A double click (or double tap) on the preview: start an empty document
+   * (INV-31), or 11-c previewDoubleClicked in the Markdown view (INV-57;
+   * only browsingPreview has a cell for it).
+   * @purity non-pure
+   * @param {MouseEvent|PointerEvent} e - the dblclick, or the pointerup of a double tap
+   */
+  _handlePreviewDoubleClick(e) {
+    if (this._canStartEmptyDocument()) {
+      this._startEmptyDocument();
+      return;
+    }
+    if (this.orchestrator.isPreRenderState() || this.orchestrator.isCodeViewActive()) return;
+    const target = this.blockEdit.doubleClickTarget(e);
+    if (!target) return;
+    this.blockEdit.dispatch("previewDoubleClicked", target);
+    this._refreshDirtyMark();
   }
 
   /**
@@ -997,20 +1133,30 @@ export default class UIController {
    * @purity non-pure
    */
   _updatePaletteStates() {
+    this.palette.setButtonStates(this._paletteStates());
+  }
+
+  /**
+   * The 5.15.5 table (the keys of EditPalette.setButtonStates). Also the
+   * condition of INV-60 for primary + B / I.
+   * @purity semi-pure-b
+   * @returns {object}
+   */
+  _paletteStates() {
     const range = this.blockEdit.getSelectionRange();
     const isEditing = this.blockEdit.isEditing();
     const hasSelection = isEditing && Boolean(range) && range.selStart !== range.selEnd;
     const isInTableSource = isEditing && this.blockEdit.isEditingTable();
-    this.palette.setButtonStates({
+    return {
       bold: hasSelection,
       italic: hasSelection,
       format: isEditing,
       insertTable: true,
       insertMermaid: true,
-      undo: !isEditing && this.orchestrator.canUndo(),
+      undo: this.orchestrator.canUndo() || this.blockEdit.hasUncommittedChange(), // INV-48
       insertRow: isInTableSource,
       insertColumn: isInTableSource,
-    });
+    };
   }
 
   /**
@@ -1101,7 +1247,8 @@ export default class UIController {
         this._editInBlock((range) => MarkdownTextOps.insertTableColumn(range.text, range.selStart));
         break;
       case "undo":
-        this._undo();
+        this.blockEdit.dispatch("undoRequested"); // INV-48, 11-c
+        this._refreshDirtyMark();
         break;
       case "insertTable":
         this._insertBlock(CONFIG.edit.tableTemplate);
@@ -1125,16 +1272,6 @@ export default class UIController {
     if (!next) return;
     this.blockEdit.applyTextEdit(next);
     this._refreshDirtyMark();
-  }
-
-  /**
-   * Undo (INV-48); #editor changes are rendered first instead (INV-45, T31).
-   * @purity non-pure
-   */
-  _undo() {
-    if (this.blockEdit.isEditing()) return;
-    if (this._editorChangedSinceRender) this._renderFromEditorFirst();
-    else this.orchestrator.undoLastCommit();
   }
 
   /**
