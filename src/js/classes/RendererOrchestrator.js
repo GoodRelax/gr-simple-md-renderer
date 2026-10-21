@@ -1,6 +1,7 @@
 import { CONFIG } from "../config.js";
 import { applyTheme, waitForDOMStability } from "../utils.js";
 import MarkdownBlockModel from "./MarkdownBlockModel.js";
+import MarkdownTable from "./MarkdownTable.js";
 
 // Performance marker for PRT-U25 (spec 5.14.3): from the start of a commit to
 // the DOM swap of its partial render. Only the last measure is kept; nothing
@@ -295,6 +296,17 @@ export default class RendererOrchestrator {
     }
     this._previousModel = model;
     return this._applyChange(change, scroll, change.anchorBlockId);
+  }
+
+  /**
+   * The edited text of a table block with its tables aligned (INV-61). The
+   * text is lexed alone, with the same lexer as the model.
+   * @purity semi-pure-b
+   * @param {string} text
+   * @returns {string}
+   */
+  formatTableText(text) {
+    return MarkdownTable.formatTablesIn(text, this._lexer);
   }
 
   /**

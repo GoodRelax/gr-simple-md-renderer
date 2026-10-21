@@ -64,7 +64,9 @@ const NEW_FILES = [
   "classes/SaveDocumentAs.js",
   "classes/BlockEditController.js",
   "classes/EditPalette.js",
+  "classes/MarkdownTable.js",
   "textTransforms.js",
+  "textWidth.js",
 ];
 
 const ENTITY_FILES = [
@@ -72,7 +74,9 @@ const ENTITY_FILES = [
   "classes/BlockDiff.js",
   "classes/MarkdownTextOps.js",
   "classes/DocumentSession.js",
+  "classes/MarkdownTable.js",
   "textTransforms.js",
+  "textWidth.js",
 ];
 
 describe("AT-STA static checks of src/js", () => {
@@ -190,7 +194,7 @@ describe("style.css for in-place editing", () => {
     expect(body).toMatch(/box-sizing:\s*border-box/);
     expect(body).toMatch(/width:\s*100%/);
     expect(body).toMatch(/overflow-y:\s*hidden/);
-    expect(body).toMatch(/font-family:\s*monospace/);
+    expect(body).toMatch(/font-family:[^;]*monospace;/);
   });
 
   it("bands and the empty block show only in edit mode (INV-41, INV-49)", () => {
@@ -224,6 +228,15 @@ describe("style.css for in-place editing", () => {
       expect(ruleBody(css, sel), sel).toContain(`color: ${light};`);
       expect(ruleBody(css, `.dark ${sel}`), sel).toContain(`color: ${dark};`);
     }
+  });
+
+  it("the block editor and #editor use the full-width monospace system fonts (5.14.13, INV-61); no @font-face", () => {
+    const stack = /font-family:\s*"BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace;/;
+    expect(ruleBody(css, "#editor")).toMatch(stack);
+    expect(ruleBody(css, ".md-block-editor")).toMatch(stack);
+    expect(css).not.toMatch(/@font-face/);
+    const bec = readFileSync(resolve(jsDir, "classes/BlockEditController.js"), "utf8");
+    expect(bec).not.toMatch(/fontFamily/); // the CSS decides the editor font
   });
 
   it("no url() in the editing rules (CSP, no external fetch)", () => {

@@ -243,7 +243,7 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
     }
   });
 
-  it("AT-PAL-03 the three popovers: ids, labels and buttons (7.1, 5.15.3)", () => {
+  it("AT-PAL-03 the three popovers: ids, labels and buttons (5.1, 5.15.3)", () => {
     expect(popover.getAttribute("aria-label")).toBe("Mermaid samples");
     expect(formatMenu.getAttribute("aria-label")).toBe("Text format");
     expect(tableMenu.getAttribute("aria-label")).toBe("Table options");
@@ -796,7 +796,7 @@ describe("AT-PAL states, status, life cycle, security", () => {
     }
   });
 
-  it("AT-PAL-23 alignment marks one alignment button with aria-pressed (7.1)", () => {
+  it("AT-PAL-23 alignment marks one alignment button with aria-pressed (5.1)", () => {
     palette.show();
     const ALIGN = { left: "paletteAlignLeft", center: "paletteAlignCenter", right: "paletteAlignRight", none: "paletteAlignNone" };
     for (const [value, id] of Object.entries(ALIGN)) {

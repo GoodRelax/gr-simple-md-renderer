@@ -43,7 +43,7 @@ describe("AT-BEC opening the editor (INV-29)", () => {
     expect(el.contains(ta)).toBe(true);
     expect(ta.value).toBe("Hello world.");
     expect(document.activeElement).toBe(ta);
-    expect(getComputedStyle(ta).fontFamily).toContain("monospace");
+    expect(ta.classList.contains("md-block-editor")).toBe(true); // the font comes from the CSS rule (staticChecks)
     expect(s.bec.isEditing()).toBe(true);
   });
 

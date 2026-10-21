@@ -358,6 +358,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-58 | イベント駆動 | Markdown 表示中に主の修飾キー + S (INV-14 の判定式) が押された場合、システムはブラウザの既定の動作を止め、[Save] と同じ処理 (INV-33) を行うこと。Shift も押されていれば [Save as] と同じ処理を行うこと。パレットが表示されていなくても行うこと。初期状態とコードビューでも、主の修飾キー + S と主 + Shift + S はブラウザの既定の動作 (ページを保存) を止め、何もしないこと (GRSMD のタブでは常に占有する。オーナーの裁定 2026-10-21)。保存処理中は 11-e のとおり無視すること。**[要検証]** `keydown` の中で始めた `requestPermission` / `showSaveFilePicker` がユーザーアクティベーションの不足で拒まれないこと (PRT-W01 / W08) |
 | INV-59 | イベント駆動 | 編集モードの間 (パレットの表示中。最小化を含む) に主の修飾キー + Z (Shift なし) が押された場合、システムは次のとおりにすること。(a) フォーカスが `#editor`、またはブロック編集欄・セル以外の入力要素にあれば、横取りしない (ブラウザの既定)。(b) ブロック編集欄にあり、その内容が開いた時点の原文と異なれば、横取りしない (ブラウザの文字単位の Undo。裁定 Q2)。(c) それ以外 (ブロック編集欄で変更が無い、セルの中、編集欄の外) は、ブラウザの既定の動作を止め、パレットの Undo と同じ処理 (11-c の `undoRequested`) を行うこと。セルの中では、主の修飾キー + Shift + Z と Ctrl+Y (Mac 以外) も止め、何もしないこと (Redo は無い。OS-18)。編集モードでないときは横取りしない (裁定 Q3)。 |
 | INV-60 | イベント駆動 | ブロック編集欄またはセルの編集中に主の修飾キー + B / I (Shift なし。主 + Shift + B / I はブラウザの既定のまま。オーナーの裁定 2026-10-21) が押された場合、システムはブラウザの既定の動作を止め、選択が 5.15.5 の条件を満たせば Bold / Italic (INV-67) を行うこと (満たさなければ何もしない)。編集中でないときと `#editor` では横取りしないこと。 |
+| INV-61 | イベント駆動 | 種類が `table` のブロックを、原文の編集欄の確定、セルの確定、または INV-65 の操作で本文を変えて確定する場合、確定の結果が GFM の表として解釈できるなら、システムは表を次の形に整えてからモデルに入れること: 各行の両端に縦棒を置き、セルの前後に空白を 1 つ置き、列ごとに最も幅の広いセルに合わせて右に空白を足す。幅は East Asian Width の F / W を 2、結合文字 (Mn / Me) と幅 0 の文字 (Cf の一部、異体字セレクタ) を 0、それ以外 (Ambiguous、タブを含む) を 1 として数える。区切り行は列の幅 (最小 3) の `-` で作り、配置の `:` を保つ。セルの数が見出しより少ない行は空のセルを補い、多い行は余るセルを元のまま後ろに残す。内容を変えずに閉じた場合は整えないこと。幅の数え方の限界 (5.14.13) は既知の制約とする。 |
 | INV-68 | イベント駆動 | 編集パレットのグリップが `CONFIG.edit.paletteLongPressMs` 以上押され、その間の移動が `CONFIG.pan.activationThresholdPx` 以下だった場合、システムは 11-f の `minimizeToggled` を起こすこと (時間が来た時点で切り替え、離すまで移動しない。11-d)。それより前に閾値を超えて動いた場合は移動とすること。最小化している間はグリップだけを表示し、未保存なら印 (点) を付けること。グリップの画面上の位置は変えないこと (ビューポートの外に出る場合は INV-37 で補正する)。最小化しても編集モード、開いている編集欄、ショートカットはそのままとすること。最小化の状態は記憶しないこと (CON-13)。タッチの長押しで文脈メニューや選択が出ないようにすること (`contextmenu` を止め、`-webkit-touch-callout: none`)。 |
 
 ---
@@ -401,6 +402,7 @@ graph TB
             PORTS["ModelChangedPort and OverwriteConfirmPort<br/>(Ports owned by use cases)"]:::usecase
             BLOCKMODEL["MarkdownBlockModel<br/>(Source as blocks)"]:::entity
             TEXTOPS["MarkdownTextOps<br/>(Pure text edits)"]:::entity
+            TABLE["MarkdownTable and textWidth<br/>(Pure table format, INV-61)"]:::entity
             SESSION["DocumentSession<br/>(Document values)"]:::entity
             SAVER["MarkdownFileAccess<br/>(Local file read and write)"]:::adapter
         end
@@ -437,6 +439,8 @@ graph TB
     UI -->|"runs save use cases"| SAVEDOC
     BLOCKEDIT -->|"commits blocks"| ORCH
     BLOCKEDIT -->|"format edits"| TEXTOPS
+    ORCH -->|"align tables (INV-61)"| TABLE
+    TABLE -->|"split cells"| TEXTOPS
     PALETTE -->|"invokes commands"| UI
     ORCH -->|"owns"| BLOCKMODEL
     ORCH -->|"notifies through"| PORTS
@@ -679,6 +683,16 @@ classDiagram
         +insertTextAt(text, caretOffset, insertText)$ TextEdit
         +changedRange(before, after)$ object
     }
+    class MarkdownTable {
+        +parse(raw)$ object
+        +format(table)$ string
+        +formatTablesIn(text, lexer)$ string
+        +insertRow(table, r)$ object
+        +deleteRow(table, r)$ object
+        +insertColumn(table, c)$ object
+        +deleteColumn(table, c)$ object
+        +setAlignment(table, c, align)$ object
+    }
     class TextEdit {
         +text : string
         +selStart : number
@@ -827,6 +841,8 @@ classDiagram
     SaveDocumentAs ..> DocumentLocation : reads and replaces
     BlockEditController --> RendererOrchestrator : commits blocks
     BlockEditController ..> MarkdownTextOps : uses
+    RendererOrchestrator ..> MarkdownTable : formats tables
+    MarkdownTable ..> MarkdownTextOps : splitTableRow
     RendererOrchestrator --> ModelChangedPort : notifies
     SaveDocument --> OverwriteConfirmPort : asks
     UIController ..|> ModelChangedPort : implements
@@ -863,6 +879,7 @@ classDiagram
     style DiagramPanController fill:#87CEEB,stroke:#333,color:#000
     style DiagramCopyController fill:#87CEEB,stroke:#333,color:#000
     style MarkdownBlockModel fill:#FF8C00,stroke:#333,color:#000
+    style MarkdownTable fill:#FF8C00,stroke:#333,color:#000
     style ModelChange fill:#FF8C00,stroke:#333,color:#000
     style MarkdownBlock fill:#FF8C00,stroke:#333,color:#000
     style BlockDiff fill:#FF8C00,stroke:#333,color:#000
@@ -911,11 +928,13 @@ classDiagram
 | クラス / モジュール | メンバと決めごと |
 | --- | --- |
 | `textTransforms.js` | `splitMarkdownWrapper(text)` / `detectLineEnding(text)` / `normalizeLineEndings(text)` / `convertLineEndings(lfText, lineEnding)` / `hasUtf8Bom(bytes)`。すべて `@purity pure` (5.13、5.14.1) |
+| `textWidth.js` | `displayWidth(text)` / `codePointWidth(cp)` (`@purity pure`。INV-61、5.14.13。範囲表は Unicode 16.0.0 から作った定数) |
+| `MarkdownTable` | `+parse(raw)$` / `+format(table)$` / `+formatTablesIn(text, lexer)$` / `+insertRow$` / `+deleteRow$` / `+insertColumn$` / `+deleteColumn$` / `+setAlignment$` (すべて `@purity pure`。5.14.13) |
 | `MarkdownBlockModel` | `+toEditableText(raw)$` (末尾の改行を除いた、編集欄に入れる文字列。`replaceBlock` が元の末尾の改行を付け直す) / `+getNextBlockId()` / `+withNextBlockId(nextBlockId)` (Undo で戻したモデルに現在のカウンタを引き継ぐ。INV-48) |
 | `MarkdownRenderer` | `+lex(src)` (RendererOrchestrator がモデルを作るときの lexer。ブロックの字句解析だけを行い、インラインの解析はしない。ブロックの境界と参照リンクの定義は全体の解析と同じ。各ブロックの HTML は `blockHtml` がそのブロックを全体で解析して作る) / `+documentHtml(markdownText)` / `+blockHtml(raw, links)` (どちらも `{html, error}` を返し、DOM に書かない) / `+findBlockIdAt(node) number\|null` / `+getBlockElement(blockId) HTMLElement\|null` / `+getEmptyBlockElement() HTMLElement\|null` (ブロックの特定は、レンダラーが作った外枠の参照だけで行う。INV-29) / `+isStale(blockId) boolean` (編集中で差し替えなかった外枠が古い描画のままか。INV-47)。外枠の印: 不可視のブロックは `.md-block-hidden` と `data-hidden-kind` (`link` / `html`) と `title` (`messages.edit.hiddenLinkDefinition` / `hiddenHtml`)。空の文書は ID を持たない `.md-block.md-block-empty`。編集中は `.md-block-editing` |
 | `PlantUMLRenderer` | `+askConsent()` / `+createPendingElement(code, theme)` (`.plantuml-pending`: `messages.edit.plantumlPending` の文と `plantumlRenderButton` のボタン)。[Render] の確認で Cancel を選んだ場合は、プレースホルダを残す (もう一度押せる) |
 | `DiagramRenderer` / `MermaidRenderer` / `PlantUMLRenderer` | `render(theme, root)` の `root` は `Element` または `Element[]` (省略時は preview 全体)。要素の収集は `utils.queryAllIn(roots, selector)`。Mermaid は変換したコンテナだけを `mermaid.run` に渡す |
-| `RendererOrchestrator` | `+getModel() MarkdownBlockModel\|null` / `+resetExternalImageConsent() void` (`.md` のドロップで UIController が呼ぶ。INV-43) / `+holdBlock(blockId)` / `+releaseBlock()` (編集中のブロックの外枠の保持。INV-47)。`clear()` は `clearDocument()` を呼ぶ。`renderCodeView()` も最初に `clearDocument()` を呼ぶ (`state.markdownText` は `""` になる) |
+| `RendererOrchestrator` | `+formatTableText(text) string` (表のブロックの編集欄の文字列の中の表を整える。モデルと同じ lexer で、その文字列だけを字句解析する。INV-61) / `+getModel() MarkdownBlockModel\|null` / `+resetExternalImageConsent() void` (`.md` のドロップで UIController が呼ぶ。INV-43) / `+holdBlock(blockId)` / `+releaseBlock()` (編集中のブロックの外枠の保持。INV-47)。`clear()` は `clearDocument()` を呼ぶ。`renderCodeView()` も最初に `clearDocument()` を呼ぶ (`state.markdownText` は `""` になる) |
 | `BlockEditController` | コンストラクタ `(preview, orchestrator, blockLocator, scrollMemento, host)`。`blockLocator` は MarkdownRenderer、`host` は `BlockEditHost`。11-c の遷移表を `blockEditStateMachine` (出来事 → 状態 → `{to, actions, guard}`) として持ち、出来事の入口は `dispatch(event, target)` 1 つとする。`emptyDocumentStarted` だけは、全体描画の後で編集欄を開くまでの Promise を返す (それまでの状態は editModeIdle)。`isEditing()` は編集欄が開いているかどうかを返す。`isEditorElement(node)` は開いている編集欄の textarea かどうか (参照で判定。INV-59 (b))。`doubleClickTarget(event)` は INV-57 の対象 (11-c。ダブルクリックの `dblclick`、またはダブルタップの 2 回目の `pointerup` を受ける)。`isDoubleTap(first, second, limits)` は `CONFIG.edit` の値で判定する (INV-31) |
 | `BlockEditHost` (UIController が実装するポート) | `isPaletteNode(node)` はパレットと 3 つのポップオーバーを参照で判定する。`renderFromEditor()` は INV-45 の全体描画とトーストを行う。`onEditorInput()` は編集欄の `input` で、`onEditStateChanged()` は編集欄の開閉で呼ばれる (未保存の印とパレットのボタンを更新する) |
 | `EditPalette` | コンストラクタ `(host, {isApple})` (`isApple` は tooltip を `Cmd` で書くか。INV-14 の判定式で main.js が `utils.isApplePlatform(navigator)` から決める)。7 列 × 2 段、ポップオーバー 3 つ (`paletteMermaidMenu` / `paletteFormatMenu` / `paletteTableMenu`)。11-d の遷移表を `paletteGestureStateMachine`、11-f の遷移表を `paletteDisplayStateMachine` として持ち、入口は `dispatch(event, input)` (11-d) と `dispatchDisplay(event, input)` (11-f)。表示・最小化・ポップオーバーは 11-f の状態 (`paletteDisplayState`) だけで決める。`setButtonStates(states)` は 5.15.5 の表の値をそのまま受け取る (キーが無ければ無効。Save / Save as と Mermaid の雛形は常に有効。`alignment` は配置のボタンの `aria-pressed`)。`setUnsaved(isUnsaved)` は最小化中の未保存の点。`isMinimized()`。`contains(node)` はパレットとポップオーバーを参照で判定する (`isPaletteNode` の実体)。無効なボタンは `disabled` 属性ではなく `aria-disabled="true"` で示す (パレット本体の無効なボタンの押下を移動にするため、ポインタの事象を受ける必要がある。INV-35)。キーボードの処理は持たない (INV-53)。表示中は `body` に class `edit-mode` を付ける (帯と空のブロックを編集モードの間だけ見せる CSS のため) |
@@ -2123,6 +2142,16 @@ Feature: ブロック単位のその場編集
     When ユーザーがMermaidの図をダブルクリックする
     Then 図のズームがリセットされ、編集パレットは表示されない
 
+  Scenario: 表の縦棒をそろえる
+    Given 縦棒のそろっていない表の原文の編集欄を開いた
+    When ユーザーが1文字直して外側をクリックする
+    Then 原文の表の縦棒がそろう (全角は半角2文字分)
+
+  Scenario: 内容を変えずに閉じた表はそろえない
+    Given 縦棒のそろっていない表の原文の編集欄を開いた
+    When ユーザーが何も変えずに外側をクリックする
+    Then 原文は変わらない
+
   Scenario: ブロック編集欄の Ctrl+Z は文字単位
     Given 段落の編集欄で "abc" と打った
     When ユーザーが Ctrl+Z を押す
@@ -2382,7 +2411,7 @@ Feature: 未保存の保護
 | `header-group`  | div      | タイトル＋著作権ラッパー                                                           |
 | `title`         | div      | アプリケーションタイトル（リポジトリへのリンク `<a>` 付き）                        |
 | `copyright`     | div      | リポジトリリンク付き著作権表示                                                     |
-| `editor`        | textarea | Markdown 入力エリア。`placeholder="Paste Markdown..."`                             |
+| `editor`        | textarea | Markdown 入力エリア。`placeholder="Paste Markdown..."`。`font-family` は 5.14.13 の等幅フォントの並び (INV-61) |
 | `controls`      | div      | ボタングループコンテナ                                                             |
 | `renderLight`   | button   | ラベル: "Render Light" — 両ビュー共用 (FR-06)                                      |
 | `renderDark`    | button   | ラベル: "Render Dark" — 両ビュー共用 (FR-06)                                       |
@@ -2415,7 +2444,7 @@ Feature: 未保存の保護
 | `paletteStatus` | div | パレット下端の状態表示。`<file name> * unsaved` / `<file name> - saved` (ASCII) |
 | `.md-block` | div (クラス) | 描画結果の 1 ブロックの外枠。`data-block-id` を持つ。MarkdownRenderer が生成する (外枠は sanitize の対象外のコード生成で、中身は sanitize 済み) |
 | `.md-block-hidden` | div (クラス) | 描画結果が空または不可視のブロックの帯。編集モードの間だけ表示し、ホバーで種類 ("link definition" / "hidden HTML") を出す (INV-41) |
-| `.md-block-editor` | textarea (クラス) | ブロック編集欄。`font-family: monospace`。高さは自動 (INV-40) |
+| `.md-block-editor` | textarea (クラス) | ブロック編集欄。`font-family` は 5.14.13 の等幅フォントの並び (`#editor` と同じ。INV-61)。高さは自動 (INV-40) |
 | `.plantuml-pending` | div (クラス) | 未送信の PlantUML ブロックのプレースホルダ。[Render] ボタン付き (INV-23) |
 
 **[要検証]** `#controls` のボタンが 6 個 (`helpBtn` を含めると上部バーで 7 個) になるので、iPhone (幅 375px) で折り返しや欠けが起きないかを PRT-V11 で確認する。
@@ -3754,6 +3783,14 @@ CONFIG を読まず、必要な値は引数で受け取る。`toggleWrap` (選�
 | 保存の成功 | `withSaved` (文書 ID は同じ) | Save as なら新しい保存先 | 維持 | 変えない | 同じ文書 ID のときだけ反映 (INV-54)  |
 | ダウンロード | 変えない | 変えない | 維持 | 変えない | INV-26  |
 
+#### 5.14.13 表の整形 (INV-61)
+
+- 対象: 種類が `table` のブロックの原文の編集欄を、内容を変えて確定したとき (BlockEditController の `commitBlock`)。編集欄の文字列を `RendererOrchestrator.formatTableText(text)` に通し、その中の表のブロック (字句解析のトークンの種類が `table`) だけを `MarkdownTable.format(MarkdownTable.parse(raw))` で整える (編集で表の後ろに段落を足すなど、複数のブロックに分かれた場合も、表のブロックだけ)。トークンの `raw` をつなぐと元の文字列にならない場合は、何も変えない。内容を変えずに閉じた場合と、表でないブロックを表に書き換えた場合は整えない。整えた結果も 1 回の確定 (1 つの変更の単位。INV-48)。セルの確定と INV-65 の操作 (INV-62、INV-65) も同じ整形を使う。
+- `MarkdownTable` (`@purity pure`): `parse(raw)` は `{aligns, rows, extras}` または `null` (見出しの行と区切り行のセルの数が同じで、区切り行の各セルが `:?-+:?` のときだけ表)。セルの分割は `MarkdownTextOps.splitTableRow` と同じ規則 (共通の関数) (逃がされていない `|` で分ける。コードスパンの中の `|` も区切り。marked と同じ)。セルの前後の空白とタブだけを除き、全角の空白 (U+3000) や U+00A0 はセルの内容として残す。`rows` は見出しの列数にそろえ (足りないセルは空)、余るセルは `extras` に元のまま持つ。`format(table)` は INV-61 の形で書き、余るセルは整えた列の後ろにそのまま続ける。`insertRow` / `deleteRow` / `insertColumn` / `deleteColumn` / `setAlignment` は INV-65 の操作 (見出しの行と、列が 1 つのときの列は削除できず `null`。D2)。
+- 幅 (`textWidth.js` の `displayWidth(text)`、`@purity pure`): コードポイントごとに、East_Asian_Width が F / W なら 2、General_Category が Mn / Me、または Cf (表示される前置の結合記号 U+0600〜U+0605・U+06DD・U+070F・U+0890・U+0891・U+08E2・U+110BD・U+110CD を除く) なら 0、それ以外 (Ambiguous、タブ、制御文字を含む) は 1。両方に当たる文字 (U+3099 など) は 0。範囲表は Unicode 16.0.0 の `EastAsianWidth.txt` と `DerivedGeneralCategory.txt` から開発時に 1 回だけ作った定数 (製品は実行時に通信しない)。版と作り方は `textWidth.js` の冒頭に書く。セルの幅は書かれたとおりの文字列 (`\|` は 2) で数える (等幅フォントで原文を見たときにそろうため)。
+- 幅の数え方の既知の制約: (1) 和文の等幅フォントは Ambiguous の文字 (○ ① α ※ × など) を全角で描くことがあり、その場合は縦棒がずれる。(2) 絵文字の ZWJ の列と、肌の色の修飾 (U+1F3FB〜U+1F3FF、W) の付いた絵文字は W を足し合わせて数えるので、表示 (2) より広く数える。(3) VS16 の付いた絵文字 (❤️ など) は 1 と数えるが、表示は 2。(4) タブは 1 と数える。いずれも縦棒の見た目がずれるだけで、表の意味は変わらない。
+- 等幅フォント: `.md-block-editor` と `#editor` は `"BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace` (システムのフォントだけ。`@font-face` は使わない)。合否の基準と既知の制約は PRT-X07。
+
 ### 5.15 編集パレット
 
 #### 5.15.1 配置
@@ -3850,7 +3887,7 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | **YAGNI**    | 検索、差分、プラグインシステム、マルチファイルタブは実装しない。指定された機能のみ実装する。                                                                                                                                                                                                                        |
 | **DRY**      | EXT_TO_HLJSは単一のルックアップテーブル。テーマ適用は `applyTheme()`。トーストは `showToast()`。`handleRender()` はキーとボタンで共用。                                                                                                                                                                             |
 | **SoC**      | SourceFileRenderer: コード本体レンダリングのみ（UI chrome は UIController に委譲）。SmoothScrollEngine: アニメーション物理のみ。UIController: イベント配線 + ビューモード管理（setViewMode, showKeyHint）。RendererOrchestrator: レンダリングパイプライン調整のみ（DOM classList 操作なし）。CONFIG: 全定数を集約。 |
-| **SRP**      | 各クラスは変更理由がちょうど1つ。SourceFileRendererはコード描画変更時のみ変更。UIControllerはUI表示変更時のみ変更。RendererOrchestratorはパイプライン変更時のみ変更。 **(その場編集。2026-xx-xx 追記)** MarkdownBlockModel: 本文とブロックの対応だけ。BlockDiff: ブロック列の対応付けだけ。MarkdownTextOps: 文字列の書式操作だけ。DocumentSession: 保存に関わる値だけ。SaveDocument / SaveDocumentAs: 保存の手順だけ。MarkdownFileAccess: ローカルファイルへの入出力だけ。BlockEditController: ブロック編集の UI イベントだけ。EditPalette: パレットの表示とジェスチャだけ (機能の実行はコールバックで UIController へ) |
+| **SRP**      | 各クラスは変更理由がちょうど1つ。SourceFileRendererはコード描画変更時のみ変更。UIControllerはUI表示変更時のみ変更。RendererOrchestratorはパイプライン変更時のみ変更。 **(その場編集。2026-xx-xx 追記)** MarkdownBlockModel: 本文とブロックの対応だけ。BlockDiff: ブロック列の対応付けだけ。MarkdownTextOps: 文字列の書式操作だけ。MarkdownTable: 表の解析と整形だけ (幅は textWidth.js)。DocumentSession: 保存に関わる値だけ。SaveDocument / SaveDocumentAs: 保存の手順だけ。MarkdownFileAccess: ローカルファイルへの入出力だけ。BlockEditController: ブロック編集の UI イベントだけ。EditPalette: パレットの表示とジェスチャだけ (機能の実行はコールバックで UIController へ) |
 | **OCP**      | EXT_TO_HLJSへの拡張子追加にロジック変更は不要。新レンダラーはUIControllerを変更せずRendererOrchestratorに追加可能。                                                                                                                                                                                                 |
 | **LSP**      | MermaidRendererとPlantUMLRendererは共にDiagramRendererを継承し、互換性のある `render()` インターフェースを持つ。                                                                                                                                                                                                    |
 | **ISP**      | 不要なインターフェースへの依存を強制するクラスはない。SourceFileRendererはダイアグラムレンダリングインターフェースに依存しない。                                                                                                                                                                                    |
@@ -3860,8 +3897,8 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | **CQS**      | `isPreRenderState()` / `isCodeViewActive()` は純粋なクエリ（副作用なし）。`render()` / `reload()` はコマンド + CodeViewMeta 返却（CQS の実用的例外: レンダリング副作用とメタデータ返却を分離すると呼び出し側が複雑化するため）。`destroy()` / `setViewMode()` は純粋なコマンド。 **(その場編集。2026-xx-xx 追記)** `isBodyChanged()` / `toFileText()` / `diffBlocks()` / `toBody()` は副作用の無いクエリ。`isEditing()` / `hasUncommittedChange()` / `canUndo()` は副作用は無いが可変の状態を読むクエリ (純粋ではない) |
 | **POLA**     | `L` = ライト、`D` = ダーク — 両ビューで一貫。`C` = 常にクリア。`N` = 常に新規タブ。Ctrl+C = ブラウザネイティブコピー（修飾キーガードにより bare key ショートカットと衝突しない）。`setViewMode()` で全ビュー切替を統一API化。リロードはファイルが読み込まれている場合のみ発火。 **(その場編集。2026-xx-xx 追記)** パレットのボタンは「押して離した」ときだけ動き、ずらすと移動になる。Esc は常に「取消 / 閉じる」。閲覧中 (編集モードでない) のプレビューの操作は従来どおり |
 | **PIE**      | 自己説明的な命名: SourceFileRenderer、SmoothScrollEngine、EXT_TO_HLJS、keyHintDurationMs。CONFIGのキーは自然な英語として読める。                                                                                                                                                                                    |
-| **CA**       | 依存の方向は内側へ: Framework(UIController) → UseCase(Orchestrator) → Entity(Renderers, ApplicationState)。Renderers はドメインコアレンダリングのため Entity に分類。循環依存なし。CONFIGは境界上の純粋データオブジェクト。**意図的逸脱:** ScrollMemento は Adapter 層だが UseCase(Orchestrator) が直接所有する。2メソッドのクラスに対して Interface を挟むのはオーバーエンジニアリングのため、実用上許容する。 **(その場編集。2026-xx-xx 追記)** Entity: MarkdownBlockModel / BlockDiff / MarkdownTextOps / DocumentSession (文書の値だけで、ブラウザの型を持たない)。UseCase: RendererOrchestrator / SaveDocument / SaveDocumentAs / DocumentLocation (保存先の値。fileHandle は不透明な参照として扱い、Entity からは使わない)。Adapter: MarkdownFileAccess / ScrollMemento。Framework: BlockEditController / EditPalette / UIController。UseCase の SaveDocument は UI を直接扱わず、`confirmOverwrite` のポートを通す。依存は内向き |
-| **純粋性 (R7)** | **(その場編集。2026-xx-xx 追加)** `pure`: MarkdownBlockModel / BlockDiff / MarkdownTextOps / DocumentSession (不変の値) / `splitMarkdownWrapper` 等の変換関数。`semi-pure-b`: `ScrollMemento.captureAnchor`、`MarkdownFileAccess.readLastModified`。`non-pure`: 状態を持つコントローラ、書き込み、DOM の更新。純粋な core と非純粋な shell は別ファイル (R7.9) |
+| **CA**       | 依存の方向は内側へ: Framework(UIController) → UseCase(Orchestrator) → Entity(Renderers, ApplicationState)。Renderers はドメインコアレンダリングのため Entity に分類。循環依存なし。CONFIGは境界上の純粋データオブジェクト。**意図的逸脱:** ScrollMemento は Adapter 層だが UseCase(Orchestrator) が直接所有する。2メソッドのクラスに対して Interface を挟むのはオーバーエンジニアリングのため、実用上許容する。 **(その場編集。2026-xx-xx 追記)** Entity: MarkdownBlockModel / BlockDiff / MarkdownTextOps / MarkdownTable / DocumentSession (文書の値だけで、ブラウザの型を持たない)。UseCase: RendererOrchestrator / SaveDocument / SaveDocumentAs / DocumentLocation (保存先の値。fileHandle は不透明な参照として扱い、Entity からは使わない)。Adapter: MarkdownFileAccess / ScrollMemento。Framework: BlockEditController / EditPalette / UIController。UseCase の SaveDocument は UI を直接扱わず、`confirmOverwrite` のポートを通す。依存は内向き |
+| **純粋性 (R7)** | **(その場編集。2026-xx-xx 追加)** `pure`: MarkdownBlockModel / BlockDiff / MarkdownTextOps / MarkdownTable / DocumentSession (不変の値) / `splitMarkdownWrapper` 等の変換関数 / `textWidth.js` の `displayWidth`。`semi-pure-b`: `ScrollMemento.captureAnchor`、`MarkdownFileAccess.readLastModified`。`non-pure`: 状態を持つコントローラ、書き込み、DOM の更新。純粋な core と非純粋な shell は別ファイル (R7.9) |
 | **命名規則** | CSS: 既存のcamelCase ID規約を維持。JS: メソッドはcamelCase、クラスはPascalCase、モジュールレベル定数はUPPER_SNAKE。                                                                                                                                                                                                 |
 
 #### 5.16.1 最小構成との比較 (R2.18)

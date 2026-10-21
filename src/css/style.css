@@ -68,7 +68,9 @@ body {
 
 #editor {
   flex: 1;
-  font-family: monospace;
+  /* Full-width monospace (ruling 7, spec 5.14.13): a CJK character is two columns,
+     so the aligned table pipes line up (INV-61, PRT-X07). System fonts only. */
+  font-family: "BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace;
   font-size: 14px;
   padding: 4px 8px;
   border: 1px solid #ccc;
@@ -599,7 +601,7 @@ body.view-code.dark #editor {
   width: 100%;
   margin: 4px 0;
   padding: 6px 8px;
-  font-family: monospace;
+  font-family: "BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace; /* as #editor (INV-61) */
   font-size: 14px;
   line-height: 1.5;
   color: #1f2328;

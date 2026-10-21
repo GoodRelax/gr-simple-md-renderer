@@ -418,7 +418,6 @@ export default class BlockEditController {
     textarea.spellcheck = false;
     textarea.rows = 1;
     textarea.value = raw;
-    textarea.style.fontFamily = "monospace";
     textarea.style.overflowY = "hidden"; // INV-40: the height follows the content
     const savedNodes = [...wrapper.childNodes];
     wrapper.replaceChildren(textarea);
@@ -444,7 +443,7 @@ export default class BlockEditController {
   /**
    * Remove the editor and put the rendered content back.
    * @purity non-pure
-   * @returns {{blockId: number|null, text: string, original: string}|null}
+   * @returns {{blockId: number|null, blockType: string|null, text: string, original: string}|null}
    */
   _closeEditor() {
     const openEditor = this._editor;
@@ -460,7 +459,7 @@ export default class BlockEditController {
     this._composing = false;
     this.orchestrator.releaseBlock();
     this.host.onEditStateChanged();
-    return { blockId: openEditor.blockId, text: textarea.value, original: openEditor.original };
+    return { blockId: openEditor.blockId, blockType: openEditor.blockType, text: textarea.value, original: openEditor.original };
   }
 
   /**
@@ -477,12 +476,14 @@ export default class BlockEditController {
     const anchor = open && open.blockId !== null ? this.scrollMemento.captureAnchor(open.wrapper) : undefined;
     const closed = this._closeEditor();
     if (!closed || closed.text === closed.original) return;
+    // INV-61: a table block committed with a change is aligned (only then).
+    const text = closed.blockType === "table" ? this.orchestrator.formatTableText(closed.text) : closed.text;
     if (closed.blockId === null) {
       // The empty first block of an empty document (INV-31, INV-49).
       if (closed.text.trim() !== "") void this.orchestrator.insertAfter(null, closed.text);
       return;
     }
-    void this.orchestrator.commitBlock(closed.blockId, closed.text, anchor);
+    void this.orchestrator.commitBlock(closed.blockId, text, anchor);
   }
 
   // ---- internals: pointer (INV-29, INV-30) ----

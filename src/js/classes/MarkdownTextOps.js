@@ -58,7 +58,7 @@ export default class MarkdownTextOps {
     const lines = tableRaw.split("\n");
     const caretLine = MarkdownTextOps._lineIndexAt(tableRaw, caretOffset);
     const after = Math.max(caretLine, 1);
-    const header = MarkdownTextOps._splitRow(lines[0]);
+    const header = MarkdownTextOps.splitTableRow(lines[0]);
     const cells = header.segments.slice(header.first, header.last).map(() => "  ");
     const row = MarkdownTextOps._joinRow(header, cells);
     lines.splice(after + 1, 0, row);
@@ -82,7 +82,7 @@ export default class MarkdownTextOps {
     const offset = MarkdownTextOps._clamp(caretOffset, tableRaw);
     const caretLine = MarkdownTextOps._lineIndexAt(tableRaw, offset);
     const caretCol = offset - MarkdownTextOps._lineStart(lines, caretLine);
-    const caretRow = MarkdownTextOps._splitRow(lines[caretLine]);
+    const caretRow = MarkdownTextOps.splitTableRow(lines[caretLine]);
     const pipesBefore = MarkdownTextOps._pipePositions(lines[caretLine]).filter((p) => p < caretCol).length;
     const cellCount = caretRow.last - caretRow.first;
     const column = Math.min(Math.max(pipesBefore - caretRow.first, 0), Math.max(cellCount - 1, 0));
@@ -97,7 +97,7 @@ export default class MarkdownTextOps {
         pos += line.length + 1;
         continue;
       }
-      const row = MarkdownTextOps._splitRow(line);
+      const row = MarkdownTextOps.splitTableRow(line);
       const cells = row.segments.slice(row.first, row.last);
       const at = Math.min(column + 1, cells.length);
       cells.splice(at, 0, i === 1 ? "---" : "  ");
@@ -240,13 +240,15 @@ export default class MarkdownTextOps {
   }
 
   /**
-   * Split a table line into segments at separating pipes. With outer pipes
-   * the first and last segments are the (empty) outside parts.
+   * Split a table line into segments at separating pipes (not escaped with a
+   * backslash; a pipe inside a code span separates too, as in marked). With
+   * outer pipes the first and last segments are the (empty) outside parts.
+   * Shared with MarkdownTable (one rule for cells).
    * @purity pure
    * @param {string} line
    * @returns {{segments: string[], first: number, last: number}}
    */
-  static _splitRow(line) {
+  static splitTableRow(line) {
     const segments = [];
     let from = 0;
     for (const p of MarkdownTextOps._pipePositions(line)) {
