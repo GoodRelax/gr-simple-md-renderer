@@ -17,6 +17,21 @@ const katexWoff2Only = {
   },
 };
 
+// The code colors are style.css's own (Primer prettylights, spec 5.8.1). A
+// highlight.js theme is a set of global .hljs rules that would override or
+// mix with them, so importing any file from highlight.js/styles fails the
+// build.
+export const noHljsThemeCss = {
+  postcssPlugin: "no-hljs-theme-css",
+  Once(root) {
+    const file = root.source?.input?.file ?? "";
+    const match = /[\\/]highlight\.js[\\/]styles[\\/](.+)$/.exec(file);
+    if (match) {
+      throw root.error(`highlight.js theme "${match[1]}" must not be bundled; style.css colors the code`);
+    }
+  },
+};
+
 // Fail the build if the output still imports code from the network. All
 // libraries must be bundled; a leftover CDN import would make the app depend
 // on that host to start. Listed after viteSingleFile so it sees the final HTML.
@@ -116,7 +131,7 @@ export default defineConfig({
   },
   css: {
     postcss: {
-      plugins: [katexWoff2Only],
+      plugins: [katexWoff2Only, noHljsThemeCss],
     },
   },
   plugins: [viteSingleFile(), noExternalImports, contentSecurityPolicy],

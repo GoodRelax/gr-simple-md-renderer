@@ -8,8 +8,8 @@ import plantumlEncoder from "plantuml-encoder";
 import markedKatex from "marked-katex-extension";
 import DOMPurify from "dompurify";
 
-// Vendor CSS (inlined into the single file; katex fonts embedded as data URIs)
-import "highlight.js/styles/vs2015.css";
+// Vendor CSS (inlined into the single file; katex fonts embedded as data URIs).
+// No highlight.js theme: style.css colors the code (spec 5.8.1).
 import "katex/dist/katex.min.css";
 
 // ========================================

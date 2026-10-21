@@ -101,6 +101,225 @@ body {
   padding: 20px;
   position: relative;
   background-color: #fff;
+  color: #1f2328;
+}
+
+#preview a {
+  color: #0969da;
+}
+
+/* Inline code: a ground in both themes (Primer bgColor-neutral-muted); no code anywhere inside pre */
+#preview code:not(pre code) {
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  background: #818b981f;
+}
+
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark #preview code:not(pre code) {
+    background: #656c7633;
+  }
+}
+
+/* Code highlighting (spec 5.8.1, owner ruling 2026-10-22): the highlight.js
+   classes grouped as in its github.css, colored with Primer 11.10.0
+   prettylights-syntax-*. No highlight.js theme CSS is bundled. Not limited
+   to #preview, so the code view (#codeViewBody) gets the same colors. */
+.hljs {
+  color: #1f2328;
+}
+
+/* prettylights-syntax-keyword */
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+  color: #cf222e;
+}
+
+/* prettylights-syntax-entity */
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  color: #6639ba;
+}
+
+/* prettylights-syntax-constant */
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: #0550ae;
+}
+
+/* prettylights-syntax-string */
+.hljs-regexp,
+.hljs-string,
+.hljs-meta .hljs-string {
+  color: #0a3069;
+}
+
+/* prettylights-syntax-variable */
+.hljs-built_in,
+.hljs-symbol {
+  color: #953800;
+}
+
+/* prettylights-syntax-comment */
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+  color: #59636e;
+}
+
+/* prettylights-syntax-entity-tag */
+.hljs-name,
+.hljs-quote,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+  color: #0550ae;
+}
+
+/* prettylights-syntax-storage-modifier-import */
+.hljs-subst {
+  color: #1f2328;
+}
+
+/* prettylights-syntax-markup-heading */
+.hljs-section {
+  color: #0550ae;
+  font-weight: bold;
+}
+
+/* prettylights-syntax-markup-list */
+.hljs-bullet {
+  color: #3b2300;
+}
+
+/* prettylights-syntax-markup-italic */
+.hljs-emphasis {
+  color: #1f2328;
+  font-style: italic;
+}
+
+/* prettylights-syntax-markup-bold */
+.hljs-strong {
+  color: #1f2328;
+  font-weight: bold;
+}
+
+/* prettylights-syntax-markup-inserted */
+.hljs-addition {
+  color: #116329;
+  background-color: #dafbe1;
+}
+
+/* prettylights-syntax-markup-deleted */
+.hljs-deletion {
+  color: #82071e;
+  background-color: #ffebe9;
+}
+
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  body.dark .hljs {
+    color: #f0f6fc;
+  }
+
+  body.dark .hljs-doctag,
+  body.dark .hljs-keyword,
+  body.dark .hljs-meta .hljs-keyword,
+  body.dark .hljs-template-tag,
+  body.dark .hljs-template-variable,
+  body.dark .hljs-type,
+  body.dark .hljs-variable.language_ {
+    color: #ff7b72;
+  }
+
+  body.dark .hljs-title,
+  body.dark .hljs-title.class_,
+  body.dark .hljs-title.class_.inherited__,
+  body.dark .hljs-title.function_ {
+    color: #d2a8ff;
+  }
+
+  body.dark .hljs-attr,
+  body.dark .hljs-attribute,
+  body.dark .hljs-literal,
+  body.dark .hljs-meta,
+  body.dark .hljs-number,
+  body.dark .hljs-operator,
+  body.dark .hljs-variable,
+  body.dark .hljs-selector-attr,
+  body.dark .hljs-selector-class,
+  body.dark .hljs-selector-id {
+    color: #79c0ff;
+  }
+
+  body.dark .hljs-regexp,
+  body.dark .hljs-string,
+  body.dark .hljs-meta .hljs-string {
+    color: #a5d6ff;
+  }
+
+  body.dark .hljs-built_in,
+  body.dark .hljs-symbol {
+    color: #ffa657;
+  }
+
+  body.dark .hljs-comment,
+  body.dark .hljs-code,
+  body.dark .hljs-formula {
+    color: #9198a1;
+  }
+
+  body.dark .hljs-name,
+  body.dark .hljs-quote,
+  body.dark .hljs-selector-tag,
+  body.dark .hljs-selector-pseudo {
+    color: #7ee787;
+  }
+
+  body.dark .hljs-subst {
+    color: #f0f6fc;
+  }
+
+  body.dark .hljs-section {
+    color: #1f6feb;
+  }
+
+  body.dark .hljs-bullet {
+    color: #f2cc60;
+  }
+
+  body.dark .hljs-emphasis {
+    color: #f0f6fc;
+  }
+
+  body.dark .hljs-strong {
+    color: #f0f6fc;
+  }
+
+  body.dark .hljs-addition {
+    color: #aff5b4;
+    background-color: #033a16;
+  }
+
+  body.dark .hljs-deletion {
+    color: #ffdcd7;
+    background-color: #67060c;
+  }
 }
 
 /* Code view: remove padding so code body fills the area */
@@ -109,17 +328,25 @@ body.view-code #preview {
 }
 
 pre {
-  background: #f4f4f4;
-  padding: 12px;
+  background: #f6f8fa;
+  padding: 16px; /* as GitHub (owner ruling 2026-10-22) */
   border-radius: 4px;
   overflow-x: auto;
 }
 
 blockquote {
-  border-left: 4px solid #ccc;
+  border-left: 4px solid #d1d9e0;
   margin: 0;
   padding-left: 16px;
-  color: #666;
+  color: #59636e;
+}
+
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark blockquote {
+    color: #9198a1;
+    border-left-color: #3d444d;
+  }
 }
 
 #preview table {
@@ -129,7 +356,7 @@ blockquote {
 
 #preview th,
 #preview td {
-  border: 1px solid #ccc;
+  border: 1px solid #d1d9e0;
   padding: 6px 12px;
 }
 
@@ -138,6 +365,7 @@ blockquote {
   justify-content: flex-start;
   margin: 16px 0;
   position: relative;
+  background: transparent;
 }
 
 .mermaid > svg {
@@ -170,10 +398,13 @@ blockquote {
   user-select: none;
 }
 
-.dark .diagram-copy-btn {
-  background: rgba(50, 50, 50, 0.9);
-  border-color: #666;
-  color: #eee;
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark .diagram-copy-btn {
+    background: #212830;
+    border-color: #3d444d;
+    color: #f0f6fc;
+  }
 }
 
 @media (pointer: fine) {
@@ -220,6 +451,13 @@ blockquote {
 
   #editor {
     display: none;
+  }
+
+  /* Transient screen messages are not printed; !important beats the inline
+     display that UIController.showKeyHint sets. */
+  #keyHint,
+  #toastContainer {
+    display: none !important;
   }
 
   #preview {
@@ -330,78 +568,84 @@ blockquote {
   font-weight: bold;
 }
 
-body.dark {
-  background: #222;
-  color: #ddd;
-}
+/* Dark theme: GitHub (Primer) dark colors (spec 5.8.1). Screen only: print
+   keeps the light colors (owner ruling 2026-10-22). */
+@media screen {
+  body.dark {
+    background: #0d1117;
+    color: #f0f6fc;
+  }
 
-.dark #topbar {
-  background: #333;
-  border-bottom: 1px solid #444;
-}
+  .dark #topbar {
+    background: #151b23;
+    border-bottom: 1px solid #3d444d;
+  }
 
-.dark #preview {
-  background-color: #222;
-}
+  .dark #preview {
+    background-color: #0d1117;
+    color: #f0f6fc;
+  }
 
-.dark #editor {
-  background: #444;
-  color: #fff;
-  border-color: #666;
-}
+  .dark #editor {
+    background: #444;
+    color: #f0f6fc;
+    border-color: #3d444d;
+  }
 
-.dark pre {
-  background: #333;
-  border: 1px solid #555;
-}
+  .dark pre {
+    background: #151b23;
+    border: 1px solid #3d444d;
+  }
 
-.dark #copyright a {
-  color: #66b3ff;
-}
+  .dark #preview a,
+  .dark #copyright a {
+    color: #4493f8;
+  }
 
-.dark .modal-content {
-  background-color: #333;
-  color: #eee;
-  border: 1px solid #555;
-}
+  .dark .modal-content {
+    background-color: #151b23;
+    color: #f0f6fc;
+    border: 1px solid #3d444d;
+  }
 
-.dark .close-btn {
-  color: #ddd;
-}
+  .dark .close-btn {
+    color: #9198a1;
+  }
 
-.dark .close-btn:hover {
-  color: #fff;
-}
+  .dark .close-btn:hover {
+    color: #f0f6fc;
+  }
 
-.dark .modal-section h3 {
-  border-bottom-color: #555;
-}
+  .dark .modal-section h3 {
+    border-bottom-color: #3d444d;
+  }
 
-.dark #promptText {
-  background: #444;
-  border: 1px solid #666;
-  color: #fff;
-}
+  .dark #promptText {
+    background: #0d1117;
+    border: 1px solid #3d444d;
+    color: #f0f6fc;
+  }
 
-.dark .plantuml-error {
-  background-color: #2d1f1f;
-  color: #ff8787;
-  border-color: #ff6b6b;
-}
+  .dark .plantuml-error {
+    background-color: #f851491a;
+    color: #f85149;
+    border-color: #da3633;
+  }
 
-.dark .external-image-placeholder {
-  background-color: #2b2b2b;
-  color: #ced4da;
-  border-color: #868e96;
-}
+  .dark .external-image-placeholder {
+    background-color: #151b23;
+    color: #9198a1;
+    border-color: #656c76;
+  }
 
-.dark #preview th,
-.dark #preview td {
-  border-color: #555;
-}
+  .dark #preview th,
+  .dark #preview td {
+    border-color: #3d444d;
+  }
 
-.dark .katex {
-  color: inherit;
+  .dark .katex {
+    color: inherit;
+  }
 }
 
 .katex {
@@ -423,8 +667,11 @@ body.dark {
   -webkit-user-select: none;
 }
 
-.dark #affordanceText {
-  color: #888;
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark #affordanceText {
+    color: #9198a1;
+  }
 }
 
 /* ============================================================
@@ -446,9 +693,9 @@ body.dark {
 }
 
 .dark #fileInfo {
-  background: #333;
-  color: #ccc;
-  border-color: #555;
+  background: #151b23;
+  color: #9198a1;
+  border-color: #3d444d;
 }
 
 body.view-code #fileInfo {
@@ -458,7 +705,7 @@ body.view-code #fileInfo {
 
 body.view-code.dark #fileInfo {
   background: #1A1E2E;
-  border-color: #3a3e5e;
+  border-color: #3d444d;
 }
 
 /* ============================================================
@@ -470,7 +717,7 @@ body.view-code.dark #fileInfo {
   top: 60px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(40, 40, 40, 0.8);
   color: #eeeeee;
   font-family: monospace;
   font-size: 12px;
@@ -483,8 +730,9 @@ body.view-code.dark #fileInfo {
   white-space: pre;
 }
 
-body:not(.dark) #keyHint {
-  background: rgba(40, 40, 40, 0.8);
+body.dark #keyHint {
+  background: #3d444d;
+  color: #ffffff;
 }
 
 /* ============================================================
@@ -496,16 +744,11 @@ body:not(.dark) #keyHint {
   font-size: 13px;
   line-height: 1.6;
   white-space: pre;
-  background: #1e1e1e;
-  color: #d4d4d4;
+  background: #ffffff;
+  color: #1f2328;
   padding: 8px 0 36px 0;
   min-height: 100%;
   tab-size: 4;
-}
-
-body:not(.dark) #codeViewBody {
-  background: #ffffff;
-  color: #1e1e1e;
 }
 
 .code-line {
@@ -515,10 +758,6 @@ body:not(.dark) #codeViewBody {
 }
 
 .code-line:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-body:not(.dark) .code-line:hover {
   background: rgba(0, 0, 0, 0.03);
 }
 
@@ -533,14 +772,26 @@ body:not(.dark) .code-line:hover {
   width: 4em;
   text-align: right;
   margin-right: 1.5em;
-  color: #5a5a5a;
+  color: #59636e;
   user-select: none;
   -webkit-user-select: none;
   flex-shrink: 0;
 }
 
-body:not(.dark) .code-line::before {
-  color: #aaaaaa;
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  body.dark #codeViewBody {
+    background: #0d1117;
+    color: #f0f6fc;
+  }
+
+  body.dark .code-line:hover {
+    background: #151b23;
+  }
+
+  body.dark .code-line::before {
+    color: #9198a1;
+  }
 }
 
 /* ============================================================
@@ -589,6 +840,11 @@ body.view-code.dark #editor {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+.dark .toast {
+  background: #3d444d;
+  color: #ffffff;
+}
+
 /* ========================================
    In-place Markdown editing (SC-22 to SC-24)
    body.edit-mode is set while the edit palette is shown (EditPalette).
@@ -606,7 +862,7 @@ body.view-code.dark #editor {
   line-height: 1.5;
   color: #1f2328;
   background: #fffdf5;
-  border: 1px solid #1f7a3a;
+  border: 1px solid #0969da;
   border-radius: 4px;
   resize: none;
   overflow-y: hidden;
@@ -616,18 +872,21 @@ body.view-code.dark #editor {
 }
 
 .md-block-editor:focus {
-  outline: 2px solid #1f7a3a;
+  outline: 2px solid #0969da;
   outline-offset: 1px;
 }
 
-.dark .md-block-editor {
-  color: #e8e8e8;
-  background: #1b1d1f;
-  border-color: #6fd08c;
-}
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark .md-block-editor {
+    color: #f0f6fc;
+    background: #010409;
+    border-color: #1f6feb;
+  }
 
-.dark .md-block-editor:focus {
-  outline-color: #6fd08c;
+  .dark .md-block-editor:focus {
+    outline-color: #1f6feb;
+  }
 }
 
 /* Invisible character marks (INV-70): a layer right behind the block
@@ -668,7 +927,7 @@ body.view-code.dark #editor {
 }
 
 .dark .md-invisible-overlay {
-  background: #1b1d1f;
+  background: #010409;
 }
 
 .md-block-editor.md-block-editor-overlaid {
@@ -739,9 +998,12 @@ body.dark.edit-mode .grsmd-table-tab {
   cursor: text;
 }
 
-.dark #preview td.grsmd-cell-editing,
-.dark #preview th.grsmd-cell-editing {
-  outline-color: #1f6feb;
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark #preview td.grsmd-cell-editing,
+  .dark #preview th.grsmd-cell-editing {
+    outline-color: #1f6feb;
+  }
 }
 
 #preview td.grsmd-cell-raw,
@@ -750,23 +1012,29 @@ body.dark.edit-mode .grsmd-table-tab {
   background: #fff8c5;
 }
 
-.dark #preview td.grsmd-cell-raw,
-.dark #preview th.grsmd-cell-raw {
-  background: #bb800926;
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark #preview td.grsmd-cell-raw,
+  .dark #preview th.grsmd-cell-raw {
+    background: #bb800926;
+  }
 }
 
 /* Text colors (INV-66): the source holds the light value of
    CONFIG.edit.textColors; the dark theme shows its pair. */
-body.dark #preview span[style*="#B84F00" i] {
-  color: #E0661A !important;
-}
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  body.dark #preview span[style*="#B84F00" i] {
+    color: #E0661A !important;
+  }
 
-body.dark #preview span[style*="#0072B2" i] {
-  color: #56B4E9 !important;
-}
+  body.dark #preview span[style*="#0072B2" i] {
+    color: #56B4E9 !important;
+  }
 
-body.dark #preview span[style*="#007A58" i] {
-  color: #009E73 !important;
+  body.dark #preview span[style*="#007A58" i] {
+    color: #009E73 !important;
+  }
 }
 
 /* In edit mode a block shows where a click opens it */
@@ -782,7 +1050,7 @@ body.edit-mode #preview > .md-block.md-block-editing:hover {
 }
 
 body.dark.edit-mode #preview > .md-block:hover {
-  outline-color: #5a5d62;
+  outline-color: #656c76;
 }
 
 /* Blocks that show nothing (reference definitions, comments): a band in
@@ -808,7 +1076,7 @@ body.edit-mode .md-block-hidden.md-block-editing {
 }
 
 body.dark.edit-mode .md-block-hidden {
-  border-color: #5a5d62;
+  border-color: #656c76;
   background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255, 255, 255, 0.05) 4px, rgba(255, 255, 255, 0.05) 8px);
 }
 
@@ -835,7 +1103,7 @@ body.edit-mode .md-block-empty.md-block-editing {
 }
 
 body.dark.edit-mode .md-block-empty {
-  border-color: #5a5d62;
+  border-color: #656c76;
 }
 
 body.dark.edit-mode .md-block-empty.md-block-editing {
@@ -863,10 +1131,13 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   cursor: pointer;
 }
 
-.dark .plantuml-pending {
-  background-color: #2b2b2b;
-  color: #ced4da;
-  border-color: #868e96;
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark .plantuml-pending {
+    background-color: #151b23;
+    color: #9198a1;
+    border-color: #656c76;
+  }
 }
 
 /* Edit palette (spec 5.15.1, colors 5.15.2) */
@@ -934,12 +1205,12 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   height: 5px;
 }
 
-.edit-palette-btn:hover:not([aria-disabled="true"]) {
+.edit-palette-btn:hover:not([aria-disabled="true"]):not([aria-pressed="true"]) {
   background: rgba(0, 0, 0, 0.06);
 }
 
 .edit-palette-btn[aria-pressed="true"] {
-  background: #1f7a3a;
+  background: #0969da;
   color: #ffffff;
 }
 
@@ -1033,32 +1304,34 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
 
 .dark .edit-palette,
 .dark .edit-palette-popover {
-  background: #2b2d30;
-  border-color: #45474b;
+  background: #151b23;
+  border-color: #3d444d;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .dark .edit-palette-btn {
-  color: #e8e8e8;
-  border-color: #5a5d62;
+  color: #f0f6fc;
+  background: #212830;
+  border-color: #3d444d;
 }
 
-.dark .edit-palette-btn:hover:not([aria-disabled="true"]) {
-  background: rgba(255, 255, 255, 0.08);
+.dark .edit-palette-btn:hover:not([aria-disabled="true"]):not([aria-pressed="true"]) {
+  background: #262c36;
 }
 
 .dark .edit-palette-btn[aria-pressed="true"] {
-  background: #6fd08c;
-  color: #10301b;
+  background: #1f6feb;
+  color: #ffffff;
 }
 
 .dark .edit-palette-btn[aria-disabled="true"] {
-  color: #5f6267;
-  border-color: #3e4044;
+  color: #656c76;
+  border-color: #3d444db3;
+  background: transparent;
 }
 
 .dark .edit-palette-grip {
-  color: #e8e8e8;
+  color: #f0f6fc;
 }
 
 .dark .edit-palette-swatch-red:not([aria-disabled="true"]) {
@@ -1078,7 +1351,7 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
 }
 
 .dark .edit-palette-status {
-  color: #9da3aa;
+  color: #9198a1;
 }
 
 /* Touch: larger buttons are a PRT-V09 decision (spec 5.15.1); 28 px for now. */
@@ -1106,11 +1379,13 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   #preview td.grsmd-cell-raw,
   #preview th.grsmd-cell-raw,
   .grsmd-invisible {
+    /* the mark only: in a cell the span wraps the character (INV-70) */
     background: none !important;
     box-shadow: none !important;
   }
 
-  .md-block-editor {
+  .md-block-editor,
+  .md-block-editor:focus {
     border: none;
     outline: none;
     background: none;

@@ -3440,6 +3440,90 @@ UIController は RendererOrchestrator のパブリックメソッドのみを呼
 
 **(その場編集。2026-xx-xx 追記)** `[Render]` / `l` / `d` の経路の判定は、純粋関数 `renderRouteFor(isCodeView, isPreRender)` に切り出す。`"theme"` (コードビュー: CSS の切り替えだけ)、`"editorIntoDocument"` (Markdown 表示中: 同じ文書。開いている編集欄を確定してから、改行の正規化だけを行って全体を描画する。裁定 T33)、`"newDocument"` (初期状態: 改行の正規化 → ラッパーの除去 → 新しい文書) の 3 つ。
 
+### 5.8.1 配色 (テーマ別。2026-xx-xx 追記)
+
+GitHub (Primer) の配色に合わせる。値は `@primer/primitives` 11.10.0 の `functional/themes/light.css` / `dark.css` (2026-10-21 に取得して確認) による。上部バー (`#topbar`) の地はライトでは変えない (ダークは下の表)。`#editor` / `#fileInfo` の地 (`CONFIG.editorColors`。5.9。初期状態の `#editor` のダークの地 `#444` を含む) はライト・ダークとも変えない。PlantUML の図は変えない。表に縞は付けない。等幅フォントの並びは 5.14.13。
+
+**ダーク:**
+
+| 部品 | 値 | Primer の名前 |
+| --- | --- | --- |
+| `body` の地 / 文字 | `#0d1117` / `#f0f6fc` | bgColor-default / fgColor-default |
+| `#preview` の地 / 文字 | `#0d1117` / `#f0f6fc` | bgColor-default / fgColor-default |
+| `#topbar` の地 / 下の線 | `#151b23` / `#3d444d` | bgColor-muted / borderColor-default |
+| `#editor` の枠 / 文字 | `#3d444d` / `#f0f6fc` (地は `editorColors` のまま。初期状態の地 `#444` も変えない) | |
+| `pre` の地 / 枠 | `#151b23` / `#3d444d` | bgColor-muted |
+| コードの色分けの地 | 持たない (`pre` の `#151b23` が見える。差分の追加・削除の印だけは下の色分けの表の地) | |
+| インラインのコードの地 | `#656c7633` | bgColor-neutral-muted |
+| 本文のリンク、`#copyright a` | `#4493f8` | fgColor-accent |
+| 引用の文字 / 線 | `#9198a1` / `#3d444d` | fgColor-muted / borderColor-default |
+| 表の枠 | `#3d444d` | |
+| モーダルの地 / 文字 / 枠 (見出しの下線を含む) | `#151b23` / `#f0f6fc` / `#3d444d` | |
+| 閉じるボタン / ホバー | `#9198a1` / `#f0f6fc` | fgColor-muted |
+| `#promptText` の地 / 枠 / 文字 | `#0d1117` / `#3d444d` / `#f0f6fc` | |
+| PlantUML のエラー (地 / 文字 / 枠) | `#f851491a` / `#f85149` / `#da3633` | danger |
+| 外部画像の代替表示・`.plantuml-pending` (地 / 文字 / 枠) | `#151b23` / `#9198a1` / `#656c76` | borderColor-emphasis |
+| アフォーダンステキスト | `#9198a1` | |
+| `#fileInfo` (地 / 文字 / 枠) | `#151b23` / `#9198a1` / `#3d444d` (コードビューの寒色の地 `#1A1E2E` は `editorColors` のまま。枠はコードビューでも `#3d444d`) | |
+| キーのヒント・トースト | `#3d444d` / `#ffffff` | tooltip |
+| コードビューの地 / 文字 / 行番号 / 行のホバー | `#0d1117` / `#f0f6fc` / `#9198a1` / `#151b23` | |
+| 図のコピーボタン (地 / 枠 / 文字) | `#212830` / `#3d444d` / `#f0f6fc` | control-bgColor-rest |
+| ブロック編集欄・編集中のセル (地 / 文字 / 枠) | `#010409` / `#f0f6fc` / `#1f6feb` (フォーカスの輪も `#1f6feb`) | bgColor-inset / borderColor-accent-emphasis |
+| 原文のセルの地 | `#bb800926` | bgColor-attention-muted |
+| 見えない文字の印 (INV-70) | `#bb800926` | bgColor-attention-muted |
+| 編集モードのホバーの点線、帯の枠、空のブロックの枠 | `#656c76` | borderColor-emphasis |
+| コードの色分け | 下の色分けの表のダークの列 (Primer の prettylights) | |
+| Mermaid の図の容器 | 地を透明。配色は Mermaid の `dark` のまま | |
+
+**ライト** (オーナーの裁定 2026-10-21。本文のプレビューとコードビューだけを GitHub に合わせる。表に無い部品は変えない):
+
+| 部品 | 値 | Primer の名前 |
+| --- | --- | --- |
+| `#preview` の文字 | `#1f2328` (地は `#fff` のまま) | fgColor-default |
+| 本文のリンク | `#0969da` (`#copyright a` は変えない) | fgColor-accent |
+| `pre` の地 | `#f6f8fa` (枠なしのまま) | bgColor-muted |
+| コードの色分けの地 | 持たない (`pre` の `#f6f8fa` が見える。差分の印は下の表) | |
+| インラインのコードの地 | `#818b981f` | bgColor-neutral-muted |
+| 引用の文字 / 線 | `#59636e` / `#d1d9e0` | fgColor-muted / borderColor-default |
+| 表の枠 | `#d1d9e0` | borderColor-default |
+| コードビューの文字 / 行番号 | `#1f2328` / `#59636e` (地 `#ffffff` と行のホバーは変えない) | fgColor-default / fgColor-muted |
+| ブロック編集欄・編集中のセルの枠とフォーカスの輪 | `#0969da` (地 `#fffdf5` は変えない) | |
+| 原文のセルの地、見えない文字の印 (INV-70) | `#fff8c5` | bgColor-attention-muted |
+| コードの色分け | 下の色分けの表のライトの列 (Primer の prettylights) | |
+| Mermaid の図の容器 | 地を透明。配色は Mermaid の `default` のまま | |
+
+インラインのコード (`#preview` の中の、`pre` の中に無い `code`。選択子は `#preview code:not(pre code)`) は、両テーマとも角を `6px` 丸め、上下 `0.2em`・左右 `0.4em` の余白を付ける (オーナーの裁定 2026-10-21)。`pre` の中のコード (`<pre><b><code>` のような入れ子を含む) には地を付けない。
+
+コードブロック (`pre`) の内側の余白は、両テーマとも `16px` (GitHub と同じ。オーナーの裁定 2026-10-22)。highlight.js のテーマの CSS を読まないので、`pre` の中の `code` には余白が付かない (余白は `pre` の `16px` だけ)。
+
+**印刷はライトの色 (オーナーの裁定 2026-10-22)**: 画面がダークでも、印刷ではライトの列の色で出す。本文・リンク・引用・表・コード・色分け・コードビュー・外部画像と PlantUML の代替表示・図のコピーボタン・ブロック編集欄・表のセルの編集の印 (`grsmd-cell-*`)・文字色の読み替え (INV-66) のダークの規則は、`style.css` で `@media screen` の中にだけ書く (ライトの規則は `@media` の外)。背景を印刷しないブラウザで、ダークの淡い文字が白い紙に出るのを避けるため **[確認済: Chromium の PDF では、この対処の前、ダークの本文が `#a0a4a8` (白の上で 2.51) で出た]**。上部バー・パレット・モーダルなど印刷しない部品のダークの規則は `@media` の外に置いてよい。**既知の制約 (オーナーの裁定 2026-10-22)**: Mermaid と PlantUML の図は、描いたときの配色 (ダークなら Mermaid の `dark`、PlantUML の `CONFIG.plantuml.darkTheme` (`cyborg`)) のまま印刷される。ダークで描いた図は、白い紙の上で線が淡く (Mermaid の矢印の線は対比 1.50 **[確認済: Chromium の印刷の表示]**)、ノードは暗い箱になる。図の描き直しは非同期で、印刷の直前には間に合わないため、CSS では直さない。図をライトで印刷するには、`l` でライトにしてから印刷する。
+
+印刷では、両テーマとも、ブロック編集欄の地・枠・フォーカスの輪を出さない (INV-53。フォーカスの `.md-block-editor:focus` の規則も `@media print` で打ち消す)。一時的な画面の表示であるキーのヒント (`#keyHint`) とトースト (`#toastContainer`) も、印刷では隠す (`display: none !important`。`showKeyHint` が書くインラインの `display` に勝つため)。見えない文字の印 (`.grsmd-invisible`。INV-70) は、印刷では印の地と影だけを消す (`background: none`、`box-shadow: none`。両テーマ)。セルでは印の要素が文字そのものを包むので、要素は隠さない (文字は印刷に残る)。
+
+`pre` の中の色の付かない文字 (`.hljs`) は、本文の文字と同じ (ライト `#1f2328`、ダーク `#f0f6fc`)。
+
+**コードの色分け (オーナーの裁定 2026-10-22)**: highlight.js のテーマの CSS (`highlight.js/styles/*.css`) は読み込まない。`style.css` が、highlight.js のクラスに Primer 11.10.0 の `prettylights-syntax-*` の値を当てる。クラスの組み分けは highlight.js の `github.css` に従う。規則は `#preview` に限らないので、コードビュー (`#codeViewBody` の中の `hljs-*` の `span`) にも同じ色が付く。テーマの CSS を誤って読み込んだら、`vite.config.js` の PostCSS の検査 `no-hljs-theme-css` がビルドを失敗させる (グローバルな `.hljs` の規則が混ざらないため)。
+
+| クラス | Primer の名前 (`prettylights-syntax-`) | ライト | ダーク |
+| --- | --- | --- | --- |
+| `.hljs` (色の付かない文字) | — (fgColor-default) | `#1f2328` | `#f0f6fc` |
+| `hljs-doctag` / `keyword` / `meta .hljs-keyword` / `template-tag` / `template-variable` / `type` / `variable.language_` | keyword | `#cf222e` | `#ff7b72` |
+| `hljs-title` / `title.class_` / `title.class_.inherited__` / `title.function_` | entity | `#6639ba` | `#d2a8ff` |
+| `hljs-attr` / `attribute` / `literal` / `meta` / `number` / `operator` / `variable` / `selector-attr` / `selector-class` / `selector-id` | constant | `#0550ae` | `#79c0ff` |
+| `hljs-regexp` / `string` / `meta .hljs-string` | string | `#0a3069` | `#a5d6ff` |
+| `hljs-built_in` / `symbol` | variable | `#953800` | `#ffa657` |
+| `hljs-comment` / `code` / `formula` | comment | `#59636e` | `#9198a1` |
+| `hljs-name` / `quote` / `selector-tag` / `selector-pseudo` | entity-tag | `#0550ae` | `#7ee787` |
+| `hljs-subst` | storage-modifier-import | `#1f2328` | `#f0f6fc` |
+| `hljs-section` (太字) | markup-heading | `#0550ae` | `#1f6feb` |
+| `hljs-bullet` | markup-list | `#3b2300` | `#f2cc60` |
+| `hljs-emphasis` (斜体) | markup-italic | `#1f2328` | `#f0f6fc` |
+| `hljs-strong` (太字) | markup-bold | `#1f2328` | `#f0f6fc` |
+| `hljs-addition` (文字 / 地) | markup-inserted | `#116329` / `#dafbe1` | `#aff5b4` / `#033a16` |
+| `hljs-deletion` (文字 / 地) | markup-deleted | `#82071e` / `#ffebe9` | `#ffdcd7` / `#67060c` |
+
+対比 (WCAG 2): ライトは `#f6f8fa` (`pre`) と `#ffffff` (コードビュー) の上、ダークは `#151b23` と `#0d1117` の上で、すべて 4.5 以上 (単体テストで確かめる)。**既知の制約**: ダークの `hljs-section` (Markdown の見出しなど) の `#1f6feb` は、`#151b23` の上で 3.74、`#0d1117` の上で 4.08 で、4.5 に届かない (Primer の値のまま。オーナーの裁定 2026-10-22)。
+
 ### 5.9 コードビュー UIレイアウトとCSS
 
 **コードビューレイアウト (ASCII):**
@@ -3523,7 +3607,7 @@ body.view-code[data-theme="dark"] #editor {
   width: 4em;
   text-align: right;
   margin-right: 1.5em;
-  color: #4a4a4a;
+  color: #59636e; /* light; dark #9198a1 in @media screen (5.8.1) */
   user-select: none;
   -webkit-user-select: none;
 }
@@ -3555,7 +3639,7 @@ Get started:
   font-family: monospace;
   font-size: 14px;
   line-height: 2;
-  color: #555;
+  color: #555; /* light; dark #9198a1 (5.8.1) */
   text-align: center;
   padding-top: 40px;
   user-select: none;
@@ -4036,14 +4120,20 @@ CONFIG を読まず、必要な値は引数で受け取る。`formatRange(text, 
 
 #### 5.15.2 色 (テーマ別)
 
+ダークは GitHub (Primer) の配色 (5.8.1)。
+
 | 要素 | Dark | Light |
 | --- | --- | --- |
-| パレット地 / 枠 | `#2b2d30` / `#45474b` | `#f6f7f8` / `#d9dbde` |
-| ボタン枠 / アイコン | `#5a5d62` / `#e8e8e8` | `#c4c7cb` / `#1f2328` |
-| 有効中 (効いている書式) | 地 `#6fd08c`、アイコン `#10301b` | 地 `#1f7a3a`、アイコン `#ffffff` |
-| 無効 | アイコン `#5f6267`、枠 `#3e4044` | アイコン `#b5b8bc`、枠 `#e1e3e6` |
+| パレット地 / 枠 | `#151b23` / `#3d444d` | `#f6f7f8` / `#d9dbde` |
+| ボタン地 / 枠 / アイコン (グリップのアイコンを含む) | `#212830` / `#3d444d` / `#f0f6fc` | 透明 / `#c4c7cb` / `#1f2328` |
+| ボタンのホバー | `#262c36` | `rgba(0, 0, 0, 0.06)` |
+| 有効中 (`aria-pressed="true"`) | 地 `#1f6feb`、アイコン `#ffffff` | 地 `#0969da`、アイコン `#ffffff` |
+| 無効 | アイコン `#656c76`、枠 `#3d444db3`、地 透明 | アイコン `#b5b8bc`、枠 `#e1e3e6` |
+| 状態表示 | `#9198a1` | `#57606a` |
+| 最小化中の未保存の点 | `#1f6feb` | `#0969da` |
+| 文字色の見本 | 5.14.14 (`CONFIG.edit.textColors`) のダークの値 | 同 ライトの値 |
 
-「有効中 (効いている書式)」の色は、`aria-pressed="true"` のボタンに当てる。現在の実装は、カーソル位置の書式の判定を持たないので、この色は使われない。
+「有効中」の色は、`aria-pressed="true"` のボタン (Table options のポップオーバーの、今の列の配置のボタン) に当てる。ホバーの色は、無効なボタンと有効中のボタンには当てない (有効中の地を保つ)。
 
 #### 5.15.3 アイコン
 
