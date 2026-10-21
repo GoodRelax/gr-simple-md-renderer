@@ -67,6 +67,8 @@ const NEW_FILES = [
   "classes/MarkdownTable.js",
   "classes/InlineRuns.js",
   "classes/InvisibleCharOverlay.js",
+  "classes/TableCellEditor.js",
+  "classes/ClipboardLink.js",
   "textTransforms.js",
   "textWidth.js",
 ];
@@ -141,9 +143,15 @@ describe("AT-STA static checks of src/js", () => {
     }
   });
 
-  it("AT-STA-07 src/js never makes rendered output editable (OS-13)", () => {
+  it("AT-STA-07 only TableCellEditor.js makes rendered output editable, with plaintext-only or true (OS-13, INV-62)", () => {
     for (const f of FILES) {
       const src = stripComments(read(f));
+      if (rel(f).endsWith("TableCellEditor.js")) {
+        const values = [...src.matchAll(/\bcontentEditable\s*=\s*([^;]+);/g)].map((m) => m[1].trim());
+        expect(values.length).toBeGreaterThan(0);
+        for (const v of values) expect(['"plaintext-only"', '"true"']).toContain(v);
+        continue;
+      }
       expect(src, rel(f)).not.toMatch(/\bcontentEditable\s*=/);
       expect(src, rel(f)).not.toMatch(/["']contenteditable["']/i);
     }
@@ -276,5 +284,15 @@ describe("style.css: the marks layer has the block editor's text box (INV-70)", 
 
   it("AT-STA-10 print hides the layer (INV-53)", () => {
     expect(ruleBody(printBlocks(css), ".md-invisible-overlay")).toMatch(/display:\s*none/);
+  });
+});
+
+describe("style.css: table cells (INV-62, INV-53)", () => {
+  it("AT-STA-11 the open cell keeps its spaces (pre-wrap); print hides the tab, the cell frame and the raw ground", () => {
+    expect(ruleBody(css, "#preview td.grsmd-cell-editing")).toMatch(/white-space:\s*pre-wrap/);
+    const print = printBlocks(css);
+    expect(ruleBody(print, ".grsmd-table-tab")).toMatch(/display:\s*none/);
+    expect(ruleBody(print, "#preview td.grsmd-cell-editing")).toMatch(/outline:\s*none/);
+    expect(ruleBody(print, "#preview td.grsmd-cell-raw")).toMatch(/background:\s*none/);
   });
 });

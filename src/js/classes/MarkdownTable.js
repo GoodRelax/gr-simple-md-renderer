@@ -162,6 +162,18 @@ export default class MarkdownTable {
     return { aligns, rows: table.rows.map((row) => [...row]), extras: table.extras.map((e) => [...e]) };
   }
 
+  /**
+   * A cell's text as a table holds it: without the spaces and tabs around
+   * it (marked trims a cell the same way). An ideographic space or a
+   * no-break space is content and stays.
+   * @purity pure
+   * @param {string} text
+   * @returns {string}
+   */
+  static trimCell(text) {
+    return text.replace(OUTER_BLANKS, "");
+  }
+
   // ---- helpers (pure) ----
 
   /**
@@ -185,7 +197,7 @@ export default class MarkdownTable {
    */
   static _cells(line) {
     const row = MarkdownTextOps.splitTableRow(line);
-    return row.segments.slice(row.first, row.last).map((cell) => cell.replace(OUTER_BLANKS, ""));
+    return row.segments.slice(row.first, row.last).map((cell) => MarkdownTable.trimCell(cell));
   }
 
   /**

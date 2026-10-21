@@ -24,7 +24,7 @@ afterEach(() => {
 });
 
 function openTable() {
-  tap(s.block((b) => b.type === "table").el.firstElementChild);
+  tap(s.block((b) => b.type === "table").el.querySelector(":scope > .grsmd-table-tab")); // the source (INV-29 (b))
   return s.editor();
 }
 

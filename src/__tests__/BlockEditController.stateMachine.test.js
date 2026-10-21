@@ -10,20 +10,23 @@ import { setupEdit, flush } from "./helpers/editStack.js";
 import { diagramTransitions, tableTransitions } from "./helpers/specDiagram.js";
 import { pointer, tap, keydown } from "./helpers/editDom.js";
 
-// Spec 11-c: every cell of the 17 x 3 table (AT-BSM-01..18; 15 is the
-// definition check). The state is judged from outside only:
+// Spec 11-c: every cell of the 25 x 4 table (AT-BSM-01..18 and AT-BSM-19..25
+// for the table cells; 15 is the definition check). The state is judged
+// from outside only:
 //   browsingPreview = a tap on a block opens nothing
 //   editModeIdle    = not editing, and a tap on a block opens it
-//   editingBlock    = isEditing()
+//   editingBlock    = a block editor is open
+//   editingCell     = a table cell is open (isEditingCell())
 // Events that come from UIController (palette toggles, save, reload, clear,
 // code view, full render, #editor focus) are dispatched at the controller's
 // entry point here; their UI stimuli are tested with UIController (unit f).
 
-const DOC = "# Title\n\nHello world.\n\nSecond para.\n";
+const DOC = "# Title\n\nHello world.\n\nSecond para.\n\n| A | B |\n| --- | --- |\n| x | y |\n";
 const B = "browsingPreview";
 const I = "editModeIdle";
 const E = "editingBlock";
-const STATES = [B, I, E];
+const C = "editingCell";
+const STATES = [B, I, E, C];
 
 let s;
 afterEach(() => {
@@ -35,13 +38,28 @@ afterEach(() => {
 
 const helloEl = () => s.block((b) => b.raw.startsWith("Hello")).el;
 const secondEl = () => s.block((b) => b.raw.startsWith("Second")).el;
+const tableBlock = () => s.block((b) => b.type === "table");
+const tableEl = () => tableBlock().el.querySelector(":scope > table");
+const cellEl = (r, c) => tableEl().rows[r].cells[c];
+const tabEl = () => tableBlock().el.querySelector(":scope > .grsmd-table-tab");
+const cellTarget = (row, col) => ({ kind: "cell", id: tableBlock().block.id, row, col });
 
-/** Set up the stack in the given state; when editing, the open block has a change. */
+/** Type into the open cell (jsdom has no contenteditable editing). */
+function typeInCell(el, text) {
+  el.textContent = text;
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+/** Set up the stack in the given state; when editing, the open block or cell has a change. */
 async function inState(state) {
   s = await setupEdit(DOC, { editMode: state !== B });
   if (state === E) {
     tap(helloEl().firstElementChild);
     s.editor().value = "Hello changed.";
+  }
+  if (state === C) {
+    tap(cellEl(1, 0));
+    typeInCell(cellEl(1, 0), "x changed");
   }
   return s;
 }
@@ -50,12 +68,13 @@ async function inState(state) {
 function spyAll() {
   const spies = {
     commitBlock: vi.spyOn(s.orchestrator, "commitBlock"),
+    replaceTableBlock: vi.spyOn(s.orchestrator, "replaceTableBlock"),
     insertAfter: vi.spyOn(s.orchestrator, "insertAfter"),
     startEmptyDocument: vi.spyOn(s.orchestrator, "startEmptyDocument"),
     replaceBlocks: vi.spyOn(s.markdownRenderer, "replaceBlocks"),
     undoLastCommit: vi.spyOn(s.orchestrator, "undoLastCommit"),
   };
-  for (const name of ["showPalette", "hidePalette", "renderFromEditor", "onEditorInput"]) {
+  for (const name of ["showPalette", "hidePalette", "renderFromEditor", "onEditorInput", "showToast"]) {
     s.host[name].mockClear();
     spies[name] = s.host[name];
   }
@@ -71,6 +90,7 @@ function calledNames(spies) {
 
 /** Observed state; probing a tap may open a block, which is then cancelled. */
 function observedState() {
+  if (s.bec.isEditingCell()) return C;
   if (s.bec.isEditing()) return E;
   s.host.editorChanged = false;
   tap(secondEl().firstElementChild);
@@ -84,44 +104,77 @@ function observedState() {
 // event (a tap while editing is otherBlockTapped; a tap in editModeIdle is
 // blockTapped), so those cells are reached through the entry point.
 const tapSecond = () => tap(secondEl().firstElementChild);
-const flagAndTap = () => {
+const flagAndTap = (el) => () => {
   s.host.editorChanged = true;
-  tapSecond();
+  tap(el());
 };
 const touchTapSecond = () => tap(secondEl().firstElementChild, { pointerType: "touch" });
 const pressBody = () => pointer(document.body, "pointerdown");
+const tapCellY = () => tap(cellEl(1, 1));
+const touchTapCellY = () => tap(cellEl(1, 1), { pointerType: "touch" });
+const openCellKey = (key, init) => () => keydown(cellEl(1, 0), key, init);
 const DOM_STIMULI = {
   blockTapped: { [B]: tapSecond, [I]: tapSecond },
-  blockTappedWithUnrenderedEditor: { [B]: flagAndTap, [I]: flagAndTap },
-  otherBlockTapped: { [B]: touchTapSecond, [E]: touchTapSecond },
-  pointerPressedOutside: { [B]: pressBody, [I]: pressBody, [E]: pressBody },
+  blockTappedWithUnrenderedEditor: { [B]: flagAndTap(() => secondEl().firstElementChild), [I]: flagAndTap(() => secondEl().firstElementChild) },
+  otherBlockTapped: { [B]: touchTapSecond, [E]: touchTapSecond, [C]: touchTapSecond },
+  pointerPressedOutside: { [B]: pressBody, [I]: pressBody, [E]: pressBody, [C]: pressBody },
+  cellTapped: { [B]: tapCellY, [I]: tapCellY, [E]: touchTapCellY, [C]: tapCellY },
+  cellTappedWithUnrenderedEditor: { [B]: flagAndTap(() => cellEl(1, 1)), [I]: flagAndTap(() => cellEl(1, 1)) },
+  tableSourceTapped: { [I]: () => tap(tabEl()), [E]: () => tap(tabEl(), { pointerType: "touch" }) },
+  tableSourceTappedWithUnrenderedEditor: { [I]: flagAndTap(() => tabEl()) },
+  nextCellRequested: { [C]: openCellKey("Tab") },
+  previousCellRequested: { [C]: openCellKey("Tab", { shiftKey: true }) },
+  cellBelowRequested: { [C]: openCellKey("Enter") },
+  escapePressed: { [C]: openCellKey("Escape") },
+};
+
+// Targets for the entry point (cells reached without a DOM stimulus).
+const TARGETS = {
+  cellTapped: () => cellTarget(1, 1),
+  cellTappedWithUnrenderedEditor: () => cellTarget(1, 1),
+  tableSourceTapped: () => ({ kind: "tableSource", id: tableBlock().block.id }),
+  tableSourceTappedWithUnrenderedEditor: () => ({ kind: "tableSource", id: tableBlock().block.id }),
+  otherBlockTapped: () => ({ kind: "block", id: s.block((b) => b.raw.startsWith("Second")).block.id }),
+  tableOperationRequested: () => ({ op: { kind: "insertRow" } }),
 };
 
 // Expected cells: [next state or null for "-", side effects (sorted)].
+// editingCell has a change in cell x (row 1, column 0; the last row).
 const TABLE = {
-  paletteShown: { [B]: [I, []], [I]: null, [E]: null },
-  paletteHidden: { [B]: null, [I]: [B, []], [E]: [B, ["commitBlock"]] },
+  paletteShown: { [B]: [I, []], [I]: null, [E]: null, [C]: null },
+  paletteHidden: { [B]: null, [I]: [B, []], [E]: [B, ["commitBlock"]], [C]: [B, ["replaceTableBlock"]] },
   emptyDocumentStarted: {
     [B]: [E, ["showPalette", "startEmptyDocument"]],
     [I]: [E, ["startEmptyDocument"]],
     [E]: null,
+    [C]: null,
   },
-  blockTapped: { [B]: null, [I]: [E, []], [E]: null },
-  blockTappedWithUnrenderedEditor: { [B]: null, [I]: [I, ["renderFromEditor"]], [E]: null },
-  otherBlockTapped: { [B]: null, [I]: null, [E]: [E, ["commitBlock"]] },
-  pointerPressedOutside: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]] },
-  escapePressed: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [I, []] },
-  saveRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]] },
-  saveAsRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]] },
-  documentReplaced: { [B]: null, [I]: null, [E]: [I, []] },
-  documentCleared: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [B, ["hidePalette"]] },
-  viewSwitchedToCode: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [B, ["hidePalette"]] },
-  fullRenderRequested: { [B]: [B, []], [I]: [I, []], [E]: [I, ["commitBlock"]] },
-  editorFocused: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]] },
-  // E has a change: [hasUncommittedChange] restores (the else cell is in the details)
-  undoRequested: { [B]: null, [I]: [I, ["undoLastCommit"]], [E]: [I, []] },
+  blockTapped: { [B]: null, [I]: [E, []], [E]: null, [C]: null },
+  blockTappedWithUnrenderedEditor: { [B]: null, [I]: [I, ["renderFromEditor"]], [E]: null, [C]: null },
+  otherBlockTapped: { [B]: null, [I]: null, [E]: [E, ["commitBlock"]], [C]: [E, ["replaceTableBlock"]] },
+  // [isCellEditableTable] / [isInSessionTable and canKeepTableId]
+  cellTapped: { [B]: null, [I]: [C, []], [E]: [C, ["commitBlock"]], [C]: [C, ["replaceTableBlock"]] },
+  cellTappedWithUnrenderedEditor: { [B]: null, [I]: [I, ["renderFromEditor"]], [E]: null, [C]: null },
+  tableSourceTapped: { [B]: null, [I]: [E, []], [E]: [E, ["commitBlock"]], [C]: [E, ["replaceTableBlock"]] },
+  tableSourceTappedWithUnrenderedEditor: { [B]: null, [I]: [I, ["renderFromEditor"]], [E]: null, [C]: null },
+  nextCellRequested: { [B]: null, [I]: null, [E]: null, [C]: [C, ["replaceTableBlock"]] },
+  previousCellRequested: { [B]: null, [I]: null, [E]: null, [C]: [C, ["replaceTableBlock"]] },
+  // the last row: [else] -> editModeIdle / commitCell, endTableSession
+  cellBelowRequested: { [B]: null, [I]: null, [E]: null, [C]: [I, ["replaceTableBlock"]] },
+  tableOperationRequested: { [B]: null, [I]: null, [E]: null, [C]: [C, ["replaceTableBlock"]] },
+  pointerPressedOutside: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
+  escapePressed: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [I, []], [C]: [I, []] },
+  saveRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
+  saveAsRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
+  documentReplaced: { [B]: null, [I]: null, [E]: [I, []], [C]: [I, []] },
+  documentCleared: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [B, ["hidePalette"]], [C]: [B, ["hidePalette"]] },
+  viewSwitchedToCode: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [B, ["hidePalette"]], [C]: [B, ["hidePalette"]] },
+  fullRenderRequested: { [B]: [B, []], [I]: [I, []], [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
+  editorFocused: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
+  // E and C have a change: [hasUncommittedChange] restores (the else cells are in the details)
+  undoRequested: { [B]: null, [I]: [I, ["undoLastCommit"]], [E]: [I, []], [C]: [I, []] },
   // no target: [else] -> editModeIdle / clearSelection, showPalette
-  previewDoubleClicked: { [B]: [I, ["showPalette"]], [I]: null, [E]: null },
+  previewDoubleClicked: { [B]: [I, ["showPalette"]], [I]: null, [E]: null, [C]: null },
 };
 
 const IDS = {
@@ -142,15 +195,23 @@ const IDS = {
   editorFocused: "AT-BSM-16",
   undoRequested: "AT-BSM-17",
   previewDoubleClicked: "AT-BSM-18",
+  cellTapped: "AT-BSM-19",
+  cellTappedWithUnrenderedEditor: "AT-BSM-20",
+  tableSourceTapped: "AT-BSM-21",
+  tableSourceTappedWithUnrenderedEditor: "AT-BSM-22",
+  nextCellRequested: "AT-BSM-23",
+  previousCellRequested: "AT-BSM-23",
+  cellBelowRequested: "AT-BSM-24",
+  tableOperationRequested: "AT-BSM-25",
 };
 
 const CELLS = Object.entries(TABLE).flatMap(([event, row]) =>
   STATES.map((state) => [IDS[event], event, state, row[state]]),
 );
 
-describe("AT-BSM 11-c block edit state machine: all 51 cells", () => {
-  it("covers 17 events x 3 states", () => {
-    expect(CELLS).toHaveLength(51);
+describe("AT-BSM 11-c block edit state machine: all 100 cells", () => {
+  it("covers 25 events x 4 states", () => {
+    expect(CELLS).toHaveLength(100);
   });
 
   it.each(CELLS)("%s %s in %s", async (_id, event, state, cell) => {
@@ -158,7 +219,7 @@ describe("AT-BSM 11-c block edit state machine: all 51 cells", () => {
     const spies = spyAll();
     const body = s.orchestrator.getBody();
     const stimulus = DOM_STIMULI[event]?.[state];
-    const ret = stimulus ? stimulus() : s.bec.dispatch(event);
+    const ret = stimulus ? stimulus() : s.bec.dispatch(event, TARGETS[event]?.() ?? null);
     await ret;
     if (event === "emptyDocumentStarted") await flush();
 
@@ -189,11 +250,30 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the spec", () =
     const d = blockEditStateMachine.previewDoubleClicked[B];
     expect(d.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
       [I, "hasUnrenderedEditor", ["clearSelection", "showPalette", "renderFromEditor", "showToast"]],
+      [C, "isCellTarget&&isCellEditableTable", ["clearSelection", "showPalette", "startTableSession", "openCell"]],
       [E, "isEmptyDocument", ["clearSelection", "showPalette", "openBlockEditor"]],
       [E, "isBlockTarget", ["clearSelection", "showPalette", "openBlockEditor"]],
       [I, "else", ["clearSelection", "showPalette"]],
     ]);
     expect(blockEditStateMachine.undoRequested[I]).toMatchObject({ to: I, actions: ["undoLastUnit"] });
+    const t = blockEditStateMachine.cellTapped[C];
+    expect(t.map((c) => [c.to, c.guard ?? "else"])).toEqual([
+      [C, "isInSessionTable&&canKeepTableId"],
+      [I, "isInSessionTable"],
+      [C, "isCellEditableTable"],
+      [E, "else"],
+    ]);
+    const below = blockEditStateMachine.cellBelowRequested[C];
+    expect(below.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+      [C, "hasCellBelow&&canKeepTableId", ["commitCell", "moveToCell", "openCell"]],
+      [I, "hasCellBelow", ["commitCell", "endTableSession", "showTableEditEndedToast"]],
+      [I, "else", ["commitCell", "endTableSession"]],
+    ]);
+    const op = blockEditStateMachine.tableOperationRequested[C];
+    expect(op.map((c) => [c.to, c.guard, c.actions])).toEqual([
+      [C, "canApplyTableOperation&&canKeepTableId", ["commitCell", "applyTableOperation", "openCell"]],
+      [I, "canApplyTableOperation", ["commitCell", "applyTableOperation", "endTableSession", "showTableEditEndedToast"]],
+    ]);
   });
 });
 
@@ -202,7 +282,7 @@ describe("AT-BSM cell details", () => {
     await inState(E);
     s.host.shown = false;
     s.bec.dispatch("paletteHidden");
-    expect(s.orchestrator.getBody()).toBe("# Title\n\nHello changed.\n\nSecond para.\n");
+    expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
     expect(s.editor()).toBeNull();
   });
 
@@ -276,7 +356,7 @@ describe("AT-BSM cell details", () => {
   it("AT-BSM-14 fullRenderRequested while editing commits before it returns (the caller then enqueues the render)", async () => {
     await inState(E);
     s.bec.dispatch("fullRenderRequested");
-    expect(s.orchestrator.getBody()).toBe("# Title\n\nHello changed.\n\nSecond para.\n");
+    expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
   });
 
   it("AT-BSM-17 undoRequested in editingBlock without a change: commitBlock (nothing) then undoLastUnit", async () => {
@@ -303,7 +383,7 @@ describe("AT-BSM cell details", () => {
     s.editor().value = "Second changed.";
     s.bec.dispatch("undoRequested");
     expect(s.editor()).toBeNull();
-    expect(s.orchestrator.getBody()).toBe("# Title\n\nHello changed.\n\nSecond para.\n");
+    expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
     expect(s.orchestrator.canUndo()).toBe(true);
   });
 
@@ -362,7 +442,7 @@ describe("AT-BSM cell details", () => {
 });
 
 describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () => {
-  it("has the same 17 events, and the same next state in all 51 cells (the first alternative of a choice)", () => {
+  it("has the same 24 events, and the same next state in all 100 cells (the first alternative of a choice)", () => {
     expect(Object.keys(blockEditStateMachine).sort()).toEqual(Object.keys(TABLE).sort());
     for (const [event, row] of Object.entries(TABLE)) {
       for (const state of STATES) {
@@ -370,7 +450,11 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () 
         if (row[state] === null) expect(def, `${event} x ${state}`).toBeNull();
         else {
           const cells = Array.isArray(def) ? def : [def];
-          const expected = event === "previewDoubleClicked" ? cells[cells.length - 1] : cells[0];
+          // the cell the TABLE above expects: the else of a double click without
+          // a target, the [else] of Enter on the last row, else the first one
+          let expected = cells[0];
+          if (event === "previewDoubleClicked" || event === "cellBelowRequested") expected = cells[cells.length - 1];
+          if (event === "cellTapped" && state !== C) expected = cells[0];
           expect(expected.to, `${event} x ${state}`).toBe(row[state][0]);
         }
       }

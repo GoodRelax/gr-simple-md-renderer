@@ -689,6 +689,72 @@ body.view-code.dark #editor {
   box-shadow: 0 0 0 1px #bb800926;
 }
 
+/* Table cells (INV-62, 7.1): the "Markdown" tab of a table block (shown in
+   edit mode only; on touch it is always there, there is no hover), the
+   open cell, and a cell opened as its text. The classes are for the look
+   only: the renderer and TableCellEditor know the elements by reference. */
+#preview > .md-block.md-block-table {
+  position: relative;
+}
+
+/* The tab sits in a strip above the table, not over its header cells. */
+body.edit-mode #preview > .md-block.md-block-table {
+  padding-top: 20px;
+}
+
+.grsmd-table-tab {
+  display: none;
+}
+
+body.edit-mode .grsmd-table-tab {
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  padding: 1px 6px;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #59636e;
+  background: #f6f8fa;
+  border: 1px solid #d1d9e0;
+  border-radius: 0 0 0 6px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body.dark.edit-mode .grsmd-table-tab {
+  color: #9198a1;
+  background: #151b23;
+  border-color: #3d444d;
+}
+
+#preview td.grsmd-cell-editing,
+#preview th.grsmd-cell-editing {
+  white-space: pre-wrap;
+  outline: 2px solid #0969da;
+  outline-offset: -2px;
+  cursor: text;
+}
+
+.dark #preview td.grsmd-cell-editing,
+.dark #preview th.grsmd-cell-editing {
+  outline-color: #1f6feb;
+}
+
+#preview td.grsmd-cell-raw,
+#preview th.grsmd-cell-raw {
+  font-family: "BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace; /* as the block editor */
+  background: #fff8c5;
+}
+
+.dark #preview td.grsmd-cell-raw,
+.dark #preview th.grsmd-cell-raw {
+  background: #bb800926;
+}
+
 /* Text colors (INV-66): the source holds the light value of
    CONFIG.edit.textColors; the dark theme shows its pair. */
 body.dark #preview span[style*="#B84F00" i] {
@@ -1022,8 +1088,26 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
   .edit-palette-popover,
   .md-block-hidden,
   .md-block-empty,
-  .md-invisible-overlay {
+  .md-invisible-overlay,
+  .grsmd-table-tab {
     display: none !important;
+  }
+
+  body.edit-mode #preview > .md-block.md-block-table {
+    padding-top: 0;
+  }
+
+  /* INV-53: no cell frame and no marks in print */
+  #preview td.grsmd-cell-editing,
+  #preview th.grsmd-cell-editing {
+    outline: none;
+  }
+
+  #preview td.grsmd-cell-raw,
+  #preview th.grsmd-cell-raw,
+  .grsmd-invisible {
+    background: none !important;
+    box-shadow: none !important;
   }
 
   .md-block-editor {

@@ -1,5 +1,5 @@
 import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
-import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame } from "../utils.js";
+import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame, shortcutLetter } from "../utils.js";
 import { splitMarkdownWrapper, normalizeLineEndings, hasUtf8Bom } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
 import DocumentSession from "./DocumentSession.js";
@@ -51,29 +51,6 @@ function noAction() {}
 function isTextEntry(el) {
   if (!el) return false;
   return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable === true;
-}
-
-/**
- * INV-14 (2): the letter of a primary-modifier shortcut (INV-58 to INV-60),
- * or null. The primary modifier is Cmd alone on Apple platforms and Ctrl
- * alone elsewhere; Alt (also AltGr, which arrives as Ctrl+Alt) and IME
- * composition are never shortcuts. The letter is event.key in lower case;
- * only when that is not a Latin letter (Russian and other layouts) is
- * event.code (KeyS ...) used. A repeat still has its letter: the caller
- * stops its default and runs nothing (owner ruling, 2026-10-21).
- * @purity pure
- * @param {{key: string, code?: string, ctrlKey: boolean, metaKey: boolean,
- *   altKey: boolean, isComposing?: boolean, keyCode?: number}} e
- * @param {boolean} isApple
- * @returns {string|null} "a" to "z"
- */
-export function shortcutLetter(e, isApple) {
-  const primary = isApple ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
-  if (!primary || e.altKey || e.isComposing || e.keyCode === 229) return null;
-  const key = typeof e.key === "string" ? e.key.toLowerCase() : "";
-  if (/^[a-z]$/.test(key)) return key;
-  const m = /^Key([A-Z])$/.exec(e.code ?? "");
-  return m ? m[1].toLowerCase() : null;
 }
 
 /**
@@ -740,7 +717,9 @@ export default class UIController {
       // INV-59: edit mode only (ruling Q3).
       if (!this.palette.isShown()) return null;
       const active = document.activeElement;
-      if (this.blockEdit.isEditorElement(active)) {
+      if (this.blockEdit.isCellElement(active)) {
+        // (c): in a cell Undo is always by unit (ruling Q2)
+      } else if (this.blockEdit.isEditorElement(active)) {
         if (this.blockEdit.hasUncommittedChange()) return null; // (b) the browser's character Undo
       } else if (active === this.elements.editor || isTextEntry(active)) {
         return null; // (a)
@@ -1085,7 +1064,7 @@ export default class UIController {
    * @purity non-pure
    */
   _showPalette() {
-    this.palette.show();
+    this.orchestrator.keepReadingPosition(() => this.palette.show());
     this.blockEdit.dispatch("paletteShown");
     this._refreshDirtyMark();
   }
@@ -1096,7 +1075,7 @@ export default class UIController {
    */
   _hidePalette() {
     this.blockEdit.dispatch("paletteHidden");
-    this.palette.hide();
+    this.orchestrator.keepReadingPosition(() => this.palette.hide());
   }
 
   /**
@@ -1166,16 +1145,21 @@ export default class UIController {
     // A selection in one inline range (INV-67 (6)).
     const canFormat = isEditing && this.blockEdit.canFormatSelection();
     const isInTableSource = isEditing && this.blockEdit.isEditingTable();
+    const cell = this.blockEdit.cellState(); // null unless a cell is open
     return {
       bold: canFormat,
       italic: canFormat,
       textColor: canFormat,
       format: isEditing,
-      insertTable: true,
-      insertMermaid: true,
+      insertTable: cell === null, // W7
+      insertMermaid: cell === null,
       undo: this.orchestrator.canUndo() || this.blockEdit.hasUncommittedChange(), // INV-48
-      insertRow: isInTableSource,
-      insertColumn: isInTableSource,
+      insertRow: isInTableSource || cell !== null,
+      insertColumn: isInTableSource || cell !== null,
+      rowDelete: cell !== null && cell.row > 0, // D2
+      columnDelete: cell !== null && cell.columns > 1,
+      tableOptions: cell !== null, // D3 / P4
+      alignment: cell ? cell.alignment : null,
     };
   }
 
@@ -1219,14 +1203,16 @@ export default class UIController {
    */
   _blockEditHost() {
     return {
-      showPalette: () => this.palette.show(),
-      hidePalette: () => this.palette.hide(),
+      showPalette: () => this.orchestrator.keepReadingPosition(() => this.palette.show()),
+      hidePalette: () => this.orchestrator.keepReadingPosition(() => this.palette.hide()),
       isPaletteNode: (node) => this.palette.contains(node),
       isEditorChangedSinceRender: () => this._editorChangedSinceRender,
       renderFromEditor: () => this._renderFromEditorFirst(),
       // typing: the button states once per frame (INV-51)
       onEditorInput: () => this._refreshDirtyMark({ deferButtonStates: true }),
       onEditStateChanged: () => this._refreshDirtyMark(),
+      showToast: (message) => this._toast(message),
+      isApple: this._isApple, // INV-14: the cell's Redo keys (TableCellEditor)
     };
   }
 
@@ -1262,10 +1248,21 @@ export default class UIController {
         this._formatInBlock({ kind: "color", value: CONFIG.edit.textColors[arg]?.light ?? null });
         break;
       case "insertRow":
-        this._editInBlock((range) => MarkdownTextOps.insertTableRow(range.text, range.selStart));
+        if (this.blockEdit.isEditingCell()) this._tableOperation({ kind: "insertRow" });
+        else this._editInBlock((range) => MarkdownTextOps.insertTableRow(range.text, range.selStart));
         break;
       case "insertColumn":
-        this._editInBlock((range) => MarkdownTextOps.insertTableColumn(range.text, range.selStart));
+        if (this.blockEdit.isEditingCell()) this._tableOperation({ kind: "insertColumn" });
+        else this._editInBlock((range) => MarkdownTextOps.insertTableColumn(range.text, range.selStart));
+        break;
+      case "rowDelete":
+        this._tableOperation({ kind: "deleteRow" });
+        break;
+      case "columnDelete":
+        this._tableOperation({ kind: "deleteColumn" });
+        break;
+      case "alignColumn":
+        this._tableOperation({ kind: "align", value: arg });
         break;
       case "undo":
         this.blockEdit.dispatch("undoRequested"); // INV-48, 11-c
@@ -1280,6 +1277,18 @@ export default class UIController {
       default:
         break;
     }
+  }
+
+  /**
+   * INV-65: a row, column or alignment operation on the open cell's table
+   * (11-c tableOperationRequested; only while a cell is open).
+   * @purity non-pure
+   * @param {{kind: string, value?: string}} op
+   */
+  _tableOperation(op) {
+    if (!this.blockEdit.isEditingCell()) return;
+    this.blockEdit.dispatch("tableOperationRequested", { op });
+    this._refreshDirtyMark();
   }
 
   /**
@@ -1311,6 +1320,7 @@ export default class UIController {
    * @purity non-pure
    */
   _insertBlock(blockText) {
+    if (this.blockEdit.isEditingCell()) return; // W7: not while a cell is open
     if (this.blockEdit.isEditing()) {
       this._editInBlock((range) => MarkdownTextOps.insertBlockText(range.text, range.selEnd, blockText));
     } else if (this._editorChangedSinceRender) {

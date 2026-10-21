@@ -72,6 +72,9 @@ export default class MarkdownRenderer {
     this._htmlById = new Map(); // block id -> HTML shown in that wrapper
     this._idByWrapper = new WeakMap(); // wrapper element -> block id
     this._staleIds = new Set(); // kept wrappers that show older HTML (Q-d1)
+    this._tabById = new Map(); // table block id -> its "Markdown" tab (INV-29 (b))
+    this._writtenKeys = new Map(); // held block id -> raw + links written in place (INV-47)
+    this._tabs = new WeakSet(); // the tabs this renderer made
     this._emptyBlock = null;
   }
 
@@ -174,6 +177,31 @@ export default class MarkdownRenderer {
   }
 
   /**
+   * Sanitized HTML of one table cell's text (INV-62, INV-47): an escaped
+   * pipe is a pipe, as marked's tables read a cell; the inline tokens use
+   * the same marked setup (KaTeX included) and the document's reference
+   * definitions, and the same private DOMPurify with its hook. Generation
+   * only: the caller writes it and then runs the image gate on it.
+   * @purity semi-pure-a
+   * @param {string} cellRaw
+   * @param {object} [links] - MarkdownBlockModel.links
+   * @returns {string}
+   */
+  inlineHtml(cellRaw, links) {
+    try {
+      const lexer = new this.marked.Lexer(this.marked.defaults);
+      Object.assign(lexer.tokens.links, links || {});
+      const tokens = lexer.inlineTokens(cellRaw.replace(/\\\|/g, "|"));
+      const walk = this.marked.defaults?.walkTokens;
+      if (typeof walk === "function") this.marked.walkTokens(tokens, walk);
+      return this.purify.sanitize(new this.marked.Parser(this.marked.defaults).parseInline(tokens));
+    } catch (error) {
+      console.error("Markdown parse error:", error);
+      return escapeHtml(cellRaw);
+    }
+  }
+
+  /**
    * @purity pure
    * @param {Error} error
    * @returns {string}
@@ -237,8 +265,22 @@ export default class MarkdownRenderer {
     const order = [];
     const keep = new Set();
     for (const block of currentModel.getBlocks()) {
-      const html = this._cachedHtml(block, currentModel.links, signature);
       let el = this._wrapperById.get(block.id);
+      const written = this._writtenKeys.get(block.id);
+      if (el && written !== undefined) {
+        if (written === `${block.raw}\u0000${signature}`) {
+          // written in place for this very text (markWrittenInPlace): it is
+          // current, and its HTML is not made (a big table's, INV-51)
+          this._staleIds.delete(block.id);
+          keep.add(block.id);
+          order.push(el);
+          continue;
+        }
+        // it shows an older text: compared as changed below
+        this._writtenKeys.delete(block.id);
+        this._htmlById.delete(block.id);
+      }
+      const html = this._cachedHtml(block, currentModel.links, signature);
       const changed = !el || this._htmlById.get(block.id) !== html;
       if (changed && el && block.id === keepBlockId) {
         this._staleIds.add(block.id);
@@ -312,6 +354,71 @@ export default class MarkdownRenderer {
   }
 
   /**
+   * The table element this renderer made for a table block (a direct child
+   * of its wrapper; INV-29, INV-62), or null.
+   * @purity semi-pure-b
+   * @param {number} blockId
+   * @returns {HTMLTableElement|null}
+   */
+  getTableElement(blockId) {
+    if (!this._tabById.has(blockId)) return null;
+    const wrapper = this._wrapperById.get(blockId);
+    for (const child of wrapper?.children ?? []) if (child.tagName === "TABLE") return child;
+    return null;
+  }
+
+  /**
+   * The node is (inside) a table tab this renderer made, by reference: a
+   * user-written class="grsmd-table-tab" is not one (INV-29 (b), UIR-11).
+   * @purity semi-pure-b
+   * @param {Node|null} node
+   * @returns {boolean}
+   */
+  isTableTab(node) {
+    const el = node?.nodeType === Node.TEXT_NODE ? node.parentNode : node;
+    return Boolean(el) && this._tabs.has(el);
+  }
+
+  /**
+   * The external image gate on HTML the caller has just written (a held
+   * table's cell or table element; INV-47, INV-43).
+   * @purity non-pure
+   * @param {HTMLElement} root
+   */
+  applyImageGate(root) {
+    this.imageGate.apply(root);
+  }
+
+  /**
+   * A held block was written in place to show the model's block (INV-47
+   * exception): partial renders take its wrapper as showing that block for
+   * as long as its text and the link definitions stay the same, so it is
+   * not drawn again when it is released. Only the text is recorded: the
+   * block's HTML is not made for it (a big table's, INV-51); when the text
+   * changes later, the block is drawn as changed.
+   * @purity non-pure
+   * @param {{id: number, raw: string}} block
+   * @param {object} links - MarkdownBlockModel.links
+   */
+  markWrittenInPlace(block, links) {
+    if (!this._wrapperById.has(block.id)) return;
+    this._writtenKeys.set(block.id, `${block.raw}\u0000${linksSignature(links)}`);
+    this._staleIds.delete(block.id);
+  }
+
+  /**
+   * One block's sanitized HTML through the cache (a table drawn again in
+   * place after a table operation, INV-65).
+   * @purity non-pure
+   * @param {{raw: string}} block
+   * @param {object} links - MarkdownBlockModel.links
+   * @returns {string}
+   */
+  cachedBlockHtml(block, links) {
+    return this._cachedHtml(block, links, linksSignature(links));
+  }
+
+  /**
    * A kept block whose wrapper shows older HTML (Q-d1).
    * @purity semi-pure-b
    * @param {number} blockId
@@ -367,10 +474,28 @@ export default class MarkdownRenderer {
           ? CONFIG.messages.edit.hiddenLinkDefinition
           : CONFIG.messages.edit.hiddenHtml;
     }
+    if (block.type === "table") this._addTableTab(el, block.id);
     this._wrapperById.set(block.id, el);
     this._htmlById.set(block.id, html);
     this._idByWrapper.set(el, block.id);
     return el;
+  }
+
+  /**
+   * The "Markdown" tab of a table block (7.1): it opens the table's source
+   * (INV-29 (b)). Made in code and known by reference; the class is for the
+   * look only. It is shown in edit mode only (style.css).
+   * @purity non-pure
+   */
+  _addTableTab(wrapper, blockId) {
+    wrapper.classList.add("md-block-table"); // positions the tab (style.css)
+    const tab = document.createElement("span");
+    tab.className = "grsmd-table-tab";
+    tab.textContent = "Markdown";
+    tab.title = CONFIG.messages.edit.tableSourceTab;
+    wrapper.appendChild(tab);
+    this._tabById.set(blockId, tab);
+    this._tabs.add(tab);
   }
 
   /**
@@ -403,6 +528,8 @@ export default class MarkdownRenderer {
     this._wrapperById.delete(id);
     this._htmlById.delete(id);
     this._staleIds.delete(id);
+    this._tabById.delete(id);
+    this._writtenKeys.delete(id);
   }
 
   /**
@@ -415,6 +542,8 @@ export default class MarkdownRenderer {
     this._htmlById.clear();
     this._idByWrapper = new WeakMap();
     this._staleIds.clear();
+    this._tabById.clear();
+    this._writtenKeys.clear();
     this._emptyBlock = null;
   }
 

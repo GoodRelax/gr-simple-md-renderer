@@ -27,7 +27,8 @@ afterEach(() => {
 /** Open the block matching pred with a plain click; returns {block, el, ta}. */
 function openBlock(pred) {
   const { block, el } = s.block(pred);
-  tap(el.firstElementChild ?? el);
+  // a table opens its source from its tab (INV-29 (b)); its cells open in place
+  tap(el.querySelector(":scope > .grsmd-table-tab") ?? el.firstElementChild ?? el);
   return { block, el, ta: s.editor() };
 }
 
@@ -184,6 +185,11 @@ describe("INV-46 opening another block keeps the tapped block where it was (PRT-
         top += height;
       }
       return original.call(this);
+    });
+    // the blocks have boxes (jsdom has no layout: no client rects otherwise)
+    const originalRects = Element.prototype.getClientRects;
+    vi.spyOn(Element.prototype, "getClientRects").mockImplementation(function () {
+      return this.classList.contains("md-block") ? [this.getBoundingClientRect()] : originalRects.call(this);
     });
     return {
       topOf: (el) => el.getBoundingClientRect().top,

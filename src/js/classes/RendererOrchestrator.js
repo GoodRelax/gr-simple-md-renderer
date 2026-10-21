@@ -281,6 +281,8 @@ export default class RendererOrchestrator {
    * text changes nothing (INV-48, AT-ORC-18).
    * @param {number} blockId
    * @param {string} newRaw - editor text
+   * @param {{offsetTop: number}|null} [anchor] - the scroll anchor of the
+   *   block, measured by the caller; left out, it is measured here (INV-46)
    * @returns {Promise<void>} settles when the render is done
    * @purity non-pure
    */
@@ -296,6 +298,69 @@ export default class RendererOrchestrator {
     }
     this._previousModel = model;
     return this._applyChange(change, scroll, change.anchorBlockId);
+  }
+
+  /**
+   * The change a table block's new text would make (INV-42, INV-62), on
+   * base (the current model by default; a table operation after a cell
+   * commit plans on the cell commit's model). keptId: the table keeps its
+   * id. Nothing is applied (11-c guard canKeepTableId); replaceTableBlock()
+   * applies it unchanged. null without a model.
+   * @purity semi-pure-b
+   * @param {number} blockId
+   * @param {string} newRaw
+   * @param {MarkdownBlockModel} [base]
+   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null, keptId: boolean, base: MarkdownBlockModel}|null}
+   */
+  planTableReplace(blockId, newRaw, base = this._currentModel) {
+    if (!base) return null;
+    return { ...base.planTableReplace(blockId, newRaw, this._lexer, CONFIG.edit.diffMaxCells), base };
+  }
+
+  /**
+   * Apply a planned table change (commitBlock for a table edited by cell or
+   * by a table operation; INV-46 / 47 / 48): one undoable unit, synchronous.
+   * A plan made on another model than the current one changes nothing.
+   * While the table is held, the queued partial render keeps its DOM
+   * (writeHeldInterior writes inside it). No scroll anchor is taken: only
+   * the held table's inside changes, so nothing above it moves (INV-46),
+   * and reading the layout of a big table here costs a layout of it
+   * (INV-51). An anchor still pending from an earlier commit stays.
+   * @purity non-pure
+   * @param {number} blockId - the table block
+   * @param {object|null} change - from planTableReplace()
+   * @returns {Promise<void>} settles when the render is done
+   */
+  replaceTableBlock(blockId, change) {
+    if (!change || !change.isChanged || change.base !== this._currentModel) return Promise.resolve();
+    void blockId; // the table: its id is in the plan (anchorBlockId)
+    markCommitStart();
+    const pending = this._pendingAnchor;
+    this._previousModel = change.base;
+    const rendered = this._applyChange(change, null, change.anchorBlockId);
+    this._pendingAnchor = pending;
+    return rendered;
+  }
+
+  /**
+   * INV-47 exception: write inside the held block only (a cell's children,
+   * or its table element after a table operation), outside the render
+   * queue. write() must put in marked + DOMPurify output (and run the image
+   * gate on it) or the nodes saved when a cell opened. The wrapper, the
+   * order and the other blocks are not touched. Afterwards the block counts
+   * as showing the current model. Not held (or not on screen): nothing.
+   * @purity non-pure
+   * @param {number} blockId
+   * @param {() => void} write
+   * @returns {boolean} true when written
+   */
+  writeHeldInterior(blockId, write) {
+    if (this._heldBlockId !== blockId || !this.markdownRenderer.getBlockElement(blockId)) return false;
+    write();
+    const model = this._currentModel;
+    const index = model ? model.findIndexById(blockId) : -1;
+    if (index >= 0) this.markdownRenderer.markWrittenInPlace(model.getBlocks()[index], model.links);
+    return true;
   }
 
   /**
@@ -415,6 +480,34 @@ export default class RendererOrchestrator {
     const anchor = { scroll: this.scrollManager.captureAnchor(element), blockId };
     if (this._pendingAnchor) this._pendingAnchor = anchor;
     if (this._renderingAnchor) this._renderingAnchor = anchor;
+  }
+
+  /**
+   * Run change (edit mode on or off) and keep what the reader is looking at
+   * where it was: edit mode shows the hidden bands, the empty block and the
+   * strips above the tables, and a browser without scroll anchoring would
+   * let the text move (5.1, PRT-X08). Only in the markdown view. The anchor
+   * of a render still to come (a block committed as edit mode is left) was
+   * measured in the layout before the change: it follows its place, or that
+   * render would move the text back (INV-46).
+   * @param {() => void} change
+   * @purity non-pure
+   */
+  keepReadingPosition(change) {
+    if (this._viewState !== "markdown") {
+      change();
+      return;
+    }
+    const memento = this.scrollManager;
+    const saved = memento.captureReadingAnchor();
+    const anchors = [...new Set([this._pendingAnchor, this._renderingAnchor])].filter((a) => a && a.scroll);
+    const places = anchors.map((a) => memento.capturePlaceAt(a.scroll.offsetTop));
+    change();
+    memento.restoreReadingAnchor(saved);
+    for (let i = 0; i < anchors.length; i++) {
+      const moved = memento.movedBy(places[i]);
+      if (moved !== 0) anchors[i].scroll = { offsetTop: anchors[i].scroll.offsetTop + moved };
+    }
   }
 
   // ---- internals ----

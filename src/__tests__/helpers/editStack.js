@@ -41,6 +41,7 @@ export function fakeHost() {
     renderFromEditor: vi.fn(),
     onEditorInput: vi.fn(),
     onEditStateChanged: vi.fn(),
+    showToast: vi.fn(),
   };
   return host;
 }

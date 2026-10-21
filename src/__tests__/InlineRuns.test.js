@@ -352,3 +352,43 @@ describe("AT-IR entities and HTML elements", () => {
     expect(InlineRuns.expandRange(runs, at("</i>"), at("</i>") + 1)).toEqual({ from: at("<i>"), to: at("</i>") + 1 });
   });
 });
+
+describe("AT-IR fromNodes: a cell's DOM copy to runs (INV-63, unit E)", () => {
+  const text = (t) => ({ kind: "text", text: t });
+
+  it("the allowed formats nest; a code span is one run; a line break is a run", () => {
+    const runs = InlineRuns.fromNodes([
+      { kind: "strong", children: [text("a"), { kind: "em", children: [text("b")] }] },
+      { kind: "br" },
+      { kind: "code", children: [text("x|y")] },
+      { kind: "del", children: [text("d")] },
+    ]);
+    expect(runs.map((r) => r.type)).toEqual(["text", "text", "br", "code", "text"]);
+    expect(InlineRuns.serialize(runs, { inTableCell: true })).toBe("**a*b***<br>`x\\|y`~~d~~");
+  });
+
+  it("other elements give their text only; a mark node is its text; attributes are not read", () => {
+    const runs = InlineRuns.fromNodes([
+      { kind: "other", children: [{ kind: "strong", children: [text("in")] }] },
+      { kind: "mark", children: [text("\u00a0")] },
+      { kind: "span", style: "color: red", children: [text("s")] },
+    ], [], { colors: COLORS });
+    expect(runs.every((r) => !r.marks.strong && r.marks.color === null)).toBe(true);
+    expect(InlineRuns.serialize(runs)).toBe("in\u00a0s");
+  });
+
+  it("a span is a color only for a palette value written exactly; a link only by its index", () => {
+    const link = { kind: "inline", href: "u", title: null, innerSrc: "l", dest: "(u)" };
+    const runs = InlineRuns.fromNodes([
+      { kind: "span", style: `color: ${BLUE}`, children: [text("c")] },
+      { kind: "a", link: 0, children: [text("l")] },
+      { kind: "a", link: null, children: [text("n")] },
+    ], [link], { colors: COLORS });
+    expect(InlineRuns.serialize(runs)).toBe(`<span style="color: ${BLUE}">c</span>[l](u)n`);
+  });
+
+  it("linksOf lists the links of tokens in order, inside formats too", () => {
+    const links = InlineRuns.linksOf(lexInline("**[a](x)** and [b][r] <https://c.example/>", { r: { href: "y", title: null } }));
+    expect(links.map((l) => l.kind)).toEqual(["inline", "reference", "autolink"]);
+  });
+});

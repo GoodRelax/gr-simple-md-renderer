@@ -83,12 +83,21 @@ describe("AT-DBL INV-57 double click outside edit mode", () => {
     expect(app.blockEditor()).toBeNull();
   });
 
-  it("AT-DBL-03 a table opens its block (cells are opened in place by unit E)", async () => {
+  it("AT-DBL-03 a cell opens in place (INV-57, INV-62); the table's margin only enters edit mode", async () => {
     await withDocument();
-    const td = app.block((b) => b.type === "table").el.querySelector("td");
+    const { el } = app.block((b) => b.type === "table");
+    const td = el.querySelector("td");
     dblclick(td);
     expect(app.ui.palette.isShown()).toBe(true);
-    expect(app.blockEditor().value).toContain("| A | B |");
+    expect(app.blockEditor()).toBeNull();
+    expect(app.ui.blockEdit.isEditingCell()).toBe(true);
+    expect(td.classList.contains("grsmd-cell-editing")).toBe(true);
+    app.ui.blockEdit.dispatch("escapePressed");
+    app.ui.blockEdit.dispatch("paletteHidden");
+    app.ui.palette.hide();
+    dblclick(el); // the table block's margin
+    expect(app.ui.palette.isShown()).toBe(true);
+    expect(app.ui.blockEdit.isEditing()).toBe(false);
   });
 
   it("AT-DBL-04 a diagram, a link or a button: nothing (the diagram keeps its zoom reset)", async () => {

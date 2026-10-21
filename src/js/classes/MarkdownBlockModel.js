@@ -341,20 +341,42 @@ export default class MarkdownBlockModel {
   replaceBlock(blockId, newRaw, lexer, maxCells) {
     const index = this.findIndexById(blockId);
     if (index < 0) return { model: this, isChanged: false, anchorBlockId: null };
-    const block = this._blocks[index];
-    const start = this._offsetOf(index);
-    const text = MarkdownBlockModel.toEditableText(newRaw);
-    const oldBody = this.toBody();
-    let newBody;
-    if (text === "") {
-      newBody = oldBody.slice(0, start) + oldBody.slice(start + block.raw.length + block.separatorAfter.length);
-    } else {
-      const trailing = /\n*$/.exec(block.raw)[0];
-      newBody = oldBody.slice(0, start) + text + trailing + oldBody.slice(start + block.raw.length);
-    }
-    if (newBody === oldBody) return { model: this, isChanged: false, anchorBlockId: blockId };
-    const model = this._relex(newBody, lexer, maxCells);
+    const { body, start } = this._bodyReplacing(index, newRaw);
+    if (body === this.toBody()) return { model: this, isChanged: false, anchorBlockId: blockId };
+    const model = this._relex(body, lexer, maxCells);
     return { model, isChanged: true, anchorBlockId: model._blockIdAt(start) };
+  }
+
+  /**
+   * replaceBlock() for a table block edited by cell or by a table operation
+   * (INV-42, INV-62): when, after the equal blocks at the start and at the
+   * end are left out (as BlockDiff matches them), one old block (the table)
+   * stands against one new block of type table, the new block keeps the
+   * table's id (keptId true). Otherwise the blocks are matched as usual
+   * (keptId false). Nothing is applied: the plan is the guard of 11-c
+   * (canKeepTableId) and, unchanged, the change the commit applies.
+   * @purity pure
+   * @param {number} blockId
+   * @param {string} newRaw - the table's new text
+   * @param {(src: string) => object[]} lexer
+   * @param {number} maxCells
+   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null, keptId: boolean}}
+   */
+  planTableReplace(blockId, newRaw, lexer, maxCells) {
+    const index = this.findIndexById(blockId);
+    if (index < 0) return { model: this, isChanged: false, anchorBlockId: null, keptId: false };
+    const { body, start } = this._bodyReplacing(index, newRaw);
+    if (body === this.toBody()) return { model: this, isChanged: false, anchorBlockId: blockId, keptId: true };
+    const local = this._localTableModel(index, newRaw, lexer);
+    if (local) return { model: local, isChanged: true, anchorBlockId: blockId, keptId: true };
+    const split = splitBody(body, lexer);
+    const kept = this._keptTableBlocks(index, split.blocks);
+    if (!kept) {
+      const model = this._relex(body, lexer, maxCells);
+      return { model, isChanged: true, anchorBlockId: model._blockIdAt(start), keptId: false };
+    }
+    const model = new MarkdownBlockModel(split.leading, kept, this._nextBlockId, split.links, split.isWholeDocument);
+    return { model, isChanged: true, anchorBlockId: blockId, keptId: true };
   }
 
   /**
@@ -379,6 +401,84 @@ export default class MarkdownBlockModel {
   }
 
   // ---- internals (pure) ----
+
+  /**
+   * The body with block index's raw replaced by an editor text (its
+   * trailing newlines kept); an empty text removes the block and its
+   * separator. start: the block's offset.
+   * @purity pure
+   * @returns {{body: string, start: number}}
+   */
+  _bodyReplacing(index, newRaw) {
+    const block = this._blocks[index];
+    const start = this._offsetOf(index);
+    const text = MarkdownBlockModel.toEditableText(newRaw);
+    const oldBody = this.toBody();
+    if (text === "") {
+      return { body: oldBody.slice(0, start) + oldBody.slice(start + block.raw.length + block.separatorAfter.length), start };
+    }
+    const trailing = /\n*$/.exec(block.raw)[0];
+    return { body: oldBody.slice(0, start) + text + trailing + oldBody.slice(start + block.raw.length), start };
+  }
+
+  /**
+   * planTableReplace() without lexing the whole body (INV-51): when the
+   * table starts after a blank line (or at the start), and its new text
+   * lexed alone is one table block and nothing else, the whole body would
+   * split the same way: a table's text decides neither where the block
+   * before it ends nor where it ends (the line after it does, and that line
+   * does not change), and it holds no reference definition. The blocks,
+   * the definitions and the ids stay; only the table's raw changes. null
+   * when that does not hold (the whole body is lexed then).
+   * @purity pure
+   * @param {number} index - a table block
+   * @param {string} newRaw - its editor text
+   * @param {(src: string) => object[]} lexer
+   * @returns {MarkdownBlockModel|null}
+   */
+  _localTableModel(index, newRaw, lexer) {
+    const block = this._blocks[index];
+    const text = MarkdownBlockModel.toEditableText(newRaw);
+    if (block.type !== "table" || text === "") return null;
+    const before = index === 0 ? this._leading : this._blocks[index - 1].raw + this._blocks[index - 1].separatorAfter;
+    if (index > 0 && !/\n[ \t]*\n$/.test(before)) return null;
+    const raw = text + /\n*$/.exec(block.raw)[0];
+    let split;
+    try {
+      split = splitBody(raw, lexer);
+    } catch {
+      return null;
+    }
+    const only = split.blocks[0];
+    if (split.leading !== "" || split.blocks.length !== 1 || only.type !== "table" || only.raw !== raw) return null;
+    if (Object.keys(split.links).length > 0) return null;
+    const blocks = this._blocks.map((b, i) => (i === index ? { ...b, raw } : b));
+    return new MarkdownBlockModel(this._leading, blocks, this._nextBlockId, this.links, this.isWholeDocument);
+  }
+
+  /**
+   * The new blocks numbered with the old ids when the only difference is
+   * block index (a table) against one new table block, else null.
+   * @purity pure
+   * @param {number} index
+   * @param {{type: string, raw: string}[]} blocks - the new blocks
+   * @returns {object[]|null}
+   */
+  _keptTableBlocks(index, blocks) {
+    const old = this._blocks;
+    let head = 0;
+    while (head < Math.min(old.length, blocks.length) && old[head].raw === blocks[head].raw) head++;
+    let tail = 0;
+    while (tail < Math.min(old.length, blocks.length) - head && old[old.length - 1 - tail].raw === blocks[blocks.length - 1 - tail].raw) tail++;
+    if (head !== index || old.length - head - tail !== 1 || blocks.length - head - tail !== 1) return null;
+    if (blocks[head].type !== "table") return null;
+    /** @purity pure */
+    return blocks.map((b, i) => {
+      if (i < head) return { id: old[i].id, ...b };
+      if (i === head) return { id: old[index].id, ...b };
+      return { id: old[i - blocks.length + old.length].id, ...b };
+    });
+  }
 
   /**
    * Start offset of block i in the body (i may be the block count: end of body).

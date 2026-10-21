@@ -98,6 +98,45 @@ export default class InlineRuns {
   }
 
   /**
+   * Runs from a copy of a table cell's DOM (TableCellEditor.snapshotNodes;
+   * INV-62, INV-63). Only the allowed elements are formats: strong / em /
+   * del, a code span, a line break, a link that was there when the cell
+   * opened (node.link: its index in linkInfo, INV-72 (a)), and a span whose
+   * style is exactly a palette color (options.colors). A "mark" node (the
+   * INV-70 marks) only holds text. Any other element gives its text only.
+   * All runs are new text (src null): they are written in the normal form.
+   * @purity pure
+   * @param {object[]} tree - {kind: "text", text} | {kind: "br"} |
+   *   {kind: "strong"|"em"|"del"|"code"|"a"|"span"|"mark"|"other", children, link?, style?}
+   * @param {object[]} [linkInfo] - the link notations, by index (InlineRuns link objects)
+   * @param {{colors?: string[]}} [options]
+   * @returns {object[]}
+   */
+  static fromNodes(tree, linkInfo = [], options = {}) {
+    const colors = (options.colors ?? []).map((c) => c.toLowerCase());
+    const runs = [];
+    InlineRuns._collectNodes(tree, NO_MARKS, linkInfo, colors, runs, false);
+    return runs;
+  }
+
+  /**
+   * The links of inline tokens in source order (they are the a elements
+   * of the rendered HTML in the same order), each with its notation
+   * (INV-72 (a)); null for a link whose notation is not known.
+   * @purity pure
+   * @param {object[]} tokens
+   * @returns {Array<object|null>}
+   */
+  static linksOf(tokens) {
+    const out = [];
+    for (const token of tokens) {
+      if (token.type === "link") out.push(InlineRuns._linkOf(token));
+      else if (token.tokens) out.push(...InlineRuns.linksOf(token.tokens));
+    }
+    return out;
+  }
+
+  /**
    * Bold / Italic / text color over [start, end) of the shown text (a line
    * break counts 0). null when the range holds no run, or only spaces for
    * Bold / Italic.
@@ -332,6 +371,69 @@ export default class InlineRuns {
   }
 
   /**
+   * fromNodes() of one level; textOnly: inside an element that is not a
+   * format, where only the text counts.
+   * @purity pure
+   */
+  static _collectNodes(nodes, marks, linkInfo, colors, runs, textOnly) {
+    for (const node of nodes) {
+      if (node.kind === "text") {
+        for (const ch of Array.from(node.text)) runs.push({ type: "text", text: ch, src: null, marks: { ...marks } });
+        continue;
+      }
+      if (node.kind === "br") {
+        if (!textOnly) runs.push({ type: "br", text: "", src: null, marks: { ...marks } });
+        continue;
+      }
+      if (node.kind === "code" && !textOnly) {
+        runs.push({ type: "code", text: InlineRuns._nodeText(node.children ?? []), src: null, marks: { ...marks } });
+        continue;
+      }
+      const inner = textOnly ? null : InlineRuns._nodeMarks(node, marks, linkInfo, colors);
+      InlineRuns._collectNodes(node.children ?? [], inner ?? marks, linkInfo, colors, runs, textOnly || inner === null);
+    }
+  }
+
+  /**
+   * The marks inside a format node, or null for a node that only gives its
+   * text (INV-63).
+   * @purity pure
+   */
+  static _nodeMarks(node, marks, linkInfo, colors) {
+    switch (node.kind) {
+      case "strong":
+      case "em":
+      case "del":
+        return { ...marks, [node.kind]: true };
+      case "mark":
+        return marks;
+      case "a": {
+        const link = Number.isInteger(node.link) ? linkInfo[node.link] : undefined;
+        return link ? { ...marks, link } : null;
+      }
+      case "span": {
+        const m = /^color: (#[0-9A-Fa-f]{6})$/.exec(node.style ?? "");
+        return m && colors.includes(m[1].toLowerCase()) ? { ...marks, color: m[1] } : null;
+      }
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * The text of nodes (a code span's content).
+   * @purity pure
+   */
+  static _nodeText(nodes) {
+    let text = "";
+    for (const node of nodes) {
+      if (node.kind === "text") text += node.text;
+      else if (node.kind !== "br") text += InlineRuns._nodeText(node.children ?? []);
+    }
+    return text;
+  }
+
+  /**
    * A text token's runs: one per code point, an entity reference whole.
    * @purity pure
    * @param {string} raw
@@ -559,21 +661,25 @@ export default class InlineRuns {
   static _writeLink(runs, i, j, link, level, options, out) {
     const inner = InlineRuns._emptyLayout(runs.length);
     InlineRuns._writeLevel(runs, i, j, level + 1, options, inner);
-    const same = inner.text === link.innerSrc;
+    // In a table cell the notation came from the cell with its \| read as |
+    // (as marked reads a cell): every pipe of it is written \| again.
+    const pipes = (text) => InlineRuns.escapeCellPipes(text, options);
+    const innerSrc = pipes(link.innerSrc);
+    const same = inner.text === innerSrc;
     let prefix = "[";
     let suffix = "]";
     switch (link.kind) {
       case "inline":
-        suffix = `]${link.dest}`;
+        suffix = `]${pipes(link.dest)}`;
         break;
       case "reference":
-        suffix = `][${link.label}]`;
+        suffix = `][${pipes(link.label)}]`;
         break;
       case "collapsed":
-        suffix = same ? "][]" : `][${link.innerSrc}]`;
+        suffix = same ? "][]" : `][${innerSrc}]`;
         break;
       case "shortcut":
-        suffix = same ? "]" : `][${link.innerSrc}]`;
+        suffix = same ? "]" : `][${innerSrc}]`;
         break;
       default: {
         const angle = link.kind === "autolink";
@@ -585,10 +691,10 @@ export default class InlineRuns {
         const text = shown.map((r) => r.text).join("");
         const plain = shown.every((r) => r.type === "text" && !r.marks.del && !r.marks.strong && !r.marks.em);
         if (plain && options.isLinkableUrl?.(text)) {
-          InlineRuns._appendLayout(out, InlineRuns._plainLayout(runs, i, j), angle ? "<" : "", angle ? ">" : "", i, j);
+          InlineRuns._appendLayout(out, InlineRuns._plainLayout(runs, i, j, options), angle ? "<" : "", angle ? ">" : "", i, j);
           return;
         }
-        suffix = `](${InlineRuns._destination(link.href)})`;
+        suffix = `](${pipes(InlineRuns._destination(link.href))})`;
         break;
       }
     }
@@ -596,15 +702,35 @@ export default class InlineRuns {
   }
 
   /**
-   * Runs [i, j) written as their shown text (a URL text, no escapes).
+   * Runs [i, j) written as their shown text (a URL text, no escapes but
+   * the pipes of a table cell).
    * @purity pure
    */
-  static _plainLayout(runs, i, j) {
+  static _plainLayout(runs, i, j, options) {
     const out = InlineRuns._emptyLayout(runs.length);
     for (let k = i; k < j; k++) {
       out.unitFrom[k] = out.text.length;
-      out.text += runs[k].text;
+      out.text += InlineRuns.escapeCellPipes(runs[k].text, options);
       out.unitTo[k] = out.text.length;
+    }
+    return out;
+  }
+
+  /**
+   * In a table cell (options.inTableCell), each pipe not escaped by a
+   * backslash is written \| (INV-69, INV-72 (d)); elsewhere the text as it is.
+   * @purity pure
+   * @param {string} text
+   * @param {{inTableCell?: boolean}} options
+   * @returns {string}
+   */
+  static escapeCellPipes(text, options) {
+    if (!options.inTableCell || !text.includes("|")) return text;
+    let out = "";
+    let backslashes = 0;
+    for (const ch of text) {
+      out += ch === "|" && backslashes % 2 === 0 ? "\\|" : ch;
+      backslashes = ch === "\\" ? backslashes + 1 : 0;
     }
     return out;
   }

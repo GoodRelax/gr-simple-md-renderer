@@ -82,6 +82,10 @@ export const CONFIG = {
       plantumlRenderButton: "Render",
       hiddenLinkDefinition: "link definition",
       hiddenHtml: "hidden HTML",
+      tableSourceTab: "Edit the table as Markdown",
+      tableNotCellEditable:
+        "This table cannot be edited by cell. Opened its Markdown instead.",
+      tableEditEnded: "The table changed into other blocks. Table editing ended.",
       statusUnsaved: (name) => `${name} * unsaved`,
       statusSaved: (name) => `${name} - saved`,
     },
@@ -110,6 +114,8 @@ export const CONFIG = {
       green: { light: "#007A58", dark: "#009E73" },
     },
     invisibleMarkMaxChars: 50000, // INV-70: no marks layer above this length
+    linkSchemes: ["http:", "https:", "mailto:"], // a text that is a link URL (INV-69, INV-72 (a))
+    maxPastedUrlLength: 2048, // INV-69
     doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
     doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",

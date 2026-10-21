@@ -49,7 +49,8 @@ describe("MarkdownRenderer.renderBlocks / replaceBlocks (real marked, DOMPurify,
     const box = document.createElement("div");
     for (const child of [...root.childNodes]) {
       const nodes = unwrap && child.classList?.contains("md-block") ? [...child.childNodes] : [child];
-      for (const n of nodes) box.appendChild(n.cloneNode(true));
+      // the table tabs are the renderer's own (INV-29 (b)), not document HTML
+      for (const n of nodes) if (!renderer.isTableTab(n)) box.appendChild(n.cloneNode(true));
     }
     for (const n of [...box.childNodes]) {
       if (n.nodeType === Node.TEXT_NODE && n.textContent.trim() === "") n.remove();

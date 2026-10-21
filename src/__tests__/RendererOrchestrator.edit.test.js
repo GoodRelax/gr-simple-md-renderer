@@ -437,3 +437,169 @@ describe("RendererOrchestrator edit API (INV-47, INV-48, spec 5.14.3)", () => {
     expect(console.error).toHaveBeenCalled();
   });
 });
+
+describe("AT-ORC-T table commits (INV-42 / 46 / 47 / 48, INV-62)", () => {
+  const TBL = "Intro\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n\nEnd\n";
+  const tableId = (t) => t.orchestrator.getModel().getBlocks().find((b) => b.type === "table").id;
+
+  it("AT-ORC-T1 replaceTableBlock applies a kept plan as one undoable unit, reading no layout (INV-46, INV-51)", async () => {
+    const t = await loaded(TBL);
+    const id = tableId(t);
+    const before = t.orchestrator.getModel();
+    const plan = t.orchestrator.planTableReplace(id, "| a | b |\n| --- | --- |\n| 1x | 2 |");
+    expect(plan.keptId).toBe(true);
+    expect(t.orchestrator.getModel()).toBe(before); // planning changes nothing
+    t.orchestrator.replaceTableBlock(id, plan);
+    expect(t.orchestrator.getModel()).toBe(plan.model);
+    expect(tableId(t)).toBe(id);
+    expect(t.listener.onModelChanged).toHaveBeenCalledTimes(1);
+    expect(t.calls.filter((c) => c.startsWith("capture:"))).toEqual([]); // the held table's top does not move
+    expect(t.orchestrator.canUndo()).toBe(true);
+    t.orchestrator.undoLastCommit();
+    expect(t.orchestrator.getBody()).toBe(TBL);
+  });
+
+  it("AT-ORC-T2 a plan made on another model than the current one changes nothing", async () => {
+    const t = await loaded(TBL);
+    const id = tableId(t);
+    const stale = t.orchestrator.planTableReplace(id, "| a |\n| --- |");
+    t.orchestrator.commitBlock(t.idOf("End"), "End changed");
+    const body = t.orchestrator.getBody();
+    t.orchestrator.replaceTableBlock(id, stale);
+    expect(t.orchestrator.getBody()).toBe(body);
+  });
+
+  it("AT-ORC-T3 a table operation plans on the model of the cell commit before it (two units)", async () => {
+    const t = await loaded(TBL);
+    const id = tableId(t);
+    const commit = t.orchestrator.planTableReplace(id, "| a | b |\n| --- | --- |\n| 9 | 2 |");
+    const op = t.orchestrator.planTableReplace(id, "| a | b |\n| --- | --- |\n| 9 | 2 |\n|   |   |", commit.model);
+    t.orchestrator.replaceTableBlock(id, commit);
+    t.orchestrator.replaceTableBlock(id, op);
+    expect(t.orchestrator.getBody()).toContain("|   |   |");
+    t.orchestrator.undoLastCommit(); // the operation only
+    expect(t.orchestrator.getBody()).toContain("| 9 | 2 |\n\nEnd");
+  });
+
+  it("AT-ORC-T4 writeHeldInterior writes only inside the held block, and then counts it current", async () => {
+    const t = await loaded(TBL);
+    const id = tableId(t);
+    t.markdownRenderer.markWrittenInPlace = vi.fn();
+    const write = vi.fn();
+    expect(t.orchestrator.writeHeldInterior(id, write)).toBe(false); // not held
+    expect(write).not.toHaveBeenCalled();
+    t.orchestrator.holdBlock(id);
+    expect(t.orchestrator.writeHeldInterior(t.idOf("End"), write)).toBe(false); // another block
+    expect(t.orchestrator.writeHeldInterior(id, write)).toBe(true);
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(t.markdownRenderer.markWrittenInPlace).toHaveBeenCalledWith(expect.objectContaining({ id }), t.orchestrator.getModel().links);
+  });
+
+  it("AT-ORC-T5 while the table is held, the queued partial render keeps its DOM (keepBlockId)", async () => {
+    const t = await loaded(TBL);
+    const id = tableId(t);
+    t.orchestrator.holdBlock(id);
+    t.orchestrator.replaceTableBlock(id, t.orchestrator.planTableReplace(id, "| a |\n| --- |\n| z |"));
+    await flush();
+    expect(t.markdownRenderer.replaceBlocks).toHaveBeenCalledWith(expect.anything(), expect.anything(), id);
+  });
+});
+
+describe("AT-ORC-T6 a table commit keeps the anchor an earlier commit left pending (INV-46)", () => {
+  it("the paragraph commit's anchor (retargeted to the table) is restored by the render after the table commit", async () => {
+    const t = await loaded("Intro\n\n| a |\n| --- |\n| 1 |\n\nEnd\n");
+    const id = t.orchestrator.getModel().getBlocks().find((b) => b.type === "table").id;
+    t.orchestrator.commitBlock(t.idOf("Intro"), "Intro changed");
+    t.orchestrator.retargetPendingAnchor(id);
+    t.orchestrator.replaceTableBlock(id, t.orchestrator.planTableReplace(id, "| a |\n| --- |\n| 2 |"));
+    await flush();
+    expect(t.calls).toContain(`restore:el${id}`);
+  });
+});
+
+describe("AT-ORC-R keepReadingPosition (5.1, PRT-X08, INV-46)", () => {
+  function withReading(t) {
+    const order = [];
+    t.scrollManager.captureReadingAnchor = vi.fn(() => {
+      order.push("capture");
+      return { element: "place", anchor: { offsetTop: 5 } };
+    });
+    t.scrollManager.restoreReadingAnchor = vi.fn(() => order.push("restore"));
+    t.scrollManager.capturePlaceAt = vi.fn((top) => ({ element: `place@${top}`, anchor: { offsetTop: top } }));
+    t.scrollManager.movedBy = vi.fn(() => -22);
+    return order;
+  }
+
+  it("AT-ORC-R1 outside the markdown view the change only runs", () => {
+    const t = setup();
+    const order = withReading(t);
+    const change = vi.fn();
+    t.orchestrator.keepReadingPosition(change);
+    expect(change).toHaveBeenCalledTimes(1);
+    expect(order).toEqual([]);
+  });
+
+  it("AT-ORC-R2 in the markdown view: the place is taken before the change and put back after it", async () => {
+    const t = await loaded();
+    const order = withReading(t);
+    t.orchestrator.keepReadingPosition(() => order.push("change"));
+    expect(order).toEqual(["capture", "change", "restore"]);
+    expect(t.scrollManager.capturePlaceAt).not.toHaveBeenCalled();
+  });
+
+  it("AT-ORC-R3 a commit's anchor still to be rendered follows its place, so the render does not move the text back", async () => {
+    const t = await loaded();
+    withReading(t);
+    t.orchestrator.commitBlock(t.idOf("B"), "B2");
+    const measured = t.scrollManager.captureAnchor.mock.results[0].value.offsetTop;
+    t.orchestrator.keepReadingPosition(() => {});
+    expect(t.scrollManager.capturePlaceAt).toHaveBeenCalledWith(measured);
+    await flush();
+    const restored = t.scrollManager.restoreAnchor.mock.calls.at(-1)[0];
+    expect(restored).toEqual({ offsetTop: measured - 22 });
+  });
+
+  it("AT-ORC-R4 the anchor's place is taken before the change; a place that did not move leaves the anchor alone", async () => {
+    const t = await loaded();
+    withReading(t);
+    const order = [];
+    t.scrollManager.capturePlaceAt.mockImplementation((top) => {
+      order.push("place");
+      return { element: "p", anchor: { offsetTop: top } };
+    });
+    t.scrollManager.movedBy.mockImplementation(() => {
+      order.push("moved");
+      return 0;
+    });
+    t.scrollManager.restoreReadingAnchor.mockImplementation(() => order.push("restore"));
+    t.orchestrator.commitBlock(t.idOf("B"), "B2");
+    const measured = t.scrollManager.captureAnchor.mock.results[0].value;
+    t.orchestrator.keepReadingPosition(() => order.push("change"));
+    // the anchor's move is read after the reading place is put back (both are on screen)
+    expect(order).toEqual(["place", "change", "restore", "moved"]);
+    await flush();
+    expect(t.scrollManager.restoreAnchor.mock.calls.at(-1)[0]).toBe(measured);
+  });
+
+  it("AT-ORC-R5 during a render in progress its anchor follows too, and an anchor shared with the pending one moves once", async () => {
+    const t = await loaded("A\n\nB\n\nC\n\nD\n");
+    withReading(t);
+    const gate = deferred();
+    t.mermaidRenderer.render.mockImplementationOnce(() => gate.promise);
+    const p1 = t.orchestrator.commitBlock(t.idOf("A"), "A2");
+    await flush();
+    // the first render waits; a second commit is pending; the opened block is the anchor of both
+    t.orchestrator.commitBlock(t.idOf("C"), "C2");
+    const opened = t.idOf("D");
+    t.orchestrator.retargetPendingAnchor(opened);
+    const measured = t.scrollManager.captureAnchor.mock.results.at(-1).value.offsetTop;
+    t.orchestrator.keepReadingPosition(() => {});
+    expect(t.scrollManager.capturePlaceAt).toHaveBeenCalledTimes(1);
+    gate.resolve();
+    await p1;
+    await flush();
+    const restores = t.scrollManager.restoreAnchor.mock.calls.filter((c) => c[1] === t.elements.get(opened));
+    expect(restores.length).toBeGreaterThan(0);
+    for (const [anchor] of restores) expect(anchor).toEqual({ offsetTop: measured - 22 });
+  });
+});

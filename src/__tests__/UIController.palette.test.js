@@ -67,7 +67,8 @@ function press(el) {
 }
 
 function open(pred) {
-  tap(app.block(pred).el.firstElementChild);
+  const el = app.block(pred).el;
+  tap(el.querySelector(":scope > .grsmd-table-tab") ?? el.firstElementChild); // a table: its source (INV-29 (b))
   return app.blockEditor();
 }
 
@@ -419,5 +420,75 @@ describe("AT-UI-38 nothing is stored", () => {
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
     expect(document.cookie).toBe("");
+  });
+});
+
+describe("AT-UI-39 an open table cell (5.15.5, INV-65, W7)", () => {
+  const tableEl = () => app.block((b) => b.type === "table").el.querySelector(":scope > table");
+  const cellEl = (r, c) => tableEl().rows[r].cells[c];
+  const tableRaw = () => app.block((b) => b.type === "table").block.raw;
+
+  it("Insert table and Mermaid off; Row / Column, Delete row / column and Table options on; the column's alignment pressed", async () => {
+    await withDocument();
+    tap(cellEl(1, 0));
+    expect(app.ui.blockEdit.isEditingCell()).toBe(true);
+    for (const id of ["paletteTable", "paletteMermaid"]) expect(off(btn(id)), id).toBe(true);
+    for (const id of ["paletteRow", "paletteColumn", "paletteRowDelete", "paletteColumnDelete", "paletteTableOptions", "paletteFormat"]) {
+      expect(off(btn(id)), id).toBe(false);
+    }
+    expect(popoverButton("Default alignment").getAttribute("aria-pressed")).toBe("true");
+    expect(popoverButton("Align center").getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("the header row cannot be deleted; a table of one column cannot lose its column (D2)", async () => {
+    await withDocument();
+    tap(cellEl(0, 1));
+    expect(off(btn("paletteRowDelete"))).toBe(true);
+    expect(off(btn("paletteColumnDelete"))).toBe(false);
+  });
+
+  it("not in a cell: Delete row / column and Table options are off (also in the table's source)", async () => {
+    await withDocument();
+    for (const id of ["paletteRowDelete", "paletteColumnDelete", "paletteTableOptions"]) expect(off(btn(id)), id).toBe(true);
+    open((b) => b.type === "table");
+    for (const id of ["paletteRowDelete", "paletteColumnDelete", "paletteTableOptions"]) expect(off(btn(id)), id).toBe(true);
+    expect(off(btn("paletteRow"))).toBe(false);
+  });
+
+  it("the buttons run INV-65 on the cell's table: Insert row, Delete column, an alignment", async () => {
+    await withDocument();
+    tap(cellEl(1, 0));
+    press(btn("paletteRow"));
+    expect(tableEl().rows.length).toBe(3);
+    expect(cellEl(2, 0).classList.contains("grsmd-cell-editing")).toBe(true);
+    press(btn("paletteColumnDelete"));
+    expect(tableEl().rows[0].cells.length).toBe(1);
+    press(btn("paletteTableOptions"));
+    press(popoverButton("Align right"));
+    expect(tableRaw().split("\n")[1]).toMatch(/^\| -+: \|$/);
+    expect(popoverButton("Align right").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("Insert table does nothing while a cell is open (W7)", async () => {
+    await withDocument();
+    tap(cellEl(1, 0));
+    const body = app.orchestrator.getBody();
+    app.ui._runPaletteCommand("insertTable");
+    expect(app.orchestrator.getBody()).toBe(body);
+  });
+
+  it("Bold follows the selection in the cell and applies to it", async () => {
+    await withDocument();
+    tap(cellEl(1, 0));
+    const td = cellEl(1, 0);
+    const range = document.createRange();
+    range.selectNodeContents(td);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.dispatchEvent(new Event("selectionchange"));
+    await nextFrame();
+    expect(off(btn("paletteBold"))).toBe(false);
+    press(btn("paletteBold"));
+    expect(td.querySelector("strong")?.textContent).toBe("x");
   });
 });

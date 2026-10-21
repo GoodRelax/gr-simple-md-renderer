@@ -182,6 +182,29 @@ export function isApplePlatform(nav) {
 }
 
 /**
+ * INV-14 (2): the letter of a primary-modifier shortcut (INV-58 to INV-60),
+ * or null. The primary modifier is Cmd alone on Apple platforms and Ctrl
+ * alone elsewhere; Alt (also AltGr, which arrives as Ctrl+Alt) and IME
+ * composition are never shortcuts. The letter is event.key in lower case;
+ * only when that is not a Latin letter (Russian and other layouts) is
+ * event.code (KeyS ...) used. A repeat still has its letter: the caller
+ * stops its default and runs nothing (owner ruling, 2026-10-21).
+ * @purity pure
+ * @param {{key: string, code?: string, ctrlKey: boolean, metaKey: boolean,
+ *   altKey: boolean, isComposing?: boolean, keyCode?: number}} e
+ * @param {boolean} isApple
+ * @returns {string|null} "a" to "z"
+ */
+export function shortcutLetter(e, isApple) {
+  const primary = isApple ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
+  if (!primary || e.altKey || e.isComposing || e.keyCode === 229) return null;
+  const key = typeof e.key === "string" ? e.key.toLowerCase() : "";
+  if (/^[a-z]$/.test(key)) return key;
+  const m = /^Key([A-Z])$/.exec(e.code ?? "");
+  return m ? m[1].toLowerCase() : null;
+}
+
+/**
  * Run cb in the next animation frame (a short timer where there is none,
  * e.g. jsdom). Returns the id for cancelFrame.
  * @purity non-pure

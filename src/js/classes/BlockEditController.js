@@ -2,11 +2,22 @@ import { CONFIG } from "../config.js";
 import MarkdownBlockModel from "./MarkdownBlockModel.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
 import InvisibleCharOverlay from "./InvisibleCharOverlay.js";
+import TableCellEditor from "./TableCellEditor.js";
 import { cell, row, choice, selectCell } from "../stateTable.js";
 
 const BROWSING = "browsingPreview";
 const IDLE = "editModeIdle";
 const EDITING = "editingBlock";
+const CELL = "editingCell";
+
+// The INV-64 moves: to the cell, or (the id not kept) out of the table session.
+const MOVE_EVENTS = { nextCellRequested: "next", previousCellRequested: "previous", cellBelowRequested: "below" };
+// Taps whose block keeps its place on screen when an editor above it closes
+// first (INV-46), and the actions that open that block or its table.
+const PLACED_KINDS = new Set(["block", "cell", "tableSource"]);
+const OPENING_ACTIONS = new Set(["openBlockEditor", "startTableSession", "openTableSourceWithToast"]);
+// Actions that open or close a cell: the host refreshes the palette after them.
+const CELL_ACTIONS = new Set(["openCell", "commitCell", "revertCell", "discardCell", "endTableSession"]);
 
 // Targets a tap never opens (INV-29). The list is kept as written in the
 // spec: user HTML may contain the same classes and roles, and they stay
@@ -30,50 +41,139 @@ const HARD_BREAK_TYPES = new Set(["paragraph", "list", "blockquote"]);
 // A double click here keeps its own meaning (zoom reset of a diagram, INV-57).
 const DIAGRAM_SELECTOR = [".mermaid", ".plantuml-wrapper", ".plantuml-diagram", ".plantuml-pending"].join(", ");
 
-const STATES = [BROWSING, IDLE, EDITING];
+const STATES = [BROWSING, IDLE, EDITING, CELL];
 const transitions = (...cells) => row(STATES, cells);
 
 /**
+ * The two cells of an INV-64 move in editingCell (11-c).
+ * @purity pure
+ * @param {string} guard - hasNextCell, hasPreviousCell or hasCellBelow
+ * @returns {ReadonlyArray<object>}
+ */
+function moveCells(guard) {
+  return choice(
+    cell(CELL, ["commitCell", "moveToCell", "openCell"], `${guard}&&canKeepTableId`),
+    cell(IDLE, ["commitCell", "endTableSession", "showTableEditEndedToast"], guard),
+  );
+}
+
+/**
  * Spec 11-c: event -> current state -> cell (or guarded alternatives, tried
- * in order). "enqueueFullRender" is done by the caller (UIController) after
- * dispatch returns; "showToast" is part of host.renderFromEditor() (INV-45).
+ * in order; "a&&b" is both guards). "enqueueFullRender" is done by the
+ * caller (UIController) after dispatch returns; "showToast" is part of
+ * host.renderFromEditor() (INV-45).
  */
 export const blockEditStateMachine = Object.freeze({
-  paletteShown: transitions(cell(IDLE, []), null, null),
-  paletteHidden: transitions(null, cell(BROWSING, []), cell(BROWSING, ["commitBlock"])),
+  paletteShown: transitions(cell(IDLE, []), null, null, null),
+  paletteHidden: transitions(
+    null,
+    cell(BROWSING, []),
+    cell(BROWSING, ["commitBlock"]),
+    cell(BROWSING, ["commitCell", "endTableSession"]),
+  ),
   emptyDocumentStarted: transitions(
     cell(EDITING, ["startEmptyDocument", "showPalette", "openBlockEditor"]),
     cell(EDITING, ["startEmptyDocument", "openBlockEditor"]),
     null,
+    null,
   ),
-  blockTapped: transitions(null, cell(EDITING, ["openBlockEditor"]), null),
-  blockTappedWithUnrenderedEditor: transitions(null, cell(IDLE, ["renderFromEditor", "showToast"]), null),
-  otherBlockTapped: transitions(null, null, cell(EDITING, ["commitBlock", "resolveBlockById", "openBlockEditor"])),
-  pointerPressedOutside: transitions(null, null, cell(IDLE, ["commitBlock"])),
-  escapePressed: transitions(null, cell(BROWSING, ["hidePalette"]), cell(IDLE, ["restoreOriginalRaw"], "isImeIdle")),
-  saveRequested: transitions(null, null, cell(IDLE, ["commitBlock"])),
-  saveAsRequested: transitions(null, null, cell(IDLE, ["commitBlock"])),
-  documentReplaced: transitions(null, null, cell(IDLE, ["discardBlockEditor"])),
-  documentCleared: transitions(null, cell(BROWSING, ["hidePalette"]), cell(BROWSING, ["discardBlockEditor", "hidePalette"])),
-  viewSwitchedToCode: transitions(null, cell(BROWSING, ["hidePalette"]), cell(BROWSING, ["discardBlockEditor", "hidePalette"])),
-  fullRenderRequested: transitions(
-    cell(BROWSING, ["enqueueFullRender"]),
-    cell(IDLE, ["enqueueFullRender"]),
-    cell(IDLE, ["commitBlock", "enqueueFullRender"]),
+  blockTapped: transitions(null, cell(EDITING, ["openBlockEditor"]), null, null),
+  blockTappedWithUnrenderedEditor: transitions(null, cell(IDLE, ["renderFromEditor", "showToast"]), null, null),
+  otherBlockTapped: transitions(
+    null,
+    null,
+    cell(EDITING, ["commitBlock", "resolveBlockById", "openBlockEditor"]),
+    cell(EDITING, ["commitCell", "endTableSession", "resolveBlockById", "openBlockEditor"]),
   ),
-  editorFocused: transitions(null, null, cell(IDLE, ["commitBlock"])),
+  cellTapped: transitions(
+    null,
+    choice(
+      cell(CELL, ["startTableSession", "openCell"], "isCellEditableTable"),
+      cell(EDITING, ["openTableSourceWithToast"]),
+    ),
+    choice(
+      cell(CELL, ["commitBlock", "resolveBlockById", "startTableSession", "openCell"], "isCellEditableTable"),
+      cell(EDITING, ["commitBlock", "resolveBlockById", "openTableSourceWithToast"]),
+    ),
+    choice(
+      cell(CELL, ["commitCell", "openCell"], "isInSessionTable&&canKeepTableId"),
+      cell(IDLE, ["commitCell", "endTableSession", "showTableEditEndedToast"], "isInSessionTable"),
+      cell(CELL, ["commitCell", "endTableSession", "resolveBlockById", "startTableSession", "openCell"], "isCellEditableTable"),
+      cell(EDITING, ["commitCell", "endTableSession", "resolveBlockById", "openTableSourceWithToast"]),
+    ),
+  ),
+  cellTappedWithUnrenderedEditor: transitions(null, cell(IDLE, ["renderFromEditor", "showToast"]), null, null),
+  tableSourceTapped: transitions(
+    null,
+    cell(EDITING, ["openBlockEditor"]),
+    cell(EDITING, ["commitBlock", "resolveBlockById", "openBlockEditor"]),
+    cell(EDITING, ["commitCell", "endTableSession", "resolveBlockById", "openBlockEditor"]),
+  ),
+  tableSourceTappedWithUnrenderedEditor: transitions(null, cell(IDLE, ["renderFromEditor", "showToast"]), null, null),
+  nextCellRequested: transitions(null, null, null, moveCells("hasNextCell")),
+  previousCellRequested: transitions(null, null, null, moveCells("hasPreviousCell")),
+  cellBelowRequested: transitions(
+    null,
+    null,
+    null,
+    choice(...moveCells("hasCellBelow"), cell(IDLE, ["commitCell", "endTableSession"])),
+  ),
+  tableOperationRequested: transitions(
+    null,
+    null,
+    null,
+    choice(
+      cell(CELL, ["commitCell", "applyTableOperation", "openCell"], "canApplyTableOperation&&canKeepTableId"),
+      cell(IDLE, ["commitCell", "applyTableOperation", "endTableSession", "showTableEditEndedToast"], "canApplyTableOperation"),
+    ),
+  ),
+  pointerPressedOutside: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
+  escapePressed: transitions(
+    null,
+    cell(BROWSING, ["hidePalette"]),
+    cell(IDLE, ["restoreOriginalRaw"], "isImeIdle"),
+    cell(IDLE, ["revertCell", "endTableSession"], "isImeIdle"),
+  ),
   undoRequested: transitions(
     null,
     cell(IDLE, ["undoLastUnit"]),
     choice(cell(IDLE, ["restoreOriginalRaw"], "hasUncommittedChange"), cell(IDLE, ["commitBlock", "undoLastUnit"])),
+    choice(
+      cell(IDLE, ["revertCell", "endTableSession"], "hasUncommittedChange"),
+      cell(IDLE, ["commitCell", "endTableSession", "undoLastUnit"]),
+    ),
   ),
+  saveRequested: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
+  saveAsRequested: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
+  documentReplaced: transitions(null, null, cell(IDLE, ["discardBlockEditor"]), cell(IDLE, ["discardCell", "endTableSession"])),
+  documentCleared: transitions(
+    null,
+    cell(BROWSING, ["hidePalette"]),
+    cell(BROWSING, ["discardBlockEditor", "hidePalette"]),
+    cell(BROWSING, ["discardCell", "endTableSession", "hidePalette"]),
+  ),
+  viewSwitchedToCode: transitions(
+    null,
+    cell(BROWSING, ["hidePalette"]),
+    cell(BROWSING, ["discardBlockEditor", "hidePalette"]),
+    cell(BROWSING, ["discardCell", "endTableSession", "hidePalette"]),
+  ),
+  fullRenderRequested: transitions(
+    cell(BROWSING, ["enqueueFullRender"]),
+    cell(IDLE, ["enqueueFullRender"]),
+    cell(IDLE, ["commitBlock", "enqueueFullRender"]),
+    cell(IDLE, ["commitCell", "endTableSession", "enqueueFullRender"]),
+  ),
+  editorFocused: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
   previewDoubleClicked: transitions(
     choice(
       cell(IDLE, ["clearSelection", "showPalette", "renderFromEditor", "showToast"], "hasUnrenderedEditor"),
+      cell(CELL, ["clearSelection", "showPalette", "startTableSession", "openCell"], "isCellTarget&&isCellEditableTable"),
       cell(EDITING, ["clearSelection", "showPalette", "openBlockEditor"], "isEmptyDocument"),
       cell(EDITING, ["clearSelection", "showPalette", "openBlockEditor"], "isBlockTarget"),
       cell(IDLE, ["clearSelection", "showPalette"]),
     ),
+    null,
     null,
     null,
   ),
@@ -90,7 +190,10 @@ export const blockEditStateMachine = Object.freeze({
  *   by reference), isEditorChangedSinceRender(),
  *   renderFromEditor() (full render from #editor and the toast, INV-45),
  *   onEditorInput() (refresh the unsaved mark), onEditStateChanged() (an
- *   editor opened or closed: unsaved mark and palette buttons).
+ *   editor or a cell opened or closed: unsaved mark and palette buttons),
+ *   showToast(message) (the table toasts of 11-c).
+ * Table cells (editingCell, INV-62 to INV-65) are edited by a
+ * TableCellEditor that this class owns and drives through 11-c.
  */
 export default class BlockEditController {
   /**
@@ -129,6 +232,12 @@ export default class BlockEditController {
     this._onInput = () => this._handleInput();
     this._onCompositionStart = () => this._setComposing(true);
     this._onCompositionEnd = () => this._setComposing(false);
+    this._cells = new TableCellEditor(
+      orchestrator,
+      blockLocator,
+      { dispatch: (event) => this.dispatch(event), onCellInput: () => this.host.onEditorInput() },
+      { isApple: Boolean(host.isApple) },
+    );
   }
 
   /**
@@ -159,16 +268,19 @@ export default class BlockEditController {
   dispatch(event, target = null) {
     const cells = blockEditStateMachine[event];
     if (!cells) throw new Error(`Unknown block edit event: ${event}`);
-    const next = selectCell(cells[this._blockEditState], (guard) => this._isGuardTrue(guard, target));
+    /** @purity non-pure */
+    const isTrue = (guard) => guard.split("&&").every((g) => this._isGuardTrue(g, target));
+    const next = selectCell(cells[this._blockEditState], isTrue);
     if (!next) return undefined;
-    return this._run(next, target);
+    return this._run(next, target, event);
   }
 
   /**
    * What a double click opens (INV-57), for previewDoubleClicked: null on
    * the scroll bar, inside the INV-29 exclusions and the diagrams (nothing
    * happens); {kind: "empty"} when the document has no block;
-   * {kind: "block", id}; or {kind: "none"} (the margin: edit mode only).
+   * {kind: "block", id}; {kind: "cell", id, row, col, caret}; or
+   * {kind: "none"} (a margin, also a table's: edit mode only).
    * @purity semi-pure-b
    * @param {MouseEvent|PointerEvent} e - the dblclick, or the pointerup of a double tap
    * @returns {{kind: string, id?: number}|null}
@@ -180,7 +292,9 @@ export default class BlockEditController {
     if (node.closest(OPEN_EXCLUDED_SELECTOR) || node.closest(DIAGRAM_SELECTOR)) return null;
     const model = this.orchestrator.getModel();
     if (model && model.getBlocks().length === 0) return { kind: "empty" };
-    return this._targetAt(node) ?? { kind: "none" };
+    const target = this._targetAt(node);
+    if (target?.kind === "cell") return { ...target, caret: this._caretOf(target, e) };
+    return target && target.kind !== "tableSource" && target.kind !== "tableMargin" ? target : { kind: "none" };
   }
 
   /**
@@ -194,13 +308,42 @@ export default class BlockEditController {
   }
 
   /**
+   * The node is in the open cell (INV-59 (c), by reference).
+   * @purity semi-pure-b
+   * @param {Node|null} node
+   * @returns {boolean}
+   */
+  isCellElement(node) {
+    return this._cells.containsNode(node);
+  }
+
+  /**
+   * A block editor or a cell is open.
    * @purity semi-pure-b
    * @returns {boolean}
    */
   isEditing() {
     // The editor itself, so a commit's onModelChanged (inside the transition)
-    // already sees the editor closed.
-    return this._editor !== null;
+    // already sees the editor closed (a cell closes before its commit too).
+    return this._editor !== null || this._cells.isOpen();
+  }
+
+  /**
+   * A cell is open (editingCell).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  isEditingCell() {
+    return this._cells.isOpen();
+  }
+
+  /**
+   * Where the open cell is (5.15.5: row and column buttons, alignment), or null.
+   * @purity semi-pure-b
+   * @returns {{row: number, col: number, columns: number, alignment: string, kind: string}|null}
+   */
+  cellState() {
+    return this._cells.cellState();
   }
 
   /**
@@ -227,6 +370,7 @@ export default class BlockEditController {
    * @returns {boolean}
    */
   hasUncommittedChange() {
+    if (this._cells.isOpen()) return this._cells.hasUncommittedChange();
     return this._editor !== null && this._editor.textarea.value !== this._editor.original;
   }
 
@@ -247,6 +391,7 @@ export default class BlockEditController {
    * @returns {boolean}
    */
   canFormatSelection() {
+    if (this._cells.isOpen()) return this._cells.canFormatSelection();
     const range = this.getSelectionRange();
     if (!range || range.selStart === range.selEnd) return false;
     return MarkdownTextOps.canFormatRange(range.text, range.selStart, range.selEnd, this._textLexers().lexBlocks);
@@ -260,6 +405,7 @@ export default class BlockEditController {
    * @returns {boolean} true when the text changed
    */
   formatSelection(op) {
+    if (this._cells.isOpen()) return this._cells.applyFormat(op);
     const range = this.getSelectionRange();
     if (!range) return false;
     const { lexBlocks, lexInline } = this._textLexers();
@@ -311,7 +457,7 @@ export default class BlockEditController {
   _isGuardTrue(guard, target) {
     switch (guard) {
       case "isImeIdle":
-        return !this._composing;
+        return !this._composing && !this._cells.isComposing();
       case "hasUncommittedChange":
         return this.hasUncommittedChange();
       case "hasUnrenderedEditor":
@@ -320,6 +466,22 @@ export default class BlockEditController {
         return target?.kind === "empty";
       case "isBlockTarget":
         return target?.kind === "block";
+      case "isCellTarget":
+        return target?.kind === "cell";
+      case "isCellEditableTable":
+        return target?.kind === "cell" && this._cells.isCellEditableTable(target.id);
+      case "isInSessionTable":
+        return target?.kind === "cell" && target.id === this._cells.sessionBlockId();
+      case "canKeepTableId":
+        return this._cells.planFor(target?.op ?? null);
+      case "hasNextCell":
+        return this._cells.neighbour("next") !== null;
+      case "hasPreviousCell":
+        return this._cells.neighbour("previous") !== null;
+      case "hasCellBelow":
+        return this._cells.neighbour("below") !== null;
+      case "canApplyTableOperation":
+        return Boolean(target?.op) && this._cells.canApplyOperation(target.op);
       default:
         throw new Error(`Unknown block edit guard: ${guard}`);
     }
@@ -328,8 +490,10 @@ export default class BlockEditController {
   /**
    * @purity non-pure
    */
-  _run(next, target) {
+  _run(next, target, event) {
     let resolved = target;
+    // The cell an INV-64 move opens, taken before the open cell closes.
+    const move = MOVE_EVENTS[event] ? this._cellTarget(this._cells.neighbour(MOVE_EVENTS[event])) : null;
     let rendering = null;
     // INV-46: where the tapped block was before an open editor above it
     // closed and changed the layout (PRT-U07).
@@ -371,11 +535,51 @@ export default class BlockEditController {
           if (this.host.isEditorChangedSinceRender()) this.host.renderFromEditor();
           else this.orchestrator.undoLastCommit();
           break;
+        case "startTableSession":
+          // the tapped table is gone (the commit before changed it): nothing opens
+          if (!resolved) break;
+          this._cells.startSession(resolved.id);
+          this._lastOpenedBlockId = resolved.id;
+          this._keepTappedPlace(tapped, resolved.id);
+          break;
+        case "endTableSession":
+          this._cells.endSession();
+          break;
+        case "openCell":
+          if (resolved?.kind === "cell" && this._cells.sessionBlockId() === resolved.id) {
+            this._cells.openCell(resolved.row, resolved.col, resolved.caret ?? null);
+          }
+          break;
+        case "commitCell":
+          this._cells.commitCell();
+          break;
+        case "revertCell":
+          this._cells.revertCell();
+          break;
+        case "discardCell":
+          this._cells.discardCell();
+          break;
+        case "moveToCell":
+          resolved = move;
+          break;
+        case "applyTableOperation":
+          resolved = this._cellTarget(this._cells.applyTableOperation(target.op));
+          break;
+        case "openTableSourceWithToast":
+          // the toast only when the source did open (the table may be gone)
+          this._openBlockEditor(resolved, tapped);
+          if (this._editor) this.host.showToast(CONFIG.messages.edit.tableNotCellEditable);
+          break;
+        case "showTableEditEndedToast":
+          this.host.showToast(CONFIG.messages.edit.tableEditEnded);
+          break;
         default:
           // showToast: inside renderFromEditor; enqueueFullRender: by the caller
           break;
       }
     }
+    // A cell opened or closed: told before the state moves on (11-c contract).
+    if (next.actions.some((a) => CELL_ACTIONS.has(a))) this.host.onEditStateChanged();
     if (!rendering) {
       this._settle(next.to);
       return undefined;
@@ -400,7 +604,11 @@ export default class BlockEditController {
    * @purity non-pure
    */
   _settle(to) {
-    const next = to === EDITING && !this._editor ? IDLE : to;
+    if (to === CELL && !this._cells.isOpen() && this._cells.sessionBlockId() !== null) {
+      this._cells.endSession(); // the cell did not open (11-c note)
+      this.host.onEditStateChanged();
+    }
+    const next = (to === EDITING && !this._editor) || (to === CELL && !this._cells.isOpen()) ? IDLE : to;
     const wasBrowsing = this._blockEditState === BROWSING;
     this._blockEditState = next;
     if (wasBrowsing && next !== BROWSING) {
@@ -424,8 +632,24 @@ export default class BlockEditController {
    * @returns {{wrapper: Element, anchor: object}|null}
    */
   _tappedPlace(next, target) {
-    if (!target || target.kind !== "block" || !next.actions.includes("openBlockEditor")) return null;
+    if (!target || !PLACED_KINDS.has(target.kind)) return null;
+    if (!next.actions.some((a) => OPENING_ACTIONS.has(a))) return null;
     return target.place ?? this._placeOf(target.id);
+  }
+
+  /**
+   * INV-46 for a table session started by a tap: the table goes back to
+   * where it was when it was pressed (an open editor above it closed), and
+   * the commit's queued render keeps it there.
+   * @purity non-pure
+   * @param {{wrapper: Element, anchor: object}|null} tapped
+   * @param {number} blockId - the table block
+   */
+  _keepTappedPlace(tapped, blockId) {
+    const wrapper = this.blockLocator.getBlockElement(blockId);
+    if (!tapped || tapped.wrapper !== wrapper) return;
+    this.scrollMemento.restoreAnchor(tapped.anchor, wrapper);
+    this.orchestrator.retargetPendingAnchor(blockId);
   }
 
   /**
@@ -443,9 +667,33 @@ export default class BlockEditController {
    * @purity semi-pure-b
    */
   _resolve(target) {
-    if (!target || target.kind !== "block") return target;
+    if (!target || target.id === undefined) return target;
     const model = this.orchestrator.getModel();
     return model && model.findIndexById(target.id) >= 0 ? target : null;
+  }
+
+  /**
+   * Where a press on a cell was, and the top of that cell then: the cell can
+   * move before it opens (the palette's edit-mode layout, a commit above
+   * or in the same table), and the caret point follows it (INV-57, INV-62).
+   * @purity semi-pure-b
+   * @param {{id: number, row: number, col: number}} target
+   * @param {MouseEvent|PointerEvent} e
+   * @returns {{x: number, y: number, top: number|null}}
+   */
+  _caretOf(target, e) {
+    const cell = this.blockLocator.getTableElement(target.id)?.rows[target.row]?.cells[target.col];
+    return { x: e.clientX, y: e.clientY, top: cell ? cell.getBoundingClientRect().top : null };
+  }
+
+  /**
+   * A cell of the session's table as a target, or null.
+   * @purity semi-pure-b
+   * @param {{row: number, col: number}|null} at
+   */
+  _cellTarget(at) {
+    const id = this._cells.sessionBlockId();
+    return at && id !== null ? { kind: "cell", id, row: at.row, col: at.col } : null;
   }
 
   /**
@@ -465,6 +713,7 @@ export default class BlockEditController {
     if (target.kind === "empty") {
       wrapper = this.blockLocator.getEmptyBlockElement();
     } else {
+      // a block, a table's tab, or a table opened as its source
       const model = this.orchestrator.getModel();
       const index = model ? model.findIndexById(target.id) : -1;
       if (index < 0) return;
@@ -591,14 +840,22 @@ export default class BlockEditController {
    */
   _handlePointerDown(e) {
     const node = e.target;
-    const inEditor = this._isInEditor(node);
+    const inEditor = this._isInEditor(node) || this._cells.containsNode(node);
     const inPalette = this.host.isPaletteNode(node);
     const onScrollbar = this._isScrollbarPress(e);
-    const outside = !inEditor && !inPalette && !onScrollbar;
-    // The block id and its place on screen are taken now; layout may move
-    // before pointerup (a mouse press commits an open editor below).
-    const target = outside && e.button === 0 ? this._targetAt(node) : null;
-    if (target && target.kind === "block") target.place = this._placeOf(target.id);
+    // INV-30: while a cell is open, its table is not outside; a press on
+    // another of its cells is a cell tap at pointerup.
+    const inSessionTable = !inEditor && this._cells.isInSessionTable(node);
+    const outside = !inEditor && !inPalette && !onScrollbar && !inSessionTable;
+    // The block id (and the cell) and its place on screen are taken now;
+    // layout may move before pointerup (a mouse press commits an open
+    // editor below).
+    const target = (outside || inSessionTable) && e.button === 0 ? this._targetAt(node) : null;
+    if (target?.kind === "cell") target.caret = this._caretOf(target, e);
+    // INV-46: where the tapped block is before an open editor or cell is
+    // committed by this press (nothing moves when none is open)
+    const isOpen = this._editor !== null || this._cells.isOpen();
+    if (target && outside && isOpen && PLACED_KINDS.has(target.kind)) target.place = this._placeOf(target.id);
     this._press = {
       pointerId: e.pointerId,
       x: e.clientX,
@@ -620,13 +877,36 @@ export default class BlockEditController {
     const moved = Math.hypot(e.clientX - press.x, e.clientY - press.y);
     if (moved > CONFIG.pan.activationThresholdPx) return;
     const isTap = press.target !== null && this._isSelectionEmpty();
-    if (this._blockEditState === EDITING && press.outside && press.pointerType !== "mouse") {
-      this.dispatch(isTap ? "otherBlockTapped" : "pointerPressedOutside", press.target);
+    const target = press.target?.kind === "cell" ? { ...press.target, caret: { ...press.target.caret, x: e.clientX, y: e.clientY } } : press.target;
+    const isEditing = this._blockEditState === EDITING || this._blockEditState === CELL;
+    if (isEditing && press.outside && press.pointerType !== "mouse") {
+      this.dispatch(isTap ? this._tapEvent(target, true) : "pointerPressedOutside", target);
       return;
     }
     if (!isTap) return;
-    const event = this.host.isEditorChangedSinceRender() ? "blockTappedWithUnrenderedEditor" : "blockTapped";
-    this.dispatch(event, press.target);
+    const event = this._tapEvent(target, false);
+    if (event) this.dispatch(event, target);
+  }
+
+  /**
+   * The 11-c event of a tap on target. whileEditing: a touch tap outside
+   * the open editor or cell (it commits there, INV-30). The *WithUnrenderedEditor
+   * events come from editModeIdle only (#editor focus ends editing).
+   * @purity semi-pure-b
+   * @returns {string|null}
+   */
+  _tapEvent(target, whileEditing) {
+    const unrendered = !whileEditing && this.host.isEditorChangedSinceRender() ? "WithUnrenderedEditor" : "";
+    switch (target.kind) {
+      case "cell":
+        return `cellTapped${unrendered}`;
+      case "tableSource":
+        return `tableSourceTapped${unrendered}`;
+      case "tableMargin":
+        return whileEditing ? "pointerPressedOutside" : null; // W6 / M1: opens nothing
+      default:
+        return whileEditing ? "otherBlockTapped" : `blockTapped${unrendered}`;
+    }
   }
 
   /**
@@ -647,7 +927,13 @@ export default class BlockEditController {
     const empty = this.blockLocator.getEmptyBlockElement();
     if (empty && empty.contains(node)) return { kind: "empty" };
     const id = this.blockLocator.findBlockIdAt(node);
-    return id === null ? null : { kind: "block", id };
+    if (id === null) return null;
+    const table = this.blockLocator.getTableElement(id);
+    if (!table) return { kind: "block", id };
+    // INV-29 (a) to (c): a cell of the rendered table, the tab, or the margin
+    if (this.blockLocator.isTableTab(node)) return { kind: "tableSource", id };
+    const at = TableCellEditor.cellAt(table, node);
+    return at ? { kind: "cell", id, row: at.row, col: at.col } : { kind: "tableMargin", id };
   }
 
   /**

@@ -25,7 +25,8 @@ afterEach(() => {
 });
 
 function open(pred) {
-  tap(s.block(pred).el.firstElementChild);
+  const el = s.block(pred).el;
+  tap(el.querySelector(":scope > .grsmd-table-tab") ?? el.firstElementChild); // a table: its tab (INV-29 (b))
   return s.editor();
 }
 const byStart = (start) => (b) => b.raw.startsWith(start);

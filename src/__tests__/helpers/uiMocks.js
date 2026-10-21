@@ -66,6 +66,8 @@ export function fakeEditServices() {
     getSelectionRange: vi.fn(() => null),
     applyTextEdit: vi.fn(),
     isEditingTable: vi.fn(() => false),
+    isEditingCell: vi.fn(() => false),
+    cellState: vi.fn(() => null),
     getLastOpenedBlockId: vi.fn(() => null),
   };
   return {

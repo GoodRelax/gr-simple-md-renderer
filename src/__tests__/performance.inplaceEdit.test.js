@@ -19,6 +19,8 @@ import MarkdownBlockModel from "../js/classes/MarkdownBlockModel.js";
 import BlockDiff from "../js/classes/BlockDiff.js";
 import { CONFIG } from "../js/config.js";
 import { loadSampleLf, makeLexer, makeOneMegabyteDoc, makeDocWithDuplicateDefs, makeOneMegabyteTextDoc } from "./helpers/samples.js";
+import { setupEdit } from "./helpers/editStack.js";
+import { tap } from "./helpers/editDom.js";
 
 // Heavy setup (whole-document renders in jsdom) gets an explicit timeout so CPU
 // load cannot fail it; the global 5 s default stays.
@@ -140,6 +142,31 @@ describe("AT-PERF-01 deterministic cost checks (always run; INV-51, INV-42)", ()
   });
 });
 
+describe("AT-PERF-08 a table session never makes the whole table's HTML inside a step (INV-51, INV-47)", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("opening a cell and committing it make none; a row operation makes only a small table's", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const rows = Array.from({ length: 50 }, (_, i) => `| r${i} | a${i} |`).join("\n");
+    const s = await setupEdit(`| A | B |\n| --- | --- |\n${rows}\n\nAfter.\n`);
+    const tableEl = () => s.block((b) => b.type === "table").el.querySelector(":scope > table");
+    const blockHtml = vi.spyOn(s.markdownRenderer, "blockHtml");
+    tap(tableEl().rows[3].cells[1]);
+    const td = tableEl().rows[3].cells[1];
+    td.firstChild.data = "changed";
+    td.dispatchEvent(new Event("input", { bubbles: true }));
+    td.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+    expect(blockHtml).not.toHaveBeenCalled(); // the commit writes the cell only; the render makes the table's HTML later
+    s.bec.dispatch("tableOperationRequested", { op: { kind: "insertRow" } });
+    expect(blockHtml).toHaveBeenCalledTimes(1);
+    expect(blockHtml.mock.calls[0][0].split("\n")).toHaveLength(3); // header, delimiter, one empty row
+    s.teardown();
+  });
+});
+
 // Timing checks: only with GRSMD_PERF=1 (they depend on the machine; R6.1, Q8).
 describe.runIf(PERF)("AT-PERF-02..04 timing (GRSMD_PERF=1 only)", () => {
   const PERF_TIMEOUT_MS = 60000;
@@ -239,5 +266,44 @@ describe.runIf(PERF)("AT-PERF-02..04 timing (GRSMD_PERF=1 only)", () => {
     await stack.orchestrator.commitBlock(def.id, "[d]: https://example.com/y");
     console.log(`AT-PERF-04 definition edit (ms): ${(performance.now() - t0).toFixed(1)}`);
     stack.preview.remove();
+  }, PERF_TIMEOUT_MS);
+
+  it("AT-PERF-07 1 MB with a 1,000 x 5 table (INV-51): first cell open, cell commit to next cell, table operation, format <= commitBudgetMs each", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const rows = Array.from({ length: 1000 }, (_, i) => `| r${i} | a${i} | b${i} | c${i} | d${i} |`).join("\n");
+    const table = `| A | B | C | D | E |\n| --- | --- | --- | --- | --- |\n${rows}\n`;
+    // the table first: the 1 MiB cut may end inside a code fence
+    const s = await setupEdit(`${table}\n${makeOneMegabyteDoc()}`);
+    const tableEl = () => s.block((b) => b.type === "table").el.querySelector(":scope > table");
+    const time = (fn) => {
+      const t0 = performance.now();
+      fn();
+      return performance.now() - t0;
+    };
+    const open = time(() => tap(tableEl().rows[500].cells[1]));
+    const td = tableEl().rows[500].cells[1];
+    td.firstChild.data = "changed";
+    td.dispatchEvent(new Event("input", { bubbles: true }));
+    const commit = time(() => td.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true })));
+    const operation = time(() => s.bec.dispatch("tableOperationRequested", { op: { kind: "insertRow" } }));
+    const cell = tableEl().rows[500].cells[2];
+    const range = document.createRange();
+    range.selectNodeContents(s.block((b) => b.type === "table").el.querySelector(".grsmd-cell-editing"));
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    s.bec.dispatch("escapePressed");
+    tap(cell);
+    const r2 = document.createRange();
+    r2.selectNodeContents(cell);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(r2);
+    const format = time(() => s.bec.formatSelection({ kind: "strong" }));
+    console.log(`AT-PERF-07 (ms): open ${open.toFixed(1)}, commit ${commit.toFixed(1)}, operation ${operation.toFixed(1)}, format ${format.toFixed(1)}`);
+    // The table operation draws the whole table through DOMPurify, which jsdom
+    // runs many times slower than Chrome: it is timed in Chromium instead
+    // (e2e/tableCell.e2e.js, PRT-X23); here its count of HTML runs is fixed
+    // (AT-PERF-01).
+    for (const ms of [open, commit, format]) expect(ms).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
+    s.teardown();
   }, PERF_TIMEOUT_MS);
 });

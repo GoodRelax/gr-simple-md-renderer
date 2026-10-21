@@ -20,7 +20,7 @@ vi.mock("../js/classes/ModalController.js", () => ({
 
 import { showToast } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
-import { shortcutLetter } from "../js/classes/UIController.js";
+import { shortcutLetter } from "../js/utils.js";
 import { setupApp, dropEvent, settle } from "./helpers/appStack.js";
 import { tap, pointer, keydown } from "./helpers/editDom.js";
 import { fakeFileAccess, fakeFileHandle, deferred } from "./helpers/fakeFs.js";
@@ -45,11 +45,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function withDocument({ isApple = false, permission } = {}) {
+async function withDocument({ isApple = false, permission, doc = DOC } = {}) {
   access = fakeFileAccess();
   app = await setupApp({ fileAccess: access, isApple });
-  const handle = fakeFileHandle({ name: "doc.md", content: [DOC], calls: access.calls, permission });
-  document.dispatchEvent(dropEvent(new File([DOC], "doc.md", { lastModified: 1000 }), handle));
+  const handle = fakeFileHandle({ name: "doc.md", content: [doc], calls: access.calls, permission });
+  document.dispatchEvent(dropEvent(new File([doc], "doc.md", { lastModified: 1000 }), handle));
   await settle();
   return app;
 }
@@ -390,5 +390,56 @@ describe("AT-KEY-06 Apple platforms: Cmd is the primary modifier", () => {
     expect(ta.value).toBe("Hello word here.");
     expect(keydown(ta, "b", { metaKey: true, code: "KeyB" }).defaultPrevented).toBe(true);
     expect(ta.value).toBe("Hello **word** here.");
+  });
+});
+
+describe("AT-KEY-07 in a table cell: primary + Z is the unit Undo, B / I format the cell (INV-59 (c), INV-60)", () => {
+  const TDOC = `${DOC}\n| A | B |\n| --- | --- |\n| x | y |\n`;
+  const cellEl = (r, c) => app.block((b) => b.type === "table").el.querySelector(":scope > table").rows[r].cells[c];
+
+  function typeInCell(td, text) {
+    td.textContent = text;
+    td.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  it("a changed cell: Ctrl+Z is taken and takes the cell's change back (INV-48 (1)); the table session ends", async () => {
+    await withDocument({ doc: TDOC });
+    showPalette();
+    tap(cellEl(1, 0));
+    const td = cellEl(1, 0);
+    td.focus();
+    typeInCell(td, "changed");
+    const e = ctrl(td, "z");
+    expect(e.defaultPrevented).toBe(true);
+    expect(app.ui.blockEdit.isEditing()).toBe(false);
+    expect(cellEl(1, 0).textContent).toBe("x");
+    expect(app.orchestrator.getBody()).toBe(TDOC);
+  });
+
+  it("a cell without a change: Ctrl+Z undoes the last unit (the cell committed before)", async () => {
+    await withDocument({ doc: TDOC });
+    showPalette();
+    tap(cellEl(1, 0));
+    typeInCell(cellEl(1, 0), "x2");
+    keydown(cellEl(1, 0), "Tab");
+    expect(app.orchestrator.getBody()).toContain("x2");
+    const e = ctrl(cellEl(1, 1), "z");
+    expect(e.defaultPrevented).toBe(true);
+    expect(app.orchestrator.getBody()).toBe(TDOC);
+  });
+
+  it("Ctrl+B with a selection in the cell makes it bold; Ctrl+Shift+Z is stopped (no Redo)", async () => {
+    await withDocument({ doc: TDOC });
+    showPalette();
+    tap(cellEl(1, 1));
+    const td = cellEl(1, 1);
+    const range = document.createRange();
+    range.selectNodeContents(td);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    expect(ctrl(td, "b").defaultPrevented).toBe(true);
+    expect(td.querySelector("strong")?.textContent).toBe("y");
+    expect(ctrl(td, "z", { shiftKey: true }).defaultPrevented).toBe(true);
+    expect(app.ui.blockEdit.isEditingCell()).toBe(true);
   });
 });
