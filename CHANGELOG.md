@@ -115,7 +115,9 @@ re-hash.
     line break (two trailing spaces); trailing spaces that make no line break
     are removed on commit. New list items are typed by the user (`- `). In a
     very large block (over 50,000 characters) Enter is the browser's plain
-    newline, and the format and link buttons are checked when pressed.
+    newline, and the format and link buttons are checked when pressed (a
+    notice says so when the format cannot be applied or there is no link to
+    remove).
   - While editing, invisible characters (no-break spaces, zero-width
     characters except the ones that join or style emoji, soft hyphens) and the
     two spaces of a line break are shown with a light mark (not in very large

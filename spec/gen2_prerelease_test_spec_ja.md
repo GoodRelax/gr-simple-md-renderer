@@ -3085,7 +3085,7 @@
 | AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致) | 11-c | BlockEditController.stateMachine.test.js、UIController.editMode.test.js、UIController.save.test.js | 01〜25 |
 | AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
-| AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜35 |
+| AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
 | AT-ICO | `InvisibleCharOverlay` | INV-70 | InvisibleCharOverlay.test.js | 01〜19 |
 | AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜35 (21・22・29 は欠番) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
@@ -3093,7 +3093,7 @@
 | AT-FA | `MarkdownFileAccess` | INV-24〜26、CON-14 | MarkdownFileAccess.test.js | 01〜08 |
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
 | AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |
-| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js | 01〜66 (25 は欠番。41 は AT.1 の注) |
+| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js | 01〜67 (25 は欠番。41 は AT.1 の注) |
 | AT-KEY | 主の修飾キーのショートカット | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜07 |
 | AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
 | AT-PAN | `DiagramPanController` (図のパンの終わり) | INV-16b、FS-09 | DiagramPanController.test.js | 01〜03 |
@@ -3123,6 +3123,7 @@ ID を持たない試験ファイル (その場編集の前からあるクラス
 | AT-UI-51〜60 | 単位をまたぐ結合の試験 (全体のレビューの K-1・K-2・T-3 (1)〜(8)): ポップオーバーが開いたままのセルの移動と表の操作、押し続けた Esc、WYSIWYG のセルの Ctrl+B と Ctrl+Z、ポップオーバーとセルの Esc、見えない文字をまたぐ Bold、最小化中のセル、最小化 → `e` → ダブルクリック、テーマの切り替え、変更のあるセルでの保存、`openerDisabled` の本物の経路 |
 | AT-UI-64、AT-UI-66 (L5) | クリップボードの読み取りは 1 回ずつ (AT-UI-64: 待つ間は「リンクを貼る」が無効で、2 回目の押下は無視し、リンクは 1 回だけ入る。AT-UI-66 の L5: 待つ間に編集モードを出ると待ちを解き、結果は捨てる。全体のレビューの FX-1) |
 | AT-UI-48〜50 | リンクを貼る・外すのボタンの状態、押した時点の読み取り、クリップボードを待つ間に対象・選択・世代が変わったら適用しない (偽のクリップボードを遅らせる。INV-69) |
+| AT-UI-67 | とても大きなブロック (50,000 字を超える) で、押した時点で付けられない書式は文字を変えずに `formatNotApplicable`、外すリンクが無い「リンクを外す」は `linkNotRemovable` をトーストで出す。50,000 字以下ではボタンが無効なので、トーストは出ない (INV-71、オーナーの裁定 Q-f) |
 | AT-HB / AT-HBK | INV-71 の文脈 (リスト・引用・入れ子のコード、(i)〜(xi) の位置) と確定のときの後始末 |
 | AT-BSM / AT-PSM / AT-PDS | 状態機械 11-c / 11-d / 11-f の表のすべての交点と、仕様の図と表の一致 (`src/__tests__/helpers/specDiagram.js` で仕様の本文の図を読む) |
 | AT-SSM | 状態機械 11-e の表の 14 の交点 (試験の中に書いた表と `saveOperationStateMachine` の定義の一致。仕様の図は読まない) |
