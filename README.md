@@ -31,6 +31,8 @@ This tool was built to provide a **transparent, minimal, and privacy-respecting 
 - Auto-render on paste (Ctrl+V / Cmd+V anywhere on the page) or file drop
 - Reload the current file from disk (browsers with the File System Access API)
 - Edit the preview block by block and save to a file (no autosave; Save as / download where writing files is not supported)
+- Edit table cells as they are shown, and double-click (double-tap) the preview to start editing what you clicked
+- Text color (red, blue, green), and links: paste a URL onto selected text, or remove a link
 - Dark / Light theme rendering
 - Keyboard shortcuts and smooth arrow-key scrolling
 - Diagram zoom (Ctrl+Scroll), pan (drag), and copy as SVG / PNG on PC
@@ -66,6 +68,11 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Edit | `E` | Show / hide the edit palette; click a block to edit its Markdown in place |
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
+   | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document is shown |
+   | | `Ctrl+Z` | Undo while the edit palette is shown (in a block you have changed, the browser undoes your typing) |
+   | | `Ctrl+B` / `Ctrl+I` | Bold / Italic while editing |
+
+   On a Mac, use `Cmd` instead of `Ctrl`.
 
 4. If your Markdown contains PlantUML blocks or external images, you will be asked for permission before anything is sent to an external server
 
@@ -78,6 +85,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
   - External images (`![](https://...)`): shown as placeholders until you click one and confirm. The consent lasts until `[Clear]` or a new file drop.
 - **Nothing is stored.** Your content is never written to localStorage, sessionStorage, or cookies.
 - **Edits are not stored in the browser either.** They live only in the open page until you save them to a file.
+- **Clipboard.** The "Paste link from clipboard" button reads the clipboard only when you press it, so the browser may ask you to allow it. In Chrome and Edge, once you allow it, other pages on goodrelax.github.io can also read your clipboard without asking. To withdraw it, open the site settings for goodrelax.github.io (the icon at the left of the address bar) and set Clipboard to Ask or Block. Pasting a URL onto selected text with Ctrl+V / Cmd+V makes a link without any permission. Nothing read from the clipboard is sent anywhere.
 - **HTML in Markdown is sanitized** with DOMPurify. Scripts and event handlers are removed. Other remote references (video, audio, CSS `url()`, `<style>`) are removed.
 - **Content-Security-Policy:** the built file only runs its own script, and network access is limited to the PlantUML server.
 
@@ -103,8 +111,15 @@ npm test
 npm run build
 ```
 
+Browser tests of the built file (Playwright, Chromium and WebKit). They need a one-time browser download; see [`e2e/README.md`](e2e/README.md).
+
+```bash
+npm run test:e2e
+```
+
 - `src/index.html`, `src/css/`, `src/js/` — the app (ES6+ classes, one class per file in `src/js/classes/`)
 - `src/__tests__/` — unit tests (Vitest + jsdom)
+- `e2e/` — browser tests (Playwright)
 - `spec/grsmd_gen2_spec_ja.md` — the specification (Japanese)
 - `CHANGELOG.md` — notable changes and dependency versions
 
@@ -158,6 +173,8 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 - ページ上どこでも貼り付け（Ctrl+V / Cmd+V）またはファイルのドロップで自動プレビュー
 - 表示中のファイルをディスクからリロード（File System Access API 対応ブラウザ）
 - プレビュー上でのブロック単位の編集と、ファイルへの保存（自動保存はしない。ファイルを書き込めないブラウザではダウンロード）
+- 表のセルを見たままの形で編集。プレビューのダブルクリック（ダブルタップ）で、押した所の編集を始める
+- 文字色（赤・青・緑）と、リンク（選んだ文字に URL を貼る、リンクを外す）
 - ダーク / ライトテーマ
 - キーボードショートカットと矢印キーのスムーズスクロール
 - PC: ダイアグラムの Zoom（Ctrl+Scroll）/ Pan（ドラッグ）/ SVG・PNG コピー
@@ -193,6 +210,11 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリックすると、その場で Markdown を編集 |
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
+   | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書を表示している間、保存 / 名前を付けて保存 |
+   | | `Ctrl+Z` | 編集パレットを表示している間、元に戻す（変更したブロックの中では、ブラウザが入力を元に戻す） |
+   | | `Ctrl+B` / `Ctrl+I` | 編集中に太字 / 斜体 |
+
+   Mac では `Ctrl` の代わりに `Cmd` を使います。
 
 4. Markdown に PlantUML ブロックや外部画像が含まれる場合、外部サーバーへ送信する前に許可確認が表示されます
 
@@ -205,6 +227,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
   - 外部画像（`![](https://...)`）: クリックして確認するまでプレースホルダーを表示します。同意は `[Clear]` または新しいファイルのドロップまで有効です。
 - **何も保存しません。** 入力内容を localStorage・sessionStorage・Cookie に書き込みません。
 - **編集内容もブラウザに保存しません。** ファイルに保存するまでは、開いているページの中にだけあります。
+- **クリップボード。** 「リンクを貼る」（Paste link from clipboard）のボタンは、押したときだけクリップボードを読むので、ブラウザが許可を求めることがあります。Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。選んだ文字に URL を Ctrl+V / Cmd+V で貼ってリンクにする方法には、許可が要りません。クリップボードから読んだものは、どこにも送りません。
 - **Markdown 内の HTML は DOMPurify でサニタイズ**します。スクリプトとイベント属性を除去し、その他の外部参照（動画・音声・CSS の `url()`・`<style>`）も除去します。
 - **Content-Security-Policy:** ビルド成果物は自身のスクリプトしか実行せず、通信先も PlantUML サーバーだけに制限しています。
 
@@ -230,8 +253,15 @@ npm test
 npm run build
 ```
 
+ビルドしたファイルのブラウザでの試験（Playwright、Chromium と WebKit）。初めにブラウザのダウンロードが 1 回要ります。[`e2e/README.md`](e2e/README.md) を見てください。
+
+```bash
+npm run test:e2e
+```
+
 - `src/index.html`、`src/css/`、`src/js/` — アプリ本体（ES6+ クラス。`src/js/classes/` に 1 クラス 1 ファイル）
 - `src/__tests__/` — 単体テスト（Vitest + jsdom）
+- `e2e/` — ブラウザでの試験（Playwright）
 - `spec/grsmd_gen2_spec_ja.md` — 仕様書
 - `CHANGELOG.md` — 主な変更点と依存ライブラリのバージョン
 
