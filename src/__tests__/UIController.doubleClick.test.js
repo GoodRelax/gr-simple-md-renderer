@@ -100,6 +100,19 @@ describe("AT-DBL INV-57 double click outside edit mode", () => {
     expect(app.ui.blockEdit.isEditing()).toBe(false);
   });
 
+  it("AT-DBL-14 a cell of a table not editable by cell: as a click, the table's source opens with the toast (owner ruling Q-c)", async () => {
+    await withDocument("# T\n\n| A | B |\n| --- | --- |\n| a</td><td>z | y |\n");
+    const { el } = app.block((b) => b.type === "table");
+    const td = el.querySelector("td");
+    selectWordIn(td);
+    dblclick(td);
+    expect(app.ui.palette.isShown()).toBe(true);
+    expect(app.ui.blockEdit.isEditingCell()).toBe(false);
+    expect(app.blockEditor()?.value).toContain("| A | B |");
+    expect(showToast).toHaveBeenCalledWith(CONFIG.messages.edit.tableNotCellEditable, CONFIG.codeView.toastDurationMs);
+    expect(window.getSelection().isCollapsed).toBe(true);
+  });
+
   it("AT-DBL-04 a diagram, a link or a button: nothing (the diagram keeps its zoom reset)", async () => {
     await withDocument();
     const container = document.createElement("div");
@@ -158,7 +171,7 @@ describe("AT-DBL INV-57 double click outside edit mode", () => {
     expect(app.ui.palette.isShown()).toBe(true);
   });
 
-  it("AT-DBL-07 a touch double tap followed by the browser's dblclick opens once", async () => {
+  it("AT-DBL-13 a touch double tap followed by the browser's dblclick opens once", async () => {
     await withDocument();
     const p = app.block(isPara).el.firstElementChild;
     for (let i = 0; i < 2; i++) {

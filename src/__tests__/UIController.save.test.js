@@ -291,7 +291,7 @@ describe("AT-UI-27 / 28 / 29 / 06 / 39 save results", () => {
     if (stillDirty) expect(app.ui._session).toBe(baseline);
   });
 
-  it("AT-UI-39 a canceled save dialog shows no toast and stays unsaved", async () => {
+  it("AT-UI-65 a canceled save dialog shows no toast and stays unsaved", async () => {
     const picker = Promise.reject(domError("AbortError"));
     picker.catch(() => {});
     await withDocument({ picker });

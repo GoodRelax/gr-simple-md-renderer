@@ -245,6 +245,19 @@ describe("AT-TCE-06 INV-72 the notation of a changed cell", () => {
     expect(tableRaw()).toContain("a\\|b \\$5 \\*c\\*");
   });
 
+  it("AT-TCE-30 INV-72 (b): a changed cell writes character references as characters (&nbsp; as U+00A0)", async () => {
+    s = await setupEdit("| A |\n| --- |\n| x &amp; y&nbsp;z &#169; |\n");
+    const td = openCell(1, 0);
+    expect(td.classList.contains("grsmd-cell-raw")).toBe(false);
+    // change only the first text node: the references around stay as they were opened
+    const first = [...td.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
+    typeText(first, first.data.replace("x", "w"));
+    pointer(document.body, "pointerdown");
+    const cell = tableRaw().split("\n")[2];
+    expect(cell).toContain("w \\& y\u00a0z \u00a9");
+    expect(cell).not.toMatch(/&(amp|nbsp|#169);/);
+  });
+
   it("PRT-X17: an img tag typed as text stays text, written escaped; no img element is made", async () => {
     s = await setupEdit(DOC);
     const td = openCell(1, 0);
@@ -283,7 +296,20 @@ describe("AT-TCE-08 INV-63 input, paste and drop", () => {
       td.dispatchEvent(e);
       return e.defaultPrevented;
     };
-    for (const t of ["insertText", "insertCompositionText", "insertReplacementText", "deleteContentBackward", "deleteContentForward", "deleteWordBackward", "deleteByCut"]) {
+    for (const t of [
+      "insertText",
+      "insertCompositionText",
+      "insertReplacementText",
+      "deleteContentBackward",
+      "deleteContentForward",
+      "deleteWordBackward",
+      "deleteWordForward",
+      "deleteSoftLineBackward",
+      "deleteSoftLineForward",
+      "deleteHardLineBackward",
+      "deleteHardLineForward",
+      "deleteByCut",
+    ]) {
       expect(fire(t), t).toBe(false);
     }
     for (const t of ["insertParagraph", "insertLineBreak", "insertFromPaste", "insertFromDrop", "insertFromYank", "insertLink", "formatBold", "historyUndo", "historyRedo"]) {
@@ -331,11 +357,12 @@ describe("AT-TCE-09 INV-64 keys in a cell (all preventDefault()ed)", () => {
     expect(cellEl(1, 1).classList.contains("grsmd-cell-editing")).toBe(true);
     s.bec.dispatch("escapePressed");
     td = openCell(0, 0);
-    keydown(td, "Tab", { shiftKey: true }); // the first cell: nothing
+    // the first cell: nothing, and the key is still taken (focus stays in the cell)
+    expect(keydown(td, "Tab", { shiftKey: true }).defaultPrevented).toBe(true);
     expect(cellEl(0, 0).classList.contains("grsmd-cell-editing")).toBe(true);
     s.bec.dispatch("escapePressed");
     td = openCell(2, 1);
-    keydown(td, "Tab"); // the last cell: nothing (no row is added)
+    expect(keydown(td, "Tab").defaultPrevented).toBe(true); // the last cell: nothing (no row is added)
     expect(cellEl(2, 1).classList.contains("grsmd-cell-editing")).toBe(true);
     expect(tableEl().rows.length).toBe(3);
   });
@@ -352,6 +379,15 @@ describe("AT-TCE-09 INV-64 keys in a cell (all preventDefault()ed)", () => {
     expect(td.classList.contains("grsmd-cell-editing")).toBe(true);
     keydown(td, "Enter");
     expect(s.bec.isEditing()).toBe(false);
+  });
+
+  it("AT-TCE-28 ArrowUp / ArrowDown (and Left / Right) are the browser's: not taken, the cell stays open (INV-64)", async () => {
+    s = await setupEdit(DOC);
+    const td = openCell(1, 0);
+    for (const key of ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]) {
+      expect(keydown(td, key).defaultPrevented, key).toBe(false);
+      expect(cellEl(1, 0).classList.contains("grsmd-cell-editing"), key).toBe(true);
+    }
   });
 
   it("Shift+Enter puts a line break at the caret (with a filler at the end); it is read as one break", async () => {
@@ -423,6 +459,15 @@ describe("AT-TCE-10 INV-65 row and column operations", () => {
     op("deleteColumn");
     expect(tableEl().rows[0].cells.length).toBe(2);
     expect(cellEl(1, 0).classList.contains("grsmd-cell-editing")).toBe(true);
+    s.teardown();
+    // AT-TCE-29: Delete column on the first column opens the new first column
+    s = await setupEdit("| A | B |\n| --- | --- |\n| x | y |\n");
+    openCell(1, 0);
+    op("deleteColumn");
+    expect(tableEl().rows[0].cells.length).toBe(1);
+    expect(tableEl().rows[0].cells[0].textContent).toBe("B");
+    expect(cellEl(1, 0).classList.contains("grsmd-cell-editing")).toBe(true);
+    expect(s.bec.cellState()).toMatchObject({ row: 1, col: 0, columns: 1 });
     s.teardown();
     s = await setupEdit("| A |\n| --- |\n| x |\n");
     openCell(1, 0);
@@ -557,6 +602,160 @@ describe("AT-TCE-14 unsaved and hasUncommittedChange (INV-21 b')", () => {
     expect(commit).not.toHaveBeenCalled();
     expect(s.bec.isEditing()).toBe(false);
     expect(cellEl(1, 0).textContent).toBe("Yamada");
+  });
+
+  it("AT-TCE-24 the end of the table session drops the table's data (5.15.7, review P-6)", async () => {
+    s = await setupEdit(DOC);
+    const cells = s.bec._cells;
+    openCell(1, 0);
+    expect(cells._parsed).not.toBe(null);
+    s.bec.dispatch("documentReplaced");
+    expect(cells._parsed).toBe(null);
+    expect(cells._lastPosition).toBe(null);
+  });
+});
+
+describe("AT-TCE-25..27 the external image gate after a write in place (INV-47, INV-43; review S-2)", () => {
+  const IMG = "https://img.example/a.png";
+  // no image that loads from outside; the gate's placeholders stand for them
+  const loaded = () => [...tableEl().querySelectorAll("img")].filter((img) => /^https?:/.test(img.getAttribute("src") ?? ""));
+  const held = () => tableEl().querySelectorAll("img");
+  const placeholders = () => tableEl().querySelectorAll(".external-image-placeholder");
+
+  it("AT-TCE-25 a raw cell whose image is changed and committed shows a placeholder, not the image", async () => {
+    s = await setupEdit(`| A | B |\n| --- | --- |\n| ![i](${IMG}) | y |\n`);
+    expect(placeholders()).toHaveLength(1);
+    const td = openCell(1, 0);
+    expect(td.classList.contains("grsmd-cell-raw")).toBe(true);
+    typeText(td.firstChild, "![j](https://img.example/b.png) and ![k](https://img.example/c.png)");
+    keydown(td, "Tab");
+    expect(tableRaw()).toContain("b.png");
+    expect(loaded()).toEqual([]);
+    expect(held()).toHaveLength(0);
+    expect(placeholders()).toHaveLength(2);
+  });
+
+  it("AT-TCE-26 INV-65 on a table with images: new rows and a table drawn again keep the gate", async () => {
+    s = await setupEdit(`| ![h](${IMG}) | B |\n| --- | --- |\n| x | ![i](${IMG}) |\n`);
+    expect(placeholders()).toHaveLength(2);
+    openCell(1, 0);
+    s.bec.dispatch("tableOperationRequested", { op: { kind: "insertRow" } });
+    expect(tableEl().rows).toHaveLength(3);
+    expect(loaded()).toEqual([]);
+    expect(placeholders()).toHaveLength(2);
+    s.bec.dispatch("tableOperationRequested", { op: { kind: "align", value: "center" } });
+    expect(loaded()).toEqual([]);
+    expect(placeholders()).toHaveLength(2);
+    // the only body row left goes: marked writes the table again (no tbody)
+    s.bec.dispatch("tableOperationRequested", { op: { kind: "deleteRow" } });
+    s.bec.dispatch("tableOperationRequested", { op: { kind: "deleteRow" } });
+    expect(tableEl().rows).toHaveLength(1);
+    expect(tableEl().tBodies).toHaveLength(0);
+    expect(loaded()).toEqual([]);
+    expect(held()).toHaveLength(0);
+    keydown(tableEl().querySelector(".grsmd-cell-editing"), "Escape"); // the header cell opened as its text
+    expect(placeholders()).toHaveLength(1);
+  });
+
+  it("AT-TCE-27 a WYSIWYG cell written again on commit loads no image (typed image syntax stays text)", async () => {
+    s = await setupEdit(`| A | B |\n| --- | --- |\n| **b** | y |\n`);
+    const td = openCell(1, 0);
+    expect(td.classList.contains("grsmd-cell-raw")).toBe(false);
+    typeText(td.querySelector("strong").firstChild, `b ![i](${IMG})`);
+    // the written HTML still goes through the gate (defence in depth: here the syntax is escaped)
+    const gate = vi.spyOn(s.markdownRenderer, "applyImageGate");
+    keydown(td, "Tab");
+    expect(gate).toHaveBeenCalledWith(cellEl(1, 0));
+    expect(tableRaw()).toContain("!\\[i\\](");
+    expect(loaded()).toEqual([]);
+    expect(held()).toHaveLength(0);
+    expect(cellEl(1, 0).textContent).toContain("![i]");
+  });
+});
+
+describe("AT-TCE-31..34 how a cell opens: footnotes raw, formats in any nesting as rendered (owner ruling 2026-10-22, PRT-X02)", () => {
+  const RED = CONFIG.edit.textColors.red.light;
+  const isRaw = (td) => td.classList.contains("grsmd-cell-raw");
+
+  it("AT-TCE-31 a cell with a footnote reference opens as its text and keeps it", async () => {
+    s = await setupEdit("| Kind | Cell |\n| --- | --- |\n| note | text[^1] |\n\n[^1]: the note\n");
+    const td = openCell(1, 1);
+    expect(isRaw(td)).toBe(true);
+    expect(td.textContent).toBe("text[^1]");
+    typeText(td.firstChild, "text[^1]!");
+    pointer(document.body, "pointerdown");
+    expect(tableRaw()).toContain("| text[^1]! |");
+    // an escaped one is no footnote: as rendered
+    s.teardown();
+    s = await setupEdit("| A |\n| --- |\n| text\\[^1] |\n");
+    expect(isRaw(openCell(1, 0))).toBe(false);
+    // an escaped backslash before it: a footnote reference again (review L2)
+    s.teardown();
+    s = await setupEdit("| A |\n| --- |\n| text\\\\[^1] |\n\n[^1]: the note\n");
+    expect(isRaw(openCell(1, 0))).toBe(true);
+  });
+
+  it.each([
+    ["bold outside a color", `**<span style="color: ${RED}">word</span>**`],
+    ["italic outside a link", "*[word](https://example.com/)*"],
+    ["bold and italic outside a color, part of the text", `a ***<span style="color: ${RED}">word</span>*** b`],
+  ])("AT-TCE-32 %s: opens as rendered; unchanged, the source stays as written", async (_name, cell) => {
+    s = await setupEdit(`| A |\n| --- |\n| ${cell} |\n`);
+    const before = tableRaw();
+    const td = openCell(1, 0);
+    expect(isRaw(td)).toBe(false);
+    expect(td.textContent).toContain("word");
+    keydown(td, "Tab"); // the last cell: stays; then out
+    pointer(document.body, "pointerdown");
+    expect(tableRaw()).toBe(before);
+  });
+
+  it("AT-TCE-33 changed, such a cell is written in the normal form with the same formats", async () => {
+    s = await setupEdit(`| A |\n| --- |\n| **<span style="color: ${RED}">word</span>** |\n`);
+    const td = openCell(1, 0);
+    const text = td.querySelector("span").firstChild;
+    typeText(text, "words");
+    pointer(document.body, "pointerdown");
+    const cell = cellEl(1, 0);
+    expect(cell.querySelector("strong")?.textContent).toBe("words");
+    expect(cell.querySelector(`span[style="color: ${RED}"]`)?.textContent).toBe("words");
+    expect(tableRaw()).not.toContain(`**<span style="color: ${RED}">word</span>**`);
+  });
+
+  it.each([
+    ["an HTML comment (review CR-2)", "a <!-- secret --> b"],
+    ["a comment beside a format", "**x** <!--c-->"],
+    ["a format element with another attribute (review CR-3)", '<strong title="t">x</strong>'],
+    ["a color span with another attribute", `**<span style="color: ${RED}" class="k">word</span>**`],
+    ["a color not in the palette's notation", "**<span style=\"color:#B84F00\">word</span>**"],
+    ["another element inside", `**<span style="color: ${RED}">H<sub>2</sub>O</span>**`],
+    ["a strikethrough in another nesting", `~~<span style="color: ${RED}">word</span>~~`],
+  ])("AT-TCE-34 %s: still opens as its text (nothing would be lost)", async (_name, cell) => {
+    s = await setupEdit(`| A |\n| --- |\n| ${cell} |\n`);
+    expect(isRaw(openCell(1, 0))).toBe(true);
+  });
+
+  it("AT-TCE-36 a raw cell with a comment, changed and committed, keeps the comment (review CR-2)", async () => {
+    s = await setupEdit("| A |\n| --- |\n| a <!-- secret --> b |\n");
+    const td = openCell(1, 0);
+    typeText(td.firstChild, `${td.firstChild.data}!`);
+    pointer(document.body, "pointerdown");
+    expect(tableRaw()).toContain("a <!-- secret --> b!");
+  });
+});
+
+describe("AT-TCE-35 no link from a paste during IME composition, as in the block editor (review FX-2)", () => {
+  it("the paste goes in as text (INV-63) and nothing becomes a link", async () => {
+    s = await setupEdit(DOC);
+    const td = openCell(1, 0);
+    select(td.firstChild, 0, 6);
+    td.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+    const e = new Event("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(e, "clipboardData", { value: { getData: (type) => (type === "text/plain" ? "https://u.example/" : "") } });
+    td.dispatchEvent(e);
+    expect(e.defaultPrevented).toBe(true);
+    expect(td.querySelector("a")).toBe(null);
+    expect(td.textContent).toBe("https://u.example/");
   });
 });
 

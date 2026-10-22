@@ -35,10 +35,17 @@ function rawOf(tokens) {
   return tokens.map((t) => t.raw).join("");
 }
 
+// The leaf table of a text (_leafTable), kept by the identity of its block
+// tokens: a lexer that keeps its tokens per text (the block editor's, INV-51)
+// finds it again when the button states ask every frame. Only read; the
+// result is the same as working it out again.
+const LEAF_TABLES = new WeakMap();
+
 /**
  * Markdown text edits on the block editor's string (spec 5.14.5, INV-52,
- * INV-67, INV-71). Stateless and pure: no DOM, no CONFIG (templates, colors
- * and lexers come in as arguments).
+ * INV-67, INV-71). Pure: no DOM, no CONFIG (templates, colors and lexers
+ * come in as arguments); the only state is LEAF_TABLES, a cache that does
+ * not change any result.
  * Every operation returns a TextEdit { text, selStart, selEnd } (or null
  * when it does not apply).
  */
@@ -538,22 +545,23 @@ export default class MarkdownTextOps {
   static insertHardBreak(text, selStart, selEnd, lexers) {
     const s = MarkdownTextOps._clamp(Math.min(selStart, selEnd), text);
     const e = MarkdownTextOps._clamp(Math.max(selStart, selEnd), text);
-    const info = MarkdownTextOps._leafLines(text, lexers.lexBlocks);
-    if (!info) return null;
-    const n = MarkdownTextOps._lineIndexAt(text, s);
-    const lineStart = text.lastIndexOf("\n", s - 1) + 1;
+    const table = MarkdownTextOps._leafTable(text, lexers.lexBlocks);
+    if (!table) return null;
+    const { info } = table;
+    const n = MarkdownTextOps._lineAt(table.starts, s);
+    const lineStart = table.starts[n];
     const before = text.slice(lineStart, s);
     /** @purity pure */
     const isParagraph = (k) => k >= 0 && PARAGRAPH_LEAVES.has(info[k]?.leaf?.type);
     // The selection's end must be in the same paragraph as its start.
-    const ne = MarkdownTextOps._lineIndexAt(text, e);
+    const ne = MarkdownTextOps._lineAt(table.starts, e);
     /** @purity pure */
     const inLeaf = (leaf) => ne === n || info[ne]?.leaf === leaf;
     if (!/^[ \t]*(?:>[ \t]*)*$/.test(before)) {
       if (!isParagraph(n)) return null;
       // in or right after the list marks of the line: not paragraph text
       if (s <= lineStart + info[n].prefix || !inLeaf(info[n].leaf)) return null;
-      if (MarkdownTextOps._cutsInlineSyntax(text, info, n, [s, e], lexers.lexInline)) return null;
+      if (MarkdownTextOps._cutsInlineSyntax(text, table, n, [s, e], lexers.lexInline)) return null;
       const lineEnd = text.indexOf("\n", s) < 0 ? text.length : text.indexOf("\n", s);
       const marks = info[n].quote ? (QUOTE_MARKS.exec(text.slice(lineStart, lineEnd))?.[0] ?? "") : "";
       const insert = `  \n${marks}`;
@@ -564,7 +572,7 @@ export default class MarkdownTextOps {
     if (!inLeaf(isParagraph(n) ? here.leaf : info[n - 1].leaf)) return null;
     // At the start of a paragraph line: the line break of the line before
     // may be inside a code span or an attribute value (INV-71 (1) (i)-(xi)).
-    if (isParagraph(n) && MarkdownTextOps._cutsInlineSyntax(text, info, n, [s, e], lexers.lexInline)) return null;
+    if (isParagraph(n) && MarkdownTextOps._cutsInlineSyntax(text, table, n, [s, e], lexers.lexInline)) return null;
     const inQuote = Boolean(here?.quote || info[n - 1]?.quote);
     let head = text.slice(0, s);
     if (isParagraph(n - 1)) {
@@ -626,9 +634,11 @@ export default class MarkdownTextOps {
    * @returns {boolean[]}
    */
   static hardBreakLines(text, lexBlocks) {
+    const lines = text.split("\n");
+    const ends = lines.map((line) => LINE_BREAK_SPACES.test(line));
+    if (!ends.includes(true)) return ends; // nothing to mark: no lexing
     const info = MarkdownTextOps._leafLines(text, lexBlocks);
-    /** @purity pure */
-    return text.split("\n").map((line, n) => LINE_BREAK_SPACES.test(line) && PARAGRAPH_LEAVES.has(info?.[n]?.leaf?.type));
+    return ends.map((end, n) => end && PARAGRAPH_LEAVES.has(info?.[n]?.leaf?.type));
   }
 
   // ---- helpers (pure) ----
@@ -726,12 +736,52 @@ export default class MarkdownTextOps {
    * @returns {Array<object|null>|null}
    */
   static _leafLines(text, lexBlocks) {
+    return MarkdownTextOps._leafTable(text, lexBlocks)?.info ?? null;
+  }
+
+  /**
+   * _leafLines with the lines of text and where each starts (starts has one
+   * more entry: the end), or null when the tokens do not add up to the
+   * text. Kept per block tokens (LEAF_TABLES).
+   * @purity pure
+   * @param {string} text
+   * @param {(src: string) => object[]} lexBlocks
+   * @returns {{info: Array<object|null>, lines: string[], starts: number[]}|null}
+   */
+  static _leafTable(text, lexBlocks) {
     const tokens = lexBlocks(text);
-    if (rawOf(tokens) !== text) return null;
-    const lines = text.split("\n");
-    const info = new Array(lines.length).fill(null);
-    MarkdownTextOps._mapLeaves(tokens, 0, lines, info, { quote: false, list: false });
-    return info;
+    const kept = LEAF_TABLES.get(tokens);
+    if (kept && kept.text === text) return kept.table;
+    let table = null;
+    if (rawOf(tokens) === text) {
+      const lines = text.split("\n");
+      const starts = [0];
+      for (const line of lines) starts.push(starts[starts.length - 1] + line.length + 1);
+      const info = new Array(lines.length).fill(null);
+      MarkdownTextOps._mapLeaves(tokens, 0, lines, info, { quote: false, list: false });
+      table = { info, lines, starts };
+    }
+    LEAF_TABLES.set(tokens, { text, table });
+    return table;
+  }
+
+  /**
+   * The index of the line that holds offset, from the line starts of
+   * _leafTable (halving).
+   * @purity pure
+   * @param {number[]} starts
+   * @param {number} offset - in [0, text length]
+   * @returns {number}
+   */
+  static _lineAt(starts, offset) {
+    let lo = 0;
+    let hi = starts.length - 2; // the last line
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (starts[mid] <= offset) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo;
   }
 
   /**
@@ -775,11 +825,9 @@ export default class MarkdownTextOps {
    * the paragraph cannot be lexed back to itself.
    * @purity pure
    */
-  static _cutsInlineSyntax(text, info, n, offsets, lexInline) {
+  static _cutsInlineSyntax(text, table, n, offsets, lexInline) {
+    const { info, lines, starts } = table;
     const at = info[n];
-    const lines = text.split("\n");
-    const starts = [0];
-    for (const line of lines) starts.push(starts[starts.length - 1] + line.length + 1);
     const segments = MarkdownTextOps._leafSegments(lines, starts, info, n - at.index, at.count, at.leaf);
     if (!segments) return true;
     const inline = segments.map((g) => text.slice(g.from, g.to)).join("\n");
@@ -955,15 +1003,13 @@ export default class MarkdownTextOps {
     if (e > s && text[e - 1] === "\n") e--;
     if (e > s && text[s] === "\n") s++;
     if (allowEmpty ? s > e : s >= e) return null;
-    const info = MarkdownTextOps._leafLines(text, lexBlocks);
-    if (!info) return null;
-    const ls = MarkdownTextOps._lineIndexAt(text, s);
-    const le = MarkdownTextOps._lineIndexAt(text, e);
+    const table = MarkdownTextOps._leafTable(text, lexBlocks);
+    if (!table) return null;
+    const { info, lines, starts } = table;
+    const ls = MarkdownTextOps._lineAt(starts, s);
+    const le = MarkdownTextOps._lineAt(starts, e);
     const a = info[ls];
     if (!a?.leaf || info[le]?.leaf !== a.leaf || !INLINE_LEAVES.has(a.leaf.type)) return null;
-    const lines = text.split("\n");
-    const starts = [0];
-    for (const line of lines) starts.push(starts[starts.length - 1] + line.length + 1);
     const first = ls - a.index;
     let segments;
     if (a.leaf.type === "table") {

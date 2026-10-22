@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from "vitest";
 import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
 /**
@@ -304,5 +304,74 @@ describe("UIController.setupFileDrop", () => {
       (call) => typeof call[0] === "string" && call[0].includes("Unsupported"),
     );
     expect(unsupportedCalls).toHaveLength(0);
+  });
+
+  describe("AT-UI-63 a file that cannot be read is told, not left as an unhandled rejection (release test N4)", () => {
+    it("a code view file whose reading fails: the read error, and back to the initial state", async () => {
+      const controller = createController();
+      const { event } = createDropEvent("script.py");
+      mockOrchestrator.renderCodeView.mockRejectedValue(new DOMException("could not be read", "NotReadableError"));
+      const setView = vi.spyOn(controller, "setViewMode");
+      alertSpy.mockClear();
+      document.dispatchEvent(event);
+      await vi.waitFor(() => expect(alertSpy).toHaveBeenCalledWith("Failed to read the dropped file."));
+      expect(mockOrchestrator.clear).toHaveBeenCalled();
+      expect(setView).toHaveBeenLastCalledWith("initial");
+      expect(setView).not.toHaveBeenCalledWith("code", expect.anything());
+    });
+
+    it("a drop whose file handle cannot be had goes on without one", async () => {
+      // a browser whose drops give handles (jsdom gives none)
+      vi.resetModules();
+      vi.doMock("../js/config.js", async () => ({ ...(await vi.importActual("../js/config.js")), FILE_SYSTEM_HANDLE_SUPPORTED: true }));
+      onTestFinished(() => vi.doUnmock("../js/config.js"));
+      UIController = (await import("../js/classes/UIController.js")).default;
+      createController();
+      const file = new File(["print(1)"], "script.py", { type: "text/plain" });
+      const event = new Event("drop", { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "dataTransfer", {
+        value: { files: [file], items: [{ getAsFileSystemHandle: () => Promise.reject(new DOMException("no", "NotAllowedError")) }] },
+      });
+      mockOrchestrator.renderCodeView.mockClear();
+      alertSpy.mockClear();
+      document.dispatchEvent(event);
+      await vi.waitFor(() => expect(mockOrchestrator.renderCodeView).toHaveBeenCalled());
+      expect(mockOrchestrator.renderCodeView.mock.calls[0][1]).toBe(null);
+    });
+
+    it("a .md drop whose handle is refused at once: no unhandled rejection while the file is read (review L1)", async () => {
+      vi.resetModules();
+      vi.doMock("../js/config.js", async () => ({ ...(await vi.importActual("../js/config.js")), FILE_SYSTEM_HANDLE_SUPPORTED: true }));
+      onTestFinished(() => vi.doUnmock("../js/config.js"));
+      UIController = (await import("../js/classes/UIController.js")).default;
+      createController();
+      const unhandled = [];
+      const onUnhandled = (reason) => unhandled.push(reason);
+      process.on("unhandledRejection", onUnhandled);
+      onTestFinished(() => process.off("unhandledRejection", onUnhandled));
+      // reads that end in later tasks, as a browser's do (jsdom's end in microtasks)
+      const later = (value) => new Promise((resolve) => setTimeout(() => resolve(value), 5));
+      const file = { name: "doc.md", size: 7, lastModified: 1000, slice: () => ({ arrayBuffer: () => later(new ArrayBuffer(0)) }), text: () => later("# Hello") };
+      const event = new Event("drop", { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "dataTransfer", {
+        value: { files: [file], items: [{ getAsFileSystemHandle: () => Promise.reject(new DOMException("no", "NotAllowedError")) }] },
+      });
+      mockOrchestrator.loadMarkdown.mockClear();
+      document.dispatchEvent(event);
+      await vi.waitFor(() => expect(mockOrchestrator.loadMarkdown).toHaveBeenCalled());
+      await new Promise((r) => setTimeout(r, 20));
+      expect(unhandled).toEqual([]);
+    });
+
+    it("the code view's reload whose reading fails: the reload toast", async () => {
+      const { showToast } = await import("../js/utils.js");
+      const controller = createController();
+      mockOrchestrator.isPreRenderState.mockReturnValue(false);
+      mockOrchestrator.isCodeViewActive.mockReturnValue(true);
+      mockOrchestrator.reloadCodeView.mockRejectedValue(new DOMException("gone", "NotFoundError"));
+      showToast.mockClear();
+      await expect(controller.handleReload()).resolves.toBeUndefined();
+      expect(showToast).toHaveBeenCalledWith("Reload failed. The file could not be read.", expect.any(Number));
+    });
   });
 });

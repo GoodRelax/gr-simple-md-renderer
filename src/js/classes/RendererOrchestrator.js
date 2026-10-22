@@ -484,8 +484,8 @@ export default class RendererOrchestrator {
 
   /**
    * Run change (edit mode on or off) and keep what the reader is looking at
-   * where it was: edit mode shows the hidden bands, the empty block and the
-   * strips above the tables, and a browser without scroll anchoring would
+   * where it was: edit mode shows the hidden bands and the empty block (the
+   * tables' tabs take no room), and a browser without scroll anchoring would
    * let the text move (5.1, PRT-X08). Only in the markdown view. The anchor
    * of a render still to come (a block committed as edit mode is left) was
    * measured in the layout before the change: it follows its place, or that

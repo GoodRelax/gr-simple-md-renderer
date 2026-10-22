@@ -170,6 +170,8 @@ export const blockEditStateMachine = Object.freeze({
     choice(
       cell(IDLE, ["clearSelection", "showPalette", "renderFromEditor", "showToast"], "hasUnrenderedEditor"),
       cell(CELL, ["clearSelection", "showPalette", "startTableSession", "openCell"], "isCellTarget&&isCellEditableTable"),
+      // a table not editable by cell: as a click there (owner ruling Q-c, INV-62 (1))
+      cell(EDITING, ["clearSelection", "showPalette", "openTableSourceWithToast"], "isCellTarget"),
       cell(EDITING, ["clearSelection", "showPalette", "openBlockEditor"], "isEmptyDocument"),
       cell(EDITING, ["clearSelection", "showPalette", "openBlockEditor"], "isBlockTarget"),
       cell(IDLE, ["clearSelection", "showPalette"]),
@@ -192,6 +194,7 @@ export const blockEditStateMachine = Object.freeze({
  *   renderFromEditor() (full render from #editor and the toast, INV-45),
  *   onEditorInput() (refresh the unsaved mark), onEditStateChanged() (an
  *   editor or a cell opened or closed: unsaved mark and palette buttons),
+ *   onTransitionEnded() (an 11-c crossing ended: the deferred button states),
  *   showToast(message) (the table toasts of 11-c).
  * Table cells (editingCell, INV-62 to INV-65) are edited by a
  * TableCellEditor that this class owns and drives through 11-c.
@@ -226,6 +229,7 @@ export default class BlockEditController {
     this._press = null; // the pointerdown being followed
     this._composing = false;
     this._lastOpenedBlockId = null;
+    this._transitionDepth = 0; // 11-c crossings running (nested: INV-45)
     this.editGeneration = 0; // INV-69: the editor opened, closed or changed
     this._onPointerDown = (e) => this._handlePointerDown(e);
     this._onPointerUp = (e) => this._handlePointerUp(e);
@@ -275,7 +279,25 @@ export default class BlockEditController {
     const isTrue = (guard) => guard.split("&&").every((g) => this._isGuardTrue(g, target));
     const next = selectCell(cells[this._blockEditState], isTrue);
     if (!next) return undefined;
-    return this._run(next, target, event);
+    // The host defers the palette's button states while a crossing runs (a
+    // cell closes before the next one opens, K-1), and gets them once at the
+    // end of the outermost one (a crossing can dispatch another, INV-45).
+    this._transitionDepth++;
+    try {
+      return this._run(next, target, event);
+    } finally {
+      this._transitionDepth--;
+      if (this._transitionDepth === 0) this.host.onTransitionEnded?.();
+    }
+  }
+
+  /**
+   * An 11-c crossing is running (its actions have not all been done).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  isInTransition() {
+    return this._transitionDepth > 0;
   }
 
   /**
@@ -397,6 +419,8 @@ export default class BlockEditController {
     if (this._cells.isOpen()) return this._cells.canFormatSelection();
     const range = this.getSelectionRange();
     if (!range || range.selStart === range.selEnd) return false;
+    // a huge block: any selection; the format checks when pressed (isHugeBlock)
+    if (this._isHugeBlock()) return true;
     return MarkdownTextOps.canFormatRange(range.text, range.selStart, range.selEnd, this._textLexers().lexBlocks);
   }
 
@@ -443,6 +467,7 @@ export default class BlockEditController {
     const range = this.getSelectionRange();
     if (!range) return false;
     if (range.selStart !== range.selEnd) return this.canFormatSelection();
+    if (this._isHugeBlock()) return false; // a caret: the place is not lexed
     return MarkdownTextOps.canInsertLink(range.text, range.selStart, this._formatContext());
   }
 
@@ -455,6 +480,7 @@ export default class BlockEditController {
     if (this._cells.isOpen()) return this._cells.canRemoveLink();
     const range = this.getSelectionRange();
     if (!range) return false;
+    if (this._isHugeBlock()) return range.selStart !== range.selEnd;
     return MarkdownTextOps.canRemoveLink(range.text, range.selStart, range.selEnd, this._formatContext());
   }
 
@@ -514,6 +540,29 @@ export default class BlockEditController {
   }
 
   // ---- internals: guards and actions ----
+
+  /**
+   * The open block editor holds more than CONFIG.edit.invisibleMarkMaxChars
+   * characters (owner ruling 2026-10-23, as INV-70): its whole text is not
+   * lexed on each key or frame. Enter is the browser's newline, and the
+   * format and link buttons are on for a selection and check when pressed.
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  _isHugeBlock() {
+    return this._editor !== null && this._editor.textarea.value.length > CONFIG.edit.invisibleMarkMaxChars;
+  }
+
+  /**
+   * The open block editor is a huge block (_isHugeBlock): its format buttons
+   * are on without checking, so a format that cannot go in is told (owner
+   * ruling Q-f).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  isHugeBlock() {
+    return this._isHugeBlock();
+  }
 
   /**
    * The lexers and palette colors of formatRange and the link operations.
@@ -933,6 +982,7 @@ export default class BlockEditController {
     const lineEndMarks = (value) => MarkdownTextOps.hardBreakLines(value, this._textLexers().lexBlocks);
     const overlay = this.createOverlay(textarea, {
       maxChars: CONFIG.edit.invisibleMarkMaxChars,
+      maxMarks: CONFIG.edit.invisibleMarkMaxMarks,
       lineEndMarks: HARD_BREAK_TYPES.has(blockType) ? lineEndMarks : null,
     });
     this._editor.overlay = overlay;
@@ -1073,9 +1123,9 @@ export default class BlockEditController {
   // ---- internals: editor keys and size ----
 
   /**
-   * Esc cancels, Enter in a table inserts the line break text, Enter /
-   * Shift+Enter in a paragraph, list or quote the line break mark (INV-71;
-   * with Ctrl / Alt / Meta it is the browser's). Tab is left to the browser
+   * Esc cancels, Enter in a table inserts the line break text (INV-27),
+   * Enter / Shift+Enter in a paragraph, list or quote the line break mark
+   * (INV-71); with Ctrl / Alt / Meta, Enter is the browser's in both. Tab is left to the browser
    * (INV-53). Nothing is done during IME composition (INV-27, INV-28).
    * @purity non-pure
    */
@@ -1083,12 +1133,15 @@ export default class BlockEditController {
     if (e.isComposing || e.keyCode === 229 || this._composing) return;
     if (e.key === "Escape") {
       e.preventDefault();
-      this.dispatch("escapePressed");
-    } else if (e.key === "Enter" && this._editor.blockType === "table") {
-      e.preventDefault();
-      this._insertTableLineBreak();
-    } else if (e.key === "Enter" && !e.ctrlKey && !e.altKey && !e.metaKey && HARD_BREAK_TYPES.has(this._editor.blockType)) {
-      this._insertHardBreak(e);
+      if (!e.repeat) this.dispatch("escapePressed"); // a held Esc acts once (ruling Q-a)
+    } else if (e.key === "Enter" && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      // with Ctrl / Alt / Meta, Enter is the browser's (INV-27 by owner ruling Q-b, INV-71)
+      if (this._editor.blockType === "table") {
+        e.preventDefault();
+        this._insertTableLineBreak();
+      } else if (HARD_BREAK_TYPES.has(this._editor.blockType)) {
+        this._insertHardBreak(e);
+      }
     }
   }
 
@@ -1099,6 +1152,7 @@ export default class BlockEditController {
    * @param {KeyboardEvent} e
    */
   _insertHardBreak(e) {
+    if (this._isHugeBlock()) return; // the browser's newline (owner ruling 2026-10-23)
     const { textarea } = this._editor;
     const edit = MarkdownTextOps.insertHardBreak(textarea.value, textarea.selectionStart, textarea.selectionEnd, this._textLexers());
     if (!edit) return;

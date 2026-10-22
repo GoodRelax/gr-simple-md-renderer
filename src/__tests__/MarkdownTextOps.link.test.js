@@ -65,7 +65,7 @@ describe("AT-FR links: Ctrl+V and the button with a selection (INV-69)", () => {
     expect(linked("> quoted text", "text", PASTE("https://x.example/")).text).toBe("> quoted [text](https://x.example/)");
   });
 
-  it("AT-FR-41 in a table row the pipes of the URL are written \\| and the table stays (INV-69, UIR-55)", () => {
+  it("AT-FR-41 in a table row the pipes of the URL are written \\| and the table stays (INV-69, INV-72 (d))", () => {
     const table = "| A | B |\n| --- | --- |\n| cell | x |";
     const edit = linked(table, "cell", PASTE("https://x.example/p|q"));
     expect(edit.text).toBe("| A | B |\n| --- | --- |\n| [cell](https://x.example/p\\|q) | x |");

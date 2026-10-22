@@ -707,7 +707,7 @@ export default class EditPalette {
     if (e.isComposing || e.keyCode === 229) return;
     e.preventDefault();
     e.stopPropagation();
-    this.dispatchDisplay("popoverEscapePressed");
+    if (!e.repeat) this.dispatchDisplay("popoverEscapePressed"); // a held Esc acts once (ruling Q-a)
   }
 
   /**

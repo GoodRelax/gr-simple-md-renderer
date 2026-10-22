@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { Marked } from "marked";
 import markedKatex from "marked-katex-extension";
 import MarkdownTextOps from "../js/classes/MarkdownTextOps.js";
@@ -354,5 +354,37 @@ describe("AT-HB the start of a line and the selection's end (INV-71 (1))", () =>
 
   it("AT-HB-59 a selection over lines of the same paragraph is replaced", () => {
     expect(breakAt("ab\ncd", 1, 4).text).toBe(`a${S}\nd`);
+  });
+});
+
+describe("AT-HB the lexing kept per text (review P-4, INV-51)", () => {
+  it("AT-HB-60 with the same block tokens, the per-line table is worked out once (the button states ask every frame)", () => {
+    const text = Array.from({ length: 50 }, (_, i) => `- item ${i} with words`).join("\n");
+    const tokens = lexBlocks(text);
+    const cachedLex = () => tokens;
+    const map = vi.spyOn(MarkdownTextOps, "_mapLeaves");
+    try {
+      const at = text.indexOf("item 20");
+      expect(MarkdownTextOps.canFormatRange(text, at, at + 4, cachedLex)).toBe(true);
+      const calls = map.mock.calls.length;
+      expect(MarkdownTextOps.canFormatRange(text, at + 1, at + 6, cachedLex)).toBe(true);
+      expect(MarkdownTextOps.insertHardBreak(text, at + 2, at + 2, { lexBlocks: cachedLex, lexInline }).text).toContain(`it${S}\nem 20`);
+      expect(map.mock.calls.length).toBe(calls);
+      // the same tokens object given for another text: the kept table is not
+      // taken for it (the tokens do not add up to that text: no range)
+      expect(MarkdownTextOps.canFormatRange(`${text}x`, at, at + 4, cachedLex)).toBe(false);
+      expect(MarkdownTextOps._leafTable(`${text}x`, cachedLex)).toBe(null);
+      expect(MarkdownTextOps._leafTable(text, cachedLex)).not.toBe(null);
+    } finally {
+      map.mockRestore();
+    }
+  });
+
+  it("AT-HB-61 hardBreakLines does not lex a text without a line end of two spaces", () => {
+    const lex = vi.fn(lexBlocks);
+    expect(MarkdownTextOps.hardBreakLines("a\nb \nc", lex)).toEqual([false, false, false]);
+    expect(lex).not.toHaveBeenCalled();
+    expect(MarkdownTextOps.hardBreakLines(`a${S}\nb`, lex)).toEqual([true, false]);
+    expect(lex).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import MarkdownBlockModel from "../js/classes/MarkdownBlockModel.js";
 import { loadFixtureLf, makeLexer } from "./helpers/samples.js";
 
@@ -236,5 +236,20 @@ describe("MarkdownBlockModel (Entity, pure; real marked lexer)", () => {
     const out = m.replaceBlock(def.id, "[d]: https://example.com/y", lexer, MAX).model;
     expect(out.links.d.href).toBe("https://example.com/y");
     expect(m.links.d.href).toBe("https://example.com/x");
+  });
+
+  it("AT-BM-27 toBody() joins the blocks once per model (review P-5, INV-51)", () => {
+    const body = "# A\n\npara\n\n- x\n";
+    const m = model(body);
+    const join = vi.spyOn(Array.prototype, "join");
+    try {
+      const first = m.toBody();
+      const calls = join.mock.calls.length;
+      expect(m.toBody()).toBe(first);
+      expect(m.toBody()).toBe(body);
+      expect(join.mock.calls.length).toBe(calls);
+    } finally {
+      join.mockRestore();
+    }
   });
 });

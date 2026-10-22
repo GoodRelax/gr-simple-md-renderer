@@ -423,7 +423,7 @@ describe("AT-UI-38 nothing is stored", () => {
   });
 });
 
-describe("AT-UI-39 an open table cell (5.15.5, INV-65, W7)", () => {
+describe("AT-UI-61 an open table cell (5.15.5, INV-65, W7)", () => {
   const tableEl = () => app.block((b) => b.type === "table").el.querySelector(":scope > table");
   const cellEl = (r, c) => tableEl().rows[r].cells[c];
   const tableRaw = () => app.block((b) => b.type === "table").block.raw;

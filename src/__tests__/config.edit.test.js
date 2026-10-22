@@ -63,6 +63,7 @@ describe("CONFIG.edit text colors and invisible marks (INV-66, INV-70, 5.14.14)"
       green: { light: "#007A58", dark: "#009E73" },
     });
     expect(CONFIG.edit.invisibleMarkMaxChars).toBe(50000);
+    expect(CONFIG.edit.invisibleMarkMaxMarks).toBe(2000); // P-3
   });
 
   // The grounds text can be on: page, block editor, table header (light);

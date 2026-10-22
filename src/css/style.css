@@ -648,7 +648,9 @@ blockquote {
   }
 }
 
-.katex {
+/* #preview: more specific than KaTeX's own .katex rule (font: 1.21em ...),
+   which the build puts after this file (PRT-M04) */
+#preview .katex {
   font-size: 1.5em;
 }
 
@@ -956,35 +958,40 @@ body.view-code.dark #editor {
   position: relative;
 }
 
-/* The tab sits in a strip above the table, not over its header cells. */
-body.edit-mode #preview > .md-block.md-block-table {
-  padding-top: 20px;
-}
-
-.grsmd-table-tab {
+/* Only the tab the renderer adds (a child of the table block's wrapper):
+   a document's own class="grsmd-table-tab" is shown as written. */
+#preview > .md-block-table > .grsmd-table-tab {
   display: none;
 }
 
-body.edit-mode .grsmd-table-tab {
+/* The tab sits in the gap right above the table (16 px tall: the gap after
+   a paragraph; after another table it is 12 px and the tab covers the last
+   4 px of it). Edit mode changes no layout: WebKit lays out everything
+   after a block that gets shorter, which a strip above every table made
+   cost about 150 ms on each exit from edit mode (owner ruling 2026-10-23). */
+body.edit-mode #preview > .md-block-table > .grsmd-table-tab {
   display: block;
   position: absolute;
-  top: 0;
+  top: -16px;
   right: 0;
   z-index: 2;
-  padding: 1px 6px;
+  box-sizing: border-box;
+  height: 16px;
+  padding: 0 6px;
   font-family: system-ui, sans-serif;
-  font-size: 11px;
-  line-height: 1.6;
+  font-size: 10px;
+  line-height: 14px;
   color: #59636e;
   background: #f6f8fa;
   border: 1px solid #d1d9e0;
-  border-radius: 0 0 0 6px;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
 }
 
-body.dark.edit-mode .grsmd-table-tab {
+body.dark.edit-mode #preview > .md-block-table > .grsmd-table-tab {
   color: #9198a1;
   background: #151b23;
   border-color: #3d444d;
@@ -1054,12 +1061,13 @@ body.dark.edit-mode #preview > .md-block:hover {
 }
 
 /* Blocks that show nothing (reference definitions, comments): a band in
-   edit mode only; the title attribute names the kind on hover (INV-41) */
-.md-block-hidden {
+   edit mode only; the title attribute names the kind on hover (INV-41).
+   Only the renderer's wrappers (children of #preview) are meant. */
+#preview > .md-block-hidden {
   display: none;
 }
 
-body.edit-mode .md-block-hidden {
+body.edit-mode #preview > .md-block-hidden {
   display: block;
   min-height: 8px;
   margin: 6px 0;
@@ -1069,28 +1077,33 @@ body.edit-mode .md-block-hidden {
   cursor: pointer;
 }
 
-body.edit-mode .md-block-hidden.md-block-editing {
+/* the band opens on a click: its cursor wins over the block hover rule */
+body.edit-mode #preview > .md-block.md-block-hidden:not(.md-block-editing):hover {
+  cursor: pointer;
+}
+
+body.edit-mode #preview > .md-block-hidden.md-block-editing {
   border: none;
   background: none;
   cursor: auto;
 }
 
-body.dark.edit-mode .md-block-hidden {
+body.dark.edit-mode #preview > .md-block-hidden {
   border-color: #656c76;
   background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255, 255, 255, 0.05) 4px, rgba(255, 255, 255, 0.05) 8px);
 }
 
-body.dark.edit-mode .md-block-hidden.md-block-editing {
+body.dark.edit-mode #preview > .md-block-hidden.md-block-editing {
   border: none;
   background: none;
 }
 
 /* The empty first block of an empty document (INV-49): edit mode only */
-.md-block-empty {
+#preview > .md-block-empty {
   display: none;
 }
 
-body.edit-mode .md-block-empty {
+body.edit-mode #preview > .md-block-empty {
   display: block;
   min-height: 1.6em;
   border: 1px dashed #c4c7cb;
@@ -1098,15 +1111,15 @@ body.edit-mode .md-block-empty {
   cursor: text;
 }
 
-body.edit-mode .md-block-empty.md-block-editing {
+body.edit-mode #preview > .md-block-empty.md-block-editing {
   border: none;
 }
 
-body.dark.edit-mode .md-block-empty {
+body.dark.edit-mode #preview > .md-block-empty {
   border-color: #656c76;
 }
 
-body.dark.edit-mode .md-block-empty.md-block-editing {
+body.dark.edit-mode #preview > .md-block-empty.md-block-editing {
   border: none;
 }
 
@@ -1359,15 +1372,11 @@ body.dark.edit-mode .md-block-empty.md-block-editing {
 @media print {
   .edit-palette,
   .edit-palette-popover,
-  .md-block-hidden,
-  .md-block-empty,
+  #preview > .md-block-hidden,
+  #preview > .md-block-empty,
   .md-invisible-overlay,
-  .grsmd-table-tab {
+  #preview > .md-block-table > .grsmd-table-tab {
     display: none !important;
-  }
-
-  body.edit-mode #preview > .md-block.md-block-table {
-    padding-top: 0;
   }
 
   /* INV-53: no cell frame and no marks in print */

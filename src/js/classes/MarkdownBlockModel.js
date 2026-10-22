@@ -218,6 +218,9 @@ function freezeLinks(links) {
   return Object.freeze(copy);
 }
 
+// The body of each model, joined on the first toBody() (the model is frozen).
+const BODIES = new WeakMap();
+
 /**
  * Markdown source as a list of blocks (Entity, immutable value; spec 5.14.2).
  * Invariant: toBody() === leading + every (raw + separatorAfter) (INV-41).
@@ -305,11 +308,18 @@ export default class MarkdownBlockModel {
   }
 
   /**
+   * The body text. A model does not change, so the text is joined once
+   * (the unsaved check and the commits ask for it many times, INV-51).
    * @purity pure
    * @returns {string}
    */
   toBody() {
-    return this._leading + this._blocks.map((b) => b.raw + b.separatorAfter).join("");
+    let body = BODIES.get(this);
+    if (body === undefined) {
+      body = this._leading + this._blocks.map((b) => b.raw + b.separatorAfter).join("");
+      BODIES.set(this, body);
+    }
+    return body;
   }
 
   /**

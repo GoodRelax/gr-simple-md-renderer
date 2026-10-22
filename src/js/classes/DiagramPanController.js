@@ -33,6 +33,13 @@ export default class DiagramPanController {
     document.addEventListener("mousemove", (e) => {
       const s = this.panState;
       if (!s) return;
+      // No button held: the press ended without a mouseup reaching here
+      // (WebKit sends none when the pressed element left the DOM, as when a
+      // click on a diagram opens its code, PRT-U20). A move does not pan.
+      if ((e.buttons & 1) === 0) {
+        this.endPan();
+        return;
+      }
       if (!s.active) {
         const dx = e.clientX - s.startX;
         const dy = e.clientY - s.startY;
@@ -53,14 +60,24 @@ export default class DiagramPanController {
       s.lastY = e.clientY;
     });
 
+    // The pointer events end it too: they come where a mouseup may not.
     /** @purity non-pure */
-    document.addEventListener("mouseup", () => {
-      if (!this.panState) return;
-      if (this.panState.active) {
-        this.setCursor(this.panState.container, false);
-      }
-      this.panState = null;
-    });
+    const end = () => this.endPan();
+    document.addEventListener("mouseup", end);
+    document.addEventListener("pointerup", end);
+    document.addEventListener("pointercancel", end);
+  }
+
+  /**
+   * End the pan, if there is one, and put the cursor back.
+   * @purity non-pure
+   */
+  endPan() {
+    if (!this.panState) return;
+    if (this.panState.active) {
+      this.setCursor(this.panState.container, false);
+    }
+    this.panState = null;
   }
 
   /**

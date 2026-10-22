@@ -48,11 +48,12 @@ describe("SourceFileRenderer", () => {
         toastDurationMs: 3000,
         reloadUnavailableMsg:
           "Reload not available (Chrome/Edge 86+ required)",
+        reloadNoFileMsg: "No file to reload. Drop a file to enable reload.",
       },
     };
     const previewEl = document.createElement("div");
     return {
-      renderer: new SourceFileRenderer(config, previewEl, hljsMock),
+      renderer: new SourceFileRenderer(config, previewEl, hljsMock, false),
       previewEl,
       config,
     };
@@ -235,6 +236,14 @@ describe("SourceFileRenderer", () => {
         config.codeView.reloadUnavailableMsg,
         config.codeView.toastDurationMs,
       );
+    });
+
+    it("AT-SFR-01 where drops give file handles, a file without one says there is no file (release test N5)", async () => {
+      const { config, previewEl } = createRenderer();
+      const renderer = new SourceFileRenderer(config, previewEl, hljsMock, true);
+      await renderer.reload("light");
+      expect(showToastMock).toHaveBeenCalledWith(config.codeView.reloadNoFileMsg, config.codeView.toastDurationMs);
+      expect(showToastMock).not.toHaveBeenCalledWith(config.codeView.reloadUnavailableMsg, expect.anything());
     });
 
     it("does not modify previewEl when fileHandle is null", async () => {

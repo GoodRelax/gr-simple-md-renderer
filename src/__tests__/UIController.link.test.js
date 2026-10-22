@@ -28,7 +28,7 @@ import { fakeFileAccess, fakeFileHandle } from "./helpers/fakeFs.js";
 // read only when the button is pressed (navigator.clipboard, a fake here),
 // in the button's pointerup; while it is read, the target (block or cell,
 // selection, edit generation) must not change, else nothing changes and a
-// toast tells (UIR-44).
+// toast tells (INV-69).
 
 const M = CONFIG.messages.edit;
 const TOAST_MS = CONFIG.codeView.toastDurationMs;
@@ -228,7 +228,7 @@ describe("AT-UI-49 Paste link reads the clipboard when pressed (INV-69)", () => 
   });
 });
 
-describe("AT-UI-50 the wait for the clipboard (UIR-44): a changed target changes nothing", () => {
+describe("AT-UI-50 the wait for the clipboard (INV-69): a changed target changes nothing", () => {
   /** Press Paste link with a waiting clipboard, change something, then let the read end. */
   async function race(change) {
     const clipboard = fakeClipboard("https://example.com/", null, { wait: true });
@@ -315,5 +315,25 @@ describe("AT-UI-50 the wait for the clipboard (UIR-44): a changed target changes
       expect(table().rows[1].cells[0].querySelector("a")?.textContent).toBe("one");
       expect(showToast).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("AT-UI-64 one read of the clipboard at a time (review FX-1)", () => {
+  it("while a read waits, Paste link is off and a second press reads nothing; the link goes in once, with no toast", async () => {
+    const clipboard = fakeClipboard("https://u.example/", null, { wait: true });
+    await withDocument(clipboard);
+    const ta = await openAndSelect("See", "example");
+    pressPasteLink();
+    expect(clipboard.read).toHaveBeenCalledTimes(1);
+    press(btn("paletteFormat")); // open the popover again while the read waits
+    expect(off(popoverButton("Paste link from clipboard"))).toBe(true);
+    app.ui._runPaletteCommand("linkPaste"); // a press that gets through anyway
+    expect(clipboard.read).toHaveBeenCalledTimes(1);
+    clipboard.release();
+    await settle();
+    expect(ta.value).toBe("See the [example](https://u.example/) here.");
+    expect(showToast).not.toHaveBeenCalled();
+    await nextFrame();
+    expect(off(popoverButton("Paste link from clipboard"))).toBe(false);
   });
 });
