@@ -1,4 +1,4 @@
-import { test, expect, renderMarkdown, dropFile } from "./fixtures.js";
+import { test, expect, renderMarkdown, dropFile, afterFullRender } from "./fixtures.js";
 
 // Effective theme colors in a real browser (spec 5.8.1, PRT-X16): the
 // code is colored by style.css with Primer prettylights (no highlight.js
@@ -90,7 +90,7 @@ test("light: GitHub light colors for the preview; top bar and editor unchanged",
 test("dark: GitHub dark colors for the page and the preview; editor ground unchanged", async ({ page }) => {
   await page.goto("/");
   await renderMarkdown(page, MARKDOWN);
-  await page.keyboard.press("d");
+  await afterFullRender(page, () => page.keyboard.press("d"));
   await expect(page.locator("body")).toHaveClass(/\bdark\b/);
   await expect(page.locator("#preview .mermaid svg")).toBeVisible();
 
@@ -159,7 +159,7 @@ test("code view: dark and light colors, line numbers and highlighting", async ({
 async function openDarkEditor(page, markdown) {
   await page.goto("/");
   await renderMarkdown(page, markdown);
-  await page.keyboard.press("d");
+  await afterFullRender(page, () => page.keyboard.press("d"));
   await expect(page.locator("body")).toHaveClass(/\bdark\b/);
   await page.locator("#editBtn").click();
   await page.locator("#preview p").first().click();
@@ -197,7 +197,7 @@ test("print in dark: a block editor without the marks layer shows no ground (INV
 test("print in dark: the document is printed in the light colors (owner ruling 2026-10-22)", async ({ page }) => {
   await page.goto("/");
   await renderMarkdown(page, MARKDOWN);
-  await page.keyboard.press("d");
+  await afterFullRender(page, () => page.keyboard.press("d"));
   await expect(page.locator("body")).toHaveClass(/\bdark\b/);
   await expect(page.locator("#preview .mermaid svg")).toBeVisible();
   expect((await colors(page)).text).toBe("rgb(240, 246, 252)"); // on screen: dark
@@ -260,7 +260,7 @@ test("print: the key hint and toasts are not printed", async ({ page }) => {
 test("print: an invisible character mark loses its ground but keeps the character (INV-70)", async ({ page }) => {
   await page.goto("/");
   await renderMarkdown(page, MARKDOWN);
-  await page.keyboard.press("d");
+  await afterFullRender(page, () => page.keyboard.press("d"));
   await expect(page.locator("body")).toHaveClass(/\bdark\b/);
   await expect(page.locator("#preview .mermaid svg")).toBeVisible(); // the dark re-render is done
   // A mark as the renderer wraps a character in a cell (the element only).

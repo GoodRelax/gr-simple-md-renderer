@@ -94,3 +94,49 @@ export async function renderMarkdown(page, markdown) {
   await page.locator("#renderLight").click();
   await expect(page.locator("body")).toHaveClass(/\bview-markdown\b/);
 }
+
+/**
+ * Wait until the render has settled: nothing in the preview changed for
+ * quietMs (a full or partial render puts the scroll back or restores its
+ * anchor when the DOM is stable, CONFIG.rendering.stabilityDebounce 50 ms
+ * after the last change), then a frame. A loaded machine only makes it
+ * later; a fixed wait was too short there (review T-1).
+ * @param {import("@playwright/test").Page} page
+ * @param {number} [quietMs]
+ */
+export async function settled(page, quietMs = 300) {
+  await page.evaluate(
+    (quiet) =>
+      new Promise((resolve) => {
+        const preview = document.querySelector("#preview");
+        let last = performance.now();
+        const observer = new MutationObserver(() => (last = performance.now()));
+        observer.observe(preview, { subtree: true, childList: true, attributes: true, characterData: true });
+        const check = () => {
+          if (performance.now() - last < quiet) return setTimeout(check, 50);
+          observer.disconnect();
+          resolve();
+        };
+        setTimeout(check, 50);
+      }),
+    quietMs,
+  );
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0))));
+}
+
+/**
+ * Run action (a theme switch: d / l), which renders the whole document
+ * again, and wait until that render has replaced the blocks and settled: a
+ * wait for the new theme class or for an element alone can be met by the
+ * old DOM before the render (review CR-4).
+ * @param {import("@playwright/test").Page} page
+ * @param {() => Promise<void>} action
+ */
+export async function afterFullRender(page, action) {
+  await page.evaluate(() => {
+    window.__e2eOldBlock = document.querySelector("#preview > .md-block");
+  });
+  await action();
+  await page.waitForFunction(() => !window.__e2eOldBlock || !window.__e2eOldBlock.isConnected);
+  await settled(page);
+}
