@@ -4,11 +4,13 @@
 **日付:** 2026-xx-xx (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
-**自動テスト:** 214 件 全パス確認済み
+**自動テスト:** `npm test` (vitest) と `npm run test:e2e` (Playwright) の全件。件数は実施のときに記入する: vitest \_\_\_\_ 件 (スキップ \_\_\_\_ 件)、e2e \_\_\_\_ 件 (スキップ \_\_\_\_ 件)。ID の一覧は「自動テスト (AT) の一覧」の章
 
 > v2.1 の変更: セキュリティ対策 (HTML サニタイズ、外部画像の同意、CSP、CDN 不使用) に合わせて PRT-E02 / PRT-M02 / PRT-R01 / PRT-S01 / PRT-S02 を改訂し、セクション T を追加した。改訂・追加したケースの判定は空欄 (未実施) に戻してある。
 
 > v2.2 の変更: Markdown のその場編集 (SC-22〜24) に合わせてセクション U (ブロック編集)・V (編集パレット)・W (保存と未保存の保護) を追加し、PRT-A01 / PRT-K01 / PRT-L01 / PRT-R01 を改訂した。改訂・追加したケースの判定は空欄 (未実施) に戻してある。
+
+> v2.2 の変更 (続き): その場編集の UI の改善 (仕様の改訂履歴 2026-xx-xx の 2 件目) に合わせてセクション X (UI 改善) を追加し、PRT-F01 / F02 / O01 / D02 / J01 / L01 / M04 / Q01 / U10 / U12 / U20 / U21 / U24 / U27 / U28 / U36 / V01〜V05 / V07 / V09 / V10 / V12 / V13 / V14 / W01 / W08 を改訂した (U27 / U36 / V13 / V14 / X16 は、リリース前の試験で見つかった手順の誤りも直した。M04 / Q01 / U10 / U20 と、セクション X の X02 / X08 / X14 / X18 は、全体のレビューとリリース前の試験の修正 (2026-10-23) に合わせて改めた)。自動テストの ID の行き先として「自動テスト (AT) の一覧」の章を追加し、前提条件 P-02 の件数の固定 (214 件) をやめた。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -19,7 +21,7 @@
 | #    | 項目                       | 詳細                                                                 |
 | ---- | -------------------------- | -------------------------------------------------------------------- |
 | P-01 | ビルドが最新であること     | `npm run build` を実行し、`docs/index.html` が生成されていること     |
-| P-02 | 自動テストが全パスすること | `npm test` を実行し、全 214 テストがパスすること                     |
+| P-02 | 自動テストが全パスすること | `npm test` を実行し、全件がパスすること (スキップは AT.1 の「スキップ」に挙げたものに限る)。`npm run test:e2e` も全件がパスすること (スキップは同じく AT.1 に挙げたものだけ) |
 | P-03 | テスト用ファイルの準備     | 以下のファイルをローカルに用意する:                                  |
 |      |                            | - `docs/sample-data.md` (Mermaid + PlantUML + KaTeX を含む)          |
 |      |                            | - 任意の `.py` ファイル (例: 短い Python スクリプト)                 |
@@ -267,7 +269,7 @@
 | 結果 | Pass / Fail / N/A                                                       |
 | ---- | ----------------------------------------------------------------------- |
 | 判定 |                                                                         |
-| 備考 | dockerfile は hljs common バンドル非対応のため plaintext 表示 (LIM-01)  |
+| 備考 | dockerfile は hljs common バンドル非対応のため plaintext 表示 (PRT-S01)  |
 
 ---
 
@@ -592,7 +594,7 @@
 
 | 結果 | Pass / Fail / N/A |
 | ---- | ----------------- |
-| 判定 | Pass              |
+| 判定 |                   |
 | 備考 | Ctrl+C などは従来どおりブラウザに委ねる。INV-58〜60 の組み合わせ (主 + S / Shift+S / Z / B / I) だけが例外で、それは PRT-X13 で確かめる |
 
 ---
@@ -661,13 +663,16 @@
 |              | - JP Reload の説明が "現在のファイルをディスクからリロード" である                      |
 |              | - EN / JP の "Details" / "詳細" に [Edit] / E の行がある |
 |              | - EN / JP の両方に「表の中で縦棒を文字として書くときはバックスラッシュを付ける」の注記がある |
+|              | - EN / JP の "Details" / "詳細" に Ctrl+S / Ctrl+Shift+S の行がある (Mac は Cmd) |
+|              | - EN "Editing" / JP "編集" に次がある (日英で同じ内容): 編集モードの外のダブルクリック、Undo と Ctrl+Z、ショートカット (Ctrl+S / Ctrl+Shift+S / Ctrl+B / Ctrl+I。Mac は Cmd)、パレットの並びとキーボードで操作しないこと、グリップの長押し (0.5 秒) と未保存の点、表のセルの編集とキー (Tab / Shift+Tab / Enter / Shift+Enter / Esc)、表のつまみ「Markdown」、書式 (文字色、リンクを貼る・外す、Ctrl+V は許可が要らないこと)、「リンクを貼る」の許可を Chrome / Edge で一度与えると goodrelax.github.io の他のページも確認なしにクリップボードを読めることと、サイトの設定 (アドレスバーの左のアイコン) で「クリップボード」を「確認する」か「ブロック」にする取り消し方、本文の Enter の改行とリストの新しい項目 (`- ` を自分で打つ)・空行で項目の間が空くこと、見えない文字の印 |
+|              | - 「ブロックから Tab でパレットへ移れます」の文が、EN / JP のどちらにも無い |
 |              | - Sample Data リンクが正常に動作する                                                    |
 |              | - x ボタンでモーダルが閉じる                                                            |
 
 | 結果 | Pass / Fail / N/A |
 | ---- | ----------------- |
 | 判定 |                   |
-| 備考 |                   |
+| 備考 | ヘルプの「Editing」/「編集」の項目は、仕様 5.11 の注 (その場編集の UI の改善) と CON-12 の注による (オーナーの裁定 2026-10-22) |
 
 ---
 
@@ -766,8 +771,8 @@
 
 | 結果 | Pass / Fail / N/A |
 | ---- | ----------------- |
-| 判定 | Pass              |
-| 備考 | 既知の不具合 (main と同じ): ビルドの CSS で KaTeX の `.katex` の規則がアプリの規則より後ろにあるため、1.21em (KaTeX の既定) になる。TODO.md を参照 |
+| 判定 |                   |
+| 備考 | 2026-10-23 に直した: アプリの規則を `#preview .katex` にして、KaTeX の `.katex` の規則より強くした (ビルドの CSS の順によらない)。数式は 1.21em から 1.5em に戻る。自動の確認は e2e の `crossUnit.e2e.js` (本文の文字との比 1.5) |
 
 ---
 
@@ -880,15 +885,15 @@
 |              | 4. Render Light / Dark ボタンが動作することを確認               |
 |              | 5. Clear ボタンが動作することを確認                             |
 |              | 6. [?] タップでヘルプモーダルが開くことを確認                   |
-|              | 7. [?] 長押しでプロンプトモーダルが開くことを確認               |
+|              | 7. [?] 長押しでプロンプトモーダルが開き、指を離しても開いたままであることを確認 |
 | **期待結果** | - 全ステップが正常に動作する                                    |
 |              | - topbar が sticky で画面上部に固定される                       |
 |              | - ダイアグラムのズーム/パンはタッチデバイスでは無効             |
 
 | 結果 | Pass / Fail / N/A |
 | ---- | ----------------- |
-| 判定 | Pass              |
-| 備考 |                   |
+| 判定 |                   |
+| 備考 | 手順 7 の自動の確認は AT-UI-62 と e2e の `crossUnit.e2e.js` の N1 (Chromium だけ。リリース前の試験で、指を離すとプロンプトが閉じた。2026-10-23 に直した) |
 
 ---
 
@@ -1002,7 +1007,7 @@
 
 ## セクション S: 既知の制限事項 (確認のみ)
 
-### PRT-S01: hljs common バンドル制限 (LIM-01)
+### PRT-S01: hljs common バンドル制限 (既知の制約)
 
 | 項目         | 詳細                                                                          |
 | ------------ | ----------------------------------------------------------------------------- |
@@ -1017,7 +1022,7 @@
 
 ---
 
-### PRT-S02: Edge Tracking Prevention (LIM-02)
+### PRT-S02: Edge Tracking Prevention (既知の制約)
 
 | 項目         | 詳細                                                                                             |
 | ------------ | ------------------------------------------------------------------------------------------------ |
@@ -1277,14 +1282,14 @@
 | | 3. "link definition" の帯をクリックする |
 | | 4. パレットを閉じて目視する |
 | **期待結果** | - 1 で、定義とコメントの位置に細い帯が見える |
-| | - 2 で、種類 ("link definition" / "hidden HTML") が表示される |
+| | - 2 で、種類 ("link definition" / "hidden HTML") が表示され、マウスのカーソルが指の形 (pointer) になる |
 | | - 3 で、定義の原文が編集欄に開く |
 | | - 4 で、帯は見えない |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-41、5.1 |
+| 備考 | 要求: INV-41、5.1。カーソルの自動の確認は AT-STA-14 と e2e の `crossUnit.e2e.js` (リリース前の試験の N3) |
 
 ---
 
@@ -1451,12 +1456,14 @@
 | **手順** | 1. 図をクリックしてコードを開く (図の上端の位置を覚えておく) |
 | | 2. 1 文字変えて外側をクリックして確定する |
 | | 3. 図が描画され終わるまで待つ |
+| | 4. 手順 1 のように図をクリックしてコードを開いた後、ボタンを押さずにマウスをプレビューの上で動かす (PC。**Safari** でも行う) |
 | **期待結果** | - 1・2・3 のどの時点でも、対象のブロックの上端が画面上の同じ位置にある (目視でずれが分からない程度。DevTools で測る場合は ±1 px) |
+| | - 4 で、プレビューが流れない (図のパンはボタンを離した時点で終わる) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-46、INV-09 |
+| 備考 | 要求: INV-46、INV-09、INV-16b (図のパン)。手順 4 の自動の確認は e2e の `crossUnit.e2e.js` の U20 と AT-PAN-01〜03 (リリース前の試験で、WebKit でマウスを動かすだけでプレビューが流れた。2026-10-23 に直した) |
 
 ---
 
@@ -1573,7 +1580,7 @@
 | **前提条件** | `sample-data-2.md` (Mermaid が多い) を表示し、パレットを表示。段落を開いて 1 語変えた |
 | **手順** | 1. 上部の `#editor` をクリックし (これで確定する)、すぐに `ABC` を打ち込む |
 | | 2. 図の描画が終わるまで待つ |
-| | 3. 別の段落を開いて 1 語変え、Shift+Tab を何回か押して (マウスを使わずに) `#editor` にフォーカスを移し、`DEF` を打ち込む |
+| | 3. [Render Light] を押して `ABC` を描画する (`#editor` に未描画の変更があると、INV-45 により段落を押しても開かないため)。別の段落を開いて 1 語変え、Shift+Tab を何回か押して (マウスを使わずに) `#editor` にフォーカスを移し、`DEF` を打ち込む |
 | | 4. [Render Light] を押す |
 | **期待結果** | - 2 の後、打ち込んだ `ABC` が `#editor` に残っている (描画の完了で上書きされない) |
 | | - 確定した変更も `#editor` に含まれている |
@@ -1582,7 +1589,7 @@
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-47、5.7 (5) と 11-c の editorFocused |
+| 備考 | 要求: INV-47、INV-45、5.7 (5) と 11-c の editorFocused |
 
 ---
 
@@ -1733,7 +1740,7 @@
 | | 4. Ctrl+Z を 1 回押し、続けてもう 1 回押す |
 | | 5. 続けて Ctrl+Z を 4 回押す |
 | | 6. 「Alpha para.」を開いて末尾に ` X` を入力し、「Beta para.」をクリックする |
-| | 7. `e` でパレットを閉じ、本体 (プレビューの余白) をクリックしてから、Ctrl+Z を 5 回押す |
+| | 7. プレビューの余白をクリックして「Beta para.」の編集欄を閉じ (開いたままだと `e` が文字として入る)、`e` でパレットを閉じ、もう一度本体 (プレビューの余白) をクリックしてから、Ctrl+Z を 5 回押す |
 | **期待結果** | - 2 で、編集欄の ` X` が消え (ブラウザの文字単位の Undo)、編集欄は開いたまま。タブのタイトルの `* ` も消える |
 | | - 3 で、編集欄に ` X` が戻る (編集欄自身の Redo)。`#editor` の内容は変わらない |
 | | - 4 で、1 回目に ` X` が消え、2 回目 (編集欄に変更が無い) は単位の Undo になり、編集欄が変更なしで閉じる。Undo の記録が無いので文書は変わらない |
@@ -2009,18 +2016,22 @@
 
 | 項目 | 詳細 |
 | --- | --- |
-| **前提条件** | `edit-html.md` を表示し、パレットを表示。段落を開いた |
+| **前提条件** | `edit-html.md` の段落の 1 つに U+00A0 (`&nbsp;` ではなく文字) を 1 つ入れたものを表示し、パレットを表示。段落を開いた |
 | **手順** | 1. 外側をクリックして確定する |
 | | 2. ブラウザの印刷プレビューを開く |
 | | 3. パレットのボタンの並びを目視する |
+| | 4. U+00A0 を入れた段落を開き、書式のポップオーバーを開いたまま、印刷プレビューを開く |
+| | 5. Esc を 2 回押して (1 回目はポップオーバーだけを閉じる) 編集を取り消し、表のセルをクリックしてセルを開いたまま、印刷プレビューを開く |
 | **期待結果** | - 1 で、パレットは消えずに同じ位置にある |
-| | - 2 で、パレット・ポップオーバー・編集欄の枠・不可視ブロックの帯が印刷に出ない |
+| | - 2 で、パレット・ポップオーバー・編集欄の枠・不可視ブロックの帯・表のつまみ (「Markdown」) が印刷に出ない |
 | | - 3 で、7 列 × 2 段 (1 段目 grip・Bold・Italic・Format・Mermaid・Save・Save as、2 段目 Insert table・Insert row・Delete row・Insert column・Delete column・Table options・Undo)。区切りの線は無い |
+| | - 4 で、パレット・ポップオーバー・編集欄の枠と、見えない文字の印 (薄い背景) が印刷に出ない (文字そのものは出る) |
+| | - 5 で、セルの編集の枠と表のつまみが印刷に出ない |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-53、INV-41 |
+| 備考 | 要求: INV-53、INV-41、INV-70、5.15.6。自動の確認は AT-PAL-27 (パレット・ポップオーバー・帯・編集欄の枠)、AT-STA-10 / 11 (印の層、表のつまみ、セルの枠と原文のセルの地) と、e2e の `theme.e2e.js` (印刷のエミュレーション。印の要素 `.grsmd-invisible` は地を失い文字は残る。セルの中の印も同じ要素) |
 
 ---
 
@@ -2032,16 +2043,16 @@
 | **手順** | 1. 段落の 1 語を選択し、パレットの Bold を押す |
 | | 2. 編集欄で Ctrl+Z (macOS は Cmd+Z) を押す |
 | | 3. Ctrl+Y (macOS は Cmd+Shift+Z) を押す |
-| | 4. 外側をクリックして確定し、表のセルを開いてセルの中で Enter を押し、続けて Ctrl+Z を押す |
+| | 4. 外側をクリックして確定し、表の右上のつまみ「Markdown」を押して表の原文の編集欄を開き、データの行の途中で Enter を押し、続けて Ctrl+Z を押す (セルを開いた中の Enter は下のセルへ移る (INV-64) ので、ここでは使わない) |
 | **期待結果** | - 1 で、選択した語が `**` で囲まれ、選択はその語のまま |
 | | - 2 で、`**` が消えて元の語に戻り、その語が選択されている (編集欄は開いたまま) |
 | | - 3 で、もう一度 `**` で囲まれる |
-| | - 4 で、Enter で入った `<br>` が Ctrl+Z で消える |
+| | - 4 で、Enter で入った `<br>` (INV-27) が Ctrl+Z で消え、編集欄は開いたまま |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-52、OS-18 (仕様 5.14.6) |
+| 備考 | 要求: INV-52、INV-27、INV-59 (b)、OS-18 (仕様 5.14.6) |
 
 ---
 
@@ -2490,16 +2501,17 @@
 
 | 項目 | 詳細 |
 | --- | --- |
-| **前提条件** | パレットを表示。数式 (`$x^2$`)、外部の画像、インラインの HTML (`<span title="t">x</span>`)、脚注のあるセルを含む表を表示した |
+| **前提条件** | パレットを表示。数式 (`$x^2$`)、外部の画像、インラインの HTML (`<span title="t">x</span>`)、脚注の参照 (`[^1]`。表の外に `[^1]: the note` がある) のセルと、パレットの色・太字・斜体・リンクだけで、入れ子の順を正規形と違えて書いたセル (`**<span style="color: #B84F00">y</span>**` と `*[x](https://example.com/)*`) を含む表を表示した |
 | **手順** | 1. それぞれのセルをクリックする |
-|  | 2. 原文のセルで文字を変え、`|` を打ち、Shift+Enter を押して外側をクリックする |
-| **期待結果** | - 1 で、セルの中にそのセルの原文が文字として出る (薄い黄色の地、等幅フォント) |
-|  | - 2 で、原文の `|` は `\|`、改行は `<br>` になり、それ以外の文字は打ったとおり (裁定 L2)。表は崩れない |
+|  | 2. 原文のセルで文字を変え、`\|` を打ち、Shift+Enter を押して外側をクリックする |
+| **期待結果** | - 1 で、数式・外部の画像・インラインの HTML・脚注の参照のセルは、セルの中にそのセルの原文が文字として出る (薄い黄色の地、等幅フォント)。色・太字・斜体・リンクだけのセルは、入れ子の順が正規形と違っても、描画のまま (WYSIWYG) 開く (オーナーの裁定 2026-10-22) |
+|  | - 色・太字・斜体・リンクだけのセルは、変えずに閉じれば原文がそのまま。1 文字足して確定すると正規形 (INV-67) で書き出され (例: `<span style="color: #B84F00">**y…**</span>`、`[*x…*](https://example.com/)`)、色と書式は同じに描かれる。脚注の参照のセルは、確定しても原文の `[^1]` が残る (`\[^1\]` にならない。GRSMD は脚注の記法を持たないが、GitHub では脚注として読める) |
+|  | - 2 で、原文の `\|` は前に `\` が付いた形 (逃がした縦棒)、改行は `<br>` になり、それ以外の文字は打ったとおり (裁定 L2)。表は崩れない |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-62 (2)、INV-63 |
+| 備考 | 要求: INV-62 (2) と (開き方)、INV-63。自動の確認は AT-TCE-31〜34 |
 
 ---
 
@@ -2572,13 +2584,13 @@
 
 | 項目 | 詳細 |
 | --- | --- |
-| **前提条件** | パレットを表示。次の表を含む文書を表示した: (1) 漢字・かな・英数の混ざる表 (2) 両端の縦棒の無い表 (3) セルの数が見出しより少ない行と多い行のある表 (4) `\|` とコードスパンの中の `\|` のあるセル |
+| **前提条件** | パレットを表示。次の表を含む文書を表示した: (1) 漢字・かな・英数の混ざる表 (2) 両端の縦棒の無い表 (3) セルの数が見出しより少ない行と多い行のある表 (4) 逃がした縦棒 (前に `\` を付けた `\|`) と、コードスパンの中の逃がした縦棒のあるセル |
 | **手順** | 1. 各表の原文の編集欄を開き、1 文字変えて外側をクリックする |
 | | 2. もう一度開いて原文を見る |
 | | 3. 別の表を開き、何も変えずに外側をクリックしてから開き直す |
 | **期待結果** | - 2 で、各行の両端に縦棒があり、セルの前後に空白が 1 つずつあり、列の縦棒がそろっている (全角は半角 2 文字分)。区切り行の `:` は保たれる |
 | | - (3) の少ない行は空のセルで補われ、多い行の余るセルは後ろに元のまま残る |
-| | - (4) の `\|` は変わらない |
+| | - (4) の逃がした縦棒は、逃がしたまま変わらない |
 | | - 3 で、原文は変わらない (そろえない) |
 | | - 描画された表の内容は 1 の前と同じ (変えた 1 文字を除く) |
 
@@ -2611,26 +2623,28 @@
 
 | 項目 | 詳細 |
 | --- | --- |
-| **前提条件** | パレットを表示。表を含む文書を表示した。文書に `<span class="grsmd-table-tab">x</span>` の段落もある |
+| **前提条件** | パレットを表示。表を含む文書を表示した (段落の後の表、表のすぐ後の表、参照リンクの定義 (編集モードの帯) のすぐ後の表を含む)。文書に `<span class="grsmd-table-tab">x</span>` の段落もある |
 | **手順** | 1. 表の右上の「Markdown」のつまみを押す |
 |  | 2. 表のブロックの余白 (表の外、外枠の内) を押す |
 |  | 3. セルを開いたまま余白を押す |
 |  | 4. パレットを閉じる |
 |  | 5. タッチの端末でつまみを見る |
-|  | 6. 文書に書いた `grsmd-table-tab` の span を押す |
+|  | 6. 文書に書いた `grsmd-table-tab` の span を、パレットを閉じた状態と表示した状態で見る。パレットを表示した状態で押す |
+|  | 6a. 表のすぐ後の表と、帯のすぐ後の表で、つまみが上のブロックに重なって見える所を押す |
 |  | 7. 表が 20 個ほどある長い文書の下の方を表示し、`e` で編集モードに入り、もう一度 `e` で出る。段落ごとに HTML のコメント (`<!-- note -->`) がある長い文書、参照リンクの定義がある長い文書、長いコードブロックの途中が画面の上端に掛かる場合でも行う。また、編集モードで下の方の段落を開いて 1 段落足し、そのまま `e` で出る場合と、**iPhone の Safari** (上のバーの下が表示の上端) でも行う。表の文書とコメントの文書では、`e` で 5 往復する。Chrome と **Safari** で行う |
-| **期待結果** | - 1 で、表の原文の編集欄が開く |
+| **期待結果** | - 1 で、表の原文の編集欄が開く。つまみ (高さ 16px) は表のすぐ上のすき間の右端にあり、見出しのセルに重ならない |
 |  | - 2 で、何も開かない |
 |  | - 3 で、表の編集が終わる |
 |  | - 4 で、つまみが消える (編集モードの間だけ) |
 |  | - 5 で、つまみが見える |
-|  | - 6 で、その段落の編集欄が開くだけで、表の原文は開かない |
-|  | - 7 で、読んでいる位置 (画面の上の方の文) が動かない (表の上の余白や隠れたブロックの帯が出入りしても、確定した段落の描画の後も、ずれは 1 px 以内。iPhone では、何度出入りしても、出た後は元の位置に戻り、ずれが溜まらない。編集モードの間のずれは、目で見て分からない程度 (スクロールの刻みの半分以内。ブラウザが止められる、いちばん近い位置)。自動の試験: e2e の `editModeScroll.e2e.js`、Chromium と WebKit。タッチは 5 往復し、毎回、元の位置と比べる) |
+|  | - 6 で、閲覧中も編集モードでも `x` の文字が普通に見え (アプリのつまみの見た目にならない)、押すとその段落の編集欄が開くだけで、表の原文は開かない |
+|  | - 6a で、つまみの重なった所を押すと、下の表の原文の編集欄が開く (上の表のセルや帯は開かない) |
+|  | - 7 で、読んでいる位置 (画面の上の方の文) が動かない (表のつまみは余白を取らないので表は動かない。隠れたブロックの帯が出入りしても、確定した段落の描画の後も、ずれは 1 px 以内。1 MB の文書でも、Safari で `e` のたびに固まらない。iPhone では、何度出入りしても、出た後は元の位置に戻り、ずれが溜まらない。編集モードの間のずれは、目で見て分からない程度 (スクロールの刻みの半分以内。ブラウザが止められる、いちばん近い位置)。自動の試験: e2e の `editModeScroll.e2e.js`、Chromium と WebKit。タッチは 5 往復し、毎回、元の位置と比べる) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-29 (b) (c)、INV-30、5.1。iPhone の実機では、スクロールの刻み (編集モードの間のずれの上限の 2 倍) を記録する (Playwright の WebKit の刻みは縮尺の逆数で約 2.5 CSS px、DPR によらない) |
+| 備考 | 要求: INV-29 (b) (c)、INV-30、5.1 (表のつまみ。オーナーの裁定 2026-10-23: 編集モードの間に表の上に 20px の余白を取るのをやめ、つまみを表の上のすき間に重ねた)。自動の確認は e2e の `editModeScroll.e2e.js` と `crossUnit.e2e.js` の P1 (出入りでどのブロックも動かず、つまみが表の真上にある)。iPhone の実機では、スクロールの刻み (編集モードの間のずれの上限の 2 倍) を記録する (Playwright の WebKit の刻みは縮尺の逆数で約 2.5 CSS px、DPR によらない) |
 
 ---
 
@@ -2653,7 +2667,7 @@
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-66、INV-67 (2)、FS-17「色の分割」。表のセルでの色は単位 E で追加する |
+| 備考 | 要求: INV-66、INV-67 (2)、FS-17「色の分割」。表のセルの色も同じ規則 (INV-66。自動の確認は AT-TCE-11) |
 
 ---
 
@@ -2708,7 +2722,7 @@
 | | 3. コードブロックの編集欄で文字を選ぶ |
 | | 4. 見出しの文字、表の 1 つのセルの文字、表の 2 つのセルにまたがる範囲、表の区切り行をそれぞれ選ぶ |
 | **期待結果** | - 1〜3 で、Bold / Italic / 文字色のボタンが無効になり、Ctrl+B を押しても何も変わらない |
-| | - 4 で、見出しと 1 つのセルの文字は有効 (Bold で `# **見出し**`、`| **セル** |`)、2 つのセルにまたがる範囲と区切り行は無効 |
+| | - 4 で、見出しと 1 つのセルの文字は有効 (Bold で `# **見出し**`、`\| **セル** \|`)、2 つのセルにまたがる範囲と区切り行は無効 |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -2762,6 +2776,7 @@
 | | 5. 内容を全部消した空の文書 (Clear の後に [Edit] で開始して確定せずに閉じたもの、または空の `.md`) を表示し、プレビューをダブルクリックする |
 | | 6. `#editor` に文字を打ち込み (描画しない)、段落をダブルクリックする |
 | | 7. iPhone / iPad で 1 と同じことをダブルタップで行う |
+| | 8. セルの中の HTML で行やセルの数が変わる表 (例: セルが `a</td><td>z` の表。PRT-X24) を含む文書を表示し、パレットを閉じた状態で、その表のセルをダブルクリックする |
 | **期待結果** | - 1 で、パレットが表示され、その段落の編集欄が開く。語の選択は残らない |
 | | - 2 で、パレットが表示されるだけで、編集欄は開かない |
 | | - 3 で、図のズームがリセットされ、パレットは表示されない |
@@ -2769,11 +2784,12 @@
 | | - 5 で、パレットが表示され、空のブロックの編集欄が開く |
 | | - 6 で、編集欄は開かず、`#editor` の内容で全体が描画し直され、トーストが出る (INV-45)。パレットは表示される |
 | | - 7 で、1 と同じ結果になる |
+| | - 8 で、クリックと同じく、パレットが表示され、表の原文の編集欄が開き、トースト「This table cannot be edited by cell. Opened its Markdown instead.」が出る (オーナーの裁定 Q-c、2026-10-22) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-57、INV-45、11-c `previewDoubleClicked` |
+| 備考 | 要求: INV-57、INV-45、INV-62 (1)、11-c `previewDoubleClicked`。手順 8 の自動の確認は AT-DBL-14 |
 
 ---
 
@@ -2810,7 +2826,7 @@
 | --- | --- |
 | **前提条件** | PC の Chrome または Edge。`sample-data-2.md` の末尾に `> 引用の段落と [リンク](#x)` を足して表示する (リンク・インラインのコード・引用・表・コードブロック・Mermaid が揃う) |
 | **手順** | 1. `l` でライトにし、DevTools で本文の文字・リンク・`pre` の地・インラインのコードの地・引用・表の枠を確かめる |
-| | 2. `d` でダークにし、1 と同じ部品と、`body` の地、上部バー、モーダル (`?`)、パレット (`e`)、ブロック編集欄 (段落を開く) を確かめる |
+| | 2. `d` でダークにし、1 と同じ部品と、`body` の地、上部バー、ヘルプのモーダル ([?] ボタン。`?` のキーには割り当てが無い)、パレット (`e`)、ブロック編集欄 (段落を開く) を確かめる |
 | | 3. `.py` ファイルを D&D し、コードビューのダークとライト (`l`) で、地・文字・行番号・色分けを確かめる |
 | | 4. 1〜3 で、コードブロックの色分けの見え方と Mermaid の図の背景を目視する |
 | | 5. 2 のダークのまま印刷のプレビュー (Ctrl+P) を開く。3 のコードビュー (ダーク) でも開く |
@@ -2858,8 +2874,8 @@
 |  | 2. URL でない文字をコピーして、選んだ語に Ctrl+V。文字を選ばずに URL を Ctrl+V |
 |  | 3. 段落の裸の URL `https://old.example/` を選び、`https://new.example/` を Ctrl+V |
 |  | 4. コードブロックの編集欄、コードスパンの中、リンクの行き先 `(…)` の中、インラインの HTML のタグの中、空行をまたぐ選択で、URL を Ctrl+V |
-|  | 5. 表のセル (WYSIWYG のセルと原文のセル) で文字を選び、`https://x.example/p|q` を Ctrl+V して確定する |
-|  | 6. 語を選び、書式の「リンクを貼る」を押す。初めてなら、ブラウザの許可の確認で許可する。同じオリジンの別のページ (`goodrelax.github.io` の他のページ) を開き、クリップボードの読み取りの確認が出るかを見る |
+|  | 5. 表のセル (WYSIWYG のセルと原文のセル) で文字を選び、`https://x.example/p\|q` を Ctrl+V して確定する |
+|  | 6. 語を選び、書式の「リンクを貼る」を押す。初めてなら、ブラウザの許可の確認で許可する。同じオリジンの別のページ (`goodrelax.github.io` の他のページ) を開き、クリップボードの読み取りの確認が出るかを見る。続けて、ヘルプのとおりに、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」に戻して、もう一度「リンクを貼る」を押す |
 |  | 7. 文字を選ばずに「リンクを貼る」を押す (クリップボードはブラウザのページのリンクをコピーしたもの、と URL だけのもの) |
 |  | 8. クリップボードに URL でない文字を入れて「リンクを貼る」を押す。許可の確認で拒否する |
 |  | 9. 「リンクを貼る」を押して許可の確認が出ている間に、外側の押下・Esc・Ctrl+S・選択の変更・文字の入力、セルでは Tab・別のセルの押下をしてから許可する (ブロック編集欄の Tab はフォーカスが移るだけで、対象は変わらない) |
@@ -2868,20 +2884,22 @@
 |  | 12. 文字を選ばずに、見出しの `#` の前・リストの `- ` の前・コードスパンの中・リンクの中・コードブロックの中にカーソルを置き、書式のポップオーバーを開く。`Hello!` の末尾で「リンクを貼る」を押す |
 |  | 13. 画像 `![alt](https://img.example/i.png)` の `i.png` と、インラインの数式 `$x+y$` の `x+y` を選んで、URL を Ctrl+V。画像の全体を端から選んで Ctrl+V |
 |  | 14. 色の範囲の端をまたいで選び (付けられない選択)、「リンクを貼る」を押す |
+|  | 15. 文書の末尾に、段落 `see https://old.example/ now`、段落 `[docs](https://a.example/) and [ref][d]`、参照リンクの定義 `[d]: https://d.example/` を足して描画する。`https://new.example/` をコピーし、裸の URL の `old` だけを選んで Ctrl+V。`[docs](https://a.example/)` の `docs` の一部を選んで Ctrl+V。`[ref][d]` の `ref` を選んで Ctrl+V |
 | **期待結果** | - 1 で、語が `[語](https://example.com/)` になり、ブラウザの許可の確認は出ない。Ctrl+Z で文字単位に戻る (ブロック編集欄) |
 |  | - 2 で、普通の貼り付けになる |
 |  | - 3 で、URL が置き換わり、`[…](…)` の書き方にはならない (裁定 Q6) |
 |  | - 4 で、リンクにならず普通に置き換わる |
-|  | - 5 で、セルにリンクが描かれ、原文は `[文字](https://x.example/p\|q)` になり、表が崩れない |
-|  | - 6 で、語がリンクになる。許可した後は、同じオリジンの別のページでも確認が出ないことがある (許可は `goodrelax.github.io` で共有される。取り消しはブラウザのサイトの設定) **[要検証: ブラウザごとの記憶のしかた]**。Firefox・Safari では貼り付けのボタンが出ることがある **[要検証]** |
+|  | - 5 で、セルにリンクが描かれ、原文は `[文字](https://x.example/p\|q)` (URL の縦棒の前に `\` が付いた形) になり、表が崩れない |
+|  | - 6 で、語がリンクになる。許可した後は、同じオリジンの別のページでも確認が出ないことがある (許可は `goodrelax.github.io` で共有される。取り消しはブラウザのサイトの設定) **[要検証: ブラウザごとの記憶のしかた]**。サイトの設定で「確認する」に戻した後は、再び許可の確認が出る。Firefox・Safari では貼り付けのボタンが出ることがある **[要検証]** |
 |  | - 7 で、ページのリンクの文字 (無ければ URL) を文字とするリンクが入り、その文字が選ばれている |
 |  | - 8 で、何も変わらず「There is no URL in the clipboard.」のトーストが出る |
-|  | - 9 で、何も変わらず「The text being edited changed while the clipboard was read. Nothing was pasted.」のトーストが出る |
+|  | - 9 で、何も変わらず「The text being edited changed while the clipboard was read. Nothing was pasted.」のトーストが出る。ただし、ブロック編集欄の Tab (フォーカスが移るだけで、対象・選択・世代が変わらない) の後に許可した場合は、トーストは出ず、語がリンクになる |
 |  | - 10 で、`<…>` / `%5C` / `%3C` の形で書かれ、リンクの行き先が正しい。空白・制御文字などの入ったものは URL として扱わず、Ctrl+V は普通の貼り付け、ボタンは「There is no URL in the clipboard.」になる |
 |  | - 11 で、リンクが外れ、文字と他の書式は残る。参照リンクの定義は残る。裸の URL などは `https\://…`・`www\.…`・`a\@…` と書かれ、描画でリンクに戻らない |
 |  | - 12 で、「リンクを貼る」は無効になる (オーナーの裁定 F-R1)。`Hello!` の末尾では `Hello\![…](…)` になり、画像にならない |
 |  | - 13 で、途中を選んだ場合はリンクにならず普通に置き換わる。全体を選んだ場合は画像がリンクで包まれる (オーナーの裁定 F-R3) |
 |  | - 14 で、付けられなければ何も変わらず「A link cannot be pasted here.」のトーストが出る (オーナーの裁定 F-R2) |
+|  | - 15 で、ボタンの選択ありと同じ形になる: 裸の URL は文字と URL が新しい URL になり (`[https://new.example/](https://new.example/)`)、普通のリンクは URL だけが置き換わり、参照リンクは普通のリンク `[ref](https://new.example/)` になる (定義は残る) |
 |  | - どの手順でも、Network に外部への要求が無い (ページの題名を取りに行かない。HTML の画像も読まない) |
 
 | 結果 | Pass / Fail / N/A |
@@ -2912,7 +2930,7 @@
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-70、5.14.6。印の色: ライト `#fff8c5`、ダーク `#bb800926` (単位 G で配色を合わせる)。表のセルの印は単位 E で追加する |
+| 備考 | 要求: INV-70、5.14.6。印の色: ライト `#fff8c5`、ダーク `#bb800926` (5.8.1)。表のセルの印の自動の確認は AT-TCE-12 |
 
 ---
 
@@ -2943,7 +2961,7 @@
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-71 (段落の記法の中は普通の改行: INV-71 (1) の (i)〜(xi)、裁定 R4 / R5)、FS-17「本文の Enter で改行する」「リストの項目の改行と新しい項目」「引用の中の改行」。ヘルプの説明は単位 H で足す |
+| 備考 | 要求: INV-71 (段落の記法の中は普通の改行: INV-71 (1) の (i)〜(xi)、裁定 R4 / R5)、FS-17「本文の Enter で改行する」「リストの項目の改行と新しい項目」「引用の中の改行」。ヘルプ (日英) の「Editing」/「編集」に同じ説明がある (PRT-L01) |
 
 ---
 
@@ -2955,7 +2973,7 @@
 | **手順** | 1. セル A を変えて Tab、セル B を変えて Enter を押す |
 |  | 2. Console で `t === document.querySelector('#preview table')` を見る |
 | **期待結果** | - 1 で、次のセルが開き、スクロールの位置が動かない |
-|  | - 2 で、`true` (表の要素も外枠も、2 回の確定の後も同じ。UIR-01) |
+|  | - 2 で、`true` (表の要素も外枠も、2 回の確定の後も同じ。UI 改善のレビュー UIR-01) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -3017,6 +3035,108 @@
 | --- | --- |
 | 判定 | |
 | 備考 | 要求: INV-62 (1) (2) |
+
+---
+
+## 自動テスト (AT) の一覧
+
+この章は、PRT の備考と仕様が引く自動テストの ID (`AT-<族>-<番号>`) の行き先である。手で行う試験ではないので、判定の欄は持たない (前提条件 P-02 で全件の合格を確かめる)。
+
+### AT.1 書き方と実行
+
+| 項目 | 決めごと |
+| --- | --- |
+| 単体・結合の試験 | vitest + jsdom (`npm test`)。置き場は `src/__tests__/`。ブラウザの配置・印刷・クリップボードの許可など jsdom で試せないものは PRT で確かめる |
+| ID | `describe` / `it` の名前の先頭に `AT-<族>-<番号>` と書く。1 つの ID を `(a)` `(b)` などで複数の `it` に分けてよい。1 つの ID は 1 つの要求を確かめる試験のまとまりを指し、複数の `it` (別のファイルを含む) にまたがってよい (`(a)` `(b)` を付けることも、付けないこともある。同じファイルの中で `(a)` `(b)` なしに複数の `it` に付くものは約 30 件 (例: AT-BSM-15、AT-PAL-03 / 10 / 11、AT-THM-14 / 18))。違う要求の試験に同じ ID を使わない。ファイルをまたぐもの: AT-BSM-01 / 02 / 03 / 08 / 09〜14 / 16 (`BlockEditController.stateMachine.test.js` の表の交点の試験と、`UIController.editMode.test.js` / `UIController.save.test.js` の結合の試験)、AT-UI-41 / 43 / 46 (`UIController.document.test.js` / `UIController.editMode.test.js` / `UIController.save.test.js` / `UIController.handleRender.test.js`。AT-UI-41 の中身は 5.14.11 の表の行ごと)、AT-BEC-35 (`BlockEditController.link.test.js` と `UIController.link.test.js` の「Remove link」の試験)。族の中で番号を足すときは、その族の最後の番号の次から振る。付け直した番号: 同じ番号が 2 つの試験に付いていたものを、AT-UI-39 (セルを開いた表の試験) → AT-UI-61、AT-UI-39 (保存ダイアログの取消) → AT-UI-65、AT-DBL-07 (タッチのダブルタップ) → AT-DBL-13 に付け直した (全体のレビューの T-4)。残る注: AT-MR-09 と AT-TCE-29 は名前ではなくコメントにだけある (AT-TCE-29 は AT-TCE-10 の describe の中)。AT-BEC-28 は中身の違う 2 つの describe (`BlockEditController.test.js` と `BlockEditController.keys.test.js` の (5)) に付いている (上の決めごとの例外) |
+| 番号の無い族 | AT-MT・AT-TW は `describe` の名前を族の名前だけで書く (関数ごとのまとまり) |
+| 時間の試験 | AT-PERF のうち時間を測るもの (02〜07、09) は、環境変数 `GRSMD_PERF=1` のときだけ動く (`describe.runIf`。ふだんはスキップと数える)。計算量の上限を数えるもの (01、08) は常に動く。AT-HB の大きなブロックの試験 (`MarkdownTextOps.insertHardBreak.test.js` の AT-HB-14〜19 と、字句解析の上限の AT-HB-26〜28) は、常に字句解析の回数を確かめ、時間は `GRSMD_PERF=1` のときだけ確かめる |
+| スキップ | vitest のスキップは次に限る: 上の時間の試験 (`GRSMD_PERF=1` でないとき)、`MarkdownRenderer.test.js` の「parse error path」の試験 (`it.runIf(path === "render")`。描画の経路ごとに繰り返す試験のうち、`render` 以外の経路の分は常にスキップ)、`textWidth.test.js` の幅 0 の範囲表と Unicode の照合 (`it.skipIf`。Node の Unicode の版が 16.0 でないとき)。e2e のスキップは、`tableCell.e2e.js` の時間の試験 (`GRSMD_PERF=1` でないとき、および Chromium 以外のブラウザ) と、`crossUnit.e2e.js` の N1 (本物のタッチの列は Chromium の CDP だけで作れるので、Chromium 以外) に限る |
+| e2e | Playwright (`npm run test:e2e` = `build:e2e` で `output/e2e/` にビルドし、`playwright test`。`playwright.config.js` の projects は Chromium と WebKit。Firefox は `npm run test:e2e:firefox` で選んだときだけ動く)。初めて動かす前に、ブラウザを `npx playwright install chromium webkit` で取得する (外部からのダウンロード。`e2e/README.md`)。置き場は `e2e/`。AT の ID は持たない。PRT との対応は AT.4 の表で引く (PRT の本文に e2e のファイル名を書いていないものもある) |
+
+### AT.2 族の一覧
+
+番号の範囲は、仕様の UI 改善の単位 A〜G と、全体のレビューとリリース前の試験の修正 (2026-10-23) を入れた時点のもの (単位 H は文書だけ)。
+
+| 族 | 対象 | 主な要求 | ファイル (`src/__tests__/`) | 番号 |
+| --- | --- | --- | --- | --- |
+| AT-WRAP | `splitMarkdownWrapper` と `preprocessInput` | INV-38、5.13 | splitMarkdownWrapper.test.js、preprocessInput.test.js | 01〜19 |
+| AT-EOL | 改行コードと BOM の変換 | INV-44、5.14.1 | lineEnding.test.js | 01〜07 |
+| AT-SES | `DocumentSession` | INV-38、INV-44、INV-55 | DocumentSession.test.js | 01〜11 |
+| AT-BM | `MarkdownBlockModel` | INV-41、INV-42、INV-48 | MarkdownBlockModel.test.js | 01〜27 |
+| AT-PTR | `MarkdownBlockModel.planTableReplace` | INV-42、11-c の `canKeepTableId` | MarkdownBlockModel.planTableReplace.test.js | 01〜07 |
+| AT-DIFF | `BlockDiff.diffBlocks` | INV-42 | BlockDiff.test.js | 01〜10 |
+| AT-RT | サンプルとフィクスチャの往復 | INV-38、INV-41、INV-44 | roundTrip.samples.test.js | 01〜06 |
+| AT-TXT | `MarkdownTextOps` (挿入など) | INV-52 | MarkdownTextOps.test.js | 01〜16 |
+| AT-FR | `MarkdownTextOps.formatRange` (書式、リンク) | INV-66、INV-67、INV-69 | MarkdownTextOps.formatRange.test.js、MarkdownTextOps.link.test.js | 01〜64 |
+| AT-HB | `MarkdownTextOps.insertHardBreak` と確定の後始末 | INV-71 | MarkdownTextOps.insertHardBreak.test.js | 01〜61 |
+| AT-IR | `InlineRuns` (並び、正規形、表記の保持) | INV-67、INV-69、INV-72、5.14.14 | InlineRuns.test.js | 01〜53 |
+| AT-MT | `MarkdownTable` (解析、整形、行・列の操作) | INV-61、INV-65 | MarkdownTable.test.js | (番号なし) |
+| AT-TW | `textWidth.displayWidth` | INV-61、5.14.13 | textWidth.test.js | (番号なし) |
+| AT-CL | `ClipboardLink` | INV-69 | ClipboardLink.test.js | 01〜04 |
+| AT-MR | `MarkdownRenderer` のブロックの描画 | INV-41〜43、INV-47 | MarkdownRenderer.blocks.test.js、MarkdownRenderer.test.js、diagrams.partial.test.js | 01〜14 (09 は `MarkdownRenderer.test.js` のコメントにだけある。AT.1 の注) |
+| AT-DG | 図と PlantUML の部分描画 | INV-02、INV-23 | diagrams.partial.test.js | 01〜07 |
+| AT-SM | `ScrollMemento` (アンカー、読んでいる位置) | INV-46、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜35 |
+| AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R5) | INV-42、INV-46〜48、INV-62 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜24 (06b を含む)、R1〜R5、T1〜T6 |
+| AT-BEC | `BlockEditController` (ジェスチャ、外側、IME、キー、リンク) | INV-27〜30、INV-40、INV-69 | BlockEditController.test.js、BlockEditController.keys.test.js、BlockEditController.link.test.js、UIController.link.test.js (35) | 01〜35 |
+| AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致) | 11-c | BlockEditController.stateMachine.test.js、UIController.editMode.test.js、UIController.save.test.js | 01〜25 |
+| AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
+| AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
+| AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜35 |
+| AT-ICO | `InvisibleCharOverlay` | INV-70 | InvisibleCharOverlay.test.js | 01〜17 |
+| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜35 (21・22・29 は欠番) |
+| AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
+| AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
+| AT-FA | `MarkdownFileAccess` | INV-24〜26、CON-14 | MarkdownFileAccess.test.js | 01〜08 |
+| AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
+| AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |
+| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js | 01〜66 (25 は欠番。41 は AT.1 の注) |
+| AT-KEY | 主の修飾キーのショートカット | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜07 |
+| AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
+| AT-PAN | `DiagramPanController` (図のパンの終わり) | INV-16b、FS-09 | DiagramPanController.test.js | 01〜03 |
+| AT-SFR | `SourceFileRenderer` (コードビューの Reload) | INV-15 | SourceFileRenderer.test.js | 01 |
+| AT-CFG | `CONFIG.edit` と文言 | 5.2、CON-06 | config.edit.test.js、UIController.editMode.test.js | 01〜08 |
+| AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |
+| AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと | 5.8.1、5.15.2 | themeColors.test.js、hljsThemePlugin.test.js | 01〜20 |
+| AT-STA | `src/js` と `src/css` の静的な検査 | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜14 |
+| AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
+| AT-PERF | 性能と計算量の上限 | INV-42、INV-51 | performance.inplaceEdit.test.js | 01〜09 |
+
+ID を持たない試験ファイル (その場編集の前からあるクラスの試験、`stateTable.test.js` など) と、ID を持つファイルの中の ID の無い試験 (`staticChecks.test.js` の「style.css for in-place editing」の一部、`MarkdownRenderer.purifyConfig.test.js` の設定を 1 度だけ与えることの試験など) も `npm test` の全件に含まれる。
+
+### AT.3 個別に定める試験
+
+| ID | 試験の内容 |
+| --- | --- |
+| AT-STA-07 | `contentEditable` の代入は `TableCellEditor.js` だけ。値は `plaintext-only` または `true` (OS-13、INV-62) |
+| AT-STA-08〜10 | ブロック編集欄と見えない文字の層 (INV-70) のフォント・大きさ・折り返し・地が同じ。印刷で層を隠す (INV-53) |
+| AT-STA-11 | 開いているセルは空白を保つ (`pre-wrap`)。印刷で表のつまみ・セルの枠・原文のセルの地を隠す (INV-53) |
+| AT-STA-12 と (ID なし)、AT-PAL-27 | 編集まわりの CSS に `url()` と `@font-face` が無い (CSP、外部の取得をしない)。`url()` は AT-STA-12 (編集の規則のセレクタと宣言の両方)、`@font-face` は `staticChecks.test.js` の「style.css for in-place editing」の ID の無い試験、印刷の規則は AT-PAL-27 |
+| AT-STA-13 | `MarkdownRenderer` の `PURIFY_CONFIG` が凍結され (`Object.isFrozen`。中の配列も)、決めた値と一致する (`toEqual`)。MathML の `semantics` / `annotation` と `encoding` を足し、`style` を禁じる (OS-14)。置き場は `MarkdownRenderer.purifyConfig.test.js` |
+| AT-STA-14 | アプリの class (`.grsmd-table-tab`・`.md-block-hidden`・`.md-block-empty`) の CSS は、描画側が作った要素 (`#preview > …`) だけに当たる。不可視ブロックの帯のホバーのカーソルは pointer (リリース前の試験の N2 / N3) |
+| AT-PERF-07 | 1 MB の文書に 1,000 行 × 5 列の表: 中ほどのセル (500 行目) を初めて開くまで、セルの確定から次のセル、書式の適用が、それぞれ `commitBudgetMs` (300 ms) 以内 (INV-51)。表の操作 (行の追加) は、jsdom では DOMPurify が遅いので時間を記録するだけとし、時間の判定は e2e の `tableCell.e2e.js` (Chromium、PRT-X23) で行う (行の追加で作る HTML は小さな表の分の 1 回だけであることを AT-PERF-08 で数える) |
+| AT-PERF-08 | 表の編集の間の 1 回の操作で、表全体の HTML を作らない (INV-47、INV-51) |
+| AT-PERF-09 | 5,000 個のリンクを持つ 250 KB の段落で、書式のポップオーバーを開いたときの 1 フレームのボタンの判定が予算の中 (INV-51、INV-69) |
+| AT-UI-51〜60 | 単位をまたぐ結合の試験 (全体のレビューの K-1・K-2・T-3 (1)〜(8)): ポップオーバーが開いたままのセルの移動と表の操作、押し続けた Esc、WYSIWYG のセルの Ctrl+B と Ctrl+Z、ポップオーバーとセルの Esc、見えない文字をまたぐ Bold、最小化中のセル、最小化 → `e` → ダブルクリック、テーマの切り替え、変更のあるセルでの保存、`openerDisabled` の本物の経路 |
+| AT-UI-64、AT-UI-66 (L5) | クリップボードの読み取りは 1 回ずつ (AT-UI-64: 待つ間は「リンクを貼る」が無効で、2 回目の押下は無視し、リンクは 1 回だけ入る。AT-UI-66 の L5: 待つ間に編集モードを出ると待ちを解き、結果は捨てる。全体のレビューの FX-1) |
+| AT-UI-48〜50 | リンクを貼る・外すのボタンの状態、押した時点の読み取り、クリップボードを待つ間に対象・選択・世代が変わったら適用しない (偽のクリップボードを遅らせる。INV-69) |
+| AT-HB / AT-HBK | INV-71 の文脈 (リスト・引用・入れ子のコード、(i)〜(xi) の位置) と確定のときの後始末 |
+| AT-BSM / AT-PSM / AT-PDS | 状態機械 11-c / 11-d / 11-f の表のすべての交点と、仕様の図と表の一致 (`src/__tests__/helpers/specDiagram.js` で仕様の本文の図を読む) |
+| AT-SSM | 状態機械 11-e の表の 14 の交点 (試験の中に書いた表と `saveOperationStateMachine` の定義の一致。仕様の図は読まない) |
+
+### AT.4 e2e (Playwright)
+
+| ファイル (`e2e/`) | 確かめること | 主な PRT |
+| --- | --- | --- |
+| load.e2e.js | 起動 (CSP を持ち、エラーが無い)、Markdown・数式・コード・Mermaid の描画でエラーが無い | PRT-A01、PRT-R01、PRT-T03 |
+| guards.e2e.js | 試験の土台の検査 (CSP の違反、`console.error`、外への要求を記録できること) | (e2e の全件の前提) |
+| fileDrop.e2e.js | `.md` のドロップは Markdown の表示、それ以外のテキストはコードビュー | PRT-C01、PRT-E01 |
+| externalConsent.e2e.js | 外部画像と PlantUML は、同意の前・拒否の後に通信しない | PRT-T02、PRT-M02 |
+| save.e2e.js | Save as のダウンロードと保存ダイアログ (偽の picker) | PRT-W06 (ダウンロード)。偽の picker の試験は、PRT-W05 / W16 などの Save as で選んだファイルへ書き込む経路と同じ (本物の保存ダイアログは自動にできないので、ダイアログそのものは PRT で確かめる) |
+| theme.e2e.js | 配色 (ライト・ダーク・コードビュー) と印刷の色、印刷に出ないもの | PRT-X16、PRT-X19、PRT-V13 |
+| tableCell.e2e.js | セルの入力と Tab、Esc・Shift+Enter・Ctrl+Z、原文のセルと表のつまみ、編集モードの外のダブルクリック、表の時間の試験 (`GRSMD_PERF=1`、Chromium だけ) | PRT-X01〜03、PRT-X08、PRT-X14、PRT-X21、PRT-X23 |
+| editModeScroll.e2e.js | 編集モードの出入りで読んでいる位置を保つ (マウスとタッチ) | PRT-X08 |
+| link.e2e.js | リンクを貼る・外す | PRT-X18 |
+| crossUnit.e2e.js | 単位をまたぐ動き: 変更のあるセルの移動でポップオーバーが開いたまま (K-1)、外部画像の入った HTML の貼り付けと画像のあるセルの編集で通信しない (S-2)、色のセルを残したままの Render Dark、図のコードを開いた後のボタンなしの移動でスクロールしない (U20)、文書の class にアプリの CSS が当たらない・帯のカーソル・数式の大きさ (N2 / N3 / M04)、[?] の長押し (N1。Chromium だけ)、スマートフォンの配置 (N6)、編集モードの出入りでブロックが動かず、つまみが表の真上にある (P1) | PRT-X04、PRT-X08、PRT-X11、PRT-U10、PRT-U20、PRT-Q01、PRT-M04 |
 
 ---
 
