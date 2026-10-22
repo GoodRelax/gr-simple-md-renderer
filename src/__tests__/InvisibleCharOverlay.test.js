@@ -78,16 +78,16 @@ describe("AT-ICO the layer behind the editor", () => {
   });
 
   it("AT-ICO-07 an input is drawn again once per frame", () => {
-    const { textarea, overlay } = setup("a");
+    const { textarea, overlay } = setup("a\u200b");
     overlay.attach();
     flush();
-    textarea.value = "a\u00a0";
+    textarea.value = "a\u200b\u00a0";
     textarea.dispatchEvent(new Event("input"));
     textarea.dispatchEvent(new Event("input"));
     expect(frames).toHaveLength(1);
-    expect(layer().textContent).toBe("a");
+    expect(layer().textContent).toBe("a\u200b");
     flush();
-    expect(layer().textContent).toBe("a\u00a0");
+    expect(layer().textContent).toBe("a\u200b\u00a0");
   });
 
   it("AT-ICO-08 line end marks come from lineEndMarks(text)", () => {
@@ -103,7 +103,7 @@ describe("AT-ICO the layer behind the editor", () => {
     flush();
     expect(layer()).toBe(null);
     expect(textarea.classList.contains("md-block-editor-overlaid")).toBe(false);
-    textarea.value = "short";
+    textarea.value = "short\u00a0";
     textarea.dispatchEvent(new Event("input"));
     flush();
     expect(layer()).not.toBe(null);
@@ -114,9 +114,11 @@ describe("AT-ICO the layer behind the editor", () => {
   });
 
   it("AT-ICO-10 detach removes the layer, the class and the listener", () => {
-    const { textarea, overlay } = setup("a");
+    const { textarea, overlay } = setup("a\u00a0");
     overlay.attach();
     flush();
+    expect(layer()).not.toBe(null);
+    expect(textarea.classList.contains("md-block-editor-overlaid")).toBe(true);
     overlay.detach();
     expect(layer()).toBe(null);
     expect(textarea.classList.contains("md-block-editor-overlaid")).toBe(false);
@@ -134,6 +136,59 @@ describe("AT-ICO the layer behind the editor", () => {
     expect(layer().textContent).toBe("a\u00a0b");
   });
 
+  it("AT-ICO-18 no mark: no layer, and the editor keeps its own background; a mark brings the layer, none again removes it (INV-51)", () => {
+    // the layer would show only the editor's own background, and laying out
+    // a copy of a large text (a 1,000-row table's source) costs a frame
+    const { textarea, overlay } = setup("| a | b |");
+    overlay.attach();
+    flush();
+    expect(layer()).toBe(null);
+    expect(textarea.classList.contains("md-block-editor-overlaid")).toBe(false);
+    textarea.value = "| a\u00a0| b |";
+    textarea.dispatchEvent(new Event("input"));
+    flush();
+    expect(layer().querySelectorAll("span.grsmd-invisible")).toHaveLength(1);
+    expect(textarea.classList.contains("md-block-editor-overlaid")).toBe(true);
+    textarea.value = "| a | b |";
+    textarea.dispatchEvent(new Event("input"));
+    flush();
+    expect(layer()).toBe(null);
+    expect(textarea.classList.contains("md-block-editor-overlaid")).toBe(false);
+  });
+
+  it("AT-ICO-19 line end spaces alone are marks (a layer); a size change without a layer draws none", () => {
+    const observers = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(cb) {
+          this.cb = cb;
+          observers.push(this);
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    try {
+      const { textarea, overlay } = setup("ab  ", { lineEndMarks: () => [true] });
+      overlay.attach();
+      flush();
+      expect([...layer().querySelectorAll("span.grsmd-invisible")].map((s) => s.textContent)).toEqual(["  "]);
+      textarea.value = "ab";
+      textarea.dispatchEvent(new Event("input"));
+      flush();
+      expect(layer()).toBe(null);
+      observers[0].cb([]); // the editor's size changed: only a placing, and there is no layer
+      expect(frames).toHaveLength(1);
+      expect(() => flush()).not.toThrow();
+      expect(layer()).toBe(null);
+      expect(textarea.classList.contains("md-block-editor-overlaid")).toBe(false);
+      overlay.detach();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("AT-ICO-16 above maxMarks marks there is no layer; fewer again brings it back (P-3)", () => {
     const { textarea, overlay } = setup("a\u00a0b\u00a0c\u00a0d", { maxMarks: 2 });
     overlay.attach();
@@ -147,9 +202,10 @@ describe("AT-ICO the layer behind the editor", () => {
   });
 
   it("AT-ICO-11 a frame that runs after detach draws nothing", () => {
-    const { textarea, overlay } = setup("a");
+    const { textarea, overlay } = setup("a\u00a0");
     overlay.attach();
     flush();
+    expect(layer()).not.toBe(null);
     textarea.dispatchEvent(new Event("input"));
     overlay.detach();
     flush();

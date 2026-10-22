@@ -17,7 +17,9 @@ const OVERLAID_CLASS = "md-block-editor-overlaid";
  * frame after an input (the first draw too: opening an editor forces no
  * second layout, INV-51); a change of the editor's size only moves the
  * layer. Above maxChars characters, or maxMarks marks, there is no layer
- * (and no marks).
+ * (and no marks); with no mark there is none either (it would show only
+ * the editor's own background, and its layout costs a frame for a large
+ * text such as a long table's source, INV-51).
  */
 export default class InvisibleCharOverlay {
   /**
@@ -163,8 +165,10 @@ export default class InvisibleCharOverlay {
     const parts = InvisibleCharOverlay.segments(value, flags);
     let marks = 0;
     for (const part of parts) if (part.mark) marks++;
-    if (marks > this.maxMarks) {
-      // as many elements as marks: typing would wait for them (INV-70)
+    if (marks === 0 || marks > this.maxMarks) {
+      // none: the layer would show only the editor's own background, and
+      // laying out a copy of a large text costs a frame (INV-51);
+      // too many: as many elements as marks, typing would wait for them (INV-70)
       this._removeLayer();
       return;
     }

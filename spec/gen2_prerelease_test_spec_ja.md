@@ -3086,7 +3086,7 @@
 | AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜35 |
-| AT-ICO | `InvisibleCharOverlay` | INV-70 | InvisibleCharOverlay.test.js | 01〜17 |
+| AT-ICO | `InvisibleCharOverlay` | INV-70 | InvisibleCharOverlay.test.js | 01〜19 |
 | AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜35 (21・22・29 は欠番) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |

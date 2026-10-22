@@ -173,11 +173,13 @@ async function openDarkEditor(page, markdown) {
   return { editor, look };
 }
 
-test("print in dark: the focused block editor shows no focus ring (INV-53)", async ({ page }) => {
-  // A short paragraph has the marks layer, so its editor ground is transparent
-  // on screen already; this test checks the focus ring.
-  const { look } = await openDarkEditor(page, MARKDOWN);
-  expect((await look()).outline).toBe("solid"); // on screen: the focus ring
+test("print in dark: the focused block editor with the marks layer shows no focus ring (INV-53)", async ({ page }) => {
+  // A paragraph with a mark (U+00A0) has the marks layer, so its editor
+  // ground is transparent on screen already; the next test has no layer.
+  const { editor, look } = await openDarkEditor(page, MARKDOWN.replace("Text with", "Text\u00a0with"));
+  await expect(editor).toHaveClass(/\bmd-block-editor-overlaid\b/);
+  await expect(page.locator("#preview .md-invisible-overlay")).toHaveCount(1);
+  expect(await look()).toEqual({ ground: TRANSPARENT, border: "solid", outline: "solid" }); // on screen: the focus ring
   await page.emulateMedia({ media: "print" });
   expect(await look()).toEqual({ ground: TRANSPARENT, border: "none", outline: "none" });
   await page.emulateMedia({ media: null });

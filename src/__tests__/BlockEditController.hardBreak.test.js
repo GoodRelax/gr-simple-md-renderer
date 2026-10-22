@@ -201,7 +201,7 @@ describe("AT-HBK the marks layer (INV-70)", () => {
   const frame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
   it("AT-HBK-11 opens with the editor (drawn in the next frame) and goes with it", async () => {
-    s = await setupEdit(DOC);
+    s = await setupEdit(DOC.replace("Hello word", "Hello\u00a0word"));
     const ta = open(byStart("Hello"));
     expect(layer()).toBe(null);
     await frame();
@@ -219,7 +219,7 @@ describe("AT-HBK the marks layer (INV-70)", () => {
     commit();
     open(byStart("```"));
     await frame();
-    expect(layer().querySelectorAll(".grsmd-invisible")).toHaveLength(0);
+    expect(layer()).toBe(null); // no mark, no layer (AT-ICO-18)
   });
 
   it("AT-HBK-13 no layer for a block longer than invisibleMarkMaxChars", async () => {
