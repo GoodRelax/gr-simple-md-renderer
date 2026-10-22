@@ -55,10 +55,11 @@ export async function settle() {
  * @returns {Promise<object>}
  */
 /**
- * @param {{fileAccess?: object, isApple?: boolean}} [opts] - fileAccess: a fake
- *   MarkdownFileAccess (save tests); isApple: Cmd is the primary modifier (INV-14)
+ * @param {{fileAccess?: object, isApple?: boolean, clipboard?: object|null}} [opts] - fileAccess: a fake
+ *   MarkdownFileAccess (save tests); isApple: Cmd is the primary modifier (INV-14);
+ *   clipboard: a fake navigator.clipboard (INV-69; null: none)
  */
-export async function setupApp({ fileAccess: fakeAccess, isApple = false } = {}) {
+export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipboard } = {}) {
   vi.stubGlobal("matchMedia", () => ({ matches: false }));
   document.title = BASE_TITLE;
   const elements = createUiElements({ attach: true });
@@ -91,6 +92,7 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false } = {})
       new UIController(orchestrator, state, elements, scrollEngine, {
         fileAccess,
         isApple,
+        ...(clipboard === undefined ? {} : { clipboard }),
         createPalette: (host) => new EditPalette(host, { isApple }),
         createBlockEdit: (host) => new BlockEditController(preview, orchestrator, markdownRenderer, scrollMemento, host),
       }),

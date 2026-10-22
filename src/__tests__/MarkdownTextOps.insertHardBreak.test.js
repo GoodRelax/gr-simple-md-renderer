@@ -117,67 +117,97 @@ describe("AT-HB hardBreakLines (INV-70: the line ends that get a mark)", () => {
   });
 });
 
-describe("AT-HB the time on large blocks (INV-51: 300 ms on commit)", () => {
-  const BUDGET_MS = 300;
-  const timed = (fn) => {
-    const t0 = performance.now();
-    const out = fn();
-    return { out, ms: performance.now() - t0 };
+// The cost on large blocks: always the number of full lexings, which does
+// not depend on the machine (one for the block as it was and one for the
+// rewrite; STRIP_MAX_LEXES = 8 in all, the first one included, where the
+// halving search hits the cap); the time against INV-51's 300 ms only with
+// GRSMD_PERF=1 (as AT-PERF-02..09), since a loaded machine (e2e at the same
+// time) made it fail with nothing wrong.
+const PERF = process.env.GRSMD_PERF === "1";
+const STRIP_MAX_LEXES = 8;
+const BUDGET_MS = 300;
+const timed = (fn) => {
+  const t0 = performance.now();
+  const out = fn();
+  return { out, ms: performance.now() - t0 };
+};
+/** strip, counting the full lexings. */
+const counted = (raw) => {
+  let lexes = 0;
+  const lex = (src) => {
+    lexes++;
+    return lexFull(src);
   };
+  const { out, ms } = timed(() => MarkdownTextOps.stripMeaninglessHardBreaks(raw, lex, walkTokens));
+  return { out, ms, lexes };
+};
+const inBudget = (ms) => {
+  if (PERF) expect(ms).toBeLessThan(BUDGET_MS);
+};
+
+describe("AT-HB the cost on large blocks: the lexings (INV-51; 300 ms on commit with GRSMD_PERF=1)", () => {
   const lines = (n, line) => Array.from({ length: n }, (_, i) => line(i)).join("\n");
 
   it("AT-HB-14 a list of 1,000 items, each line ending with two spaces", () => {
     const raw = lines(1000, (i) => `- item ${i} with some text${S}`);
-    const { out, ms } = timed(() => strip(raw));
+    const { out, ms, lexes } = counted(raw);
     expect(out).toBe(raw.replace(/ +$/gm, ""));
-    expect(ms).toBeLessThan(BUDGET_MS);
+    expect(lexes).toBe(2);
+    inBudget(ms);
   });
 
   it("AT-HB-15 a paragraph of 1,000 lines, each ending with two spaces (the last one goes)", () => {
     const raw = lines(1000, (i) => `line ${i} with some text${S}`);
-    const { out, ms } = timed(() => strip(raw));
+    const { out, ms, lexes } = counted(raw);
     expect(out).toBe(raw.replace(/ +$/, ""));
-    expect(ms).toBeLessThan(BUDGET_MS);
+    expect(lexes).toBe(2);
+    inBudget(ms);
   });
 
   it("AT-HB-16 500 short paragraphs of two lines: the line breaks stay, the paragraph ends go", () => {
     const raw = lines(500, (i) => `a${i}${S}\nb${i}${S}\n`);
-    const { out, ms } = timed(() => strip(raw));
+    const { out, ms, lexes } = counted(raw);
     expect(out).toBe(lines(500, (i) => `a${i}${S}\nb${i}\n`));
-    expect(ms).toBeLessThan(BUDGET_MS);
+    expect(lexes).toBe(2);
+    inBudget(ms);
   });
 
-  it("AT-HB-17 hardBreakLines and canFormatRange on a 1,000-line paragraph", () => {
+  it("AT-HB-17 hardBreakLines and canFormatRange on a 1,000-line paragraph: one block lexing each", () => {
     const text = lines(1000, (i) => `line ${i} with some text${S}`);
-    const marks = timed(() => MarkdownTextOps.hardBreakLines(text, lexBlocks));
+    let lexes = 0;
+    const lex = (src) => {
+      lexes++;
+      return lexBlocks(src);
+    };
+    const marks = timed(() => MarkdownTextOps.hardBreakLines(text, lex));
     expect(marks.out.every(Boolean)).toBe(true);
-    expect(marks.ms).toBeLessThan(BUDGET_MS);
-    const can = timed(() => MarkdownTextOps.canFormatRange(text, 5, 9, lexBlocks));
+    expect(lexes).toBe(1);
+    inBudget(marks.ms);
+    lexes = 0;
+    const can = timed(() => MarkdownTextOps.canFormatRange(text, 5, 9, lex));
     expect(can.out).toBe(true);
-    expect(can.ms).toBeLessThan(BUDGET_MS);
+    expect(lexes).toBe(1);
+    inBudget(can.ms);
   });
 });
 
 describe("AT-HB the clean-up never tries code, HTML or math lines", () => {
   const lines = (n, line) => Array.from({ length: n }, (_, i) => line(i)).join("\n");
-  const timed = (fn) => {
-    const t0 = performance.now();
-    const out = fn();
-    return { out, ms: performance.now() - t0 };
-  };
 
-  it("AT-HB-18 1,000 code lines with end spaces in a list item: kept, within 300 ms", () => {
+  it("AT-HB-18 1,000 code lines with end spaces in a list item: kept, lexed twice (300 ms with GRSMD_PERF=1)", () => {
     const raw = `- item${S}\n\n  \`\`\`js\n${lines(1000, (i) => `  const x${i} = ${i};${S}`)}\n  \`\`\`\n- last${S}`;
-    const { out, ms } = timed(() => strip(raw));
+    const { out, ms, lexes } = counted(raw);
     expect(out).toBe(raw.replace(/^- item {2}$/m, "- item").replace(/^- last {2}$/m, "- last"));
-    expect(ms).toBeLessThan(300);
+    expect(lexes).toBe(2);
+    inBudget(ms);
   });
 
-  it("AT-HB-19 1,000 indented code lines in a quote: kept, within 300 ms", () => {
+  it("AT-HB-19 1,000 indented code lines in a quote: kept, lexed twice (300 ms with GRSMD_PERF=1)", () => {
     const raw = `> q${S}\n>\n${lines(1000, (i) => `>     code ${i}${S}`)}`;
-    const { out, ms } = timed(() => strip(raw));
+    const { out, ms, lexes } = counted(raw);
     expect(out).toBe(raw.replace(/^> q {2}$/m, "> q"));
-    expect(ms).toBeLessThan(300);
+    expect(lexes).toBe(2);
+    inBudget(ms);
   });
 
   it("AT-HB-20 a backslash before the end spaces is kept (a space break never becomes a backslash break)", () => {
@@ -212,10 +242,10 @@ describe("AT-HB the worst case of the clean-up (INV-51)", () => {
     ["AT-HB-26 code spans over the lines of a list", lines(500, (i) => `- \`a${i}${S}\n  b${i}\``)],
     ["AT-HB-27 HTML attributes over the lines of a paragraph", lines(500, (i) => `<span title="a${i}${S}\nb${i}">x</span>`)],
     ["AT-HB-28 code spans over the lines, every other item", lines(500, (i) => (i % 2 ? `- \`a${i}${S}\n  b${i}\`` : `- c${i}${S}`))],
-  ])("%s: within 300 ms, and what is shown does not change", (_name, raw) => {
-    const t0 = performance.now();
-    const out = strip(raw);
-    expect(performance.now() - t0).toBeLessThan(300);
+  ])("%s: lexed 8 times, the cap (300 ms with GRSMD_PERF=1), and what is shown does not change", (_name, raw) => {
+    const { out, ms, lexes } = counted(raw);
+    expect(lexes).toBe(STRIP_MAX_LEXES);
+    inBudget(ms);
     // spaces before a closing tag are not shown
     const shown = (md) => app.parse(md).replace(/ +</g, "<");
     expect(shown(out)).toBe(shown(raw));

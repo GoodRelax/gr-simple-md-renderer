@@ -86,6 +86,10 @@ export const CONFIG = {
       tableNotCellEditable:
         "This table cannot be edited by cell. Opened its Markdown instead.",
       tableEditEnded: "The table changed into other blocks. Table editing ended.",
+      noUrlInClipboard: "There is no URL in the clipboard.", // INV-69 (also when reading was refused)
+      linkTargetChanged:
+        "The text being edited changed while the clipboard was read. Nothing was pasted.", // INV-69
+      linkNotPastable: "A link cannot be pasted here.", // INV-69 (owner ruling F-R2)
       statusUnsaved: (name) => `${name} * unsaved`,
       statusSaved: (name) => `${name} - saved`,
     },

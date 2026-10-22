@@ -23,9 +23,11 @@ test("Save as downloads the file when the browser cannot write in place", async 
   await page.locator("#paletteSaveAs").click();
   const download = await downloadPromise;
 
+  // the toast first: it goes after CONFIG.codeView.toastDurationMs (3 s),
+  // and reading the downloaded file can take that long under load
+  await expect(page.locator("#toastContainer")).toContainText("note.md");
   expect(download.suggestedFilename()).toBe("note.md");
   expect(await readFile(await download.path(), "utf8")).toBe(NOTE.text);
-  await expect(page.locator("#toastContainer")).toContainText("note.md");
 });
 
 test("Save as writes through showSaveFilePicker (fake picker)", async ({ page }) => {

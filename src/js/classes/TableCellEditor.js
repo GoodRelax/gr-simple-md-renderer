@@ -330,7 +330,8 @@ export default class TableCellEditor {
     const point = caret && typeof caret.top === "number" ? { x: caret.x, y: caret.y + element.getBoundingClientRect().top - caret.top } : caret;
     const saved = [...element.childNodes];
     const opened = this._wysiwygCopy(element, raw);
-    const cell = { row, col, element, saved, raw, kind: opened ? "wysiwyg" : "raw", links: new Map(), linkInfo: [], openedMarkdown: raw };
+    // literals: URL texts taken off a link here, kept text when written (INV-69)
+    const cell = { row, col, element, saved, raw, kind: opened ? "wysiwyg" : "raw", links: new Map(), linkInfo: [], openedMarkdown: raw, literals: [] };
     if (opened) {
       cell.links = opened.links;
       cell.linkInfo = opened.linkInfo;
@@ -582,6 +583,143 @@ export default class TableCellEditor {
     const range = this._selectionOffsets();
     if (!range || range.start === range.end) return false;
     return this._cell.kind === "wysiwyg" ? this._formatWysiwyg(op, range) : this._formatRaw(op, range);
+  }
+
+  // ---- links (INV-69) ----
+
+  /**
+   * What the palette's Paste link acts on: the table, the open cell, the
+   * selection in it (null when it is not in the cell) and the edit
+   * generation; null when no cell is open.
+   * @purity semi-pure-b
+   * @returns {object|null}
+   */
+  linkTarget() {
+    if (!this._cell) return null;
+    const range = this._selectionOffsets();
+    return {
+      kind: "cell",
+      blockId: this._session.blockId,
+      row: this._cell.row,
+      col: this._cell.col,
+      generation: this.editGeneration,
+      start: range ? range.start : null,
+      end: range ? range.end : null,
+    };
+  }
+
+  /**
+   * 5.15.5 Paste link: a selection that can take a format, or a caret
+   * where a link can go in (owner ruling F-R1: not inside a link, a code
+   * span or another piece kept whole).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  canPasteLink() {
+    const range = this._selectionOffsets();
+    if (!range) return false;
+    if (range.start !== range.end) return this.canFormatSelection();
+    if (this._cell.kind === "raw") return MarkdownTextOps.canInsertLink(this._rawText(), range.start, this._rawContext());
+    const runs = this._runs();
+    const index = this._caretRunIndex();
+    return InlineRuns.canInsertLinkAt(runs, index) && this._linkStaysAfter(runs, index);
+  }
+
+  /**
+   * A link written before run index i is read as a link: the word right
+   * before it (its text up to a space, a bare URL too) does not swallow it,
+   * as marked reads "https://a.example/[L](u)" as one bare URL. The word and
+   * a stand-in link are written as insertLinkAt writes them (a "!" before
+   * it as \!).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  _linkStaysAfter(runs, i) {
+    let a = i;
+    while (a > 0 && runs[a - 1].type === "text" && !/\s/.test(runs[a - 1].text)) a--;
+    if (a === i) return true;
+    const options = this._serializeOptions();
+    const probe = InlineRuns.insertLinkAt(runs.slice(a, i), i - a, "x", InlineRuns.inlineLink("u"), options);
+    if (!probe) return false;
+    const tokens = this.orchestrator.textLexers().lexInline(InlineRuns.serialize(probe.runs, options));
+    return tokens.some((t) => t.type === "link" && t.href === "u");
+  }
+
+  /**
+   * 5.15.5 Remove link: the caret or the selection is on a link of the cell.
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  canRemoveLink() {
+    const range = this._selectionOffsets();
+    if (!range) return false;
+    if (this._cell.kind === "wysiwyg") return InlineRuns.hasLinkAt(this._runs(), range.start, range.end);
+    return MarkdownTextOps.canRemoveLink(this._rawText(), range.start, range.end, this._rawContext());
+  }
+
+  /**
+   * The palette's Paste link: the selection becomes a link to url; with a
+   * caret a link goes in there, its text label or else url, selected. A
+   * change of the open cell (not a commit).
+   * @purity non-pure
+   * @param {string} url
+   * @param {string|null} label
+   * @returns {boolean} true when it changed
+   */
+  pasteLink(url, label) {
+    const range = this._selectionOffsets();
+    if (!range) return false;
+    const op = ClipboardLink.linkOp(url);
+    if (range.start !== range.end) return this.applyFormat(op);
+    // the clipboard's link text, or the URL when that text cannot go in as written
+    const texts = label && label !== op.url ? [label, op.url] : [op.url];
+    if (this._cell.kind === "wysiwyg") {
+      const runs = this._runs();
+      const index = this._caretRunIndex();
+      if (!this._linkStaysAfter(runs, index)) return false;
+      return texts.some((text) => this._writeWysiwyg(InlineRuns.insertLinkAt(runs, index, text, op.link, this._serializeOptions())));
+    }
+    const raw = this._rawText();
+    return texts.some((text) => this._writeRaw(MarkdownTextOps.insertLink(raw, range.start, text, op.link, this._rawContext())));
+  }
+
+  /**
+   * The palette's Remove link: the link at the caret, or every link the
+   * selection touches, comes off; a URL text taken off stays text (also
+   * when the cell is written again from its DOM). A change of the open cell.
+   * @purity non-pure
+   * @returns {boolean} true when it changed
+   */
+  removeLink() {
+    const range = this._selectionOffsets();
+    if (!range) return false;
+    if (this._cell.kind === "raw") {
+      return this._writeRaw(MarkdownTextOps.removeLink(this._rawText(), range.start, range.end, this._rawContext()));
+    }
+    const runs = this._runs();
+    const result = InlineRuns.apply(runs, range.start, range.end, { kind: "unlink" }, this._serializeOptions());
+    if (!result) return false;
+    // each link taken off, with the text next to it (an autolink could take
+    // both: "[www](u).example"): kept text when the cell is written again
+    const kept = new Set(result.runs.map((r) => r.marks.link).filter(Boolean));
+    const removed = [];
+    for (let k = 0; k < runs.length; ) {
+      const link = runs[k].marks.link;
+      if (!link || kept.has(link)) {
+        k++;
+        continue;
+      }
+      let e = k;
+      while (e < runs.length && runs[e].marks.link === link) e++;
+      const around = InlineRuns.textAround(result.runs, k, e);
+      removed.push(result.runs.slice(around.from, around.to).map((r) => r.text).join(""));
+      k = e;
+    }
+    const literals = this._cell.literals;
+    this._cell.literals = [...literals, ...removed];
+    if (this._writeWysiwyg(result)) return true;
+    this._cell.literals = literals;
+    return false;
   }
 
   // ---- internals: opening ----
@@ -847,11 +985,14 @@ export default class TableCellEditor {
   }
 
   /**
-   * Paste: text/plain only, newlines as spaces (INV-63). Links are unit F.
+   * Paste: first INV-69's link (selected text that is not a URL itself,
+   * the paste's text/plain a URL, the selection where a link can go, not
+   * inside a code span); else text/plain only, newlines as spaces (INV-63).
    * @purity non-pure
    */
   _handlePaste(e) {
     e.preventDefault();
+    if (this._pasteAsLink(e)) return;
     const text = (e.clipboardData?.getData("text/plain") ?? "").replace(/\r\n?|\n/g, " ");
     if (text === "") return;
     try {
@@ -860,6 +1001,34 @@ export default class TableCellEditor {
       // fall through to the direct insert
     }
     this._insertNodes([document.createTextNode(text)]);
+  }
+
+  /**
+   * The run index of the caret in the open WYSIWYG cell (a line break
+   * counts 1, so a caret at a line start is after its break); -1 inside a
+   * code span or another piece kept whole.
+   * @purity semi-pure-b
+   * @returns {number}
+   */
+  _caretRunIndex() {
+    const caret = this._selectionOffsets(1);
+    return caret ? InlineRuns.runIndexAt(this._runs(), caret.start, 1) : -1;
+  }
+
+  /**
+   * INV-69's Ctrl+V link in the open cell (synchronous, no permission).
+   * @purity non-pure
+   * @returns {boolean} true when the selection became a link
+   */
+  _pasteAsLink(e) {
+    const range = this._selectionOffsets();
+    if (!range || range.start === range.end) return false;
+    const options = ClipboardLink.urlOptions();
+    const url = ClipboardLink.urlFromPasteEvent(e, options);
+    if (!url) return false;
+    const shown = this._cell.kind === "wysiwyg" ? this._runs().map((r) => r.text).join("") : this._rawText();
+    if (ClipboardLink.isLinkableUrl(shown.slice(range.start, range.end), options.schemes, options.maxLength)) return false;
+    return this.applyFormat(ClipboardLink.linkOp(url, true));
   }
 
   /**
@@ -1093,7 +1262,18 @@ export default class TableCellEditor {
    * @purity non-pure
    */
   _formatWysiwyg(op, range) {
-    const result = InlineRuns.apply(this._runs(), range.start, range.end, op, this._serializeOptions());
+    return this._writeWysiwyg(InlineRuns.apply(this._runs(), range.start, range.end, op, this._serializeOptions()));
+  }
+
+  /**
+   * Draw the WYSIWYG cell from new format runs (marked + DOMPurify, INV-47)
+   * and check it against them (INV-67 (8)); result.start / end are
+   * selected. Nothing changes when result is null or the check fails.
+   * @purity non-pure
+   * @param {{runs: object[], start: number, end: number}|null} result
+   * @returns {boolean} true when it changed
+   */
+  _writeWysiwyg(result) {
     if (!result) return false;
     const markdown = InlineRuns.serialize(result.runs, this._serializeOptions());
     const cell = this._cell;
@@ -1170,8 +1350,17 @@ export default class TableCellEditor {
    * @purity non-pure
    */
   _formatRaw(op, range) {
-    const { lexBlocks, lexInline } = this.orchestrator.textLexers();
-    const edit = MarkdownTextOps.formatRange(this._rawText(), range.start, range.end, op, { lexBlocks, lexInline, colors: this._colors().colors });
+    return this._writeRaw(MarkdownTextOps.formatRange(this._rawText(), range.start, range.end, op, this._rawContext()));
+  }
+
+  /**
+   * Put a raw cell's new text in (newlines as line breaks) and select
+   * edit.selStart / selEnd. Nothing changes when edit is null.
+   * @purity non-pure
+   * @param {{text: string, selStart: number, selEnd: number}|null} edit
+   * @returns {boolean} true when it changed
+   */
+  _writeRaw(edit) {
     if (!edit) return false;
     const nodes = [];
     const lines = edit.text.split("\n");
@@ -1196,17 +1385,30 @@ export default class TableCellEditor {
   }
 
   /**
+   * The context of MarkdownTextOps on a raw cell's text.
+   * @purity semi-pure-b
+   */
+  _rawContext() {
+    const { lexBlocks, lexInline } = this.orchestrator.textLexers();
+    return { lexBlocks, lexInline, colors: this._colors().colors };
+  }
+
+  /**
    * INV-72 (a), (d): table cell escapes; a changed URL text keeps the form
-   * of an autolink or a bare URL only when it reads back as one.
+   * of an autolink or a bare URL only when it reads back as one; the URL
+   * texts taken off a link in this cell stay text (INV-69).
    * @purity semi-pure-b
    */
   _serializeOptions() {
     const { lexInline } = this.orchestrator.textLexers();
     return {
       inTableCell: true,
+      literalUrls: this._cell?.literals ?? [],
       /** @purity semi-pure-b */
       isLinkableUrl: (text) => {
-        if (!ClipboardLink.isLinkableUrl(text, CONFIG.edit.linkSchemes, CONFIG.edit.maxPastedUrlLength) || /\s/.test(text)) return false;
+        // isLinkableUrl takes no white space, control or invisible character
+        // inside (INV-69); the text is written as it is, so none around it either
+        if (text !== text.trim() || !ClipboardLink.isLinkableUrl(text, CONFIG.edit.linkSchemes, CONFIG.edit.maxPastedUrlLength)) return false;
         const bare = lexInline(text);
         const angle = lexInline(`<${text}>`);
         return bare.length === 1 && bare[0].type === "link" && bare[0].raw === text && angle.length === 1 && angle[0].type === "link";

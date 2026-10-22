@@ -172,42 +172,302 @@ export default class MarkdownTextOps {
   }
 
   /**
-   * Bold / Italic / text color on the selection (INV-66, INV-67 (6)(7)).
-   * The inline range that holds the selection is lexed; only its top-level
-   * tokens the selection touches (and a formatted token right next to them)
-   * are written again (InlineRuns); the rest of the text is not changed.
-   * The rewrite is lexed again and must show what was meant (INV-67 (8)).
-   * null when it does not apply (no inline range, nothing selected, nothing
-   * would change).
+   * Bold / Italic / text color / a link on the selection (INV-66, INV-67
+   * (6)(7), INV-69). The inline range that holds the selection is lexed;
+   * only its top-level tokens the selection touches (and a formatted token
+   * right next to them) are written again (InlineRuns); the rest of the
+   * text is not changed. The rewrite is lexed again and must show what was
+   * meant (INV-67 (8)). null when it does not apply (no inline range,
+   * nothing selected, nothing would change; with op.strictEnds, the Ctrl+V
+   * link, an end inside a code span, an inline HTML tag or a link
+   * destination or label).
    * @purity pure
    * @param {string} text
    * @param {number} selStart
    * @param {number} selEnd
-   * @param {{kind: "strong"|"em"|"color", value?: string|null}} op
+   * @param {{kind: "strong"|"em"|"color"|"link"|"unlink", value?: string|null, link?: object, url?: string, strictEnds?: boolean}} op
    * @param {{lexBlocks: Function, lexInline: Function, colors?: string[]}} context
    * @returns {{text: string, selStart: number, selEnd: number}|null}
    */
   static formatRange(text, selStart, selEnd, op, context) {
-    const range = MarkdownTextOps._inlineRangeAt(text, selStart, selEnd, context.lexBlocks);
+    const lexed = MarkdownTextOps._lexedRange(text, selStart, selEnd, context, false);
+    if (!lexed) return null;
+    const { range, segments, tokens, runs } = lexed;
+    const s = MarkdownTextOps._toInline(segments, range.s);
+    const e = MarkdownTextOps._toInline(segments, range.e);
+    if (op.strictEnds && (MarkdownTextOps._cutsLinkSyntax(tokens, 0, s) || MarkdownTextOps._cutsLinkSyntax(tokens, 0, e))) return null;
+    const touched = InlineRuns.unitRangeOfSource(runs, s, e);
+    if (!touched) return null;
+    return MarkdownTextOps._rewritePicked(text, lexed, InlineRuns.expandRange(runs, touched.from, touched.to), op, context);
+  }
+
+  /**
+   * INV-69 (b): a new link at the caret, with label as its text (escaped,
+   * INV-72 (d); in a table row the destination's pipes are \|); the label
+   * is selected. Owner ruling F-R1: only with the caret in the text of one
+   * inline range (not on the marks of a line), and not inside a code span,
+   * an inline HTML tag, a link, an image, inline math, an entity, an
+   * escape or the markers of emphasis. Only the tokens at the caret are
+   * written again; the result is lexed again and must read as meant
+   * (INV-67 (8)). null when it does not apply.
+   * @purity pure
+   * @param {string} text
+   * @param {number} caret
+   * @param {string} label
+   * @param {object} link - InlineRuns.inlineLink
+   * @param {{lexBlocks: Function, lexInline: Function, colors?: string[]}} context
+   * @returns {{text: string, selStart: number, selEnd: number}|null}
+   */
+  static insertLink(text, caret, label, link, context) {
+    const c = MarkdownTextOps._clamp(caret, text);
+    const lexed = MarkdownTextOps._lexedRange(text, c, c, context, true);
+    if (!lexed) return MarkdownTextOps._insertLinkOnBlankLine(text, c, label, link, context);
+    if (!lexed.segments.some((g) => g.from <= c && c <= g.to)) return null;
+    if (lexed.range.inTableCell && MarkdownTextOps._outsideRowPipes(text, c)) return null;
+    const { segments, inline, tokens, runs, colors } = lexed;
+    const o = MarkdownTextOps._toInline(segments, c);
+    if (MarkdownTextOps._cutsInsertion(tokens, 0, o)) return null;
+    // the top-level tokens at the caret (a palette color span with its content is one group)
+    const groupStart = MarkdownTextOps._tokenGroups(tokens, colors);
+    let ta = -1;
+    let tb = -1;
+    let pos = 0;
+    for (let k = 0; k < tokens.length; k++) {
+      const from = pos;
+      pos += tokens[k].raw.length;
+      if (from > o || pos < o) continue;
+      if (ta < 0) ta = groupStart[k];
+      tb = k;
+    }
+    while (tb >= 0 && tb + 1 < tokens.length && groupStart[tb + 1] === groupStart[tb]) tb++;
+    const srcFrom = ta < 0 ? o : rawOf(tokens.slice(0, ta)).length;
+    const srcTo = ta < 0 ? o : srcFrom + rawOf(tokens.slice(ta, tb + 1)).length;
+    let rf = 0;
+    while (rf < runs.length && (ta < 0 ? runs[rf].srcFrom < o : runs[rf].top < ta)) rf++;
+    let rt = rf;
+    while (ta >= 0 && rt < runs.length && runs[rt].top <= tb) rt++;
+    let index = rf;
+    while (index < rt && runs[index].srcFrom < o) index++;
+    const options = { before: inline.slice(0, srcFrom), after: inline.slice(srcTo), inTableCell: lexed.range.inTableCell };
+    const result = InlineRuns.insertLinkAt(runs.slice(rf, rt), index - rf, label, link, options);
+    if (!result) return null;
+    const layout = InlineRuns.layout(result.runs, options);
+    const next = inline.slice(0, srcFrom) + layout.text + inline.slice(srcTo);
+    const work = { runs, colors, lexInline: context.lexInline };
+    const local = Boolean(context.localCheck);
+    if (!MarkdownTextOps._readsAsMeant(local ? layout.text : next, local ? result.runs : null, work, { from: rf, to: rt }, result.runs)) return null;
+    const first = index - rf;
+    const last = first + Array.from(label).length - 1;
+    return MarkdownTextOps._writeInline(text, segments, next, srcFrom + layout.unitFrom[first], srcFrom + layout.unitTo[last]);
+  }
+
+  /**
+   * insertLink on a line with only spaces that is in no block (an empty
+   * editor, or an empty line between blocks): the link starts a paragraph.
+   * null on any other line.
+   * @purity pure
+   * @returns {{text: string, selStart: number, selEnd: number}|null}
+   */
+  static _insertLinkOnBlankLine(text, c, label, link, context) {
+    const lines = text.split("\n");
+    const n = MarkdownTextOps._lineIndexAt(text, c);
+    if (lines[n].trim() !== "") return null;
+    if (text.trim() !== "" && MarkdownTextOps._leafLines(text, context.lexBlocks)?.[n]?.leaf) return null;
+    const result = InlineRuns.insertLinkAt([], 0, label, link);
+    if (!result) return null;
+    const layout = InlineRuns.layout(result.runs);
+    const check = context.lexInline(layout.text);
+    if (rawOf(check) !== layout.text) return null;
+    if (JSON.stringify(InlineRuns.signature(InlineRuns.fromTokens(check))) !== JSON.stringify(InlineRuns.signature(result.runs))) return null;
+    // the line's spaces go (four would make a code block); a blank line is
+    // kept on each side that has a block, so the link is a paragraph of its own
+    const before = n > 0 && lines[n - 1].trim() !== "" ? "\n" : "";
+    const after = n + 1 < lines.length && lines[n + 1].trim() !== "" ? "\n" : "";
+    const start = MarkdownTextOps._lineStart(lines, n);
+    const next = text.slice(0, start) + before + layout.text + after + text.slice(start + lines[n].length);
+    if (!MarkdownTextOps._addsOneParagraph(text, next, layout.text, context.lexBlocks)) return null;
+    const at = start + before.length;
+    return { text: next, selStart: at + layout.unitFrom[0], selEnd: at + layout.unitTo[result.runs.length - 1] };
+  }
+
+  /**
+   * A caret on a table row before its leading pipe or after its trailing
+   * one (outside every cell: text there would be a cell too many, or the
+   * row's first cell).
+   * @purity pure
+   * @returns {boolean}
+   */
+  static _outsideRowPipes(text, c) {
+    const lines = text.split("\n");
+    const n = MarkdownTextOps._lineIndexAt(text, c);
+    const start = MarkdownTextOps._lineStart(lines, n);
+    const pipes = MarkdownTextOps._pipePositions(lines[n]);
+    if (pipes.length === 0) return false;
+    const line = lines[n];
+    const lead = line.replace(/^[ \t]*(?:>[ \t]*)*/, "").startsWith("|");
+    const trail = line.trimEnd().endsWith("|") && pipes[pipes.length - 1] === line.trimEnd().length - 1;
+    return (lead && c <= start + pipes[0]) || (trail && c > start + pipes[pipes.length - 1]);
+  }
+
+  /**
+   * next has the blocks of text and one more paragraph whose source is
+   * paragraph, the others as they were (the blank lines between blocks
+   * aside).
+   * @purity pure
+   * @returns {boolean}
+   */
+  static _addsOneParagraph(text, next, paragraph, lexBlocks) {
+    /** @purity pure */
+    const blocks = (src) => lexBlocks(src).filter((t) => t.type !== "space").map((t) => [t.type, t.raw.trimEnd()]);
+    const was = blocks(text);
+    const now = blocks(next);
+    if (now.length !== was.length + 1) return false;
+    const k = now.findIndex((b) => b[0] === "paragraph" && b[1] === paragraph);
+    if (k < 0) return false;
+    return JSON.stringify([...now.slice(0, k), ...now.slice(k + 1)]) === JSON.stringify(was);
+  }
+
+  /**
+   * 5.15.5 Paste link with no selection: insertLink would put a link at
+   * the caret (owner ruling F-R1).
+   * @purity pure
+   * @param {string} text
+   * @param {number} caret
+   * @param {{lexBlocks: Function, lexInline: Function, colors?: string[]}} context
+   * @returns {boolean}
+   */
+  static canInsertLink(text, caret, context) {
+    return MarkdownTextOps.insertLink(text, caret, "x", InlineRuns.inlineLink("u"), { ...context, localCheck: true }) !== null;
+  }
+
+  /**
+   * INV-69 Remove link: every link the selection touches, or the link the
+   * caret is on (its text, edges included, or anywhere in its source),
+   * comes off; its text and other formats stay, written so that marked
+   * does not make it an autolink again. null when there is none.
+   * @purity pure
+   * @param {string} text
+   * @param {number} selStart
+   * @param {number} selEnd
+   * @param {{lexBlocks: Function, lexInline: Function, colors?: string[]}} context
+   * @returns {{text: string, selStart: number, selEnd: number}|null}
+   */
+  static removeLink(text, selStart, selEnd, context) {
+    if (selStart !== selEnd) return MarkdownTextOps.formatRange(text, selStart, selEnd, { kind: "unlink" }, context);
+    const lexed = MarkdownTextOps._lexedRange(text, selStart, selEnd, context, true);
+    const at = lexed && MarkdownTextOps._linkAt(lexed.tokens, 0, MarkdownTextOps._toInline(lexed.segments, lexed.range.s));
+    const touched = at && InlineRuns.unitRangeOfSource(lexed.runs, at.from, at.to);
+    if (!touched) return null;
+    return MarkdownTextOps._rewritePicked(text, lexed, InlineRuns.expandRange(lexed.runs, touched.from, touched.to), { kind: "unlink" }, context);
+  }
+
+  /**
+   * 5.15.5 Remove link: the selection touches a link, or the caret is on
+   * one (as removeLink). Only the inline range is lexed (INV-51).
+   * @purity pure
+   * @param {string} text
+   * @param {number} selStart
+   * @param {number} selEnd
+   * @param {{lexBlocks: Function, lexInline: Function}} context
+   * @returns {boolean}
+   */
+  static canRemoveLink(text, selStart, selEnd, context) {
+    const range = MarkdownTextOps._inlineRangeAt(text, selStart, selEnd, context.lexBlocks, selStart === selEnd);
+    if (!range) return false;
+    // no link can be written without one of these: no inline lexing then
+    if (!range.segments.some((g) => /[[<:@]|www\./i.test(text.slice(g.from, g.to)))) return false;
+    return MarkdownTextOps.removeLink(text, selStart, selEnd, { ...context, localCheck: true }) !== null;
+  }
+
+  /**
+   * INV-67 (8): source lexed again reads as the runs meant. Whole: source is
+   * the whole inline range written again, checked against its runs with
+   * the rewritten ones (rewritten) in place of [region.from, region.to).
+   * Local (only the runs given, for a button state per frame, INV-51):
+   * source is the rewritten part alone, checked against those runs.
+   * @purity pure
+   * @returns {boolean}
+   */
+  static _readsAsMeant(source, localRuns, work, region, rewritten) {
+    const check = work.lexInline(source);
+    if (rawOf(check) !== source) return false;
+    const expected = localRuns ?? [...work.runs.slice(0, region.from), ...rewritten, ...work.runs.slice(region.to)];
+    return JSON.stringify(InlineRuns.signature(InlineRuns.fromTokens(check, { colors: work.colors }))) === JSON.stringify(InlineRuns.signature(expected));
+  }
+
+  /**
+   * A new link's region also takes the top-level token right before it
+   * when that ends with a literal "!", "*", "_" or "~" (they are escaped
+   * there; InlineRuns._escapeBeforeLink): written as they are, a "!" would
+   * make the link an image and the others could close emphasis.
+   * @purity pure
+   * @returns {{from: number, to: number, srcFrom: number, srcTo: number}}
+   */
+  static _widenBeforeLink(tokens, runs, region, colors) {
+    const prev = runs[region.from - 1];
+    if (!prev || prev.type !== "text" || prev.src !== prev.text || !["!", "*", "_", "~"].includes(prev.text)) return region;
+    const ta = MarkdownTextOps._tokenGroups(tokens, colors)[prev.top];
+    let from = region.from;
+    while (from > 0 && runs[from - 1].top >= ta) from--;
+    return { from, to: region.to, srcFrom: rawOf(tokens.slice(0, ta)).length, srcTo: region.srcTo };
+  }
+
+  /**
+   * Taking a link off: the region also takes the text tokens right before
+   * and after it (the text of the link and its neighbours could make an
+   * autolink together: "[www](u).example"; InlineRuns escapes them).
+   * @purity pure
+   * @returns {{from: number, to: number, srcFrom: number, srcTo: number}}
+   */
+  static _widenAroundUnlink(tokens, runs, region, colors) {
+    const groupStart = MarkdownTextOps._tokenGroups(tokens, colors);
+    let { from, to, srcFrom, srcTo } = region;
+    const before = runs[from - 1];
+    if (before?.type === "text" && !before.marks.link) {
+      const ta = groupStart[before.top];
+      while (from > 0 && runs[from - 1].top >= ta) from--;
+      srcFrom = rawOf(tokens.slice(0, ta)).length;
+    }
+    const after = runs[to];
+    if (after?.type === "text" && !after.marks.link) {
+      let tb = after.top;
+      while (tb + 1 < tokens.length && groupStart[tb + 1] === groupStart[after.top]) tb++;
+      while (to < runs.length && runs[to].top <= tb) to++;
+      srcTo = rawOf(tokens.slice(0, tb + 1)).length;
+    }
+    return { from, to, srcFrom, srcTo };
+  }
+
+  /**
+   * The inline range of a selection (or of a caret, with allowEmpty)
+   * lexed: {range, segments, inline, tokens, runs, colors}, or null.
+   * @purity pure
+   */
+  static _lexedRange(text, selStart, selEnd, context, allowEmpty) {
+    const range = MarkdownTextOps._inlineRangeAt(text, selStart, selEnd, context.lexBlocks, allowEmpty);
     if (!range) return null;
     const { segments } = range;
     const inline = segments.map((g) => text.slice(g.from, g.to)).join("\n");
     const tokens = context.lexInline(inline);
     if (rawOf(tokens) !== inline) return null;
     const colors = context.colors ?? [];
-    const runs = InlineRuns.fromTokens(tokens, { colors });
-    const touched = InlineRuns.unitRangeOfSource(
-      runs,
-      MarkdownTextOps._toInline(segments, range.s),
-      MarkdownTextOps._toInline(segments, range.e),
-    );
-    if (!touched) return null;
-    const picked = InlineRuns.expandRange(runs, touched.from, touched.to);
-    const work = { text, segments, inline, runs, picked, op, colors, inTableCell: range.inTableCell, lexInline: context.lexInline };
+    return { range, segments, inline, tokens, runs: InlineRuns.fromTokens(tokens, { colors }), colors };
+  }
+
+  /**
+   * formatRange on the picked runs of a lexed range.
+   * @purity pure
+   * @returns {{text: string, selStart: number, selEnd: number}|null}
+   */
+  static _rewritePicked(text, lexed, picked, op, context) {
+    const { range, segments, inline, tokens, runs, colors } = lexed;
+    const work = { text, segments, inline, runs, picked, op, colors, inTableCell: range.inTableCell, lexInline: context.lexInline, localCheck: Boolean(context.localCheck) };
     // First without a neighbour the format does not merge with (its
     // notation stays, INV-67 (7)); when that cannot be written so that
     // marked reads it as meant, with the neighbours that have the format.
-    const strict = MarkdownTextOps._regionOf(tokens, runs, picked, colors, op, false);
+    let strict = MarkdownTextOps._regionOf(tokens, runs, picked, colors, op, false);
+    if (op.kind === "link") strict = MarkdownTextOps._widenBeforeLink(tokens, runs, strict, colors);
+    if (op.kind === "unlink") strict = MarkdownTextOps._widenAroundUnlink(tokens, runs, strict, colors);
     const edit = MarkdownTextOps._rewrite(work, strict);
     if (edit) return edit;
     const loose = MarkdownTextOps._regionOf(tokens, runs, picked, colors, op, true);
@@ -229,11 +489,7 @@ export default class MarkdownTextOps {
     const layout = InlineRuns.layout(result.runs, options);
     const next = inline.slice(0, region.srcFrom) + layout.text + inline.slice(region.srcTo);
     if (next === inline) return null;
-    const check = work.lexInline(next);
-    if (rawOf(check) !== next) return null;
-    const expected = [...runs.slice(0, region.from), ...result.runs, ...runs.slice(region.to)];
-    const shown = JSON.stringify(InlineRuns.signature(InlineRuns.fromTokens(check, { colors })));
-    if (shown !== JSON.stringify(InlineRuns.signature(expected))) return null;
+    if (!MarkdownTextOps._readsAsMeant(work.localCheck ? layout.text : next, work.localCheck ? result.runs : null, work, region, result.runs)) return null;
     // The selection: the characters that got the format (inside the
     // markers; the punctuation and spaces left out by INV-67 (4)(5) are not
     // selected), so that the same button takes it off again (5.14.14).
@@ -567,6 +823,107 @@ export default class MarkdownTextOps {
   }
 
   /**
+   * INV-69 (iii) for the Ctrl+V link: the offset o of an inline range is
+   * inside a link's destination or label (after the "]" of its text), or
+   * inside a piece kept whole: a code span, an inline HTML tag, an image,
+   * inline math, an escape, an entity (owner ruling F-R3), at any depth.
+   * Inside a link's text or emphasis, the tokens in it are looked at.
+   * @purity pure
+   * @returns {boolean}
+   */
+  static _cutsLinkSyntax(tokens, start, o) {
+    let pos = start;
+    for (const token of tokens) {
+      const from = pos;
+      const to = pos + token.raw.length;
+      pos = to;
+      if (!(from < o && o < to)) continue;
+      if (token.type === "text") return MarkdownTextOps._cutsTextPart(token.raw, o - from);
+      if (!["link", "strong", "em", "del"].includes(token.type)) return true; // kept whole
+      const inner = MarkdownTextOps._innerOf(token);
+      if (!inner) {
+        if (token.type !== "link") return true;
+        // a text with \[ \] (InlineRuns.linkOf maps it): after its "]" is the destination
+        if (token.raw.startsWith("[")) {
+          const link = InlineRuns.linkOf(token);
+          return !link || o > from + 1 + link.innerSrc.length;
+        }
+        return false; // a bare URL or an autolink: its text is characters (the brackets are at its edges)
+      }
+      if (token.type === "link" && o > from + inner.to) return true;
+      // on the markers of emphasis: formatRange takes the emphasis as it is
+      if (o < from + inner.from || o > from + inner.to) return false;
+      return MarkdownTextOps._cutsLinkSyntax(token.tokens, from + inner.from, o);
+    }
+    return false;
+  }
+
+  /**
+   * Owner ruling F-R1 for a new link at the caret: the offset o is inside
+   * any token but plain text and the text between the markers of emphasis
+   * (a link, a code span, an HTML tag, an image, math, an escape, an entity,
+   * or the markers themselves).
+   * @purity pure
+   * @returns {boolean}
+   */
+  static _cutsInsertion(tokens, start, o) {
+    let pos = start;
+    for (const token of tokens) {
+      const from = pos;
+      const to = pos + token.raw.length;
+      pos = to;
+      if (!(from < o && o < to)) continue;
+      if (token.type === "text") return MarkdownTextOps._cutsTextPart(token.raw, o - from);
+      if (!["strong", "em", "del"].includes(token.type)) return true;
+      const inner = MarkdownTextOps._innerOf(token);
+      if (!inner || o < from + inner.from || o > from + inner.to) return true;
+      return MarkdownTextOps._cutsInsertion(token.tokens, from + inner.from, o);
+    }
+    return false;
+  }
+
+  /**
+   * The offset k of a text token's source is inside one of its parts (an
+   * entity reference kept whole).
+   * @purity pure
+   */
+  static _cutsTextPart(raw, k) {
+    let p = 0;
+    for (const part of InlineRuns.textParts(raw)) {
+      if (p < k && k < p + part.length) return true;
+      p += part.length;
+    }
+    return false;
+  }
+
+  /**
+   * The source span {from, to} of the link the caret at o is on: inside its
+   * source, or on its text's edges; inside emphasis too. null when none.
+   * @purity pure
+   * @returns {{from: number, to: number}|null}
+   */
+  static _linkAt(tokens, start, o) {
+    let pos = start;
+    for (const token of tokens) {
+      const from = pos;
+      const to = pos + token.raw.length;
+      pos = to;
+      if (o < from || o > to) continue;
+      if (token.type === "link") {
+        const link = InlineRuns.linkOf(token);
+        const textFrom = from + (link ? link.innerFrom : 0);
+        const textTo = link ? textFrom + link.innerSrc.length : to;
+        if ((from < o && o < to) || (link && textFrom <= o && o <= textTo)) return { from, to };
+        continue;
+      }
+      const inner = token.type === "link" ? null : MarkdownTextOps._innerOf(token);
+      const found = inner ? MarkdownTextOps._linkAt(token.tokens, from + inner.from, o) : null;
+      if (found) return found;
+    }
+    return null;
+  }
+
+  /**
    * Where the child tokens of emphasis or a bracketed link are in its
    * source ({from, to}, relative), or null for a token kept whole.
    * @purity pure
@@ -588,15 +945,16 @@ export default class MarkdownTextOps {
    * {segments: [{from, to}] (its text, one per line, without the list /
    * quote marks), s, e (the selection moved off the marks), inTableCell}.
    * A newline at either end of the selection is left out. null when the
-   * selection is empty or not in one paragraph, heading or table cell.
+   * selection is empty (unless allowEmpty: a caret) or not in one
+   * paragraph, heading or table cell.
    * @purity pure
    */
-  static _inlineRangeAt(text, selStart, selEnd, lexBlocks) {
+  static _inlineRangeAt(text, selStart, selEnd, lexBlocks, allowEmpty = false) {
     let s = MarkdownTextOps._clamp(Math.min(selStart, selEnd), text);
     let e = MarkdownTextOps._clamp(Math.max(selStart, selEnd), text);
     if (e > s && text[e - 1] === "\n") e--;
     if (e > s && text[s] === "\n") s++;
-    if (s >= e) return null;
+    if (allowEmpty ? s > e : s >= e) return null;
     const info = MarkdownTextOps._leafLines(text, lexBlocks);
     if (!info) return null;
     const ls = MarkdownTextOps._lineIndexAt(text, s);
@@ -623,7 +981,7 @@ export default class MarkdownTextOps {
     if (!into || !outOf) return null;
     s = Math.max(s, into.from);
     e = Math.min(e, outOf.to);
-    if (s >= e) return null;
+    if (allowEmpty ? s > e : s >= e) return null;
     return { segments, s, e, inTableCell: a.leaf.type === "table" };
   }
 
@@ -719,6 +1077,7 @@ export default class MarkdownTextOps {
     const turnsOn = op.kind === "color" ? Boolean(op.value) : !shown.every((r) => r.marks[op.kind]);
     /** @purity pure */
     const merges = (run) => {
+      if (op.kind === "link" || op.kind === "unlink") return false; // a link is not merged with its neighbours
       if (!turnsOn && !always) return false;
       if (op.kind === "color") return Boolean(op.value && run.marks.color && run.marks.color.toLowerCase() === op.value.toLowerCase());
       return Boolean(run.marks[op.kind]);

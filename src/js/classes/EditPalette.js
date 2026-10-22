@@ -261,6 +261,8 @@ function createButton(id, label, iconHtml) {
  *     insertRow, rowDelete, insertColumn, columnDelete, insertMermaid (arg: a
  *     CONFIG.edit.mermaidSamples key), textColor (red / blue / green / none),
  *     linkPaste, linkRemove, alignColumn (left / center / right / none)
+ *   onPopoverOpened(key) - optional: a popover (format / mermaid / table)
+ *     has just opened (its button states can be set now, 5.15.5)
  */
 export default class EditPalette {
   /**
@@ -349,6 +351,15 @@ export default class EditPalette {
    */
   isShown() {
     return this._paletteDisplayState !== HIDDEN;
+  }
+
+  /**
+   * The open popover (format / mermaid / table), or null (11-f).
+   * @purity semi-pure-b
+   * @returns {string|null}
+   */
+  openPopoverKey() {
+    return this._openPopoverKey();
   }
 
   /**
@@ -452,6 +463,9 @@ export default class EditPalette {
     this._paletteDisplayState = next.to;
     this._root.hidden = next.to === HIDDEN;
     for (const action of next.actions) this._runDisplayAction(action, { from, to: next.to, input });
+    // after the move: the host may set the button states (5.15.5) of the popover
+    const opened = this._popoverKeyOf(next.to);
+    if (opened && opened !== this._popoverKeyOf(from)) this.host.onPopoverOpened?.(opened);
   }
 
   // ---- internals: 11-d actions and guards ----

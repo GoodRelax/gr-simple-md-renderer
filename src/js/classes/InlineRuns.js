@@ -9,6 +9,8 @@ const WHITESPACE = /\s/u;
 const PUNCTUATION = /[\p{P}\p{S}]/u;
 const WORD_CHAR = /[\p{L}\p{N}]/u;
 // INV-72 (d): escaped in text written without a source
+// emphasis delimiters written as plain text (_escapeBeforeLink)
+const LITERAL_DELIMITERS = new Set(["*", "_", "~"]);
 const ESCAPED_CHARS = new Set(["\\", "`", "*", "_", "[", "]", "<", "|", "~", "$", "&"]);
 const NO_MARKS = Object.freeze({ color: null, link: null, del: false, strong: false, em: false });
 // An entity or numeric character reference is one run (never split).
@@ -120,6 +122,17 @@ export default class InlineRuns {
   }
 
   /**
+   * A link token's notation (INV-72 (a)): {kind, href, title, innerFrom,
+   * innerSrc, ...}, or null when its text cannot be found in its source.
+   * @purity pure
+   * @param {object} token
+   * @returns {object|null}
+   */
+  static linkOf(token) {
+    return InlineRuns._linkOf(token);
+  }
+
+  /**
    * The links of inline tokens in source order (they are the a elements
    * of the rendered HTML in the same order), each with its notation
    * (INV-72 (a)); null for a link whose notation is not known.
@@ -137,33 +150,135 @@ export default class InlineRuns {
   }
 
   /**
-   * Bold / Italic / text color over [start, end) of the shown text (a line
-   * break counts 0). null when the range holds no run, or only spaces for
-   * Bold / Italic.
+   * Bold / Italic / text color / a link over [start, end) of the shown text
+   * (a line break counts 0). null when the range holds no run, or only
+   * spaces for Bold / Italic, or no link to take off. Taking a link off
+   * also works at a caret (start === end): the link the caret is on, its
+   * edges included (INV-69). op.strictEnds (the Ctrl+V link): null when an
+   * end is inside a code span or another piece kept whole.
    * @purity pure
    * @param {object[]} runs
    * @param {number} start
    * @param {number} end
-   * @param {{kind: "strong"|"em"|"color", value?: string|null}} op
+   * @param {{kind: "strong"|"em"|"color"|"link"|"unlink", value?: string|null, link?: object, url?: string, strictEnds?: boolean}} op
    * @param {object} [context] - before / after: the text around the runs
    * @returns {{runs: object[], start: number, end: number}|null} start / end: the range after INV-67 (6)
    */
   static apply(runs, start, end, op, context = {}) {
     const offsets = InlineRuns._offsets(runs);
+    if (op.strictEnds && (InlineRuns._cutsRun(offsets, start) || InlineRuns._cutsRun(offsets, end))) return null;
     let from = -1;
     let to = -1;
-    for (let k = 0; k < runs.length; k++) {
-      const a = offsets[k];
-      const b = offsets[k + 1];
-      const inside = b > a ? a < end && b > start : a > start && a < end;
-      if (!inside) continue;
-      if (from < 0) from = k;
-      to = k + 1;
+    if (start === end && op.kind === "unlink") {
+      from = InlineRuns._linkRunAt(runs, offsets, start);
+      to = from + 1;
+    } else {
+      for (let k = 0; k < runs.length; k++) {
+        if (!InlineRuns._touches(offsets, k, start, end)) continue;
+        if (from < 0) from = k;
+        to = k + 1;
+      }
     }
     if (from < 0) return null;
     const result = InlineRuns.applyUnits(runs, from, to, op, context);
     if (!result) return null;
-    return { runs: result.runs, start: offsets[result.from], end: offsets[result.to] };
+    const after = InlineRuns._offsets(result.runs);
+    return { runs: result.runs, start: after[result.from], end: after[result.to] };
+  }
+
+  /**
+   * The selection [start, end) touches a link, or the caret (start === end)
+   * is on one, its edges included (5.15.5: Remove link).
+   * @purity pure
+   * @param {object[]} runs
+   * @param {number} start
+   * @param {number} end
+   * @returns {boolean}
+   */
+  static hasLinkAt(runs, start, end) {
+    const offsets = InlineRuns._offsets(runs);
+    if (start === end) return InlineRuns._linkRunAt(runs, offsets, start) >= 0;
+    for (let k = 0; k < runs.length; k++) if (runs[k].marks.link && InlineRuns._touches(offsets, k, start, end)) return true;
+    return false;
+  }
+
+  /**
+   * An inline link [text](destination) made by INV-69; its href is what
+   * marked reads from the destination (without the angle brackets).
+   * @purity pure
+   * @param {string} destination - ClipboardLink.toDestination
+   * @returns {object} a link of the runs (as InlineRuns._linkOf makes them)
+   */
+  static inlineLink(destination) {
+    const angle = destination.startsWith("<") && destination.endsWith(">");
+    return { kind: "inline", innerFrom: 1, href: angle ? destination.slice(1, -1) : destination, title: null, innerSrc: "", dest: `(${destination})` };
+  }
+
+  /**
+   * A new link before run index i (no selection, INV-69 (b), owner ruling
+   * F-R1): its text is label; it has the other formats of the run before it
+   * (or after it). A "!" right before it is written \! (else it would make
+   * an image) and a lone backslash is doubled. null when the label is empty,
+   * or i is not a place a link can go (inside a link, or not a run
+   * boundary). start / end: the label in the shown text.
+   * @purity pure
+   * @param {object[]} runs - not changed
+   * @param {number} i
+   * @param {string} label
+   * @param {object} link - inlineLink()
+   * @param {object} [context]
+   * @returns {{runs: object[], start: number, end: number}|null}
+   */
+  static insertLinkAt(runs, i, label, link, context = {}) {
+    if (!InlineRuns.canInsertLinkAt(runs, i) || !label) return null;
+    const marks = { ...((runs[i - 1] ?? runs[i])?.marks ?? NO_MARKS), link };
+    /** @purity pure */
+    const copy = (r) => ({ ...r, marks: { ...r.marks } });
+    /** @purity pure */
+    const run = (ch) => ({ type: "text", text: ch, src: null, marks: { ...marks } });
+    const added = Array.from(label).map(run);
+    const out = [...runs.slice(0, i).map(copy), ...added, ...runs.slice(i).map(copy)];
+    const before = out[i - 1];
+    if (before?.type === "text" && before.text === "\\" && before.src === "\\") before.src = "\\\\";
+    InlineRuns._escapeBeforeLink(out, i);
+    InlineRuns._normalize(out, context);
+    const after = InlineRuns._offsets(out);
+    return { runs: out, start: after[i], end: after[i + added.length] };
+  }
+
+  /**
+   * A new link can go before run index i (owner ruling F-R1): i is a run
+   * boundary, and not inside a link (the runs on both sides of one link).
+   * @purity pure
+   * @param {object[]} runs
+   * @param {number} i
+   * @returns {boolean}
+   */
+  static canInsertLinkAt(runs, i) {
+    if (!Number.isInteger(i) || i < 0 || i > runs.length) return false;
+    const link = runs[i - 1]?.marks.link;
+    return !link || runs[i]?.marks.link !== link;
+  }
+
+  /**
+   * The run index where the shown offset at falls between two runs, a line
+   * break counting brWidth (1: a caret in a cell's DOM, unambiguous at a line
+   * start); -1 when at is inside a run (a code span or another piece kept
+   * whole).
+   * @purity pure
+   * @param {object[]} runs
+   * @param {number} at
+   * @param {number} [brWidth]
+   * @returns {number}
+   */
+  static runIndexAt(runs, at, brWidth = 0) {
+    let pos = 0;
+    for (let i = 0; i < runs.length; i++) {
+      if (pos === at) return i;
+      pos += runs[i].type === "br" ? brWidth : runs[i].text.length;
+      if (pos > at) return -1;
+    }
+    return pos === at ? runs.length : -1;
   }
 
   /**
@@ -172,11 +287,15 @@ export default class InlineRuns {
    * (3) Bold / Italic come off when every selected character has them, else
    * go on the whole range; (4) spaces at the ends go outside the markers;
    * (5) an end whose markers would not work is dropped from the range.
+   * A link (op.link) goes on the whole range, in place of any link there;
+   * a bare URL or an autolink in it gives its text up for op.url (INV-69).
+   * Taking links off (unlink) keeps their text, written so that marked does
+   * not make it an autolink again.
    * @purity pure
    * @param {object[]} runs - not changed
    * @param {number} from
    * @param {number} to - exclusive
-   * @param {{kind: string, value?: string|null}} op
+   * @param {{kind: string, value?: string|null, link?: object, url?: string}} op
    * @param {object} [context] - before / after / inTableCell
    * @returns {{runs: object[], from: number, to: number}|null}
    */
@@ -184,6 +303,8 @@ export default class InlineRuns {
     if (!(from < to)) return null;
     const { from: i, to: j } = InlineRuns.expandRange(runs, from, to);
     const out = runs.map((r) => ({ ...r, marks: { ...r.marks } }));
+    if (op.kind === "link") return InlineRuns._linkUnits(out, i, j, op, context);
+    if (op.kind === "unlink") return InlineRuns._unlinkUnits(out, i, j, context);
     if (op.kind === "strong" || op.kind === "em") {
       const shown = out.slice(i, j).filter((r) => !InlineRuns.isBlank(r));
       if (shown.length === 0) return null;
@@ -247,12 +368,15 @@ export default class InlineRuns {
    * the emphasis markers ({kind, from, to, open, close, length}).
    * @purity pure
    * @param {object[]} runs
-   * @param {object} [options]
+   * @param {object} [options] - also literalUrls: texts taken off a link
+   *   that stay text where they stand outside a link (a table cell written
+   *   again from its DOM, INV-69)
    * @returns {{text: string, unitFrom: number[], unitTo: number[], delimiters: object[]}}
    */
   static layout(runs, options = {}) {
     const out = InlineRuns._emptyLayout(runs.length);
-    InlineRuns._writeLevel(runs, 0, runs.length, 0, options, out);
+    const written = options.literalUrls?.length ? InlineRuns._withLiteralUrls(runs, options.literalUrls) : runs;
+    InlineRuns._writeLevel(written, 0, written.length, 0, options, out);
     return out;
   }
 
@@ -302,6 +426,203 @@ export default class InlineRuns {
   // ---- helpers (pure) ----
 
   /**
+   * Run k is touched by [start, end) (a run of no width when it is inside).
+   * @purity pure
+   */
+  static _touches(offsets, k, start, end) {
+    const a = offsets[k];
+    const b = offsets[k + 1];
+    return b > a ? a < end && b > start : a > start && a < end;
+  }
+
+  /**
+   * The shown offset x is inside a run (not at its edges).
+   * @purity pure
+   */
+  static _cutsRun(offsets, x) {
+    for (let k = 0; k + 1 < offsets.length; k++) if (offsets[k] < x && x < offsets[k + 1]) return true;
+    return false;
+  }
+
+  /**
+   * The run of a link the caret at c is on (inside it, else the run that
+   * ends at c, else the one that starts at c), or -1.
+   * @purity pure
+   */
+  static _linkRunAt(runs, offsets, c) {
+    let edge = -1;
+    for (let k = 0; k < runs.length; k++) {
+      if (!runs[k].marks.link || offsets[k + 1] === offsets[k]) continue;
+      if (offsets[k] < c && c < offsets[k + 1]) return k;
+      if (offsets[k + 1] === c) edge = k;
+      else if (offsets[k] === c && edge < 0) edge = k;
+    }
+    return edge;
+  }
+
+  /**
+   * INV-69: op.link on out[i, j); the runs of a bare URL or an autolink
+   * there become op.url's characters.
+   * @purity pure
+   * @param {object[]} out - copies owned by the caller
+   * @returns {{runs: object[], from: number, to: number}}
+   */
+  static _linkUnits(out, i, j, op, context) {
+    const middle = [];
+    let k = i;
+    while (k < j) {
+      const old = out[k].marks.link;
+      if (old && (old.kind === "bare" || old.kind === "autolink") && op.url) {
+        let e = k;
+        while (e < j && out[e].marks.link === old) e++;
+        const marks = { ...out[k].marks, link: op.link };
+        for (const ch of Array.from(op.url)) middle.push({ type: "text", text: ch, src: null, marks: { ...marks } });
+        k = e;
+        continue;
+      }
+      out[k].marks.link = op.link;
+      // a bracket written as it was would close or open the link's text
+      if (out[k].type === "text" && (out[k].src === "[" || out[k].src === "]")) out[k].src = null;
+      // "(" after such a "]": written \( by _sourceOf
+      if (out[k].type === "text" && out[k].src === "(" && middle[middle.length - 1]?.text === "]") out[k].src = null;
+      middle.push(out[k]);
+      k++;
+    }
+    const runs = [...out.slice(0, i), ...middle, ...out.slice(j)];
+    InlineRuns._escapeBeforeLink(runs, i);
+    InlineRuns._normalize(runs, context);
+    return { runs, from: i, to: i + middle.length };
+  }
+
+  /**
+   * The runs written right before a new link at index i (INV-69, INV-72
+   * (d)): a "!" there would make it an image, and literal "*" "_" "~"
+   * there could close emphasis once a "[" follows them; written as they
+   * were, they are escaped (\! \* \_ \~). Runs without source are
+   * escaped by _sourceOf.
+   * @purity pure
+   * @param {object[]} out - copies owned by the caller, changed in place
+   * @param {number} i
+   */
+  static _escapeBeforeLink(out, i) {
+    let k = i - 1;
+    if (out[k]?.type === "text" && out[k].text === "!" && (out[k].src ?? "!") === "!") out[k--].src = "\\!";
+    while (k >= 0 && out[k].type === "text" && LITERAL_DELIMITERS.has(out[k].text) && out[k].src === out[k].text) {
+      out[k].src = `\\${out[k].text}`;
+      k--;
+    }
+  }
+
+  /**
+   * INV-69: the links of out[i, j) come off; the text of each is written
+   * so that it is no autolink. null when there is no link there.
+   * @purity pure
+   * @param {object[]} out - copies owned by the caller
+   * @returns {{runs: object[], from: number, to: number}|null}
+   */
+  static _unlinkUnits(out, i, j, context) {
+    let any = false;
+    let k = i;
+    while (k < j) {
+      const link = out[k].marks.link;
+      if (!link) {
+        k++;
+        continue;
+      }
+      let e = k;
+      while (e < j && out[e].marks.link === link) out[e++].marks.link = null;
+      // with the text right next to it: "www" + ".example", "a" + "@b.example"
+      const around = InlineRuns.textAround(out, k, e);
+      InlineRuns._breakAutolinks(out, around.from, around.to);
+      any = true;
+      k = e;
+    }
+    if (!any) return null;
+    InlineRuns._normalize(out, context);
+    return { runs: out, from: i, to: j };
+  }
+
+  /**
+   * runs[from, to) grown over the text runs next to it that are in no link
+   * and are no white space: the word an autolink of marked could take.
+   * @purity pure
+   * @param {object[]} runs
+   * @param {number} from
+   * @param {number} to - exclusive
+   * @returns {{from: number, to: number}}
+   */
+  static textAround(runs, from, to) {
+    /** @purity pure */
+    const plain = (r) => r && r.type === "text" && !r.marks.link && !WHITESPACE.test(r.text);
+    let a = from;
+    let b = to;
+    while (a > 0 && plain(runs[a - 1])) a--;
+    while (b < runs.length && plain(runs[b])) b++;
+    return { from: a, to: b };
+  }
+
+  /**
+   * Escape what would make out[from, to) an autolink of marked (GFM): the
+   * colon of a scheme, the dot of every "www.", and "@" (as \:, \. and \@;
+   * marked makes "www." an autolink after any character).
+   * @purity pure
+   * @param {object[]} out - copies owned by the caller, changed in place
+   */
+  static _breakAutolinks(out, from, to) {
+    const at = [];
+    let text = "";
+    for (let k = from; k < to; k++) {
+      at.push(text.length);
+      text += out[k].text;
+    }
+    const targets = new Set();
+    for (const m of text.matchAll(/(?:https?|ftp|mailto):/gi)) targets.add(m.index + m[0].length - 1);
+    for (const m of text.matchAll(/www\./gi)) targets.add(m.index + 3);
+    for (const m of text.matchAll(/@/g)) targets.add(m.index);
+    for (let k = from; k < to; k++) {
+      const run = out[k];
+      if (run.type !== "text" || run.text.length !== 1 || !targets.has(at[k - from])) continue;
+      if (typeof run.src === "string" && run.src.startsWith("\\")) continue; // escaped already
+      run.src = `\\${run.text}`;
+    }
+  }
+
+  /**
+   * Copies of runs where each literal URL text standing outside a link is
+   * written so that it is no autolink (layout's literalUrls).
+   * @purity pure
+   */
+  static _withLiteralUrls(runs, literals) {
+    const out = runs.map((r) => ({ ...r }));
+    let k = 0;
+    while (k < out.length) {
+      if (out[k].type !== "text" || out[k].marks.link) {
+        k++;
+        continue;
+      }
+      let e = k;
+      const starts = [];
+      let text = "";
+      while (e < out.length && out[e].type === "text" && !out[e].marks.link) {
+        starts.push(text.length);
+        text += out[e++].text;
+      }
+      for (const literal of literals) {
+        if (!literal) continue;
+        for (let p = text.indexOf(literal); p >= 0; p = text.indexOf(literal, p + literal.length)) {
+          let a = 0;
+          while (a < starts.length && starts[a] < p) a++;
+          let b = a;
+          while (b < starts.length && starts[b] < p + literal.length) b++;
+          InlineRuns._breakAutolinks(out, k + a, k + b);
+        }
+      }
+      k = e;
+    }
+    return out;
+  }
+
+  /**
    * One level of tokens into runs; color spans of this level are paired.
    * @purity pure
    */
@@ -348,8 +669,17 @@ export default class InlineRuns {
         }
         case "link": {
           const link = InlineRuns._linkOf(token);
-          if (link) InlineRuns._collect(token.tokens, from + link.innerFrom, { ...marks, link }, colors, runs, at);
-          else add("atom", token.raw, token.raw);
+          if (link && !link.textMap) {
+            InlineRuns._collect(token.tokens, from + link.innerFrom, { ...marks, link }, colors, runs, at);
+          } else {
+            // marked reads the text with \[ \] as brackets: its tokens are
+            // placed on the text without those backslashes, mapped back here
+            const inner = [];
+            if (link) InlineRuns._collect(token.tokens, 0, { ...marks, link }, colors, inner, at);
+            const mapped = link && InlineRuns._mapLinkText(inner, link, from + link.innerFrom);
+            if (mapped) runs.push(...mapped);
+            else add("atom", token.raw, token.raw);
+          }
           break;
         }
         case "html": {
@@ -531,12 +861,62 @@ export default class InlineRuns {
     const base = { href: token.href, title: token.title ?? null, innerSrc: inner };
     if (raw.startsWith("<")) return raw === `<${inner}>` ? { kind: "autolink", innerFrom: 1, ...base } : null;
     if (!raw.startsWith("[")) return raw === inner ? { kind: "bare", innerFrom: 0, ...base } : null;
-    if (raw.slice(1, 1 + inner.length) !== inner || raw[1 + inner.length] !== "]") return null;
-    const rest = raw.slice(inner.length + 2);
+    if (raw.slice(1, 1 + inner.length) !== inner || raw[1 + inner.length] !== "]") {
+      // the text has \[ or \], which marked reads as brackets before lexing it
+      const textMap = InlineRuns._escapedTextMap(raw, inner);
+      if (!textMap) return null;
+      base.innerSrc = raw.slice(1, 1 + textMap[inner.length]);
+      base.textMap = textMap;
+    }
+    const rest = raw.slice(base.innerSrc.length + 2);
     if (rest === "") return { kind: "shortcut", innerFrom: 1, ...base };
     if (rest === "[]") return { kind: "collapsed", innerFrom: 1, ...base };
     if (rest.startsWith("[")) return { kind: "reference", innerFrom: 1, label: rest.slice(1, -1), ...base };
     return { kind: "inline", innerFrom: 1, dest: rest, ...base };
+  }
+
+  /**
+   * Where each offset of a link's text as marked lexed it (its \[ \] read
+   * as brackets) is in the link's source text (raw from index 1): an array
+   * of inner.length + 1 offsets, or null when the source does not read so.
+   * @purity pure
+   * @param {string} raw - the link token's source
+   * @param {string} inner - its text as marked lexed it
+   * @returns {number[]|null}
+   */
+  static _escapedTextMap(raw, inner) {
+    const map = [0];
+    let i = 1;
+    for (let u = 0; u < inner.length; u++) {
+      if (raw[i] === "\\" && raw[i + 1] === inner[u] && (inner[u] === "[" || inner[u] === "]")) i += 2;
+      else if (raw[i] === inner[u]) i++;
+      else return null;
+      map.push(i - 1);
+    }
+    return raw[i] === "]" ? map : null;
+  }
+
+  /**
+   * The runs of a link's text collected at 0 on the text marked lexed, put
+   * back on the source (link.textMap): each text run gets its source (a
+   * bracket is written \[ or \] again); null when any other run would
+   * cover a backslash marked took off (the link is then kept whole).
+   * @purity pure
+   * @param {object[]} inner - runs owned by the caller, changed in place
+   * @param {object} link
+   * @param {number} base - where the link's text starts in the source
+   * @returns {object[]|null}
+   */
+  static _mapLinkText(inner, link, base) {
+    const map = link.textMap;
+    for (const run of inner) {
+      const source = link.innerSrc.slice(map[run.srcFrom], map[run.srcTo]);
+      if (run.type === "text") run.src = source;
+      else if (source !== run.src) return null;
+      run.srcFrom = base + map[run.srcFrom];
+      run.srcTo = base + map[run.srcTo];
+    }
+    return inner;
   }
 
   /**
@@ -775,6 +1155,11 @@ export default class InlineRuns {
     if (run.src !== null && run.src !== undefined) return run.src;
     switch (run.type) {
       case "text":
+        // "!" right before a link's "[" would make it an image
+        if (run.text === "!" && runs[i + 1]?.marks.link && runs[i + 1].marks.link !== run.marks.link) return "\\!";
+        // in a link's text marked reads \[ \] as brackets before lexing it:
+        // "\[x\](y)" would be a link inside the link, so "(" after "]" is \(
+        if (run.text === "(" && run.marks.link && runs[i - 1]?.type === "text" && runs[i - 1].text === "]" && runs[i - 1].marks.link === run.marks.link) return "\\(";
         return InlineRuns._escapeChar(run.text, runs[i - 1], runs[i + 1]);
       case "code":
         return InlineRuns._codeSpan(options.inTableCell ? run.text.replace(/\|/g, "\\|") : run.text);

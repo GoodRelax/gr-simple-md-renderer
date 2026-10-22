@@ -9,6 +9,11 @@ import { test, expect, renderMarkdown } from "./fixtures.js";
 // no box while browsing (comments, reference definitions) once made the
 // search pick a block far below the top (-1074 px in both browsers).
 
+// Long documents toggled again and again: 12 to 18 s each without load. The
+// tests in this file get three times the default time (test.slow), so that a
+// loaded machine (another worktree's e2e, GRSMD_E2E_PORT) does not fail them.
+test.beforeEach(() => test.slow());
+
 function sections(count, body) {
   const parts = [];
   for (let i = 0; i < count; i++) parts.push(`## Section ${i}`, "", ...body(i), "");

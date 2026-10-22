@@ -283,7 +283,7 @@ gr-simple-md-renderer/
 | CON-09 | JavaScriptはES6+クラスベースで記述すること。                                                                                                                                              |
 | CON-10 | バンドルしたライブラリ (npm依存) のバージョン変更は機能検証を必須とする。                                                                                                                 |
 | CON-11 | バックエンドを追加してはならない（サーバー処理、APIエンドポイント、Node.jsサーバー一切不可）。                                                                                            |
-| CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。 |
+| CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。**クリップボードの読み取り (INV-69) は外部との通信ではない。ただし「リンクを貼る」のボタンは、ブラウザの読み取りの許可 (`navigator.clipboard`) を使う。Chrome などは許可をオリジンごとに記憶するので、GRSMD で許可すると、同じオリジン `https://goodrelax.github.io` の他のページ (gr-scheduler など) も、確認なしにクリップボードを読めるようになる **[要検証: ブラウザごとの記憶のしかた]**。許可はブラウザのサイトの設定で取り消せる。このため、許可の要らない Ctrl+V の方式を主とし (裁定 Q5)、ボタンは押したときだけ許可を使う。このことをヘルプ (日英) に書く (2026-xx-xx)。** |
 | CON-13 | 編集内容を自動保存してはならない。localStorage、sessionStorage、Cookie、IndexedDB、Origin Private File System、Cache Storage のいずれにも、編集内容・ファイル名・パレットの位置・パレットの最小化の状態を書いてはならない。保存はユーザーの明示操作 (SC-24) によるローカルファイルへの書き込み、またはダウンロードに限る。`document.title` にファイル名を入れてはならない (ブラウザの履歴に残るため。INV-50) |
 | CON-14 | 保存処理はネットワーク通信を行ってはならない。File System Access API の書き込み、または `blob:` URL によるダウンロードのみを用いる |
 | CON-15 | 製品コード (`src/js/`) のすべての関数とメソッドは、JSDoc のコメント内に `@purity` タグをちょうど 1 つ持つこと。値は `pure` / `semi-pure-a` / `semi-pure-b` / `non-pure` の 4 値とする (レビュー規約 R7.1 / R7.6)。既存コードにも適用する。数え方と検査の方法は 5.16 に定める |
@@ -366,9 +366,10 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-66 | イベント駆動 | ブロック編集欄またはセルで文字を選び、書式のポップオーバーで色を選んだ場合、システムは選んだ文字だけに INV-67 の規則で文字色を付けること (「色を外す」では外す)。原文には `<span style="color: #RRGGBB">…</span>` と書き、値は `CONFIG.edit.textColors` のライトの値 (5.14.14) とすること。ダークでは、その 3 値を CSS でダークの値に読み替えて表示すること (原文は変えない)。DOMPurify・ExternalImageGate・CSP は変更しないこと **[確認済: `style` 属性は DOMPurify の既定で通り、`url()` などを含む `style` は ExternalImageGate が除く]**。GitHub では `style` が除かれるので、色は消え、文字は残る **[確認済: レビュー UIR-38]**。文書の利用者が書いた任意の `style` 属性は改訂の前から通る (今回は広げも絞りもしない。絞る件は範囲外として別に検討する。裁定 Q4)。 |
 | INV-67 | イベント駆動 | Bold / Italic / 文字色 / リンクを適用する場合、システムは次の規則で書式の並びを変え、書き出すこと。(1) **正規形**: 書式の種類を外から順に、色 → リンク → 取り消し線 → 太字 → 斜体 とし、コード・改行・文字は最も内側に置く。同じ種類の書式は入れ子にしない (分割と結合で扱う)。違う種類の入れ子は、この順でだけ作る (例と書き方は 5.14.14 の表)。(2) 隣り合う同じ書式はまとめる。(3) Bold / Italic は、選んだ範囲の文字がすべてその書式なら外し、そうでなければ範囲全体に付ける。(4) 強調の記号 (`**` / `*` / `~~`) の内側の両端に空白を置かない (端の空白は記号の外に出す)。(5) **約物**: 強調の範囲の端の文字が、CommonMark 0.31.2 の左右の区切りの規則 (Unicode の空白と、Unicode の P / S に属する約物で判定する。marked も同じ判定 **[確認済: marked 18.1.0 の `[\s\p{P}\p{S}]`]**) を満たさず記号が効かない場合は、その端の文字を 1 文字ずつ範囲から外し、効くようになるまで繰り返す。範囲が空になれば、その書式を付けない。HTML (`<strong>` など) では書かない (裁定 E1)。WYSIWYG のセルでは、適用した時点でこの結果を表示に反映する。(6) **範囲**: 選択の端がコードスパンまたはリンクの途中にある場合は、範囲をそのコードスパン・リンク全体に広げる。選択が 1 つのインラインの範囲 (用語集) に収まらない場合は、適用せず、ボタンを無効にする (空行をまたぐ選択を含む)。(7) **原文の編集欄**では、選択を含むインラインの範囲を字句解析し、選択に重なるトークンの範囲だけを (1)〜(5) の形で書き直し、それ以外の文字は変えない。(8) **検証**: 書き出した結果を marked で解析し直し、並びが意図と一致することを単体テストで確かめる (5.14.14 の表のすべての例)。 |
 | INV-68 | イベント駆動 | 編集パレットのグリップが `CONFIG.edit.paletteLongPressMs` 以上押され、その間の移動が `CONFIG.pan.activationThresholdPx` 以下だった場合、システムは 11-f の `minimizeToggled` を起こすこと (時間が来た時点で切り替え、離すまで移動しない。11-d)。それより前に閾値を超えて動いた場合は移動とすること。最小化している間はグリップだけを表示し、未保存なら印 (点) を付けること。グリップの画面上の位置は変えないこと (ビューポートの外に出る場合は INV-37 で補正する)。最小化しても編集モード、開いている編集欄、ショートカットはそのままとすること。最小化の状態は記憶しないこと (CON-13)。タッチの長押しで文脈メニューや選択が出ないようにすること (`contextmenu` を止め、`-webkit-touch-callout: none`)。 |
+| INV-69 | イベント駆動 | システムは、ブロック編集欄またはセルの編集中に、次の 2 つの方法でリンクを貼れるようにすること (裁定 Q5)。**(主: Ctrl+V)** 貼り付け (`paste` の事象。Ctrl+V / Cmd+V、文脈メニューの貼り付けを含む) が起きたとき、次の (i)〜(iv) をすべて満たす場合に限り、ブラウザの既定の貼り付けを止め、選んだ文字をその URL へのリンクにすること (権限は使わない。同期に処理する)。(i) 文字を選んでいる。(ii) `clipboardData` の `text/plain` が下の URL の条件を満たす。(iii) 選択が 5.15.5 の「リンクを貼る」の条件 (INV-67 の (6)。1 つのインラインの範囲にあり、コードブロック・数式・HTML のブロック・参照リンクの定義の中でない) を満たし、かつ、リンクの行き先 `(…)`・コードスパン・インラインの HTML のタグ・画像 (`![…](…)` の文字と行き先)・インラインの数式・エスケープ・実体参照の中でない (選択の両端を、その範囲の字句解析の結果で判定する。画像と数式はオーナーの裁定 F-R3 (2026-10-22)。端から全体を選べば、その全体をリンクで包む)。(iv) 選んだ文字そのものが URL の条件を満たさない (選んだ文字が URL なら、普通の貼り付けと同じく置き換える。裁定 Q6)。どれかを満たさない場合は、従来どおりの貼り付けとする (セルは INV-63、ブロック編集欄はブラウザの既定。`preventDefault()` しない)。セルでは、この判定を INV-63 の貼り付けの規則より先に行う。リンクにする場合の入れ方は、ブロック編集欄では 5.14.6 の `execCommand("insertText")` の方式 (ブラウザの文字単位の Undo の履歴に載る。裁定 Q2)、セルでは INV-67 の適用 (`TableCellEditor` の書式の適用と同じ) とする。**(ボタン)** 書式のポップオーバーの「リンクを貼る」が押された場合は、クリップボードを読み (`navigator.clipboard.read()`。使えなければ `readText()`)、URL の条件を満たせば、(a) 文字を選んでいれば、その文字をリンクにし (既存のリンクの中なら、そのリンクの URL を置き換える。参照リンクは普通のリンク `[文字](URL)` に変える (定義は変えない)。裸の URL・`<URL>` は、文字と URL を新しい URL にする)、(b) 文字を選んでいなければ、カーソルの位置にリンクを入れ、その文字を選んだ状態にする。ただし (b) は、カーソルが 1 つのインラインの範囲の文字の中 (行の印 (`- `・`# `・`> ` など) の上でない) にあり、コードスパン・インラインの HTML のタグ・リンク (文字と行き先)・画像・インラインの数式・エスケープ・実体参照・強調の記号の中でないときに限る (行の外の空の行では、新しい段落になる)。カーソルの直前の `!` は `\!` と書く (画像にしない)。それ以外の位置ではボタンを無効にする (オーナーの裁定 F-R1 (2026-10-22))。文字は、クリップボードの `text/html` に `href` が同じ URL の `a` 要素が 1 つだけあればその文字 (`textContent`、改行を空白に、前後の空白を除く)、無ければ URL とする。`text/html` は `DOMParser` (inert な文書) で解析し、文字だけを取り、DOM には入れない。ボタンを押すと、ブラウザが読み取りの許可を確かめることがあり、許可は同じオリジンの他のページと共有されうる (CON-12 の注。ヘルプ (日英) に書く)。**(待つ間の競合)** ボタンを押した時点で、対象 (ブロック編集欄ならブロック ID、セルなら表のブロック ID と (r, c))、選択の範囲 (開始と終了の位置)、編集の世代 (`editGeneration`。ブロック編集欄・セルを開くたび・閉じるたびと、その内容が変わるたびに進む番号) を記録し、読み終えた時点でそのすべてが今と一致するときだけ適用すること。一致しなければ何も変えず、トースト (`messages.edit.linkTargetChanged`) で知らせること。**(URL の条件)** `text/plain` の前後の空白を除いた文字列が、制御文字 (タブを含む C0、DEL、C1)・空白類 (`\s`。NBSP、U+3000、U+2028 / 2029 を含む)・ソフトハイフン・双方向の制御文字 (U+061C、U+200E / 200F、U+202A〜202E、U+2066〜2069)・廃止された書式の文字 (U+206A〜206F)・U+180E・幅 0 の文字 (U+200B〜200D、U+2060〜2064)・U+FEFF を含まず (`new URL()` はこれらを除くか符号化して受け入れるので、確かめた文字列と書く文字列が違ってしまう。見えない文字で URL の見た目を偽れる)、`new URL()` で解釈でき、スキームが `CONFIG.edit.linkSchemes` (`http:` / `https:` / `mailto:`) のどれかで、長さが `CONFIG.edit.maxPastedUrlLength` 以下であること。URL でない場合は、ボタンでは何も変えず「クリップボードに URL がありません」(`messages.edit.noUrlInClipboard`) をトーストで示すこと (読み取りが拒まれた場合も同じ)。URL はあるが、その選択・カーソルにリンクを付けられない場合 (書き出しを marked で読み直して意図と合わない場合を含む) は、何も変えず「ここにはリンクを貼れません」(`messages.edit.linkNotPastable`) をトーストで示すこと (オーナーの裁定 F-R2 (2026-10-22))。**(原文に書く形)** URL は利用者の文字列 (前後の空白を除いたもの。`new URL().href` に正規化しない) を書く。`\` は `%5C` にし、`<`・`>`・括弧の不釣り合いを含む場合は `<` `>` を `%3C` `%3E` にして `<…>` で囲む (空白は URL の条件で含まない) **[確認済: marked 18.1.0]**。URL の中の実体参照の形 (`&amp;` など) は書いたとおりに残すが、marked が描画で文字に解く (`\&` と書いても同じ。既知の制約) **[確認済: marked 18.1.0]**。リンクの文字は INV-72 (d) で逃がす。表のセル (WYSIWYG のセル、原文のセル、表の原文の編集欄の表の行) では、URL の中の `|` を `\|` と書く (marked の表は `\|` を `|` に戻してからセルを解析する。INV-72 (d) と同じ。Ctrl+V とボタンの両方。原文のセルは INV-63 の自動の修正で `\|` になる)。クリップボードの読み取りはブラウザの中だけで行い、外部への通信をしないこと (ページの題名を取りに行かない。裁定 V2)。**(リンクを外す)** 「リンクを外す」が押された場合は、カーソルのあるリンク (リンクの文字の上。両端を含む。ブロック編集欄では、その原文の中も) または選択が触れるすべてのリンクを外し、文字と他の書式は残すこと。外したリンクの文字 (裸の URL・`<URL>` と、文字が URL やメールアドレスの形の普通のリンク) が再び自動リンクにならないよう、スキームの後の `:` を `\:`、`www.` の `.` を `\.`、`@` を `\@` と書くこと。WYSIWYG のセルでは、外した文字をそのセルの編集の間覚えておき、閉じるときに DOM から書き出し直すときも同じく書くこと **[確認済: marked 18.1.0 で自動リンクにならない。`www.` と `@` は、その前の `:` を逃がしても自動リンクになるので、それぞれ逃がす]**。**[要検証]** ボタンの `pointerup` の中でクリップボードを読めること (ユーザーアクティベーション、Chrome の許可の確認、Firefox / Safari の貼り付けのボタン。PRT-X18) |
 | INV-70 | 状態駆動 | ブロック編集欄またはセルの編集中、システムは次の文字に薄い背景の印を付けて表示すること: U+00A0、U+2007、U+202F、U+200B、U+200C、U+2060、U+FEFF、U+00AD、および INV-71 の対象のブロック (段落・リスト・引用) の編集欄の行末の 2 つ以上の空白 (改行の印)。コードブロック・HTML などの行末の空白には印を付けない。U+200D (ZWJ) と異体字セレクタは、絵文字の表示を崩さないため印を付けない。印は文字の幅を変えない (背景だけ)。**(ブロック編集欄)** `textarea` の文字には色を付けられないので、同じ文字列を同じフォント・幅・折り返しで描いた背景の層を編集欄の真後ろに重ね、その層の印の位置に背景を付ける。層は `textContent` と要素の生成だけで作り (利用者の文字を HTML として解釈しない)、`inert`、`aria-hidden="true"`、`pointer-events: none`、文字の色を透明にする (支援技術とページ内検索に二重に当たらないため。**[要検証: ブラウザのページ内検索が `inert` の中を除くこと]**。除かない場合は既知の制約とする)。作り直しは `requestAnimationFrame` で 1 フレームに 1 回にまとめる。編集欄の文字数が `CONFIG.edit.invisibleMarkMaxChars` (50,000) を超える場合は層を作らない (大きなブロックで打鍵を遅くしないため。印は出ない)。**(セル)** 印の文字を、描画側が作った要素で囲む (要素の参照で判定し、書き出しでは文字として扱う。INV-63)。ファイルには文字のまま書くこと (実体参照に変えない。裁定 V1)。プレビュー・印刷・編集モードでない表示では印を付けないこと。 |
 | INV-71 | イベント駆動 | 種類が段落・リスト・引用のブロックの編集欄で、IME の変換中でなく、Enter または Shift+Enter (修飾キーは Shift だけ) が押された場合、システムは次のとおりにすること。(1) **文脈**: 編集欄の文字列を字句解析し (`lexer`)、カーソルの行が段落の文字 (リストの項目・引用の中の段落を含む) にある場合だけ、(2)〜(5) を行う。コードブロック (フェンス・インデント。リスト・引用の中を含む)、HTML、数式のブロックの行では、普通の改行とする。字句解析の結果が編集欄の文字列に戻らず、行の文脈が決まらない場合も、普通の改行とする。段落の文字の行でも、カーソル (選択の両端) が次の場所にある場合は、普通の改行とする (空白 2 つを入れない。コードや属性の値、URL に空白を入れないため): (i) コードスパンの中、(ii) インラインの HTML のタグの中、(iii) インラインの数式の中 (以上、オーナーの裁定 R4、2026-10-22)、(iv) 実体参照の途中、(v) エスケープ (`\*` など) の途中、(vi) 自動リンク (`<URL>` と裸の URL) の途中、(vii) リンクの行き先 `(…)` と参照のラベル `[…]` (リンクの文字の `]` の直後から、閉じの括弧まで)、(viii) 強調の記号 (`**` / `*` / `~~`) の途中と、そのすぐ内側の端、(ix) 画像 (`![…](…)`) の途中、(x) リンクの文字の括弧のすぐ内側 (`[` の直後と `]` の直前)、(xi) そのほか 1 つの部品として扱うトークン (改行 `br` など) の途中と、1 つの文字 (サロゲートの組) の途中 (利用者の操作では起きない) (以上、オーナーの裁定 R5、2026-10-22)。行の先頭 (カーソルの前が空白と引用の印だけ) の Enter でも、カーソルが (i)〜(xi) の場所 (行をまたぐコードスパンや属性の値の中など) にあれば、普通の改行とする (前の行の末尾の空白も取り除かない)。選択の両端が別の段落 (リストの別の項目、引用の別の段落など) にある場合と、カーソルが行の先頭のリストの印の中またはその直後 (段落の文字の前) にある場合も、普通の改行とする。(2) **選択**: 選択が空でなければ、選択した文字を消してから (3) を行う (選択を置き換える)。(3) **改行の印**: カーソルの前の、その行の部分が空白以外を含めば「空白 2 つ + 改行」を入れる。空 (空白だけ、または引用の印 `>` と空白だけ) なら改行だけを入れ、前の行の末尾の 2 つ以上の空白 (改行の印) を取り除く (段落の区切りになる)。(4) **引用**: カーソルの行が引用の中なら、改行の後に、その行の先頭の引用の印 (`> `、入れ子なら `> > ` など、行の先頭の `>` と空白の並びをそのまま) を補う。(5) **リスト**: 項目の印は補わない (新しい項目は利用者が `- ` などを打つ。項目の自動の継続は次の改善。裁定 UIR-47)。(6) **確定のときの後始末**: 種類が段落・リスト・引用のブロックを確定するとき、行末の 2 つ以上の空白のうち、改行 (`br`) を生じていないものだけを取り除く。判定は候補ごとに行い、その行末の空白だけを取り除く前と後の本文を同じ lexer で字句解析し、`marked.walkTokens` で `type === "br"` のトークンを数え、その数が変わらない候補だけを取り除く (行末の空白はトークンの `text` に残るので、トークンの列の一致では判定できない **[確認済: marked 18.1.0]**)。ただし、行末がコードスパン・インラインの HTML・リンクや画像の題名などの中にある候補は取り除かない (行をまたぐコードスパンの中身や、行をまたぐ属性の値が変わるため)。判定は、同じ `walkTokens` で、`type` が `text` と `space` のトークン (どちらもトークンごと除く。行末の空白が独立した `text` のトークンや、リストの最後の行の後ろの `space` のトークンとして現れ、取り除くとトークンが消えて列が変わるため) を除くすべてのトークンについて、`type` と、`raw` 以外の文字列・数値・真偽の属性 (子のトークン (`tokens`) を持つトークンの `text` を除く。`codespan` の `text`、`html` の `text`、`link` / `image` の `href` と `title` を含む) を出現順に集めた列を、取り除く前と後で比べ、一致しない候補は取り除かないことで行う (型を列挙せずに一般化する。拡張のトークン (KaTeX など) も含まれ、取りこぼした場合も空白を残す側に倒れる)。字句解析の対象は、確定するブロックの原文だけでよい (ブロックが大きい場合も、本文全体を解析しない)。例 **[確認済: marked 18.1.0]**: `- a␣␣` / `- b`、`abc␣␣` / 空行 / `def`、`abc␣␣` (最後の行)、`abc␣␣` / `# H` は `br` が 0 のまま変わらないので取り除く。`abc␣␣` / `2. x`、`abc␣␣` / `def`、`> a␣␣` / `> b`、`- a␣␣` / `␣␣b` は `br` が 1 から 0 に変わるので残す (改行の意味がある)。行をまたぐコードスパン (`` x `a␣␣`` / ``b` y ``。中身は `a   b` で、取り除くと `a b` になる) と、行をまたぐ HTML の属性の値 (`x <span title="a␣␣` / `b">y</span> z`) は、`br` は 0 のままだが、コードスパン・HTML の列が変わるので残す。同じ行に閉じたコードスパンがあるだけの行 (`` x `c` d␣␣`` / `- e`) は列が変わらないので取り除く。行をまたぐリンク・画像の題名 (`[a](u "t␣␣` / `x")`、`![a](u "t␣␣` / `x")`) は、`br` は 0 のままだが `title` が変わるので残す **[確認済: marked 18.1.0 (KaTeX の拡張あり)]**。ブロックの最後の行がリストの項目の場合 (`- a` / `- b␣␣`、`- b␣␣`、`1. a` / `2. b␣␣`) は、取り除く **[確認済: 同]**。コードブロックの中の行は変えない。(7) 入れ方は 5.14.6 の `execCommand("insertText")` の方式 (ブラウザの Undo の履歴に載る) とする。表のブロックの編集欄は INV-27、それ以外の種類 (見出し、コードブロック、数式、HTML、参照リンクの定義) の編集欄では、普通の改行とすること。空行を入れるとリストが「ゆるいリスト」 (各項目が段落になり、間が空く) になるのは Markdown の通常の動きとし、ヘルプ (日英) に書く。 |
-| INV-72 | 常時 | WYSIWYG のセルの書き出しでは、システムは表記を次のとおり保つこと。(a) リンク: 開く時点で、セルの原文をインラインの字句解析し、リンクのトークンを出現順に描画の `a` 要素と対応付け (数が合わなければ原文のセルにする)、要素ごとに種類と元の表記 (普通 `[文字](URL)`・参照 `[文字][ラベル]` / `[文字][]` / `[文字]`・`<URL>`・裸の URL) を記録する。書き出しでは、普通のリンクは `[文字](URL)`、参照リンクは `[文字][ラベル]` (省略形で文字が変わった場合は元の文字をラベルとして `[新しい文字][元の文字]`)、`<URL>` と裸の URL は、文字が変わっていなければ元の表記、変わっていれば新しい文字を URL として同じ形 (新しい文字が INV-69 の URL の条件を満たさなければ `[文字](元の URL)`) とする。INV-69 で作ったリンクは普通のリンクとする。(b) 実体参照は文字として書く (`&nbsp;` は U+00A0)。(c) 見えない文字は文字のまま書く (INV-70)。(d) 文字の逃がし: `\`、`` ` ``、`*`、`_` (単語の中を除く)、`[`、`]`、`<`、`|`、`~`、`$`、`&` を `\` で逃がす **[確認済: `\$` は KaTeX の拡張を入れた marked で数式にならない]**。表のセルでは、コードスパンの中の `|` も `\|` と書く (marked の表は `\|` を `|` に戻してからセルを解析する **[確認済]**。`inlineHtml` も同じ前処理をする)。 |
+| INV-72 | 常時 | WYSIWYG のセルの書き出しでは、システムは表記を次のとおり保つこと。(a) リンク: 開く時点で、セルの原文をインラインの字句解析し、リンクのトークンを出現順に描画の `a` 要素と対応付け (数が合わなければ原文のセルにする)、要素ごとに種類と元の表記 (普通 `[文字](URL)`・参照 `[文字][ラベル]` / `[文字][]` / `[文字]`・`<URL>`・裸の URL) を記録する。書き出しでは、普通のリンクは `[文字](URL)`、参照リンクは `[文字][ラベル]` (省略形で文字が変わった場合は元の文字をラベルとして `[新しい文字][元の文字]`)、`<URL>` と裸の URL は、文字が変わっていなければ元の表記、変わっていれば新しい文字を URL として同じ形 (新しい文字が INV-69 の URL の条件を満たさなければ `[文字](元の URL)`) とする。INV-69 で作ったリンクは普通のリンクとする。(b) 実体参照は文字として書く (`&nbsp;` は U+00A0)。(c) 見えない文字は文字のまま書く (INV-70)。(d) 文字の逃がし: `\`、`` ` ``、`*`、`_` (単語の中を除く)、`[`、`]`、`<`、`|`、`~`、`$`、`&` を `\` で逃がす (リンクの文字の中で、逃がした `]` の直後の `(` は `\(` と書く (marked はリンクの文字の `\[` `\]` を括弧に戻してから読むので、`\[x\](y)` が中のリンクになる)。リンクの直前の `!` も `\!` と書く。画像にしない。新しいリンクの直前に文字として書かれた `*` `_` `~` も `\` で逃がす。`[` が続くと強調を閉じうるため。単位 F) **[確認済: `\$` は KaTeX の拡張を入れた marked で数式にならない]**。表のセルでは、コードスパンの中の `|` も `\|` と書く (marked の表は `\|` を `|` に戻してからセルを解析する **[確認済]**。`inlineHtml` も同じ前処理をする)。 |
 
 ---
 
@@ -710,6 +711,10 @@ classDiagram
         +insertBlockText(text, caretOffset, blockText)$ TextEdit
         +insertTextAt(text, caretOffset, insertText)$ TextEdit
         +changedRange(before, after)$ object
+        +insertLink(text, caret, label, link, context)$ TextEdit
+        +canInsertLink(text, caret, context)$ boolean
+        +removeLink(text, selStart, selEnd, context)$ TextEdit
+        +canRemoveLink(text, selStart, selEnd, context)$ boolean
     }
     class InlineRuns {
         +fromTokens(tokens, options)$ object[]
@@ -722,6 +727,12 @@ classDiagram
         +unitRangeOfSource(runs, srcFrom, srcTo)$ object
         +fromNodes(tree, linkInfo, options)$ object[]
         +linksOf(tokens)$ object[]
+        +linkOf(token)$ object
+        +inlineLink(destination)$ object
+        +hasLinkAt(runs, start, end)$ boolean
+        +insertLinkAt(runs, i, label, link, context)$ object
+        +canInsertLinkAt(runs, i)$ boolean
+        +runIndexAt(runs, at, brWidth)$ number
         +escapeCellPipes(text, options)$ string
     }
     class InvisibleCharOverlay {
@@ -818,6 +829,12 @@ classDiagram
         +applyTextEdit(edit) void
         +canFormatSelection() boolean
         +formatSelection(op) boolean
+        +editGeneration : number
+        +linkTarget() object
+        +canPasteLink() boolean
+        +canRemoveLink() boolean
+        +pasteLink(url, label) boolean
+        +removeLink() boolean
         +dispatch(event, target) Promise
         +isEditingTable() boolean
         +isEditingCell() boolean
@@ -843,11 +860,22 @@ classDiagram
         +cellState() object
         +canFormatSelection() boolean
         +applyFormat(op) boolean
+        +linkTarget() object
+        +canPasteLink() boolean
+        +canRemoveLink() boolean
+        +pasteLink(url, label) boolean
+        +removeLink() boolean
         +cellAt(table, node)$ object
         +cellAfter(op, at)$ object
     }
     class ClipboardLink {
         +isLinkableUrl(text, schemes, maxLength)$ boolean
+        +urlOptions()$ object
+        +linkOp(url, strictEnds)$ object
+        +urlFromPasteEvent(event, options)$ string
+        +readUrlAndText(clipboard, options)$ Promise
+        +linkTextOf(html, url, parseHtml)$ string
+        +toDestination(url)$ string
     }
     class BlockEditHost {
         +showPalette() void
@@ -943,7 +971,10 @@ classDiagram
     TableCellEditor --> MarkdownRenderer : tables, cell HTML, image gate
     TableCellEditor ..> InlineRuns : DOM copy to Markdown
     TableCellEditor ..> MarkdownTable : parses and operates
-    TableCellEditor ..> ClipboardLink : URL condition
+    TableCellEditor ..> ClipboardLink : URL condition, Ctrl+V link
+    BlockEditController ..> ClipboardLink : Ctrl+V link
+    UIController ..> ClipboardLink : reads the clipboard (button)
+    ClipboardLink ..> InlineRuns : link op
     EditPalette --> EditPaletteHost : calls back
     UIController ..|> BlockEditHost : implements
     UIController ..|> EditPaletteHost : implements
@@ -1019,20 +1050,20 @@ classDiagram
 | `textTransforms.js` | `splitMarkdownWrapper(text)` / `detectLineEnding(text)` / `normalizeLineEndings(text)` / `convertLineEndings(lfText, lineEnding)` / `hasUtf8Bom(bytes)`。すべて `@purity pure` (5.13、5.14.1) |
 | `textWidth.js` | `displayWidth(text)` / `codePointWidth(cp)` (`@purity pure`。INV-61、5.14.13。範囲表は Unicode 16.0.0 から作った定数) |
 | `MarkdownTable` | `+parse(raw)$` / `+format(table)$` / `+formatTablesIn(text, lexer)$` / `+trimCell(text)$` (セルの前後の空白とタブを除く。`parse` とセルの確定で同じ規則) / `+insertRow$` / `+deleteRow$` / `+insertColumn$` / `+deleteColumn$` / `+setAlignment$` (すべて `@purity pure`。5.14.13) |
-| `InlineRuns` | `+fromTokens(tokens, {colors, offset})$` (marked のインラインのトークンから並びを作る。各要素に原文の位置 `srcFrom` / `srcTo` と最上位のトークンの番号 `top`) / `+apply(runs, start, end, op, context)$` (表示の文字の位置で。セル用) / `+applyUnits(runs, from, to, op, context)$` (要素の番号で。原文の編集欄用) / `+expandRange(runs, from, to)$` (INV-67 (6) の切らないものを含むように範囲を広げる) / `+serialize(runs, options)$` / `+layout(runs, options)$` (書き出しと、各要素と強調の記号の位置) / `+signature(runs)$` (marked が示すものだけの列。書き直しの照合に使う) / `+unitRangeOfSource(runs, srcFrom, srcTo)$` / `+fromNodes(tree, linkInfo, {colors})$` (セルの DOM の写し (`snapshotNodes`) から並びを作る。INV-63。すべて原文なし (`src: null`) の新しい文字) / `+linksOf(tokens)$` (インラインのトークンのリンクを出現順に、その表記 (INV-72 (a)) と共に)。すべて `@purity pure`、CONFIG を読まない (色の値は引数)。5.14.14 |
+| `InlineRuns` | `+fromTokens(tokens, {colors, offset})$` (marked のインラインのトークンから並びを作る。各要素に原文の位置 `srcFrom` / `srcTo` と最上位のトークンの番号 `top`) / `+apply(runs, start, end, op, context)$` (表示の文字の位置で。セル用) / `+applyUnits(runs, from, to, op, context)$` (要素の番号で。原文の編集欄用) / `+expandRange(runs, from, to)$` (INV-67 (6) の切らないものを含むように範囲を広げる) / `+serialize(runs, options)$` / `+layout(runs, options)$` (書き出しと、各要素と強調の記号の位置) / `+signature(runs)$` (marked が示すものだけの列。書き直しの照合に使う) / `+unitRangeOfSource(runs, srcFrom, srcTo)$` / `+fromNodes(tree, linkInfo, {colors})$` (セルの DOM の写し (`snapshotNodes`) から並びを作る。INV-63。すべて原文なし (`src: null`) の新しい文字) / `+linksOf(tokens)$` (インラインのトークンのリンクを出現順に、その表記 (INV-72 (a)) と共に) / `+linkOf(token)$` (1 つのリンクのトークンの表記) / `+inlineLink(destination)$` (INV-69 で作る普通のリンク。`href` は行き先から `<>` を除いたもの) / `+hasLinkAt(runs, start, end)$` (選択がリンクに触れるか、カーソルがリンクの文字の上 (両端を含む) か。5.15.5) / `+insertLinkAt(runs, i, label, link, context)$` (要素の番号 `i` の前に新しいリンク。文字は `label`、他の書式は前の要素 (無ければ後の要素) のもの。リンクの中なら `null`。直前の `!` は `\!`。INV-69 (b)、オーナーの裁定 F-R1) / `+canInsertLinkAt(runs, i)$` / `+runIndexAt(runs, at, brWidth)$` (表示の位置の要素の番号。改行を `brWidth` と数える (セルのカーソルは 1)。コードスパンなどの途中なら -1)。リンクの文字に `\[` / `\]` があるリンク (marked はそれを括弧として読んでから字句解析する) も、原文の位置に戻して読む (戻せなければ、そのまま書く 1 つの片)。`apply` / `applyUnits` の `op.kind` に `link` (`{link, url, strictEnds}`。範囲全体を `link` にし、範囲の中の裸の URL・`<URL>` は文字も `url` にする。`strictEnds` (Ctrl+V) では、端がコードスパンなど 1 つの要素の途中なら `null`) と `unlink` (範囲のリンクを外し、外した文字を自動リンクにしないよう逃がす。カーソルだけ (`start === end`) なら、その上のリンク) を加える。`layout` / `serialize` の `options.literalUrls` (WYSIWYG のセルで外した URL の文字。リンクの外にあるものは自動リンクにならないよう書く。INV-69)。すべて `@purity pure`、CONFIG を読まない (色の値は引数)。5.14.14 |
 | `InvisibleCharOverlay` | コンストラクタ `(textarea, {maxChars, lineEndMarks(text), requestFrame})`。`attach()` / `detach()` / `refresh()` (次のフレームで 1 回だけ描き直す) / `+segments(text, lineEndFlags)$` (`@purity pure`)。INV-70、5.14.6 |
 | `MarkdownBlockModel` | `+toEditableText(raw)$` (末尾の改行を除いた、編集欄に入れる文字列。`replaceBlock` が元の末尾の改行を付け直す) / `+getNextBlockId()` / `+withNextBlockId(nextBlockId)` (Undo で戻したモデルに現在のカウンタを引き継ぐ。INV-48) / `+planTableReplace(blockId, newRaw, lexer, maxCells)` (`@purity pure`。`replaceBlock` と同じく本文全体を作り直して字句解析し、前後の一致 (BlockDiff と同じく原文の一致) を除いた区間が「元の表 1 × 種類が `table` の新しいブロック 1」なら、そのブロックに元の ID を与える。`{model, isChanged, anchorBlockId, keptId}` を返し、自身は変えない (R7.5)。表が空行の後 (または先頭) にあり、新しい原文を単独で字句解析して表 1 個だけになるときは、本文全体を字句解析せずに、その表の原文だけを差し替えたモデルを作る (本文全体の解析と同じ結果になる。表の原文は、前のブロックの終わりも自分の終わりも決めず、参照リンクの定義も持たないため。INV-51)。INV-42、11-c の `canKeepTableId`) |
 | `MarkdownRenderer` | `+lex(src)` (RendererOrchestrator がモデルを作るときの lexer。ブロックの字句解析だけを行い、インラインの解析はしない。ブロックの境界と参照リンクの定義は全体の解析と同じ。各ブロックの HTML は `blockHtml` がそのブロックを全体で解析して作る) / `+lexInline(src, links)` / `+lexFull(src)` / `+walkTokens(tokens, fn)` (同じ marked の設定。INV-67 / INV-71) / `+documentHtml(markdownText)` / `+blockHtml(raw, links)` (どちらも `{html, error}` を返し、DOM に書かない) / `+findBlockIdAt(node) number\|null` / `+getBlockElement(blockId) HTMLElement\|null` / `+getEmptyBlockElement() HTMLElement\|null` (ブロックの特定は、レンダラーが作った外枠の参照だけで行う。INV-29) / `+isStale(blockId) boolean` (編集中で差し替えなかった外枠が古い描画のままか。INV-47) / `+inlineHtml(cellRaw, links) string` (表のセル用。`\|` → `|` の前処理の後、同じ marked の設定 (KaTeX を含む) のインラインの字句解析と `Parser.parseInline`、同じ私的な DOMPurify とフック。DOM に書かない。INV-62) / `+getTableElement(blockId) HTMLTableElement\|null` (種類が `table` のブロックの外枠の直下の、描画が作った `table`) / `+isTableTab(node) boolean` (描画が作った表のつまみか。参照で判定。INV-29 (b)) / `+applyImageGate(root)` (書き換えた範囲への ExternalImageGate。INV-47 の例外) / `+markWrittenInPlace(block, links)` (保持中の外枠をその原文で書いたことを記録する。その原文と参照リンクの定義が変わらない間、部分描画はその外枠を今の描画とみなし、そのブロックの HTML を作らない。原文が変われば、変わったブロックとして描く) / `+cachedBlockHtml(block, links) string` (キャッシュを通した `blockHtml`)。種類が `table` のブロックの外枠には、右上に表のつまみ (`span.grsmd-table-tab`、文字 `Markdown`、`title` は `messages.edit.tableSourceTab`) を作り、参照を保持する。外枠の印: 不可視のブロックは `.md-block-hidden` と `data-hidden-kind` (`link` / `html`) と `title` (`messages.edit.hiddenLinkDefinition` / `hiddenHtml`)。空の文書は ID を持たない `.md-block.md-block-empty`。編集中は `.md-block-editing` |
 | `PlantUMLRenderer` | `+askConsent()` / `+createPendingElement(code, theme)` (`.plantuml-pending`: `messages.edit.plantumlPending` の文と `plantumlRenderButton` のボタン)。[Render] の確認で Cancel を選んだ場合は、プレースホルダを残す (もう一度押せる) |
 | `DiagramRenderer` / `MermaidRenderer` / `PlantUMLRenderer` | `render(theme, root)` の `root` は `Element` または `Element[]` (省略時は preview 全体)。要素の収集は `utils.queryAllIn(roots, selector)`。Mermaid は変換したコンテナだけを `mermaid.run` に渡す |
 | `RendererOrchestrator` | `+textLexers()` (`{lexBlocks, lexInline, lexFull, walkTokens}`: ブロックだけ (モデルと同じ)、文書の参照リンクの定義を入れたインライン、ブロックとインライン、`marked.walkTokens`。INV-67 / INV-71) / `+formatTableText(text) string` (表のブロックの編集欄の文字列の中の表を整える。モデルと同じ lexer で、その文字列だけを字句解析する。INV-61) / `+getModel() MarkdownBlockModel\|null` / `+resetExternalImageConsent() void` (`.md` のドロップで UIController が呼ぶ。INV-43) / `+holdBlock(blockId)` / `+releaseBlock()` (編集中のブロック・表の編集の表のブロックの外枠の保持。INV-47) / `+planTableReplace(blockId, newRaw, base) object\|null` (`MarkdownBlockModel.planTableReplace` を base (既定は今のモデル。INV-65 の操作はセルの確定の後のモデル) で求め、`base` を添えて返す) / `+replaceTableBlock(blockId, change) Promise` (`commitBlock` の表版。計画の `base` が今のモデルのときだけ、同期でモデルを更新し (1 つの変更の単位)、部分描画をキューに入れる。スクロールの基準は取らない (保持中の表は内側だけが変わり、上端は動かない。大きな表の配置を読むと、その場で表の配置の計算が走る。INV-46 / 51)。前の確定が残した基準はそのまま残す。INV-47 / 48) / `+writeHeldInterior(blockId, write) boolean` (INV-47 の例外の入口。保持中のブロックのときだけ `write()` を呼び、`markWrittenInPlace` を記録する) / `+keepReadingPosition(change)` (編集モードの切り替え (`change`) の前後で、読んでいる位置を保つ。Markdown 表示中だけ。編集モードから出るときに確定したブロックのように、まだ描画していない部分描画の基準 (INV-46) は、切り替えの前の配置で測ってある。その基準の位置に掛かるブロックが切り替えで動いた分だけ、基準を動かす (動かさないと、その描画が読んでいる位置を戻してしまう)。5.1)。`clear()` は `clearDocument()` を呼ぶ。`renderCodeView()` も最初に `clearDocument()` を呼ぶ (`state.markdownText` は `""` になる) |
-| `BlockEditController` | コンストラクタ `(preview, orchestrator, blockLocator, scrollMemento, host, createOverlay)`。`blockLocator` は MarkdownRenderer、`host` は `BlockEditHost`、`createOverlay(textarea, options)` は INV-70 の層を作る (既定は `InvisibleCharOverlay`)。`canFormatSelection()` (5.15.5) / `formatSelection(op)` (INV-66 / 67。編集欄の文字列の変更で、確定しない。セルが開いていればセルの選択に対して `TableCellEditor` が行う)。表のセルの編集は、このクラスが持つ `TableCellEditor` が行い、このクラスの 11-c が動かす。`isEditingCell()` / `cellState()` (`{row, col, columns, alignment, kind}`。5.15.5) / `isCellElement(node)` (開いているセルの内側か。INV-59 (c))。11-c の遷移表を `blockEditStateMachine` (出来事 → 状態 → `{to, actions, guard}`) として持ち、出来事の入口は `dispatch(event, target)` 1 つとする。`emptyDocumentStarted` だけは、全体描画の後で編集欄を開くまでの Promise を返す (それまでの状態は editModeIdle)。`isEditing()` は編集欄またはセルが開いているかどうかを返す。`hasUncommittedChange()` はセルの変更を含む (11-e)。`isEditorElement(node)` は開いている編集欄の textarea かどうか (参照で判定。INV-59 (b))。`doubleClickTarget(event)` は INV-57 の対象 (11-c。ダブルクリックの `dblclick`、またはダブルタップの 2 回目の `pointerup` を受ける)。`isDoubleTap(first, second, limits)` は `CONFIG.edit` の値で判定する (INV-31) |
+| `BlockEditController` | コンストラクタ `(preview, orchestrator, blockLocator, scrollMemento, host, createOverlay)`。`blockLocator` は MarkdownRenderer、`host` は `BlockEditHost`、`createOverlay(textarea, options)` は INV-70 の層を作る (既定は `InvisibleCharOverlay`)。`canFormatSelection()` (5.15.5) / `formatSelection(op)` (INV-66 / 67。編集欄の文字列の変更で、確定しない。セルが開いていればセルの選択に対して `TableCellEditor` が行う)。`editGeneration` (編集欄を開く・閉じる・内容が変わるたびに進む番号。INV-69) / `linkTarget()` (INV-69 のボタンの待つ間の対象: 編集欄ならブロック ID、セルなら表のブロック ID と (r, c)、選択の開始と終了、編集の世代。何も開いていなければ `null`) / `canPasteLink()` / `canRemoveLink()` (5.15.5) / `pasteLink(url, label)` / `removeLink()` (INV-69。編集欄の文字列の変更で、確定しない。セルが開いていれば `TableCellEditor` が行う)。編集欄の `paste` で INV-69 の Ctrl+V の方式を判定する (5.14.15)。表のセルの編集は、このクラスが持つ `TableCellEditor` が行い、このクラスの 11-c が動かす。`isEditingCell()` / `cellState()` (`{row, col, columns, alignment, kind}`。5.15.5) / `isCellElement(node)` (開いているセルの内側か。INV-59 (c))。11-c の遷移表を `blockEditStateMachine` (出来事 → 状態 → `{to, actions, guard}`) として持ち、出来事の入口は `dispatch(event, target)` 1 つとする。`emptyDocumentStarted` だけは、全体描画の後で編集欄を開くまでの Promise を返す (それまでの状態は editModeIdle)。`isEditing()` は編集欄またはセルが開いているかどうかを返す。`hasUncommittedChange()` はセルの変更を含む (11-e)。`isEditorElement(node)` は開いている編集欄の textarea かどうか (参照で判定。INV-59 (b))。`doubleClickTarget(event)` は INV-57 の対象 (11-c。ダブルクリックの `dblclick`、またはダブルタップの 2 回目の `pointerup` を受ける)。`isDoubleTap(first, second, limits)` は `CONFIG.edit` の値で判定する (INV-31) |
 | `BlockEditHost` (UIController が実装するポート) | `isPaletteNode(node)` はパレットと 3 つのポップオーバーを参照で判定する。`renderFromEditor()` は INV-45 の全体描画とトーストを行う。`onEditorInput()` は編集欄・セルの `input` で、`onEditStateChanged()` は編集欄・セルの開閉で呼ばれる (未保存の印とパレットのボタンを更新する)。`showToast(message)` は 11-c の表のトースト (`tableNotCellEditable` / `tableEditEnded`)。`isApple` は INV-14 の判定式の主の修飾キーが Cmd か (UIController の値) |
-| `EditPalette` | コンストラクタ `(host, {isApple})` (`isApple` は tooltip を `Cmd` で書くか。INV-14 の判定式で main.js が `utils.isApplePlatform(navigator)` から決める)。7 列 × 2 段、ポップオーバー 3 つ (`paletteMermaidMenu` / `paletteFormatMenu` / `paletteTableMenu`)。11-d の遷移表を `paletteGestureStateMachine`、11-f の遷移表を `paletteDisplayStateMachine` として持ち、入口は `dispatch(event, input)` (11-d) と `dispatchDisplay(event, input)` (11-f)。表示・最小化・ポップオーバーは 11-f の状態 (`paletteDisplayState`) だけで決める。`setButtonStates(states)` は 5.15.5 の表の値をそのまま受け取る (キーが無ければ無効。Save / Save as と Mermaid の雛形は常に有効。`alignment` は配置のボタンの `aria-pressed`)。`setUnsaved(isUnsaved)` は最小化中の未保存の点。`isMinimized()`。`contains(node)` はパレットとポップオーバーを参照で判定する (`isPaletteNode` の実体)。無効なボタンは `disabled` 属性ではなく `aria-disabled="true"` で示す (パレット本体の無効なボタンの押下を移動にするため、ポインタの事象を受ける必要がある。INV-35)。キーボードの処理は持たない (INV-53)。表示中は `body` に class `edit-mode` を付ける (帯と空のブロックを編集モードの間だけ見せる CSS のため) |
-| `EditPaletteHost` (UIController が実装するポート) | `runCommand(command, arg)` だけ。`command` は `bold` / `italic` / `undo` / `save` / `saveAs` / `insertTable` / `insertRow` / `rowDelete` / `insertColumn` / `columnDelete` / `insertMermaid` / `textColor` / `linkPaste` / `linkRemove` / `alignColumn`。`arg` は `insertMermaid` のときの `CONFIG.edit.mermaidSamples` のキー、`textColor` のときの `red` / `blue` / `green` / `none`、`alignColumn` のときの `left` / `center` / `right` / `none` |
-| `TableCellEditor` (UI 層) | コンストラクタ `(orchestrator, renderer, host, {isApple})`。`host` は `{dispatch(event), onCellInput()}` (BlockEditController)。`isApple` は BlockEditHost の `isApple` (UIController と同じ値。セルの Redo のキーの判定)。表のセッション (表のブロック ID) と、開いているセル `{row, col, element, saved, raw, kind: "wysiwyg" \| "raw", links, linkInfo, openedMarkdown}`、`editGeneration` (開く・閉じる・変わるたびに進む。INV-69) を持つ。`isCellEditableTable(blockId)` (INV-62 (1)) / `startSession(blockId)` / `endSession()` / `openCell(row, col, caret)` / `commitCell()` / `revertCell()` / `discardCell()` / `applyTableOperation(op)` (INV-65。次に開くセルを返す) / `planFor(op)` (11-c の `canKeepTableId`。計画を覚え、続く確定で使い回す) / `neighbour(direction)` (INV-64) / `canApplyOperation(op)` (D2) / `hasUncommittedChange()` / `cellState()` / `canFormatSelection()` / `applyFormat(op)` / `containsNode(node)` / `isInSessionTable(node)` / `cellAt(table, node)$` (INV-29 (a)) / `cellAfter(op, at)$`。モジュール関数 `snapshotNodes(root, refs)` (`@purity semi-pure-b`。INV-63) / `fixRawCellText(text)` (`@purity semi-pure-a`。INV-63 の自動の修正。`CONFIG.edit.tableLineBreak` を読む)。`contentEditable` を設定してよい唯一のファイル (AT-STA-07) |
-| `ClipboardLink` | `+isLinkableUrl(text, schemes, maxLength)$` (`@purity pure`。INV-69 の URL の条件。単位 E では INV-72 (a) の `<URL>`・裸の URL の文字の変更の判定に使う。クリップボードの読み取りは単位 F) |
-| `UIController` | コンストラクタの第 5 引数 `services` = `{fileAccess, isApple, createPalette(host), createBlockEdit(host)}` (main.js が組み立てる。`isApple` は `utils.isApplePlatform(navigator)`)。`utils.shortcutLetter(event, isApple)` (`@purity pure`。TableCellEditor の Redo の判定と共有する) は INV-14 の判定式で主の修飾キーの文字 (`a`〜`z`) か `null` を返す。SaveDocument / SaveDocumentAs は `fileAccess` から UIController が作る。11-e の遷移表を `saveOperationStateMachine` として持ち、`SaveOutcome.status` を出来事に対応させる (`saved` → fileWritten、`downloadStarted` → downloadStarted、`failed` → writeFailed、`canceled` → saveCanceled)。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8) |
+| `EditPalette` | コンストラクタ `(host, {isApple})` (`isApple` は tooltip を `Cmd` で書くか。INV-14 の判定式で main.js が `utils.isApplePlatform(navigator)` から決める)。7 列 × 2 段、ポップオーバー 3 つ (`paletteMermaidMenu` / `paletteFormatMenu` / `paletteTableMenu`)。11-d の遷移表を `paletteGestureStateMachine`、11-f の遷移表を `paletteDisplayStateMachine` として持ち、入口は `dispatch(event, input)` (11-d) と `dispatchDisplay(event, input)` (11-f)。`openPopoverKey()` は開いているポップオーバーのキー (無ければ `null`)。表示・最小化・ポップオーバーは 11-f の状態 (`paletteDisplayState`) だけで決める。`setButtonStates(states)` は 5.15.5 の表の値をそのまま受け取る (キーが無ければ無効。Save / Save as と Mermaid の雛形は常に有効。`alignment` は配置のボタンの `aria-pressed`)。`setUnsaved(isUnsaved)` は最小化中の未保存の点。`isMinimized()`。`contains(node)` はパレットとポップオーバーを参照で判定する (`isPaletteNode` の実体)。無効なボタンは `disabled` 属性ではなく `aria-disabled="true"` で示す (パレット本体の無効なボタンの押下を移動にするため、ポインタの事象を受ける必要がある。INV-35)。キーボードの処理は持たない (INV-53)。表示中は `body` に class `edit-mode` を付ける (帯と空のブロックを編集モードの間だけ見せる CSS のため) |
+| `EditPaletteHost` (UIController が実装するポート) | `runCommand(command, arg)` と、任意の `onPopoverOpened(key)` (ポップオーバー (`format` / `mermaid` / `table`) が開いた直後に呼ぶ。UIController は `format` のとき、リンクのボタンの状態を決める。5.15.5、INV-51)。`command` は `bold` / `italic` / `undo` / `save` / `saveAs` / `insertTable` / `insertRow` / `rowDelete` / `insertColumn` / `columnDelete` / `insertMermaid` / `textColor` / `linkPaste` / `linkRemove` / `alignColumn`。`arg` は `insertMermaid` のときの `CONFIG.edit.mermaidSamples` のキー、`textColor` のときの `red` / `blue` / `green` / `none`、`alignColumn` のときの `left` / `center` / `right` / `none` |
+| `TableCellEditor` (UI 層) | コンストラクタ `(orchestrator, renderer, host, {isApple})`。`host` は `{dispatch(event), onCellInput()}` (BlockEditController)。`isApple` は BlockEditHost の `isApple` (UIController と同じ値。セルの Redo のキーの判定)。表のセッション (表のブロック ID) と、開いているセル `{row, col, element, saved, raw, kind: "wysiwyg" \| "raw", links, linkInfo, openedMarkdown, literals}` (`literals` は、そのセルで外したリンクの文字。INV-69)、`editGeneration` (開く・閉じる・変わるたびに進む。INV-69) を持つ。`isCellEditableTable(blockId)` (INV-62 (1)) / `startSession(blockId)` / `endSession()` / `openCell(row, col, caret)` / `commitCell()` / `revertCell()` / `discardCell()` / `applyTableOperation(op)` (INV-65。次に開くセルを返す) / `planFor(op)` (11-c の `canKeepTableId`。計画を覚え、続く確定で使い回す) / `neighbour(direction)` (INV-64) / `canApplyOperation(op)` (D2) / `hasUncommittedChange()` / `cellState()` / `canFormatSelection()` / `applyFormat(op)` / `linkTarget()` / `canPasteLink()` / `canRemoveLink()` / `pasteLink(url, label)` / `removeLink()` (INV-69。セルの `paste` では、INV-63 の貼り付けより先に Ctrl+V の方式を判定する) / `containsNode(node)` / `isInSessionTable(node)` / `cellAt(table, node)$` (INV-29 (a)) / `cellAfter(op, at)$`。モジュール関数 `snapshotNodes(root, refs)` (`@purity semi-pure-b`。INV-63) / `fixRawCellText(text)` (`@purity semi-pure-a`。INV-63 の自動の修正。`CONFIG.edit.tableLineBreak` を読む)。`contentEditable` を設定してよい唯一のファイル (AT-STA-07) |
+| `ClipboardLink` (UI 層) | `+isLinkableUrl(text, schemes, maxLength)$` (`@purity pure`。INV-69 の URL の条件。制御文字・空白類・見えない文字 (双方向の制御文字、廃止された書式の文字、幅 0 の文字、U+FEFF など) を含む文字列は通さない。INV-72 (a) の `<URL>`・裸の URL の文字の変更の判定にも使う) / `+urlOptions()$` (`@purity semi-pure-a`。`CONFIG.edit.linkSchemes` と `maxPastedUrlLength`) / `+linkOp(url, strictEnds)$` (リンクを付ける書式の操作。`toDestination(url)` を行き先とする普通のリンク) / `+urlFromPasteEvent(event, options)$` (Ctrl+V の方式。`clipboardData` の `text/plain` だけを同期に読む。権限は要らない) / `+readUrlAndText(clipboard, options)$` (ボタン。`clipboard` は `navigator.clipboard` (テストでは偽物)。`read()` があればそれを、無ければ `readText()` を使い、拒否・失敗で読み直さない。URL でなければ、または拒否・失敗なら `null`。`text/html` は `DOMParser` の inert な文書で解析し (スクリプトは動かず、画像も読まない。DOM には入れない)、`href` が同じ URL の `a` がちょうど 1 つならその文字を返す) / `+linkTextOf(html, url, parseHtml)$` / `+toDestination(url)$` (`@purity pure`。利用者の文字列のまま (`new URL().href` にしない)。`\` → `%5C`。`<`・`>`・括弧の不釣り合いがあれば `<…>` (`<` `>` は `%3C` `%3E`)。表のセルの `|` → `\|` は書き出し (`InlineRuns`) が行う)。外部へ通信しない (CON-12) |
+| `UIController` | コンストラクタの第 5 引数 `services` = `{fileAccess, isApple, createPalette(host), createBlockEdit(host), clipboard}` (main.js が組み立てる。`isApple` は `utils.isApplePlatform(navigator)`。`clipboard` は INV-69 のボタンが読むもので、省略すれば押した時点の `navigator.clipboard`。テストでは偽物を渡す)。`isSameLinkTarget(a, b)$` (`@purity pure`。INV-69 の待つ間の対象の比較)。`utils.shortcutLetter(event, isApple)` (`@purity pure`。TableCellEditor の Redo の判定と共有する) は INV-14 の判定式で主の修飾キーの文字 (`a`〜`z`) か `null` を返す。SaveDocument / SaveDocumentAs は `fileAccess` から UIController が作る。11-e の遷移表を `saveOperationStateMachine` として持ち、`SaveOutcome.status` を出来事に対応させる (`saved` → fileWritten、`downloadStarted` → downloadStarted、`failed` → writeFailed、`canceled` → saveCanceled)。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8) |
 | `SaveDocument` / `SaveDocumentAs` | コンストラクタ `(fileAccess, messages, defaultFileName)`。SaveDocument は、保存先 (handle) か書き込み API が無いときは、内部の SaveDocumentAs に任せる。`outcome(request, status, message)` はセッションと保存先を変えない結果を作る。`failureMessage(error)` は `SecurityError` → `saveActivationLost`、`NotFoundError` → `saveNotFound`、それ以外 → `saveFailed`。`SaveOutcome.status` は `saved` / `downloadStarted` / `canceled` / `failed` の 4 つ |
 | `MarkdownFileAccess` | コンストラクタ `(win = window)`。書き込み API の有無 (`canWriteInPlace`) は `win.showSaveFilePicker` の有無で判定する |
 
@@ -2299,6 +2330,47 @@ Feature: ブロック単位のその場編集
     When ユーザーが "「太字」" を選んで Bold を押す
     Then 原文は "日本語「**太字**」です" になり、描画で "太字" が太字になる
 
+  Scenario: 文字を選んで URL を貼るとリンクになる
+    Given クリップボードに "https://example.com/" がある
+    When ユーザーが段落の "例" を選び、Ctrl+V を押す
+    Then 原文の "例" が "[例](https://example.com/)" になる
+    And ブラウザのクリップボードの許可の確認は出ない
+
+  Scenario: URL を選んで URL を貼ると置き換わる
+    Given 段落に "https://old.example/" があり、クリップボードに "https://new.example/" がある
+    When ユーザーが "https://old.example/" を選び、Ctrl+V を押す
+    Then 原文の "https://old.example/" が "https://new.example/" に置き換わり、リンクの書き方にはならない
+
+  Scenario: コードの中で URL を貼ってもリンクにしない
+    Given コードブロックの編集欄で "foo" を選び、クリップボードに "https://example.com/" がある
+    When ユーザーが Ctrl+V を押す
+    Then "foo" が "https://example.com/" に置き換わり、"[foo](...)" にはならない
+
+  Scenario: ボタンでリンクを貼る
+    Given クリップボードに "https://example.com/" がある
+    When ユーザーが段落の "例" を選び、書式から「リンクを貼る」を押す
+    Then ブラウザが読み取りの許可を確かめることがあり、許可すると "例" がリンクになる
+
+  Scenario: クリップボードを待つ間に対象が変わったら貼らない
+    Given ユーザーが「リンクを貼る」を押し、ブラウザの許可の確認が出ている
+    When ユーザーが外側をクリックして編集欄を閉じてから許可する
+    Then 何も変わらず、その旨がトーストで表示される
+
+  Scenario: 文字を選ばずにリンクを貼る
+    Given クリップボードに URL だけがある
+    When ユーザーが文字を選ばずに「リンクを貼る」を押す
+    Then カーソルの位置に URL を文字とするリンクが入り、その文字が選ばれている
+
+  Scenario: リンクを入れられない位置ではボタンが無効
+    Given 見出し "# 題" の編集欄の行頭にカーソルがある
+    When ユーザーが書式のポップオーバーを開く
+    Then 「リンクを貼る」は無効で、カーソルを "題" の前に移すと有効になる
+
+  Scenario: 裸の URL のリンクを外す
+    Given 段落に "https://example.com/" がある
+    When ユーザーがその URL の上にカーソルを置き、書式から「リンクを外す」を押す
+    Then 原文は "https\://example.com/" になり、描画で URL がリンクにならない
+
   Scenario: 本文の Enter で改行する
     Given 段落の編集欄で "abc" の後ろにカーソルがある
     When ユーザーが Enter を押して "def" と打つ
@@ -2754,6 +2826,10 @@ const CONFIG = {
       tableNotCellEditable:
         "This table cannot be edited by cell. Opened its Markdown instead.",
       tableEditEnded: "The table changed into other blocks. Table editing ended.",
+      noUrlInClipboard: "There is no URL in the clipboard.", // INV-69 (also when reading was refused)
+      linkTargetChanged:
+        "The text being edited changed while the clipboard was read. Nothing was pasted.", // INV-69
+      linkNotPastable: "A link cannot be pasted here.", // INV-69 (owner ruling F-R2)
       statusUnsaved: (name) => `${name} * unsaved`,
       statusSaved: (name) => `${name} - saved`,
     },
@@ -3721,6 +3797,7 @@ setupTouchPasteAssist() {
 | 主 + Z | ブラウザ既定 | 編集モードでなければブラウザ既定 (裁定 Q3)、編集モードなら Undo (INV-59 (c)) | 変更あり: フォーカスが編集欄の中ならブラウザ既定 (文字単位)、外なら変更の取消 (INV-48 (1)) / 変更なし: Undo (INV-59) | 変更あり: セルの変更の取消 / 変更なし: Undo (INV-59 (c)) | ブラウザ既定 |
 | 主 + Shift + Z / Ctrl+Y | ブラウザ既定 | ブラウザ既定 | ブラウザ既定 | 止めて何もしない (INV-59) | ブラウザ既定 |
 | 主 + B / I (Shift なし) | ブラウザ既定 | ブラウザ既定 | Bold / Italic (INV-60) | Bold / Italic (INV-60) | ブラウザ既定 |
+| 主 + V (貼り付け。文脈メニューの貼り付けも) | ペースト＋自動レンダリング (現行) | ブラウザ既定 | INV-69 の (i)〜(iv) を満たせばリンク (権限は使わない)、それ以外はブラウザ既定 (コードの中・リンクの行き先・URL を選んだ置き換えなど) | INV-69 の (i)〜(iv) を満たせばリンク、それ以外は文字として貼る (INV-63) | ブラウザ既定 |
 
 「主」は INV-14 の判定式 (Mac は Cmd、それ以外は Ctrl)。横取りする場面でキーを押し続けた繰り返し (`event.repeat`) は、既定の動作だけを止め、機能は実行しない (INV-14)。`#editor` にフォーカスがあるときの主 + Z / B / I は、どの列でもブラウザ既定。`#editor` にフォーカスがある間の Esc は、パレットを閉じない (INV-14 のガード)。
 
@@ -3980,7 +4057,7 @@ UIController.preprocessInput() は、AIツールが出力する外側のMarkdown
 
 #### 5.14.5 テキスト操作 (`MarkdownTextOps`, `@purity pure`)
 
-CONFIG を読まず、必要な値は引数で受け取る。`formatRange(text, selStart, selEnd, op, {lexBlocks, lexInline, colors})` (Bold / Italic / 文字色。INV-66 / 67。5.14.14)、`canFormatRange(text, selStart, selEnd, lexBlocks)` (5.15.5)、`insertHardBreak(text, selStart, selEnd, {lexBlocks, lexInline})` (INV-71 の (1)〜(5))、`stripMeaninglessHardBreaks(raw, lexFull, walkTokens)` (INV-71 の (6))、`hardBreakLines(text, lexBlocks)` (INV-70 の行末の印を付ける行)、`insertTableRow` / `insertTableColumn` (列はバックスラッシュの付かない縦棒だけで区切る。コードスパンの中の縦棒も区切りとして数える。区切り行にも区切りのセルを足し、配置指定は既定とする)、`insertBlockText` (前後に空行が無ければ補って挿入する。INV-52)、`insertTextAt` (`<br>` の挿入に使う)、`changedRange(before, after)` (2 つの文字列の共通の先頭と末尾を除いた、置き換える 1 つの区間 `{start, end, text}`。5.14.6 の Undo の対象にする挿入に使う)。
+CONFIG を読まず、必要な値は引数で受け取る。`formatRange(text, selStart, selEnd, op, {lexBlocks, lexInline, colors})` (Bold / Italic / 文字色 / リンク。INV-66 / 67 / 69。5.14.14 / 5.14.15)、`insertLink(text, caret, label, link, context)` / `canInsertLink(text, caret, context)` (オーナーの裁定 F-R1 の位置の判定と、marked での読み直しの照合) / `removeLink(text, selStart, selEnd, context)` / `canRemoveLink(text, selStart, selEnd, context)` (外して読み直しまで通るか) (INV-69。5.14.15)、`canFormatRange(text, selStart, selEnd, lexBlocks)` (5.15.5)、`insertHardBreak(text, selStart, selEnd, {lexBlocks, lexInline})` (INV-71 の (1)〜(5))、`stripMeaninglessHardBreaks(raw, lexFull, walkTokens)` (INV-71 の (6))、`hardBreakLines(text, lexBlocks)` (INV-70 の行末の印を付ける行)、`insertTableRow` / `insertTableColumn` (列はバックスラッシュの付かない縦棒だけで区切る。コードスパンの中の縦棒も区切りとして数える。区切り行にも区切りのセルを足し、配置指定は既定とする)、`insertBlockText` (前後に空行が無ければ補って挿入する。INV-52)、`insertTextAt` (`<br>` の挿入に使う)、`changedRange(before, after)` (2 つの文字列の共通の先頭と末尾を除いた、置き換える 1 つの区間 `{start, end, text}`。5.14.6 の Undo の対象にする挿入に使う)。
 
 - 行の文脈: `lexBlocks` (モデルと同じブロックだけの字句解析) のトークンを、リストの項目と引用の中までたどり、行ごとに、その行が属する末端のブロック (段落、リストの項目の文字、見出し、コード、HTML、数式、表など) と、行の先頭のリスト・引用の印の長さを求める。末端のブロックの行が編集欄の行の末尾に見つからない場合 (行末の空白を除いて比べる) は、その行の文脈は不明とする (書式は無効、Enter は普通の改行)。
 - インラインの範囲 (INV-67 (6)): 選択の両端が同じ末端のブロックにあり、その種類が段落・リストの項目の文字・見出し・表である場合だけ。段落は各行のリスト・引用の印の後ろ、見出しは `#` の印と閉じの `#` を除いた文字 (セットテキストは下線の行を除く)、表は 1 つのセル (区切り行を除く。前後の空白とタブを除く)。選択の端の改行は除き、行の印の上の端はその隣の文字へ寄せる。
@@ -4108,6 +4185,16 @@ CONFIG を読まず、必要な値は引数で受け取る。`formatRange(text, 
 
 コントラスト比は WCAG の式による (単体テストで、すべて 4.5 以上を確かめる)。ダークの読み替えは `body.dark #preview span[style*="#B84F00" i] { color: #E0661A !important; }` の形 (3 色分。`url()` を含まない)。原文は変えない。
 
+#### 5.14.15 リンクを貼る・外す (INV-69)
+
+- Ctrl+V / Cmd+V (主の方法。権限なし): ブロック編集欄の `paste` (BlockEditController) と、セルの `paste` (TableCellEditor。INV-63 の貼り付けより先) で、選択があり、`ClipboardLink.urlFromPasteEvent` が URL を返し、選んだ文字そのものが URL でなく (裁定 Q6)、`ClipboardLink.linkOp(url, true)` の適用が `null` でないときだけ、`preventDefault()` して適用する。ブロック編集欄は `MarkdownTextOps.formatRange` の結果を `execCommand("insertText")` で入れる (ブラウザの文字単位の Undo。5.14.6)。セルは、WYSIWYG なら `InlineRuns.apply` (セルの書式の適用と同じ)、原文のセルなら `formatRange`。`strictEnds` は、選択の端がコードスパン・インラインの HTML のタグ・画像・インラインの数式・エスケープ・実体参照・リンクの行き先やラベル (リンクの文字の `]` の後) の中にあれば `null` とする (WYSIWYG のセルでは、コードスパンなど 1 つの要素の途中。画像と数式はオーナーの裁定 F-R3)。どれかに当たれば、ブロック編集欄はブラウザの既定の貼り付け、セルは INV-63 の文字の貼り付けになる。
+- ボタン: UIController は、押した時点で `BlockEditController.linkTarget()` を記録し、`ClipboardLink.readUrlAndText(clipboard)` をボタンの `pointerup` の中で始める (ユーザーアクティベーション)。読み終えた時点で、URL が無ければ (拒否・失敗を含む) `noUrlInClipboard`、対象が変わっていれば (`UIController.isSameLinkTarget`) `linkTargetChanged` のトーストを出し、何も変えない。同じなら `pasteLink(url, text)`: 選択があれば、その文字をリンクにする (既存のリンクの中なら URL を置き換え、参照リンクは普通のリンクに、裸の URL・`<URL>` は文字も新しい URL にする)。選択が無ければ、カーソルの位置に `[文字](URL)` を入れ、その文字を選ぶ (`insertLink`。文字は、クリップボードの HTML のリンクの文字、無ければ URL。その文字では書けない (読み直すと別のリンクになるなど) 場合は、URL を文字として入れる。入れられる位置はオーナーの裁定 F-R1: 1 つのインラインの範囲の文字の中で、コードスパン・HTML のタグ・リンク・画像・数式・エスケープ・実体参照・強調の記号の中でない。表の行では、先頭の `|` の前と末尾の `|` の後ろには入れない。WYSIWYG のセルでは、直前の語 (空白までの文字。裸の URL を含む) がリンクを飲み込む位置 (URL の直後など) にも入れない。行の外の空の行も入れられ、新しい段落になる (行の空白を除き、前後にブロックがあれば空行を補う。前後のブロックが変わらないことをブロックの字句解析で確かめる。リストの項目の間など、変わってしまう場所には入れない)。直前の `!` は `\!`。入れた結果を marked で読み直して照合する)。付けられなかった場合は `linkNotPastable` のトースト (オーナーの裁定 F-R2)。
+- 書く形: 普通のリンク `[文字](行き先)`。行き先は `ClipboardLink.toDestination(url)` (確かめた文字列そのもの。実体参照の形は書いたとおりに残すが、marked が文字に解く。既知の制約)。リンクの文字は INV-72 (d) で逃がす。表のセル (WYSIWYG のセルと、表の原文の編集欄の表の行) では、行き先の `|` も `\|` と書く。原文のセルは INV-63 の自動の修正で `\|` になる。
+- リンクを外す (`removeLink`): カーソルのあるリンク (リンクの文字の上。両端を含む。ブロック編集欄では、その原文の中も) または選択が触れるすべてのリンクを外す。外した文字は自動リンクにならないよう、スキームの後の `:`、`www.` の `.`、`@` を逃がす。WYSIWYG のセルでは、外した文字をセル (`literals`) に覚え、閉じるときの DOM からの書き出し (`InlineRuns.serialize` の `literalUrls`) でも同じく逃がす。
+- 有効・無効は 5.15.5 (`canPasteLink` / `canRemoveLink`)。判定は、選択を含むインラインの範囲だけを字句解析し、書式のポップオーバーが開いている間だけ行う (開いた時点 (`EditPaletteHost.onPopoverOpened`) と、その後のフレームごと。閉じている間は無効として扱う。INV-51)。リンクにする範囲の生の `[` `]` は `\[` `\]` と書く。
+- WYSIWYG のセルのカーソルの位置は、改行を 1 と数えて要素の番号に直す (`InlineRuns.runIndexAt`。2 行目の先頭なら改行の後に入れる)。
+- 通信: クリップボードの読み取りはブラウザの中だけ。ページの題名を取りに行かない (裁定 V2)。`text/html` は inert な文書で解析し、DOM には入れない (画像を読まない)。
+
 ### 5.15 編集パレット
 
 #### 5.15.1 配置
@@ -4182,8 +4269,8 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | --- | --- |
 | Bold / Italic / 文字色 / 色を外す | 編集中 (ブロック編集欄、セル) で、選択範囲があり、INV-67 の (6) の条件を満たす |
 | Format (書式のポップオーバーの開き手) | 編集中 |
-| リンクを貼る | 編集中で、選択が無いか、INV-67 の (6) の条件を満たす |
-| リンクを外す | 編集中で、カーソルまたは選択がリンクの中 |
+| リンクを貼る | 編集中で、選択があって INV-67 の (6) の条件を満たすか、選択が無く、カーソルがリンクを入れられる位置にある (INV-69 (b)。オーナーの裁定 F-R1) |
+| リンクを外す | 編集中で、カーソルまたは選択がリンクの上にあり、外せる (外した結果を marked で読み直して意図と合う) |
 | Mermaid / Insert table | セルの編集中でない |
 | Save / Save as | 常に有効 (処理中の二重押しは 11-e で無視する) |
 | Undo | Undo の記録があるか、開いている編集欄・セルに変更がある (INV-48) |
@@ -4191,6 +4278,8 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | Delete row | セルの編集中で、今の行が見出しの行でない |
 | Delete column | セルの編集中で、列が 2 つ以上 |
 | Table options (とその配置) | セルの編集中 |
+
+リンクを貼る・外すの判定は、書式のポップオーバーが開いている間だけ行う (5.14.15。INV-51)。
 
 `EditPalette.setButtonStates(states)` は、この表の判定の結果を、キー `bold` / `italic` / `format` / `textColor` / `linkPaste` / `linkRemove` / `insertTable` / `insertMermaid` / `undo` / `insertRow` / `insertColumn` / `rowDelete` / `columnDelete` / `tableOptions` の真偽と、`alignment` (今の列の配置。`left` / `center` / `right` / `none`、または `null`) で受け取る。判定は UIController が行う。ボタンの有効・無効は、未保存の印を更新するたびと、編集欄の選択範囲が変わるたび (document の `selectionchange` を capture で受ける) に更新する。編集欄の入力と選択の変化では次のフレームに 1 回 (`_schedulePaletteStates`)、編集欄の開閉・確定などでは、その場で更新する。判定は INV-51 のとおり、`requestAnimationFrame` で 1 フレームに 1 回にまとめて行う。編集中の挿入 (Insert table / Mermaid の雛形) は、カーソル位置 (選択の終わり) に入れる。Bold / Italic / 文字色の判定 (INV-67 (6)) は `BlockEditController.canFormatSelection()` で、編集欄の文字列のブロックの字句解析だけを使う (同じ文字列の解析は使い回す。インラインの字句解析はしない)。ブロック編集欄の Bold / Italic / 文字色は `formatSelection` で、`MarkdownTextOps.formatRange` が `null` なら何もしない。
 

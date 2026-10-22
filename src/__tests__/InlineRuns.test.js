@@ -392,3 +392,156 @@ describe("AT-IR fromNodes: a cell's DOM copy to runs (INV-63, unit E)", () => {
     expect(links.map((l) => l.kind)).toEqual(["inline", "reference", "autolink"]);
   });
 });
+
+describe("AT-IR links: put on and taken off (INV-69)", () => {
+  const link = (dest) => InlineRuns.inlineLink(dest);
+  const LINK = (dest, url = dest) => ({ kind: "link", link: link(dest), url });
+  const UNLINK = { kind: "unlink" };
+  /** apply + serialize, and marked reads the result as meant (INV-67 (8)). */
+  function checked(src, start, end, op, links, options = {}) {
+    const result = InlineRuns.apply(runsOf(src, links), start, end, op, options);
+    if (!result) return null;
+    const text = InlineRuns.serialize(result.runs, options);
+    const back = InlineRuns.fromTokens(lexInline(text, links), { colors: COLORS });
+    expect(JSON.stringify(InlineRuns.signature(back))).toBe(JSON.stringify(InlineRuns.signature(result.runs)));
+    return text;
+  }
+
+  it("AT-IR-38 inlineLink: an inline link whose href is what marked reads from the destination", () => {
+    expect(link("https://a.example/x")).toMatchObject({ kind: "inline", href: "https://a.example/x", title: null, dest: "(https://a.example/x)" });
+    expect(link("<https://a.example/a%20b>")).toMatchObject({ href: "https://a.example/a%20b", dest: "(<https://a.example/a%20b>)" });
+  });
+
+  it("AT-IR-39 the selected text becomes a link; other formats stay, the link goes outside emphasis", () => {
+    expect(checked("see this page", 4, 8, LINK("https://a.example/"))).toBe("see [this](https://a.example/) page");
+    expect(checked("a **bold** b", 2, 6, LINK("https://a.example/"))).toBe("a [**bold**](https://a.example/) b");
+    expect(checked(`<span style="color: ${RED}">red</span>`, 0, 3, LINK("u"))).toBe(`<span style="color: ${RED}">[red](u)</span>`);
+    expect(checked("x <https://a.example/> y", 2, 5, LINK("<https://b.example/a%20b>", "https://b.example/a b"))).not.toBeNull();
+  });
+
+  it("AT-IR-40 in a link: the whole link takes the new URL; a reference link becomes an inline link (its definition stays)", () => {
+    expect(checked("a [text](old) b", 3, 4, LINK("new"))).toBe("a [text](new) b");
+    const links = { r: { href: "old", title: null } };
+    expect(checked("a [text][r] b", 2, 6, LINK("new"), links)).toBe("a [text](new) b");
+  });
+
+  it("AT-IR-41 a bare URL or <URL>: its text and URL become the new URL", () => {
+    expect(checked("see https://old.example/ now", 6, 10, LINK("https://new.example/"))).toBe("see [https://new.example/](https://new.example/) now");
+    expect(checked("see <https://old.example/> now", 4, 8, LINK("https://new.example/"))).toBe("see [https://new.example/](https://new.example/) now");
+  });
+
+  it("AT-IR-42 in a table cell the pipes of the URL are written \\| (INV-69)", () => {
+    const options = { inTableCell: true };
+    const result = InlineRuns.apply(plain("cell"), 0, 4, LINK("https://a.example/p|q"), options);
+    expect(InlineRuns.serialize(result.runs, options)).toBe("[cell](https://a.example/p\\|q)");
+    const bare = InlineRuns.apply(runsOf("https://old.example/"), 0, 3, LINK("https://a.example/p|q"), options);
+    expect(InlineRuns.serialize(bare.runs, options)).toBe("[https://a.example/p\\|q](https://a.example/p\\|q)");
+  });
+
+  it("AT-IR-43 strictEnds (Ctrl+V): an end inside a code span is not linked; ends at its edges are", () => {
+    const runs = runsOf("a `code` b");
+    expect(InlineRuns.apply(runs, 2, 4, { ...LINK("u"), strictEnds: true })).toBeNull();
+    expect(InlineRuns.apply(runs, 0, 4, { ...LINK("u"), strictEnds: true })).toBeNull();
+    expect(InlineRuns.serialize(InlineRuns.apply(runs, 2, 6, { ...LINK("u"), strictEnds: true }).runs)).toBe("a [`code`](u) b");
+    // without strictEnds (the button) a code span is taken whole (INV-67 (6))
+    expect(InlineRuns.serialize(InlineRuns.apply(runs, 3, 4, LINK("u")).runs)).toBe("a [`code`](u) b");
+  });
+
+  it("AT-IR-44 taking a link off keeps its text and the other formats", () => {
+    expect(checked("a [**text**](u) b", 3, 4, UNLINK)).toBe("a **text** b");
+    expect(checked("a [x](u) and [y](v) b", 0, 5, UNLINK)).toBe("a x and [y](v) b");
+    expect(checked("a [x](u) and [y](v) b", 0, 11, UNLINK)).toBe("a x and y b");
+    expect(checked("plain", 1, 3, UNLINK)).toBeNull();
+  });
+
+  it("AT-IR-45 a bare URL or <URL> taken off does not become a link again: \\: (www.: \\., an address: \\@)", () => {
+    expect(checked("see https://a.example/x now", 6, 8, UNLINK)).toBe("see https\\://a.example/x now");
+    expect(checked("see <https://a.example/x> now", 6, 8, UNLINK)).toBe("see https\\://a.example/x now");
+    expect(checked("see www.a.example now", 5, 6, UNLINK)).toBe("see www\\.a.example now");
+    expect(checked("see a@b.example now", 4, 5, UNLINK)).toBe("see a\\@b.example now");
+    expect(checked("<mailto:a@b.example>", 2, 3, UNLINK)).toBe("mailto\\:a\\@b.example");
+    // a link whose text looks like a URL is not made an autolink either
+    expect(checked("[http://www.a.example](u)", 2, 3, UNLINK)).toBe("http\\://www\\.a.example");
+    for (const src of ["see https\\://a.example/x now", "www\\.a.example", "a\\@b.example", "http\\://www\\.a.example"]) {
+      expect(render(src), src).not.toContain("<a ");
+    }
+  });
+
+  it("AT-IR-46 a caret (no selection): the link the caret is on comes off, its edges included", () => {
+    expect(checked("a [text](u) b", 4, 4, UNLINK)).toBe("a text b");
+    expect(checked("a [text](u) b", 2, 2, UNLINK)).toBe("a text b");
+    expect(checked("a [text](u) b", 6, 6, UNLINK)).toBe("a text b");
+    expect(checked("a [text](u) b", 1, 1, UNLINK)).toBeNull();
+    expect(InlineRuns.hasLinkAt(runsOf("a [text](u) b"), 4, 4)).toBe(true);
+    expect(InlineRuns.hasLinkAt(runsOf("a [text](u) b"), 6, 6)).toBe(true);
+    expect(InlineRuns.hasLinkAt(runsOf("a [text](u) b"), 7, 7)).toBe(false);
+    expect(InlineRuns.hasLinkAt(runsOf("a [text](u) b"), 0, 3)).toBe(true);
+    expect(InlineRuns.hasLinkAt(runsOf("a [text](u) b"), 0, 2)).toBe(false);
+  });
+
+  it("AT-IR-47 insertLinkAt: no selection, the link goes in at the caret with its text selected (ruling V2)", () => {
+    const result = InlineRuns.insertLinkAt(plain("ab"), 1, "Example *x*", link("https://a.example/"));
+    expect(InlineRuns.serialize(result.runs)).toBe("a[Example \\*x\\*](https://a.example/)b");
+    expect(visible(result.runs).slice(result.start, result.end)).toBe("Example *x*");
+    const bold = InlineRuns.insertLinkAt(runsOf("**ab**"), 1, "L", link("u"));
+    expect(InlineRuns.serialize(bold.runs)).toBe("**a**[**L**](u)**b**");
+    const empty = InlineRuns.insertLinkAt([], 0, "https://a.example/", link("https://a.example/"));
+    expect(InlineRuns.serialize(empty.runs)).toBe("[https://a.example/](https://a.example/)");
+    expect([empty.start, empty.end]).toEqual([0, 18]);
+  });
+
+  it("AT-IR-48 literalUrls: a URL text taken off a link in a cell stays text when written again from the DOM", () => {
+    const runs = plain("see https://a.example/x and https://b.example/");
+    expect(InlineRuns.serialize(runs, { literalUrls: ["https://a.example/x"] })).toBe("see https\\://a.example/x and https://b.example/");
+    expect(InlineRuns.serialize(runs)).toBe("see https://a.example/x and https://b.example/");
+    // inside a link the text is the link's own
+    const linked = InlineRuns.apply(runs, 0, 3, LINK("u")).runs;
+    expect(InlineRuns.serialize(linked, { literalUrls: ["see"] })).toBe("[see](u) https://a.example/x and https://b.example/");
+  });
+
+  it("AT-IR-49 runIndexAt / canInsertLinkAt / insertLinkAt (owner ruling F-R1)", () => {
+    const br = { type: "br", text: "", src: null, marks: { ...NONE } };
+    const runs = [...plain("ab"), br, ...plain("cd")];
+    expect(InlineRuns.runIndexAt(runs, 2, 1)).toBe(2); // before the break
+    expect(InlineRuns.runIndexAt(runs, 3, 1)).toBe(3); // after it: the second line's start
+    expect(InlineRuns.runIndexAt(runs, 2, 0)).toBe(2);
+    expect(InlineRuns.runIndexAt(runsOf("a `code` b"), 4)).toBe(-1); // inside a code span
+    const linkedRuns = InlineRuns.apply(plain("abcd"), 1, 3, LINK("u")).runs;
+    expect(InlineRuns.canInsertLinkAt(linkedRuns, 2)).toBe(false); // inside the link
+    expect(InlineRuns.canInsertLinkAt(linkedRuns, 1)).toBe(true); // at its edges
+    expect(InlineRuns.canInsertLinkAt(linkedRuns, 3)).toBe(true);
+    expect(InlineRuns.canInsertLinkAt(linkedRuns, -1)).toBe(false);
+    expect(InlineRuns.insertLinkAt(linkedRuns, 2, "L", link("v"))).toBeNull();
+    expect(InlineRuns.insertLinkAt(plain("ab"), 1, "", link("v"))).toBeNull();
+    const after = InlineRuns.insertLinkAt(runs, 3, "L", link("v"));
+    expect(InlineRuns.serialize(after.runs, { inTableCell: true })).toBe("ab<br>[L](v)cd");
+    expect(InlineRuns.serialize(InlineRuns.insertLinkAt(plain("Hi!"), 3, "L", link("v")).runs)).toBe("Hi\\![L](v)");
+  });
+
+  it("AT-IR-50 a link whose text has \\[ \\] is read as a link (marked lexes its text with them as brackets)", () => {
+    const runs = runsOf("a [x \\[1\\]](u) b");
+    expect(runs.some((r) => r.type === "atom")).toBe(false);
+    expect(visible(runs)).toBe("a x [1] b");
+    expect(InlineRuns.serialize(runs)).toBe("a [x \\[1\\]](u) b");
+    const bracket = runs.find((r) => r.text === "[");
+    expect([bracket.srcFrom, bracket.srcTo, bracket.src]).toEqual([5, 7, "\\["]); // its source: \[
+    // a code span in such a text, holding a backslash marked took off, is kept whole
+    expect(runsOf("[`a\\[b`](u)").some((r) => r.type === "atom")).toBe(true);
+  });
+
+  it("AT-IR-51 the dot of every www. is escaped when a link comes off (also after a letter)", () => {
+    expect(checked("[xwww.a.example](u)", 1, 2, UNLINK)).toBe("xwww\\.a.example");
+    expect(render("xwww\\.a.example")).not.toContain("<a ");
+  });
+
+  it("AT-IR-52 a raw bracket put inside a new link is escaped", () => {
+    expect(checked("a b]c d", 2, 5, LINK("u"))).toBe("a [b\\]c](u) d");
+  });
+
+  it("AT-IR-53 runs without source (a cell written from its DOM): a \"!\" right before a link is \\! (no image)", () => {
+    const runs = InlineRuns.apply(plain("Hi!ab"), 3, 5, LINK("u")).runs;
+    expect(InlineRuns.serialize(runs)).toBe("Hi\\![ab](u)");
+    expect(render(InlineRuns.serialize(runs))).not.toContain("<img");
+    expect(InlineRuns.serialize(plain("Hi!ab"))).toBe("Hi!ab");
+  });
+});

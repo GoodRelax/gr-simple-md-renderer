@@ -83,7 +83,14 @@ export async function dropFile(page, { name, text, type = "" }) {
  * @param {string} markdown
  */
 export async function renderMarkdown(page, markdown) {
-  await page.locator("#editor").fill(markdown);
+  // The value with one input event, as a paste gives it: locator.fill types
+  // a large document in pieces (about 6 s for 21 KB), which leaves the
+  // tests little room under load. The app's handler is the same either way.
+  await page.locator("#editor").evaluate((editor, text) => {
+    editor.focus();
+    editor.value = text;
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+  }, markdown);
   await page.locator("#renderLight").click();
   await expect(page.locator("body")).toHaveClass(/\bview-markdown\b/);
 }

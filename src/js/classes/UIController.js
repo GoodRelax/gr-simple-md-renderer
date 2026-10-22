@@ -6,6 +6,7 @@ import DocumentSession from "./DocumentSession.js";
 import DocumentLocation from "./DocumentLocation.js";
 import BlockEditController from "./BlockEditController.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
+import ClipboardLink from "./ClipboardLink.js";
 import SaveDocument from "./SaveDocument.js";
 import SaveDocumentAs from "./SaveDocumentAs.js";
 import { cell } from "../stateTable.js";
@@ -143,7 +144,8 @@ export default class UIController {
    * @param {object} services - in-place editing parts (composed in main.js):
    *   fileAccess (MarkdownFileAccess), createPalette(host) -> EditPalette,
    *   createBlockEdit(host) -> BlockEditController, isApple (Cmd is the
-   *   primary shortcut modifier, INV-14)
+   *   primary shortcut modifier, INV-14), clipboard (what the Paste link
+   *   button reads, INV-69; navigator.clipboard when not given)
    * @purity non-pure
    */
   constructor(orchestrator, state, elements, scrollEngine, services) {
@@ -158,6 +160,7 @@ export default class UIController {
     // Document session and save target (INV-55): the only place of the file handle
     this.fileAccess = services.fileAccess;
     this._isApple = Boolean(services.isApple);
+    this._clipboard = "clipboard" in services ? () => services.clipboard : () => navigator.clipboard;
     this._session = null; // DocumentSession
     this._location = null; // DocumentLocation
     this._nextDocumentId = 1;
@@ -1146,10 +1149,14 @@ export default class UIController {
     const canFormat = isEditing && this.blockEdit.canFormatSelection();
     const isInTableSource = isEditing && this.blockEdit.isEditingTable();
     const cell = this.blockEdit.cellState(); // null unless a cell is open
+    const isLinkMenuOpen = isEditing && this.palette.openPopoverKey() === "format";
     return {
       bold: canFormat,
       italic: canFormat,
       textColor: canFormat,
+      // INV-69: lexing the inline range, so only while the format popover is open (INV-51)
+      linkPaste: isLinkMenuOpen && this.blockEdit.canPasteLink(),
+      linkRemove: isLinkMenuOpen && this.blockEdit.canRemoveLink(),
       format: isEditing,
       insertTable: cell === null, // W7
       insertMermaid: cell === null,
@@ -1223,6 +1230,11 @@ export default class UIController {
   _paletteHost() {
     return {
       runCommand: (command, arg) => this._runPaletteCommand(command, arg),
+      // the link buttons' states are worked out only while their popover is open (INV-51)
+      /** @purity non-pure */
+      onPopoverOpened: (key) => {
+        if (key === "format") this._updatePaletteStates();
+      },
     };
   }
 
@@ -1246,6 +1258,12 @@ export default class UIController {
       case "textColor":
         // INV-66: the light value goes into the source; "none" removes the color
         this._formatInBlock({ kind: "color", value: CONFIG.edit.textColors[arg]?.light ?? null });
+        break;
+      case "linkPaste":
+        void this._pasteLinkFromClipboard(); // INV-69: started in the button's pointerup
+        break;
+      case "linkRemove":
+        if (this.blockEdit.removeLink()) this._refreshDirtyMark();
         break;
       case "insertRow":
         if (this.blockEdit.isEditingCell()) this._tableOperation({ kind: "insertRow" });
@@ -1311,6 +1329,46 @@ export default class UIController {
    */
   _formatInBlock(op) {
     if (this.blockEdit.formatSelection(op)) this._refreshDirtyMark();
+  }
+
+  /**
+   * INV-69, the Paste link button: the clipboard is read now, inside the
+   * button's pointerup (user activation; the browser may ask for its
+   * permission). The target (the open editor or cell, its selection and
+   * edit generation) is noted now and compared when the read has ended: a
+   * changed target changes nothing and is told by a toast (UIR-44), as is a
+   * clipboard without a URL or a refused read.
+   * @purity non-pure
+   * @returns {Promise<void>}
+   */
+  async _pasteLinkFromClipboard() {
+    const target = this.blockEdit.linkTarget();
+    if (!target) return;
+    const found = await ClipboardLink.readUrlAndText(this._clipboard(), ClipboardLink.urlOptions());
+    if (!found) {
+      this._toast(CONFIG.messages.edit.noUrlInClipboard);
+      return;
+    }
+    if (!UIController.isSameLinkTarget(target, this.blockEdit.linkTarget())) {
+      this._toast(CONFIG.messages.edit.linkTargetChanged);
+      return;
+    }
+    if (this.blockEdit.pasteLink(found.url, found.text)) this._refreshDirtyMark();
+    else this._toast(CONFIG.messages.edit.linkNotPastable); // owner ruling F-R2
+  }
+
+  /**
+   * Two link targets (BlockEditController.linkTarget) are the same: the
+   * same block or cell, selection and edit generation.
+   * @purity pure
+   * @param {object|null} a
+   * @param {object|null} b
+   * @returns {boolean}
+   */
+  static isSameLinkTarget(a, b) {
+    if (!a || !b) return false;
+    const keys = ["kind", "blockId", "row", "col", "generation", "start", "end"];
+    return keys.every((k) => a[k] === b[k]);
   }
 
   /**
