@@ -474,24 +474,31 @@ describe("ScrollMemento reading anchor (5.1, PRT-X08)", () => {
       // aims on both sides and at every fraction of a step, for steps of 2.5
       // and 6 px of one device pixel, and of 2.513 px of two and three (the
       // emulation)
+      // (the worst miss per step is checked once: an expect per try made the
+      // test slow enough to time out on a loaded machine)
       for (const [step, devicePixels] of [[STEP, 1], [6, 1], [2.513, 2], [2.513, 3]]) {
+        let worst = 0;
         for (const start of startsOn(step)) {
           for (let aim = 60; aim <= 140; aim += 0.37) {
             const doc = steppedDocument(start, step, Infinity, devicePixels);
             const el = { getBoundingClientRect: () => ({ top: start + 125 - doc.pos() }), getClientRects: () => [{}] };
             new ScrollMemento({}).restoreAnchor({ offsetTop: aim }, el);
-            expect(Math.abs(el.getBoundingClientRect().top - aim)).toBeLessThanOrEqual(step / 2);
+            worst = Math.max(worst, Math.abs(el.getBoundingClientRect().top - aim));
           }
         }
+        expect(worst, `step ${step}`).toBeLessThanOrEqual(step / 2);
       }
     });
-  });
+  }, 30000);
 
   it("AT-SM-29 touch: in and out of edit mode again and again, the place stays within half a step of where it was", () => {
     touch(() => {
       // strips of every height from 1 to 40 px, for the same steps, with the
-      // place at different fractions of a pixel
-      for (const [step, devicePixels] of [[STEP, 1], [6, 1], [2.513, 2], [2.513, 3]]) {
+      // place at different fractions of a pixel (the device pixel ratio does
+      // not change the search: AT-SM-33; the worst drift per step is
+      // checked once, as in AT-SM-28)
+      for (const [step, devicePixels] of [[STEP, 1], [6, 1], [2.513, 2]]) {
+        let worst = 0;
         for (const at of startsOn(step)) {
           for (let shift = 1; shift <= 40; shift += 0.9) {
             const doc = steppedDocument(at, step, Infinity, devicePixels);
@@ -502,13 +509,14 @@ describe("ScrollMemento reading anchor (5.1, PRT-X08)", () => {
               const saved = memento.captureReadingAnchor();
               edit = !edit;
               memento.restoreReadingAnchor(saved);
-              expect(Math.abs(top() - start)).toBeLessThanOrEqual(step / 2);
+              worst = Math.max(worst, Math.abs(top() - start));
             }
           }
         }
+        expect(worst, `step ${step}`).toBeLessThanOrEqual(step / 2);
       }
     });
-  });
+  }, 30000);
 
   it("AT-SM-30 a browser that lands where asked scrolls once", () => {
     touch(() => {

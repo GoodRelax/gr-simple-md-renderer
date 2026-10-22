@@ -13,14 +13,20 @@ const OVERLAID_CLASS = "md-block-editor-overlaid";
  * characters get a background there. The layer is built from text nodes
  * and elements only (the user's text is never read as HTML), is inert,
  * hidden from assistive technology, takes no pointer, and its text is
- * transparent. It is drawn again at most once per frame; above maxChars
- * there is no layer (and no marks).
+ * transparent. It is drawn in the next frame, and again at most once per
+ * frame after an input (the first draw too: opening an editor forces no
+ * second layout, INV-51); a change of the editor's size only moves the
+ * layer. Above maxChars characters, or maxMarks marks, there is no layer
+ * (and no marks); with no mark there is none either (it would show only
+ * the editor's own background, and its layout costs a frame for a large
+ * text such as a long table's source, INV-51).
  */
 export default class InvisibleCharOverlay {
   /**
    * @param {HTMLTextAreaElement} textarea - in its wrapper, which is positioned
    * @param {object} [options]
    * @param {number} [options.maxChars] - CONFIG.edit.invisibleMarkMaxChars
+   * @param {number} [options.maxMarks] - CONFIG.edit.invisibleMarkMaxMarks
    * @param {((text: string) => boolean[])|null} [options.lineEndMarks] - per line: mark the
    *   line end spaces (INV-71 blocks); null for none
    * @param {(fn: () => void) => void} [options.requestFrame]
@@ -29,13 +35,15 @@ export default class InvisibleCharOverlay {
   constructor(textarea, options = {}) {
     this.textarea = textarea;
     this.maxChars = options.maxChars ?? Infinity;
+    this.maxMarks = options.maxMarks ?? Infinity;
     this.lineEndMarks = options.lineEndMarks ?? null;
     this.requestFrame = options.requestFrame ?? nextFrame;
     this._layer = null;
     this._observer = null;
     this._attached = false;
-    this._framePending = false;
+    this._pending = null; // what the asked-for frame does: "draw", or "place" (a size change)
     this._onChange = () => this.refresh();
+    this._onResize = () => this._schedule("place");
   }
 
   /**
@@ -79,9 +87,9 @@ export default class InvisibleCharOverlay {
   }
 
   /**
-   * Draw the layer and follow the editor's input and size (a ResizeObserver
-   * on the editor: its width also changes without a window resize; the
-   * window's resize event where there is none).
+   * Draw the layer in the next frame and follow the editor's input and size
+   * (a ResizeObserver on the editor: its width also changes without a
+   * window resize; the window's resize event where there is none).
    * @purity non-pure
    */
   attach() {
@@ -89,12 +97,12 @@ export default class InvisibleCharOverlay {
     this._attached = true;
     this.textarea.addEventListener("input", this._onChange);
     if (typeof ResizeObserver === "function") {
-      this._observer = new ResizeObserver(this._onChange);
+      this._observer = new ResizeObserver(this._onResize);
       this._observer.observe(this.textarea);
     } else {
-      window.addEventListener("resize", this._onChange);
+      window.addEventListener("resize", this._onResize);
     }
-    this._draw();
+    this.refresh();
   }
 
   /**
@@ -106,7 +114,7 @@ export default class InvisibleCharOverlay {
     this._attached = false;
     this.textarea.removeEventListener("input", this._onChange);
     if (this._observer) this._observer.disconnect();
-    else window.removeEventListener("resize", this._onChange);
+    else window.removeEventListener("resize", this._onResize);
     this._observer = null;
     this._removeLayer();
   }
@@ -116,16 +124,33 @@ export default class InvisibleCharOverlay {
    * @purity non-pure
    */
   refresh() {
-    if (!this._attached || this._framePending) return;
-    this._framePending = true;
-    /** @purity non-pure */
-    this.requestFrame(() => {
-      this._framePending = false;
-      if (this._attached) this._draw();
-    });
+    this._schedule("draw");
   }
 
   // ---- internals ----
+
+  /**
+   * Ask for one frame: a draw, or only a placing when the text did not
+   * change (the size did); a draw also places.
+   * @purity non-pure
+   * @param {"draw"|"place"} what
+   */
+  _schedule(what) {
+    if (!this._attached) return;
+    if (this._pending) {
+      if (what === "draw") this._pending = "draw";
+      return;
+    }
+    this._pending = what;
+    /** @purity non-pure */
+    this.requestFrame(() => {
+      const pending = this._pending;
+      this._pending = null;
+      if (!this._attached) return;
+      if (pending === "draw") this._draw();
+      else if (this._layer) this._place();
+    });
+  }
 
   /**
    * @purity non-pure
@@ -136,10 +161,20 @@ export default class InvisibleCharOverlay {
       this._removeLayer();
       return;
     }
-    if (!this._layer) this._createLayer();
     const flags = this.lineEndMarks ? this.lineEndMarks(value) : [];
+    const parts = InvisibleCharOverlay.segments(value, flags);
+    let marks = 0;
+    for (const part of parts) if (part.mark) marks++;
+    if (marks === 0 || marks > this.maxMarks) {
+      // none: the layer would show only the editor's own background, and
+      // laying out a copy of a large text costs a frame (INV-51);
+      // too many: as many elements as marks, typing would wait for them (INV-70)
+      this._removeLayer();
+      return;
+    }
+    if (!this._layer) this._createLayer();
     /** @purity non-pure */
-    const nodes = InvisibleCharOverlay.segments(value, flags).map((part) => {
+    const nodes = parts.map((part) => {
       if (!part.mark) return document.createTextNode(part.text);
       const span = document.createElement("span");
       span.className = "grsmd-invisible";

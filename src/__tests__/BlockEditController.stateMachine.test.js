@@ -251,6 +251,7 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the spec", () =
     expect(d.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
       [I, "hasUnrenderedEditor", ["clearSelection", "showPalette", "renderFromEditor", "showToast"]],
       [C, "isCellTarget&&isCellEditableTable", ["clearSelection", "showPalette", "startTableSession", "openCell"]],
+      [E, "isCellTarget", ["clearSelection", "showPalette", "openTableSourceWithToast"]], // owner ruling Q-c
       [E, "isEmptyDocument", ["clearSelection", "showPalette", "openBlockEditor"]],
       [E, "isBlockTarget", ["clearSelection", "showPalette", "openBlockEditor"]],
       [I, "else", ["clearSelection", "showPalette"]],
@@ -442,7 +443,8 @@ describe("AT-BSM cell details", () => {
 });
 
 describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () => {
-  it("has the same 24 events, and the same next state in all 100 cells (the first alternative of a choice)", () => {
+  it("has the same 25 events, and the same next state in all 100 cells (the first alternative of a choice)", () => {
+    expect(Object.keys(TABLE)).toHaveLength(25);
     expect(Object.keys(blockEditStateMachine).sort()).toEqual(Object.keys(TABLE).sort());
     for (const [event, row] of Object.entries(TABLE)) {
       for (const state of STATES) {

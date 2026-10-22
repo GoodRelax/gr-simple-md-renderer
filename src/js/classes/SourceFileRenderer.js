@@ -1,4 +1,4 @@
-import { EXT_TO_HLJS } from "../config.js";
+import { EXT_TO_HLJS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
 import { escapeHtml, formatDateTime, applyTheme, showToast } from "../utils.js";
 
 /**
@@ -11,10 +11,12 @@ export default class SourceFileRenderer {
    * @param {object} config  - global CONFIG object
    * @param {HTMLElement} previewEl - #preview element
    * @param {object} hljs - bundled highlight.js instance (shared with MarkdownRenderer)
+   * @param {boolean} [fileHandleSupported] - a drop gives a file handle (CON-01)
    * @purity non-pure
    */
-  constructor(config, previewEl, hljs) {
+  constructor(config, previewEl, hljs, fileHandleSupported = FILE_SYSTEM_HANDLE_SUPPORTED) {
     this._cfg = config;
+    this._fileHandleSupported = fileHandleSupported;
     this._previewEl = previewEl;
     this._hljs = hljs;
     this._fileHandle = null;
@@ -51,16 +53,18 @@ export default class SourceFileRenderer {
 
   /**
    * Reload from fileHandle preserving scroll position.
-   * Shows a toast if fileHandle is unavailable.
+   * Shows a toast if fileHandle is unavailable: the browser gives none, or
+   * this file came without one (as the Markdown view says, release test N5).
    * @param {'light'|'dark'} theme
    * @returns {Promise<CodeViewMeta|null>} null if fileHandle is unavailable
    * @purity non-pure
    */
   async reload(theme) {
     if (!this._fileHandle) {
+      const codeView = this._cfg.codeView;
       showToast(
-        this._cfg.codeView.reloadUnavailableMsg,
-        this._cfg.codeView.toastDurationMs,
+        this._fileHandleSupported ? codeView.reloadNoFileMsg : codeView.reloadUnavailableMsg,
+        codeView.toastDurationMs,
       );
       return null;
     }

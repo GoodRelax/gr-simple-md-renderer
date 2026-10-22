@@ -76,3 +76,15 @@ describe("the private DOMPurify instance is configured once (render speed)", () 
     expect(DOMPurify.sanitize("<p>a</p><style>x</style>")).toContain("<style>");
   });
 });
+
+describe("AT-STA-13 PURIFY_CONFIG is the frozen agreed value (spec 5.14.3, CON-14)", () => {
+  it("equals the agreed value and cannot be changed", () => {
+    expect(PURIFY_CONFIG).toEqual({
+      ADD_TAGS: ["semantics", "annotation"],
+      ADD_ATTR: ["encoding"],
+      FORBID_TAGS: ["style"],
+    });
+    expect(Object.isFrozen(PURIFY_CONFIG)).toBe(true);
+    for (const key of Object.keys(PURIFY_CONFIG)) expect(Object.isFrozen(PURIFY_CONFIG[key]), key).toBe(true);
+  });
+});

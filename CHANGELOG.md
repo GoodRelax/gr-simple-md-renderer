@@ -40,6 +40,18 @@ re-hash.
   highlight.js instance shared with the Markdown renderer. A build check now
   fails the build if the output still imports code from `http(s)://` or
   mentions `cdnjs`.
+- Math is 1.5em again, as before the libraries were bundled. The bundled
+  KaTeX CSS came after the app's rule and had set it to 1.21em.
+- Diagram panning ends on pointer up and pointer cancel, and when the mouse
+  moves with no button pressed. Before, after clicking a diagram (for
+  example to open its code) in Safari, moving the mouse alone could scroll
+  the preview.
+- On touch screens, the prompt opened by a long press on `[?]` no longer
+  closes as soon as the finger is lifted.
+- Code View: a dropped file that cannot be read shows the read error and
+  goes back to the start screen (no unhandled error), Reload of a file that
+  cannot be read shows a notice, and Reload with no file says that no file
+  is open instead of asking for Chrome / Edge 86+.
 
 ### Removed
 
@@ -57,10 +69,60 @@ re-hash.
   only the changed blocks are rendered again; `Esc` cancels. Lists, tables,
   `<details>` and other raw HTML open as one block; reference definitions and
   hidden HTML show as thin bands in edit mode.
-  - Palette: Bold, Italic, Undo (one step), Save, Save as, Insert table / row
-    / column, and four Mermaid samples. Buttons run on press-and-release
-    inside the button; moving off a pressed button drags the palette instead.
-    Full keyboard use (Tab from the block, arrow keys, Enter / Space, Esc).
+  - Palette: a 7 x 2 grid of icons. Bold, Italic, Format (text color, paste
+    link, remove link), four Mermaid samples, Save, Save as, Insert table,
+    Insert / Delete row, Insert / Delete column, Table options (column
+    alignment) and Undo. Buttons run on press-and-release inside the button;
+    moving off a pressed button, or pressing a disabled one, drags the palette
+    instead. A long press on the grip minimizes the palette to the grip (a dot
+    marks unsaved changes) and restores it. The palette is pointer only: it
+    takes no keyboard focus, and the keyboard uses the shortcuts below.
+  - Undo also works while editing. It takes back the last change unit: a
+    block commit, an insert, a cell commit, or a table row / column /
+    alignment operation. If an open editor or cell has changes, Undo cancels
+    those changes instead and leaves the last unit as it is.
+  - Shortcuts: Ctrl+S / Ctrl+Shift+S save (the browser's "Save page" is
+    always blocked in the GRSMD tab), Ctrl+Z is the Undo above in edit mode
+    (inside a changed block editor it stays the browser's own undo), Ctrl+B /
+    Ctrl+I in an editor or a cell. Mac uses Cmd. A held key runs once, and a
+    held `Esc` cancels once.
+  - Outside edit mode, a double-click (double-tap) on the preview enters edit
+    mode and opens what was clicked: a block, or a table cell.
+  - Table cells are edited in place as they are rendered. Tab / Shift+Tab move
+    right / left, Enter moves down (and ends on the last row), Shift+Enter
+    adds a line break, and `Esc` cancels the open cell only. A cell that
+    cannot go back to the same Markdown (math, images, footnote references,
+    HTML other than bold, italic, a line break or text color) opens as its
+    Markdown text; a table whose rendered structure differs from its source
+    opens the whole table source with a notice. The "Markdown" tab above a
+    table opens the whole table source. Links in a cell keep their notation
+    (reference, `<URL>`, bare URL).
+  - Committing a changed table aligns its pipes (full-width characters count
+    as two columns).
+  - Text color (red, blue, green) is written as `<span style="color: ...">`
+    and shown with dark-theme values in the dark theme. Bold, Italic and
+    color split and merge spans without nesting them, and keep emphasis
+    markers where they work next to punctuation.
+  - Links: select text and paste a URL with Ctrl+V (Cmd+V) to make it a link,
+    with no clipboard permission. The "Paste link" button reads the clipboard
+    when pressed; the browser may ask for permission. In Chrome and Edge that
+    permission is shared with the other pages on the same site
+    (`goodrelax.github.io`); it can be withdrawn in the site settings. The
+    button makes one clipboard read at a time, and a read still pending when
+    edit mode ends is dropped. "Remove link" keeps the text. Nothing is sent
+    over the network.
+  - Enter / Shift+Enter in a paragraph, list item or quote inserts a Markdown
+    line break (two trailing spaces); trailing spaces that make no line break
+    are removed on commit. New list items are typed by the user (`- `). In a
+    very large block (over 50,000 characters) Enter is the browser's plain
+    newline, and the format and link buttons are checked when pressed (a
+    notice says so when the format cannot be applied or there is no link to
+    remove).
+  - While editing, invisible characters (no-break spaces, zero-width
+    characters except the ones that join or style emoji, soft hyphens) and the
+    two spaces of a line break are shown with a light mark (not in very large
+    blocks or with more than 2,000 marks).
+    The file keeps the characters as they are.
   - Save overwrites the dropped file through the File System Access API
     (Chrome / Edge, after the permission prompt), and asks before overwriting
     a file that changed on disk. Save as picks a new file. Browsers without
@@ -77,6 +139,18 @@ re-hash.
 - `docs/sample-data-2.md` / `.txt`: a "9. Images" section with a small SVG
   embedded as a data URI.
 - The help text now mentions math (LaTeX) support.
+- Development: browser tests of the built file with Playwright
+  (`npm run test:e2e`, Chromium and WebKit; `npm run test:e2e:firefox` for
+  Firefox). `@playwright/test` is a devDependency only; see `e2e/README.md`.
+- The help (English and Japanese) describes the editing features above:
+  double-click editing, Undo and the shortcuts, the palette and its grip, table
+  cells and the "Markdown" tab, text color and links, line breaks and list
+  items, and the marks for invisible characters. It also says that in Chrome
+  and Edge, once "Paste link from clipboard" is allowed, other pages on
+  goodrelax.github.io can read the clipboard without asking, and how to set
+  Clipboard back to Ask or Block in the site settings. The Details list gains
+  the Ctrl+S / Ctrl+Shift+S line. The old line about moving from a block to
+  the palette with `Tab` is removed.
 
 ### Changed
 
@@ -87,6 +161,11 @@ re-hash.
   with a code block. Line endings are still normalized. To strip the wrapper
   of a pasted AI answer, Clear first and paste again (the initial paste and a
   dropped `.md` file still strip it, as before).
+- Colors follow GitHub (Primer): the whole dark theme, the light preview and
+  Code View, an inline code ground, prettylights syntax colors (no
+  highlight.js theme CSS), 16 px code block padding, and printing in the light
+  colors (diagrams keep the colors they were drawn with). The editing color is
+  blue.
 - The full render now builds the preview block by block (one wrapper per
   top-level Markdown block). The output is the same HTML as before, sanitized
   the same way, but every existing view is affected; the pre-release tests
@@ -103,7 +182,8 @@ re-hash.
 - README rewritten to match the current app (math, Code View, consent for
   external images, CSP, development steps). The pre-release test spec
   (`spec/gen2_prerelease_test_spec_ja.md`) is updated to v2.1 with a new
-  security section.
+  security section, and to v2.2 with sections U to X for in-place editing and
+  a chapter that lists the automated test IDs (`AT-...`).
 
 - Update bundled dependencies to the latest release within the same major
   version (plantuml-encoder unchanged at 1.4.0, already the latest):

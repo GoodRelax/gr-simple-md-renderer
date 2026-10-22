@@ -71,8 +71,8 @@ export default class ScrollMemento {
   /**
    * The reader's place: the first child of the container that is shown and
    * reaches below the top of what is shown, and where the top of its content
-   * is (its first shown element in the flow; a table block's strip for its
-   * tab comes and goes above it). A child without a box (display: none) is passed over, and
+   * is (its first shown element in the flow; a table block's tab is placed
+   * out of it). A child without a box (display: none) is passed over, and
    * so is a block that edit mode alone shows (.md-block-hidden,
    * .md-block-empty): it is not there on the other side of the change.
    * null when no child can be the place.
@@ -91,9 +91,9 @@ export default class ScrollMemento {
   /**
    * What lies at a given top on screen, to follow an anchor measured before
    * a change of layout (RendererOrchestrator): inside a place, the last
-   * child of it in the flow and shown that starts at or above that top (a
-   * table under the strip for its tab; never the tab, which is placed out of
-   * the flow), or the place itself; in a gap above a place (a band that only
+   * child of it in the flow and shown that starts at or above that top
+   * (never a table's tab, which is placed out of the flow), or the place
+   * itself; in a gap above a place (a band that only
    * edit mode shows, or a margin), the bottom of the place before it.
    * @param {number} top - a top on screen (an anchor's offsetTop)
    * @returns {{element: Element, anchor: {offsetTop: number}, edge: string}|null}

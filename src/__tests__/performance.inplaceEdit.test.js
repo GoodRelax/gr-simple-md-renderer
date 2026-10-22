@@ -168,7 +168,7 @@ describe("AT-PERF-08 a table session never makes the whole table's HTML inside a
 });
 
 // Timing checks: only with GRSMD_PERF=1 (they depend on the machine; R6.1, Q8).
-describe.runIf(PERF)("AT-PERF-02..04 timing (GRSMD_PERF=1 only)", () => {
+describe.runIf(PERF)("AT-PERF-02..07 and 09 timing (GRSMD_PERF=1 only)", () => {
   const PERF_TIMEOUT_MS = 60000;
 
   afterEach(() => {
@@ -304,6 +304,29 @@ describe.runIf(PERF)("AT-PERF-02..04 timing (GRSMD_PERF=1 only)", () => {
     // (e2e/tableCell.e2e.js, PRT-X23); here its count of HTML runs is fixed
     // (AT-PERF-01).
     for (const ms of [open, commit, format]) expect(ms).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
+    s.teardown();
+  }, PERF_TIMEOUT_MS);
+
+  it("AT-PERF-09 1 MB with one 250 KB paragraph of 5,000 links (INV-51, INV-69): one frame's button states (Format open: canFormat, Paste link, Remove link) <= commitBudgetMs", async () => {
+    const lines = [];
+    for (let i = 0; i < 5000; i++) lines.push(`l${i} see [a link ${i}](https://example.com/${i}) t`);
+    const s = await setupEdit(`${lines.join("\n")}\n\n${makeOneMegabyteDoc()}`);
+    tap(s.block((b) => b.raw.startsWith("l0 ")).el.firstElementChild);
+    const ta = s.editor();
+    const frame = () => {
+      const t0 = performance.now();
+      s.bec.canFormatSelection();
+      s.bec.canPasteLink();
+      s.bec.canRemoveLink();
+      return performance.now() - t0;
+    };
+    const times = [];
+    for (const at of [ta.value.length - 1, Math.floor(ta.value.length / 2), ta.value.indexOf("a link 9")]) {
+      ta.setSelectionRange(at, at);
+      times.push(frame()); // a new caret: nothing kept from before for these checks
+    }
+    console.log(`AT-PERF-09 one frame of button states (ms): ${times.map((t) => t.toFixed(1)).join(", ")}`);
+    for (const ms of times) expect(ms).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
     s.teardown();
   }, PERF_TIMEOUT_MS);
 });

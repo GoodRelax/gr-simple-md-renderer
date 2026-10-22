@@ -1,4 +1,4 @@
-import { test, expect, renderMarkdown } from "./fixtures.js";
+import { test, expect, renderMarkdown, settled } from "./fixtures.js";
 
 // Edit mode shows the hidden bands, the empty block and, above each table,
 // the strip for its "Markdown" tab (5.1). Entering or leaving it must not
@@ -8,6 +8,11 @@ import { test, expect, renderMarkdown } from "./fixtures.js";
 // text moved by 329 px here when edit mode was left (2026-10-22). Blocks with
 // no box while browsing (comments, reference definitions) once made the
 // search pick a block far below the top (-1074 px in both browsers).
+
+// Long documents toggled again and again: 12 to 18 s each without load. The
+// tests in this file get three times the default time (test.slow), so that a
+// loaded machine (another worktree's e2e, GRSMD_E2E_PORT) does not fail them.
+test.beforeEach(() => test.slow());
 
 function sections(count, body) {
   const parts = [];
@@ -43,8 +48,10 @@ const CASES = [
   },
   {
     name: "the top in the middle of a long code block",
-    markdown: sections(10, (i) => [`Paragraph ${i}.`, "", "<!-- note -->", "", "```", ...Array.from({ length: 200 }, (_, n) => `code ${i}.${n}`), "```", "", "| A | B |", "| --- | --- |", "| a | b |"]),
-    target: "code 6.100",
+    // 80 lines put the top more than 500 px inside the block; more only made
+    // the full render (highlight.js) slow under load (review T-1)
+    markdown: sections(10, (i) => [`Paragraph ${i}.`, "", "<!-- note -->", "", "```", ...Array.from({ length: 80 }, (_, n) => `code ${i}.${n}`), "```", "", "| A | B |", "| --- | --- |", "| a | b |"]),
+    target: "code 6.60",
     code: true,
   },
 ];
@@ -78,6 +85,7 @@ async function nextFrame(page) {
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0))));
 }
 
+
 const ROUND_TRIPS = 5;
 
 /**
@@ -87,12 +95,30 @@ const ROUND_TRIPS = 5;
  */
 async function toggleEditMode(page, item) {
   const tops = [];
+  // The button's own click event, without Playwright's actionability wait:
+  // under heavy load WebKit's "stable" check (two equal frames) stalled for
+  // the whole test time while the page went on answering (the frame waits
+  // right before it had returned). No editor is open here, so no press
+  // outside has anything to commit. A page that hangs still fails at the
+  // next frame wait.
+  const toggle = async () => {
+    // the button is still there to be hit: shown, and on top at its centre
+    const button = page.locator("#editBtn");
+    await expect(button).toBeVisible();
+    expect(
+      await button.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+      }),
+    ).toBe(true);
+    await button.dispatchEvent("click");
+  };
   for (let i = 0; i < ROUND_TRIPS; i++) {
-    await page.locator("#editBtn").click();
+    await toggle();
     await expect(page.locator("body")).toHaveClass(/\bedit-mode\b/);
     await nextFrame(page);
     tops.push(await topOf(page, item));
-    await page.locator("#editBtn").click();
+    await toggle();
     await expect(page.locator("body")).not.toHaveClass(/\bedit-mode\b/);
     await nextFrame(page);
     tops.push(await topOf(page, item));
@@ -140,7 +166,7 @@ for (const item of CASES) {
     await page.goto("/");
     await renderMarkdown(page, item.markdown);
     // the full render restores its scroll position when the DOM is stable: wait for it
-    await page.waitForTimeout(1000);
+    await settled(page);
     await page.evaluate(({ target, code }) => {
       const preview = document.querySelector("#preview");
       const top = preview.getBoundingClientRect().top;
@@ -187,7 +213,7 @@ for (const variant of [
   test(`leaving edit mode with a table's source changed (${variant.name}): the text stays after the render too (INV-46)`, async ({ page, browserName }) => {
     await page.goto("/");
     await renderMarkdown(page, CASES[0].markdown);
-    await page.waitForTimeout(1000);
+    await settled(page);
     await page.evaluate(() => {
       const preview = document.querySelector("#preview");
       const table = [...preview.querySelectorAll("table")].find((t) => t.textContent.includes("a20"));
@@ -205,8 +231,7 @@ for (const variant of [
     await expect(page.locator("body")).not.toHaveClass(/\bedit-mode\b/);
     await expect(page.locator("#preview table", { hasText: "x20" })).toHaveCount(1);
     // the partial render restores its anchor when the DOM is stable: wait for it
-    await page.waitForTimeout(1000);
-    await nextFrame(page);
+    await settled(page);
     const after = await tableAndHeading(page, "x20", "Section 21");
 
     console.log(`${browserName} commit on leaving (${variant.name}): table ${before.table} -> ${after.table}, heading ${before.heading} -> ${after.heading}`);
@@ -218,7 +243,7 @@ for (const variant of [
 test("leaving edit mode with a block lower down changed: the bands between go, and the render does not move the text back (INV-46)", async ({ page, browserName }) => {
   await page.goto("/");
   await renderMarkdown(page, CASES[1].markdown);
-  await page.waitForTimeout(1000);
+  await settled(page);
   const item = { target: "Paragraph 7 with a note." };
   await page.evaluate(({ target }) => {
     const preview = document.querySelector("#preview");
@@ -237,8 +262,7 @@ test("leaving edit mode with a block lower down changed: the bands between go, a
   await page.locator("#editBtn").click();
   await expect(page.locator("body")).not.toHaveClass(/\bedit-mode\b/);
   await expect(page.locator("#preview p", { hasText: "Added paragraph." })).toHaveCount(1);
-  await page.waitForTimeout(1000);
-  await nextFrame(page);
+  await settled(page);
   const after = await topOf(page, item);
 
   console.log(`${browserName} commit lower down on leaving: before ${before}, after ${after}`);
@@ -254,7 +278,7 @@ for (const variant of [
   test(`leaving edit mode with a comment's band changed (${variant.name}): the text stays (INV-46)`, async ({ page, browserName }) => {
     await page.goto("/");
     await renderMarkdown(page, CASES[1].markdown);
-    await page.waitForTimeout(1000);
+    await settled(page);
     const item = { target: "Paragraph 7 with a note." };
     await page.evaluate(({ target }) => {
       const preview = document.querySelector("#preview");
@@ -278,8 +302,7 @@ for (const variant of [
     await page.locator("#editBtn").click();
     await expect(page.locator("body")).not.toHaveClass(/\bedit-mode\b/);
     if (variant.shows) await expect(page.locator("#preview p", { hasText: variant.shows })).toHaveCount(1);
-    await page.waitForTimeout(1000);
-    await nextFrame(page);
+    await settled(page);
     const after = await topOf(page, item);
 
     console.log(`${browserName} band ${variant.name} on leaving: before ${before}, after ${after}`);
@@ -295,7 +318,7 @@ test.describe("touch: the document scrolls under the sticky top bar", () => {
       await page.goto("/");
       expect(await page.evaluate(() => window.matchMedia("(any-pointer: coarse)").matches)).toBe(true);
       await renderMarkdown(page, doc.markdown);
-      await page.waitForTimeout(1000);
+      await settled(page);
       // the paragraph 40 px below the bar; the one before it ends under the bar
       const item = { target: doc.target };
       await page.evaluate(({ target }) => {
@@ -314,7 +337,7 @@ test.describe("touch: the document scrolls under the sticky top bar", () => {
   test("leaving edit mode with a block lower down changed keeps the reading position below the top bar", async ({ page, browserName }) => {
     await page.goto("/");
     await renderMarkdown(page, CASES[1].markdown);
-    await page.waitForTimeout(1000);
+    await settled(page);
     const item = { target: "Paragraph 30 with a note." };
     await page.evaluate(({ target }) => {
       const bar = document.querySelector("#topbar").getBoundingClientRect().bottom;
@@ -334,8 +357,7 @@ test.describe("touch: the document scrolls under the sticky top bar", () => {
     await page.locator("#editBtn").click();
     await expect(page.locator("body")).not.toHaveClass(/\bedit-mode\b/);
     await expect(page.locator("#preview p", { hasText: "Added paragraph." })).toHaveCount(1);
-    await page.waitForTimeout(1000);
-    await nextFrame(page);
+    await settled(page);
     const after = await topOf(page, item);
 
     const tolerance = await measuredTolerance(page);
@@ -350,7 +372,7 @@ test("an empty document: edit mode shows the empty block, and nothing scrolls or
   // the only paragraph committed empty: no block is left, and the empty
   // block stands for the document (INV-49)
   await renderMarkdown(page, "Only paragraph.");
-  await page.waitForTimeout(500);
+  await settled(page);
   await page.locator("#editBtn").click();
   await expect(page.locator("body")).toHaveClass(/\bedit-mode\b/);
   await page.locator("#preview p", { hasText: "Only paragraph." }).click();

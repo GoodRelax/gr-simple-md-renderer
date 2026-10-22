@@ -1,3 +1,8 @@
+// How long a download's blob: URL stays valid after the click. There is no
+// need to revoke it at once: a minute leaves the browser all the time it
+// may take to read the blob (a margin; spec 5.14.7).
+const DOWNLOAD_URL_LIFETIME_MS = 60000;
+
 /**
  * Local file read and write for Markdown documents (Adapter, spec 5.14.7).
  * Uses only the File System Access API and blob: downloads: no network
@@ -111,8 +116,8 @@ export default class MarkdownFileAccess {
 
   /**
    * Download fileText as a .md file through a blob: URL. The link is clicked
-   * synchronously (inside the press handler, INV-33); the URL is revoked in
-   * a later task.
+   * synchronously (inside the press handler, INV-33); the URL is revoked a
+   * minute later (DOWNLOAD_URL_LIFETIME_MS), when the browser has read it.
    * @purity non-pure
    * @param {string} suggestedName
    * @param {string} fileText
@@ -127,6 +132,6 @@ export default class MarkdownFileAccess {
     document.body.appendChild(link);
     link.click();
     link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    setTimeout(() => URL.revokeObjectURL(url), DOWNLOAD_URL_LIFETIME_MS);
   }
 }

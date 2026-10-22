@@ -31,11 +31,11 @@
 - [ ] F-B3 `SmoothScrollEngine._loop`：速度と摩擦の物理計算が `scrollBy` と `requestAnimationFrame` と混ざっている。計算を純粋関数に切り出す（R7.2）
 
 ### 表示の既存の不具合（その場編集の手動テストで見つかった、main と同じもの）
-- [ ] KaTeX の文字の大きさが 1.5em にならず 1.21em になる：ビルドの CSS で KaTeX の `.katex{font:1.21em ...}` が、アプリの `.katex{font-size:1.5em}` より後ろに来る（CSS の順序）。試験仕様 PRT-M04
-- [ ] ダーク表示で本文のリンクの色が既定の青（rgb(0,0,238)）のままで、暗い背景で読みにくい（`.dark a` の規則が無い）
-- [ ] `<meta name="viewport">` が無い：幅 768px 未満の端末では 980px のレイアウトになる（スマートフォンでの表示）
+- [x] KaTeX の文字の大きさが 1.5em にならず 1.21em になる：ビルドの CSS で KaTeX の `.katex{font:1.21em ...}` が、アプリの `.katex{font-size:1.5em}` より後ろに来る（CSS の順序）。試験仕様 PRT-M04。→ 2026-10-23 に解決（アプリの規則を `#preview .katex` にして詳細度で勝つ。1.5em に戻る）
+- [x] ダーク表示で本文のリンクの色が既定の青（rgb(0,0,238)）のままで、暗い背景で読みにくい（`.dark a` の規則が無い）。→ 単位 G（GitHub の配色）で解決（`.dark #preview a` を `#4493f8`）
+- [x] `<meta name="viewport">` が無い：幅 768px 未満の端末では 980px のレイアウトになる（スマートフォンでの表示）。→ 追加しない（決定。仕様書の「`<meta name="viewport">` は追加しない」のとおり、追加すると iPhone の既存のレイアウトが崩れる）。既知の制約として扱う
 
 ### 構造の整理（その場編集のコードレビューで受容した指摘）
-- [ ] `UIController` の責務が多い（約 1,300 行）。UI の配線に加え、文書の作り直し（`_session` / `_location` の置き換え）・保存の状態機械・未保存の判定・パレットの機能の振り分けを持つ。「文書のライフサイクル」（セッション・保存先・保存の状態）を別のクラスへ分ける（R2.2 / R2.10）
+- [ ] `UIController` の責務が多い（約 1,740 行。2026-10-23）。UI の配線に加え、文書の作り直し（`_session` / `_location` の置き換え）・保存の状態機械・未保存の判定・パレットの機能の振り分けを持つ。「文書のライフサイクル」（セッション・保存先・保存の状態）を別のクラスへ分ける（R2.2 / R2.10）
 - [ ] `SaveDocument` が内部で `SaveDocumentAs` を作り、その `outcome` / `failureMessage` を借りている（UIController も例外の経路で使う）。両方の use case が使う純粋な関数（例：`saveOutcome.js`）に出し、`SaveDocument` には `SaveDocumentAs` を注入する（R2.7 / R2.2）
 - [ ] メンバの並び：`BlockEditController` の non-pure の `dispatch` が semi-pure-b のクエリより前にある。`UIController.js` の先頭の純粋関数（`classifyDroppedFile` / `hasNullByte` / `renderRouteFor`）を別ファイル（例：`dropClassification.js`）へ移す（R7.7 / R7.9）

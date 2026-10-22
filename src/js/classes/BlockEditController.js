@@ -3,6 +3,7 @@ import MarkdownBlockModel from "./MarkdownBlockModel.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
 import InvisibleCharOverlay from "./InvisibleCharOverlay.js";
 import TableCellEditor from "./TableCellEditor.js";
+import ClipboardLink from "./ClipboardLink.js";
 import { cell, row, choice, selectCell } from "../stateTable.js";
 
 const BROWSING = "browsingPreview";
@@ -169,6 +170,8 @@ export const blockEditStateMachine = Object.freeze({
     choice(
       cell(IDLE, ["clearSelection", "showPalette", "renderFromEditor", "showToast"], "hasUnrenderedEditor"),
       cell(CELL, ["clearSelection", "showPalette", "startTableSession", "openCell"], "isCellTarget&&isCellEditableTable"),
+      // a table not editable by cell: as a click there (owner ruling Q-c, INV-62 (1))
+      cell(EDITING, ["clearSelection", "showPalette", "openTableSourceWithToast"], "isCellTarget"),
       cell(EDITING, ["clearSelection", "showPalette", "openBlockEditor"], "isEmptyDocument"),
       cell(EDITING, ["clearSelection", "showPalette", "openBlockEditor"], "isBlockTarget"),
       cell(IDLE, ["clearSelection", "showPalette"]),
@@ -191,6 +194,7 @@ export const blockEditStateMachine = Object.freeze({
  *   renderFromEditor() (full render from #editor and the toast, INV-45),
  *   onEditorInput() (refresh the unsaved mark), onEditStateChanged() (an
  *   editor or a cell opened or closed: unsaved mark and palette buttons),
+ *   onTransitionEnded() (an 11-c crossing ended: the deferred button states),
  *   showToast(message) (the table toasts of 11-c).
  * Table cells (editingCell, INV-62 to INV-65) are edited by a
  * TableCellEditor that this class owns and drives through 11-c.
@@ -225,11 +229,14 @@ export default class BlockEditController {
     this._press = null; // the pointerdown being followed
     this._composing = false;
     this._lastOpenedBlockId = null;
+    this._transitionDepth = 0; // 11-c crossings running (nested: INV-45)
+    this.editGeneration = 0; // INV-69: the editor opened, closed or changed
     this._onPointerDown = (e) => this._handlePointerDown(e);
     this._onPointerUp = (e) => this._handlePointerUp(e);
     this._onPointerCancel = () => this._forgetPress();
     this._onKeyDown = (e) => this._handleKeyDown(e);
     this._onInput = () => this._handleInput();
+    this._onPaste = (e) => this._handlePaste(e);
     this._onCompositionStart = () => this._setComposing(true);
     this._onCompositionEnd = () => this._setComposing(false);
     this._cells = new TableCellEditor(
@@ -272,7 +279,25 @@ export default class BlockEditController {
     const isTrue = (guard) => guard.split("&&").every((g) => this._isGuardTrue(g, target));
     const next = selectCell(cells[this._blockEditState], isTrue);
     if (!next) return undefined;
-    return this._run(next, target, event);
+    // The host defers the palette's button states while a crossing runs (a
+    // cell closes before the next one opens, K-1), and gets them once at the
+    // end of the outermost one (a crossing can dispatch another, INV-45).
+    this._transitionDepth++;
+    try {
+      return this._run(next, target, event);
+    } finally {
+      this._transitionDepth--;
+      if (this._transitionDepth === 0) this.host.onTransitionEnded?.();
+    }
+  }
+
+  /**
+   * An 11-c crossing is running (its actions have not all been done).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  isInTransition() {
+    return this._transitionDepth > 0;
   }
 
   /**
@@ -394,6 +419,8 @@ export default class BlockEditController {
     if (this._cells.isOpen()) return this._cells.canFormatSelection();
     const range = this.getSelectionRange();
     if (!range || range.selStart === range.selEnd) return false;
+    // a huge block: any selection; the format checks when pressed (isHugeBlock)
+    if (this._isHugeBlock()) return true;
     return MarkdownTextOps.canFormatRange(range.text, range.selStart, range.selEnd, this._textLexers().lexBlocks);
   }
 
@@ -408,9 +435,93 @@ export default class BlockEditController {
     if (this._cells.isOpen()) return this._cells.applyFormat(op);
     const range = this.getSelectionRange();
     if (!range) return false;
-    const { lexBlocks, lexInline } = this._textLexers();
-    const colors = Object.values(CONFIG.edit.textColors).map((c) => c.light);
-    const edit = MarkdownTextOps.formatRange(range.text, range.selStart, range.selEnd, op, { lexBlocks, lexInline, colors });
+    const edit = MarkdownTextOps.formatRange(range.text, range.selStart, range.selEnd, op, this._formatContext());
+    if (!edit) return false;
+    this.applyTextEdit(edit);
+    return true;
+  }
+
+  /**
+   * What the palette's Paste link acts on (INV-69, the wait for the
+   * clipboard): the open editor (its block id) or cell (TableCellEditor),
+   * the selection and the edit generation; null when none is open. The
+   * button compares it by value when the clipboard has been read.
+   * @purity semi-pure-b
+   * @returns {object|null}
+   */
+  linkTarget() {
+    if (this._cells.isOpen()) return this._cells.linkTarget();
+    if (!this._editor) return null;
+    const { textarea, blockId } = this._editor;
+    return { kind: "block", blockId, generation: this.editGeneration, start: textarea.selectionStart, end: textarea.selectionEnd };
+  }
+
+  /**
+   * 5.15.5 Paste link: editing, with a selection in one inline range
+   * (INV-67 (6)), or a caret where a link can go in (owner ruling F-R1).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  canPasteLink() {
+    if (this._cells.isOpen()) return this._cells.canPasteLink();
+    const range = this.getSelectionRange();
+    if (!range) return false;
+    if (range.selStart !== range.selEnd) return this.canFormatSelection();
+    if (this._isHugeBlock()) return false; // a caret: the place is not lexed
+    return MarkdownTextOps.canInsertLink(range.text, range.selStart, this._formatContext());
+  }
+
+  /**
+   * 5.15.5 Remove link: the caret or the selection is on a link.
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  canRemoveLink() {
+    if (this._cells.isOpen()) return this._cells.canRemoveLink();
+    const range = this.getSelectionRange();
+    if (!range) return false;
+    if (this._isHugeBlock()) return range.selStart !== range.selEnd;
+    return MarkdownTextOps.canRemoveLink(range.text, range.selStart, range.selEnd, this._formatContext());
+  }
+
+  /**
+   * The palette's Paste link with the clipboard's URL (INV-69): the
+   * selection becomes a link to url; with no selection a link goes in at
+   * the caret, its text label (the clipboard's link text) or else url, and
+   * that text is selected. An editor change (not a commit).
+   * @purity non-pure
+   * @param {string} url
+   * @param {string|null} label
+   * @returns {boolean} true when the text changed
+   */
+  pasteLink(url, label) {
+    if (this._cells.isOpen()) return this._cells.pasteLink(url, label);
+    const range = this.getSelectionRange();
+    if (!range) return false;
+    const op = ClipboardLink.linkOp(url);
+    const context = this._formatContext();
+    const edit =
+      range.selStart === range.selEnd
+        ? // the clipboard's link text, or the URL when that text cannot go in as written
+          (MarkdownTextOps.insertLink(range.text, range.selStart, label || op.url, op.link, context) ??
+          (label && label !== op.url ? MarkdownTextOps.insertLink(range.text, range.selStart, op.url, op.link, context) : null))
+        : MarkdownTextOps.formatRange(range.text, range.selStart, range.selEnd, op, context);
+    if (!edit) return false;
+    this.applyTextEdit(edit);
+    return true;
+  }
+
+  /**
+   * The palette's Remove link (INV-69): the link at the caret, or every
+   * link the selection touches, comes off. An editor change (not a commit).
+   * @purity non-pure
+   * @returns {boolean} true when the text changed
+   */
+  removeLink() {
+    if (this._cells.isOpen()) return this._cells.removeLink();
+    const range = this.getSelectionRange();
+    if (!range) return false;
+    const edit = MarkdownTextOps.removeLink(range.text, range.selStart, range.selEnd, this._formatContext());
     if (!edit) return false;
     this.applyTextEdit(edit);
     return true;
@@ -431,6 +542,38 @@ export default class BlockEditController {
   // ---- internals: guards and actions ----
 
   /**
+   * The open block editor holds more than CONFIG.edit.invisibleMarkMaxChars
+   * characters (owner ruling 2026-10-23, as INV-70): its whole text is not
+   * lexed on each key or frame. Enter is the browser's newline, and the
+   * format and link buttons are on for a selection and check when pressed.
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  _isHugeBlock() {
+    return this._editor !== null && this._editor.textarea.value.length > CONFIG.edit.invisibleMarkMaxChars;
+  }
+
+  /**
+   * The open block editor is a huge block (_isHugeBlock): its format buttons
+   * are on without checking, so a format that cannot go in is told (owner
+   * ruling Q-f).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  isHugeBlock() {
+    return this._isHugeBlock();
+  }
+
+  /**
+   * The lexers and palette colors of formatRange and the link operations.
+   * @purity non-pure
+   */
+  _formatContext() {
+    const { lexBlocks, lexInline } = this._textLexers();
+    return { lexBlocks, lexInline, colors: Object.values(CONFIG.edit.textColors).map((c) => c.light) };
+  }
+
+  /**
    * The orchestrator's lexers; the block lexing of the last text is kept
    * (the button states ask once per frame, INV-51).
    * @purity non-pure
@@ -438,15 +581,23 @@ export default class BlockEditController {
   _textLexers() {
     if (this._lexers) return this._lexers;
     const lexers = this.orchestrator.textLexers();
-    let cache = null;
-    this._lexers = {
-      ...lexers,
+    // the last two texts: the editor's, and a rewrite of it checked in the
+    // same frame (a link on an empty line, INV-69) does not push it out.
+    // The inline lexing the same way: the button states of one frame lex
+    // the inline range once (INV-51). The tokens are only read.
+    /** @purity non-pure */
+    const cached = (lex) => {
+      let cache = [];
       /** @purity non-pure */
-      lexBlocks: (src) => {
-        if (cache?.src !== src) cache = { src, tokens: lexers.lexBlocks(src) };
-        return cache.tokens;
-      },
+      return (src) => {
+        const hit = cache.find((c) => c.src === src);
+        if (hit) return hit.tokens;
+        const tokens = lex(src);
+        cache = [{ src, tokens }, ...cache].slice(0, 2);
+        return tokens;
+      };
     };
+    this._lexers = { ...lexers, lexBlocks: cached(lexers.lexBlocks), lexInline: cached(lexers.lexInline) };
     return this._lexers;
   }
 
@@ -737,6 +888,7 @@ export default class BlockEditController {
     wrapper.classList.add("md-block-editing");
     this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes, overlay: null };
     this._composing = false;
+    this.editGeneration++;
     if (blockId !== null) {
       this.orchestrator.holdBlock(blockId); // Q-d1
       this._lastOpenedBlockId = blockId;
@@ -744,6 +896,7 @@ export default class BlockEditController {
 
     textarea.addEventListener("keydown", this._onKeyDown);
     textarea.addEventListener("input", this._onInput);
+    textarea.addEventListener("paste", this._onPaste);
     textarea.addEventListener("compositionstart", this._onCompositionStart);
     textarea.addEventListener("compositionend", this._onCompositionEnd);
     this._fitHeight();
@@ -765,6 +918,7 @@ export default class BlockEditController {
     const { textarea } = openEditor;
     textarea.removeEventListener("keydown", this._onKeyDown);
     textarea.removeEventListener("input", this._onInput);
+    textarea.removeEventListener("paste", this._onPaste);
     textarea.removeEventListener("compositionstart", this._onCompositionStart);
     textarea.removeEventListener("compositionend", this._onCompositionEnd);
     openEditor.overlay?.detach();
@@ -772,6 +926,7 @@ export default class BlockEditController {
     openEditor.wrapper.classList.remove("md-block-editing");
     this._editor = null;
     this._composing = false;
+    this.editGeneration++;
     this._lexers = null; // the kept block lexing goes with the editor
     this.orchestrator.releaseBlock();
     this.host.onEditStateChanged();
@@ -827,6 +982,7 @@ export default class BlockEditController {
     const lineEndMarks = (value) => MarkdownTextOps.hardBreakLines(value, this._textLexers().lexBlocks);
     const overlay = this.createOverlay(textarea, {
       maxChars: CONFIG.edit.invisibleMarkMaxChars,
+      maxMarks: CONFIG.edit.invisibleMarkMaxMarks,
       lineEndMarks: HARD_BREAK_TYPES.has(blockType) ? lineEndMarks : null,
     });
     this._editor.overlay = overlay;
@@ -967,9 +1123,9 @@ export default class BlockEditController {
   // ---- internals: editor keys and size ----
 
   /**
-   * Esc cancels, Enter in a table inserts the line break text, Enter /
-   * Shift+Enter in a paragraph, list or quote the line break mark (INV-71;
-   * with Ctrl / Alt / Meta it is the browser's). Tab is left to the browser
+   * Esc cancels, Enter in a table inserts the line break text (INV-27),
+   * Enter / Shift+Enter in a paragraph, list or quote the line break mark
+   * (INV-71); with Ctrl / Alt / Meta, Enter is the browser's in both. Tab is left to the browser
    * (INV-53). Nothing is done during IME composition (INV-27, INV-28).
    * @purity non-pure
    */
@@ -977,12 +1133,15 @@ export default class BlockEditController {
     if (e.isComposing || e.keyCode === 229 || this._composing) return;
     if (e.key === "Escape") {
       e.preventDefault();
-      this.dispatch("escapePressed");
-    } else if (e.key === "Enter" && this._editor.blockType === "table") {
-      e.preventDefault();
-      this._insertTableLineBreak();
-    } else if (e.key === "Enter" && !e.ctrlKey && !e.altKey && !e.metaKey && HARD_BREAK_TYPES.has(this._editor.blockType)) {
-      this._insertHardBreak(e);
+      if (!e.repeat) this.dispatch("escapePressed"); // a held Esc acts once (ruling Q-a)
+    } else if (e.key === "Enter" && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      // with Ctrl / Alt / Meta, Enter is the browser's (INV-27 by owner ruling Q-b, INV-71)
+      if (this._editor.blockType === "table") {
+        e.preventDefault();
+        this._insertTableLineBreak();
+      } else if (HARD_BREAK_TYPES.has(this._editor.blockType)) {
+        this._insertHardBreak(e);
+      }
     }
   }
 
@@ -993,6 +1152,7 @@ export default class BlockEditController {
    * @param {KeyboardEvent} e
    */
   _insertHardBreak(e) {
+    if (this._isHugeBlock()) return; // the browser's newline (owner ruling 2026-10-23)
     const { textarea } = this._editor;
     const edit = MarkdownTextOps.insertHardBreak(textarea.value, textarea.selectionStart, textarea.selectionEnd, this._textLexers());
     if (!edit) return;
@@ -1034,6 +1194,7 @@ export default class BlockEditController {
       }
       byBrowser = inserted && textarea.value === edit.text;
       if (!byBrowser) textarea.value = edit.text;
+      this.editGeneration++; // also when assigned: no input event then
     }
     textarea.setSelectionRange(edit.selStart, edit.selEnd);
     textarea.focus({ preventScroll: true });
@@ -1045,8 +1206,34 @@ export default class BlockEditController {
    * @purity non-pure
    */
   _handleInput() {
+    this.editGeneration++;
     this._fitHeight();
     this.host.onEditorInput();
+  }
+
+  /**
+   * INV-69 (Ctrl+V / Cmd+V, and the context menu's paste): selected text,
+   * the paste's text/plain a URL (read synchronously, no permission), the
+   * selected text not a URL itself (ruling Q6), and the selection where a
+   * link can go (formatRange with strictEnds: one inline range, not in a
+   * code span, an inline HTML tag or a link destination): the paste is
+   * stopped and the selection becomes a link, put in as one undoable step
+   * of the editor. Otherwise the browser's paste is left alone.
+   * @purity non-pure
+   * @param {ClipboardEvent} e
+   */
+  _handlePaste(e) {
+    if (!this._editor || this._composing) return;
+    const { textarea } = this._editor;
+    const { selectionStart: start, selectionEnd: end } = textarea;
+    if (start === end) return;
+    const options = ClipboardLink.urlOptions();
+    const url = ClipboardLink.urlFromPasteEvent(e, options);
+    if (!url || ClipboardLink.isLinkableUrl(textarea.value.slice(start, end), options.schemes, options.maxLength)) return;
+    const edit = MarkdownTextOps.formatRange(textarea.value, start, end, ClipboardLink.linkOp(url, true), this._formatContext());
+    if (!edit) return;
+    e.preventDefault();
+    if (!this._replaceText(edit)) this._handleInput();
   }
 
   /**

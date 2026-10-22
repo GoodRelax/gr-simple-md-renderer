@@ -6,6 +6,7 @@ import DocumentSession from "./DocumentSession.js";
 import DocumentLocation from "./DocumentLocation.js";
 import BlockEditController from "./BlockEditController.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
+import ClipboardLink from "./ClipboardLink.js";
 import SaveDocument from "./SaveDocument.js";
 import SaveDocumentAs from "./SaveDocumentAs.js";
 import { cell } from "../stateTable.js";
@@ -143,7 +144,8 @@ export default class UIController {
    * @param {object} services - in-place editing parts (composed in main.js):
    *   fileAccess (MarkdownFileAccess), createPalette(host) -> EditPalette,
    *   createBlockEdit(host) -> BlockEditController, isApple (Cmd is the
-   *   primary shortcut modifier, INV-14)
+   *   primary shortcut modifier, INV-14), clipboard (what the Paste link
+   *   button reads, INV-69; navigator.clipboard when not given)
    * @purity non-pure
    */
   constructor(orchestrator, state, elements, scrollEngine, services) {
@@ -158,11 +160,15 @@ export default class UIController {
     // Document session and save target (INV-55): the only place of the file handle
     this.fileAccess = services.fileAccess;
     this._isApple = Boolean(services.isApple);
+    this._clipboard = "clipboard" in services ? () => services.clipboard : () => navigator.clipboard;
     this._session = null; // DocumentSession
     this._location = null; // DocumentLocation
     this._nextDocumentId = 1;
     this._editorChangedSinceRender = false; // INV-45
     this._paletteStatesPending = false; // a frame is asked for (INV-51)
+    this._buttonStatesDeferred = false; // asked for inside an 11-c crossing (K-1)
+    this._isReadingClipboard = false; // Paste link waits for the clipboard (INV-69)
+    this._clipboardRead = 0; // the latest read: only it ends the wait
     this._saveOperationState = "idle"; // 11-e
     this._baseTitle = document.title;
     this._lastTap = null; // double tap on the empty preview (INV-31)
@@ -443,7 +449,13 @@ export default class UIController {
     if (this.orchestrator.isPreRenderState()) return;
     const theme = this.state.currentTheme;
     if (this.orchestrator.isCodeViewActive()) {
-      const metadata = await this.orchestrator.reloadCodeView(theme);
+      let metadata;
+      try {
+        metadata = await this.orchestrator.reloadCodeView(theme);
+      } catch {
+        this._toast(CONFIG.messages.edit.reloadFailed); // the file could not be read (N4)
+        return;
+      }
       if (metadata) this.setViewMode("code", metadata);
       return;
     }
@@ -485,6 +497,14 @@ export default class UIController {
    */
   doClear() {
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
+    this._resetToInitial();
+  }
+
+  /**
+   * Back to the initial state (the clear, without its questions).
+   * @purity non-pure
+   */
+  _resetToInitial() {
     this.blockEdit.dispatch("documentCleared");
     this._session = null;
     this._location = null;
@@ -519,9 +539,11 @@ export default class UIController {
       const item = e.dataTransfer.items?.[0];
 
       // CON-01: call synchronously before any await
+      // a handle that cannot be had is no handle; caught here, at once, so
+      // that the awaits before it is used leave no rejection unhandled
       const handlePromise =
-        FILE_SYSTEM_HANDLE_SUPPORTED
-          ? item?.getAsFileSystemHandle?.() ?? null
+        FILE_SYSTEM_HANDLE_SUPPORTED && typeof item?.getAsFileSystemHandle === "function"
+          ? Promise.resolve(item.getAsFileSystemHandle()).catch(() => null)
           : null;
 
       const file = e.dataTransfer.files[0];
@@ -586,7 +608,15 @@ export default class UIController {
     this._setEditorText(""); // RTC2-07: clear editor before code view
     const rendering = this.orchestrator.renderCodeView(file, fileHandle);
     this._refreshDirtyMark();
-    const metadata = await rendering;
+    let metadata;
+    try {
+      metadata = await rendering;
+    } catch {
+      // the file could not be read after all (release test N4): nothing is shown
+      alert(CONFIG.fileDrop.messages.readError);
+      this._resetToInitial();
+      return;
+    }
     this.setViewMode("code", metadata);
     this.showKeyHint("code");
   }
@@ -667,7 +697,9 @@ export default class UIController {
           break;
         case "Escape":
           // Markdown view: hide the palette, or cancel the open block editor
-          // when the focus is outside it (5.11, 11-c escapePressed).
+          // when the focus is outside it (5.11, 11-c escapePressed). A held
+          // Esc acts once: its repeats do nothing (owner ruling Q-a).
+          if (e.repeat) break;
           if (!this.orchestrator.isPreRenderState() && !this.orchestrator.isCodeViewActive())
             this.blockEdit.dispatch("escapePressed");
           break;
@@ -1074,6 +1106,7 @@ export default class UIController {
    * @purity non-pure
    */
   _hidePalette() {
+    this._endClipboardWait();
     this.blockEdit.dispatch("paletteHidden");
     this.orchestrator.keepReadingPosition(() => this.palette.hide());
   }
@@ -1107,8 +1140,23 @@ export default class UIController {
     if (this._session) status = dirty ? m.statusUnsaved(name) : m.statusSaved(name);
     this.palette.setStatusText(status);
     this.palette.setUnsaved(dirty);
-    if (options.deferButtonStates) this._schedulePaletteStates();
+    // Inside an 11-c crossing the open cell or editor is closed for a moment
+    // (the next one opens later in it): the states would disable the openers
+    // and close an open popover (K-1). They follow when it ends.
+    if (this.blockEdit.isInTransition()) this._buttonStatesDeferred = true;
+    else if (options.deferButtonStates) this._schedulePaletteStates();
     else this._updatePaletteStates();
+  }
+
+  /**
+   * BlockEditHost.onTransitionEnded: the button states deferred during the
+   * crossing (5.15.5, 11-f openerDisabled after it only).
+   * @purity non-pure
+   */
+  _onTransitionEnded() {
+    if (!this._buttonStatesDeferred) return;
+    this._buttonStatesDeferred = false;
+    this._updatePaletteStates();
   }
 
   /**
@@ -1146,10 +1194,15 @@ export default class UIController {
     const canFormat = isEditing && this.blockEdit.canFormatSelection();
     const isInTableSource = isEditing && this.blockEdit.isEditingTable();
     const cell = this.blockEdit.cellState(); // null unless a cell is open
+    const isLinkMenuOpen = isEditing && this.palette.openPopoverKey() === "format";
     return {
       bold: canFormat,
       italic: canFormat,
       textColor: canFormat,
+      // INV-69: lexing the inline range, so only while the format popover is
+      // open (INV-51); off while a read of the clipboard waits (one at a time)
+      linkPaste: isLinkMenuOpen && !this._isReadingClipboard && this.blockEdit.canPasteLink(),
+      linkRemove: isLinkMenuOpen && this.blockEdit.canRemoveLink(),
       format: isEditing,
       insertTable: cell === null, // W7
       insertMermaid: cell === null,
@@ -1204,13 +1257,18 @@ export default class UIController {
   _blockEditHost() {
     return {
       showPalette: () => this.orchestrator.keepReadingPosition(() => this.palette.show()),
-      hidePalette: () => this.orchestrator.keepReadingPosition(() => this.palette.hide()),
+      /** @purity non-pure */
+      hidePalette: () => {
+        this._endClipboardWait(); // Esc, Clear, the code view (11-c hidePalette)
+        this.orchestrator.keepReadingPosition(() => this.palette.hide());
+      },
       isPaletteNode: (node) => this.palette.contains(node),
       isEditorChangedSinceRender: () => this._editorChangedSinceRender,
       renderFromEditor: () => this._renderFromEditorFirst(),
       // typing: the button states once per frame (INV-51)
       onEditorInput: () => this._refreshDirtyMark({ deferButtonStates: true }),
       onEditStateChanged: () => this._refreshDirtyMark(),
+      onTransitionEnded: () => this._onTransitionEnded(),
       showToast: (message) => this._toast(message),
       isApple: this._isApple, // INV-14: the cell's Redo keys (TableCellEditor)
     };
@@ -1223,6 +1281,11 @@ export default class UIController {
   _paletteHost() {
     return {
       runCommand: (command, arg) => this._runPaletteCommand(command, arg),
+      // the link buttons' states are worked out only while their popover is open (INV-51)
+      /** @purity non-pure */
+      onPopoverOpened: (key) => {
+        if (key === "format") this._updatePaletteStates();
+      },
     };
   }
 
@@ -1246,6 +1309,14 @@ export default class UIController {
       case "textColor":
         // INV-66: the light value goes into the source; "none" removes the color
         this._formatInBlock({ kind: "color", value: CONFIG.edit.textColors[arg]?.light ?? null });
+        break;
+      case "linkPaste":
+        void this._pasteLinkFromClipboard(); // INV-69: started in the button's pointerup
+        break;
+      case "linkRemove":
+        if (this.blockEdit.removeLink()) this._refreshDirtyMark();
+        // as the formats (owner ruling Q-f): a huge block's button is on without checking
+        else if (this.blockEdit.isHugeBlock()) this._toast(CONFIG.messages.edit.linkNotRemovable);
         break;
       case "insertRow":
         if (this.blockEdit.isEditingCell()) this._tableOperation({ kind: "insertRow" });
@@ -1311,6 +1382,75 @@ export default class UIController {
    */
   _formatInBlock(op) {
     if (this.blockEdit.formatSelection(op)) this._refreshDirtyMark();
+    // a huge block's buttons are on without checking (INV-71): say why nothing changed (owner ruling Q-f)
+    else if (this.blockEdit.isHugeBlock()) this._toast(CONFIG.messages.edit.formatNotApplicable);
+  }
+
+  /**
+   * INV-69, the Paste link button: the clipboard is read now, inside the
+   * button's pointerup (user activation; the browser may ask for its
+   * permission). The target (the open editor or cell, its selection and
+   * edit generation) is noted now and compared when the read has ended: a
+   * changed target changes nothing and is told by a toast (INV-69), as is a
+   * clipboard without a URL or a refused read. One read at a time: a press
+   * while one waits is ignored (the button is off meanwhile).
+   * @purity non-pure
+   * @returns {Promise<void>}
+   */
+  async _pasteLinkFromClipboard() {
+    if (this._isReadingClipboard) return;
+    const target = this.blockEdit.linkTarget();
+    if (!target) return;
+    this._isReadingClipboard = true;
+    const read = ++this._clipboardRead;
+    this._updatePaletteStates();
+    let found;
+    try {
+      found = await ClipboardLink.readUrlAndText(this._clipboard(), ClipboardLink.urlOptions());
+    } finally {
+      // only the latest read ends the wait (an older one, given up when edit
+      // mode ended, may settle while a newer one waits)
+      if (read === this._clipboardRead) {
+        this._isReadingClipboard = false;
+        if (this.palette.isShown()) this._updatePaletteStates();
+      }
+    }
+    if (read !== this._clipboardRead) return; // given up: ends silently
+    if (!found) {
+      this._toast(CONFIG.messages.edit.noUrlInClipboard);
+      return;
+    }
+    if (!UIController.isSameLinkTarget(target, this.blockEdit.linkTarget())) {
+      this._toast(CONFIG.messages.edit.linkTargetChanged);
+      return;
+    }
+    if (this.blockEdit.pasteLink(found.url, found.text)) this._refreshDirtyMark();
+    else this._toast(CONFIG.messages.edit.linkNotPastable); // owner ruling F-R2
+  }
+
+  /**
+   * Give up waiting for the clipboard (edit mode ends): a read that never
+   * settles (a prompt not answered) keeps Paste link off only until then; a
+   * late answer changes nothing and shows nothing (INV-69).
+   * @purity non-pure
+   */
+  _endClipboardWait() {
+    this._isReadingClipboard = false;
+    this._clipboardRead++;
+  }
+
+  /**
+   * Two link targets (BlockEditController.linkTarget) are the same: the
+   * same block or cell, selection and edit generation.
+   * @purity pure
+   * @param {object|null} a
+   * @param {object|null} b
+   * @returns {boolean}
+   */
+  static isSameLinkTarget(a, b) {
+    if (!a || !b) return false;
+    const keys = ["kind", "blockId", "row", "col", "generation", "start", "end"];
+    return keys.every((k) => a[k] === b[k]);
   }
 
   /**
@@ -1448,10 +1588,11 @@ export default class UIController {
     /** @purity non-pure */
     this.elements.helpBtn.addEventListener("touchend", (e) => {
       this.cancelPress();
-      if (!this.isLongPress) {
-        e.preventDefault();
-        this.handleHelpClick(e);
-      }
+      // Taken either way: after a long press the browser's click (and the
+      // mouse events) would land on the prompt's overlay and close it.
+      e.preventDefault();
+      if (this.isLongPress) this.isLongPress = false;
+      else this.handleHelpClick(e);
     });
 
     this.elements.helpBtn.addEventListener("click", (e) =>

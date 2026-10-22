@@ -62,6 +62,8 @@ export function fakeEditServices() {
   const blockEdit = {
     dispatch: vi.fn(),
     isEditing: vi.fn(() => false),
+    isInTransition: vi.fn(() => false),
+    isHugeBlock: vi.fn(() => false),
     hasUncommittedChange: vi.fn(() => false),
     getSelectionRange: vi.fn(() => null),
     applyTextEdit: vi.fn(),

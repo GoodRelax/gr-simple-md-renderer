@@ -8,6 +8,7 @@ vi.mock("../js/utils.js", async () => {
 import { setupEdit, flush } from "./helpers/editStack.js";
 import { tap, pointer, keydown } from "./helpers/editDom.js";
 import { CONFIG } from "../js/config.js";
+import MarkdownTextOps from "../js/classes/MarkdownTextOps.js";
 
 // INV-71: Enter / Shift+Enter in a paragraph, list or quote block editor;
 // (6) the trailing spaces that make no line break are removed on commit.
@@ -98,12 +99,61 @@ describe("AT-HBK Enter in the block editor (INV-71)", () => {
     expect(ta.value).toContain(`x${CONFIG.edit.tableLineBreak}`);
   });
 
+  it.each([["Ctrl", { ctrlKey: true }], ["Alt", { altKey: true }], ["Meta", { metaKey: true }]])(
+    "AT-HBK-14 %s+Enter in a table's source is the browser's newline (owner ruling Q-b, INV-27)",
+    async (_name, init) => {
+      s = await setupEdit(DOC);
+      const ta = open(byStart("| A"));
+      const before = ta.value;
+      ta.setSelectionRange(ta.value.indexOf("x") + 1, ta.value.indexOf("x") + 1);
+      expect(keydown(ta, "Enter", init).defaultPrevented).toBe(false);
+      expect(ta.value).toBe(before);
+    },
+  );
+
   it("AT-HBK-06 Enter where the line is a code block inside the list: the browser's newline (null)", async () => {
     s = await setupEdit("- a\n\n  ```\n  x\n  ```\n");
     const ta = open(byStart("- a"));
     const at = ta.value.indexOf("x") + 1;
     ta.setSelectionRange(at, at);
     expect(keydown(ta, "Enter").defaultPrevented).toBe(false);
+  });
+});
+
+describe("AT-HBK-16 a block above invisibleMarkMaxChars is not lexed per key (owner ruling 2026-10-23, review P-4)", () => {
+  const huge = () => `${"word ".repeat(Math.ceil((CONFIG.edit.invisibleMarkMaxChars + 10) / 5))}end\n\nsmall paragraph\n`;
+
+  it("Enter is the browser's newline; at the limit or below, the line break mark as before", async () => {
+    s = await setupEdit(huge());
+    const ta = open(byStart("word"));
+    expect(ta.value.length).toBeGreaterThan(CONFIG.edit.invisibleMarkMaxChars);
+    const before = ta.value;
+    caretAtEnd(ta);
+    expect(keydown(ta, "Enter").defaultPrevented).toBe(false);
+    expect(ta.value).toBe(before);
+    commit();
+    const small = open(byStart("small"));
+    caretAtEnd(small);
+    expect(keydown(small, "Enter").defaultPrevented).toBe(true);
+  });
+
+  it("the format and link states do not lex it: on for a selection; Bold checks when pressed", async () => {
+    s = await setupEdit(huge());
+    const ta = open(byStart("word"));
+    const can = vi.spyOn(MarkdownTextOps, "canFormatRange");
+    ta.setSelectionRange(0, 4);
+    expect(s.bec.canFormatSelection()).toBe(true);
+    expect(s.bec.canPasteLink()).toBe(true);
+    expect(s.bec.canRemoveLink()).toBe(true);
+    ta.setSelectionRange(4, 4);
+    expect(s.bec.canFormatSelection()).toBe(false);
+    expect(s.bec.canPasteLink()).toBe(false);
+    expect(s.bec.canRemoveLink()).toBe(false);
+    expect(can).not.toHaveBeenCalled();
+    ta.setSelectionRange(0, 4);
+    expect(s.bec.formatSelection({ kind: "strong" })).toBe(true);
+    expect(ta.value.startsWith("**word** word")).toBe(true);
+    expect(s.bec.isHugeBlock()).toBe(true);
   });
 });
 
@@ -147,10 +197,14 @@ describe("AT-HBK the trailing spaces on commit (INV-71 (6))", () => {
 
 describe("AT-HBK the marks layer (INV-70)", () => {
   const layer = () => s.preview.querySelector(".md-block-editing > .md-invisible-overlay");
+  // the layer is drawn in the frame after the editor opens (INV-70)
+  const frame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
-  it("AT-HBK-11 opens with the editor and goes with it", async () => {
-    s = await setupEdit(DOC);
+  it("AT-HBK-11 opens with the editor (drawn in the next frame) and goes with it", async () => {
+    s = await setupEdit(DOC.replace("Hello word", "Hello\u00a0word"));
     const ta = open(byStart("Hello"));
+    expect(layer()).toBe(null);
+    await frame();
     expect(layer()).not.toBe(null);
     expect(layer().nextElementSibling).toBe(ta);
     commit();
@@ -160,15 +214,30 @@ describe("AT-HBK the marks layer (INV-70)", () => {
   it("AT-HBK-12 line end marks in a paragraph block; none in a code block", async () => {
     s = await setupEdit(`a${S}\nb\n\n\`\`\`\nc${S}\n\`\`\`\n`);
     open(byStart("a"));
+    await frame();
     expect([...layer().querySelectorAll(".grsmd-invisible")].map((m) => m.textContent)).toEqual([S]);
     commit();
     open(byStart("```"));
-    expect(layer().querySelectorAll(".grsmd-invisible")).toHaveLength(0);
+    await frame();
+    expect(layer()).toBe(null); // no mark, no layer (AT-ICO-18)
   });
 
   it("AT-HBK-13 no layer for a block longer than invisibleMarkMaxChars", async () => {
     s = await setupEdit(`${"x".repeat(CONFIG.edit.invisibleMarkMaxChars + 1)}\n`);
     open(byStart("x"));
+    await frame();
     expect(layer()).toBe(null);
+  });
+
+  it("AT-HBK-15 no layer for a block with more marks than invisibleMarkMaxMarks (P-3)", async () => {
+    const many = "a\u00a0".repeat(CONFIG.edit.invisibleMarkMaxMarks + 1);
+    s = await setupEdit(`${many}\n\nfew\u00a0marks\n`);
+    open(byStart("a"));
+    await frame();
+    expect(layer()).toBe(null);
+    commit();
+    open(byStart("few"));
+    await frame();
+    expect(layer()).not.toBe(null);
   });
 });

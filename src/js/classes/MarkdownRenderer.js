@@ -9,11 +9,11 @@ import ExternalImageGate from "./ExternalImageGate.js";
 // text only; <annotation-xml> (the HTML integration point) stays forbidden.
 // <style> is forbidden: a stylesheet in the document could fetch remote
 // resources (@import, url()) and restyle the whole app, including the
-// external image placeholders. GitHub drops it too.
+// external image placeholders. GitHub drops it too. Frozen to the lists.
 export const PURIFY_CONFIG = Object.freeze({
-  ADD_TAGS: ["semantics", "annotation"],
-  ADD_ATTR: ["encoding"],
-  FORBID_TAGS: ["style"],
+  ADD_TAGS: Object.freeze(["semantics", "annotation"]),
+  ADD_ATTR: Object.freeze(["encoding"]),
+  FORBID_TAGS: Object.freeze(["style"]),
 });
 
 const HIGHLIGHT_SELECTOR =
@@ -369,7 +369,7 @@ export default class MarkdownRenderer {
 
   /**
    * The node is (inside) a table tab this renderer made, by reference: a
-   * user-written class="grsmd-table-tab" is not one (INV-29 (b), UIR-11).
+   * user-written class="grsmd-table-tab" is not one (INV-29 (b)).
    * @purity semi-pure-b
    * @param {Node|null} node
    * @returns {boolean}

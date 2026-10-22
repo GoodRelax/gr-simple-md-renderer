@@ -78,7 +78,7 @@ describe("MarkdownFileAccess (Adapter: local file read/write, no network)", () =
     expect(handle.calls).toEqual(["createWritable", "write", "abort"]);
   });
 
-  it("AT-FA-07 startDownload clicks a blob: link synchronously, revokes it in a later task, leaves no <a>", async () => {
+  it("AT-FA-07 startDownload clicks a blob: link synchronously, revokes it a minute later (review T-2), leaves no <a>", async () => {
     vi.useFakeTimers();
     const blobs = [];
     const create = vi.spyOn(URL, "createObjectURL").mockImplementation((b) => {
@@ -102,7 +102,10 @@ describe("MarkdownFileAccess (Adapter: local file read/write, no network)", () =
     expect(clicked).toEqual([{ href: "blob:fake-1", download: "notes.md", inDom: true }]);
     expect(document.querySelectorAll("a").length).toBe(0);
     expect(revoke).not.toHaveBeenCalled();
-    vi.runAllTimers();
+    // not in the next task: a busy browser has not read the blob yet
+    vi.advanceTimersByTime(59999);
+    expect(revoke).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
     expect(revoke).toHaveBeenCalledWith("blob:fake-1");
   });
 

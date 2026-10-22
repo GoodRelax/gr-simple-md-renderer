@@ -86,6 +86,12 @@ export const CONFIG = {
       tableNotCellEditable:
         "This table cannot be edited by cell. Opened its Markdown instead.",
       tableEditEnded: "The table changed into other blocks. Table editing ended.",
+      noUrlInClipboard: "There is no URL in the clipboard.", // INV-69 (also when reading was refused)
+      linkTargetChanged:
+        "The text being edited changed while the clipboard was read. Nothing was pasted.", // INV-69
+      linkNotPastable: "A link cannot be pasted here.", // INV-69 (owner ruling F-R2)
+      formatNotApplicable: "This format cannot be applied here.", // INV-71 huge blocks (owner ruling Q-f)
+      linkNotRemovable: "There is no link to remove here.", // INV-71 huge blocks (as Q-f)
       statusUnsaved: (name) => `${name} * unsaved`,
       statusSaved: (name) => `${name} - saved`,
     },
@@ -114,6 +120,7 @@ export const CONFIG = {
       green: { light: "#007A58", dark: "#009E73" },
     },
     invisibleMarkMaxChars: 50000, // INV-70: no marks layer above this length
+    invisibleMarkMaxMarks: 2000, // INV-70: ... nor above this many marks
     linkSchemes: ["http:", "https:", "mailto:"], // a text that is a link URL (INV-69, INV-72 (a))
     maxPastedUrlLength: 2048, // INV-69
     doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device

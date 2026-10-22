@@ -78,7 +78,7 @@ describe("AT-KEY-01 shortcutLetter: the INV-14 formula (pure)", () => {
     ["Windows Meta+S", ev({ metaKey: true }), false, null],
     ["Windows Ctrl+Meta+S", ev({ ctrlKey: true, metaKey: true }), false, null],
     ["Mac Cmd+S", ev({ metaKey: true }), true, "s"],
-    ["Mac Ctrl+S (not taken, ruling UIR-19)", ev({ ctrlKey: true }), true, null],
+    ["Mac Ctrl+S (not taken, INV-14 (2): the primary key is Cmd)", ev({ ctrlKey: true }), true, null],
     ["Mac Cmd+Ctrl+S", ev({ ctrlKey: true, metaKey: true }), true, null],
     ["AltGr (Ctrl+Alt)", ev({ ctrlKey: true, altKey: true }), false, null],
     ["Alt", ev({ altKey: true }), false, null],

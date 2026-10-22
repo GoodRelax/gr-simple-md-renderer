@@ -192,11 +192,11 @@ function ruleBody(text, selector) {
 describe("style.css for in-place editing", () => {
   it("AT-PAL-27 @media print hides the palette, the popover, the hidden-block bands and the editor frame", () => {
     const print = printBlocks(css);
-    for (const sel of [".edit-palette", ".edit-palette-popover", ".md-block-hidden"]) {
+    for (const sel of [".edit-palette", ".edit-palette-popover", "#preview > .md-block-hidden"]) {
       expect(print, sel).toContain(sel);
     }
     expect(ruleBody(print, ".edit-palette")).toMatch(/display:\s*none/);
-    expect(ruleBody(print, ".md-block-hidden")).toMatch(/display:\s*none/);
+    expect(ruleBody(print, "#preview > .md-block-hidden")).toMatch(/display:\s*none/);
     expect(ruleBody(print, ".md-block-editor")).toMatch(/border:\s*none/);
   });
 
@@ -209,10 +209,26 @@ describe("style.css for in-place editing", () => {
   });
 
   it("bands and the empty block show only in edit mode (INV-41, INV-49)", () => {
-    expect(ruleBody(css, ".md-block-hidden")).toMatch(/display:\s*none/);
-    expect(ruleBody(css, ".md-block-empty")).toMatch(/display:\s*none/);
-    expect(css).toMatch(/body\.edit-mode \.md-block-hidden/);
-    expect(css).toMatch(/body\.edit-mode \.md-block-empty/);
+    expect(ruleBody(css, "#preview > .md-block-hidden")).toMatch(/display:\s*none/);
+    expect(ruleBody(css, "#preview > .md-block-empty")).toMatch(/display:\s*none/);
+    expect(ruleBody(css, "body.edit-mode #preview > .md-block-hidden")).toMatch(/display:\s*block/);
+    expect(ruleBody(css, "body.edit-mode #preview > .md-block-empty")).toMatch(/display:\s*block/);
+  });
+
+  it("AT-STA-14 the app's classes hide or style only the renderer's own elements (release test N2) and the band's cursor wins (N3)", () => {
+    // a document's own class="grsmd-table-tab" / "md-block-hidden" / "md-block-empty"
+    // sits inside a block wrapper, never as a child of #preview or of a table block
+    for (const cls of ["grsmd-table-tab", "md-block-hidden", "md-block-empty"]) {
+      for (const m of css.matchAll(/([^{}]+)\{/g)) {
+        for (const selector of m[1].split(",").map((x) => x.trim())) {
+          if (!selector.includes(`.${cls}`)) continue;
+          const scoped = cls === "grsmd-table-tab" ? "#preview > .md-block-table > .grsmd-table-tab" : `#preview > .${cls}`;
+          const hover = `#preview > .md-block.${cls}:not(.md-block-editing):hover`;
+          expect(selector.includes(scoped) || selector.includes(hover), selector).toBe(true);
+        }
+      }
+    }
+    expect(ruleBody(css, "body.edit-mode #preview > .md-block.md-block-hidden:not(.md-block-editing):hover")).toMatch(/cursor:\s*pointer/);
   });
 
   it("palette, popover and pending-box classes exist for light and dark (5.15.2)", () => {
@@ -250,9 +266,21 @@ describe("style.css for in-place editing", () => {
     expect(bec).not.toMatch(/fontFamily/); // the CSS decides the editor font
   });
 
-  it("no url() in the editing rules (CSP, no external fetch)", () => {
-    const editing = css.split("\n").filter((line) => /edit-palette|md-block|plantuml-pending/.test(line)).join("\n");
-    expect(editing).not.toMatch(/url\(/);
+  it("AT-STA-12 no url() in the editing rules, selectors and declarations both (CSP, no external fetch; review T-5)", () => {
+    /** The rules (innermost: inside @media too) whose selector names an editing class, with url() in the body. */
+    const withUrl = (text) => {
+      const out = [];
+      for (const m of text.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const selector = m[1].trim();
+        if (/edit-palette|md-block|md-invisible|grsmd-|plantuml-pending/.test(selector) && /url\(/i.test(m[2])) out.push(selector);
+      }
+      return out;
+    };
+    // the check sees a declaration on its own line and a rule inside @media
+    expect(withUrl(".grsmd-cell-raw {\n  background: url(x.png);\n}")).toEqual([".grsmd-cell-raw"]);
+    expect(withUrl("@media screen {\n  .dark .edit-palette {\n    background-image: URL(x);\n  }\n}")).toEqual([".dark .edit-palette"]);
+    expect(withUrl(".other {\n  background: url(x.png);\n}")).toEqual([]);
+    expect(withUrl(css)).toEqual([]);
   });
 });
 
@@ -291,7 +319,7 @@ describe("style.css: table cells (INV-62, INV-53)", () => {
   it("AT-STA-11 the open cell keeps its spaces (pre-wrap); print hides the tab, the cell frame and the raw ground", () => {
     expect(ruleBody(css, "#preview td.grsmd-cell-editing")).toMatch(/white-space:\s*pre-wrap/);
     const print = printBlocks(css);
-    expect(ruleBody(print, ".grsmd-table-tab")).toMatch(/display:\s*none/);
+    expect(ruleBody(print, "#preview > .md-block-table > .grsmd-table-tab")).toMatch(/display:\s*none/);
     expect(ruleBody(print, "#preview td.grsmd-cell-editing")).toMatch(/outline:\s*none/);
     expect(ruleBody(print, "#preview td.grsmd-cell-raw")).toMatch(/background:\s*none/);
   });
