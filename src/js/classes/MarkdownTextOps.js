@@ -12,6 +12,21 @@ const COLOR_OPEN = /^<span style="color: (#[0-9A-Fa-f]{6})">$/;
 const SPAN_OPEN = /^<span(?:\s[^>]*)?>$/i;
 const SPAN_CLOSE = /^<\/span\s*>$/i;
 const LINE_BREAK_SPACES = / {2,}$/;
+// INV-52: Insert table / Mermaid refuses in an editor opened on these
+// blocks, or with the caret in such a block of the editor text at any depth
+// (top level, a list item, a quote; a table there too: owner ruling D7).
+const REFUSING_BLOCKS = new Set(["code", "html", "blockKatex", "table"]);
+// Blocks whose line end spaces are content: a cut never takes them away
+// (INV-52, as INV-71 (6) never tries them).
+const SPACE_CONTENT_BLOCKS = new Set(["code", "html", "blockKatex"]);
+// Inline spans an insert never cuts in two (INV-52, strict review M1): a
+// cut through one would show its marks as text or lose its look.
+const UNCUT_INLINE = new Set(["strong", "em", "del", "link", "image", "codespan", "inlineKatex"]);
+// Leaves whose inline spans are checked at a cut (paragraph text).
+const CUT_LEAVES = new Set(["paragraph", "text"]);
+const INLINE_TAG = /^<(\/?)([A-Za-z][A-Za-z0-9-]*)\b[^>]*?(\/?)>$/;
+// The blocks that may be cut in two by an insert (INV-52).
+const CUT_BLOCKS = new Set(["paragraph", "list", "blockquote"]);
 // INV-71 (6) lexes a block at most this many times (INV-51: about 300 ms
 // on a 1,000-line block); the candidates not decided by then stay as they
 // are (what is shown does not change).
@@ -47,7 +62,9 @@ const LEAF_TABLES = new WeakMap();
  * come in as arguments); the only state is LEAF_TABLES, a cache that does
  * not change any result.
  * Every operation returns a TextEdit { text, selStart, selEnd } (or null
- * when it does not apply).
+ * when it does not apply); planBlockInsert() returns where an insert goes
+ * (INV-52), insertOffset() that place as an offset, and
+ * cutLineEndBreak() how many characters of a line break go before it.
  */
 export default class MarkdownTextOps {
   /**
@@ -140,6 +157,117 @@ export default class MarkdownTextOps {
     else if (after.startsWith("\n")) trail = "\n";
     const end = before.length + lead.length + blockText.length;
     return { text: before + lead + blockText + trail + after, selStart: end, selEnd: end };
+  }
+
+  /**
+   * Where Insert table / Mermaid goes in an open block editor (INV-52): the
+   * text is cut at a line boundary, after the caret line (before it when
+   * the caret is at the start of the line); a side that would be blank is
+   * not made ("above" / "below"). Only a paragraph, a list or a quote is
+   * cut; a list at the boundary of the top-level item at the caret (after
+   * it; before it when the caret is at the start of its first line. Owner
+   * ruling D6); another block at the caret is not cut: the block goes above
+   * it when the caret is at its start, else below it. "refuse": the editor
+   * is a code, math, HTML or table block, or the caret line is in one at
+   * any depth. Lines are counted, not offsets: marked strips a list's
+   * indent and a quote's marks before it lexes their inside, but keeps the
+   * lines. When the tokens do not hold all the lines (marked drops a
+   * duplicate definition's title line), the lines cannot be counted: below
+   * (owner ruling D8). A cut through an inline span of a paragraph (bold,
+   * italic, strikethrough, a link, an image, a code span, inline math, an
+   * inline HTML tag closed after the cut, or HTML whose own text runs over
+   * the cut, such as a comment) is not made: the block goes below that
+   * paragraph (in a quote, below that paragraph of the quote. Strict review
+   * M1, re-check N3); the paragraph is lexed inline once. A paragraph of
+   * more than maxInlineChars characters is not lexed inline (as the huge
+   * blocks of INV-71): it is cut by line (re-check N2).
+   * @purity pure
+   * @param {string} text - the editor text
+   * @param {number} caret - the selection end
+   * @param {string|null} blockType - the block the editor was opened on
+   * @param {{lexBlocks: (src: string) => object[], lexInline: (src: string) => object[], maxInlineChars?: number}} lexers
+   * @returns {{kind: "refuse"}|{kind: "above"|"below"|"split", line: number}}
+   */
+  static planBlockInsert(text, caret, blockType, { lexBlocks, lexInline, maxInlineChars = Infinity }) {
+    if (REFUSING_BLOCKS.has(blockType)) return { kind: "refuse" };
+    const lines = text.split("\n");
+    if (text.trim() === "") return { kind: "above", line: 0 };
+    const o = MarkdownTextOps._clamp(caret, text);
+    const caretLine = MarkdownTextOps._lineIndexAt(text, o);
+    const atLineStart = o === MarkdownTextOps._lineStart(lines, caretLine);
+    const tokens = lexBlocks(text);
+    if (countNewlines(rawOf(tokens)) !== countNewlines(text.replace(/\r\n?/g, "\n"))) return { kind: "below", line: lines.length };
+    const found = MarkdownTextOps._blockAtLine(tokens, caretLine);
+    if (found.refuse) return { kind: "refuse" };
+    let line = atLineStart ? caretLine : caretLine + 1;
+    const top = found.top;
+    if (top && top.token.type === "list") {
+      const item = MarkdownTextOps._listItemAtLine(top.token, top.first, caretLine);
+      if (item) line = atLineStart && caretLine === item.first ? item.first : item.last + 1;
+    } else if (top && !CUT_BLOCKS.has(top.token.type)) {
+      line = atLineStart && caretLine === top.first ? top.first : top.last + 1;
+    } else if (top) {
+      const leaf = MarkdownTextOps._leafAcrossCut([top.token], top.first, line);
+      const small = leaf && leaf.token.text.length <= maxInlineChars;
+      if (small && MarkdownTextOps._isSpanCut(lexInline(leaf.token.text), line - leaf.first)) line = leaf.last + 1;
+    }
+    if (lines.slice(0, line).join("\n").trim() === "") return { kind: "above", line: 0 };
+    if (lines.slice(line).join("\n").trim() === "") return { kind: "below", line: lines.length };
+    return { kind: "split", line };
+  }
+
+  /**
+   * The offset in a committed block text where a planBlockInsert() plan
+   * puts the block. The committed text has the editor's lines (INV-61 and
+   * INV-71 (6) change no line count); its trailing newlines are not in the
+   * block (replaceBlock), so "below" is the end of its last text. A cut is
+   * at the end of the line before it (its line end spaces can go then:
+   * cutLineEndBreak).
+   * @purity pure
+   * @param {string} text - the committed text
+   * @param {{kind: string, line: number}} plan
+   * @returns {number}
+   */
+  static insertOffset(text, plan) {
+    const editable = text.replace(/\n+$/, "");
+    if (plan.kind === "above") return 0;
+    if (plan.kind === "below") return editable.length;
+    return Math.min(MarkdownTextOps._lineStart(text.split("\n"), plan.line) - 1, editable.length);
+  }
+
+  /**
+   * How many characters at the end of the line before a cut stop making a
+   * line break once the block is cut there (INV-71 (6), INV-52): two spaces
+   * or more, or else a backslash (an odd run of them: an even run is
+   * escaped backslashes, text; strict review L1). At the end of the text
+   * before the cut neither makes a line break, so it goes, unless that
+   * line is in code, HTML or math (at any depth), where it is content. The
+   * backslash goes only when it was a line break: the lines on both sides
+   * of the cut are in one paragraph (at the end of a block, such as a list
+   * item, a paragraph before a blank line or a heading, it is shown as
+   * text and stays. Re-check N1). Only that last line is judged (an
+   * earlier line may keep meaningless spaces of its own: an editor closed
+   * unchanged is not stripped), with one block lexing of the whole text (a
+   * block cut short would not read as its kind; no inline lexing, INV-51).
+   * 0 when nothing goes.
+   * @purity pure
+   * @param {string} text - the committed text
+   * @param {{kind: string, line: number}} plan
+   * @param {(src: string) => object[]} lexBlocks
+   * @returns {number}
+   */
+  static cutLineEndBreak(text, plan, lexBlocks) {
+    if (plan.kind !== "split") return 0;
+    const upper = text.slice(0, MarkdownTextOps.insertOffset(text, plan));
+    let count = 0;
+    let isBackslash = false;
+    if (LINE_BREAK_SPACES.test(upper)) count = / +$/.exec(upper)[0].length;
+    else if (/\\+$/.exec(upper)?.[0].length % 2 === 1) [count, isBackslash] = [1, true];
+    if (count === 0) return 0;
+    const tokens = lexBlocks(text);
+    if (MarkdownTextOps._blockAtLine(tokens, countNewlines(upper), SPACE_CONTENT_BLOCKS).refuse) return 0;
+    if (isBackslash && !MarkdownTextOps._leafAcrossCut(tokens, 0, plan.line)) return 0;
+    return count;
   }
 
   /**
@@ -659,6 +787,158 @@ export default class MarkdownTextOps {
   static _lineIndexAt(text, offset) {
     const o = MarkdownTextOps._clamp(offset, text);
     return text.slice(0, o).split("\n").length - 1;
+  }
+
+  /**
+   * The top-level block token on a line of the lexed text, with its first
+   * and last line, and whether the line refuses an insert (INV-52): the
+   * token is one of types (REFUSING_BLOCKS by default), or the line is in
+   * one of them nested inside it. top is null on a blank line between
+   * blocks.
+   * @purity pure
+   * @param {object[]} tokens - lexBlocks output
+   * @param {number} line
+   * @param {Set<string>} [types]
+   * @returns {{refuse: boolean, top: {token: object, first: number, last: number}|null}}
+   */
+  static _blockAtLine(tokens, line, types = REFUSING_BLOCKS) {
+    let start = 0;
+    for (const token of tokens) {
+      const last = start + countNewlines(token.raw.replace(/\n+$/, ""));
+      if (token.type !== "space" && line >= start && line <= last) {
+        const refuse = types.has(token.type) || MarkdownTextOps._refusesInside(token, start, line, types);
+        return { refuse, top: { token, first: start, last } };
+      }
+      start += countNewlines(token.raw);
+    }
+    return { refuse: false, top: null };
+  }
+
+  /**
+   * The paragraph leaf (at the top or in a quote, at any depth) whose lines
+   * hold both sides of a cut before line cut, with its first and last
+   * line; null when the cut is not inside one (INV-52, strict review M1).
+   * @purity pure
+   * @param {object[]} tokens
+   * @param {number} start - the line the tokens start on
+   * @param {number} cut
+   * @returns {{token: object, first: number, last: number}|null}
+   */
+  static _leafAcrossCut(tokens, start, cut) {
+    let pos = start;
+    for (const token of tokens) {
+      const last = pos + countNewlines(token.raw.replace(/\n+$/, ""));
+      if (token.type !== "space" && pos < cut && last >= cut) {
+        if (CUT_LEAVES.has(token.type)) return { token, first: pos, last };
+        if (token.type === "blockquote") return MarkdownTextOps._leafAcrossCut(token.tokens || [], pos, cut);
+        return null;
+      }
+      pos += countNewlines(token.raw);
+    }
+    return null;
+  }
+
+  /**
+   * An inline span of the lexed paragraph text runs across the start of
+   * line cut (counted in the text): an UNCUT_INLINE token, an html token
+   * whose own text runs across it (a comment, a tag with a line break), or
+   * an inline HTML tag opened before it and closed on it or after (INV-52).
+   * @purity pure
+   * @param {object[]} tokens - inline tokens of the paragraph text
+   * @param {number} cut
+   * @returns {boolean}
+   */
+  static _isSpanCut(tokens, cut) {
+    let line = 0;
+    const open = [];
+    for (const token of tokens) {
+      const last = line + countNewlines(token.raw);
+      if ((UNCUT_INLINE.has(token.type) || token.type === "html") && line < cut && last >= cut) return true;
+      const tag = token.type === "html" ? INLINE_TAG.exec(token.raw) : null;
+      if (tag && !tag[3]) {
+        const name = tag[2].toLowerCase();
+        if (!tag[1]) open.push({ name, line });
+        else {
+          const at = open.map((o) => o.name).lastIndexOf(name);
+          if (at >= 0) {
+            if (open[at].line < cut && line >= cut) return true;
+            open.splice(at);
+          }
+        }
+      }
+      line = last;
+    }
+    return false;
+  }
+
+  /**
+   * The first and last text line of the item of a list token (starting on
+   * line start) whose lines hold line; null on none (INV-52, owner ruling
+   * D6). The blank lines after an item's text belong to it.
+   * @purity pure
+   * @param {object} list
+   * @param {number} start
+   * @param {number} line
+   * @returns {{first: number, last: number}|null}
+   */
+  static _listItemAtLine(list, start, line) {
+    let first = start;
+    for (const item of list.items) {
+      const next = first + countNewlines(item.raw);
+      if (line >= first && (line < next || item === list.items[list.items.length - 1])) {
+        return { first, last: first + countNewlines(item.raw.replace(/\n+$/, "")) };
+      }
+      first = next;
+    }
+    return null;
+  }
+
+  /**
+   * The line is in a block of types (code, math, HTML, a table) inside a
+   * list or a quote token that starts on line start (at any depth). A list
+   * item's tokens and a quote's tokens are lexed from their text without
+   * the indent or the marks, line for line (INV-52).
+   * @purity pure
+   * @param {object} token
+   * @param {number} start
+   * @param {number} line
+   * @param {Set<string>} types
+   * @returns {boolean}
+   */
+  static _refusesInside(token, start, line, types) {
+    let children;
+    if (token.type === "list") {
+      let itemStart = start;
+      for (const item of token.items) {
+        const itemLast = itemStart + countNewlines(item.raw.replace(/\n+$/, ""));
+        if (line >= itemStart && line <= itemLast) return MarkdownTextOps._refusesIn(item.tokens || [], itemStart, line, types);
+        itemStart += countNewlines(item.raw);
+      }
+      return false;
+    }
+    if (token.type === "blockquote") children = token.tokens || [];
+    return children ? MarkdownTextOps._refusesIn(children, start, line, types) : false;
+  }
+
+  /**
+   * _refusesInside for a list of tokens starting on line start.
+   * @purity pure
+   * @param {object[]} tokens
+   * @param {number} start
+   * @param {number} line
+   * @param {Set<string>} types
+   * @returns {boolean}
+   */
+  static _refusesIn(tokens, start, line, types) {
+    let pos = start;
+    for (const token of tokens) {
+      const last = pos + countNewlines(token.raw.replace(/\n+$/, ""));
+      if (token.type !== "space" && line >= pos && line <= last) {
+        return types.has(token.type) || MarkdownTextOps._refusesInside(token, pos, line, types);
+      }
+      pos += countNewlines(token.raw);
+    }
+    return false;
   }
 
   /**

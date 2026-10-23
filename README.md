@@ -85,7 +85,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
   - External images (`![](https://...)`): shown as placeholders until you click one and confirm. The consent lasts until `[Clear]` or a new file drop.
 - **Nothing is stored.** Your content is never written to localStorage, sessionStorage, or cookies.
 - **Edits are not stored in the browser either.** They live only in the open page until you save them to a file.
-- **Clipboard.** The "Paste link from clipboard" button reads the clipboard only when you press it, so the browser may ask you to allow it. In Chrome and Edge, once you allow it, other pages on goodrelax.github.io can also read your clipboard without asking. To withdraw it, open the site settings for goodrelax.github.io (the icon at the left of the address bar) and set Clipboard to Ask or Block. Pasting a URL onto selected text with Ctrl+V / Cmd+V makes a link without any permission. Nothing read from the clipboard is sent anywhere.
+- **Clipboard.** The "Paste copied link" button reads the clipboard only when you press it, so the browser may ask you to allow it. In Chrome and Edge, once you allow it, other pages on goodrelax.github.io can also read your clipboard without asking. To withdraw it, open the site settings for goodrelax.github.io (the icon at the left of the address bar) and set Clipboard to Ask or Block. Pasting a URL onto selected text with Ctrl+V / Cmd+V makes a link without any permission. Nothing read from the clipboard is sent anywhere.
 - **HTML in Markdown is sanitized** with DOMPurify. Scripts and event handlers are removed. Other remote references (video, audio, CSS `url()`, `<style>`) are removed.
 - **Content-Security-Policy:** the built file only runs its own script, and network access is limited to the PlantUML server.
 
@@ -227,7 +227,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
   - 外部画像（`![](https://...)`）: クリックして確認するまでプレースホルダーを表示します。同意は `[Clear]` または新しいファイルのドロップまで有効です。
 - **何も保存しません。** 入力内容を localStorage・sessionStorage・Cookie に書き込みません。
 - **編集内容もブラウザに保存しません。** ファイルに保存するまでは、開いているページの中にだけあります。
-- **クリップボード。** 「リンクを貼る」（Paste link from clipboard）のボタンは、押したときだけクリップボードを読むので、ブラウザが許可を求めることがあります。Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。選んだ文字に URL を Ctrl+V / Cmd+V で貼ってリンクにする方法には、許可が要りません。クリップボードから読んだものは、どこにも送りません。
+- **クリップボード。** 「リンクを貼る」（Paste copied link）のボタンは、押したときだけクリップボードを読むので、ブラウザが許可を求めることがあります。Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。選んだ文字に URL を Ctrl+V / Cmd+V で貼ってリンクにする方法には、許可が要りません。クリップボードから読んだものは、どこにも送りません。
 - **Markdown 内の HTML は DOMPurify でサニタイズ**します。スクリプトとイベント属性を除去し、その他の外部参照（動画・音声・CSS の `url()`・`<style>`）も除去します。
 - **Content-Security-Policy:** ビルド成果物は自身のスクリプトしか実行せず、通信先も PlantUML サーバーだけに制限しています。
 

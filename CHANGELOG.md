@@ -154,6 +154,47 @@ re-hash.
 
 ### Changed
 
+- Plain English UI texts. Toasts, confirms, alerts, the texts shown in place
+  of diagrams and images, and the edit palette's tooltips are rewritten in
+  short, everyday English (for example `Couldn't save. Your changes are
+  kept.`, `Downloading: NAME. It's still not saved.`). The top input box is
+  called "the top box". Palette names: "Paste link from clipboard" is now
+  "Paste copied link", "Table options" is "Align column" and "Default
+  alignment" is "Remove alignment"; the help follows.
+  - The consent messages are one short question each. PlantUML: "Is it OK to
+    send your PlantUML diagram data to the official PlantUML server
+    (www.plantuml.com)?". Images from other sites: "Is it OK to get images
+    from other sites?"; the dialog no longer lists the host names (the
+    placeholders still show them). How consent works is unchanged.
+  - Every text that JS shows to the user is now in `src/js/config.js`
+    (`CONFIG.messages`); a static check keeps it there. The unused
+    `fileDrop.messages.unsupportedType` and `externalImage.maxHostsInDialog`
+    are removed.
+  - A long toast wraps inside the screen instead of running off both sides.
+- Insert table and Insert Mermaid sample no longer show the template's
+  Markdown in the open editor. While a block is open, the editor is committed
+  first, then the new block goes in at a line boundary: after the caret's
+  line, or before it when the caret is at the start of a line (never in the
+  middle of a word). Only paragraphs, lists and quotes are cut in two (a list
+  between its items); other blocks get the new block above or below them. A
+  table's first cell `Col1` then opens with its text selected (typing
+  replaces it); a Mermaid sample opens its source with the caret after its
+  first diagram line. In an empty document the table takes the empty block's
+  place.
+  - Inside code (including Mermaid and PlantUML), math, HTML or a table
+    (also a table's source), at any depth in lists and quotes, the press is
+    refused with the toast "Can't insert here. Try outside this block." and
+    nothing changes.
+  - Until the new cell or source opens, one-key shortcuts (such as `n` and
+    `c`) are ignored, so typing right after the press opens no tab and
+    clears nothing.
+  - The commit and the insert are two undo steps: one Undo removes only the
+    inserted block. A line break mark (two spaces or a backslash) left at
+    the end of the cut line goes in the insert's step.
+  - A cut never splits bold, italic, a link, a code span, a text color or
+    other inline formatting that runs over two lines: the new block goes
+    below that paragraph instead.
+  - The opened cell or editor is scrolled into view only as far as needed.
 - **Behaviour change (ruling T33): while a Markdown document is shown, rendering
   from the top `#editor` box no longer strips a ```` ```markdown ```` wrapper.**
   The box already holds the document body, and stripping it again cut the

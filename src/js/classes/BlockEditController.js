@@ -180,6 +180,27 @@ export const blockEditStateMachine = Object.freeze({
     null,
     null,
   ),
+  // INV-52: Insert table / Mermaid. While editing, the editor is committed
+  // first (a change of its own), then the block goes in where planned; a
+  // place that refuses keeps the editor open and tells why.
+  blockInsertRequested: transitions(
+    null,
+    cell(IDLE, ["insertBlock"]),
+    choice(cell(IDLE, ["commitBlock", "insertBlock"], "canInsertBlock"), cell(EDITING, ["showInsertRefusedToast"])),
+    null,
+  ),
+  // INV-52: the inserted block has been drawn and nothing else happened
+  // meanwhile: a table opens its first cell, a Mermaid block its source.
+  insertedBlockRendered: transitions(
+    null,
+    choice(
+      cell(CELL, ["startTableSession", "openCell"], "isCellEditableTable"),
+      cell(EDITING, ["openTableSourceWithToast"], "isCellTarget"),
+      cell(EDITING, ["openBlockEditor"]),
+    ),
+    null,
+    null,
+  ),
 });
 
 /**
@@ -230,6 +251,8 @@ export default class BlockEditController {
     this._composing = false;
     this._lastOpenedBlockId = null;
     this._transitionDepth = 0; // 11-c crossings running (nested: INV-45)
+    this._insertPlans = new WeakMap(); // blockInsertRequested target -> its plan (INV-52)
+    this._insertsPending = 0; // inserts whose opening after the render has not run (owner ruling D5)
     this.editGeneration = 0; // INV-69: the editor opened, closed or changed
     this._onPointerDown = (e) => this._handlePointerDown(e);
     this._onPointerUp = (e) => this._handlePointerUp(e);
@@ -266,7 +289,8 @@ export default class BlockEditController {
 
   /**
    * Handle one 11-c event. A "-" cell changes nothing. Returns a Promise
-   * only for emptyDocumentStarted (the editor opens after the render).
+   * only for emptyDocumentStarted and blockInsertRequested (an editor or a
+   * cell opens after the render).
    * @purity non-pure
    * @param {string} event
    * @param {{kind: string, id?: number}|null} [target] - the tapped block
@@ -289,6 +313,17 @@ export default class BlockEditController {
       this._transitionDepth--;
       if (this._transitionDepth === 0) this.host.onTransitionEnded?.();
     }
+  }
+
+  /**
+   * An insert's block is not drawn yet: its cell or source opens after the
+   * render (INV-52). The page's one-key shortcuts wait meanwhile (owner
+   * ruling D5).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  isInsertPending() {
+    return this._insertsPending > 0;
   }
 
   /**
@@ -633,6 +668,8 @@ export default class BlockEditController {
         return this._cells.neighbour("below") !== null;
       case "canApplyTableOperation":
         return Boolean(target?.op) && this._cells.canApplyOperation(target.op);
+      case "canInsertBlock":
+        return this._insertPlan(target).kind !== "refuse";
       default:
         throw new Error(`Unknown block edit guard: ${guard}`);
     }
@@ -646,13 +683,15 @@ export default class BlockEditController {
     // The cell an INV-64 move opens, taken before the open cell closes.
     const move = MOVE_EVENTS[event] ? this._cellTarget(this._cells.neighbour(MOVE_EVENTS[event])) : null;
     let rendering = null;
+    let committed = null; // where the committed text is now (commitBlock)
+    let inserting = null; // { rendering, blockId, model } of insertBlock
     // INV-46: where the tapped block was before an open editor above it
     // closed and changed the layout (PRT-U07).
     const tapped = this._tappedPlace(next, target);
     for (const action of next.actions) {
       switch (action) {
         case "commitBlock":
-          this._commitBlock();
+          committed = this._commitBlock();
           break;
         case "discardBlockEditor":
         case "restoreOriginalRaw":
@@ -698,7 +737,7 @@ export default class BlockEditController {
           break;
         case "openCell":
           if (resolved?.kind === "cell" && this._cells.sessionBlockId() === resolved.id) {
-            this._cells.openCell(resolved.row, resolved.col, resolved.caret ?? null);
+            this._cells.openCell(resolved.row, resolved.col, resolved.caret ?? null, resolved.selectAll === true);
           }
           break;
         case "commitCell":
@@ -724,6 +763,12 @@ export default class BlockEditController {
         case "showTableEditEndedToast":
           this.host.showToast(CONFIG.messages.edit.tableEditEnded);
           break;
+        case "insertBlock":
+          inserting = this._insertBlock(target, committed);
+          break;
+        case "showInsertRefusedToast":
+          this.host.showToast(CONFIG.messages.edit.insertNotPossible);
+          break;
         default:
           // showToast: inside renderFromEditor; enqueueFullRender: by the caller
           break;
@@ -731,6 +776,14 @@ export default class BlockEditController {
     }
     // A cell opened or closed: told before the state moves on (11-c contract).
     if (next.actions.some((a) => CELL_ACTIONS.has(a))) this.host.onEditStateChanged();
+    if (inserting) {
+      this._settle(next.to);
+      this._insertsPending++;
+      return inserting.rendering
+        .then(() => this._openInsertedAfterRender(inserting, target))
+        .catch((error) => console.error("Opening the inserted block failed:", error))
+        .finally(() => this._insertsPending--);
+    }
     if (!rendering) {
       this._settle(next.to);
       return undefined;
@@ -747,6 +800,85 @@ export default class BlockEditController {
     if (this._blockEditState !== IDLE || this._editor) return;
     this._openBlockEditor({ kind: "empty" });
     this._settle(EDITING);
+  }
+
+  /**
+   * The plan of an insert in the open editor (INV-52), worked out once per
+   * press (the guard, then insertBlock after the commit); kept per target.
+   * @purity non-pure
+   * @param {object} target - the blockInsertRequested target
+   * @returns {{kind: string, line?: number}}
+   */
+  _insertPlan(target) {
+    let plan = this._insertPlans.get(target);
+    if (!plan) {
+      const range = this.getSelectionRange();
+      plan = range
+        ? MarkdownTextOps.planBlockInsert(range.text, range.selEnd, this._editor.blockType, {
+            ...this._textLexers(),
+            maxInlineChars: CONFIG.edit.invisibleMarkMaxChars, // a huge paragraph is not lexed inline (INV-71)
+          })
+        : { kind: "refuse" };
+      this._insertPlans.set(target, plan);
+    }
+    return plan;
+  }
+
+  /**
+   * INV-52: put target.raw in, as one change of its own. After a commit,
+   * where the plan puts it in the committed text (cutting that block in
+   * two, and the line end spaces that no longer break a line go); the
+   * block at the committed block's start keeps its place (its upper part,
+   * or the inserted block when it went above. INV-46). Not editing: after
+   * the last opened block, or at the end. The inserted block becomes the
+   * last opened one. null without a model.
+   * @purity non-pure
+   * @param {{raw: string}} target
+   * @param {{start: number, text: string, anchor: object|null}|null} committed
+   * @returns {{rendering: Promise<void>, blockId: number, model: MarkdownBlockModel}|null}
+   */
+  _insertBlock(target, committed) {
+    const plan = this._insertPlans.get(target);
+    let at = { afterBlockId: this._lastOpenedBlockId };
+    if (committed && plan) {
+      const { lexBlocks } = this._textLexers();
+      at = {
+        offset: committed.start + MarkdownTextOps.insertOffset(committed.text, plan),
+        removeBefore: MarkdownTextOps.cutLineEndBreak(committed.text, plan, lexBlocks),
+        scroll: committed.anchor,
+        anchorOffset: committed.start,
+      };
+    }
+    const { rendering, blockId } = this.orchestrator.insertBlock(target.raw, at);
+    if (blockId === null) return null;
+    this._lastOpenedBlockId = blockId; // the next insert goes after it (review L5)
+    return { rendering, blockId, model: this.orchestrator.getModel() };
+  }
+
+  /**
+   * INV-52: the inserted block is drawn. Only when nothing happened
+   * meanwhile (still editModeIdle, no editor or cell open, the model is the
+   * one of the insert, no unrendered #editor change), and the block is of
+   * the inserted kind (not a whole document that could not be split): a table's first
+   * header cell opens with its text selected, a Mermaid block's source with
+   * the caret at the end of the diagram's first line. Then the least scroll
+   * that shows it (none when it is in view).
+   * @purity non-pure
+   * @param {{blockId: number, model: MarkdownBlockModel}} inserting
+   * @param {{opens: "cell"|"source"}} target
+   */
+  _openInsertedAfterRender(inserting, target) {
+    if (this._blockEditState !== IDLE || this.isEditing()) return;
+    if (this.orchestrator.getModel() !== inserting.model || this.host.isEditorChangedSinceRender()) return;
+    const id = inserting.blockId;
+    const block = inserting.model.getBlocks()[inserting.model.findIndexById(id)];
+    if (block?.type !== (target.opens === "cell" ? "table" : "code")) return;
+    const opened =
+      target.opens === "cell"
+        ? { kind: "cell", id, row: 0, col: 0, caret: null, selectAll: true }
+        : { kind: "block", id, caretLineEnd: 1 };
+    this.dispatch("insertedBlockRendered", opened);
+    this.scrollMemento.reveal(this._editor?.textarea ?? this._cells.openCellElement());
   }
 
   /**
@@ -902,6 +1034,11 @@ export default class BlockEditController {
     this._fitHeight();
     this._attachOverlay(textarea, blockType);
     textarea.focus({ preventScroll: true });
+    if (typeof target.caretLineEnd === "number") {
+      // INV-52: the end of a line of the source (a Mermaid diagram's first line)
+      const end = raw.split("\n").slice(0, target.caretLineEnd + 1).join("\n").length;
+      textarea.setSelectionRange(end, end);
+    }
     this.scrollMemento.restoreAnchor(anchor, wrapper);
     if (blockId !== null) this.orchestrator.retargetPendingAnchor(blockId);
     this.host.onEditStateChanged();
@@ -936,7 +1073,11 @@ export default class BlockEditController {
   /**
    * Close the editor, then update the model (synchronous; the DOM render is
    * queued by the orchestrator). An unchanged text commits nothing.
+   * Returns where the block's text is in the body now (start, and the text
+   * committed or kept) and the anchor taken, for an insert that follows
+   * (INV-52); null when no editor was open.
    * @purity non-pure
+   * @returns {{start: number, text: string, anchor: object|null}|null}
    */
   _commitBlock() {
     // INV-46: the anchor is taken while the editor is still open, when the
@@ -945,16 +1086,26 @@ export default class BlockEditController {
     // preview (~20 ms on a 1 MB document).
     const open = this._editor;
     const anchor = open && open.blockId !== null ? this.scrollMemento.captureAnchor(open.wrapper) : undefined;
+    const model = this.orchestrator.getModel();
     const closed = this._closeEditor();
-    if (!closed || closed.text === closed.original) return;
+    if (!closed) return null;
+    const kept = {
+      start: !model ? 0 : closed.blockId === null ? model.toBody().length : model.startOffsetOf(closed.blockId),
+      text: closed.blockId === null ? "" : closed.original,
+      anchor: anchor ?? null,
+    };
+    if (closed.text === closed.original) return kept;
     const text = this._committedText(closed);
-    if (text === closed.original) return;
+    if (text === closed.original) return kept;
     if (closed.blockId === null) {
       // The empty first block of an empty document (INV-31, INV-49).
-      if (closed.text.trim() !== "") void this.orchestrator.insertAfter(null, closed.text);
-      return;
+      if (closed.text.trim() === "") return kept;
+      void this.orchestrator.insertAfter(null, closed.text);
+      // it went in at the end of the (blank) body
+      return { ...kept, start: this.orchestrator.getBody().length - closed.text.length, text: closed.text };
     }
     void this.orchestrator.commitBlock(closed.blockId, text, anchor);
+    return { ...kept, text };
   }
 
   /**

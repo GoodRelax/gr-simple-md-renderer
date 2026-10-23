@@ -398,16 +398,48 @@ export default class MarkdownBlockModel {
    * @param {string} raw
    * @param {(src: string) => object[]} lexer
    * @param {number} maxCells
-   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null}}
+   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null, insertedBlockId: number|null}}
    */
   insertAfter(blockId, raw, lexer, maxCells) {
-    const oldBody = this.toBody();
     const index = blockId === null ? -1 : this.findIndexById(blockId);
-    const offset = index < 0 ? oldBody.length : this._offsetOf(index + 1);
-    const edit = MarkdownTextOps.insertBlockText(oldBody, offset, raw);
+    const offset = index < 0 ? this.toBody().length : this._offsetOf(index + 1);
+    return this.insertAt(offset, raw, lexer, maxCells);
+  }
+
+  /**
+   * Insert a block at a body offset (a line end; inside a block it cuts
+   * that block in two), adding blank lines only where needed (INV-52).
+   * removeBefore characters right before the offset go in the same change
+   * (line end spaces that no longer break a line, INV-71 (6)).
+   * insertedBlockId: the inserted block. The anchor is the block at
+   * anchorOffset in the new model (the inserted block by default).
+   * @purity pure
+   * @param {number} offset
+   * @param {string} raw
+   * @param {(src: string) => object[]} lexer
+   * @param {number} maxCells
+   * @param {{anchorOffset?: number, removeBefore?: number}} [options]
+   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null, insertedBlockId: number|null}}
+   */
+  insertAt(offset, raw, lexer, maxCells, { anchorOffset = undefined, removeBefore = 0 } = {}) {
+    const body = this.toBody();
+    const at = offset - removeBefore;
+    const edit = MarkdownTextOps.insertBlockText(body.slice(0, at) + body.slice(offset), at, raw);
     const model = this._relex(edit.text, lexer, maxCells);
-    const insertedStart = edit.selEnd - raw.length;
-    return { model, isChanged: true, anchorBlockId: model._blockIdAt(insertedStart) };
+    const insertedBlockId = model._blockIdAt(edit.selEnd - raw.length);
+    const anchorBlockId = anchorOffset === undefined ? insertedBlockId : model._blockIdAt(anchorOffset);
+    return { model, isChanged: true, anchorBlockId, insertedBlockId };
+  }
+
+  /**
+   * The body offset where a block starts, or -1 for an unknown id.
+   * @purity pure
+   * @param {number} blockId
+   * @returns {number}
+   */
+  startOffsetOf(blockId) {
+    const index = this.findIndexById(blockId);
+    return index < 0 ? -1 : this._offsetOf(index);
   }
 
   // ---- internals (pure) ----

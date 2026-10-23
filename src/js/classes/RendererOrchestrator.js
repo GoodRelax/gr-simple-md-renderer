@@ -400,13 +400,41 @@ export default class RendererOrchestrator {
    * @purity non-pure
    */
   insertAfter(blockId, raw) {
+    return this.insertBlock(raw, { afterBlockId: blockId }).rendering;
+  }
+
+  /**
+   * Insert a block as one undoable change of its own (INV-48, INV-52):
+   * after a block (afterBlockId; null or unknown: at the end; that block
+   * keeps its place on screen), or at a body offset (a line boundary; inside
+   * a block it cuts the block in two). With an offset, scroll is the anchor
+   * the caller measured and the block at anchorOffset in the new model keeps
+   * that place (INV-46); without scroll, no anchor is taken. removeBefore:
+   * characters right before the offset that go in the same change.
+   * @param {string} raw
+   * @param {{afterBlockId: number|null}|{offset: number, scroll?: object|null, anchorOffset?: number, removeBefore?: number}} at
+   * @returns {{rendering: Promise<void>, blockId: number|null}} blockId: the new block
+   * @purity non-pure
+   */
+  insertBlock(raw, at) {
     const model = this._currentModel;
-    if (!model) return Promise.resolve();
-    const known = blockId !== null && model.findIndexById(blockId) >= 0;
-    const scroll = known ? this._capture(this.markdownRenderer.getBlockElement(blockId)) : null;
-    const change = model.insertAfter(known ? blockId : null, raw, this._lexer, CONFIG.edit.diffMaxCells);
+    if (!model) return { rendering: Promise.resolve(), blockId: null };
+    const maxCells = CONFIG.edit.diffMaxCells;
+    let change;
+    let scroll;
+    let anchorBlockId;
+    if ("afterBlockId" in at) {
+      const known = at.afterBlockId !== null && model.findIndexById(at.afterBlockId) >= 0;
+      scroll = known ? this._capture(this.markdownRenderer.getBlockElement(at.afterBlockId)) : null;
+      change = model.insertAfter(known ? at.afterBlockId : null, raw, this._lexer, maxCells);
+      anchorBlockId = known ? at.afterBlockId : change.anchorBlockId;
+    } else {
+      scroll = at.scroll ?? null;
+      change = model.insertAt(at.offset, raw, this._lexer, maxCells, { anchorOffset: at.anchorOffset, removeBefore: at.removeBefore ?? 0 });
+      anchorBlockId = change.anchorBlockId;
+    }
     this._previousModel = model;
-    return this._applyChange(change, scroll, known ? blockId : change.anchorBlockId);
+    return { rendering: this._applyChange(change, scroll, anchorBlockId), blockId: change.insertedBlockId };
   }
 
   /**

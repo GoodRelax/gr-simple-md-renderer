@@ -603,3 +603,45 @@ describe("AT-ORC-R keepReadingPosition (5.1, PRT-X08, INV-46)", () => {
     for (const [anchor] of restores) expect(anchor).toEqual({ offsetTop: measured - 22 });
   });
 });
+
+describe("RendererOrchestrator.insertBlock (INV-52, request 1)", () => {
+  beforeEach(() => {
+    vi.mocked(waitForDOMStability).mockResolvedValue(true);
+  });
+
+  it("AT-ORC-25 insertBlock at an offset is one change of its own: Undo takes only the block away", async () => {
+    const t = await loaded("Line one\nLine two\n\nZ\n");
+    await t.orchestrator.commitBlock(t.idOf("Line one\nLine two"), "Line ONE\nLine two");
+    const committed = t.orchestrator.getBody();
+    const { rendering, blockId } = t.orchestrator.insertBlock("T", { offset: 8 });
+    expect(t.orchestrator.getBody()).toBe("Line ONE\n\nT\n\nLine two\n\nZ\n"); // synchronous (INV-47)
+    await rendering;
+    const inserted = t.orchestrator.getModel().getBlocks().find((b) => b.raw.startsWith("T"));
+    expect(blockId).toBe(inserted.id);
+    await t.orchestrator.undoLastCommit();
+    expect(t.orchestrator.getBody()).toBe(committed);
+    expect(t.orchestrator.canUndo()).toBe(false);
+  });
+
+  it("AT-ORC-26 insertBlock with a scroll anchor: the block at anchorOffset keeps its place (INV-46)", async () => {
+    const t = await loaded("Line one\nLine two\n\nZ\n");
+    const scroll = { offsetTop: 42 };
+    const { rendering } = t.orchestrator.insertBlock("T", { offset: 8, scroll, anchorOffset: 0, removeBefore: 0 });
+    await rendering;
+    const upper = t.orchestrator.getModel().getBlocks()[0];
+    expect(upper.raw).toBe("Line one");
+    const restores = t.scrollManager.restoreAnchor.mock.calls.filter((c) => c[1] === t.elements.get(upper.id));
+    expect(restores.length).toBeGreaterThan(0);
+    for (const [anchor] of restores) expect(anchor).toBe(scroll);
+  });
+
+  it("AT-ORC-27 insertBlock after a block is insertAfter, and tells the new block's id", async () => {
+    const t = await loaded();
+    const { rendering, blockId } = t.orchestrator.insertBlock("T", { afterBlockId: t.idOf("A") });
+    await rendering;
+    expect(t.orchestrator.getBody()).toBe("A\n\nT\n\nB\n\nC\n");
+    expect(t.orchestrator.getModel().getBlocks()[1].id).toBe(blockId);
+    const none = setup().orchestrator.insertBlock("T", { afterBlockId: null });
+    expect(none.blockId).toBeNull();
+  });
+});

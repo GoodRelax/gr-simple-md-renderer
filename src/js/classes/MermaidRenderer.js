@@ -1,4 +1,5 @@
 import DiagramRenderer from "./DiagramRenderer.js";
+import { CONFIG } from "../config.js";
 import { replaceCodeBlock, queryAllIn } from "../utils.js";
 
 export default class MermaidRenderer extends DiagramRenderer {
@@ -82,8 +83,7 @@ export default class MermaidRenderer extends DiagramRenderer {
     const container = document.createElement("div");
     container.className = "mermaid";
     container.textContent = block.textContent;
-    container.title =
-      "Ctrl+Scroll: zoom | Double-click: reset | Drag: pan";
+    container.title = CONFIG.messages.diagram.tooltip;
 
     replaceCodeBlock(block, container);
     return container;

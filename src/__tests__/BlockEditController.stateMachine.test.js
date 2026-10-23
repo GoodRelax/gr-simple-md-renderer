@@ -6,12 +6,14 @@ vi.mock("../js/utils.js", async () => {
 });
 
 import { blockEditStateMachine } from "../js/classes/BlockEditController.js";
+import { CONFIG } from "../js/config.js";
 import { setupEdit, flush } from "./helpers/editStack.js";
 import { diagramTransitions, tableTransitions } from "./helpers/specDiagram.js";
 import { pointer, tap, keydown } from "./helpers/editDom.js";
 
-// Spec 11-c: every cell of the 25 x 4 table (AT-BSM-01..18 and AT-BSM-19..25
-// for the table cells; 15 is the definition check). The state is judged
+// Spec 11-c: every cell of the 27 x 4 table (AT-BSM-01..18, AT-BSM-19..25
+// for the table cells, AT-BSM-26..27 for the inserts; 15 is the definition
+// check). The state is judged
 // from outside only:
 //   browsingPreview = a tap on a block opens nothing
 //   editModeIdle    = not editing, and a tap on a block opens it
@@ -70,6 +72,7 @@ function spyAll() {
     commitBlock: vi.spyOn(s.orchestrator, "commitBlock"),
     replaceTableBlock: vi.spyOn(s.orchestrator, "replaceTableBlock"),
     insertAfter: vi.spyOn(s.orchestrator, "insertAfter"),
+    insertBlock: vi.spyOn(s.orchestrator, "insertBlock"),
     startEmptyDocument: vi.spyOn(s.orchestrator, "startEmptyDocument"),
     replaceBlocks: vi.spyOn(s.markdownRenderer, "replaceBlocks"),
     undoLastCommit: vi.spyOn(s.orchestrator, "undoLastCommit"),
@@ -136,6 +139,8 @@ const TARGETS = {
   tableSourceTappedWithUnrenderedEditor: () => ({ kind: "tableSource", id: tableBlock().block.id }),
   otherBlockTapped: () => ({ kind: "block", id: s.block((b) => b.raw.startsWith("Second")).block.id }),
   tableOperationRequested: () => ({ op: { kind: "insertRow" } }),
+  blockInsertRequested: () => ({ kind: "insert", raw: CONFIG.edit.tableTemplate, opens: "cell" }),
+  insertedBlockRendered: () => ({ ...cellTarget(0, 0), selectAll: true }),
 };
 
 // Expected cells: [next state or null for "-", side effects (sorted)].
@@ -175,6 +180,10 @@ const TABLE = {
   undoRequested: { [B]: null, [I]: [I, ["undoLastCommit"]], [E]: [I, []], [C]: [I, []] },
   // no target: [else] -> editModeIdle / clearSelection, showPalette
   previewDoubleClicked: { [B]: [I, ["showPalette"]], [I]: null, [E]: null, [C]: null },
+  // judged before the render: the insertedBlockRendered after it is AT-BSM-27
+  blockInsertRequested: { [B]: null, [I]: [I, ["insertBlock"]], [E]: [I, ["commitBlock", "insertBlock"]], [C]: null },
+  // [isCellEditableTable]
+  insertedBlockRendered: { [B]: null, [I]: [C, []], [E]: null, [C]: null },
 };
 
 const IDS = {
@@ -203,15 +212,17 @@ const IDS = {
   previousCellRequested: "AT-BSM-23",
   cellBelowRequested: "AT-BSM-24",
   tableOperationRequested: "AT-BSM-25",
+  blockInsertRequested: "AT-BSM-26",
+  insertedBlockRendered: "AT-BSM-27",
 };
 
 const CELLS = Object.entries(TABLE).flatMap(([event, row]) =>
   STATES.map((state) => [IDS[event], event, state, row[state]]),
 );
 
-describe("AT-BSM 11-c block edit state machine: all 100 cells", () => {
-  it("covers 25 events x 4 states", () => {
-    expect(CELLS).toHaveLength(100);
+describe("AT-BSM 11-c block edit state machine: all 108 cells", () => {
+  it("covers 27 events x 4 states", () => {
+    expect(CELLS).toHaveLength(108);
   });
 
   it.each(CELLS)("%s %s in %s", async (_id, event, state, cell) => {
@@ -220,7 +231,7 @@ describe("AT-BSM 11-c block edit state machine: all 100 cells", () => {
     const body = s.orchestrator.getBody();
     const stimulus = DOM_STIMULI[event]?.[state];
     const ret = stimulus ? stimulus() : s.bec.dispatch(event, TARGETS[event]?.() ?? null);
-    await ret;
+    if (event !== "blockInsertRequested") await ret;
     if (event === "emptyDocumentStarted") await flush();
 
     if (cell === null) {
@@ -233,6 +244,7 @@ describe("AT-BSM 11-c block edit state machine: all 100 cells", () => {
     const [next, effects] = cell;
     expect(calledNames(spies).filter((n) => !["insertAfter", "replaceBlocks", "onEditorInput"].includes(n))).toEqual(effects);
     expect(observedState()).toBe(next);
+    await ret;
   });
 });
 
@@ -269,6 +281,17 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the spec", () =
       [C, "hasCellBelow&&canKeepTableId", ["commitCell", "moveToCell", "openCell"]],
       [I, "hasCellBelow", ["commitCell", "endTableSession", "showTableEditEndedToast"]],
       [I, "else", ["commitCell", "endTableSession"]],
+    ]);
+    const ins = blockEditStateMachine.blockInsertRequested[E];
+    expect(ins.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+      [I, "canInsertBlock", ["commitBlock", "insertBlock"]],
+      [E, "else", ["showInsertRefusedToast"]],
+    ]);
+    const shown = blockEditStateMachine.insertedBlockRendered[I];
+    expect(shown.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+      [C, "isCellEditableTable", ["startTableSession", "openCell"]],
+      [E, "isCellTarget", ["openTableSourceWithToast"]],
+      [E, "else", ["openBlockEditor"]],
     ]);
     const op = blockEditStateMachine.tableOperationRequested[C];
     expect(op.map((c) => [c.to, c.guard, c.actions])).toEqual([
@@ -443,8 +466,8 @@ describe("AT-BSM cell details", () => {
 });
 
 describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () => {
-  it("has the same 25 events, and the same next state in all 100 cells (the first alternative of a choice)", () => {
-    expect(Object.keys(TABLE)).toHaveLength(25);
+  it("has the same 27 events, and the same next state in all 108 cells (the first alternative of a choice)", () => {
+    expect(Object.keys(TABLE)).toHaveLength(27);
     expect(Object.keys(blockEditStateMachine).sort()).toEqual(Object.keys(TABLE).sort());
     for (const [event, row] of Object.entries(TABLE)) {
       for (const state of STATES) {
@@ -483,5 +506,118 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () 
     expect(act("pointerPressedOutside", E)).toEqual(["commitBlock"]);
     expect(act("saveRequested", E)).toEqual(["commitBlock"]);
     expect(act("saveAsRequested", E)).toEqual(["commitBlock"]);
+  });
+});
+
+describe("AT-BSM-26 / 27 inserts (INV-52)", () => {
+  const insertTable = () => ({ kind: "insert", raw: CONFIG.edit.tableTemplate, opens: "cell" });
+
+  it("AT-BSM-26 refused in a code block: the editor stays open with its text, a toast, no change", async () => {
+    s = await setupEdit("```js\nconst a = 1;\n```\n", { editMode: true });
+    tap(s.block((b) => b.type === "code").el.firstElementChild);
+    const ta = s.editor();
+    ta.setSelectionRange(8, 8);
+    const ret = s.bec.dispatch("blockInsertRequested", insertTable());
+    expect(ret).toBeUndefined();
+    expect(s.host.showToast).toHaveBeenCalledWith(CONFIG.messages.edit.insertNotPossible);
+    expect(s.editor()).toBe(ta);
+    expect(s.orchestrator.getBody()).toBe("```js\nconst a = 1;\n```\n");
+  });
+
+  it("AT-BSM-26 the commit and the insert are two changes; the table cuts the edited paragraph", async () => {
+    s = await setupEdit("Para.\n", { editMode: true });
+    tap(s.block((b) => b.raw.startsWith("Para")).el.firstElementChild);
+    s.editor().value = "Line one\nLine two";
+    s.editor().setSelectionRange(4, 4);
+    const commit = vi.spyOn(s.orchestrator, "commitBlock");
+    const insert = vi.spyOn(s.orchestrator, "insertBlock");
+    await s.bec.dispatch("blockInsertRequested", insertTable());
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(s.orchestrator.getBody()).toBe(`Line one\n\n${CONFIG.edit.tableTemplate}\n\nLine two\n`);
+    expect(s.bec.isEditingCell()).toBe(true);
+  });
+
+  it("AT-BSM-27 not opened when another tap came before the render (the tapped block stays open)", async () => {
+    s = await setupEdit(DOC, { editMode: true });
+    const opening = s.bec.dispatch("blockInsertRequested", insertTable());
+    tapSecond();
+    await opening;
+    expect(s.bec.isEditingCell()).toBe(false);
+    expect(s.editor().value).toBe("Second para.");
+  });
+
+  it("AT-BSM-27 not opened when the model changed before the render (an Undo)", async () => {
+    s = await setupEdit(DOC, { editMode: true });
+    const opening = s.bec.dispatch("blockInsertRequested", insertTable());
+    s.bec.dispatch("undoRequested");
+    await opening;
+    expect(s.bec.isEditing()).toBe(false);
+    expect(s.orchestrator.getBody()).toBe(DOC);
+  });
+
+  it("AT-BSM-27 a Mermaid sample opens its source, the caret at the end of the diagram's first line, scrolled into view the least", async () => {
+    s = await setupEdit(DOC, { editMode: true });
+    const reveal = vi.spyOn(s.scrollMemento, "reveal");
+    await s.bec.dispatch("blockInsertRequested", { kind: "insert", raw: CONFIG.edit.mermaidSamples.state, opens: "source" });
+    const ta = s.editor();
+    expect(ta.value).toBe(CONFIG.edit.mermaidSamples.state);
+    const end = "```mermaid\nstateDiagram-v2".length;
+    expect([ta.selectionStart, ta.selectionEnd]).toEqual([end, end]);
+    expect(reveal).toHaveBeenCalledWith(ta);
+  });
+});
+
+describe("AT-BSM-26 / 27 inserts after the first review", () => {
+  const insertTable = () => ({ kind: "insert", raw: CONFIG.edit.tableTemplate, opens: "cell" });
+
+  it("AT-BSM-26 the inserted block is the last opened one at once (review L5), and an insert is pending until it opens (D5)", async () => {
+    s = await setupEdit(DOC, { editMode: true });
+    expect(s.bec.isInsertPending()).toBe(false);
+    const opening = s.bec.dispatch("blockInsertRequested", insertTable());
+    const table = s.orchestrator.getModel().getBlocks().find((b) => b.raw.startsWith("| Col1"));
+    expect(s.bec.getLastOpenedBlockId()).toBe(table.id);
+    expect(s.bec.isInsertPending()).toBe(true);
+    await opening;
+    expect(s.bec.isInsertPending()).toBe(false);
+    expect(s.bec.isEditingCell()).toBe(true);
+  });
+
+  it("AT-BSM-26 a cut drops the line end spaces that no longer make a line break; Undo brings them back (review L4)", async () => {
+    s = await setupEdit("Para.\n", { editMode: true });
+    tap(s.block((b) => b.raw.startsWith("Para")).el.firstElementChild);
+    s.editor().value = "x  \ny";
+    s.editor().setSelectionRange(1, 1);
+    await s.bec.dispatch("blockInsertRequested", insertTable());
+    expect(s.orchestrator.getBody()).toBe(`x\n\n${CONFIG.edit.tableTemplate}\n\ny\n`);
+    s.bec.dispatch("escapePressed");
+    s.bec.dispatch("undoRequested");
+    expect(s.orchestrator.getBody()).toBe("x  \ny\n");
+  });
+
+  it("AT-BSM-27 the block to open is not of the inserted kind (a whole-document model): nothing opens (review L2)", async () => {
+    s = await setupEdit(DOC, { editMode: true });
+    const para = s.block((b) => b.raw.startsWith("Hello")).block;
+    vi.spyOn(s.orchestrator, "insertBlock").mockReturnValue({ rendering: Promise.resolve(), blockId: para.id });
+    const reveal = vi.spyOn(s.scrollMemento, "reveal");
+    await s.bec.dispatch("blockInsertRequested", insertTable());
+    expect(s.bec.isEditing()).toBe(false);
+    expect(s.host.showToast).not.toHaveBeenCalled();
+    expect(reveal).not.toHaveBeenCalled();
+    expect(s.bec.isInsertPending()).toBe(false);
+  });
+});
+
+describe("AT-BSM-26 a huge paragraph (re-check N2)", () => {
+  it("over CONFIG.edit.invisibleMarkMaxChars no inline lexing runs, and the paragraph is cut by line", async () => {
+    s = await setupEdit("Para.\n", { editMode: true });
+    tap(s.block((b) => b.raw.startsWith("Para")).el.firstElementChild);
+    const tail = "x".repeat(CONFIG.edit.invisibleMarkMaxChars);
+    s.editor().value = `alpha **beta\ngamma** ${tail}`;
+    s.editor().setSelectionRange(3, 3);
+    const inline = vi.spyOn(s.markdownRenderer, "lexInline");
+    s.bec.dispatch("blockInsertRequested", { kind: "insert", raw: CONFIG.edit.tableTemplate, opens: "cell" });
+    expect(inline).not.toHaveBeenCalled();
+    expect(s.orchestrator.getBody().startsWith(`alpha **beta\n\n${CONFIG.edit.tableTemplate}\n\ngamma** x`)).toBe(true);
   });
 });

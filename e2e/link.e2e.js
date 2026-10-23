@@ -102,7 +102,7 @@ test("the Paste link button reads the clipboard when pressed; its HTML gives the
   await paragraph(page).click();
   await editor(page).evaluate((ta) => ta.setSelectionRange(0, 0));
   await page.locator("#paletteFormat").click();
-  await page.locator('button[aria-label="Paste link from clipboard"]').click();
+  await page.locator('button[aria-label="Paste copied link"]').click();
   await expect(editor(page)).toHaveValue("[Example site](https://example.com/)See the example here.");
   expect(await page.evaluate(() => window.__e2eClipboardReads)).toBe(1);
   expect(await editor(page).evaluate((ta) => ta.value.slice(ta.selectionStart, ta.selectionEnd))).toBe("Example site");

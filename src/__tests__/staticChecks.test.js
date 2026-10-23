@@ -156,7 +156,122 @@ describe("AT-STA static checks of src/js", () => {
       expect(src, rel(f)).not.toMatch(/["']contenteditable["']/i);
     }
   });
+
+  it("AT-STA-15 the check below finds prose and skips code, console.* and errors", () => {
+    const found = (src) => proseLiterals(src).map((p) => p.text);
+    expect(found('el.title = "Copy SVG";')).toEqual(["Copy SVG"]);
+    expect(found('t("This format cannot be applied here.");')).toEqual(["This format cannot be applied here."]);
+    expect(found("const s = `${n} lines`;")).toEqual([]);
+    expect(found("const s = `Updated: ${when}`;")).toEqual(["Updated: X"]);
+    expect(found('x.label = `Bold (${mod}+B)`;')).toEqual(["Bold (X+B)"]);
+    expect(found('btn.textContent = "Copied!";')).toEqual(["Copied!"]);
+    expect(found('console.error("SVG copy failed:", err);')).toEqual([]);
+    expect(found('throw new Error("Bad state.");')).toEqual([]);
+    expect(found('reject(new TypeError("Not a file."));')).toEqual([]);
+    expect(found('q("code.language-plantuml, code.language-puml");')).toEqual([]);
+    expect(found('const a = \'fill="none" stroke="currentColor"\';')).toEqual([]);
+    expect(found('const a = \'<svg viewBox="0 0 24 24"><path d="M4 6h16"/></svg>\';')).toEqual([]);
+    expect(found('const h = `<pre style="color:red;">Parse Error: ${m}</pre>`;')).toEqual(['<pre style="color:red;">Parse Error: X</pre>']);
+    expect(found('const d = "5.0,3.0,f.0,nw.1,3.";')).toEqual([]);
+    expect(found('if (e.key === "ArrowUp") go(" ");')).toEqual([]);
+    expect(found('import x from "./A b.js";')).toEqual([]);
+    // one word put where the user sees it (strict review L3)
+    expect(found('btn.textContent = "Failed";')).toEqual(["Failed"]);
+    expect(found('tab.innerText = "Markdown";')).toEqual(["Markdown"]);
+    expect(found('img.alt = "Diagram";')).toEqual(["Diagram"]);
+    expect(found('b.setAttribute("aria-label", "Bold");')).toEqual(["Bold"]);
+    expect(found('b.setAttribute("title", `${mod}+B`);')).toEqual(["X+B"]);
+    expect(found('showToast("Saved", 3000);')).toEqual(["Saved"]);
+    expect(found('window.confirm("Sure");')).toEqual(["Sure"]);
+    expect(found('alert("Oops");')).toEqual(["Oops"]);
+    expect(found('el.textContent = "";')).toEqual([]);
+    expect(found('el.textContent = "\\u00a0";')).toEqual([]);
+    expect(found('el.textContent = label;')).toEqual([]);
+    expect(found('el.setAttribute("data-kind", "table");')).toEqual([]);
+  });
+
+  it("AT-STA-15 no user-visible English text in src/js outside config.js (R15: all UI strings in CONFIG)", () => {
+    const left = [];
+    for (const f of FILES) {
+      if (rel(f) === "config.js") continue;
+      for (const { text, line } of proseLiterals(read(f))) left.push(`${rel(f)}:${line} ${JSON.stringify(text)}`);
+    }
+    expect(left).toEqual([]);
+  });
 });
+
+/**
+ * String and template literals of a JS source that read like UI text: the
+ * text (HTML tags removed, a template's ${...} read as "X") ends a sentence
+ * (a word of 2+ letters, then . ? !, as in "Copied!" or "... here."), or
+ * holds a space and starts like a word (uppercase, then lowercase, as in
+ * "Copy SVG"). Code-like strings (selectors, attribute lists, SVG markup,
+ * key names, packed data) do neither. Also, whatever its form (one word
+ * too), a literal with a letter put where the user sees it: assigned to
+ * textContent / innerText / title / alt / placeholder / label, set as the
+ * aria-label / title / alt / placeholder attribute, or passed to
+ * showToast / alert / confirm (strict review L3). Skipped: console.* calls,
+ * thrown or constructed errors (developer text) and import / export
+ * sources. Comments are not literals, so they never match.
+ * @param {string} src
+ * @returns {{text: string, line: number}[]}
+ */
+function proseLiterals(src) {
+  const out = [];
+  const lineOf = (pos) => src.slice(0, pos).split("\n").length;
+  const isProse = (text) => {
+    const t = text.replace(/<[^>]*>/g, " ").trim();
+    if (/[A-Za-z]{2}[.?!]$/.test(t)) return true;
+    return /\s/.test(t) && /^[A-Z][a-z]/.test(t);
+  };
+  const isErrorCtor = (node) => node.callee?.type === "Identifier" && /Error$/.test(node.callee.name);
+  const textOf = (node) => {
+    if (node?.type === "Literal" && typeof node.value === "string") return node.value;
+    if (node?.type === "TemplateLiteral") return node.quasis.map((q) => q.value.cooked ?? q.value.raw).join("X");
+    return null;
+  };
+  const SHOWN_PROPS = new Set(["textContent", "innerText", "title", "alt", "placeholder", "label"]);
+  const SHOWN_ATTRS = new Set(["aria-label", "title", "alt", "placeholder"]);
+  const SHOWING_CALLS = new Set(["showToast", "alert", "confirm"]);
+  const calleeName = (callee) => (callee.type === "Identifier" ? callee.name : callee.type === "MemberExpression" ? callee.property.name : null);
+  // the literal a node puts where the user sees it, or null
+  const shownLiteral = (node) => {
+    if (node.type === "AssignmentExpression" && node.left.type === "MemberExpression" && SHOWN_PROPS.has(node.left.property.name)) return node.right;
+    if (node.type !== "CallExpression") return null;
+    const name = calleeName(node.callee);
+    if (name === "setAttribute" && SHOWN_ATTRS.has(textOf(node.arguments[0]))) return node.arguments[1];
+    return SHOWING_CALLS.has(name) ? node.arguments[0] : null;
+  };
+  const seen = new Set(); // literals already reported by the sink rule
+  const visit = (node) => {
+    if (!node || typeof node.type !== "string") return;
+    if (node.type === "ImportDeclaration" || node.type === "ExportAllDeclaration" || node.type === "ThrowStatement") return;
+    if (node.type === "ExportNamedDeclaration" && node.source) return;
+    if (node.type === "ImportExpression") return;
+    if (node.type === "NewExpression" && isErrorCtor(node)) return;
+    if (node.type === "CallExpression" && (isErrorCtor(node) || (node.callee.type === "MemberExpression" && node.callee.object.type === "Identifier" && node.callee.object.name === "console"))) return;
+    const shown = shownLiteral(node);
+    const shownText = shown ? textOf(shown) : null;
+    if (shownText !== null && /[A-Za-z]/.test(shownText) && !isProse(shownText)) {
+      out.push({ text: shownText, line: lineOf(shown.start) });
+      seen.add(shown);
+    }
+    if (node.type === "Literal" && typeof node.value === "string" && !seen.has(node) && isProse(node.value)) {
+      out.push({ text: node.value, line: lineOf(node.start) });
+    }
+    if (node.type === "TemplateLiteral" && !seen.has(node)) {
+      const text = node.quasis.map((q) => q.value.cooked ?? q.value.raw).join("X");
+      if (isProse(text)) out.push({ text, line: lineOf(node.start) });
+    }
+    for (const key of Object.keys(node)) {
+      const value = node[key];
+      if (Array.isArray(value)) value.forEach(visit);
+      else if (value && typeof value === "object" && typeof value.type === "string") visit(value);
+    }
+  };
+  visit(parseAst(src));
+  return out;
+}
 
 // ---- style.css (AT-PAL-27 and the editing rules; the look itself is PRT-V) ----
 
@@ -281,6 +396,22 @@ describe("style.css for in-place editing", () => {
     expect(withUrl("@media screen {\n  .dark .edit-palette {\n    background-image: URL(x);\n  }\n}")).toEqual([".dark .edit-palette"]);
     expect(withUrl(".other {\n  background: url(x.png);\n}")).toEqual([]);
     expect(withUrl(css)).toEqual([]);
+  });
+});
+
+describe("style.css: toasts (R11)", () => {
+  it("AT-STA-16 a toast wraps inside the screen; the container is never wider than the screen", () => {
+    const toast = ruleBody(css, ".toast");
+    expect(toast).not.toMatch(/white-space:\s*nowrap/);
+    expect(toast).toMatch(/white-space:\s*normal/);
+    expect(toast).toMatch(/max-width:\s*calc\(100vw - 32px\)/);
+    expect(toast).toMatch(/text-align:\s*center/);
+    // the screen rule (the print rule only hides it)
+    const container = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter((m) => m[1].trim() === "#toastContainer" && /position:\s*fixed/.test(m[2]))
+      .map((m) => m[2]);
+    expect(container).toHaveLength(1);
+    expect(container[0]).toMatch(/max-width:\s*calc\(100vw - 32px\)/);
   });
 });
 

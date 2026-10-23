@@ -107,7 +107,7 @@ export default class ExternalImageGate {
   constructor(preview) {
     this.preview = preview;
     this._granted = false;
-    /** @type {WeakMap<HTMLElement, {img: HTMLImageElement, hosts: string[]}>} */
+    /** @type {WeakMap<HTMLElement, {img: HTMLImageElement}>} */
     this._held = new WeakMap();
 
     /** @purity non-pure */
@@ -215,12 +215,8 @@ export default class ExternalImageGate {
     ];
     if (placeholders.length === 0) return false;
 
-    const hosts = [
-      ...new Set(placeholders.flatMap((p) => this._held.get(p)?.hosts ?? [])),
-    ];
-    if (!window.confirm(this._consentMessage(placeholders.length, hosts))) {
-      return false;
-    }
+    // One fixed sentence (R14); the placeholders name the hosts.
+    if (!window.confirm(CONFIG.messages.externalImage.consent)) return false;
 
     this._granted = true;
     /** @purity non-pure */
@@ -301,29 +297,8 @@ export default class ExternalImageGate {
     );
     placeholder.title = CONFIG.messages.externalImage.placeholderTitle;
 
-    this._held.set(placeholder, { img, hosts });
+    this._held.set(placeholder, { img });
     return placeholder;
-  }
-
-  /**
-   * @param {number} count
-   * @param {string[]} hosts
-   * @returns {string}
-   * @purity semi-pure-a
-   */
-  _consentMessage(count, hosts) {
-    const max = CONFIG.externalImage.maxHostsInDialog;
-    const shown = hosts.slice(0, max).map((h) => `  ${h}`);
-    if (hosts.length > max) shown.push(`  ... and ${hosts.length - max} more`);
-    return (
-      `Security & Privacy Warning\n\n` +
-      `This document has ${count} external image(s) from:\n` +
-      `${shown.join("\n")}\n\n` +
-      `Loading them sends your IP address to these servers and tells them ` +
-      `that this document was opened.\n\n` +
-      `[OK]: load external images (until [Clear] or a new file drop)\n\n` +
-      `[Cancel]: keep the placeholders`
-    );
   }
 
   /**

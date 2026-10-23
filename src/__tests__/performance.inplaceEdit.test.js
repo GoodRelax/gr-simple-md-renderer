@@ -168,7 +168,7 @@ describe("AT-PERF-08 a table session never makes the whole table's HTML inside a
 });
 
 // Timing checks: only with GRSMD_PERF=1 (they depend on the machine; R6.1, Q8).
-describe.runIf(PERF)("AT-PERF-02..07 and 09 timing (GRSMD_PERF=1 only)", () => {
+describe.runIf(PERF)("AT-PERF-02..07, 09 and 10 timing (GRSMD_PERF=1 only)", () => {
   const PERF_TIMEOUT_MS = 60000;
 
   afterEach(() => {
@@ -304,6 +304,29 @@ describe.runIf(PERF)("AT-PERF-02..07 and 09 timing (GRSMD_PERF=1 only)", () => {
     // (e2e/tableCell.e2e.js, PRT-X23); here its count of HTML runs is fixed
     // (AT-PERF-01).
     for (const ms of [open, commit, format]) expect(ms).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
+    s.teardown();
+  }, PERF_TIMEOUT_MS);
+
+  it("AT-PERF-10 1 MB (INV-51, INV-52): Insert table in an open paragraph, from the press to the open Col1, median of 5 <= commitBudgetMs", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const s = await setupEdit(makeOneMegabyteDoc());
+    const times = [];
+    for (let i = 0; i < 5; i++) {
+      const paras = s.orchestrator.getModel().getBlocks().filter((b) => b.type === "paragraph" && b.raw.includes("\n"));
+      const p = paras[Math.floor(((i + 1) * paras.length) / 6)];
+      tap(s.markdownRenderer.getBlockElement(p.id).firstElementChild);
+      const ta = s.preview.querySelector("textarea.md-block-editor");
+      ta.value = ta.value.replace(/\w+/, `Changed${i}`);
+      ta.setSelectionRange(2, 2);
+      const t0 = performance.now();
+      await s.bec.dispatch("blockInsertRequested", { kind: "insert", raw: CONFIG.edit.tableTemplate, opens: "cell" });
+      times.push(performance.now() - t0);
+      expect(s.bec.isEditingCell()).toBe(true);
+      s.bec.dispatch("escapePressed");
+    }
+    times.sort((a, b) => a - b);
+    console.log(`AT-PERF-10 times (ms): ${times.map((t) => t.toFixed(1)).join(", ")}`);
+    expect(times[2]).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
     s.teardown();
   }, PERF_TIMEOUT_MS);
 

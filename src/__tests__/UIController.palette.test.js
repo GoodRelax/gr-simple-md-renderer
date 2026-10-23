@@ -355,14 +355,154 @@ describe("AT-UI-35 Undo", () => {
 });
 
 describe("AT-UI-36 / 37 Insert table and Mermaid samples", () => {
-  it("while editing: only the editor text changes; the undo record is unchanged", async () => {
+  const T = CONFIG.edit.tableTemplate;
+  const selectedText = () => window.getSelection().toString();
+  const openCellEl = () => app.preview.querySelector(".grsmd-cell-editing");
+
+  it("AT-UI-36a while editing: the editor is committed, the block is cut at the caret line, the table's Col1 opens selected", async () => {
+    await withDocument();
+    const ta = open(isPara("Second"));
+    typeInBlock(ta, "Line one\nLine two");
+    await selectInEditor(ta, 4, 4); // Line| one
+    press(btn("paletteTable"));
+    expect(app.blockEditor()).toBeNull(); // committed (synchronously)
+    expect(app.orchestrator.getBody()).toContain(`Line one\n\n${T}\n\nLine two`);
+    await settle();
+    expect(app.ui.blockEdit.isEditingCell()).toBe(true);
+    expect(app.ui.blockEdit.cellState()).toMatchObject({ row: 0, col: 0 });
+    expect(openCellEl().textContent).toBe("Col1");
+    expect(selectedText()).toBe("Col1");
+  });
+
+  it("AT-UI-36b Undo once takes only the table away; the committed edit stays (two changes, INV-48)", async () => {
+    await withDocument();
+    const ta = open(isPara("Second"));
+    typeInBlock(ta, "Line one\nLine two");
+    await selectInEditor(ta, 4, 4);
+    press(btn("paletteTable"));
+    await settle();
+    keydown(openCellEl(), "Escape");
+    press(btn("paletteUndo"));
+    await settle();
+    expect(app.orchestrator.getBody()).toBe(DOC.replace("Second para.", "Line one\nLine two"));
+    expect(app.orchestrator.canUndo()).toBe(false);
+  });
+
+  it.each([
+    ["a code block", "```js\nconst a = 1;\n```", 12],
+    ["code in a list item", "- step\n  ```sh\n  npm run\n  ```", 20],
+  ])("AT-UI-36c refused in %s: a toast, the editor stays open, nothing changes", async (_n, text, caret) => {
+    await withDocument();
+    const ta = open(isPara("Second"));
+    typeInBlock(ta, text);
+    await selectInEditor(ta, caret, caret);
+    press(btn("paletteTable"));
+    expect(showToast).toHaveBeenCalledWith(M.insertNotPossible, TOAST_MS);
+    expect(app.blockEditor()).toBe(ta);
+    expect(ta.value).toBe(text);
+    expect(app.orchestrator.getBody()).toBe(DOC);
+    await settle();
+    expect(app.ui.blockEdit.isEditingCell()).toBe(false);
+  });
+
+  it("AT-UI-36d the table's source editor refuses too (Insert table stays on there, INV-35)", async () => {
+    await withDocument();
+    const ta = open((b) => b.type === "table");
+    expect(off(btn("paletteTable"))).toBe(false);
+    press(btn("paletteTable"));
+    expect(showToast).toHaveBeenCalledWith(M.insertNotPossible, TOAST_MS);
+    expect(app.blockEditor()).toBe(ta);
+  });
+
+  it("AT-UI-36e an empty document: the table takes the empty block's place and Col1 opens", async () => {
+    app = await setupApp({ fileAccess: fakeFileAccess() });
+    keydown(document.body, "e"); // Edit with an empty #editor: the empty block's editor (INV-31)
+    await settle();
+    expect(app.blockEditor()).not.toBeNull();
+    press(btn("paletteTable"));
+    await settle();
+    expect(app.orchestrator.getBody()).toBe(T);
+    expect(app.ui.blockEdit.isEditingCell()).toBe(true);
+    expect(selectedText()).toBe("Col1");
+  });
+
+  it("AT-UI-36f not editing: the table goes after the last opened block and its Col1 opens after the render", async () => {
+    await withDocument();
+    const ta = open(isPara("Hello"));
+    keydown(ta, "Escape");
+    press(btn("paletteTable"));
+    expect(app.ui.blockEdit.isEditingCell()).toBe(false); // not before the render
+    await settle();
+    expect(app.ui.blockEdit.isEditingCell()).toBe(true);
+    expect(selectedText()).toBe("Col1");
+  });
+
+  it("AT-UI-36h keys typed before Col1 opens are not page shortcuts (owner ruling D5)", async () => {
+    await withDocument();
+    const ta = open(isPara("Second"));
+    await selectInEditor(ta, 3, 3);
+    const openTab = vi.spyOn(window, "open").mockReturnValue(null);
+    const clear = vi.spyOn(app.ui, "doClear");
+    const render = vi.spyOn(app.ui, "handleRender");
+    const reload = vi.spyOn(app.ui, "handleReload");
+    press(btn("paletteTable"));
+    for (const key of ["n", "c", "l", "d", "r", "e"]) keydown(document.body, key);
+    expect(openTab).not.toHaveBeenCalled();
+    expect(clear).not.toHaveBeenCalled();
+    expect(render).not.toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
+    await settle();
+    expect(app.ui.blockEdit.isEditingCell()).toBe(true);
+    expect(app.paletteRoot().hidden).toBe(false); // "e" did not hide it
+    keydown(openCellEl(), "Escape");
+    keydown(document.body, "n"); // the cell has opened: the shortcuts are back
+    expect(openTab).toHaveBeenCalledTimes(1);
+  });
+
+  it("AT-UI-36i a selection: the line of its end decides (owner ruling D2)", async () => {
+    await withDocument();
+    const ta = open(isPara("Second"));
+    typeInBlock(ta, "Line one\nLine two");
+    await selectInEditor(ta, 4, 13); // from "Line one" into "Line two"
+    press(btn("paletteTable"));
+    expect(app.orchestrator.getBody()).toContain(`Line one\nLine two\n\n${T}`);
+  });
+
+  it("AT-UI-36j an unchanged editor: the insert is the only change (one Undo gives the document back)", async () => {
+    await withDocument();
+    const ta = open(isPara("Second"));
+    await selectInEditor(ta, 3, 3);
+    press(btn("paletteTable"));
+    await settle();
+    keydown(openCellEl(), "Escape");
+    press(btn("paletteUndo"));
+    await settle();
+    expect(app.orchestrator.getBody()).toBe(DOC);
+    expect(app.orchestrator.canUndo()).toBe(false);
+  });
+
+  it("AT-UI-36g another operation before the render: nothing opens (11-c insertedBlockRendered)", async () => {
+    await withDocument();
+    press(btn("paletteTable"));
+    open(isPara("Hello")); // before the render ends
+    await settle();
+    expect(app.ui.blockEdit.isEditingCell()).toBe(false);
+    expect(app.blockEditor().value).toBe("Hello word here.");
+  });
+
+  it("AT-UI-37a Mermaid while editing: the sample's source opens with the caret at the end of its first diagram line", async () => {
     await withDocument();
     const ta = open(isPara("Second"));
     await selectInEditor(ta, ta.value.length, ta.value.length);
-    press(btn("paletteTable"));
-    expect(ta.value).toContain(CONFIG.edit.tableTemplate);
-    expect(app.orchestrator.getBody()).toBe(DOC);
-    expect(app.orchestrator.canUndo()).toBe(false);
+    press(btn("paletteMermaid"));
+    press(popoverButton("Flowchart"));
+    await settle();
+    const src = app.blockEditor();
+    expect(src).not.toBeNull();
+    expect(src.value).toBe(CONFIG.edit.mermaidSamples.flowchart);
+    const end = "```mermaid\nflowchart TD".length;
+    expect([src.selectionStart, src.selectionEnd]).toEqual([end, end]);
+    expect(app.orchestrator.getBody()).toContain(`Second para.\n\n${CONFIG.edit.mermaidSamples.flowchart}`);
   });
 
   it("not editing: after the last opened block, as one model change (undoable)", async () => {
@@ -386,7 +526,7 @@ describe("AT-UI-36 / 37 Insert table and Mermaid samples", () => {
   it("not editing with unrendered #editor changes: no insert; render from #editor and toast", async () => {
     await withDocument();
     typeInEditor(DOC + "Typed\n");
-    const insert = vi.spyOn(app.orchestrator, "insertAfter");
+    const insert = vi.spyOn(app.orchestrator, "insertBlock");
     press(btn("paletteTable"));
     expect(insert).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith(M.editorRenderedFirst, TOAST_MS);
@@ -395,10 +535,10 @@ describe("AT-UI-36 / 37 Insert table and Mermaid samples", () => {
 
   it("AT-UI-37 popover Sequence diagram: the sequence sample is inserted and the popover closes", async () => {
     await withDocument();
-    const insert = vi.spyOn(app.orchestrator, "insertAfter");
+    const insert = vi.spyOn(app.orchestrator, "insertBlock");
     press(btn("paletteMermaid"));
     press(popoverButton("Sequence diagram"));
-    expect(insert.mock.calls[0][1]).toBe(CONFIG.edit.mermaidSamples.sequence);
+    expect(insert.mock.calls[0][0]).toBe(CONFIG.edit.mermaidSamples.sequence);
     expect(popoverButton("Sequence diagram").closest(".edit-palette-popover").hidden).toBe(true);
   });
 });
@@ -428,7 +568,7 @@ describe("AT-UI-61 an open table cell (5.15.5, INV-65, W7)", () => {
   const cellEl = (r, c) => tableEl().rows[r].cells[c];
   const tableRaw = () => app.block((b) => b.type === "table").block.raw;
 
-  it("Insert table and Mermaid off; Row / Column, Delete row / column and Table options on; the column's alignment pressed", async () => {
+  it("Insert table and Mermaid off; Row / Column, Delete row / column and Align column on; the column's alignment pressed", async () => {
     await withDocument();
     tap(cellEl(1, 0));
     expect(app.ui.blockEdit.isEditingCell()).toBe(true);
@@ -436,7 +576,7 @@ describe("AT-UI-61 an open table cell (5.15.5, INV-65, W7)", () => {
     for (const id of ["paletteRow", "paletteColumn", "paletteRowDelete", "paletteColumnDelete", "paletteTableOptions", "paletteFormat"]) {
       expect(off(btn(id)), id).toBe(false);
     }
-    expect(popoverButton("Default alignment").getAttribute("aria-pressed")).toBe("true");
+    expect(popoverButton("Remove alignment").getAttribute("aria-pressed")).toBe("true");
     expect(popoverButton("Align center").getAttribute("aria-pressed")).toBe("false");
   });
 
@@ -447,7 +587,7 @@ describe("AT-UI-61 an open table cell (5.15.5, INV-65, W7)", () => {
     expect(off(btn("paletteColumnDelete"))).toBe(false);
   });
 
-  it("not in a cell: Delete row / column and Table options are off (also in the table's source)", async () => {
+  it("not in a cell: Delete row / column and Align column are off (also in the table's source)", async () => {
     await withDocument();
     for (const id of ["paletteRowDelete", "paletteColumnDelete", "paletteTableOptions"]) expect(off(btn(id)), id).toBe(true);
     open((b) => b.type === "table");

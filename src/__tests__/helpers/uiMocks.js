@@ -71,6 +71,7 @@ export function fakeEditServices() {
     isEditingCell: vi.fn(() => false),
     cellState: vi.fn(() => null),
     getLastOpenedBlockId: vi.fn(() => null),
+    isInsertPending: vi.fn(() => false),
   };
   return {
     fileAccess: { readFile: vi.fn() },

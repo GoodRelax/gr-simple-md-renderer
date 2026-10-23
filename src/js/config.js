@@ -2,6 +2,60 @@
 // Configuration
 // ========================================
 
+// The AI prompt that [?] (long press) offers to copy: the MCBSMD output
+// rules, given to an AI chat as is.
+const PROMPT_BODY = `
+## Output Format
+
+- Output the entire content **as a single Markdown code block** so it can be copied in one go.
+- **Enclose the entire Markdown with six backticks \` \`\`\`\`\`\` \` at the beginning and end.** Specify its language as markdown.
+- **Use these six backticks only once as the outermost enclosure.**
+- **Never output speculation or fabrications.** If something is unclear or requires investigation, explicitly state so.
+- This method is called **MCBSMD** (Multiple Code Blocks in a Single Markdown)
+
+### Code and Diagram Block Rules
+
+- As a rule, use Mermaid for diagrams. Use PlantUML only when the diagram cannot be expressed in Mermaid.
+- Any diagrams or software code inside the Markdown must each be enclosed in their own code blocks using triple backticks \` \`\`\` \`.
+- Each code block must specify a language or file type (e.g., \` \`\`\`python \` or \` \`\`\`mermaid \`).
+- Each code or diagram block must be preceded by a descriptive title in the format **title:**
+  (e.g., \`**System Architecture:**\`, \`**Login Flow:**\`)
+- Always follow the structure below for every code or diagram block:
+
+  > **title:**
+  >
+  > \`\`\`language
+  > (code or diagram content here without truncation or abbreviation)
+  > \`\`\`
+  >
+  > Write the explanation for the code block here, immediately after the block, following a blank line.
+
+- Do not write explanations inside the code blocks.
+- In all diagrams, prefer alphanumeric characters and underscores (\`_\`); non-ASCII text (no spaces) is allowed only when non-English is more appropriate for the diagram. Special symbols (e.g., \`\\\`, \`/\`, \`|\`, \`<\`, \`>\`, \`{\`, \`}\`) are strictly prohibited.
+- Output all diagram content without omission. Never use \`...\` or any shorthand.
+
+### Diagram Label and Notation Rules
+
+- All arrows and relationship lines in diagrams MUST have labels. Follow these notation rules:
+  1. Mermaid \`flowchart\` and \`graph\`: place the label inside the arrow using pipes (e.g., \`A -->|Label| B\`)
+  2. Other Mermaid diagrams / All PlantUML: place the label after the arrow using a colon (e.g., \`A --> B : Label\`)
+- For line breaks in labels or node text:
+  1. Mermaid: use \`<br/>\` inside a quoted string (e.g., \`A -->|"Line1<br/>Line2"| B\`, \`A["Line1<br/>Line2"]\`)
+  2. PlantUML: use \`\\n\` (e.g., \`A -> B : Line1\\nLine2\`)
+
+### Math Rules
+
+- Use standard LaTeX notation for all mathematical formulas.
+  1. Inline math: always use single dollar signs. Place a space before the opening \`$\`
+     and a space after the closing \`$\`
+     (e.g., \`The function is $y = x + 1$ here.\`)
+  2. Block equations: always place \`$$\` on its own line, above and below the formula.
+     Example:
+     > $$
+     > E = mc^2
+     > $$
+`;
+
 export const CONFIG = {
   rendering: {
     stabilityTimeout: 1000,
@@ -11,10 +65,6 @@ export const CONFIG = {
     imageLoadTimeout: 5000,
     serverUrl: "https://www.plantuml.com/plantuml/svg/",
     darkTheme: "cyborg",
-  },
-  // External images in Markdown are consent-gated (CON-12, INV-19)
-  externalImage: {
-    maxHostsInDialog: 10,
   },
   ui: {
     longPressDuration: 300,
@@ -34,66 +84,132 @@ export const CONFIG = {
     markdownExtensions: [".md"],
     maxBytes: 5 * 1024 * 1024,
     messages: {
-      tooLarge: "Dropped file is too large. Maximum file size is 5 MB.",
-      readError: "Failed to read the dropped file.",
-      unsupportedType: "Unsupported file type. Only text-based files with recognized extensions are accepted.",
-      binaryFile: "Binary file is not supported.",
+      tooLarge: "This file is too big. The limit is 5 MB.",
+      readError: "Couldn't read this file.",
+      binaryFile: "GRSMD can only open text files.",
     },
   },
+  // Every text the user sees from JS (R15). Toasts and confirms use
+  // contractions with the ASCII apostrophe (R13).
   messages: {
     plantuml: {
-      canceled: "Rendering Canceled",
-      encodingFailed: "PlantUML encoding failed",
-      timeout: (seconds) => `PlantUML timeout (${seconds}s)`,
-      serverError: "PlantUML server error",
+      // CON-04, INV-02: asked with window.confirm before anything is sent
+      consent:
+        "Is it OK to send your PlantUML diagram data to the official PlantUML server (www.plantuml.com)?",
+      canceled: "PlantUML diagram (not sent)",
+      encodingFailed: "Couldn't prepare this PlantUML diagram.",
+      timeout: (seconds) => `The PlantUML server didn't answer in ${seconds} seconds.`,
+      serverError: "Couldn't get the diagram from the PlantUML server.",
+      diagramAlt: "PlantUML Diagram", // alt of the server image
     },
     externalImage: {
+      // CON-12, INV-19: one fixed sentence; the hosts are on the placeholders
+      consent: "Is it OK to get images from other sites?",
       placeholder: (alt, hosts) =>
-        `External image${alt ? `: ${alt}` : ""} (${hosts}) - click to load`,
-      placeholderTitle: "Click to load external images (asks for consent first)",
+        `Image from another site${alt ? `: ${alt}` : ""} (${hosts}) - click to show`,
+      placeholderTitle: "Click to show images from other sites (asks you first)",
+    },
+    diagram: {
+      tooltip: "Ctrl+wheel: zoom | Double-click: reset | Drag: move", // Mermaid and PlantUML
+      copySvg: "Copy SVG", // DiagramCopyController buttons
+      copyPng: "Copy PNG",
+      copied: "Copied!",
+      copyFailed: "Failed",
+    },
+    markdown: {
+      parseError: (message) => `Couldn't read this Markdown: ${message}`, // marked threw
+    },
+    // Initial state hint in #preview (FS-16). The three steps are padded to
+    // the same length (spec 5.10).
+    startScreen:
+      "Get started:\n\n" +
+      "  1. Paste Markdown (Ctrl+V)  ->  Markdown Preview                     \n" +
+      "  2. Drop a .md file          ->  Markdown Preview                     \n" +
+      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)",
+    fileInfo: { // #fileInfo of the code view
+      lines: (count) => `${count} lines`,
+      size: (kb) => `${kb} KB`,
+      updated: (when) => `Updated: ${when}`,
     },
     copy: {
-      failed: "Copy failed.",
-      blocked: "Browser denied copy.",
+      failed: "Couldn't copy. Select the text and press Ctrl+C (Mac: Cmd+C).",
+      blocked: "Your browser blocked copying. Select the text and press Ctrl+C (Mac: Cmd+C).",
+    },
+    prompt: { // the AI prompt dialog (long press on [?])
+      copied: "Copied!",
+      body: PROMPT_BODY,
     },
     edit: {
       unsavedConfirm: "You have unsaved changes. Discard them?",
       externalChangeConfirm:
-        "This file was changed outside GRSMD. Overwrite it?",
+        "Something outside GRSMD changed this file. Replace it with your version?",
       overwriteUnknownConfirm:
-        "GRSMD could not confirm whether this file changed since the last save. Overwrite it?",
+        "GRSMD can't tell if this file changed since your last save. Replace it with your version?",
       saved: (name) => `Saved: ${name}`,
-      downloadStarted: (name) =>
-        `Download started: ${name}. The tab stays marked unsaved.`,
-      savingInProgress: "Saving. Try again when the save finishes.",
-      reloadFailed: "Reload failed. The file could not be read.",
-      reloadCanceled: "Reload canceled. The document changed while reading.",
-      saveFailed: "Save failed. Your changes are kept.",
-      saveDenied: "Write permission was denied. Your changes are kept.",
-      saveNotFound: "The file was not found. Use Save as.",
-      saveActivationLost: "Save could not start. Press Save again.",
-      editorRenderedFirst:
-        "The top editor had unrendered changes. Rendered them first.",
-      blockSplitFailed:
-        "This document could not be split into blocks. It is edited as one block.",
+      downloadStarted: (name) => `Downloading: ${name}. It's still not saved.`,
+      savingInProgress: "Still saving. Try again in a moment.",
+      reloadFailed: "Couldn't reload the file.",
+      reloadCanceled: "Reload stopped: the document changed.",
+      saveFailed: "Couldn't save. Your changes are kept.",
+      saveDenied: "Save not allowed. Your changes are kept.",
+      saveNotFound: "Couldn't find the file. Use Save as.",
+      saveActivationLost: "Save couldn't start. Press Save again.",
+      editorRenderedFirst: "Updated from the top box. Try again.", // INV-45: the pressed action did not run
+      blockSplitFailed: "You'll edit this document as one block.",
       emptyEditorConfirm:
-        "The top editor is empty. OK: replace the whole document with an empty one. Cancel: put the document back into the top editor.",
+        "The top box is empty.\nOK: make the document empty.\nCancel: put the document back in the top box.",
       plantumlPending: "PlantUML diagram (not sent)",
       plantumlRenderButton: "Render",
-      hiddenLinkDefinition: "link definition",
-      hiddenHtml: "hidden HTML",
+      hiddenLinkDefinition: "Hidden link address",
+      hiddenHtml: "Hidden HTML",
+      tableTab: "Markdown", // the tab of a table block (7.1)
+      saveFileType: "Markdown", // the file type name in the save dialog (Save as)
       tableSourceTab: "Edit the table as Markdown",
-      tableNotCellEditable:
-        "This table cannot be edited by cell. Opened its Markdown instead.",
-      tableEditEnded: "The table changed into other blocks. Table editing ended.",
-      noUrlInClipboard: "There is no URL in the clipboard.", // INV-69 (also when reading was refused)
-      linkTargetChanged:
-        "The text being edited changed while the clipboard was read. Nothing was pasted.", // INV-69
-      linkNotPastable: "A link cannot be pasted here.", // INV-69 (owner ruling F-R2)
-      formatNotApplicable: "This format cannot be applied here.", // INV-71 huge blocks (owner ruling Q-f)
-      linkNotRemovable: "There is no link to remove here.", // INV-71 huge blocks (as Q-f)
+      tableNotCellEditable: "Can't edit by cell. Opened as Markdown.",
+      tableEditEnded: "No longer a table. Table editing ended.",
+      noUrlInClipboard: "Couldn't find a copied link.", // INV-69 (also when reading was refused)
+      linkTargetChanged: "The text changed, so no link was added.", // INV-69
+      linkNotPastable: "You can't paste a link here.", // INV-69 (owner ruling F-R2)
+      formatNotApplicable: "You can't use this format here.", // INV-71 huge blocks (owner ruling Q-f)
+      linkNotRemovable: "There's no link to remove here.", // INV-71 huge blocks (as Q-f)
+      insertNotPossible: "Can't insert here. Try outside this block.", // an insert the block cannot take
       statusUnsaved: (name) => `${name} * unsaved`,
       statusSaved: (name) => `${name} - saved`,
+    },
+    // Tooltips and aria-labels of the edit palette (5.15.3). mod is the
+    // primary modifier shown ("Ctrl", or "Cmd" on Apple platforms).
+    palette: {
+      modifier: { apple: "Cmd", other: "Ctrl" }, // the primary modifier key in the tooltips (INV-14)
+      root: "Edit palette",
+      grip: "Move palette (long press: minimize / restore)", // INV-68
+      bold: (mod) => `Bold (${mod}+B)`,
+      italic: (mod) => `Italic (${mod}+I)`,
+      format: "Text format", // the button and its popover
+      mermaid: "Insert Mermaid sample",
+      save: (mod) => `Save (${mod}+S)`,
+      saveAs: (mod) => `Save as (${mod}+Shift+S)`,
+      insertTable: "Insert table",
+      insertRow: "Insert row",
+      rowDelete: "Delete row",
+      insertColumn: "Insert column",
+      columnDelete: "Delete column",
+      tableOptions: "Align column", // the button and its popover (R6)
+      undo: (mod) => `Undo (${mod}+Z)`,
+      mermaidMenu: "Mermaid samples",
+      flowchart: "Flowchart",
+      sequence: "Sequence diagram",
+      state: "State diagram",
+      class: "Class diagram",
+      colorRed: "Text color: Red",
+      colorBlue: "Text color: Blue",
+      colorGreen: "Text color: Green",
+      colorNone: "Remove text color",
+      linkPaste: "Paste copied link", // R5
+      linkRemove: "Remove link",
+      alignLeft: "Align left",
+      alignCenter: "Align center",
+      alignRight: "Align right",
+      alignNone: "Remove alignment", // R6
     },
   },
   // New: smooth scroll physics parameters
@@ -107,8 +223,8 @@ export const CONFIG = {
     defaultTheme: "dark",
     keyHintDurationMs: 5000,
     toastDurationMs: 3000,
-    reloadUnavailableMsg: "Reload not available (Chrome/Edge 86+ required)",
-    reloadNoFileMsg: "No file to reload. Drop a file to enable reload.",
+    reloadUnavailableMsg: "Reload works only in Chrome and Edge.",
+    reloadNoFileMsg: "No file to reload. Drop a file first.",
   },
   // In-place Markdown editing (SC-22 to SC-24)
   edit: {

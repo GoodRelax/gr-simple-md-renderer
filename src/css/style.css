@@ -829,16 +829,26 @@ body.view-code.dark #editor {
   align-items: center;
   gap: 6px;
   pointer-events: none;
+  /* With left: 50% the shrink-to-fit width would stop at half the screen;
+     size to the longest toast instead, but never wider than the screen. */
+  width: max-content;
+  max-width: calc(100vw - 32px);
 }
 
+/* A long toast wraps instead of running off both sides of a phone screen
+   (R11); a long file name breaks anywhere. */
 .toast {
+  box-sizing: border-box;
+  max-width: calc(100vw - 32px);
   background: rgba(50, 50, 50, 0.92);
   color: #ffffff;
   font-family: monospace;
   font-size: 13px;
   padding: 8px 18px;
   border-radius: 4px;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
