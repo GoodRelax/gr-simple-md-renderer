@@ -395,12 +395,12 @@ describe("AT-UI-42 the editor stays open while the focus is on the body", () => 
     expect(app.ui.palette.isShown()).toBe(false);
   });
 
-  it("Esc: cancels the edit (original raw)", async () => {
+  it("Esc: applies the edit and closes it (D1); the palette stays", async () => {
     await withDocument();
     openChanged().blur();
     keydown(document.body, "Escape");
     expect(app.blockEditor()).toBeNull();
-    expect(app.orchestrator.getBody()).toBe(DOC);
+    expect(app.orchestrator.getBody()).toContain("Changed A.");
     expect(app.ui.palette.isShown()).toBe(true);
   });
 

@@ -138,7 +138,9 @@ export default class MarkdownTextOps {
   /**
    * Insert a block (template) at the caret, adding blank lines before and
    * after only where they are missing (never three newlines in a row).
-   * The caret ends at the end of the inserted block (Q6 c).
+   * At the end of a text that ends with a newline, the block ends with one
+   * too (the file keeps its last newline; UI fixes review L1). The caret
+   * ends at the end of the inserted block (Q6 c).
    * @purity pure
    * @param {string} text
    * @param {number} caretOffset
@@ -153,7 +155,8 @@ export default class MarkdownTextOps {
     if (before === "" || before.endsWith("\n\n")) lead = "";
     else if (before.endsWith("\n")) lead = "\n";
     let trail = "\n\n";
-    if (after === "" || after.startsWith("\n\n")) trail = "";
+    if (after === "") trail = before.endsWith("\n") ? "\n" : "";
+    else if (after.startsWith("\n\n")) trail = "";
     else if (after.startsWith("\n")) trail = "\n";
     const end = before.length + lead.length + blockText.length;
     return { text: before + lead + blockText + trail + after, selStart: end, selEnd: end };

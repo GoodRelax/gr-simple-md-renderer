@@ -116,8 +116,12 @@ describe("AT-UI unsaved state (INV-21, INV-22, INV-50)", () => {
     editBlock("Hello", "Changed.");
     expect(isDirtyTitle()).toBe(true);
     expect(document.title).not.toContain("secret-name");
-    keydown(app.blockEditor(), "Escape");
+    keydown(app.blockEditor(), "Escape"); // applied (D1)
+    expect(isDirtyTitle()).toBe(true);
+    app.orchestrator.undoLastCommit(); // back to the body as loaded: not unsaved (R6)
     expect(document.title).toBe(BASE_TITLE);
+    app.orchestrator.redoLastCommit();
+    expect(isDirtyTitle()).toBe(true);
   });
 
   it("AT-UI-03 the palette status shows '<name> * unsaved' / '<name> - saved'", async () => {
@@ -150,7 +154,9 @@ describe("AT-UI unsaved state (INV-21, INV-22, INV-50)", () => {
     expect(beforeUnloadPrevented()).toBe(false);
     const ta = editBlock("Hello", "Changed.");
     expect(beforeUnloadPrevented()).toBe(true);
-    keydown(ta, "Escape");
+    keydown(ta, "Escape"); // applied (D1)
+    expect(beforeUnloadPrevented()).toBe(true);
+    app.orchestrator.undoLastCommit();
     expect(beforeUnloadPrevented()).toBe(false);
     editBlock("Hello", "Changed.");
     commitByPressingOutside();

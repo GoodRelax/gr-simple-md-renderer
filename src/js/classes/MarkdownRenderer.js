@@ -76,6 +76,8 @@ export default class MarkdownRenderer {
     this._writtenKeys = new Map(); // held block id -> raw + links written in place (INV-47)
     this._tabs = new WeakSet(); // the tabs this renderer made
     this._emptyBlock = null;
+    this._gap = null; // { element, afterBlockId }: the open gap editor's wrapper (INV-73)
+    this._blockElements = null; // the wrappers in order, made again after the order changes
   }
 
   /**
@@ -304,6 +306,11 @@ export default class MarkdownRenderer {
     }
     this._pruneCache(currentModel, signature);
 
+    if (this._gap) {
+      // the open gap editor stays where it was opened (INV-73)
+      const after = this._gap.afterBlockId === null ? -1 : order.indexOf(this._wrapperById.get(this._gap.afterBlockId));
+      order.splice(after < 0 && this._gap.afterBlockId !== null ? order.length : after + 1, 0, this._gap.element);
+    }
     if (order.length === 0) {
       if (!this._emptyBlock) this._emptyBlock = this._createEmptyBlock();
       order.push(this._emptyBlock);
@@ -312,6 +319,7 @@ export default class MarkdownRenderer {
       this._emptyBlock = null;
     }
     this._placeInOrder(order);
+    this._blockElements = null;
     for (const el of replaced) this._afterInsert(el);
     return replaced;
   }
@@ -340,6 +348,51 @@ export default class MarkdownRenderer {
    */
   getBlockElement(blockId) {
     return this._wrapperById.get(blockId) ?? null;
+  }
+
+  /**
+   * The wrappers of the blocks on screen, in their order (the gaps between
+   * them, INV-73). The empty block and an open gap editor are not blocks.
+   * The list is kept until the order changes (a render; or the preview was
+   * written by another view): the mouse asks for it on every frame (INV-51).
+   * @purity semi-pure-b
+   * @returns {ReadonlyArray<HTMLElement>}
+   */
+  getBlockElements() {
+    const kept = this._blockElements;
+    if (kept && (kept.length === 0 || kept[0].parentNode === this.preview)) return kept;
+    this._blockElements = Object.freeze(Array.prototype.filter.call(this.preview.children, (el) => this._idByWrapper.has(el)));
+    return this._blockElements;
+  }
+
+  /**
+   * Put the wrapper of a gap editor in the gap after a block (null: before
+   * the first block), and keep it there through partial renders until
+   * removeGapEditor(). The block after it is nextBlockId: when the wrapper
+   * of afterBlockId is not drawn yet (a commit just before), it goes before
+   * that one (INV-73).
+   * @purity non-pure
+   * @param {HTMLElement} element
+   * @param {number|null} afterBlockId
+   * @param {number|null} nextBlockId
+   */
+  placeGapEditor(element, afterBlockId, nextBlockId) {
+    this._gap = { element, afterBlockId };
+    const after = afterBlockId === null ? null : this._wrapperById.get(afterBlockId);
+    const next = nextBlockId === null ? null : this._wrapperById.get(nextBlockId);
+    if (after) after.after(element);
+    else if (next) next.before(element);
+    else if (afterBlockId === null) this.preview.prepend(element);
+    else this.preview.append(element);
+  }
+
+  /**
+   * The gap editor closed: its wrapper leaves the preview.
+   * @purity non-pure
+   */
+  removeGapEditor() {
+    this._gap?.element.remove();
+    this._gap = null;
   }
 
   /**
@@ -545,6 +598,8 @@ export default class MarkdownRenderer {
     this._tabById.clear();
     this._writtenKeys.clear();
     this._emptyBlock = null;
+    this._gap = null;
+    this._blockElements = null;
   }
 
   /**

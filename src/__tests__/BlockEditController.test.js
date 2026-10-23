@@ -427,18 +427,18 @@ describe("AT-BEC committing on the outside (INV-30)", () => {
 
 describe("AT-BEC keys in the editor (INV-27, INV-28, INV-53)", () => {
   const IME_WAYS = [
-    ["isComposing", (ta, key) => keydown(ta, key, { isComposing: true })],
-    ["keyCode 229", (ta, key) => keydown(ta, key, { keyCode: 229 })],
+    ["isComposing", (ta, key, init = {}) => keydown(ta, key, { ...init, isComposing: true })],
+    ["keyCode 229", (ta, key, init = {}) => keydown(ta, key, { ...init, keyCode: 229 })],
     [
       "between compositionstart and compositionend",
-      (ta, key) => {
+      (ta, key, init = {}) => {
         ta.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
-        return keydown(ta, key);
+        return keydown(ta, key, init);
       },
     ],
   ];
 
-  it("AT-BEC-14 Esc after a change closes the editor, brings the original element back and commits nothing", async () => {
+  it("AT-BEC-14 Esc after a change applies it and closes the editor (INV-28, owner ruling D1); an unchanged one commits nothing", async () => {
     s = await setupEdit(DOC);
     const { el } = s.block(isPara("Hello"));
     const p = el.firstElementChild;
@@ -449,10 +449,15 @@ describe("AT-BEC keys in the editor (INV-27, INV-28, INV-53)", () => {
     const e = keydown(ta, "Escape");
     expect(e.defaultPrevented).toBe(true);
     expect(s.editor()).toBeNull();
-    expect(el.firstElementChild).toBe(p);
-    expect(p.textContent).toBe("Hello world.");
-    expect(commit).not.toHaveBeenCalled();
-    expect(s.orchestrator.getBody()).toBe(DOC);
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
+    await flush();
+    expect(s.block(isPara("Hello")).el.textContent.trim()).toBe("Hello changed.");
+
+    const second = openBlock(isPara("Hello"));
+    keydown(second.ta, "Escape");
+    expect(s.editor()).toBeNull();
+    expect(commit).toHaveBeenCalledTimes(1);
   });
 
   it.each(IME_WAYS)("AT-BEC-15 Esc during IME (%s) does nothing", async (_name, press) => {
@@ -473,12 +478,15 @@ describe("AT-BEC keys in the editor (INV-27, INV-28, INV-53)", () => {
     expect(s.editor()).toBeNull();
   });
 
-  it("AT-BEC-16 Enter in a table inserts the line break text at the caret and stops the default; not in a heading (a paragraph: INV-71)", async () => {
+  it("AT-BEC-16 Enter in a table is the browser's newline (B2); Shift+Enter inserts the line break text at the caret and stops the default; not in a heading (a paragraph: INV-71)", async () => {
     s = await setupEdit("| A | B |\n|---|---|\n| x | y |\n\n# Plain head\n");
     const t = openBlock((b) => b.type === "table");
     const caret = t.ta.value.indexOf("x") + 1;
     t.ta.setSelectionRange(caret, caret);
-    const e = keydown(t.ta, "Enter");
+    const plain = keydown(t.ta, "Enter");
+    expect(plain.defaultPrevented).toBe(false);
+    expect(t.ta.value).toBe("| A | B |\n|---|---|\n| x | y |");
+    const e = keydown(t.ta, "Enter", { shiftKey: true });
     expect(e.defaultPrevented).toBe(true);
     expect(CONFIG.edit.tableLineBreak).toBe("<br>");
     expect(t.ta.value).toBe("| A | B |\n|---|---|\n| x<br> | y |");
@@ -494,11 +502,11 @@ describe("AT-BEC keys in the editor (INV-27, INV-28, INV-53)", () => {
     expect(p.ta.value).toBe(before);
   });
 
-  it.each(IME_WAYS)("AT-BEC-17 Enter in a table during IME (%s) inserts nothing", async (_name, press) => {
+  it.each(IME_WAYS)("AT-BEC-17 Shift+Enter in a table during IME (%s) inserts nothing", async (_name, press) => {
     s = await setupEdit("| A | B |\n|---|---|\n| x | y |\n");
     const t = openBlock((b) => b.type === "table");
     const before = t.ta.value;
-    const e = press(t.ta, "Enter");
+    const e = press(t.ta, "Enter", { shiftKey: true });
     expect(e.defaultPrevented).toBe(false);
     expect(t.ta.value).toBe(before);
   });
@@ -712,13 +720,13 @@ describe("INV-52 edits from the palette and the table Enter are undoable (execCo
     expect(ta.value).toBe("Hi world.");
   });
 
-  it("table Enter inserts <br> through insertText (undoable)", async () => {
+  it("table Shift+Enter inserts <br> through insertText (undoable)", async () => {
     s = await setupEdit("| A | B |\n|---|---|\n| x | y |\n");
     const t = openBlock((b) => b.type === "table");
     const calls = stubExecCommand(true);
     const caret = t.ta.value.indexOf("x") + 1;
     t.ta.setSelectionRange(caret, caret);
-    keydown(t.ta, "Enter");
+    keydown(t.ta, "Enter", { shiftKey: true });
     expect(calls).toEqual([{ command: "insertText", showUi: false, text: "<br>", selection: [caret, caret] }]);
     expect(t.ta.value).toBe("| A | B |\n|---|---|\n| x<br> | y |");
   });

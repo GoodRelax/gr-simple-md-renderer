@@ -111,7 +111,7 @@ describe("help markup in src/index.html (AT-HLP-05, AT-HLP-06)", () => {
     const bodies = [...modal.querySelectorAll(".help-body")];
     expect(bodies.map((b) => b.getAttribute("lang"))).toEqual(["en", "ja"]);
     const sections = (b) => [...b.querySelectorAll(":scope > [data-help-section]")].map((s) => s.dataset.helpSection);
-    expect(sections(bodies[0])).toEqual(["download", "about", "usage", "details", "editing", "privacy", "samples"]);
+    expect(sections(bodies[0])).toEqual(["download", "about", "usage", "details", "privacy", "samples"]);
     expect(sections(bodies[1])).toEqual(sections(bodies[0]));
     expect(bodies[0].hidden).toBe(false);
     expect(bodies[1].hidden).toBe(true);

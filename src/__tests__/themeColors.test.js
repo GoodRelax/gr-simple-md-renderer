@@ -330,7 +330,7 @@ describe("print keeps the light colors (spec 5.8.1, owner ruling 2026-10-22)", (
     ...DIFF_MARKS.map(([sel]) => `body.dark ${sel}`),
     ".dark .katex",
     ".dark .diagram-copy-btn",
-    'body.dark #preview span[style*="#B84F00" i]',
+    'body.dark #preview span[style*="#CF222E" i]',
   ].filter(isPrintable);
 
   it("AT-THM-18 (check of the check) the list covers the page, the preview, code, the code view and the editor", () => {

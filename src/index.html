@@ -177,12 +177,23 @@
               <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
               <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge)</li>
               <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
-              <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette (see Editing)</li>
+              <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette</li>
               <li>
-                <code>Esc</code> : Close the open block or cell without applying
-                it. With nothing open, hide the edit palette.
+                <code>Esc</code> : Apply the open block or cell and close it.
+                With nothing open, hide the edit palette.
               </li>
-              <li><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code> : Save / Save as (Mac: <code>Cmd</code>. See Editing)</li>
+              <li>
+                <code>Ctrl+Z</code> / <code>Ctrl+Y</code> (or <code>Ctrl+Shift+Z</code>) : Undo / Redo
+                while the edit palette is shown, up to 30 times (Mac: <code>Cmd+Z</code> /
+                <code>Cmd+Shift+Z</code>). In an open block, Redo is always for your typing,
+                and Undo too once the block has a change.
+              </li>
+              <li>
+                Edit mode: point between two blocks, above the first one or below the last
+                one (on a phone, tap there) to show a dashed line with <code>+</code>. Click it
+                to add a new block there.
+              </li>
+              <li><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code> : Save / Save as (Mac: <code>Cmd</code>)</li>
               <li><code>[Clear]</code> / <code>C</code> : Clear and reset</li>
               <li><code>[?]</code> : Show this help (<code>Esc</code> closes it)</li>
               <li>
@@ -205,151 +216,6 @@
                 Print (<code>Ctrl+P</code>, Mac: <code>Cmd+P</code>): prints the
                 document only, in light colors. The top bar and the palette are
                 not printed.
-              </li>
-            </ul>
-          </div>
-
-          <div class="modal-section" data-help-section="editing">
-            <h3>Editing</h3>
-            <h4>Start and apply</h4>
-            <ul>
-              <li>
-                <code>[Edit]</code> / <code>E</code> : Show or hide the edit palette.
-                While it is shown, click (tap) a block to edit its Markdown source
-                in place, or click a table cell to edit it as it is shown.
-              </li>
-              <li>
-                When the palette is hidden, double-click (double-tap) a block or a
-                table cell to show the palette and start editing it there. On a
-                diagram, a double-click resets the zoom instead.
-              </li>
-              <li>
-                On the empty start screen, <code>[Edit]</code>, a double-click or a
-                double-tap starts a new empty document.
-              </li>
-              <li>
-                Click outside the block to apply the change; <code>Esc</code>
-                cancels it. Only the changed blocks are rendered again.
-              </li>
-              <li>
-                <code>Undo</code> takes back the last change: an applied block, an
-                insert, a cell, or a row, column or alignment change. If the open
-                block or cell has changes, it cancels them instead.
-                <code>Ctrl+Z</code> does the same while the palette is shown (also
-                when it is shrunk to the grip), except in a block you have changed,
-                where the browser undoes your typing. After GRSMD rewrites the top
-                box, <code>Ctrl+Z</code> there does nothing until you type; after
-                you type, it may also undo older edits.
-              </li>
-              <li>
-                Shortcuts: <code>Ctrl+S</code> Save and <code>Ctrl+Shift+S</code>
-                Save as while a Markdown document is shown, also when the palette is
-                hidden (on the start screen and in Code View they do nothing);
-                <code>Ctrl+B</code> bold and <code>Ctrl+I</code> italic while
-                editing. On a Mac, use <code>Cmd</code> instead of
-                <code>Ctrl</code>.
-              </li>
-            </ul>
-            <h4>Palette</h4>
-            <ul>
-              <li>
-                Palette: Bold, Italic, Text format, Mermaid samples, Save, Save as,
-                Insert table, Insert / Delete row, Insert / Delete column, Align
-                column and Undo. Use it with the mouse or touch;
-                it does not take the keyboard. Drag the grip, or move off a pressed
-                button, to move the palette. Press and hold the grip (half a second)
-                to shrink the palette to the grip, and again to restore it. When it
-                is shrunk, a dot on the grip means unsaved changes.
-              </li>
-              <li>
-                Insert table and Mermaid samples: while a block is open, the block
-                is applied first, and the new block goes in at the line of the
-                cursor (a paragraph, list or quote is split there; other blocks get
-                it above or below). Then the first cell or the Mermaid source
-                opens. Inside code, math, HTML or table source, nothing is
-                inserted. <code>Undo</code> removes only the inserted block. With
-                no block open, it goes after the last block you opened, or at the
-                end.
-              </li>
-            </ul>
-            <h4>Tables</h4>
-            <ul>
-              <li>
-                Tables: click a cell to edit it. <code>Tab</code> /
-                <code>Shift+Tab</code> move to the next / previous cell,
-                <code>Enter</code> to the cell below (on the last row it ends table
-                editing), <code>Shift+Enter</code> adds a line break, and
-                <code>Esc</code> cancels the cell's changes and ends table editing.
-                A cell that cannot be edited as it looks (for example with math, an
-                image, a footnote, or HTML other than bold, italic, a line break
-                or text color) opens as its Markdown text. While a cell is open, the
-                palette inserts and deletes rows and columns and aligns a column.
-              </li>
-              <li>
-                While the palette is shown, the <code>Markdown</code> tab at the top
-                right of a table opens the whole table as Markdown. There,
-                <code>Enter</code> inserts <code>&lt;br&gt;</code>, and a pipe inside
-                a cell is written as <code>\|</code>.
-              </li>
-            </ul>
-            <h4>Text format and links</h4>
-            <ul>
-              <li>
-                Text format: text color (red, blue, green, or Remove text color;
-                GitHub shows the text without the color), Paste copied link
-                and Remove link. To make a link, select text and paste a URL with
-                <code>Ctrl+V</code> (Mac: <code>Cmd+V</code>); this needs no
-                permission.
-              </li>
-              <li>
-                Paste copied link reads the clipboard, so the browser may
-                ask you to allow it. When GRSMD is opened from goodrelax.github.io,
-                in Chrome and Edge, once you allow it, other
-                pages on goodrelax.github.io can also read your clipboard without
-                asking. To withdraw it, open the site settings for
-                goodrelax.github.io (the icon at the left of the address bar) and set
-                Clipboard to Ask or Block.
-              </li>
-            </ul>
-            <h4>Line breaks and marks</h4>
-            <ul>
-              <li>
-                In a paragraph, list or quote, <code>Enter</code> (or
-                <code>Shift+Enter</code>) adds a line break (two spaces at the line
-                end); <code>Enter</code> on an empty line starts a new paragraph.
-                For a new list item, type <code>- </code> yourself. An empty line
-                between list items spreads the list out. In a very large block,
-                <code>Enter</code> is a plain new line.
-              </li>
-              <li>
-                While editing, invisible characters (no-break spaces, zero-width
-                characters except the ones that join or style emoji, soft hyphens)
-                and the two spaces that make a line break are shown with a light
-                background (not in very large blocks or with very many marks). The
-                file keeps them as they are.
-              </li>
-            </ul>
-            <h4>Saving and more</h4>
-            <ul>
-              <li>
-                <code>Save</code> overwrites the dropped file (Chrome / Edge; the
-                browser asks for write permission). <code>Save as</code> lets you
-                choose a file. Browsers that cannot write files download the file
-                instead; the tab stays marked unsaved (<code>*</code> in the title).
-              </li>
-              <li>
-                Nothing is saved automatically, and nothing is stored in the
-                browser. Leaving, reloading, clearing or dropping another file
-                asks first while there are unsaved changes.
-              </li>
-              <li>
-                An edited PlantUML diagram is not sent until you press its
-                <code>[Render]</code> button and confirm.
-              </li>
-              <li>
-                While the page is showing a document, the top box is the same
-                document: rendering from it keeps a leading <code>```markdown</code>
-                fence. To strip an AI wrapper, <code>[Clear]</code> and paste again.
               </li>
             </ul>
           </div>
@@ -379,6 +245,15 @@
               <li>
                 The Download button opens GitHub (github.com) to get the latest
                 release. Nothing is sent until you press it.
+              </li>
+              <li>
+                The edit palette's Paste copied link reads the clipboard, so the
+                browser may ask you to allow it. When GRSMD is opened from
+                goodrelax.github.io, in Chrome and Edge, once you allow it, other
+                pages on goodrelax.github.io can also read your clipboard without
+                asking. To withdraw it, open the site settings for
+                goodrelax.github.io (the icon at the left of the address bar) and set
+                Clipboard to Ask or Block.
               </li>
             </ul>
           </div>
@@ -455,11 +330,17 @@
               <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
               <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード（Chrome / Edge）</li>
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
-              <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示（「編集」を参照）</li>
+              <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
               <li>
-                <code>Esc</code> : 開いているブロックやセルを、反映せずに閉じます。何も開いていなければ、編集パレットを隠します。
+                <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。何も開いていなければ、編集パレットを隠します。
               </li>
-              <li><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code> : Save / Save as（Mac は <code>Cmd</code>。「編集」を参照）</li>
+              <li>
+                <code>Ctrl+Z</code> / <code>Ctrl+Y</code>（または <code>Ctrl+Shift+Z</code>）: 編集パレットを表示している間の Undo / Redo（30 回まで。Mac は <code>Cmd+Z</code> / <code>Cmd+Shift+Z</code>）。開いたブロックの中では、Redo はいつも入力のやり直しです。Undo も、ブロックに変更があれば入力の取り消しです。
+              </li>
+              <li>
+                編集モードで、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下にマウスを置く（スマートフォンではタップする）と、点線と <code>+</code> が出ます。押すと、そこに新しいブロックを入れます。
+              </li>
+              <li><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code> : Save / Save as（Mac は <code>Cmd</code>）</li>
               <li><code>[Clear]</code> / <code>C</code> : 初期化</li>
               <li><code>[?]</code> : 本ヘルプを表示（<code>Esc</code> で閉じる）</li>
               <li>
@@ -483,82 +364,6 @@
             </ul>
           </div>
 
-          <div class="modal-section" data-help-section="editing">
-            <h3>編集</h3>
-            <h4>開始と反映</h4>
-            <ul>
-              <li>
-                <code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示。表示中にブロックをクリック（タップ）すると、その場で原文を編集できます。表のセルをクリックすると、表示されたままセルを編集できます。
-              </li>
-              <li>
-                パレットを閉じているときに、ブロックや表のセルをダブルクリック（ダブルタップ）すると、パレットを表示して、そこで編集を始めます。図の上でダブルクリックすると、編集ではなく拡大のリセットになります。
-              </li>
-              <li>
-                初期画面で <code>[Edit]</code>、ダブルクリック、ダブルタップのいずれかで、空の文書を新しく始めます。
-              </li>
-              <li>
-                ブロックの外をクリックすると反映、<code>Esc</code> で取り消し。変わったブロックだけを描き直します。
-              </li>
-              <li>
-                <code>Undo</code> で直前の変更（反映したブロック、挿入、セル、行・列・列の配置の操作）を戻します。開いているブロックやセルに変更があるときは、その変更を取り消します。パレットの表示中（グリップだけに縮めているときも）は <code>Ctrl+Z</code> も同じです。ただし、変更したブロックの中では、打った文字をブラウザの Undo で戻します。GRSMD が上部の入力欄を書き換えた後は、そこで入力するまで <code>Ctrl+Z</code> は何もしません。入力した後は、それより前の編集まで戻ることがあります。
-              </li>
-              <li>
-                ショートカット: Markdown の表示中は、<code>Ctrl+S</code> で Save、<code>Ctrl+Shift+S</code> で Save as（パレットを閉じていても使えます。初期画面とコードビューでは何もしません）。編集中は <code>Ctrl+B</code> で太字、<code>Ctrl+I</code> で斜体。Mac では <code>Ctrl</code> の代わりに <code>Cmd</code> を使います。
-              </li>
-            </ul>
-            <h4>パレット</h4>
-            <ul>
-              <li>
-                パレット: 太字、斜体、書式（Text format）、Mermaid の雛形、Save、Save as、表の挿入、行の挿入・削除、列の挿入・削除、Align column（列の配置）、Undo。マウスかタッチで使います（キーボードでは操作しません）。グリップをドラッグする（またはボタンを押したまま外へずらす）とパレットが動きます。グリップを 0.5 秒押し続けるとパレットがグリップだけになり、もう一度で元に戻ります。縮めたグリップに点があるときは、未保存の変更があります。
-              </li>
-              <li>
-                表の挿入と Mermaid の雛形: ブロックを開いているときは、そのブロックを先に反映してから、カーソルの行の位置に入れます（段落・リスト・引用はそこで分けます。ほかのブロックでは、その上か下に入れます）。入れた後は、表の最初のセルか Mermaid の原文を開きます。コード・数式・HTML・表の原文の中では入れません。<code>Undo</code> は、入れたブロックだけを戻します。ブロックを開いていないときは、最後に開いたブロックの後ろか、文書の末尾に入れます。
-              </li>
-            </ul>
-            <h4>表</h4>
-            <ul>
-              <li>
-                表: セルをクリックして編集します。<code>Tab</code> / <code>Shift+Tab</code> で次・前のセル、<code>Enter</code> で下のセル（最後の行では表の編集を終えます）、<code>Shift+Enter</code> で改行、<code>Esc</code> でセルの変更を取り消して表の編集を終えます。そのままの見た目で編集できないセル（数式・画像・脚注、太字・斜体・改行・文字色以外の HTML など）は、原文の文字で開きます。セルを開いている間は、パレットで行・列の挿入・削除と列の配置ができます。
-              </li>
-              <li>
-                パレットの表示中は、表の右上の <code>Markdown</code> のつまみで、表全体を原文で開きます。原文では、<code>Enter</code> で <code>&lt;br&gt;</code> を挿入します。セルの中で縦棒を文字として書くときは <code>\|</code> と書きます。
-              </li>
-            </ul>
-            <h4>書式とリンク</h4>
-            <ul>
-              <li>
-                書式（Text format）: 文字色（赤・青・緑と、色を外す（Remove text color）。GitHub では色が消え、文字は残ります）、リンクを貼る（Paste copied link）、リンクを外す（Remove link）。リンクにするには、文字を選んで URL を <code>Ctrl+V</code>（Mac は <code>Cmd+V</code>）で貼ります。この方法には許可が要りません。
-              </li>
-              <li>
-                「リンクを貼る」はクリップボードを読むので、ブラウザが許可を求めることがあります。goodrelax.github.io で開いているとき、Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。
-              </li>
-            </ul>
-            <h4>改行と印</h4>
-            <ul>
-              <li>
-                段落・リスト・引用で <code>Enter</code>（または <code>Shift+Enter</code>）を押すと、改行（行末の空白 2 つ）を入れます。空の行で <code>Enter</code> を押すと、段落が分かれます。リストの新しい項目は、自分で <code>- </code> を打ちます。項目の間に空行を入れると、項目の間が空きます。とても大きなブロックでは、<code>Enter</code> は普通の改行です。
-              </li>
-              <li>
-                編集中は、見えない文字（ノーブレークスペース、絵文字をつなぐもの・絵文字の形を変えるもの以外の幅 0 の文字、ソフトハイフン）と、改行のための行末の空白 2 つに、薄い背景の印を付けます（とても大きなブロックと、印がとても多いブロックでは付けません）。ファイルには、文字のまま保存します。
-              </li>
-            </ul>
-            <h4>保存とその他</h4>
-            <ul>
-              <li>
-                <code>Save</code> はドロップしたファイルに上書きします（Chrome / Edge。書き込みの許可を求めます）。<code>Save as</code> は保存先を選びます。ファイルを書き込めないブラウザではダウンロードになり、タブは未保存（タイトルの <code>*</code>）のままです。
-              </li>
-              <li>
-                自動保存はしません。ブラウザにも何も保存しません。未保存の変更があるときに、離れる・Reload・Clear・別のファイルのドロップをすると、先に確認します。
-              </li>
-              <li>
-                編集した PlantUML の図は、<code>[Render]</code> を押して確認するまで送信しません。
-              </li>
-              <li>
-                文書を表示している間、上部のボックスは同じ文書です。そこから描画しても先頭の <code>```markdown</code> のフェンスは外しません。AI の出力の外枠を外すには、<code>[Clear]</code> してからペーストし直してください。
-              </li>
-            </ul>
-          </div>
-
           <div class="modal-section" data-help-section="privacy">
             <h3>プライバシーとセキュリティ</h3>
             <ul>
@@ -575,6 +380,9 @@
               </li>
               <li>
                 ダウンロードのボタンは、最新のリリースを取りに GitHub（github.com）を開きます。押すまでは何も送りません。
+              </li>
+              <li>
+                編集パレットの「リンクを貼る」はクリップボードを読むので、ブラウザが許可を求めることがあります。goodrelax.github.io で開いているとき、Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。
               </li>
             </ul>
           </div>

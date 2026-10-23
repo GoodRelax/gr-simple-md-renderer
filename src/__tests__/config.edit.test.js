@@ -58,9 +58,9 @@ const contrast = (a, b) => {
 describe("CONFIG.edit text colors and invisible marks (INV-66, INV-70, 5.14.14)", () => {
   it("AT-CFG-06 the agreed values", () => {
     expect(CONFIG.edit.textColors).toEqual({
-      red: { light: "#B84F00", dark: "#E0661A" },
-      blue: { light: "#0072B2", dark: "#56B4E9" },
-      green: { light: "#007A58", dark: "#009E73" },
+      red: { light: "#CF222E", dark: "#F85149" },
+      blue: { light: "#0550AE", dark: "#58A6FF" },
+      green: { light: "#1A7F37", dark: "#3FB950" },
     });
     expect(CONFIG.edit.invisibleMarkMaxChars).toBe(50000);
     expect(CONFIG.edit.invisibleMarkMaxMarks).toBe(2000); // P-3

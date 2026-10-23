@@ -268,7 +268,7 @@ describe("AT-KEY-03 primary + Z: the unit Undo in edit mode (INV-59, ruling Q2 /
     expect(app.orchestrator.getBody()).toBe(DOC);
   });
 
-  it("(c) focus outside a changed editor: the change is cancelled (11-c [hasUncommittedChange]); the record stays", async () => {
+  it("(c) focus outside a changed editor: the change is applied and undone (11-c [hasUncommittedChange], D3); the record before stays", async () => {
     await withDocument();
     showPalette();
     commitChange(isPara("Hello"), "Hello changed.");
@@ -281,6 +281,7 @@ describe("AT-KEY-03 primary + Z: the unit Undo in edit mode (INV-59, ruling Q2 /
     expect(app.orchestrator.getBody()).toContain("Hello changed.");
     expect(app.orchestrator.getBody()).not.toContain("Second typed.");
     expect(app.orchestrator.canUndo()).toBe(true);
+    expect(app.orchestrator.canRedo()).toBe(true);
   });
 
   it("a held key: undone once, the repeats are taken and do nothing", async () => {
@@ -293,13 +294,82 @@ describe("AT-KEY-03 primary + Z: the unit Undo in edit mode (INV-59, ruling Q2 /
     expect(undo).toHaveBeenCalledTimes(1);
   });
 
-  it("primary + Shift + Z and Ctrl+Y are not taken (no Redo; block editor keeps the browser's)", async () => {
+  it.each([
+    ["Ctrl+Shift+Z", (el) => ctrl(el, "Z", { shiftKey: true })],
+    ["Ctrl+Y", (el) => ctrl(el, "y")],
+  ])("AT-KEY-08 %s in edit mode, focus outside: taken; the last undone unit comes back (D5, D7)", async (_name, redo) => {
     await withDocument();
     showPalette();
     commitChange(isPara("Hello"), "Hello changed.");
-    expect(ctrl(document.body, "Z", { shiftKey: true }).defaultPrevented).toBe(false);
-    expect(ctrl(document.body, "y").defaultPrevented).toBe(false);
+    expect(redo(document.body).defaultPrevented).toBe(true); // nothing to redo yet
     expect(app.orchestrator.getBody()).toContain("Hello changed.");
+    ctrl(document.body, "z");
+    expect(app.orchestrator.getBody()).toBe(DOC);
+    expect(redo(document.body).defaultPrevented).toBe(true);
+    expect(app.orchestrator.getBody()).toContain("Hello changed.");
+    expect(app.orchestrator.canRedo()).toBe(false);
+  });
+
+  it("AT-KEY-08 Redo: in a block editor always the browser's, changed or not (ruling M5); with the focus outside, a changed editor does nothing (R2) and an unchanged one closes and redoes", async () => {
+    await withDocument();
+    showPalette();
+    commitChange(isPara("Hello"), "Hello changed.");
+    ctrl(document.body, "z");
+    const ta = open(isPara("Second"));
+    ta.value = "Second typed.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(ctrl(ta, "y").defaultPrevented).toBe(false); // (b) the browser's
+    // the typing undone by the browser: the editor is as opened, Redo is still the browser's
+    ta.value = "Second para.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(app.ui.blockEdit.hasUncommittedChange()).toBe(false);
+    for (const redo of [() => ctrl(ta, "y"), () => ctrl(ta, "Z", { shiftKey: true })]) {
+      expect(redo().defaultPrevented).toBe(false);
+      expect(app.blockEditor()).toBe(ta);
+      expect(app.orchestrator.canRedo()).toBe(true);
+    }
+    ta.value = "Second typed.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    ta.blur();
+    expect(ctrl(document.body, "y").defaultPrevented).toBe(true); // taken, nothing done (R2)
+    expect(app.blockEditor()).toBe(ta);
+    expect(app.orchestrator.canRedo()).toBe(true);
+    ta.value = "Second para.";
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(ctrl(document.body, "y").defaultPrevented).toBe(true); // unchanged, focus outside: the unit Redo
+    expect(app.blockEditor()).toBeNull();
+    expect(app.orchestrator.getBody()).toContain("Hello changed.");
+  });
+
+  it("AT-KEY-08 Redo is not taken outside edit mode, in #editor, or on Apple with Ctrl+Y; Cmd+Shift+Z is Redo on Apple", async () => {
+    await withDocument();
+    expect(ctrl(document.body, "y").defaultPrevented).toBe(false); // the palette is hidden (Q3)
+    showPalette();
+    app.elements.editor.focus();
+    expect(ctrl(app.elements.editor, "y").defaultPrevented).toBe(false); // (a)
+    app.teardown();
+    await withDocument({ isApple: true });
+    showPalette();
+    commitChange(isPara("Hello"), "Hello changed.");
+    keydown(document.body, "z", { metaKey: true, code: "KeyZ" });
+    expect(app.orchestrator.getBody()).toBe(DOC);
+    expect(keydown(document.body, "y", { ctrlKey: true, code: "KeyY" }).defaultPrevented).toBe(false);
+    expect(keydown(document.body, "y", { metaKey: true, code: "KeyY" }).defaultPrevented).toBe(false);
+    expect(keydown(document.body, "z", { metaKey: true, shiftKey: true, code: "KeyZ" }).defaultPrevented).toBe(true);
+    expect(app.orchestrator.getBody()).toContain("Hello changed.");
+  });
+
+  it("AT-KEY-08 a held Redo key redoes once", async () => {
+    await withDocument();
+    showPalette();
+    commitChange(isPara("Hello"), "Hello changed.");
+    commitChange(isPara("Second"), "Second changed.");
+    ctrl(document.body, "z");
+    ctrl(document.body, "z");
+    const redo = vi.spyOn(app.orchestrator, "redoLastCommit");
+    ctrl(document.body, "y");
+    expect(ctrl(document.body, "y", { repeat: true }).defaultPrevented).toBe(true);
+    expect(redo).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -402,7 +472,7 @@ describe("AT-KEY-07 in a table cell: primary + Z is the unit Undo, B / I format 
     td.dispatchEvent(new Event("input", { bubbles: true }));
   }
 
-  it("a changed cell: Ctrl+Z is taken and takes the cell's change back (INV-48 (1)); the table session ends", async () => {
+  it("a changed cell: Ctrl+Z is taken, applies the cell and undoes it (INV-48 (1), D3); the table session ends", async () => {
     await withDocument({ doc: TDOC });
     showPalette();
     tap(cellEl(1, 0));
@@ -412,8 +482,10 @@ describe("AT-KEY-07 in a table cell: primary + Z is the unit Undo, B / I format 
     const e = ctrl(td, "z");
     expect(e.defaultPrevented).toBe(true);
     expect(app.ui.blockEdit.isEditing()).toBe(false);
-    expect(cellEl(1, 0).textContent).toBe("x");
     expect(app.orchestrator.getBody()).toBe(TDOC);
+    await settle();
+    expect(cellEl(1, 0).textContent).toBe("x");
+    expect(app.orchestrator.canRedo()).toBe(true);
   });
 
   it("a cell without a change: Ctrl+Z undoes the last unit (the cell committed before)", async () => {

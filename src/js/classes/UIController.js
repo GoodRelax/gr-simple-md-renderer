@@ -651,8 +651,8 @@ export default class UIController {
           this.toggleEditPalette();
           break;
         case "Escape":
-          // Markdown view: hide the palette, or cancel the open block editor
-          // when the focus is outside it (5.11, 11-c escapePressed). A held
+          // Markdown view: hide the palette, or apply and close the open block
+          // editor when the focus is outside it (5.11, 11-c escapePressed). A held
           // Esc acts once: its repeats do nothing (owner ruling Q-a).
           if (e.repeat) break;
           if (!this.orchestrator.isPreRenderState() && !this.orchestrator.isCodeViewActive())
@@ -700,20 +700,26 @@ export default class UIController {
       /** @purity non-pure */
       return () => (e.shiftKey ? this.requestSaveAs() : this.requestSave());
     }
-    if (letter === "z" && !e.shiftKey) {
-      // INV-59: edit mode only (ruling Q3).
+    const isRedo = (letter === "z" && e.shiftKey) || (letter === "y" && !e.shiftKey && !this._isApple);
+    if ((letter === "z" && !e.shiftKey) || isRedo) {
+      // INV-59: edit mode only (ruling Q3). Redo (primary + Shift + Z, and
+      // Ctrl+Y outside Apple platforms) goes by the same rules (owner ruling
+      // D7), except in the block editor, where it is the browser's (ruling M5).
       if (!this.palette.isShown()) return null;
       const active = document.activeElement;
       if (this.blockEdit.isCellElement(active)) {
-        // (c): in a cell Undo is always by unit (ruling Q2)
+        // (c): in a cell Undo is always by unit (ruling Q2); the cell takes Redo itself
       } else if (this.blockEdit.isEditorElement(active)) {
-        if (this.blockEdit.hasUncommittedChange()) return null; // (b) the browser's character Undo
+        // (b) the browser's character Undo with a change; its Redo always
+        // (the typing an Undo took back can come again; ruling M5, 2026-10-24)
+        if (isRedo || this.blockEdit.hasUncommittedChange()) return null;
       } else if (active === this.elements.editor || isTextEntry(active)) {
         return null; // (a)
       }
+      const event = isRedo ? "redoRequested" : "undoRequested";
       /** @purity non-pure */
       return () => {
-        this.blockEdit.dispatch("undoRequested"); // (c)
+        this.blockEdit.dispatch(event); // (c)
         this._refreshDirtyMark();
       };
     }

@@ -125,17 +125,41 @@ describe("AT-TCE-03 closing: unchanged and cancelled cells get their children ba
     expect(cellEl(1, 0).firstChild).toBe(original);
   });
 
-  it("Esc cancels the cell and ends the table session; the palette stays (W4)", async () => {
+  it("Esc applies the cell and ends the table session; the palette stays (W4, owner ruling D1); Undo takes it back", async () => {
     s = await setupEdit(DOC);
-    const original = cellEl(1, 0).firstChild;
     const td = openCell(1, 0);
     typeText(td.firstChild, "changed");
     const e = keydown(td, "Escape");
     expect(e.defaultPrevented).toBe(true);
     expect(s.bec.isEditing()).toBe(false);
-    expect(cellEl(1, 0).firstChild).toBe(original);
-    expect(s.orchestrator.getBody()).toBe(DOC);
+    expect(cellEl(1, 0).textContent).toBe("changed");
+    expect(tableRaw()).toContain("| changed ");
     expect(s.host.hidePalette).not.toHaveBeenCalled();
+    s.bec.dispatch("undoRequested");
+    expect(s.orchestrator.getBody()).toBe(DOC);
+  });
+
+  it("Undo right after a cell commit, before its render, draws the cell again (the model undone to is the one last rendered)", async () => {
+    s = await setupEdit(DOC);
+    const td = openCell(1, 0);
+    typeText(td.firstChild, "changed");
+    s.bec.dispatch("undoRequested"); // applies the cell (written in place), then undoes it
+    expect(s.orchestrator.getBody()).toBe(DOC);
+    await flush();
+    expect(cellEl(1, 0).textContent).toBe("Yamada");
+    s.bec.dispatch("redoRequested");
+    await flush();
+    expect(cellEl(1, 0).textContent).toBe("changed");
+  });
+
+  it("Esc on an unchanged cell gives its children back and commits nothing", async () => {
+    s = await setupEdit(DOC);
+    const original = cellEl(1, 0).firstChild;
+    const td = openCell(1, 0);
+    keydown(td, "Escape");
+    expect(s.bec.isEditing()).toBe(false);
+    expect(cellEl(1, 0).firstChild).toBe(original);
+    expect(s.orchestrator.canUndo()).toBe(false);
   });
 
   it("a change: the table aligned with the new cell (INV-61), one undoable unit, the cell drawn in place", async () => {
@@ -173,12 +197,15 @@ describe("AT-TCE-04 UIR-01: cells committed one after another keep the table's e
     expect(s.bec.isEditingCell()).toBe(true);
     expect(cellEl(2, 1).classList.contains("grsmd-cell-editing")).toBe(true);
     expect(tableRaw()).toContain("| A1     | **B1** |");
-    s.bec.dispatch("escapePressed");
+    s.bec.dispatch("escapePressed"); // the open cell is unchanged: nothing more
     s.bec.dispatch("undoRequested");
     await flush();
     expect(s.orchestrator.getBody()).toContain("| A1     | **bold** |");
-    s.bec.dispatch("undoRequested"); // the record held one unit only
-    expect(s.orchestrator.getBody()).toContain("| A1     | **bold** |");
+    s.bec.dispatch("undoRequested"); // each cell is a unit of its own (INV-48)
+    expect(s.orchestrator.getBody()).toBe(DOC);
+    s.bec.dispatch("redoRequested");
+    s.bec.dispatch("redoRequested");
+    expect(tableRaw()).toContain("| A1     | **B1** |");
   });
 
   it("a queued partial render does not change the held table's DOM", async () => {
@@ -400,14 +427,35 @@ describe("AT-TCE-09 INV-64 keys in a cell (all preventDefault()ed)", () => {
     expect(tableRaw()).toContain("| Yamada<br> |");
   });
 
-  it("Redo (Ctrl+Shift+Z, Ctrl+Y) is stopped and does nothing; Ctrl+Z, Ctrl+B are left to the document (INV-59)", async () => {
+  it("Redo (Ctrl+Shift+Z, Ctrl+Y) is stopped and asks 11-c for redoRequested: a changed cell stays as it is; Ctrl+Z, Ctrl+B are left to the document (INV-59, D7)", async () => {
     s = await setupEdit(DOC);
     const td = openCell(1, 0);
+    typeText(td.firstChild, "changed");
+    const dispatch = vi.spyOn(s.bec, "dispatch");
     expect(keydown(td, "z", { ctrlKey: true, shiftKey: true }).defaultPrevented).toBe(true);
     expect(keydown(td, "y", { ctrlKey: true }).defaultPrevented).toBe(true);
+    expect(dispatch.mock.calls.map((c) => c[0])).toEqual(["redoRequested", "redoRequested"]);
+    expect(s.bec.isEditingCell()).toBe(true); // a changed cell: nothing to redo (R2)
+    expect(td.textContent).toBe("changed");
+    // a held key acts once
+    expect(keydown(td, "y", { ctrlKey: true, repeat: true }).defaultPrevented).toBe(true);
+    expect(dispatch).toHaveBeenCalledTimes(2);
     expect(keydown(td, "z", { ctrlKey: true }).defaultPrevented).toBe(false);
     expect(keydown(td, "b", { ctrlKey: true }).defaultPrevented).toBe(false);
     expect(s.bec.isEditingCell()).toBe(true);
+  });
+
+  it("Redo in an unchanged cell ends the table session and redoes the last undone unit (R2)", async () => {
+    s = await setupEdit(DOC);
+    let td = openCell(1, 0);
+    typeText(td.firstChild, "changed");
+    keydown(td, "Escape");
+    s.bec.dispatch("undoRequested");
+    expect(s.orchestrator.getBody()).toBe(DOC);
+    td = openCell(1, 1);
+    keydown(td, "y", { ctrlKey: true });
+    expect(s.bec.isEditing()).toBe(false);
+    expect(tableRaw()).toContain("| changed ");
   });
 
   it("during IME composition the keys are left alone", async () => {
@@ -509,9 +557,9 @@ describe("AT-TCE-11 formats in a cell (INV-66 / 67)", () => {
     const td = openCell(1, 0);
     select(td.firstChild, 0, 6);
     s.bec.formatSelection({ kind: "color", value: CONFIG.edit.textColors.blue.light });
-    expect(td.querySelector("span[style]").getAttribute("style")).toBe("color: #0072B2");
+    expect(td.querySelector("span[style]").getAttribute("style")).toBe("color: #0550AE");
     pointer(document.body, "pointerdown");
-    expect(tableRaw()).toContain('<span style="color: #0072B2">Yamada</span>');
+    expect(tableRaw()).toContain('<span style="color: #0550AE">Yamada</span>');
   });
 
   it("no selection or a selection outside the cell: formats are off", async () => {
@@ -538,12 +586,12 @@ describe("AT-TCE-12 INV-70 marks in a cell", () => {
 
   it("snapshotNodes reads a mark as its text, a palette span by its style, an a element by reference only", () => {
     const root = document.createElement("td");
-    root.innerHTML = '<span class="grsmd-invisible">x</span><a href="u">l</a><span style="color: #0072B2">c</span><i>e</i>';
+    root.innerHTML = '<span class="grsmd-invisible">x</span><a href="u">l</a><span style="color: #0550AE">c</span><i>e</i>';
     const marks = new WeakSet([root.firstChild]);
     const tree = snapshotNodes(root, { links: new Map(), marks, fillers: new WeakSet() });
     expect(tree.map((n) => n.kind)).toEqual(["mark", "a", "span", "em"]);
     expect(tree[1].link).toBeNull(); // not there when the cell opened: no link
-    expect(tree[2].style).toBe("color: #0072B2");
+    expect(tree[2].style).toBe("color: #0550AE");
   });
 });
 
@@ -727,7 +775,7 @@ describe("AT-TCE-31..34 how a cell opens: footnotes raw, formats in any nesting 
     ["a comment beside a format", "**x** <!--c-->"],
     ["a format element with another attribute (review CR-3)", '<strong title="t">x</strong>'],
     ["a color span with another attribute", `**<span style="color: ${RED}" class="k">word</span>**`],
-    ["a color not in the palette's notation", "**<span style=\"color:#B84F00\">word</span>**"],
+    ["a color not in the palette's notation", "**<span style=\"color:#CF222E\">word</span>**"],
     ["another element inside", `**<span style="color: ${RED}">H<sub>2</sub>O</span>**`],
     ["a strikethrough in another nesting", `~~<span style="color: ${RED}">word</span>~~`],
   ])("AT-TCE-34 %s: still opens as its text (nothing would be lost)", async (_name, cell) => {

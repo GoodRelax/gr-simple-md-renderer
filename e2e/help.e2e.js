@@ -166,7 +166,62 @@ test.describe("Japanese browser", () => {
     await expect(langButton(page, "ja")).toHaveAttribute("aria-pressed", "true");
     const sections = (lang) =>
       body(page, lang).locator(":scope > [data-help-section]").evaluateAll((els) => els.map((e) => e.dataset.helpSection));
-    expect(await sections("ja")).toEqual(["download", "about", "usage", "details", "editing", "privacy", "samples"]);
+    expect(await sections("ja")).toEqual(["download", "about", "usage", "details", "privacy", "samples"]);
     expect(await sections("en")).toEqual(await sections("ja"));
+  });
+});
+
+test.describe("the help's title row and text size (B4, B6)", () => {
+  test.use({ locale: "ja-JP", viewport: { width: 900, height: 500 } });
+
+  test("PRT-L07: the title row with the switch and the close button stays at the top while the help scrolls", async ({ page }) => {
+    await page.goto("/");
+    await openHelp(page);
+    const head = page.locator("#helpModal .help-head");
+    const before = await head.boundingBox();
+    // the help is longer than the window: scroll it to the end
+    await help(page).evaluate((modal) => {
+      modal.scrollTop = modal.scrollHeight;
+    });
+    expect(await help(page).evaluate((modal) => modal.scrollTop)).toBeGreaterThan(100);
+    const after = await head.boundingBox();
+    expect(after.y).toBeLessThanOrEqual(before.y);
+    expect(after.y).toBeGreaterThanOrEqual(0);
+    expect(after.y).toBeLessThan(2);
+    await expect(langButton(page, "en")).toBeInViewport();
+    await expect(page.locator("#helpModal .close-btn")).toBeInViewport();
+    // the row is opaque: the text scrolled under it does not show through
+    const ground = await head.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(ground).not.toBe("rgba(0, 0, 0, 0)");
+    // the switch still works there
+    await langButton(page, "en").click();
+    await expect(body(page, "en")).toBeVisible();
+  });
+
+  test("PRT-L08: the help's text is 75% of the page's (12px); the prompt's is not changed", async ({ page }) => {
+    await page.goto("/");
+    await openHelp(page);
+    const size = (selector) => page.locator(selector).first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(await size('#helpModal .help-body[lang="ja"] li')).toBe(12);
+    expect(await size("#helpModal .modal-content")).toBe(12);
+    expect(await size("#helpModal .help-lang")).toBeCloseTo(9.75, 2);
+    expect(await size("#helpModal .close-btn")).toBe(21);
+    expect(await size("#helpModal h2")).toBe(18); // 1.5em of 12px
+    expect(await size("#promptModal .close-btn")).toBe(28);
+    expect(await size("#promptModal .modal-content")).toBe(16);
+  });
+});
+
+test.describe("the clipboard permission note (CON-12, INV-69)", () => {
+  test("is in Privacy & Security in both languages, and the Editing chapter is gone", async ({ page }) => {
+    await page.goto("/");
+    await openHelp(page);
+    for (const [lang, words] of [["en", "Clipboard to Ask or Block"], ["ja", "\u300c\u30af\u30ea\u30c3\u30d7\u30dc\u30fc\u30c9\u300d\u3092\u300c\u78ba\u8a8d\u3059\u308b\u300d\u304b\u300c\u30d6\u30ed\u30c3\u30af\u300d"]]) {
+      if (lang === "ja") await langButton(page, "ja").click();
+      const privacy = body(page, lang).locator('[data-help-section="privacy"]');
+      await expect(privacy).toContainText("goodrelax.github.io");
+      await expect(privacy).toContainText(words);
+      await expect(body(page, lang).locator('[data-help-section="editing"]')).toHaveCount(0);
+    }
   });
 });

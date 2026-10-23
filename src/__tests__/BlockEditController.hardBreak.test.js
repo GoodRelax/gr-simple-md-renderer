@@ -91,11 +91,14 @@ describe("AT-HBK Enter in the block editor (INV-71)", () => {
     expect(keydown(ta, "Enter").defaultPrevented).toBe(false);
   });
 
-  it("AT-HBK-05 a table keeps its <br> (INV-27)", async () => {
+  it("AT-HBK-05 a table keeps its <br> on Shift+Enter; Enter is the browser's newline (INV-27, owner ruling B2)", async () => {
     s = await setupEdit(DOC);
     const ta = open(byStart("| A"));
     ta.setSelectionRange(ta.value.indexOf("x") + 1, ta.value.indexOf("x") + 1);
-    expect(keydown(ta, "Enter").defaultPrevented).toBe(true);
+    const before = ta.value;
+    expect(keydown(ta, "Enter").defaultPrevented).toBe(false);
+    expect(ta.value).toBe(before);
+    expect(keydown(ta, "Enter", { shiftKey: true }).defaultPrevented).toBe(true);
     expect(ta.value).toContain(`x${CONFIG.edit.tableLineBreak}`);
   });
 

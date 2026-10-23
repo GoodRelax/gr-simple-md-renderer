@@ -172,7 +172,7 @@ describe("MarkdownBlockModel (Entity, pure; real marked lexer)", () => {
 
   it.each([
     ["after a middle block", "A\n\nB\n", 1, "A\n\nT\n\nB\n"],
-    ["after the last block", "A\n\nB\n", 2, "A\n\nB\n\nT"],
+    ["after the last block: the last newline stays (L1)", "A\n\nB\n", 2, "A\n\nB\n\nT\n"],
     ["at the end when blockId is null", "A\n\nB", null, "A\n\nB\n\nT"],
     ["no blank line yet", "# A\nB\n", 1, "# A\n\nT\n\nB\n"],
   ])("AT-BM-21 insertAfter adds blank lines only where needed (%s)", (_n, body, id, expected) => {
@@ -299,5 +299,44 @@ describe("MarkdownBlockModel.insertAt removeBefore (review L4)", () => {
     const change = m.insertAt(3, "T", lexer, MAX, { removeBefore: 2 });
     expect(change.model.toBody()).toBe("x\n\nT\n\ny\n");
     expect(change.model.getBlocks().find((b) => b.raw.startsWith("T")).id).toBe(change.insertedBlockId);
+  });
+});
+
+describe("AT-BM-33 gapOffset (INV-73)", () => {
+  it("the start of the first block, the start of the block after one, the end of the body", () => {
+    const m = model("\n\n# T\n\nA\n\nB\n");
+    const [t, a, b] = m.getBlocks();
+    const body = m.toBody();
+    expect(m.gapOffset(null)).toBe(body.indexOf("# T"));
+    expect(m.gapOffset(t.id)).toBe(body.indexOf("A"));
+    expect(m.gapOffset(a.id)).toBe(body.indexOf("B"));
+    expect(m.gapOffset(b.id)).toBe(body.length);
+    expect(m.gapOffset(9999)).toBe(body.length);
+  });
+});
+
+describe("AT-BM-34 the undo record shares the blocks (INV-48, 30 units on 1 MB)", () => {
+  it("a commit keeps the very block objects that did not change; the changed one is new and equal to its text", () => {
+    const m1 = model("# T\n\nA long paragraph that is longer than sixteen characters.\n\nB\n");
+    const [t, a, b] = m1.getBlocks();
+    const m2 = m1.replaceBlock(a.id, "A changed paragraph that is longer than sixteen characters.", lexer, 250000).model;
+    const [t2, a2, b2] = m2.getBlocks();
+    expect(t2).toBe(t);
+    expect(b2).toBe(b);
+    expect(a2).not.toBe(a);
+    expect(a2.raw.trimEnd()).toBe("A changed paragraph that is longer than sixteen characters.");
+    expect(Object.isFrozen(a2)).toBe(true);
+    expect(m2.toBody()).toBe("# T\n\nA changed paragraph that is longer than sixteen characters.\n\nB\n");
+  });
+
+  it("withoutJoinedBody is a new value with the same blocks, links and counter", () => {
+    const m1 = model("[x]: https://example.com\n\nSee [x].\n", 5);
+    const copy = m1.withoutJoinedBody();
+    expect(copy).not.toBe(m1);
+    expect(copy.getBlocks()).toEqual(m1.getBlocks());
+    copy.getBlocks().forEach((b, i) => expect(b).toBe(m1.getBlocks()[i]));
+    expect(copy.links).toBe(m1.links);
+    expect(copy.getNextBlockId()).toBe(m1.getNextBlockId());
+    expect(copy.toBody()).toBe(m1.toBody());
   });
 });

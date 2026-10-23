@@ -4,6 +4,7 @@ import MarkdownTextOps from "./MarkdownTextOps.js";
 import InvisibleCharOverlay from "./InvisibleCharOverlay.js";
 import TableCellEditor from "./TableCellEditor.js";
 import ClipboardLink from "./ClipboardLink.js";
+import BlockGapInsert from "./BlockGapInsert.js";
 import { cell, row, choice, selectCell } from "../stateTable.js";
 
 const BROWSING = "browsingPreview";
@@ -18,7 +19,7 @@ const MOVE_EVENTS = { nextCellRequested: "next", previousCellRequested: "previou
 const PLACED_KINDS = new Set(["block", "cell", "tableSource"]);
 const OPENING_ACTIONS = new Set(["openBlockEditor", "startTableSession", "openTableSourceWithToast"]);
 // Actions that open or close a cell: the host refreshes the palette after them.
-const CELL_ACTIONS = new Set(["openCell", "commitCell", "revertCell", "discardCell", "endTableSession"]);
+const CELL_ACTIONS = new Set(["openCell", "commitCell", "discardCell", "endTableSession"]);
 
 // Targets a tap never opens (INV-29). The list is kept as written in the
 // spec: user HTML may contain the same classes and roles, and they stay
@@ -129,20 +130,31 @@ export const blockEditStateMachine = Object.freeze({
     ),
   ),
   pointerPressedOutside: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
+  // Esc applies and closes (INV-28, owner ruling D1); Ctrl+Z then takes it back.
   escapePressed: transitions(
     null,
     cell(BROWSING, ["hidePalette"]),
-    cell(IDLE, ["restoreOriginalRaw"], "isImeIdle"),
-    cell(IDLE, ["revertCell", "endTableSession"], "isImeIdle"),
+    cell(IDLE, ["commitBlock"], "isImeIdle"),
+    cell(IDLE, ["commitCell", "endTableSession"], "isImeIdle"),
   ),
+  // INV-48 (1): a changed editor or cell is applied, and that unit undone
+  // (Redo brings it back); a commit that made no unit undoes nothing (R1).
   undoRequested: transitions(
     null,
     cell(IDLE, ["undoLastUnit"]),
-    choice(cell(IDLE, ["restoreOriginalRaw"], "hasUncommittedChange"), cell(IDLE, ["commitBlock", "undoLastUnit"])),
+    choice(cell(IDLE, ["commitBlock", "undoJustCommitted"], "hasUncommittedChange"), cell(IDLE, ["commitBlock", "undoLastUnit"])),
     choice(
-      cell(IDLE, ["revertCell", "endTableSession"], "hasUncommittedChange"),
+      cell(IDLE, ["commitCell", "endTableSession", "undoJustCommitted"], "hasUncommittedChange"),
       cell(IDLE, ["commitCell", "endTableSession", "undoLastUnit"]),
     ),
+  ),
+  // INV-48 / INV-59: a changed editor or cell has nothing to redo (R2): it
+  // stays open and the redo record is kept.
+  redoRequested: transitions(
+    null,
+    cell(IDLE, ["redoLastUnit"]),
+    choice(cell(EDITING, [], "hasUncommittedChange"), cell(IDLE, ["commitBlock", "redoLastUnit"])),
+    choice(cell(CELL, [], "hasUncommittedChange"), cell(IDLE, ["commitCell", "endTableSession", "redoLastUnit"])),
   ),
   saveRequested: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
   saveAsRequested: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
@@ -189,6 +201,19 @@ export const blockEditStateMachine = Object.freeze({
     choice(cell(IDLE, ["commitBlock", "insertBlock"], "canInsertBlock"), cell(EDITING, ["showInsertRefusedToast"])),
     null,
   ),
+  // INV-73 (owner ruling B1): the line in a gap between blocks was clicked.
+  // An open editor or cell is committed first (a change of its own), then an
+  // empty editor opens in that gap; what is typed goes in as a new block
+  // when it is committed, and an empty one changes nothing.
+  gapInsertRequested: transitions(
+    null,
+    choice(
+      cell(IDLE, ["renderFromEditor", "showToast"], "hasUnrenderedEditor"),
+      cell(EDITING, ["resolveBlockById", "openBlockEditor"]),
+    ),
+    cell(EDITING, ["commitBlock", "resolveBlockById", "openBlockEditor"]),
+    cell(EDITING, ["commitCell", "endTableSession", "resolveBlockById", "openBlockEditor"]),
+  ),
   // INV-52: the inserted block has been drawn and nothing else happened
   // meanwhile: a table opens its first cell, a Mermaid block its source.
   insertedBlockRendered: transitions(
@@ -228,6 +253,7 @@ export default class BlockEditController {
    * @param {ScrollMemento} scrollMemento - anchor on open (INV-46)
    * @param {object} host - BlockEditHost
    * @param {(textarea: HTMLTextAreaElement, options: object) => InvisibleCharOverlay} [createOverlay] - INV-70
+   * @param {(gapHost: object) => BlockGapInsert} [createGaps] - INV-73
    * @purity non-pure
    */
   constructor(
@@ -237,6 +263,7 @@ export default class BlockEditController {
     scrollMemento,
     host,
     createOverlay = (textarea, options) => new InvisibleCharOverlay(textarea, options),
+    createGaps = (gapHost) => new BlockGapInsert(preview, blockLocator, gapHost),
   ) {
     this.preview = preview;
     this.orchestrator = orchestrator;
@@ -245,7 +272,7 @@ export default class BlockEditController {
     this.host = host;
     this.createOverlay = createOverlay;
     this._blockEditState = BROWSING;
-    this._editor = null; // { textarea, wrapper, blockId, blockType, original, savedNodes, overlay }
+    this._editor = null; // { textarea, wrapper, blockId, blockType, original, savedNodes, overlay, gap }
     this._lexers = null; // the orchestrator's text lexers, block lexing cached per text
     this._press = null; // the pointerdown being followed
     this._composing = false;
@@ -268,6 +295,7 @@ export default class BlockEditController {
       { dispatch: (event) => this.dispatch(event), onCellInput: () => this.host.onEditorInput() },
       { isApple: Boolean(host.isApple) },
     );
+    this._gaps = createGaps({ onGapChosen: (target) => this.dispatch("gapInsertRequested", target) });
   }
 
   /**
@@ -685,6 +713,7 @@ export default class BlockEditController {
     let rendering = null;
     let committed = null; // where the committed text is now (commitBlock)
     let inserting = null; // { rendering, blockId, model } of insertBlock
+    const modelBefore = this.orchestrator.getModel(); // undoJustCommitted
     // INV-46: where the tapped block was before an open editor above it
     // closed and changed the layout (PRT-U07).
     const tapped = this._tappedPlace(next, target);
@@ -694,7 +723,6 @@ export default class BlockEditController {
           committed = this._commitBlock();
           break;
         case "discardBlockEditor":
-        case "restoreOriginalRaw":
           this._closeEditor();
           break;
         case "showPalette":
@@ -725,6 +753,15 @@ export default class BlockEditController {
           if (this.host.isEditorChangedSinceRender()) this.host.renderFromEditor();
           else this.orchestrator.undoLastCommit();
           break;
+        case "undoJustCommitted":
+          // INV-48 (1): only the unit the commit of this crossing made (R1)
+          if (this.orchestrator.getModel() !== modelBefore) this.orchestrator.undoLastCommit();
+          break;
+        case "redoLastUnit":
+          // as undoLastUnit: #editor changes are rendered instead (R3)
+          if (this.host.isEditorChangedSinceRender()) this.host.renderFromEditor();
+          else this.orchestrator.redoLastCommit();
+          break;
         case "startTableSession":
           // the tapped table is gone (the commit before changed it): nothing opens
           if (!resolved) break;
@@ -742,9 +779,6 @@ export default class BlockEditController {
           break;
         case "commitCell":
           this._cells.commitCell();
-          break;
-        case "revertCell":
-          this._cells.revertCell();
           break;
         case "discardCell":
           this._cells.discardCell();
@@ -812,7 +846,12 @@ export default class BlockEditController {
   _insertPlan(target) {
     let plan = this._insertPlans.get(target);
     if (!plan) {
-      const range = this.getSelectionRange();
+      let range = this.getSelectionRange();
+      if (range && this._editor.gap) {
+        // planned on the text the gap editor commits (INV-73)
+        const { text, lead } = BlockEditController._gapText(range.text);
+        range = { text, selEnd: Math.min(Math.max(range.selEnd - lead, 0), text.length) };
+      }
       plan = range
         ? MarkdownTextOps.planBlockInsert(range.text, range.selEnd, this._editor.blockType, {
             ...this._textLexers(),
@@ -895,10 +934,12 @@ export default class BlockEditController {
     const wasBrowsing = this._blockEditState === BROWSING;
     this._blockEditState = next;
     if (wasBrowsing && next !== BROWSING) {
+      this._gaps.enable();
       document.addEventListener("pointerdown", this._onPointerDown, true);
       document.addEventListener("pointerup", this._onPointerUp, true);
       document.addEventListener("pointercancel", this._onPointerCancel, true);
     } else if (!wasBrowsing && next === BROWSING) {
+      this._gaps.disable();
       document.removeEventListener("pointerdown", this._onPointerDown, true);
       document.removeEventListener("pointerup", this._onPointerUp, true);
       document.removeEventListener("pointercancel", this._onPointerCancel, true);
@@ -950,9 +991,34 @@ export default class BlockEditController {
    * @purity semi-pure-b
    */
   _resolve(target) {
+    if (target?.kind === "gap") return this._resolveGap(target);
     if (!target || target.id === undefined) return target;
     const model = this.orchestrator.getModel();
     return model && model.findIndexById(target.id) >= 0 ? target : null;
+  }
+
+  /**
+   * The gap of a gapInsertRequested on the current model, as the block it
+   * comes after (null: before the first block), and the block after it; null
+   * when it is gone (INV-73). The start and the end of the document always
+   * stay; another gap follows its upper block, or else its lower one (a
+   * commit before it may have changed either).
+   * @purity semi-pure-b
+   * @param {{afterBlockId: number|null, beforeBlockId: number|null}} target
+   * @returns {{kind: "gap", afterBlockId: number|null, beforeBlockId: number|null}|null}
+   */
+  _resolveGap(target) {
+    const model = this.orchestrator.getModel();
+    const blocks = model ? model.getBlocks() : [];
+    if (blocks.length === 0) return null;
+    /** @purity semi-pure-b */
+    const gap = (index) => ({ kind: "gap", afterBlockId: index < 0 ? null : blocks[index].id, beforeBlockId: blocks[index + 1]?.id ?? null });
+    if (target.afterBlockId === null) return gap(-1);
+    const after = model.findIndexById(target.afterBlockId);
+    if (after >= 0) return gap(after);
+    if (target.beforeBlockId === null) return gap(blocks.length - 1);
+    const before = model.findIndexById(target.beforeBlockId);
+    return before >= 0 ? gap(before - 1) : null;
   }
 
   /**
@@ -995,6 +1061,11 @@ export default class BlockEditController {
     let blockType = null;
     if (target.kind === "empty") {
       wrapper = this.blockLocator.getEmptyBlockElement();
+    } else if (target.kind === "gap") {
+      // INV-73: a wrapper of its own in the gap, kept there by the renderer
+      wrapper = document.createElement("div");
+      wrapper.className = "md-block md-block-gap";
+      this.blockLocator.placeGapEditor(wrapper, target.afterBlockId, target.beforeBlockId);
     } else {
       // a block, a table's tab, or a table opened as its source
       const model = this.orchestrator.getModel();
@@ -1018,7 +1089,9 @@ export default class BlockEditController {
     const savedNodes = [...wrapper.childNodes];
     wrapper.replaceChildren(textarea);
     wrapper.classList.add("md-block-editing");
-    this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes, overlay: null };
+    const gap = target.kind === "gap" ? { afterBlockId: target.afterBlockId } : null;
+    this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes, overlay: null, gap };
+    this._gaps.hide();
     this._composing = false;
     this.editGeneration++;
     if (blockId !== null) {
@@ -1061,13 +1134,20 @@ export default class BlockEditController {
     openEditor.overlay?.detach();
     openEditor.wrapper.replaceChildren(...openEditor.savedNodes);
     openEditor.wrapper.classList.remove("md-block-editing");
+    if (openEditor.gap) this.blockLocator.removeGapEditor();
     this._editor = null;
     this._composing = false;
     this.editGeneration++;
     this._lexers = null; // the kept block lexing goes with the editor
     this.orchestrator.releaseBlock();
     this.host.onEditStateChanged();
-    return { blockId: openEditor.blockId, blockType: openEditor.blockType, text: textarea.value, original: openEditor.original };
+    return {
+      blockId: openEditor.blockId,
+      blockType: openEditor.blockType,
+      text: textarea.value,
+      original: openEditor.original,
+      gap: openEditor.gap,
+    };
   }
 
   /**
@@ -1085,10 +1165,11 @@ export default class BlockEditController {
     // content changes. Taking it after closing forced a layout of the whole
     // preview (~20 ms on a 1 MB document).
     const open = this._editor;
-    const anchor = open && open.blockId !== null ? this.scrollMemento.captureAnchor(open.wrapper) : undefined;
+    const anchor = open && (open.blockId !== null || open.gap) ? this.scrollMemento.captureAnchor(open.wrapper) : undefined;
     const model = this.orchestrator.getModel();
     const closed = this._closeEditor();
     if (!closed) return null;
+    if (closed.gap) return this._commitGap(closed, model, anchor ?? null);
     const kept = {
       start: !model ? 0 : closed.blockId === null ? model.toBody().length : model.startOffsetOf(closed.blockId),
       text: closed.blockId === null ? "" : closed.original,
@@ -1106,6 +1187,42 @@ export default class BlockEditController {
     }
     void this.orchestrator.commitBlock(closed.blockId, text, anchor);
     return { ...kept, text };
+  }
+
+  /**
+   * INV-73: what was typed in a gap editor goes in at that gap as one
+   * change of its own (blank lines around it as needed), and the new block
+   * keeps the place the editor had (INV-46). Blank: nothing changes. Returns
+   * as _commitBlock (where the text is now).
+   * @purity non-pure
+   * @param {{text: string, gap: {afterBlockId: number|null}}} closed
+   * @param {MarkdownBlockModel|null} model - the model when it was open
+   * @param {object|null} anchor
+   * @returns {{start: number, text: string, anchor: object|null}}
+   */
+  _commitGap(closed, model, anchor) {
+    const offset = model ? model.gapOffset(closed.gap.afterBlockId) : 0;
+    const kept = { start: offset, text: "", anchor };
+    const { text } = BlockEditController._gapText(closed.text);
+    if (!model || text === "") return kept;
+    const { blockId } = this.orchestrator.insertBlock(text, { offset, scroll: anchor });
+    if (blockId === null) return kept;
+    this._lastOpenedBlockId = blockId; // the next Insert table / Mermaid goes after it (INV-52)
+    // the text went in as typed, after the blank lines the gap needed (only "\n")
+    return { start: this.orchestrator.getBody().indexOf(text, offset), text, anchor };
+  }
+
+  /**
+   * The text a gap editor puts in (INV-73): its leading blank lines and
+   * trailing white space belong to the gap, not to the block. lead: the
+   * length taken off the start.
+   * @purity pure
+   * @param {string} value
+   * @returns {{text: string, lead: number}}
+   */
+  static _gapText(value) {
+    const lead = /^(?:[ \t]*\n)*/.exec(value)[0].length;
+    return { text: value.slice(lead).trimEnd(), lead };
   }
 
   /**
@@ -1147,6 +1264,8 @@ export default class BlockEditController {
    */
   _handlePointerDown(e) {
     const node = e.target;
+    const onGapLine = this._gaps.isLineNode(node);
+    if (!onGapLine) this._gaps.hide(); // a touch shows it until the next press
     const inEditor = this._isInEditor(node) || this._cells.containsNode(node);
     const inPalette = this.host.isPaletteNode(node);
     const onScrollbar = this._isScrollbarPress(e);
@@ -1154,10 +1273,15 @@ export default class BlockEditController {
     // another of its cells is a cell tap at pointerup.
     const inSessionTable = !inEditor && this._cells.isInSessionTable(node);
     const outside = !inEditor && !inPalette && !onScrollbar && !inSessionTable;
+    // INV-73: a touch on a gap between blocks (in the preview, not on the
+    // top bar over it) shows its line at pointerup (a tap on that line
+    // inserts); it opens no block.
+    const onPreview = node instanceof Node && this.preview.contains(node);
+    const gap = outside && onPreview && !onGapLine && e.pointerType !== "mouse" && e.button === 0 ? this._gaps.gapAt(e.clientX, e.clientY) : null;
     // The block id (and the cell) and its place on screen are taken now;
     // layout may move before pointerup (a mouse press commits an open
     // editor below).
-    const target = (outside || inSessionTable) && e.button === 0 ? this._targetAt(node) : null;
+    const target = gap ?? ((outside || inSessionTable) && e.button === 0 ? this._targetAt(node) : null);
     if (target?.kind === "cell") target.caret = this._caretOf(target, e);
     // INV-46: where the tapped block is before an open editor or cell is
     // committed by this press (nothing moves when none is open)
@@ -1186,6 +1310,14 @@ export default class BlockEditController {
     const isTap = press.target !== null && this._isSelectionEmpty();
     const target = press.target?.kind === "cell" ? { ...press.target, caret: { ...press.target.caret, x: e.clientX, y: e.clientY } } : press.target;
     const isEditing = this._blockEditState === EDITING || this._blockEditState === CELL;
+    if (target?.kind === "gap") {
+      // INV-73: an open editor or cell is committed (outside); then the line
+      // shows where the gap is now
+      if (isEditing) this.dispatch("pointerPressedOutside");
+      const gap = isTap ? this._gaps.gapAt(e.clientX, e.clientY) : null;
+      if (gap) this._gaps.show(gap);
+      return;
+    }
     if (isEditing && press.outside && press.pointerType !== "mouse") {
       this.dispatch(isTap ? this._tapEvent(target, true) : "pointerPressedOutside", target);
       return;
@@ -1274,10 +1406,12 @@ export default class BlockEditController {
   // ---- internals: editor keys and size ----
 
   /**
-   * Esc cancels, Enter in a table inserts the line break text (INV-27),
-   * Enter / Shift+Enter in a paragraph, list or quote the line break mark
-   * (INV-71); with Ctrl / Alt / Meta, Enter is the browser's in both. Tab is left to the browser
-   * (INV-53). Nothing is done during IME composition (INV-27, INV-28).
+   * Esc applies and closes (INV-28), Shift+Enter in a table inserts the line
+   * break text and Enter is the browser's newline there (INV-27, owner
+   * ruling B2), Enter / Shift+Enter in a paragraph, list or quote the line
+   * break mark (INV-71); with Ctrl / Alt / Meta, Enter is the browser's in
+   * both. Tab is left to the browser (INV-53). Nothing is done during IME
+   * composition (INV-27, INV-28).
    * @purity non-pure
    */
   _handleKeyDown(e) {
@@ -1288,6 +1422,7 @@ export default class BlockEditController {
     } else if (e.key === "Enter" && !e.ctrlKey && !e.altKey && !e.metaKey) {
       // with Ctrl / Alt / Meta, Enter is the browser's (INV-27 by owner ruling Q-b, INV-71)
       if (this._editor.blockType === "table") {
+        if (!e.shiftKey) return; // the browser's newline (owner ruling B2)
         e.preventDefault();
         this._insertTableLineBreak();
       } else if (HARD_BREAK_TYPES.has(this._editor.blockType)) {

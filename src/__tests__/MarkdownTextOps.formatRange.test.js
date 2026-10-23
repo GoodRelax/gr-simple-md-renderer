@@ -9,8 +9,8 @@ import MarkdownTextOps from "../js/classes/MarkdownTextOps.js";
 
 const app = new Marked();
 app.use(markedKatex({ throwOnError: false }));
-const RED = "#B84F00";
-const BLUE = "#0072B2";
+const RED = "#CF222E";
+const BLUE = "#0550AE";
 
 /** Block tokens only, as MarkdownRenderer.lex. */
 function lexBlocks(src) {
@@ -27,7 +27,7 @@ function contextWith(links = {}) {
       Object.assign(lexer.tokens.links, links);
       return lexer.inlineTokens(src);
     },
-    colors: [RED, BLUE, "#007A58"],
+    colors: [RED, BLUE, "#1A7F37"],
   };
 }
 const ctx = contextWith();
