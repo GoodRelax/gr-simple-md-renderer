@@ -36,6 +36,7 @@
 - [x] `<meta name="viewport">` が無い：幅 768px 未満の端末では 980px のレイアウトになる（スマートフォンでの表示）。→ 追加しない（決定。仕様書の「`<meta name="viewport">` は追加しない」のとおり、追加すると iPhone の既存のレイアウトが崩れる）。既知の制約として扱う
 
 ### 構造の整理（その場編集のコードレビューで受容した指摘）
-- [ ] `UIController` の責務が多い（約 1,740 行。2026-10-23）。UI の配線に加え、文書の作り直し（`_session` / `_location` の置き換え）・保存の状態機械・未保存の判定・パレットの機能の振り分けを持つ。「文書のライフサイクル」（セッション・保存先・保存の状態）を別のクラスへ分ける（R2.2 / R2.10）
-- [ ] `SaveDocument` が内部で `SaveDocumentAs` を作り、その `outcome` / `failureMessage` を借りている（UIController も例外の経路で使う）。両方の use case が使う純粋な関数（例：`saveOutcome.js`）に出し、`SaveDocument` には `SaveDocumentAs` を注入する（R2.7 / R2.2）
+- [x] `UIController` の責務が多い（約 1,740 行。2026-10-23）。「文書のライフサイクル」（セッション・保存先・保存の状態）を別のクラスへ分ける（R2.2 / R2.10）。→ 2026-10-23 に `DocumentLifecycle`（UseCase 層）へ分けた（`feature/uicontroller-split`。動きは変えない）
+- [ ] `UIController` に、パレットの機能の振り分け（`_runPaletteCommand` から `_insertBlock` まで。約 190 行）が残っている。別のクラスへ分けるか決める（R2.2）
+- [ ] `SaveDocument` が内部で `SaveDocumentAs` を作り、その `outcome` / `failureMessage` を借りている（DocumentLifecycle も例外の経路で使う）。両方の use case が使う純粋な関数（例：`saveOutcome.js`）に出し、`SaveDocument` には `SaveDocumentAs` を注入する（R2.7 / R2.2）
 - [ ] メンバの並び：`BlockEditController` の non-pure の `dispatch` が semi-pure-b のクエリより前にある。`UIController.js` の先頭の純粋関数（`classifyDroppedFile` / `hasNullByte` / `renderRouteFor`）を別ファイル（例：`dropClassification.js`）へ移す（R7.7 / R7.9）

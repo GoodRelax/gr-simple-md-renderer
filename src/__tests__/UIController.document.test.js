@@ -205,9 +205,9 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     expect(commit).not.toHaveBeenCalled();
     expect(app.blockEditor()).toBeNull();
     expect(app.orchestrator.getBody()).toBe("# New\n");
-    expect(app.ui._location.fileName).toBe("new.md");
-    expect(app.ui._location.fileHandle).toBe(handle);
-    expect(app.ui._session.baselineLastModified).toBe(5000);
+    expect(app.ui.documents.location.fileName).toBe("new.md");
+    expect(app.ui.documents.location.fileHandle).toBe(handle);
+    expect(app.ui.documents.session.baselineLastModified).toBe(5000);
     expect(app.ui._isDocumentDirty()).toBe(false);
   });
 
@@ -224,8 +224,8 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     expect(app.orchestrator.isCodeViewActive()).toBe(true);
     expect(app.orchestrator.getModel()).toBeNull();
     expect(app.state.markdownText).toBe("");
-    expect(app.ui._session).toBeNull();
-    expect(app.ui._location).toBeNull();
+    expect(app.ui.documents.session).toBeNull();
+    expect(app.ui.documents.location).toBeNull();
     expect(app.ui._isDocumentDirty()).toBe(false);
     expect(document.title).toBe(BASE_TITLE);
     expect(load).not.toHaveBeenCalled();
@@ -316,8 +316,8 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     app = await setupApp();
     const handle = fakeFileHandle({ name: "doc.md", content: [DOC] });
     await dropMd(DOC, { handle });
-    const location = app.ui._location;
-    const oldId = app.ui._session.documentId;
+    const location = app.ui.documents.location;
+    const oldId = app.ui.documents.session.documentId;
     typeInEditor("# changed\n");
     handle.state.content = [BOM + toCrlf("# Disk\n\nNew.\n")];
     handle.state.lastModified = 7000;
@@ -326,17 +326,17 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     confirmSpy.mockReturnValueOnce(false);
     await app.ui.handleReload();
     expect(app.elements.editor.value).toBe("# changed\n");
-    expect(app.ui._session.documentId).toBe(oldId);
+    expect(app.ui.documents.session.documentId).toBe(oldId);
 
     await app.ui.handleReload();
     expect(confirmSpy).toHaveBeenCalledTimes(2);
     expect(app.orchestrator.getBody()).toBe("# Disk\n\nNew.\n");
     expect(app.elements.editor.value).toBe("# Disk\n\nNew.\n");
-    expect(app.ui._session.documentId).not.toBe(oldId);
-    expect(app.ui._session.hasBom).toBe(true);
-    expect(app.ui._session.lineEnding).toBe("\r\n");
-    expect(app.ui._session.baselineLastModified).toBe(7000);
-    expect(app.ui._location).toBe(location);
+    expect(app.ui.documents.session.documentId).not.toBe(oldId);
+    expect(app.ui.documents.session.hasBom).toBe(true);
+    expect(app.ui.documents.session.lineEnding).toBe("\r\n");
+    expect(app.ui.documents.session.baselineLastModified).toBe(7000);
+    expect(app.ui.documents.location).toBe(location);
     expect(reset).not.toHaveBeenCalled();
     expect(app.ui._isDocumentDirty()).toBe(false);
   });
@@ -367,8 +367,8 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     expect(app.blockEditor()).toBeNull();
     expect(app.orchestrator.isPreRenderState()).toBe(true);
     expect(app.orchestrator.getModel()).toBeNull();
-    expect(app.ui._session).toBeNull();
-    expect(app.ui._location).toBeNull();
+    expect(app.ui.documents.session).toBeNull();
+    expect(app.ui.documents.location).toBeNull();
     expect(app.ui.palette.isShown()).toBe(false);
     expect(reset).toHaveBeenCalled();
     expect(app.ui._isDocumentDirty()).toBe(false);
@@ -390,7 +390,7 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     expect(app.orchestrator.getBody()).toBe("# A\nB");
     expect(app.elements.editor.value).not.toContain("\r");
     expect(app.orchestrator.getBody()).not.toContain("\r");
-    expect(app.ui._session.lineEnding).toBe("\r\n");
+    expect(app.ui.documents.session.lineEnding).toBe("\r\n");
   });
 
   it("INV-41 duplicate reference definitions: clean right after loading; both stay after an edit", async () => {
@@ -434,8 +434,8 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
   it("AT-UI-33 a BOM + CRLF .md: the session keeps BOM and CRLF; #editor has the LF body", async () => {
     app = await setupApp();
     await dropMd(BOM + toCrlf("# A\n\nB\n"));
-    expect(app.ui._session.hasBom).toBe(true);
-    expect(app.ui._session.lineEnding).toBe("\r\n");
+    expect(app.ui.documents.session.hasBom).toBe(true);
+    expect(app.ui.documents.session.lineEnding).toBe("\r\n");
     expect(app.elements.editor.value).toBe("# A\n\nB\n");
   });
 });
@@ -444,7 +444,7 @@ describe("AT-UI rendering from #editor and pasting (INV-45, 5.14.1, T33)", () =>
   it("AT-UI-16 markdown view [Render Dark]: commits the open editor first, no confirm, same session; the mark drops in the handler", async () => {
     app = await setupApp();
     await dropMd(DOC);
-    const session = app.ui._session;
+    const session = app.ui.documents.session;
     editBlock("Hello", "Committed by render.");
     app.elements.editor.dispatchEvent(new Event("input", { bubbles: true }));
     const rendering = app.ui.handleRender("dark");
@@ -452,7 +452,7 @@ describe("AT-UI rendering from #editor and pasting (INV-45, 5.14.1, T33)", () =>
     expect(app.orchestrator.getBody()).toContain("Committed by render.");
     await rendering;
     expect(confirmSpy).not.toHaveBeenCalled();
-    expect(app.ui._session).toBe(session);
+    expect(app.ui.documents.session).toBe(session);
     expect(app.state.currentTheme).toBe("dark");
   });
 
@@ -488,8 +488,8 @@ describe("AT-UI rendering from #editor and pasting (INV-45, 5.14.1, T33)", () =>
     expect(e.defaultPrevented).toBe(true);
     expect(app.preview.querySelector("h1").textContent).toBe("A");
     expect(app.elements.editor.value).toBe("# A");
-    expect(app.ui._session.hasBom).toBe(false);
-    expect(app.ui._location).toBeNull();
+    expect(app.ui.documents.session.hasBom).toBe(false);
+    expect(app.ui.documents.location).toBeNull();
   });
 
   it("AT-UI-31 a paste in the markdown view does not render", async () => {
@@ -510,7 +510,7 @@ describe("AT-UI rendering from #editor and pasting (INV-45, 5.14.1, T33)", () =>
     app.elements.renderLightBtn.click();
     await settle();
     expect(app.orchestrator.getBody()).toBe("# R");
-    expect(app.ui._location).toBeNull();
+    expect(app.ui.documents.location).toBeNull();
     keydown(document.body, "e");
     expect(app.paletteRoot().querySelector("#paletteStatus").textContent).toBe(M.statusSaved(CONFIG.edit.defaultFileName));
   });
@@ -571,16 +571,16 @@ describe("AT-UI-41 rebuilding the document (5.14.11, first 7 rows)", () => {
   it.each(ROWS)("%s", async (_name, act, session, location, consentReset) => {
     app = await setupApp();
     await withUndoRecord();
-    const before = { session: app.ui._session, location: app.ui._location };
+    const before = { session: app.ui.documents.session, location: app.ui.documents.location };
     const reset = vi.spyOn(app.markdownRenderer, "resetExternalImageConsent");
     await act();
     await settle();
-    if (session === "new") expect(app.ui._session.documentId).not.toBe(before.session.documentId);
-    if (session === "same") expect(app.ui._session).toBe(before.session);
-    if (session === "none") expect(app.ui._session).toBeNull();
-    if (location === "same") expect(app.ui._location).toBe(before.location);
-    else if (location === "none") expect(app.ui._location).toBeNull();
-    else expect(app.ui._location.fileName).toBe(location);
+    if (session === "new") expect(app.ui.documents.session.documentId).not.toBe(before.session.documentId);
+    if (session === "same") expect(app.ui.documents.session).toBe(before.session);
+    if (session === "none") expect(app.ui.documents.session).toBeNull();
+    if (location === "same") expect(app.ui.documents.location).toBe(before.location);
+    else if (location === "none") expect(app.ui.documents.location).toBeNull();
+    else expect(app.ui.documents.location.fileName).toBe(location);
     expect(reset.mock.calls.length > 0).toBe(consentReset);
     expect(app.orchestrator.canUndo()).toBe(false);
   });
@@ -593,8 +593,8 @@ describe("AT-UI-41 rebuilding the document (5.14.11, first 7 rows)", () => {
     const reset = vi.spyOn(app.markdownRenderer, "resetExternalImageConsent");
     await act();
     await settle();
-    expect(app.ui._session.documentId).toBeGreaterThan(0);
-    expect(app.ui._location).toBeNull();
+    expect(app.ui.documents.session.documentId).toBeGreaterThan(0);
+    expect(app.ui.documents.location).toBeNull();
     expect(reset).not.toHaveBeenCalled();
     expect(app.orchestrator.canUndo()).toBe(false);
   });

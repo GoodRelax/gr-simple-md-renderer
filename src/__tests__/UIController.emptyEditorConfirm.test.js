@@ -22,7 +22,7 @@ import { showToast } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
 import { setupApp, dropEvent, settle, BASE_TITLE } from "./helpers/appStack.js";
 import { tap, keydown } from "./helpers/editDom.js";
-import { fakeFileAccess, fakeFileHandle } from "./helpers/fakeFs.js";
+import { fakeFileAccess, fakeFileHandle, deferred } from "./helpers/fakeFs.js";
 
 // INV-56: taking an empty #editor (whitespace only) into a document that is
 // not empty asks first. Cancel puts the document back into #editor and
@@ -71,8 +71,8 @@ function snapshot() {
   return {
     body: app.orchestrator.getBody(),
     canUndo: app.orchestrator.canUndo(),
-    saveState: app.ui._saveOperationState,
-    session: app.ui._session,
+    saveState: app.ui.documents.saveOperationState,
+    session: app.ui.documents.session,
   };
 }
 
@@ -198,11 +198,16 @@ describe("INV-56 an empty #editor taken into a non-empty document asks first", (
 
   it("a second Save press while writing is ignored without asking", async () => {
     await withDocument();
+    const permission = deferred();
+    access.startPermissionRequest = () => permission.promise;
+    const saving = app.ui.requestSave(); // no unrendered #editor change: no question
+    expect(app.ui.documents.saveOperationState).toBe("writingFile");
     typeInEditor("");
-    app.ui._saveOperationState = "writingFile";
     await app.ui.requestSave();
     expect(confirmCalls()).toHaveLength(0);
     expect(app.orchestrator.getBody()).toBe(DOC);
+    permission.resolve("granted");
+    await saving;
   });
 
   it("Cancel recomputes the mark: a committed but unsaved change keeps the '* '", async () => {

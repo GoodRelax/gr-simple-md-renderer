@@ -2,14 +2,9 @@ import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } 
 import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame, shortcutLetter } from "../utils.js";
 import { splitMarkdownWrapper, normalizeLineEndings, hasUtf8Bom } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
-import DocumentSession from "./DocumentSession.js";
-import DocumentLocation from "./DocumentLocation.js";
 import BlockEditController from "./BlockEditController.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
 import ClipboardLink from "./ClipboardLink.js";
-import SaveDocument from "./SaveDocument.js";
-import SaveDocumentAs from "./SaveDocumentAs.js";
-import { cell } from "../stateTable.js";
 
 /**
  * An Undo or Redo of the browser's editing history.
@@ -98,40 +93,9 @@ export function renderRouteFor(isCodeView, isPreRender) {
   return isPreRender ? "newDocument" : "editorIntoDocument";
 }
 
-/**
- * Spec 11-e: event -> current state -> cell (null = no change). Only the save
- * in progress is a state; "unsaved" is derived (_isDocumentDirty).
- */
-export const saveOperationStateMachine = Object.freeze({
-  saveRequested: Object.freeze({
-    idle: cell("writingFile", ["startPermissionRequest", "commitOpenBlock", "applyEditorText", "runSaveDocument"]),
-    writingFile: null,
-  }),
-  saveAsRequested: Object.freeze({
-    idle: cell("writingFile", ["startSavePicker", "commitOpenBlock", "applyEditorText", "runSaveDocumentAs"]),
-    writingFile: null,
-  }),
-  fileWritten: Object.freeze({
-    idle: null,
-    writingFile: cell("idle", ["applyOutcomeIfSameDocument", "refreshDirtyMark", "showSavedToast"]),
-  }),
-  downloadStarted: Object.freeze({ idle: null, writingFile: cell("idle", ["showDownloadStartedToast"]) }),
-  writeFailed: Object.freeze({ idle: null, writingFile: cell("idle", ["showErrorToast"]) }),
-  saveCanceled: Object.freeze({ idle: null, writingFile: cell("idle", []) }),
-  replaceRequested: Object.freeze({ idle: null, writingFile: cell("writingFile", ["rejectReplace", "showSavingToast"]) }),
-});
-
 // The one-key shortcuts of setupKeyboard (3.12) that wait until an inserted
 // block's cell or source has opened (INV-52, owner ruling D5).
 const ONE_KEY_SHORTCUTS = new Set(["l", "d", "r", "n", "c", "e"]);
-
-// SaveOutcome.status -> 11-e event
-const SAVE_EVENT_BY_STATUS = Object.freeze({
-  saved: "fileWritten",
-  downloadStarted: "downloadStarted",
-  failed: "writeFailed",
-  canceled: "saveCanceled",
-});
 
 /**
  * Translates UI events into use-case calls.
@@ -146,7 +110,7 @@ export default class UIController {
    * @param {object} elements
    * @param {SmoothScrollEngine} scrollEngine
    * @param {object} services - in-place editing parts (composed in main.js):
-   *   fileAccess (MarkdownFileAccess), createPalette(host) -> EditPalette,
+   *   documents (DocumentLifecycle), createPalette(host) -> EditPalette,
    *   createBlockEdit(host) -> BlockEditController, isApple (Cmd is the
    *   primary shortcut modifier, INV-14), clipboard (what the Paste link
    *   button reads, INV-69; navigator.clipboard when not given)
@@ -161,25 +125,19 @@ export default class UIController {
     this.isLongPress = false;
     this._keyHintTimer = null;
 
-    // Document session and save target (INV-55): the only place of the file handle
-    this.fileAccess = services.fileAccess;
+    // Session, save target and save state (INV-55, 11-e)
+    this.documents = services.documents;
     this._isApple = Boolean(services.isApple);
     this._clipboard = "clipboard" in services ? () => services.clipboard : () => navigator.clipboard;
-    this._session = null; // DocumentSession
-    this._location = null; // DocumentLocation
-    this._nextDocumentId = 1;
     this._editorChangedSinceRender = false; // INV-45
     this._paletteStatesPending = false; // a frame is asked for (INV-51)
     this._buttonStatesDeferred = false; // asked for inside an 11-c crossing (K-1)
     this._isReadingClipboard = false; // Paste link waits for the clipboard (INV-69)
     this._clipboardRead = 0; // the latest read: only it ends the wait
-    this._saveOperationState = "idle"; // 11-e
     this._baseTitle = document.title;
     this._lastTap = null; // double tap on the empty preview (INV-31)
     this._isEditorHistoryStale = false; // #editor's undo history after a system write (5.7 (6))
     this._isEditorTextStale = false; // #editor not yet given the body after a large commit (INV-47)
-    this.saveDocument = new SaveDocument(this.fileAccess, CONFIG.messages.edit, CONFIG.edit.defaultFileName);
-    this.saveDocumentAs = new SaveDocumentAs(this.fileAccess, CONFIG.messages.edit, CONFIG.edit.defaultFileName);
     this.palette = services.createPalette(this._paletteHost());
     this.blockEdit = services.createBlockEdit(this._blockEditHost());
     this.orchestrator.setModelChangedListener(this);
@@ -460,34 +418,30 @@ export default class UIController {
       if (metadata) this.setViewMode("code", metadata);
       return;
     }
-    const location = this._location;
-    if (!location || !location.fileHandle) {
+    const target = this.documents.reloadTarget();
+    if (!target) {
       const msg = FILE_SYSTEM_HANDLE_SUPPORTED
         ? CONFIG.codeView.reloadNoFileMsg
         : CONFIG.codeView.reloadUnavailableMsg;
       this._toast(msg);
       return;
     }
-    const documentId = this._session?.documentId;
     let loaded;
     try {
-      loaded = await this.fileAccess.readFile(location.fileHandle);
+      loaded = await this.documents.readFile(target);
     } catch {
       this._toast(CONFIG.messages.edit.reloadFailed);
       return;
     }
-    if (this._location !== location || this._session?.documentId !== documentId) {
+    // One synchronous step from here: nothing can change the document
+    // between the stale check, the questions and the replace.
+    if (this.documents.isStale(target)) {
       this._toast(CONFIG.messages.edit.reloadCanceled);
       return;
     }
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
     this.blockEdit.dispatch("documentReplaced");
-    this._session = DocumentSession.fromFileText(
-      loaded.text,
-      hasUtf8Bom(loaded.bytesHead),
-      loaded.lastModified,
-      this._newDocumentId(),
-    );
+    this.documents.reload(loaded);
     await this._showSessionBody(theme);
   }
 
@@ -507,8 +461,7 @@ export default class UIController {
    */
   _resetToInitial() {
     this.blockEdit.dispatch("documentCleared");
-    this._session = null;
-    this._location = null;
+    this.documents.close();
     this._editorChangedSinceRender = false;
     this.scrollEngine.destroy();
     this.orchestrator.clear();
@@ -596,15 +549,13 @@ export default class UIController {
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
     if (kind === "markdown") {
       this.blockEdit.dispatch("documentReplaced");
-      this._session = DocumentSession.fromFileText(text, hasBom, file.lastModified, this._newDocumentId());
-      this._location = new DocumentLocation(file.name, fileHandle);
+      this.documents.openFile(text, hasBom, file.lastModified, file.name, fileHandle);
       this.orchestrator.resetExternalImageConsent(); // INV-43
       await this._showSessionBody(systemTheme());
       return;
     }
     this.blockEdit.dispatch("viewSwitchedToCode");
-    this._session = null;
-    this._location = null;
+    this.documents.close();
     this._editorChangedSinceRender = false;
     this._setEditorText(""); // RTC2-07: clear editor before code view
     const rendering = this.orchestrator.renderCodeView(file, fileHandle);
@@ -962,8 +913,7 @@ export default class UIController {
    */
   _startEmptyDocument() {
     if (this._rejectWhileSaving()) return Promise.resolve();
-    this._session = DocumentSession.fromPastedText("", this._newDocumentId());
-    this._location = null;
+    this.documents.startPasted("");
     this._setEditorText("");
     this._editorChangedSinceRender = false;
     this.setViewMode("markdown");
@@ -983,8 +933,7 @@ export default class UIController {
   async _startPastedDocument(rawText, theme) {
     const body = this.preprocessInput(normalizeLineEndings(rawText));
     if (!body.trim() || this._rejectWhileSaving()) return;
-    this._session = DocumentSession.fromPastedText(body, this._newDocumentId());
-    this._location = null;
+    this.documents.startPasted(body);
     await this._showSessionBody(theme);
   }
 
@@ -1086,7 +1035,7 @@ export default class UIController {
    * @purity non-pure
    */
   async _showSessionBody(theme) {
-    const body = this._session.getBodyText();
+    const body = this.documents.session.getBodyText();
     this._setEditorText(body);
     this._editorChangedSinceRender = false;
     const rendering = this.orchestrator.loadMarkdown(body, theme);
@@ -1121,9 +1070,9 @@ export default class UIController {
    * @returns {boolean}
    */
   _isDocumentDirty() {
-    if (!this._session) return false;
+    if (!this.documents.hasSession()) return false;
     return (
-      this._session.isBodyChanged(this.orchestrator.getBody()) ||
+      this.documents.isBodyChanged(this.orchestrator.getBody()) ||
       this.blockEdit.hasUncommittedChange() ||
       this._editorChangedSinceRender
     );
@@ -1139,9 +1088,9 @@ export default class UIController {
     const dirty = this._isDocumentDirty();
     document.title = dirty ? CONFIG.edit.titleUnsavedPrefix + this._baseTitle : this._baseTitle;
     const m = CONFIG.messages.edit;
-    const name = this._location?.fileName ?? CONFIG.edit.defaultFileName;
+    const name = this.documents.fileName();
     let status = "";
-    if (this._session) status = dirty ? m.statusUnsaved(name) : m.statusSaved(name);
+    if (this.documents.hasSession()) status = dirty ? m.statusUnsaved(name) : m.statusSaved(name);
     this.palette.setStatusText(status);
     this.palette.setUnsaved(dirty);
     // Inside an 11-c crossing the open cell or editor is closed for a moment
@@ -1235,16 +1184,9 @@ export default class UIController {
    * @returns {boolean} true when refused
    */
   _rejectWhileSaving() {
-    if (!saveOperationStateMachine.replaceRequested[this._saveOperationState]) return false;
+    if (!this.documents.isSaving()) return false;
     this._toast(CONFIG.messages.edit.savingInProgress);
     return true;
-  }
-
-  /**
-   * @purity non-pure
-   */
-  _newDocumentId() {
-    return this._nextDocumentId++;
   }
 
   /**
@@ -1515,69 +1457,38 @@ export default class UIController {
   }
 
   /**
-   * INV-33 order, synchronous until the use case awaits: (0) the INV-56
-   * confirm when #editor is about to be taken in (Cancel: nothing starts),
-   * (1) start the permission request or the save dialog, (2) commit the open
-   * block and take in #editor, (3) run the use case (a download starts inside
-   * it).
+   * 11-e through DocumentLifecycle.save: the steps up to the use case call
+   * run synchronously in the press handler (INV-33).
    * @param {"saveRequested"|"saveAsRequested"} event
+   * @returns {Promise<void>}
    * @purity non-pure
    */
-  async _startSave(event) {
-    const next = saveOperationStateMachine[event][this._saveOperationState];
-    if (!next || !this._session) return; // a second press while writing is ignored
-    if (this._editorChangedSinceRender && !this._confirmEditorIntoDocument()) return;
-    const isSaveAs = event === "saveAsRequested";
-    const location = this._location ?? new DocumentLocation(CONFIG.edit.defaultFileName, null);
-    const permissionOrPicker = this._startSaveAccess(isSaveAs, location);
-    this.blockEdit.dispatch(event); // commits an open editor (11-c)
-    if (this._editorChangedSinceRender) this._takeEditorIntoModel(this.state.currentTheme);
-    this._saveOperationState = next.to;
-    const request = {
-      session: this._session,
-      location,
-      bodyText: this.orchestrator.getBody(),
-      permissionOrPicker,
+  _startSave(event) {
+    return this.documents.save(event, this._saveSteps());
+  }
+
+  /**
+   * SaveSteps: the UI steps DocumentLifecycle.save calls back, in its order.
+   * @purity non-pure
+   */
+  _saveSteps() {
+    return {
+      // (0) INV-56 when #editor is about to be taken in (Cancel: nothing starts)
+      confirmStart: () => !this._editorChangedSinceRender || this._confirmEditorIntoDocument(),
+      /** @purity non-pure */
+      commitEdits: (event) => {
+        this.blockEdit.dispatch(event); // commits an open editor (11-c)
+        if (this._editorChangedSinceRender) this._takeEditorIntoModel(this.state.currentTheme);
+      },
+      getBody: () => this.orchestrator.getBody(),
       confirmer: this,
+      // the outcome is shown at once, right after the use case settles (11-e)
+      /** @purity non-pure */
+      onFinished: (result) => {
+        if (result.applied) this._refreshDirtyMark();
+        if (result.message) this._toast(result.message);
+      },
     };
-    let outcome;
-    try {
-      outcome = await (isSaveAs ? this.saveDocumentAs : this.saveDocument).execute(request);
-    } catch (error) {
-      console.error("Save error:", error);
-      outcome = this.saveDocumentAs.outcome(request, "failed", CONFIG.messages.edit.saveFailed);
-    }
-    this._finishSave(outcome);
-  }
-
-  /**
-   * The permission request (Save with a target) or the save dialog; null
-   * when the browser cannot write files (download).
-   * @purity non-pure
-   */
-  _startSaveAccess(isSaveAs, location) {
-    if (!this.fileAccess.canWriteInPlace()) return null;
-    if (!isSaveAs && location.fileHandle) return this.fileAccess.startPermissionRequest(location.fileHandle);
-    return this.fileAccess.startSavePicker(location.fileName);
-  }
-
-  /**
-   * Show a SaveOutcome (11-e). The session and the target change only for the
-   * document the save started from (INV-54); a failure leaves it unsaved.
-   * @param {object} outcome - SaveOutcome
-   * @purity non-pure
-   */
-  _finishSave(outcome) {
-    const event = SAVE_EVENT_BY_STATUS[outcome.status] ?? "writeFailed";
-    const next = saveOperationStateMachine[event][this._saveOperationState];
-    if (!next) return;
-    this._saveOperationState = next.to;
-    if (event === "fileWritten" && this._session && outcome.documentId === this._session.documentId) {
-      this._session = outcome.session;
-      this._location = outcome.location;
-      this._refreshDirtyMark();
-    }
-    if (event !== "saveCanceled" && outcome.message) this._toast(outcome.message);
   }
 
   /** @purity non-pure */

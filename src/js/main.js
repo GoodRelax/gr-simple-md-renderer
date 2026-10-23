@@ -29,6 +29,9 @@ import DiagramZoomController from "./classes/DiagramZoomController.js";
 import DiagramPanController from "./classes/DiagramPanController.js";
 import DiagramCopyController from "./classes/DiagramCopyController.js";
 import MarkdownFileAccess from "./classes/MarkdownFileAccess.js";
+import SaveDocument from "./classes/SaveDocument.js";
+import SaveDocumentAs from "./classes/SaveDocumentAs.js";
+import DocumentLifecycle from "./classes/DocumentLifecycle.js";
 import EditPalette from "./classes/EditPalette.js";
 import BlockEditController from "./classes/BlockEditController.js";
 import UIController from "./classes/UIController.js";
@@ -91,12 +94,22 @@ const orchestrator = new RendererOrchestrator(
 // SmoothScrollEngine: used by UIController keyboard handler
 const scrollEngine = new SmoothScrollEngine(CONFIG.scroll, elements.preview);
 
+// DocumentLifecycle: the session, the save target and the save state
+// (INV-55, 11-e); the save use cases write through the file access.
+const fileAccess = new MarkdownFileAccess(window);
+const documents = new DocumentLifecycle(fileAccess, {
+  saveDocument: new SaveDocument(fileAccess, CONFIG.messages.edit, CONFIG.edit.defaultFileName),
+  saveDocumentAs: new SaveDocumentAs(fileAccess, CONFIG.messages.edit, CONFIG.edit.defaultFileName),
+  messages: CONFIG.messages.edit,
+  defaultFileName: CONFIG.edit.defaultFileName,
+});
+
 // UIController wires all events and initializes view. It owns the in-place
 // editing parts and is their host (BlockEditHost, EditPaletteHost).
 // INV-14: Cmd is the primary shortcut modifier on Apple platforms.
 const isApple = isApplePlatform(navigator);
 new UIController(orchestrator, state, elements, scrollEngine, {
-  fileAccess: new MarkdownFileAccess(window),
+  documents,
   isApple,
   createPalette: (host) => new EditPalette(host, { isApple }),
   createBlockEdit: (host) =>

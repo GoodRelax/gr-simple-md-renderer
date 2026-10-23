@@ -1,10 +1,30 @@
 import { vi } from "vitest";
+import { CONFIG } from "../../js/config.js";
+import SaveDocument from "../../js/classes/SaveDocument.js";
+import SaveDocumentAs from "../../js/classes/SaveDocumentAs.js";
+import DocumentLifecycle from "../../js/classes/DocumentLifecycle.js";
 
 // Shared parts for UIController tests (test design section 8): the element
 // set, inert in-place editing services, the methods the orchestrator mock
 // needs for editing, and removal of document / window listeners.
 // This file does not import UIController, so tests may still use
-// vi.resetModules + vi.doMock before importing it.
+// vi.resetModules + vi.doMock before importing it. DocumentLifecycle reads
+// no config (its messages are injected), so a mocked config does not reach it.
+
+/**
+ * A DocumentLifecycle composed as main.js composes it.
+ * @param {object} fileAccess - MarkdownFileAccess or a fake
+ */
+export function createDocuments(fileAccess) {
+  const messages = CONFIG.messages.edit;
+  const name = CONFIG.edit.defaultFileName;
+  return new DocumentLifecycle(fileAccess, {
+    saveDocument: new SaveDocument(fileAccess, messages, name),
+    saveDocumentAs: new SaveDocumentAs(fileAccess, messages, name),
+    messages,
+    defaultFileName: name,
+  });
+}
 
 function modal() {
   const m = document.createElement("div");
@@ -73,8 +93,10 @@ export function fakeEditServices() {
     getLastOpenedBlockId: vi.fn(() => null),
     isInsertPending: vi.fn(() => false),
   };
+  const fileAccess = { readFile: vi.fn() };
   return {
-    fileAccess: { readFile: vi.fn() },
+    fileAccess,
+    documents: createDocuments(fileAccess),
     createPalette: () => palette,
     createBlockEdit: () => blockEdit,
     palette,
