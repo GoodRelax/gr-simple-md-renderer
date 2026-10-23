@@ -35,6 +35,7 @@ import DocumentLifecycle from "./classes/DocumentLifecycle.js";
 import EditPalette from "./classes/EditPalette.js";
 import BlockEditController from "./classes/BlockEditController.js";
 import UIController from "./classes/UIController.js";
+import HelpLanguageSwitch from "./classes/HelpLanguageSwitch.js";
 
 // ========================================
 // Initialization
@@ -115,6 +116,10 @@ new UIController(orchestrator, state, elements, scrollEngine, {
   createBlockEdit: (host) =>
     new BlockEditController(elements.preview, orchestrator, markdownRenderer, scrollManager, host),
 });
+
+// Help: English | Japanese. The first language follows the browser's; the
+// choice is kept in memory only (SC-16).
+new HelpLanguageSwitch(elements.helpModal, navigator.language);
 
 // Diagram controllers: fine-pointer (mouse/trackpad) devices only
 const isTouchCapable = window.matchMedia("(any-pointer: coarse)").matches;

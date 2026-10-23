@@ -24,6 +24,8 @@
 
 **改訂:** 2026-10-23 — 画面の英語の文言を、短いふだんの英語に改める (トースト・確認・alert・図とプレビューの中の文字・パレットの名前。オーナーの裁定 R1〜R15)。上部の入力欄の呼び名を "the top box" にそろえる。パレットの "Paste link from clipboard" を "Paste copied link"、"Table options" を "Align column"、"Default alignment" を "Remove alignment" に改める (コードの名前は変えない)。PlantUML と外部画像の同意の文を、それぞれ短い 1 文の問いにする (外部画像の確認ダイアログはホスト名の一覧を示さない。同意の仕組みは変えない。INV-19)。JS が画面に出す文言をすべて `config.js` に移す (5.2。AT-STA-15)。使っていない `fileDrop.messages.unsupportedType` と `externalImage.maxHostsInDialog` を消す。長いトーストは画面の中で折り返す (5.12)。Insert table / Mermaid の雛形は、ブロック編集中なら編集欄を確定してから、編集欄の文字列の行の境目で割って挿入し (段落・リスト・引用だけを割る)、コード・数式・HTML・表の原文の中では断ってトーストで知らせる。挿入の後は、表の最初のセル (文字を選んだ状態) か Mermaid の原文の編集欄を開く。確定と挿入は別の変更の単位とする (INV-52、INV-46、INV-48、INV-51、11-c に `blockInsertRequested` / `insertedBlockRendered` を追加。改善要望 1、オーナーの裁定 2026-10-23)。依存の追加はない (付録A 不変)。
 
+**改訂:** 2026-10-23 — ツール名を **GR Simple Markdown** に改める (旧名 GR Simple MD Renderer & Viewer。その場での編集の機能が加わり、表示するだけの道具ではなくなったため。略称 GRSMD・リポジトリ名・URL は変えない。用語集)。ヘッダーのロゴ、ヘルプの題名、`<title>`・meta・og・twitter・JSON-LD (`alternateName` に旧名と GRSMD) を改める。ヘルプを改める (SC-16、FS-10、5.1、5.11 の注): `English | Japanese` のトグルで片方だけを出し (新しいクラス `HelpLanguageSwitch`。最初の言語はブラウザの言語、選んだ言語はメモリだけ)、両方の言語の節をそろえ (日本語にサンプルデータ)、本文の先頭にダウンロードの枠 (最新の Release の `GRSMD.html`、新しいタブ) と版を置き、「編集」を 6 つの小見出しに分け、Reload が Chrome / Edge だけであること・Esc・図のコピー・印刷・挿入の位置・タッチのペースト・ダウンロードの行き先を足し、クリップボードの許可の説明を goodrelax.github.io で開いているときに限る (CON-12)。ヘルプ・プロンプトのモーダルを開いている間は、アプリの 1 キーの操作を効かせず、Esc で閉じる。開くときにフォーカスを中へ移し (ヘルプは押されている言語のボタン、プロンプトは ×)、Tab / Shift+Tab を中で回し、閉じるときに [?] へ戻す。閉じる × を `<button>` にする (ModalController。レビューの M1)。`<title>`・og:title・twitter:title は短く保ち (旧名を入れない)、旧名と改名の意図は description・og と twitter の description・keywords・JSON-LD に書く (要望 R6 の「title にも旧名を併記」との違い。調整役の裁定 M2 (c)、2026-10-23)。版を日時で管理する (1.7 を新設。ビルドのプラグイン `buildVersion`、`npm run build:release`、`tools/release.mjs`、AT-VER)。依存の追加はない (付録A 不変)。
+
 ---
 
 ## 目次
@@ -35,6 +37,7 @@
    - 1.4 解決方針（ディレクトリ構成含む）
    - 1.5 スコープ
    - 1.6 制約事項
+   - 1.7 版の規則
 2. 不変要件 (EARS)
 3. 構造設計
    - 3.1 コンポーネント図
@@ -70,7 +73,7 @@
 
 | 用語                     | 定義                                                                                                                                                                                                        |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GRSMD                    | GoodRelax Simple Markdown Renderer。単一ファイル (index.html) のクライアントサイド Markdown レンダラー＆ビューア。                                                                                          |
+| GRSMD                    | GR Simple Markdown の略称。単一ファイル (index.html) のクライアントサイドの Markdown のビューワー兼エディター。**旧名**は GR Simple MD Renderer & Viewer (GoodRelax Simple Markdown Renderer)。その場での編集の機能が加わり、表示するだけの道具 (Renderer / Viewer) ではなくなったため改名した (オーナーの指示、2026-10-23)。略称 GRSMD・リポジトリ名 `gr-simple-md-renderer`・URL・仕様書のファイル名・クラス名は変えない。                                                                                          |
 | コードビュー (Code View) | 非.mdファイル用の表示モード。シンタックスハイライトと行番号付きでソースコードを表示する。正式名称: Quick Code View。                                                                                        |
 | Markdownプレビュー       | 既存の表示モード。.mdファイルまたはペーストされたMarkdownテキストをmarked.js経由でHTMLとしてレンダリングする。                                                                                              |
 | プレレンダー状態         | アプリケーションの初期状態。エディタtextareaが空で、何もレンダリングされていない。`_viewState === 'initial'`。                                                                                              |
@@ -204,6 +207,7 @@ gr-simple-md-renderer/
 │   │       ├── SmoothScrollEngine.js
 │   │       ├── RendererOrchestrator.js
 │   │       ├── ModalController.js
+│   │       ├── HelpLanguageSwitch.js
 │   │       ├── UIController.js
 │   │       ├── DiagramZoomController.js
 │   │       ├── DiagramPanController.js
@@ -238,6 +242,7 @@ gr-simple-md-renderer/
 │   └── studies/
 ├── poc/                          # proofs of concept
 ├── skills/                       # Claude skills (mcbsmd)
+├── tools/                        # version.mjs (version forms), release.mjs (the release tool, 1.7)
 ├── vite.config.js
 ├── playwright.config.js
 ├── playwright.firefox.config.js
@@ -277,7 +282,7 @@ gr-simple-md-renderer/
 | SC-13 | ダイアグラムコピー（SVG/PNGをクリップボードへ）                                                 |
 | SC-14 | 印刷サポート（トップバー非表示、プレビュー表示）                                                |
 | SC-15 | マルチタブ対応（New Tabボタン）                                                                 |
-| SC-16 | ヘルプモーダル（英語/日本語バイリンガル）                                                       |
+| SC-16 | ヘルプモーダル（英語/日本語。`English \| Japanese` のトグルで片方だけを表示。最初の言語はブラウザの言語に従い、選んだ言語はメモリだけに持つ (CON-03)。本文の先頭にダウンロードの枠 (最新の Release の `GRSMD.html`) と、開いているファイルの版 (1.7) を置く。2026-10-23 改訂） |
 | SC-17 | MCBSMDプロンプトテンプレート（[?]長押し）                                                       |
 | SC-18 | 再レンダリング時のスクロール位置保持                                                            |
 | SC-19 | AI出力前処理（マークダウンフェンス除去）                                                        |
@@ -325,10 +330,60 @@ gr-simple-md-renderer/
 | CON-09 | JavaScriptはES6+クラスベースで記述すること。                                                                                                                                              |
 | CON-10 | バンドルしたライブラリ (npm依存) のバージョン変更は機能検証を必須とする。                                                                                                                 |
 | CON-11 | バックエンドを追加してはならない（サーバー処理、APIエンドポイント、Node.jsサーバー一切不可）。                                                                                            |
-| CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。**クリップボードの読み取り (INV-69) は外部との通信ではない。ただし「リンクを貼る」のボタンは、ブラウザの読み取りの許可 (`navigator.clipboard`) を使う。**既知の制約**: ブラウザは許可をサイト (オリジン `https://goodrelax.github.io`) ごとに記憶する。そのため Chrome / Edge では、GRSMD で一度許可すると、同じサイトの他のページ (gr-scheduler など) も、確認なしにクリップボードを読めるようになる。Safari / Firefox は、読むたびに確認を出し、許可を記憶しない見込み **[要検証: ブラウザごとの記憶のしかた]**。許可はブラウザのサイトの設定 (「クリップボード」) で取り消せる。Ctrl+V / Cmd+V の方式はこの許可を使わない。このため、許可の要らない Ctrl+V の方式を主とし (裁定 Q5)、ボタンは押したときだけ許可を使う。ヘルプ (日英) には、利用者が取れる行動が分かるように短く書く: Ctrl+V は許可が要らないこと、ボタンはブラウザが許可を求めることがあること、Chrome / Edge ではその許可が goodrelax.github.io のすべてのページに及ぶこと、取り消すにはサイトの設定の「クリップボード」を変えること (オーナーの裁定 2026-10-22。2026-xx-xx)。** |
+| CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。**クリップボードの読み取り (INV-69) は外部との通信ではない。ただし「リンクを貼る」のボタンは、ブラウザの読み取りの許可 (`navigator.clipboard`) を使う。**既知の制約**: ブラウザは許可をサイト (オリジン `https://goodrelax.github.io`) ごとに記憶する。そのため Chrome / Edge では、GRSMD で一度許可すると、同じサイトの他のページ (gr-scheduler など) も、確認なしにクリップボードを読めるようになる。Safari / Firefox は、読むたびに確認を出し、許可を記憶しない見込み **[要検証: ブラウザごとの記憶のしかた]**。許可はブラウザのサイトの設定 (「クリップボード」) で取り消せる。Ctrl+V / Cmd+V の方式はこの許可を使わない。このため、許可の要らない Ctrl+V の方式を主とし (裁定 Q5)、ボタンは押したときだけ許可を使う。ヘルプ (日英) には、利用者が取れる行動が分かるように短く書く: Ctrl+V は許可が要らないこと、ボタンはブラウザが許可を求めることがあること、Chrome / Edge ではその許可が goodrelax.github.io のすべてのページに及ぶこと、取り消すにはサイトの設定の「クリップボード」を変えること (オーナーの裁定 2026-10-22。2026-xx-xx)。この許可の説明は goodrelax.github.io で開いているときのものなので、ヘルプでは「goodrelax.github.io で開いているとき」と前置きする (ダウンロードした `GRSMD.html` を `file://` で開いたときは当てはまらない。2026-10-23)。** **ヘルプのダウンロードのボタン (SC-16) は、ページからの通信ではない。** 利用者が押したときに、新しいタブ (`target="_blank" rel="noopener noreferrer"`) で GitHub の最新のリリースの添付ファイルへ移るだけで、ページから `fetch` も先読みもしない (CSP の `connect-src` は変えない)。ヘルプ (日英) の「プライバシーとセキュリティ」に、押すと GitHub を開くこと、押すまでは何も送らないことを書く (調整役の裁定 D2・D7、2026-10-23)。 |
 | CON-13 | 編集内容を自動保存してはならない。localStorage、sessionStorage、Cookie、IndexedDB、Origin Private File System、Cache Storage のいずれにも、編集内容・ファイル名・パレットの位置・パレットの最小化の状態を書いてはならない。保存はユーザーの明示操作 (SC-24) によるローカルファイルへの書き込み、またはダウンロードに限る。`document.title` にファイル名を入れてはならない (ブラウザの履歴に残るため。INV-50) |
 | CON-14 | 保存処理はネットワーク通信を行ってはならない。File System Access API の書き込み、または `blob:` URL によるダウンロードのみを用いる |
 | CON-15 | 製品コード (`src/js/`) のすべての関数とメソッドは、JSDoc のコメント内に `@purity` タグをちょうど 1 つ持つこと。値は `pure` / `semi-pure-a` / `semi-pure-b` / `non-pure` の 4 値とする (レビュー規約 R7.1 / R7.6)。既存コードにも適用する。数え方と検査の方法は 5.16 に定める |
+
+### 1.7 版の規則
+
+版の規則はこの節だけに書く。README・CHANGELOG の冒頭・試験仕様は、この節を指す 1 行だけを持つ (要望 R4-4。AT-VER-04 が検査する)。gr-scheduler の版の規則に倣う (オーナーの指示、2026-10-22)。
+
+#### 1.7.1 版の形
+
+版は UTC の秒までの時刻とする。小数秒と、`Z` 以外の時差は書かない。1 つの時刻を、置き場が許す形で書く (2 つの形は機械で互いに移せる。`tools/version.mjs`)。
+
+| 書き方 | 形 | 例 (同じ時刻) | 置き場 |
+| --- | --- | --- | --- |
+| 詰めた形 | `YYYYMMDDTHHMMSSZ` | `20261022T013000Z` | `package.json`・`package-lock.json`・タグ・CHANGELOG の見出し・README の版の行 (名前に `:` を書かない。`package.json` は private なので npm が受け付ける) |
+| 区切りのある形 | `YYYY-MM-DDTHH:MM:SSZ` | `2026-10-22T01:30:00Z` | ヘルプの版 (人が読む所。`<time datetime>` にも同じ文字を書く) |
+
+#### 1.7.2 版を持つもの
+
+| 版を持つもの | 形と置き場 | 何が決めるか | 誰・何が書くか | 誤りを止める機械 |
+| --- | --- | --- | --- | --- |
+| `package.json` の `version`、`package-lock.json` の `version` と `packages[""].version` | 詰めた形 (`name` の次) | 最新のリリースの時刻 | `tools/release.mjs`。手で打たない | AT-VER-01 (5 か所が同じ版を指す) |
+| CHANGELOG の見出し | `## [詰めた形] - YYYY-MM-DD` (日付は版の UTC の日) | 同上 | 変更はまず日付の無い `## [Unreleased]` に書く。リリースのときに `tools/release.mjs` がこの 1 行だけを版の見出しに書き換える。それより前の `[Unreleased] - 日付` の 2 つの見出し (2026-10-10・2026-07-16) は書き換えない (要望 R4-3) | AT-VER-01 (いちばん新しい版の見出しが同じ版で、日付がその UTC の日) |
+| README の版の行 (英と日の 2 行) | 英 ``Version `<詰めた形>` (tag `Release-<詰めた形>`)``、日 ``版 `<詰めた形>`（タグ `Release-<詰めた形>`）``。この節を指す行の次に置く | 同上 | `tools/release.mjs` (無ければ足し、あれば置き換える) | AT-VER-01 |
+| リリースのタグ | `Release-<詰めた形>` (例 `Release-20261022T013000Z`) | 同上 | オーナーが打つ。打つコマンドは `tools/release.mjs` が出す | (機械は見ない) |
+| ヘルプの版 (SC-16) | 区切りのある形。リリース: "Version … (UTC)" / 「版 …（UTC）」。開発版: "Development build … (UTC)" / 「開発版 …（UTC）」 | リリースのビルド (`npm run build:release`。`vite build --mode release`) は `package.json` の版。それ以外のビルド (`npm run build`・`npm run build:e2e`・`npm run dev`) は、ビルドしたときの HEAD のコミットの時刻 (`git log -1 --format=%ct`。committer の時刻)。同じコミットからは同じ版になる。コミットしていない変更があっても印は付けない | ビルド (`vite.config.js` のプラグイン `buildVersion`)。HTML の文字として書く (スクリプトに入れないので CSP の sha256 に影響しない) | M1 (ビルドを失敗させる)、AT-VER-02 |
+
+**最初のリリースより前:** どこにも版を書かない。AT-VER-01 は「どこにも無い」を合格とし、最初の版は `tools/release.mjs` が書く (調整役の裁定 D9、2026-10-23)。開発のビルドは、版が無くても HEAD の時刻で "Development build" を出す。
+
+#### 1.7.3 ダウンロードと Release
+
+- ヘルプのボタンは `https://github.com/GoodRelax/gr-simple-md-renderer/releases/latest/download/GRSMD.html` へのリンクとする。GitHub が添付ファイルとして返すので、Pages・`file://` のどこで開いていても `GRSMD.html` として保存される **[要検証: PRT-L04]**。どの版のヘルプからでも、配るのは最新の Release とする (develop の開発版のヘルプからも同じ)。
+- **最初の Release:** Pages に出すのと同時か直後に、オーナーが `GRSMD.html` を添付した最初の Release を作る (1.7.4 の 4)。それまでボタンの行き先は見つからない (404)。ボタンは新しいタブで開くので、開いている文書からは離れない (CON-12)。
+
+#### 1.7.4 リリースの手順 (調整役の裁定 D10、2026-10-23)
+
+| 段 | 何をする | 誰 |
+| --- | --- | --- |
+| 1 | main へのリリースを許可する | オーナー |
+| 2 | develop を main へ合流する | 調整役 (オーナーの許可) |
+| 3 | main の上で `node tools/release.mjs` を回す。今のブランチが main でなければ止まる。作業ツリーに変更があれば止まる。版は今の UTC の秒とし、CHANGELOG のいちばん新しい版より新しくなければ止まる。`package.json`・`package-lock.json`・CHANGELOG・README に版を書き、`npm run build:release` で `docs/index.html` を作り、`output/release/GRSMD.html` に写す (`output/` は git の管理の外)。`docs/index.html` に "Development build" が残る、またはその版が無ければ止まる。最後に、打つコマンドを出す (自分では打たない) | 調整役 |
+| 4 | 3 が出したコマンドを打つ: コミット、main の push、`git tag Release-…`、タグの push、`gh release create Release-… output/release/GRSMD.html` | オーナー (タグと Release は必ずオーナー) |
+| 5 | main を develop へ合流して develop を push する (版のコミットを develop にも入れる) | 調整役 |
+
+#### 1.7.5 機械と限界
+
+| # | 機械 | 止めるもの |
+| --- | --- | --- |
+| M1 | `vite.config.js` のプラグイン `buildVersion` (`transformIndexHtml`) | リリースのビルドで `package.json` の版が無い・詰めた形でない。開発のビルドで HEAD の時刻を読めない。ヘルプの版の置き場所 (`data-build-version`) が 2 つ (英と日に 1 つずつ) でない、置き場所に `data-build-kind="release"` と `"dev"` の見出しが 1 つずつ無い、空の `<time>` が 1 つ無い |
+| M2 | `src/__tests__/versions.test.js` (AT-VER-01〜05) | 版を持つものが同じ版を指さない。形が違う。この節の外で形を書き直す (README・CHANGELOG・試験仕様・仕様のこの節の外) |
+| M3 | `tools/release.mjs` | 版を手で打つこと。"Development build" の入った `docs/index.html` をリリースすること。main 以外のブランチ (detached HEAD を含む) で回すこと。ファイルを書いた後に止まったときは、戻し方 (`git checkout -- package.json package-lock.json CHANGELOG.md README.md docs/index.html`) を示す (自分では戻さない) |
+
+形の変換と検査、ヘルプへの書き込みは `tools/version.mjs` に 1 つだけ置き、M1〜M3 が共に使う。**限界:** このリポジトリには CI が無い。M1・M2 は、誰かがビルド・試験を回したときだけ働く。「main で `tools/release.mjs` を回す」は手順で、機械では強制できない。
 
 ---
 
@@ -444,7 +499,8 @@ graph TB
             SRC["SourceFileRenderer<br/>(hljs Code View)"]:::entity
             SCROLL["SmoothScrollEngine<br/>(RAF Physics)"]:::adapter
             SMGR["ScrollMemento<br/>(Position Save and Restore)"]:::adapter
-            MODAL["ModalController<br/>(Help + Prompt)"]:::adapter
+            MODAL["ModalController<br/>(Help + Prompt, Esc and keys while open)"]:::adapter
+            HELPLANG["HelpLanguageSwitch<br/>(Help language, memory only)"]:::framework
             ZOOM["DiagramZoomController<br/>(Ctrl+Scroll)"]:::framework
             PAN["DiagramPanController<br/>(Drag)"]:::framework
             COPY["DiagramCopyController<br/>(SVG and PNG)"]:::framework
@@ -518,7 +574,7 @@ graph TB
     classDef framework fill:#87CEEB,stroke:#333,color:#000
 ```
 
-UIControllerがユーザーイベントを受け取り、RendererOrchestratorに処理を委譲する。OrchestratorはMarkdown、Mermaid、PlantUMLのパイプラインを逐次実行し、スクロール位置を復元する。Diagram系コントローラ（Zoom/Pan/Copy）はRendererOrchestratorとの直接のコード依存はなく、`#preview` DOM要素を共有して監視・操作する（図中に矢印なし）。SourceFileRendererとSmoothScrollEngineはMarkdownパイプラインとは独立してコードビューパスを処理する。
+UIControllerがユーザーイベントを受け取り、RendererOrchestratorに処理を委譲する。OrchestratorはMarkdown、Mermaid、PlantUMLのパイプラインを逐次実行し、スクロール位置を復元する。Diagram系コントローラ（Zoom/Pan/Copy）はRendererOrchestratorとの直接のコード依存はなく、`#preview` DOM要素を共有して監視・操作する（図中に矢印なし）。SourceFileRendererとSmoothScrollEngineはMarkdownパイプラインとは独立してコードビューパスを処理する。HelpLanguageSwitch も、main.js が作り、ヘルプのモーダルの DOM だけを扱う (他のクラスとのコードの依存は無く、図中に矢印なし。SC-16)。
 
 編集モード (パレットの表示中) の間だけ、BlockEditController がプレビューのクリックを編集の開始として扱う。確定・挿入・Undo によるモデルの更新は同期的に行い、RendererOrchestrator が `ModelChangedPort` を通して知らせる (UIController がそのポートを実装する。ソースの依存は UI から UseCase への内向き)。DOM の描画だけを直列のキューで処理する (INV-47)。保存の手順 (権限、外部変更の確認、書き込み、基準の更新) は UseCase 層の SaveDocument / SaveDocumentAs が持ち、確認ダイアログは `OverwriteConfirmPort` (UIController が実装) を通して出す。現在の文書 (`DocumentSession`)、保存先 (`DocumentLocation`)、保存の状態 (11-e) は UseCase 層の DocumentLifecycle が持ち、保存先は DocumentLifecycle が持つ `DocumentLocation` だけを正とする (INV-55)。DocumentLifecycle は UI に触れず、保存の UI の手順 (INV-56 の確認、開いている編集欄の確定、結果のトースト) は `SaveSteps` で UIController を呼び返す。MarkdownFileAccess はローカルファイルの読み込み (Reload) と書き込み (保存) だけを行い、通信しない (CON-14)。
 
@@ -648,9 +704,20 @@ classDiagram
 
     class ModalController {
         <<static>>
-        +setupModal(modal, closeTriggers)$ : void
-        +show(modal)$ : void
+        +setupModal(modal, closeTriggers)$ : Function
+        +isOpen(modal)$ : boolean
+        +show(modal, opener)$ : void
         +hide(modal)$ : void
+        +focusables(modal)$ : HTMLElement[]
+        +moveFocus(modal, step)$ : void
+    }
+
+    class HelpLanguageSwitch {
+        -bodies : Map
+        -buttons : Map
+        +initialLanguage(browserLanguage)$ : string
+        +language : string
+        +setLanguage(lang) : void
     }
 
     class DiagramZoomController {
@@ -1087,6 +1154,7 @@ classDiagram
     style ScrollMemento fill:#90EE90,stroke:#333,color:#000
     style SmoothScrollEngine fill:#90EE90,stroke:#333,color:#000
     style ModalController fill:#90EE90,stroke:#333,color:#000
+    style HelpLanguageSwitch fill:#87CEEB,stroke:#333,color:#000
     style UIController fill:#87CEEB,stroke:#333,color:#000
     style DiagramZoomController fill:#87CEEB,stroke:#333,color:#000
     style DiagramPanController fill:#87CEEB,stroke:#333,color:#000
@@ -2134,13 +2202,43 @@ Feature: ヘルプモーダル
     Given アプリが実行中である
     When ユーザーが[?]ボタンを短くクリックする (押下時間 < 300ms)
     Then ヘルプモーダルが表示される
-    And 英語と日本語のセクションが含まれる
+    And ブラウザの言語 (navigator.language) が "ja" または "ja-" で始まれば日本語、それ以外は英語の本文だけが表示される
+    And 題名の行に "English" と "Japanese" のトグルがあり、表示中の言語のボタンが押された状態 (aria-pressed="true") である
+    And 本文の先頭にダウンロードのボタン、1 文の説明、このファイルの版がある (1.7)
     And サンプルデータリンクが含まれる
+
+  Scenario: 言語を切り替える
+    Given ヘルプモーダルが英語で開いている
+    When ユーザーが "Japanese" を押す
+    Then 日本語の本文だけが表示され、"Japanese" が押された状態になる
+    And ヘルプを閉じて開き直しても日本語のまま (同じページを開いている間)
+    And 選んだ言語は localStorage・sessionStorage・Cookie に保存されない (CON-03)
+    And ページを開き直すと、最初の言語はブラウザの言語に戻る
 
   Scenario: ヘルプモーダルを閉じる
     Given ヘルプモーダルが開いている
-    When ユーザーが閉じるボタンまたは背景をクリックする
+    When ユーザーが閉じるボタン (×。`<button>`)、背景のクリック、または Esc のどれかを行う
     Then ヘルプモーダルが非表示になる
+    And フォーカスは [?] ボタンに戻り、隠れたモーダルの中に残らない
+
+  Scenario: キーボードだけでヘルプを使う
+    Given ヘルプモーダルを開いた直後である
+    Then フォーカスは押されている言語のボタンにある (プロンプトのモーダルは ×)
+    When ユーザーが Tab または Shift+Tab を何度押しても
+    Then フォーカスはモーダルの中 (トグル、×、表示中の言語の本文のリンク) を回り、裏の文書やボタン ([Clear] など) へ出ない
+
+  Scenario: ヘルプを開いている間はアプリの 1 キーの操作が効かない
+    Given 文書を表示していて、ヘルプモーダル (またはプロンプトのモーダル) が開いている
+    When ユーザーが修飾キーなしで c / d / l / r / n / e / 上下矢印キー を押す
+    Then 裏のアプリはクリア・テーマの切り替え・再読込・新しいタブ・パレット・スクロールを行わない
+    And Ctrl / Cmd / Alt を伴うキー (Ctrl+S など) は従来どおり
+    And Tab・Enter・Space はモーダルの中のボタンで従来どおり働く
+
+  Scenario: ダウンロードのボタン
+    Given ヘルプモーダルが開いている
+    When ユーザーがダウンロードのボタンを押す
+    Then 新しいタブで GitHub の最新の Release の GRSMD.html が開かれる (保存される)
+    And ページは押す前に何も送らず、押した後も fetch しない (CON-12)
 ```
 
 ### FS-11: MCBSMDプロンプトテンプレート
@@ -2836,7 +2934,7 @@ Feature: 未保存の保護
 | `clearBtn`      | button   | エディタをクリアしプレレンダー状態にリセット                                       |
 | `helpBtn`       | button   | ヘルプモーダルを開く (ラベル: "?")                                                 |
 | `preview`       | div      | メインコンテンツエリア: Markdownプレビュー / コードビュー / アフォーダンステキスト |
-| `helpModal`     | div      | ヘルプダイアログモーダル（英語・日本語バイリンガル）。ショートカットキーは大文字表記 (L, D, R, N, C) |
+| `helpModal`     | div      | ヘルプダイアログモーダル（英語・日本語。言語ごとの本文 `.help-body[lang="en"]` / `[lang="ja"]` を `HelpLanguageSwitch` が `hidden` で切り替える。HTML の既定は英語を表示し日本語を `hidden`。両方の本文は同じ節 (`data-help-section`: download, about, usage, details, editing, privacy, samples) を同じ順に持つ）。ショートカットキーは大文字表記 (L, D, R, N, C, E) |
 | `promptModal`   | div      | MCBSMDプロンプトテンプレートオーバーレイ。著作権表示 (&copy; 2026 GoodRelax. MIT License.) を含む   |
 | `promptText`    | textarea | 読み取り専用MCBSMDテンプレートテキスト                                             |
 | `copyPromptBtn` | button   | プロンプトをクリップボードにコピー                                                 |
@@ -2849,6 +2947,9 @@ Feature: 未保存の保護
 | `keyHint`        | div  | `#preview` 先頭にオーバーレイ表示 (`position: fixed`, topbar直下)。ショートカットヒントを表示。消去条件: 5秒経過 / ボタン押下 / スクロール / クリック。UIController.showKeyHint() が管理。 |
 | `affordanceText` | div  | `_viewState === 'initial'` 時に `#preview` 内に表示されるデフォルトヒントテキスト。UIController.setViewMode('initial') で表示。               |
 | `codeViewBody`   | div  | ハイライト済みコード＋行番号のスクロール可能領域。SourceFileRenderer.\_buildCodeBody() が生成。                                               |
+| `.help-head` (ヘルプ) | div | ヘルプの題名の行: `<h2>GR Simple Markdown</h2>`、言語のトグル (`.help-lang`、`role="group"`、`aria-label="Language"`。`<button type="button" data-help-lang="en">English</button>` と `data-help-lang="ja"` の `Japanese`。押された方が `aria-pressed="true"`)、閉じるボタン (`<button type="button" class="close-btn" aria-label="Close">`)。キーの割り当ては無い (調整役の裁定 D4)。2026-10-23 追加 |
+| `.help-download` (ヘルプ) | div | 各言語の本文の先頭。`.help-download-btn` (最新の Release の `GRSMD.html` へのリンク。`target="_blank" rel="noopener noreferrer"`、`download` 属性なし。1.7.3)、1 文の説明、版の行 `.help-version[data-build-version]` (`data-build-kind="release"` と `"dev"` の見出しと空の `<time>`。ビルドが片方の見出しを残して時刻を書く。1.7.2)。2026-10-23 追加 |
+| `promptModal` の閉じるボタン | button | `<button type="button" class="close-btn prompt-close" aria-label="Close">` (2026-10-23 に `<span>` から改める)。**R15:** ヘルプの本文・トグルの文字 ("English" / "Japanese")・閉じるボタンの `aria-label` ("Close") は `src/index.html` に置く (5.2 の R15 の注の「`src/index.html` に書いた文字は HTML に置く」に当たる。JS は文字を作らないので AT-STA-15 の対象外) |
 | `toastContainer` | div  | トースト通知用の固定コンテナ (ビューポート上部中央, top: 60px)。幅は画面を超えず、長いトーストは折り返す (5.12)                                  |
 | `editPalette` | div | 編集パレット。`position: fixed`。毎回ビューポートの右下に表示する (INV-32)。`role="toolbar"`、`aria-label="Edit palette"`。`body` の直下に置き、プレビューの中へは移さない (INV-53)。表示・最小化・ポップオーバーは 11-f。印刷では表示しない。EditPalette が生成・管理する。`role="toolbar"` は残す (INV-14 のガードが参照する)。フォーカスできる要素の無い toolbar は ARIA の型に合わないが、OS-16 の後退として受け入れる |
 | `paletteGrip` | div | グリップ (移動できることを示すアフォーダンス)。押して動かすと移動 (INV-35)、長押しで最小化・復活 (INV-68) |
@@ -4054,6 +4155,8 @@ setupTouchPasteAssist() {
 
 注意: 修飾キー (Ctrl / Meta / Alt) が押されている場合、ショートカットハンドラをバイパスしてブラウザネイティブ動作を優先する (INV-14)。
 
+**モーダルを開いている間 (2026-10-23 追加):** ヘルプ (`helpModal`) またはプロンプト (`promptModal`) を開いている間は、Ctrl / Meta / Alt を伴わないキーをアプリのショートカット (この表と下の編集機能の表の 1 キーの操作。`Esc` を含む) に渡さない。`Esc` はそのモーダルを閉じる (既定の動作も止める)。`Tab` / `Shift+Tab` は既定の動作を止め、モーダルの中の、隠れていない (`[hidden]` の中でない) リンク・ボタン・入力欄を順に回す (最後の次は最初。フォーカスがモーダルの外にあれば最初 (Shift なら最後) へ)。それ以外のキーは既定の動作を止めないので、Enter・Space はモーダルの中のボタンで働く。**フォーカス:** 開くとき (`ModalController.show(modal, opener)`)、押されている (`aria-pressed="true"`) ボタン (ヘルプの表示中の言語) へ、無ければ × へフォーカスを移す。閉じるとき (×・背景・Esc・コピーの後)、フォーカスがモーダルの中 (または無い) なら、開いたボタン (`opener`。UIController は [?] を渡す) へ戻す (レビューの M1、調整役の裁定 2026-10-23)。Ctrl / Meta / Alt を伴うキーは従来どおり (主 + S など)。`ModalController.setupModal` が document の capture の段で `keydown` を受け、伝播だけを止める (UIController の `keydown` は bubble の段なので届かない)。
+
 **編集機能のキー (SC-22〜24。2026-xx-xx 追加):**
 
 | キー | プレレンダー | Markdownプレビュー | ブロック編集中 | セルの編集中 | コードビュー |
@@ -4151,7 +4254,7 @@ doClear() {
 Render Light / Render Dark ボタンのクリックハンドラは `this.handleRender('light')` / `this.handleRender('dark')` を呼び出す。
 Reload ボタンのクリックハンドラは `this.handleReload()` を呼び出す。
 
-ブロック編集欄の Esc / Enter は、BlockEditController が編集欄自身の `keydown` で処理する。ヘルプモーダル (`helpModal`) の「Details」/「詳細」に `[Edit]` / `E` の行を、「Editing」/「編集」に「表の中で縦棒を文字として書くときはバックスラッシュを付ける」の注記を追加する (日英併記。CON-06 の例外)。その場編集の UI の改善 (2026-xx-xx) では、「Details」/「詳細」に Ctrl+S / Ctrl+Shift+S の行を足し、「Editing」/「編集」に、ダブルクリック、Undo と Ctrl+Z (INV-48 / 59)、ショートカット (INV-58〜60。Mac は Cmd)、パレットの並びとキーボードで操作しないこと (INV-53) とグリップの長押し (INV-68)、表のセルの編集とキー (INV-62〜65)、表のつまみと原文の Enter (INV-27)、書式 (文字色、リンクを貼る・外す。Ctrl+V の方式と、ボタンの許可の及ぶ範囲と取り消し方。CON-12 の注)、本文の改行とリストの新しい項目・ゆるいリスト (INV-71)、見えない文字の印 (INV-70) を書き、「ブロックから Tab でパレットへ移れます」を削った (オーナーの裁定 2026-10-22)。
+ブロック編集欄の Esc / Enter は、BlockEditController が編集欄自身の `keydown` で処理する。ヘルプモーダル (`helpModal`) の「Details」/「詳細」に `[Edit]` / `E` の行を、「Editing」/「編集」に「表の中で縦棒を文字として書くときはバックスラッシュを付ける」の注記を追加する (日英併記。CON-06 の例外)。その場編集の UI の改善 (2026-xx-xx) では、「Details」/「詳細」に Ctrl+S / Ctrl+Shift+S の行を足し、「Editing」/「編集」に、ダブルクリック、Undo と Ctrl+Z (INV-48 / 59)、ショートカット (INV-58〜60。Mac は Cmd)、パレットの並びとキーボードで操作しないこと (INV-53) とグリップの長押し (INV-68)、表のセルの編集とキー (INV-62〜65)、表のつまみと原文の Enter (INV-27)、書式 (文字色、リンクを貼る・外す。Ctrl+V の方式と、ボタンの許可の及ぶ範囲と取り消し方。CON-12 の注)、本文の改行とリストの新しい項目・ゆるいリスト (INV-71)、見えない文字の印 (INV-70) を書き、「ブロックから Tab でパレットへ移れます」を削った (オーナーの裁定 2026-10-22)。ヘルプの改善 (2026-10-23。SC-16) では、英語と日本語を言語のトグルで分け (節の見出しの "(Japanese)" を外し、日本語に「サンプルデータ」を足して両方の節をそろえる)、本文の先頭にダウンロードの枠を置き、「About GRSMD」/「概要」を "viewer and editor" / 「ビューワー兼エディター」と新しい名前にして旧名の 1 文を足し (裁定 D8)、「Basic Usage」/「基本的な使い方」にタッチのペースト (FS-16。裁定 D6)、「Details」/「詳細」に Reload の (Chrome / Edge)・`Esc` (11-c の escapePressed)・図の `Copy SVG` / `Copy PNG` (PC。SC-13。DiagramCopyController は `(pointer: fine)` のときだけ作る)・印刷 (SC-14) を足し、`[?]` の行に「`Esc` で閉じる」を足し、「Editing」/「編集」を 6 つの小見出し (Start and apply / 開始と反映、Palette / パレット、Tables / 表、Text format and links / 書式とリンク、Line breaks and marks / 改行と印、Saving and more / 保存とその他) に分けて (文は変えない。裁定 D5)、パレットに Insert table と Mermaid の雛形の挿入の位置 (INV-52) を足し、「リンクを貼る」の許可の行に「goodrelax.github.io で開いているとき」を前置きし (CON-12)、「Privacy & Security」/「プライバシーとセキュリティ」にダウンロードのボタンの行き先を足した (裁定 D7)。
 
 **UIController.showKeyHint(mode) メソッド:**
 
