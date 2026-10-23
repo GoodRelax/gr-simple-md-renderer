@@ -1,6 +1,7 @@
-# GRSMD — A Privacy-First Markdown Renderer & Viewer That Runs in Your Browser
+# GR Simple Markdown (GRSMD) — A Privacy-First Markdown Viewer & Editor That Runs in Your Browser
 
-**GRSMD (GoodRelax Simple Markdown Renderer & Viewer)** is a privacy-first Markdown renderer and viewer that runs entirely in the browser.
+**GR Simple Markdown (GRSMD)** is a privacy-first Markdown viewer and editor that runs entirely in the browser.
+It was called "GR Simple MD Renderer & Viewer" before it could edit documents in place; the short name GRSMD, the repository name and the URL stay the same.
 
 - Client-side Markdown, math (KaTeX), Mermaid, and syntax highlighting
 - PlantUML and external images only with explicit user consent
@@ -123,6 +124,8 @@ npm run test:e2e
 - `spec/grsmd_gen2_spec_ja.md` — the specification (Japanese)
 - `CHANGELOG.md` — notable changes and dependency versions
 
+Version rule: `spec/grsmd_gen2_spec_ja.md` section 1.7.
+
 ---
 
 ## Design Notes
@@ -142,10 +145,11 @@ MIT License
 
 ---
 ---
-# GR Simple MD Renderer & Viewer
+# GR Simple Markdown
 
 Mermaid・PlantUML・数式・シンタックスハイライトに対応した、
-軽量でプライバシー重視の Markdown レンダラー＆ビューワーです。
+軽量でプライバシー重視の Markdown のビューワー兼エディターです。
+旧名は「GR Simple MD Renderer & Viewer」です（その場で編集できるようになったため改名しました。略称 GRSMD・リポジトリ名・URL は変わりません）。
 すべてクライアントサイドで動作し、外部通信は明示的な許可がある場合のみ行われます。
 
 ---
@@ -264,6 +268,8 @@ npm run test:e2e
 - `e2e/` — ブラウザでの試験（Playwright）
 - `spec/grsmd_gen2_spec_ja.md` — 仕様書
 - `CHANGELOG.md` — 主な変更点と依存ライブラリのバージョン
+
+版の規則: `spec/grsmd_gen2_spec_ja.md` の 1.7。
 
 ---
 

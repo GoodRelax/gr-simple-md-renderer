@@ -1,8 +1,12 @@
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { defineConfig } from "vite";
 import { configDefaults } from "vitest/config";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { CONFIG } from "./src/js/config.js";
+import { separatedOf, separatedOfEpochSeconds, stampBuildVersion } from "./tools/version.mjs";
 
 // Keep only the woff2 source in each @font-face rule, dropping the woff/ttf
 // fallback copies. woff2 is supported by every browser that can run this app
@@ -49,6 +53,46 @@ const noExternalImports = {
     }
   },
 };
+
+// The version shown in the help (R3, R4; the rule is spec 1.7). A release
+// build (npm run build:release, mode "release") shows package.json's version;
+// any other build or the dev server shows the time of the HEAD commit as a
+// development build, so the same commit always gives the same text. The
+// version goes into the HTML as text, not into a script, so the CSP hash does
+// not change. A missing version, a malformed one, an unreadable HEAD or a
+// help without exactly one version slot per language fails the build.
+export function buildVersionOf(mode, { readPackage, headEpochSeconds }) {
+  if (mode === "release") {
+    const version = readPackage().version;
+    if (version === undefined) {
+      throw new Error("package.json has no version; a release build runs from tools/release.mjs");
+    }
+    return { kind: "release", instant: separatedOf(version) };
+  }
+  return { kind: "dev", instant: separatedOfEpochSeconds(headEpochSeconds()) };
+}
+
+export function buildVersion() {
+  let mode = "";
+  let projectDir = "";
+  const readPackage = () => JSON.parse(readFileSync(join(projectDir, "package.json"), "utf8"));
+  const headEpochSeconds = () =>
+    Number(execFileSync("git", ["log", "-1", "--format=%ct"], { cwd: projectDir, encoding: "utf8" }).trim());
+  return {
+    name: "build-version",
+    configResolved(config) {
+      mode = config.mode;
+      projectDir = dirname(config.root); // root is <project>/src
+    },
+    transformIndexHtml(html) {
+      try {
+        return stampBuildVersion(html, buildVersionOf(mode, { readPackage, headEpochSeconds }));
+      } catch (error) {
+        throw new Error(`build-version: ${error.message}`);
+      }
+    },
+  };
+}
 
 // Content-Security-Policy for the built single file (INV-20), as defense in
 // depth behind DOMPurify. vite-plugin-singlefile inlines the module script, so
@@ -134,7 +178,7 @@ export default defineConfig({
       plugins: [katexWoff2Only, noHljsThemeCss],
     },
   },
-  plugins: [viteSingleFile(), noExternalImports, contentSecurityPolicy],
+  plugins: [buildVersion(), viteSingleFile(), noExternalImports, contentSecurityPolicy],
   test: {
     environment: "jsdom",
     root: ".",

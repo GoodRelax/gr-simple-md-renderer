@@ -1,0 +1,172 @@
+import { test, expect, renderMarkdown, settled } from "./fixtures.js";
+
+// The help (SC-16, FS-10): the English | Japanese switch, the download box and
+// the version, and the keys while the help or the prompt is open (5.11).
+// Every test also checks (fixtures) that no request leaves for an external
+// host and that nothing is logged as an error.
+
+const DOWNLOAD_URL =
+  "https://github.com/GoodRelax/gr-simple-md-renderer/releases/latest/download/GRSMD.html";
+const help = (page) => page.locator("#helpModal");
+const body = (page, lang) => page.locator(`#helpModal .help-body[lang="${lang}"]`);
+const langButton = (page, lang) => page.locator(`#helpModal [data-help-lang="${lang}"]`);
+
+async function openHelp(page) {
+  await page.locator("#helpBtn").click();
+  await expect(help(page)).toBeVisible();
+}
+
+test.describe("English browser", () => {
+  test.use({ locale: "en-US" });
+
+  test("PRT-L01 / L03: English first; the switch shows one body and keeps the choice while the page is open", async ({ page }) => {
+    await page.goto("/");
+    await openHelp(page);
+    await expect(page.locator("#helpModal h2")).toHaveText("GR Simple Markdown");
+    await expect(body(page, "en")).toBeVisible();
+    await expect(body(page, "ja")).toBeHidden();
+    await expect(langButton(page, "en")).toHaveAttribute("aria-pressed", "true");
+
+    await langButton(page, "ja").click();
+    await expect(body(page, "ja")).toBeVisible();
+    await expect(body(page, "en")).toBeHidden();
+    await expect(langButton(page, "ja")).toHaveAttribute("aria-pressed", "true");
+    await expect(langButton(page, "en")).toHaveAttribute("aria-pressed", "false");
+
+    await page.locator("#helpModal .close-btn").click();
+    await expect(help(page)).toBeHidden();
+    await openHelp(page);
+    await expect(body(page, "ja")).toBeVisible();
+
+    // nothing kept: a reload starts from the browser's language again
+    await page.reload();
+    await openHelp(page);
+    await expect(body(page, "en")).toBeVisible();
+    await expect(body(page, "ja")).toBeHidden();
+    expect(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie])).toEqual([0, 0, ""]);
+  });
+
+  test("PRT-L05: the download box links to the latest release in a new tab, and shows this build's version", async ({ page }) => {
+    await page.goto("/");
+    await openHelp(page);
+    for (const lang of ["en", "ja"]) {
+      if (lang === "ja") await langButton(page, "ja").click();
+      const link = body(page, lang).locator(".help-download-btn");
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute("href", DOWNLOAD_URL);
+      await expect(link).toHaveAttribute("target", "_blank");
+      await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    }
+    const versionOf = (lang) => body(page, lang).locator(".help-version");
+    const ja = (await versionOf("ja").innerText()).replace(/\s+/g, " ").trim();
+    expect(ja).toMatch(/^\u958b\u767a\u7248 \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\uff08UTC\uff09$/);
+    await langButton(page, "en").click();
+    const en = (await versionOf("en").innerText()).replace(/\s+/g, " ").trim();
+    expect(en).toMatch(/^Development build \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z \(UTC\)$/);
+    const time = versionOf("en").locator("time");
+    await expect(time).toHaveAttribute("datetime", (await time.innerText()).trim());
+    expect(await page.locator('[data-build-kind="release"]').count()).toBe(0);
+  });
+
+  test("PRT-L03: while the help is open, the one-key shortcuts do not act behind it; Esc closes it and leaves the palette alone", async ({ page }) => {
+    await page.goto("/");
+    await renderMarkdown(page, "# Title\n\nSome text.\n");
+    // the palette is shown first: a leaked Esc would hide it (11-c escapePressed)
+    await page.keyboard.press("e");
+    await expect(page.locator("#paletteSave")).toBeVisible();
+    await openHelp(page);
+    for (const key of ["c", "d", "e", "ArrowDown"]) await page.keyboard.press(key);
+    await settled(page);
+    await expect(page.locator("#preview h1")).toHaveText("Title"); // not cleared
+    expect(await page.evaluate(() => document.body.classList.contains("dark"))).toBe(false);
+    await expect(page.locator("#paletteSave")).toBeVisible(); // "e" did not hide it
+    await expect(help(page)).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(help(page)).toBeHidden();
+    await expect(page.locator("#paletteSave")).toBeVisible(); // Esc did not reach the app
+
+    // closed: the keys are the app's again
+    await page.keyboard.press("e");
+    await expect(page.locator("#paletteSave")).toBeHidden();
+  });
+
+  test("PRT-L01 / L03: the focus moves into the help on open, Tab and Shift+Tab stay inside, and Esc gives it back to [?]", async ({ page }) => {
+    await page.goto("/");
+    // links, diagrams and buttons behind the help: places a leaking Tab would reach
+    await renderMarkdown(page, "# Title\n\n[a](https://example.com/a) [b](https://example.com/b)\n\n| A |\n| --- |\n| x |\n");
+    await openHelp(page);
+    const inHelp = () => page.evaluate(() => document.getElementById("helpModal").contains(document.activeElement));
+    const focusedLang = () => page.evaluate(() => document.activeElement?.dataset?.helpLang ?? null);
+    expect(await focusedLang()).toBe("en");
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press("Tab");
+      expect(await inHelp(), `Tab ${i + 1}`).toBe(true);
+    }
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press("Shift+Tab");
+      expect(await inHelp(), `Shift+Tab ${i + 1}`).toBe(true);
+    }
+    // the switch and the close button by keyboard only
+    await page.locator('#helpModal [data-help-lang="en"]').focus();
+    await page.keyboard.press("Tab");
+    expect(await focusedLang()).toBe("ja");
+    await page.keyboard.press("Enter");
+    await expect(body(page, "ja")).toBeVisible();
+    await page.keyboard.press("Tab");
+    expect(await page.evaluate(() => document.activeElement.classList.contains("close-btn"))).toBe(true);
+    await page.keyboard.press("Enter");
+    await expect(help(page)).toBeHidden();
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe("helpBtn");
+
+    // Esc: the focus is not left in the hidden help
+    await openHelp(page);
+    expect(await focusedLang()).toBe("ja"); // the pressed language
+    await page.keyboard.press("Escape");
+    await expect(help(page)).toBeHidden();
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe("helpBtn");
+  });
+
+  test("PRT-L03: the prompt (long press on [?]) also keeps the one-key shortcuts away and closes with Esc", async ({ page }) => {
+    await page.goto("/");
+    await renderMarkdown(page, "# Title\n\nSome text.\n");
+    const box = await page.locator("#helpBtn").boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(800);
+    await page.mouse.up();
+    const prompt = page.locator("#promptModal");
+    await expect(prompt).toBeVisible();
+    await expect(help(page)).toBeHidden();
+    // the focus is on the prompt's close button, and Tab stays inside the prompt
+    expect(await page.evaluate(() => document.activeElement.matches("#promptModal .close-btn"))).toBe(true);
+    for (let i = 0; i < 4; i++) {
+      await page.keyboard.press("Tab");
+      expect(await page.evaluate(() => document.getElementById("promptModal").contains(document.activeElement))).toBe(true);
+    }
+    await page.keyboard.press("c");
+    await page.keyboard.press("d");
+    await settled(page);
+    await expect(page.locator("#preview h1")).toHaveText("Title");
+    expect(await page.evaluate(() => document.body.classList.contains("dark"))).toBe(false);
+    await page.keyboard.press("Escape");
+    await expect(prompt).toBeHidden();
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe("helpBtn");
+  });
+});
+
+test.describe("Japanese browser", () => {
+  test.use({ locale: "ja-JP" });
+
+  test("PRT-L03: Japanese first, with the same sections as English", async ({ page }) => {
+    await page.goto("/");
+    await openHelp(page);
+    await expect(body(page, "ja")).toBeVisible();
+    await expect(body(page, "en")).toBeHidden();
+    await expect(langButton(page, "ja")).toHaveAttribute("aria-pressed", "true");
+    const sections = (lang) =>
+      body(page, lang).locator(":scope > [data-help-section]").evaluateAll((els) => els.map((e) => e.dataset.helpSection));
+    expect(await sections("ja")).toEqual(["download", "about", "usage", "details", "editing", "privacy", "samples"]);
+    expect(await sections("en")).toEqual(await sections("ja"));
+  });
+});

@@ -25,7 +25,8 @@ body {
 
 #title {
   font-weight: bold;
-  font-size: 14px;
+  /* about the copyright line's width with the name "GR Simple Markdown" (PRT-A01) */
+  font-size: 17px;
   font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
   font-stretch: condensed;
   line-height: 1.2;
@@ -523,6 +524,11 @@ blockquote {
   font-weight: bold;
   cursor: pointer;
   line-height: 1;
+  /* a <button>: drop the browser's button look */
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
 }
 
 .close-btn:hover,
@@ -545,6 +551,90 @@ blockquote {
 .modal-section ul {
   margin-top: 8px;
   padding-left: 20px;
+}
+
+.modal-section h4 {
+  margin: 12px 0 0;
+}
+
+/* Help: title row with the language switch (HelpLanguageSwitch) */
+.help-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* on a narrow screen only the title wraps; the switch and the close button stay on its line */
+.help-head h2 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.help-head .help-lang,
+.help-head .close-btn {
+  flex-shrink: 0;
+}
+
+.help-head .close-btn {
+  float: none;
+}
+
+.help-lang {
+  display: inline-flex;
+  border: 1px solid #999;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.help-lang button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.help-lang button + button {
+  border-left: 1px solid #999;
+}
+
+.help-lang button[aria-pressed="true"] {
+  background: #0969da;
+  color: #fff;
+}
+
+/* Help: download box at the top of each body (R2, R3) */
+.help-download {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  background: rgba(9, 105, 218, 0.06);
+}
+
+.help-download p {
+  margin: 8px 0 0;
+}
+
+.help-download-btn {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: #0969da;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.help-version {
+  font-size: 12px;
+  color: #59636e;
+  font-family: monospace;
 }
 
 #promptText {
@@ -618,6 +708,26 @@ blockquote {
 
   .dark .modal-section h3 {
     border-bottom-color: #3d444d;
+  }
+
+  .dark .help-lang,
+  .dark .help-lang button + button {
+    border-color: #3d444d;
+  }
+
+  .dark .help-lang button[aria-pressed="true"],
+  .dark .help-download-btn {
+    background: #1f6feb;
+    color: #fff;
+  }
+
+  .dark .help-download {
+    border-color: #3d444d;
+    background: rgba(31, 111, 235, 0.12);
+  }
+
+  .dark .help-version {
+    color: #9198a1;
   }
 
   .dark #promptText {

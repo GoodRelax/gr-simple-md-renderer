@@ -1580,7 +1580,8 @@ export default class UIController {
     /** @purity non-pure */
     this.longPressTimer = setTimeout(() => {
       this.isLongPress = true;
-      ModalController.show(this.elements.promptModal);
+      // the focus goes back to [?] when the prompt closes (5.11)
+      ModalController.show(this.elements.promptModal, this.elements.helpBtn);
     }, CONFIG.ui.longPressDuration);
   }
 
@@ -1600,7 +1601,7 @@ export default class UIController {
       this.isLongPress = false;
       return;
     }
-    ModalController.show(this.elements.helpModal);
+    ModalController.show(this.elements.helpModal, this.elements.helpBtn);
   }
 
   /** @purity non-pure */

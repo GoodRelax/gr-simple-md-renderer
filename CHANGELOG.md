@@ -9,7 +9,49 @@ versions live in `package.json`. The earlier entries below record the previous
 CDN + SRI era, in which each upstream `/+esm` rebuild required a documented
 re-hash.
 
+Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.md section 1.7.
+
 ---
+
+## [Unreleased]
+
+### Changed
+
+- Rename the tool to **GR Simple Markdown** (formerly "GR Simple MD Renderer &
+  Viewer"): it now edits documents in place, not just renders them. The
+  short name GRSMD, the repository name and the URL stay. The header logo,
+  the help's title and the page's title, description, Open Graph, Twitter
+  and JSON-LD data carry the new name; the descriptions and JSON-LD
+  (`alternateName`) keep the former name.
+- Help: an `English | Japanese` switch next to the close button shows one
+  language at a time. The first language follows the browser's language;
+  the choice is kept in memory only. Both languages have the same sections
+  (the Japanese help gains Sample Data), and Editing is split into six short
+  groups.
+- Help: a **Download GRSMD** button at the top (the latest GitHub release's
+  `GRSMD.html`, opened in a new tab), a one-line note that it is a single
+  HTML file that works offline, and the version of the open file.
+- Help: Reload works in Chrome and Edge only; Esc (also closes the help),
+  Copy SVG / Copy PNG (PC), printing, how Insert table / Mermaid samples places the new block, pasting
+  on a phone, where the Download button goes, and that the clipboard
+  permission note applies on goodrelax.github.io.
+- While the help or the AI prompt is open, the one-key shortcuts (L, D, R,
+  N, C, E, arrows, Esc) no longer act on the page behind it; Esc closes it.
+  Opening it moves the focus in (the help's chosen language, or the prompt's
+  close button), Tab and Shift+Tab go round inside it, and closing it gives
+  the focus back to [?]. The close control is a real button (keyboard and
+  screen readers).
+- Page metadata: the title stays short; the former name and the reason for
+  the rename are in the descriptions (also Open Graph and Twitter), the
+  keywords and the JSON-LD.
+
+### Added
+
+- Date-time versions: `npm run build:release` shows the release's version in
+  the help; any other build shows "Development build" and the time of the
+  HEAD commit. `tools/release.mjs` writes a release's version and prints the
+  tag and GitHub release commands. A test keeps `package.json`,
+  `package-lock.json`, this file and `README.md` on the same version.
 
 ## [Unreleased] - 2026-10-10
 

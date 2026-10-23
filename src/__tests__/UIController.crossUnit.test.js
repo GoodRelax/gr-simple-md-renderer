@@ -411,13 +411,13 @@ describe("AT-UI-62 a long press on [?] opens the MCBSMD prompt, and lifting the 
       ModalController.show.mockClear();
       touch("touchstart");
       vi.advanceTimersByTime(CONFIG.ui.longPressDuration);
-      expect(ModalController.show).toHaveBeenCalledWith(app.elements.promptModal);
+      expect(ModalController.show).toHaveBeenCalledWith(app.elements.promptModal, app.elements.helpBtn);
       expect(touch("touchend").defaultPrevented).toBe(true);
       expect(ModalController.show).toHaveBeenCalledTimes(1);
       ModalController.show.mockClear();
       touch("touchstart");
       expect(touch("touchend").defaultPrevented).toBe(true);
-      expect(ModalController.show).toHaveBeenCalledWith(app.elements.helpModal);
+      expect(ModalController.show).toHaveBeenCalledWith(app.elements.helpModal, app.elements.helpBtn);
       expect(ModalController.show).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
