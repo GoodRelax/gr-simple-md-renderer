@@ -62,6 +62,7 @@ const NEW_FILES = [
   "classes/MarkdownFileAccess.js",
   "classes/SaveDocument.js",
   "classes/SaveDocumentAs.js",
+  "classes/DocumentLifecycle.js",
   "classes/BlockEditController.js",
   "classes/EditPalette.js",
   "classes/MarkdownTable.js",
@@ -140,6 +141,17 @@ describe("AT-STA static checks of src/js", () => {
     }
     for (const name of ENTITY_FILES) {
       expect(scan(resolve(jsDir, name)).identifiers.has("fileHandle"), name).toBe(false);
+    }
+  });
+
+  it("AT-STA-17 DocumentLifecycle (UseCase) imports no config and uses no window / document; UIController keeps no file access (INV-55)", () => {
+    const { identifiers, imports } = scan(resolve(jsDir, "classes/DocumentLifecycle.js"));
+    expect(imports.filter((i) => i.includes("config"))).toEqual([]);
+    expect(identifiers.has("window")).toBe(false);
+    expect(identifiers.has("document")).toBe(false);
+    const ui = scan(resolve(jsDir, "classes/UIController.js"));
+    for (const name of ["fileAccess", "DocumentSession", "DocumentLocation", "SaveDocument", "SaveDocumentAs"]) {
+      expect(ui.identifiers.has(name), name).toBe(false);
     }
   });
 

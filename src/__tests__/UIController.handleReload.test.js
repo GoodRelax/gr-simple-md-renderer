@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
+import { deferred } from "./helpers/fakeFs.js";
 
 describe("UIController.handleReload", () => {
   let UIController;
@@ -8,8 +9,6 @@ describe("UIController.handleReload", () => {
   let mockElements;
   let mockScrollEngine;
   let services;
-  let DocumentSession;
-  let DocumentLocation;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -32,8 +31,6 @@ describe("UIController.handleReload", () => {
 
     const mod = await import("../js/classes/UIController.js");
     UIController = mod.default;
-    DocumentSession = (await import("../js/classes/DocumentSession.js")).default;
-    DocumentLocation = (await import("../js/classes/DocumentLocation.js")).default;
     services = fakeEditServices();
 
     const mockMetadata = {
@@ -119,10 +116,9 @@ describe("UIController.handleReload", () => {
     expect(mockOrchestrator.reloadCodeView).toHaveBeenCalledWith("dark");
   });
 
-  /** A markdown document dropped from doc.md (white box: the save target and session). */
+  /** A markdown document dropped from doc.md (its session and save target). */
   function withSaveTarget(ctrl, handle) {
-    ctrl._location = new DocumentLocation("doc.md", handle);
-    ctrl._session = DocumentSession.fromPastedText("", 1);
+    ctrl.documents.openFile("", false, 0, "doc.md", handle);
   }
 
   it("markdown view: reads through MarkdownFileAccess.readFile, then loads the file body (wrapper split)", async () => {
@@ -158,6 +154,35 @@ describe("UIController.handleReload", () => {
     expect(services.fileAccess.readFile).not.toHaveBeenCalled();
     expect(mockOrchestrator.loadMarkdown).not.toHaveBeenCalled();
     expect(setViewModeSpy).not.toHaveBeenCalled();
+  });
+
+  it("markdown view without a save target: the toast is shown synchronously, before any await (as before the split)", async () => {
+    const { showToast } = await import("../js/utils.js");
+    mockOrchestrator.isCodeViewActive.mockReturnValue(false);
+    mockOrchestrator.isPreRenderState.mockReturnValue(false);
+    const ctrl = createController();
+
+    const reloading = ctrl.handleReload();
+
+    expect(showToast).toHaveBeenCalledTimes(1);
+    await reloading;
+  });
+
+  it("markdown view: a read failure is told in the first microtask after the read rejects (one step, as before the split)", async () => {
+    const { showToast } = await import("../js/utils.js");
+    mockOrchestrator.isCodeViewActive.mockReturnValue(false);
+    mockOrchestrator.isPreRenderState.mockReturnValue(false);
+    const gate = deferred();
+    services.fileAccess.readFile.mockReturnValue(gate.promise);
+    const ctrl = createController();
+    withSaveTarget(ctrl, { name: "doc.md" });
+
+    const reloading = ctrl.handleReload();
+    gate.reject(new Error("NotReadableError"));
+    await Promise.resolve();
+
+    expect(showToast).toHaveBeenCalledTimes(1);
+    await reloading;
   });
 
   it("markdown view: a read failure loads nothing", async () => {

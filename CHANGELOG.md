@@ -275,6 +275,13 @@ re-hash.
   - mermaid 12.1.0 was evaluated and deferred: it bundles the ELK layout engine
     (about +0.5 MB gzip) and makes it the default, which changes the layout of
     flowchart, state, class and requirement diagrams.
+- Internal: the document lifecycle moves out of `UIController` into a new
+  class, `DocumentLifecycle` (use case layer, no UI). It holds the current
+  `DocumentSession` and `DocumentLocation`, the document id, the save
+  operation state machine (11-e) and runs Save / Save as and the Reload read.
+  `main.js` composes it (with `SaveDocument` / `SaveDocumentAs`) and passes it
+  to `UIController` as `services.documents` instead of `services.fileAccess`.
+  No change in behavior.
 
 ### Known issues
 

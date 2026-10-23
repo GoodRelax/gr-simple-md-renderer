@@ -1,6 +1,6 @@
 /**
  * Where the document is saved (UseCase-layer value, immutable). INV-55:
- * UIController holds exactly one current value; nothing else keeps a fileHandle.
+ * DocumentLifecycle holds exactly one current value; nothing else keeps a fileHandle.
  * The fileHandle is an opaque reference here; Entities never use it.
  */
 export default class DocumentLocation {

@@ -20,6 +20,8 @@
 
 **改訂:** 2026-xx-xx — その場編集の UI を改善。編集モードでないときのダブルクリック (INV-57)。Ctrl+S / Ctrl+Shift+S / Ctrl+Z / Ctrl+B / Ctrl+I (INV-58〜60)。表の確定で縦棒をそろえる (INV-61)。表のセルに限り WYSIWYG で編集する (INV-62〜65、INV-72。OS-13 を改訂)。文字色とリンクを貼る・外す (INV-66、INV-69。文字を選んで URL を Ctrl+V で貼るとリンク。ボタンはクリップボードの読み取りの許可を使う。CON-12 に注を追加)。書式の分割・結合 (INV-67)。見えない文字と行末の空白 2 つの表示 (INV-70)。本文の Enter / Shift+Enter で改行 (INV-71)。パレットを 7 列 × 2 段にし、行・列の削除、Align column、書式を追加。パレットのキーボード操作を廃止 (INV-53、OS-16)。無効なボタンの押下とグリップの長押し (INV-34 / 35 / 68。最小化の状態は記憶しない。CON-13)。パレットの表示とポップオーバーを状態機械にする (11-f)。表のセルの編集を 11-c に加え、表の編集の間は表のブロック ID と外枠を保つ (INV-21 / 42 / 45〜47)。パレットのボタンの有効・無効を改める (INV-52、5.15.5)。表の編集の性能の目標を加える (INV-51)。Undo は編集中にも使え、単位を「変更の単位」に改める (INV-48、OS-18)。用語集に表の編集・セルの編集・変更の単位・インラインの範囲などを追加し、「未保存」にセルの変更 (b') を加える。SC-22 / SC-23 を改訂。配色を GitHub (Primer) に合わせる (ダークの全体、ライトの本文とコードビュー、インラインのコードの地、コードの色分けは prettylights、コードブロックの余白 16px、印刷はライトの色)。編集の色を青にする (5.8、5.15.2)。依存の追加はない (付録A 不変)。
 
+**改訂:** 2026-10-23 — UIController から「文書のライフサイクル」を新しいクラス DocumentLifecycle (UseCase 層) に分ける (動きは変えない)。現在の DocumentSession と DocumentLocation、文書 ID の採番、11-e の保存の状態機械 (`saveOperationStateMachine` / `saveOperationState`) と保存の実行、Reload の読み込みを DocumentLifecycle が持つ。UIController のコンストラクタの `services.fileAccess` は `services.documents` (main.js が組み立てる DocumentLifecycle) になる。1.4 のディレクトリ構成を今のファイルにそろえる。
+
 **改訂:** 2026-10-23 — 画面の英語の文言を、短いふだんの英語に改める (トースト・確認・alert・図とプレビューの中の文字・パレットの名前。オーナーの裁定 R1〜R15)。上部の入力欄の呼び名を "the top box" にそろえる。パレットの "Paste link from clipboard" を "Paste copied link"、"Table options" を "Align column"、"Default alignment" を "Remove alignment" に改める (コードの名前は変えない)。PlantUML と外部画像の同意の文を、それぞれ短い 1 文の問いにする (外部画像の確認ダイアログはホスト名の一覧を示さない。同意の仕組みは変えない。INV-19)。JS が画面に出す文言をすべて `config.js` に移す (5.2。AT-STA-15)。使っていない `fileDrop.messages.unsupportedType` と `externalImage.maxHostsInDialog` を消す。長いトーストは画面の中で折り返す (5.12)。Insert table / Mermaid の雛形は、ブロック編集中なら編集欄を確定してから、編集欄の文字列の行の境目で割って挿入し (段落・リスト・引用だけを割る)、コード・数式・HTML・表の原文の中では断ってトーストで知らせる。挿入の後は、表の最初のセル (文字を選んだ状態) か Mermaid の原文の編集欄を開く。確定と挿入は別の変更の単位とする (INV-52、INV-46、INV-48、INV-51、11-c に `blockInsertRequested` / `insertedBlockRendered` を追加。改善要望 1、オーナーの裁定 2026-10-23)。依存の追加はない (付録A 不変)。
 
 ---
@@ -96,7 +98,8 @@
 | 本文 (bodyText)          | LF に正規化し、ラッパーを除いた原文。モデル・比較・描画はすべて本文で行う |
 | ファイル文字列 (fileText) | 保存するときの文字列。本文にラッパー・改行コード・BOM を戻したもの |
 | DocumentSession          | 新設 JS クラス (Entity、不変の値)。編集中の文書の値を持つ: 文書 ID、ラッパー、改行コード、BOM の有無、基準の本文、基準の更新日時。ブラウザの型 (fileHandle) は持たない |
-| DocumentLocation         | 新設の値 (UseCase 層)。保存先を表す: ファイル名と fileHandle (どちらも無い場合がある)。UIController が現在の値を 1 つだけ持つ (保存先の唯一の正。INV-55) |
+| DocumentLocation         | 新設の値 (UseCase 層)。保存先を表す: ファイル名と fileHandle (どちらも無い場合がある)。DocumentLifecycle が現在の値を 1 つだけ持つ (保存先の唯一の正。INV-55) |
+| DocumentLifecycle        | 新設のクラス (UseCase 層)。文書のライフサイクル: 現在の DocumentSession と DocumentLocation、文書 ID の採番、5.14.11 の表どおりの作り直し、11-e の保存の状態機械と保存の実行、Reload のファイルの読み込みを持つ。UI (`#editor`、表示、確認ダイアログ、トースト) には触れない。UIController が `services.documents` として受け取る |
 | 文書 ID                  | 文書を作り直すたびに増える整数 (`DocumentSession.documentId`)。保存の結果を、保存を始めたときと同じ文書にだけ反映するために使う (INV-54) |
 | 表の編集 (表のセッション) | 最上位の表のブロック 1 つについて、セルの編集を続けている間。開始はセルの開始ジェスチャ (INV-29 の (a)、INV-57)、終了は表の外の押下・Esc・最後の行の Enter・表のつまみ・別のブロック・保存など (11-c)。間は表のブロック ID を保ち (INV-62)、外枠を保持する (INV-47) |
 | セルの編集               | 表の編集の中で、セル 1 つを `contenteditable` にして編集している状態 (INV-62〜64) |
@@ -181,26 +184,48 @@ gr-simple-md-renderer/
 ├── src/                          # Vite source (multi-file dev)
 │   ├── index.html                # HTML template (Vite entry)
 │   ├── css/
-│   │   └── style.css             # extracted from <style> block
-│   └── js/
-│       ├── main.js               # entry point + init block
-│       ├── config.js             # CONFIG, EXT_TO_HLJS, FILE_SYSTEM_HANDLE_SUPPORTED
-│       ├── utils.js              # utility functions (applyTheme, showToast, etc.)
-│       └── classes/
-│           ├── ApplicationState.js
-│           ├── ScrollMemento.js
-│           ├── MarkdownRenderer.js
-│           ├── DiagramRenderer.js
-│           ├── MermaidRenderer.js
-│           ├── PlantUMLRenderer.js
-│           ├── SourceFileRenderer.js
-│           ├── SmoothScrollEngine.js
-│           ├── RendererOrchestrator.js
-│           ├── ModalController.js
-│           ├── UIController.js
-│           ├── DiagramZoomController.js
-│           ├── DiagramPanController.js
-│           └── DiagramCopyController.js
+│   │   └── style.css
+│   ├── js/
+│   │   ├── main.js               # entry point: imports the libraries and composes the classes
+│   │   ├── config.js             # CONFIG, EXT_TO_HLJS, FILE_SYSTEM_HANDLE_SUPPORTED
+│   │   ├── utils.js              # utility functions (applyTheme, showToast, etc.)
+│   │   ├── stateTable.js         # helpers for the transition tables (11-c to 11-f)
+│   │   ├── textTransforms.js     # wrapper split, line endings, BOM (pure)
+│   │   ├── textWidth.js          # display width (pure, INV-61)
+│   │   └── classes/              # one class per file
+│   │       ├── ApplicationState.js
+│   │       ├── ScrollMemento.js
+│   │       ├── MarkdownRenderer.js
+│   │       ├── ExternalImageGate.js
+│   │       ├── DiagramRenderer.js
+│   │       ├── MermaidRenderer.js
+│   │       ├── PlantUMLRenderer.js
+│   │       ├── SourceFileRenderer.js
+│   │       ├── SmoothScrollEngine.js
+│   │       ├── RendererOrchestrator.js
+│   │       ├── ModalController.js
+│   │       ├── UIController.js
+│   │       ├── DiagramZoomController.js
+│   │       ├── DiagramPanController.js
+│   │       ├── DiagramCopyController.js
+│   │       ├── MarkdownBlockModel.js
+│   │       ├── BlockDiff.js
+│   │       ├── MarkdownTextOps.js
+│   │       ├── MarkdownTable.js
+│   │       ├── InlineRuns.js
+│   │       ├── DocumentSession.js
+│   │       ├── DocumentLocation.js
+│   │       ├── DocumentLifecycle.js
+│   │       ├── SaveDocument.js
+│   │       ├── SaveDocumentAs.js
+│   │       ├── MarkdownFileAccess.js
+│   │       ├── BlockEditController.js
+│   │       ├── TableCellEditor.js
+│   │       ├── InvisibleCharOverlay.js
+│   │       ├── ClipboardLink.js
+│   │       └── EditPalette.js
+│   └── __tests__/                # unit tests (Vitest + jsdom), helpers/ and fixtures/
+├── e2e/                          # end-to-end tests (Playwright, *.e2e.js)
 ├── docs/                         # GitHub Pages source (Vite build output)
 │   ├── index.html                # single-file release (vite-plugin-singlefile)
 │   ├── sample-data.md            # test sample (help modal links)
@@ -208,19 +233,25 @@ gr-simple-md-renderer/
 │   ├── sample-data-2.md
 │   └── sample-data-2.txt
 ├── spec/                         # specifications
-│   └── grsmd_gen2_spec_ja.md
-├── trial/                        # alpha/beta versions (manual, e.g. try1.html)
-├── bat/                          # Windows launch helper scripts
-├── py/                           # build / verify scripts
+│   ├── grsmd_gen2_spec_ja.md
+│   ├── gen2_prerelease_test_spec_ja.md
+│   └── studies/
+├── poc/                          # proofs of concept
+├── skills/                       # Claude skills (mcbsmd)
 ├── vite.config.js
+├── playwright.config.js
+├── playwright.firefox.config.js
 ├── package.json
-├── CLAUDE.md
+├── package-lock.json
+├── CHANGELOG.md
+├── TODO.md
 ├── LICENSE
 ├── README.md
 └── .gitignore
 ```
 
 - GitHub Pages のソースディレクトリは `docs/` に設定する（URL変更なし）。
+- ビルドと試験の出力 (`output/`)、作業用の `temp/`、`node_modules/` などは `.gitignore` で管理の外に置く。
 - `sample-data.*` は `docs/` に配置する。ヘルプモーダル内のリンクが相対パスで参照するため。
 - クラスファイルに番号プレフィックスは付けない（例: `01_Foo.js` は不可）。
 - 描画ライブラリ (mermaid, hljs, katex 等) はnpm依存としてバンドルし、vite-plugin-singlefile で単一ファイルにインライン化する (2026-07-16改訂)。外部URLインポートは禁止で、出力に残っている場合はビルドを失敗させる (INV-07)。
@@ -419,6 +450,7 @@ graph TB
             COPY["DiagramCopyController<br/>(SVG and PNG)"]:::framework
             BLOCKEDIT["BlockEditController<br/>(In-place block editing)"]:::framework
             PALETTE["EditPalette<br/>(Palette and gestures)"]:::framework
+            LIFECYCLE["DocumentLifecycle<br/>(Session, save target, save state)"]:::usecase
             SAVEDOC["SaveDocument and SaveDocumentAs<br/>(Save use cases)"]:::usecase
             PORTS["ModelChangedPort and OverwriteConfirmPort<br/>(Ports owned by use cases)"]:::usecase
             BLOCKMODEL["MarkdownBlockModel<br/>(Source as blocks)"]:::entity
@@ -459,7 +491,10 @@ graph TB
     PUML -->|"sends data (with consent)"| PUML_SERVER
     UI -->|"wires callbacks"| PALETTE
     UI -->|"wires block events"| BLOCKEDIT
-    UI -->|"runs save use cases"| SAVEDOC
+    UI -->|"rebuilds and saves the document"| LIFECYCLE
+    LIFECYCLE -->|"runs save use cases"| SAVEDOC
+    LIFECYCLE -->|"holds current value"| SESSION
+    LIFECYCLE -->|"reads for Reload, starts save access"| SAVER
     BLOCKEDIT -->|"commits blocks"| ORCH
     BLOCKEDIT -->|"format edits"| TEXTOPS
     ORCH -->|"align tables (INV-61)"| TABLE
@@ -485,7 +520,7 @@ graph TB
 
 UIControllerがユーザーイベントを受け取り、RendererOrchestratorに処理を委譲する。OrchestratorはMarkdown、Mermaid、PlantUMLのパイプラインを逐次実行し、スクロール位置を復元する。Diagram系コントローラ（Zoom/Pan/Copy）はRendererOrchestratorとの直接のコード依存はなく、`#preview` DOM要素を共有して監視・操作する（図中に矢印なし）。SourceFileRendererとSmoothScrollEngineはMarkdownパイプラインとは独立してコードビューパスを処理する。
 
-編集モード (パレットの表示中) の間だけ、BlockEditController がプレビューのクリックを編集の開始として扱う。確定・挿入・Undo によるモデルの更新は同期的に行い、RendererOrchestrator が `ModelChangedPort` を通して知らせる (UIController がそのポートを実装する。ソースの依存は UI から UseCase への内向き)。DOM の描画だけを直列のキューで処理する (INV-47)。保存の手順 (権限、外部変更の確認、書き込み、基準の更新) は UseCase 層の SaveDocument / SaveDocumentAs が持ち、確認ダイアログは `OverwriteConfirmPort` (UIController が実装) を通して出す。保存先は UIController が持つ `DocumentLocation` だけを正とする (INV-55)。MarkdownFileAccess はローカルファイルの読み込み (Reload) と書き込み (保存) だけを行い、通信しない (CON-14)。
+編集モード (パレットの表示中) の間だけ、BlockEditController がプレビューのクリックを編集の開始として扱う。確定・挿入・Undo によるモデルの更新は同期的に行い、RendererOrchestrator が `ModelChangedPort` を通して知らせる (UIController がそのポートを実装する。ソースの依存は UI から UseCase への内向き)。DOM の描画だけを直列のキューで処理する (INV-47)。保存の手順 (権限、外部変更の確認、書き込み、基準の更新) は UseCase 層の SaveDocument / SaveDocumentAs が持ち、確認ダイアログは `OverwriteConfirmPort` (UIController が実装) を通して出す。現在の文書 (`DocumentSession`)、保存先 (`DocumentLocation`)、保存の状態 (11-e) は UseCase 層の DocumentLifecycle が持ち、保存先は DocumentLifecycle が持つ `DocumentLocation` だけを正とする (INV-55)。DocumentLifecycle は UI に触れず、保存の UI の手順 (INV-56 の確認、開いている編集欄の確定、結果のトースト) は `SaveSteps` で UIController を呼び返す。MarkdownFileAccess はローカルファイルの読み込み (Reload) と書き込み (保存) だけを行い、通信しない (CON-14)。
 
 ### 3.2 クラス図
 
@@ -801,6 +836,32 @@ classDiagram
         +fileName : string
         +fileHandle : object
     }
+    class DocumentLifecycle {
+        +DocumentLifecycle(fileAccess, deps)
+        +session : DocumentSession
+        +location : DocumentLocation
+        +saveOperationState : string
+        +hasSession() boolean
+        +isBodyChanged(bodyText) boolean
+        +fileName() string
+        +isSaving() boolean
+        +openFile(fileText, hasBom, lastModified, fileName, fileHandle) void
+        +reloadTarget() object
+        +readFile(target) Promise~LoadedFile~
+        +isStale(target) boolean
+        +reload(loaded) void
+        +startPasted(bodyText) void
+        +close() void
+        +save(event, steps) Promise
+        +finishSave(outcome) SaveResult
+    }
+    class SaveSteps {
+        +confirmStart() boolean
+        +commitEdits(event) void
+        +getBody() string
+        +confirmer : OverwriteConfirmPort
+        +onFinished(result) void
+    }
     class SaveRequest {
         +session : DocumentSession
         +location : DocumentLocation
@@ -989,10 +1050,14 @@ classDiagram
     EditPalette ..> UIController : calls back commands
     UIController --> BlockEditController : owns
     UIController --> EditPalette : owns
-    UIController --> SaveDocument : owns
-    UIController --> SaveDocumentAs : owns
-    UIController --> DocumentSession : holds current value
-    UIController --> DocumentLocation : holds current value
+    UIController --> DocumentLifecycle : document lifecycle
+    UIController ..> SaveSteps : provides
+    DocumentLifecycle --> SaveDocument : runs
+    DocumentLifecycle --> SaveDocumentAs : runs
+    DocumentLifecycle --> DocumentSession : holds current value
+    DocumentLifecycle --> DocumentLocation : holds current value
+    DocumentLifecycle --> MarkdownFileAccess : reads for Reload, starts access
+    DocumentLifecycle ..> SaveSteps : calls back
     UIController --> RendererOrchestrator : undo and full render
     RendererOrchestrator --> MarkdownBlockModel : owns current and rendered
     BlockEditController --> MarkdownRenderer : finds block wrappers
@@ -1043,6 +1108,7 @@ classDiagram
     style OverwriteConfirmPort fill:#FFD700,stroke:#333,color:#000
     style SaveDocument fill:#FFD700,stroke:#333,color:#000
     style SaveDocumentAs fill:#FFD700,stroke:#333,color:#000
+    style DocumentLifecycle fill:#FFD700,stroke:#333,color:#000
     style SaveOutcome fill:#FFD700,stroke:#333,color:#000
     style MarkdownFileAccess fill:#90EE90,stroke:#333,color:#000
     style LoadedFile fill:#90EE90,stroke:#333,color:#000
@@ -1073,7 +1139,8 @@ classDiagram
 | `ExternalImageGate` | `apply(root)` (適用範囲を引数で取る。省略時は preview 全体。INV-43) |
 | `ScrollMemento` | `+captureAnchor(element) ScrollAnchor` (`@purity semi-pure-b`。要素の上端の画面上の位置を読む) / `+captureReadingAnchor()` / `+restoreReadingAnchor(saved)` / `+capturePlaceAt(top)` / `+movedBy(saved)` (読んでいる位置: 表示の上端に掛かる最初の子の中身の上端。表示の上端は、Markdown の表示の上端 (タッチ端末で document がスクロールするときは、上に貼り付く `#topbar` の下端)。子を半分ずつ探し、各子を読むのは高々 1 回。表示されていない子 (`display: none`。閲覧中の隠れたブロックなど) と、編集モードの間だけ見えるブロック (`.md-block-hidden` / `.md-block-empty`) は飛ばす。戻す時点で基準の要素が表示されていなければ、何もしない。`capturePlaceAt(top)` は、その位置がブロックの中なら、そこに掛かる流れの中の表示中の子 (表のつまみは流れの外なので選ばない。無ければブロック) を、ブロックの間 (編集モードだけの帯や余白) なら、その前のブロックの下端を返す。5.1 の表のつまみ、PRT-X08) / `+restoreAnchor(anchor, element) void` (基準の要素は呼び出し側が `anchorBlockId` で探して渡す。要素が無いか、箱を持たない (閲覧中の隠れたブロックなど) なら補正しない。タッチ端末で document がスクロールするとき、スクロールが刻みで止まるブラウザ (viewport の meta が無く縮めて表示する WebKit。刻みは、Playwright の WebKit の実測で画面の 1 px (縮尺の逆数。約 2.5 CSS px で、DPR によらない) で、切り捨てる。実機の刻みは PRT-X08 で記録する) でも、基準がいちばん近くに来る位置に止める (頼んだ位置から目標の側へ数 px の範囲を試す)。これにより、出るたびに元の位置へ戻り、何度出入りしても、ずれは溜まらない。編集モードの間のずれは、刻みの半分以内 (ブラウザが止められる、いちばん近い位置) に収まる。試す範囲は刻み (画面の 1 px) と 1 px (`1 / 縮尺` の切り上げ + 1。2〜32 px。`devicePixelRatio` は、Playwright の WebKit では縮尺を含んだ値になり、実機での出方も分からないので使わない)。最初の 1 回で動かず、範囲の先でも動かなければ、文書の端として止める。`restore(pos)` も同じく、`save()` が読んだ位置に戻るまで、範囲の中で試す) (INV-46。タッチ端末では document のスクロールを使う既存の切り替えに従う) / `+reveal(element) void` (INV-52。要素が表示の中 (表示の上端から、プレビューの下端、または document がスクロールするときは画面の下端まで) にあれば何もしない。外にあれば、近い方の端がその端に来るだけスクロールする (表示より高ければ上端をそろえる)。滑らかなスクロールはしない) |
 | `ScrollAnchor` (新しい値の型) | `{ offsetTop : number }` (押下・確定の時点の、基準のブロックの上端の画面上の位置)。描画の時点の基準の要素は `ModelChange.anchorBlockId` で決める (INV-46) |
-| `UIController` | `+toggleEditPalette() void` / `+requestSave() Promise` / `+requestSaveAs() Promise` / `+confirmOverwrite(reason) Promise~boolean~` (`OverwriteConfirmPort` の実装。`reason` が `"changed"` なら `externalChangeConfirm`、`"unknown"` なら `overwriteUnknownConfirm` の文言で `window.confirm` を出す) / `+onModelChanged(change) void` (`ModelChangedPort` の実装。同期で `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろし、未保存の印を更新する) / `+onBlockSplitFailed() void` (`ModelChangedPort` の実装。本文をブロックに分けられず全体を 1 ブロックにしたことを `messages.edit.blockSplitFailed` のトーストで知らせる。5.14.2) / `-_confirmDiscardIfDirty() boolean` / `-_isDocumentDirty() boolean` / `-_session : DocumentSession` / `-_location : DocumentLocation` / `-_nextDocumentId : number` / `-_editorChangedSinceRender : boolean` (INV-45) |
+| `UIController` | `+toggleEditPalette() void` / `+requestSave() Promise` / `+requestSaveAs() Promise` / `+confirmOverwrite(reason) Promise~boolean~` (`OverwriteConfirmPort` の実装。`reason` が `"changed"` なら `externalChangeConfirm`、`"unknown"` なら `overwriteUnknownConfirm` の文言で `window.confirm` を出す) / `+onModelChanged(change) void` (`ModelChangedPort` の実装。同期で `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろし、未保存の印を更新する) / `+onBlockSplitFailed() void` (`ModelChangedPort` の実装。本文をブロックに分けられず全体を 1 ブロックにしたことを `messages.edit.blockSplitFailed` のトーストで知らせる。5.14.2) / `-_confirmDiscardIfDirty() boolean` / `-_isDocumentDirty() boolean` / `-documents : DocumentLifecycle` / `-_editorChangedSinceRender : boolean` (INV-45) |
+| `DocumentLifecycle` | `+session : DocumentSession` / `+location : DocumentLocation` / `+saveOperationState : string` (読み取りだけ。値を変えるのは下のメソッドだけ) / `-_nextDocumentId : number` / `+openFile(fileText, hasBom, lastModified, fileName, fileHandle) void` / `+reloadTarget() object\|null` / `+readFile(target) Promise` / `+isStale(target) boolean` / `+reload(loaded) void` / `+startPasted(bodyText) void` / `+close() void` / `+save(event, steps) Promise` / `+finishSave(outcome) SaveResult\|null` |
 
 **実装で確定したメンバと決めごと (その場編集):**
 
@@ -1096,7 +1163,8 @@ classDiagram
 | `EditPaletteHost` (UIController が実装するポート) | `runCommand(command, arg)` と、任意の `onPopoverOpened(key)` (ポップオーバー (`format` / `mermaid` / `table`) が開いた直後に呼ぶ。UIController は `format` のとき、リンクのボタンの状態を決める。5.15.5、INV-51)。`command` は `bold` / `italic` / `undo` / `save` / `saveAs` / `insertTable` / `insertRow` / `rowDelete` / `insertColumn` / `columnDelete` / `insertMermaid` / `textColor` / `linkPaste` / `linkRemove` / `alignColumn`。`arg` は `insertMermaid` のときの `CONFIG.edit.mermaidSamples` のキー、`textColor` のときの `red` / `blue` / `green` / `none`、`alignColumn` のときの `left` / `center` / `right` / `none` |
 | `TableCellEditor` (UI 層) | コンストラクタ `(orchestrator, renderer, host, {isApple})`。`host` は `{dispatch(event), onCellInput()}` (BlockEditController)。`isApple` は BlockEditHost の `isApple` (UIController と同じ値。セルの Redo のキーの判定)。表のセッション (表のブロック ID) と、開いているセル `{row, col, element, saved, raw, kind: "wysiwyg" \| "raw", links, linkInfo, openedMarkdown, literals}` (`literals` は、そのセルで外したリンクの文字。INV-69)、`editGeneration` (開く・閉じる・変わるたびに進む。INV-69) を持つ。`sessionBlockId()` (表のセッションの表のブロック ID。無ければ `null`) / `isOpen()` (セルが開いているか) / `isComposing()` (セルで IME の変換中か。INV-64) / `isCellEditableTable(blockId)` (INV-62 (1)) / `startSession(blockId)` / `endSession()` / `openCell(row, col, caret, selectAll)` (`selectAll` が真なら、カーソルの代わりにセルの文字を全部選ぶ。挿入した表の最初のセル。INV-52) / `openCellElement()` (開いているセルの要素。無ければ `null`) / `commitCell()` / `revertCell()` / `discardCell()` / `applyTableOperation(op)` (INV-65。次に開くセルを返す) / `planFor(op)` (11-c の `canKeepTableId`。計画を覚え、続く確定で使い回す) / `neighbour(direction)` (INV-64) / `canApplyOperation(op)` (D2) / `hasUncommittedChange()` / `cellState()` / `canFormatSelection()` / `applyFormat(op)` / `linkTarget()` / `canPasteLink()` / `canRemoveLink()` / `pasteLink(url, label)` / `removeLink()` (INV-69。セルの `paste` では、INV-63 の貼り付けより先に Ctrl+V の方式を判定する) / `containsNode(node)` / `isInSessionTable(node)` / `cellAt(table, node)$` (INV-29 (a)) / `cellAfter(op, at)$`。モジュール関数 `snapshotNodes(root, refs)` (`@purity semi-pure-b`。INV-63) / `fixRawCellText(text)` (`@purity semi-pure-a`。INV-63 の自動の修正。`CONFIG.edit.tableLineBreak` を読む)。`contentEditable` を設定してよい唯一のファイル (AT-STA-07) |
 | `ClipboardLink` (UI 層) | `+isLinkableUrl(text, schemes, maxLength)$` (`@purity pure`。INV-69 の URL の条件。制御文字・空白類・見えない文字 (双方向の制御文字、廃止された書式の文字、幅 0 の文字、U+FEFF など) を含む文字列は通さない。INV-72 (a) の `<URL>`・裸の URL の文字の変更の判定にも使う) / `+urlOptions()$` (`@purity semi-pure-a`。`CONFIG.edit.linkSchemes` と `maxPastedUrlLength`) / `+linkOp(url, strictEnds)$` (リンクを付ける書式の操作。`toDestination(url)` を行き先とする普通のリンク) / `+urlFromPasteEvent(event, options)$` (Ctrl+V の方式。`clipboardData` の `text/plain` だけを同期に読む。権限は要らない) / `+readUrlAndText(clipboard, options)$` (ボタン。`clipboard` は `navigator.clipboard` (テストでは偽物)。`read()` があればそれを、無ければ `readText()` を使い、拒否・失敗で読み直さない。URL でなければ、または拒否・失敗なら `null`。`text/html` は `DOMParser` の inert な文書で解析し (スクリプトは動かず、画像も読まない。DOM には入れない)、`href` が同じ URL の `a` がちょうど 1 つならその文字を返す) / `+linkTextOf(html, url, parseHtml)$` / `+toDestination(url)$` (`@purity pure`。利用者の文字列のまま (`new URL().href` にしない)。`\` → `%5C`。`<`・`>`・括弧の不釣り合いがあれば `<…>` (`<` `>` は `%3C` `%3E`)。表のセルの縦棒の逃がし (前に `\` を付ける) は書き出し (`InlineRuns`) が行う)。外部へ通信しない (CON-12) |
-| `UIController` | コンストラクタの第 5 引数 `services` = `{fileAccess, isApple, createPalette(host), createBlockEdit(host), clipboard}` (main.js が組み立てる。`isApple` は `utils.isApplePlatform(navigator)`。`clipboard` は INV-69 のボタンが読むもので、省略すれば押した時点の `navigator.clipboard`。テストでは偽物を渡す)。`isSameLinkTarget(a, b)$` (`@purity pure`。INV-69 の待つ間の対象の比較)。`setupDoubleClickGestures()` (`setupEventListeners` から呼ぶ。プレビューのダブルクリック・ダブルタップを受け、空の初期状態では空の文書を始め (INV-31)、Markdown 表示中は 11-c の `previewDoubleClicked` を起こす (交点は `browsingPreview` の列だけなので、編集モードの中では何もしない。INV-57))。`utils.shortcutLetter(event, isApple)` (`@purity pure`。TableCellEditor の Redo の判定と共有する) は INV-14 の判定式で主の修飾キーの文字 (`a`〜`z`) か `null` を返す。SaveDocument / SaveDocumentAs は `fileAccess` から UIController が作る。11-e の遷移表を `saveOperationStateMachine` として持ち、`SaveOutcome.status` を出来事に対応させる (`saved` → fileWritten、`downloadStarted` → downloadStarted、`failed` → writeFailed、`canceled` → saveCanceled)。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8) |
+| `UIController` | コンストラクタの第 5 引数 `services` = `{documents, isApple, createPalette(host), createBlockEdit(host), clipboard}` (main.js が組み立てる。`documents` は DocumentLifecycle。`isApple` は `utils.isApplePlatform(navigator)`。`clipboard` は INV-69 のボタンが読むもので、省略すれば押した時点の `navigator.clipboard`。テストでは偽物を渡す)。`isSameLinkTarget(a, b)$` (`@purity pure`。INV-69 の待つ間の対象の比較)。`setupDoubleClickGestures()` (`setupEventListeners` から呼ぶ。プレビューのダブルクリック・ダブルタップを受け、空の初期状態では空の文書を始め (INV-31)、Markdown 表示中は 11-c の `previewDoubleClicked` を起こす (交点は `browsingPreview` の列だけなので、編集モードの中では何もしない。INV-57))。`utils.shortcutLetter(event, isApple)` (`@purity pure`。TableCellEditor の Redo の判定と共有する) は INV-14 の判定式で主の修飾キーの文字 (`a`〜`z`) か `null` を返す。`requestSave()` / `requestSaveAs()` は `documents.save(event, steps)` を呼ぶ。`steps` (`SaveSteps`) は `confirmStart()` (`#editor` に未描画の変更があれば INV-56 の確認。偽なら何も始めない) / `commitEdits(event)` (11-c の `saveRequested` / `saveAsRequested` を起こし、`#editor` に未描画の変更があれば取り込む) / `getBody()` / `confirmer` (UIController。`OverwriteConfirmPort`) / `onFinished(result)` (保存の結果を、use case が終わった直後に同期で示す: `applied` なら未保存の印を再計算し、`message` があればトーストを出す)。`_rejectWhileSaving()` は `documents.isSaving()` を見てトーストを出す (INV-54)。`_isDocumentDirty()` は `documents.hasSession()` が偽なら偽で、そうでなければ `documents.isBodyChanged(orchestrator.getBody())`・開いている編集欄の変更・`_editorChangedSinceRender` のいずれか。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8) |
+| `DocumentLifecycle` (UseCase 層) | コンストラクタ `(fileAccess, {saveDocument, saveDocumentAs, messages, defaultFileName})` (main.js が `MarkdownFileAccess` から SaveDocument / SaveDocumentAs を作り、`CONFIG.messages.edit` と `CONFIG.edit.defaultFileName` と共に渡す。config を import しない)。`window` / `document` を使わない (AT-STA-17)。5.14.11 の行: `.md` のドロップ → `openFile` (`fromFileText`、ファイル名とドロップで得た handle)、Reload → `reloadTarget()` (同期。保存先か handle が無ければ `null`、あれば `{location, documentId}` を読む前に記録する) → `readFile(target)` (`MarkdownFileAccess.readFile` の Promise をそのまま返す。間に `await` を挟まないので、呼び出し側の `await` は読み込みと同じマイクロタスクで settle する) → `isStale(target)` (同期。保存先の参照か文書 ID が変わったか。判定はここだけ。呼び出し側は読み込みが settle した直後の 1 回の同期の流れで、`isStale` → 保存中の拒否 → 未保存の確認 → 置き換えを行う。INV-21) → `reload(loaded)` (`fromFileText`。BOM は `loaded.bytesHead` から。保存先は変えない)、初期状態からのペースト・`#editor` からの描画・空の文書 → `startPasted(body)` (`fromPastedText`。保存先は無し)、Clear と非 `.md` のドロップ → `close()`。文書 ID は 1 本の数で、作り直すたびに増える。11-e の遷移表を `saveOperationStateMachine` (モジュールの export) として持ち、`SaveOutcome.status` を出来事に対応させる (`saved` → fileWritten、`downloadStarted` → downloadStarted、`failed` → writeFailed、`canceled` → saveCanceled)。`save(event, steps)` の順 (最初の `await` は use case の `execute` だけ。INV-33): 交点が無い (書き込み中) かセッションが無ければ何もしない → `steps.confirmStart()` → 権限の要求 (Save で保存先の handle があるとき) または保存ダイアログ (`startSavePicker(location.fileName)`。保存先が無ければ `defaultFileName`)。書き込み API が無ければどちらも始めない → `steps.commitEdits(event)` → `saveOperationState` を writingFile に → `execute` (例外は `console.error` と `saveFailed` の失敗の結果) → `finishSave(outcome)` → `steps.onFinished(result)`。`finishSave(outcome)` は交点が無ければ `null`。あれば状態を移し、fileWritten で同じ文書 ID のときだけセッションと保存先を置き換え、`{applied, message}` (`message` は saveCanceled では `null`) を返す。`isSaving()` は `replaceRequested` の交点が有るか (INV-54) |
 | `SaveDocument` / `SaveDocumentAs` | コンストラクタ `(fileAccess, messages, defaultFileName)`。SaveDocument は、保存先 (handle) か書き込み API が無いときは、内部の SaveDocumentAs に任せる。`outcome(request, status, message)` はセッションと保存先を変えない結果を作る。`failureMessage(error)` は `SecurityError` → `saveActivationLost`、`NotFoundError` → `saveNotFound`、それ以外 → `saveFailed`。`SaveOutcome.status` は `saved` / `downloadStarted` / `canceled` / `failed` の 4 つ |
 | `MarkdownFileAccess` | コンストラクタ `(win = window)`。書き込み API の有無 (`canWriteInPlace`) は `win.showSaveFilePicker` の有無で判定する。保存のダイアログのファイルの種類の名前は `CONFIG.messages.edit.saveFileType` |
 
@@ -1334,9 +1402,9 @@ stateDiagram-v2
 
 **11-e 保存処理の状態機械**
 
-「未保存」は状態機械ではなく **導出値** とする (用語集。`UIController._isDocumentDirty()` = `session.isBodyChanged(orchestrator.getBody()) || blockEdit.hasUncommittedChange() || this._editorChangedSinceRender`)。状態変数を持たないので、未保存の印は「本文または編集欄が変わりうる時点」(確定、Undo、挿入、編集欄の `input`、`#editor` の `input`、全体描画、読み込み、保存の成功) で再計算する (INV-50)。
+「未保存」は状態機械ではなく **導出値** とする (用語集。`UIController._isDocumentDirty()` = `documents.hasSession() && (documents.isBodyChanged(orchestrator.getBody()) || blockEdit.hasUncommittedChange() || this._editorChangedSinceRender)`)。状態変数を持たないので、未保存の印は「本文または編集欄が変わりうる時点」(確定、Undo、挿入、編集欄の `input`、`#editor` の `input`、全体描画、読み込み、保存の成功) で再計算する (INV-50)。
 
-保存の処理中かどうかだけを状態機械にする。定義の名前は `saveOperationStateMachine`、今の状態を持つ変数は `saveOperationState` (`UIController` が持つ)。
+保存の処理中かどうかだけを状態機械にする。定義の名前は `saveOperationStateMachine`、今の状態を持つ変数は `saveOperationState` (`DocumentLifecycle` が持つ。UIController は `documents.saveOperationState` / `documents.isSaving()` で読む)。
 
 **Save operation state machine:**
 
@@ -1603,6 +1671,7 @@ sequenceDiagram
     participant User
     participant EditPalette
     participant UIController
+    participant DocumentLifecycle
     participant MarkdownFileAccess
     participant BlockEditController
     participant SaveDocument
@@ -1610,9 +1679,12 @@ sequenceDiagram
 
     User->>EditPalette : Press and release Save
     EditPalette->>UIController : requestSave()
-    UIController->>MarkdownFileAccess : startPermissionRequest(fileHandle) in the gesture
+    UIController->>DocumentLifecycle : save(saveRequested, steps)
+    DocumentLifecycle->>UIController : steps.confirmStart() (INV-56 only with unrendered top box text)
+    DocumentLifecycle->>MarkdownFileAccess : startPermissionRequest(fileHandle) in the gesture
+    DocumentLifecycle->>UIController : steps.commitEdits(saveRequested)
     UIController->>BlockEditController : dispatch(saveRequested) if editing (commitBlock, model updated synchronously)
-    UIController->>SaveDocument : execute(request with OverwriteConfirmPort as confirmer)
+    DocumentLifecycle->>SaveDocument : execute(request with OverwriteConfirmPort as confirmer)
     SaveDocument->>SaveDocument : Await permission
     SaveDocument->>MarkdownFileAccess : readLastModified(fileHandle)
     MarkdownFileAccess-->>SaveDocument : lastModified differs from the baseline
@@ -1626,8 +1698,9 @@ sequenceDiagram
     MarkdownFileAccess-->>SaveDocument : New lastModified
     SaveDocument->>DocumentSession : withSaved(bodyText, lastModified)
     DocumentSession-->>SaveDocument : New session value
-    SaveDocument-->>UIController : SaveOutcome saved with documentId
-    UIController->>UIController : Apply only if documentId is current
+    SaveDocument-->>DocumentLifecycle : SaveOutcome saved with documentId
+    DocumentLifecycle->>DocumentLifecycle : Apply only if documentId is current
+    DocumentLifecycle->>UIController : steps.onFinished(applied, message)
     UIController->>User : Toast (Saved)
 ```
 
@@ -3340,7 +3413,7 @@ class SourceFileRenderer {
    */
   async reload(theme) {
     if (!this._fileHandle) {
-      // as readMarkdownFile: no file (handles supported) or the browser
+      // as the Markdown Reload: no file (handles supported) or the browser
       const codeView = this._cfg.codeView;
       showToast(
         this._fileHandleSupported ? codeView.reloadNoFileMsg : codeView.reloadUnavailableMsg,
@@ -3593,7 +3666,7 @@ _formatFileInfo(metadata) {
 | `l` キーまたは Render Light (Markdown)     | `orchestrator.reRender('light')`                          |
 | `d` キーまたは Render Dark (Markdown)      | `orchestrator.reRender('dark')`                           |
 | `r` キーまたは Reload (コードビュー)       | `orchestrator.reloadCodeView(currentTheme)`               |
-| `r` キーまたは Reload (Markdown)           | `orchestrator.readMarkdownFile()` → preprocessInput → `loadMarkdown` (要fileHandle)|
+| `r` キーまたは Reload (Markdown)           | `documents.reloadTarget()` → `documents.readFile(target)` → `isStale`・保存中の拒否・未保存の確認 → `documents.reload(loaded)` → `loadMarkdown` (要fileHandle。INV-21 の Reload の順) |
 | `c` キーまたは Clear                       | `uiController.doClear()`                                  |
 
 設計根拠: hljs出力はCSSクラス (`hljs-keyword` 等) ベースであり、ライト/ダーク切替は `body.dark` のCSS切替のみで完結する。ファイル再読込・DOM再構築は不要。これによりコードビューの `l`/`d` は即時応答となる。
@@ -3631,17 +3704,47 @@ async handleReload() {
   if (this.orchestrator.isPreRenderState()) return;
   const theme = this.state.currentTheme;
   if (this.orchestrator.isCodeViewActive()) {
-    const metadata = await this.orchestrator.reloadCodeView(theme);
+    let metadata;
+    try {
+      metadata = await this.orchestrator.reloadCodeView(theme);
+    } catch {
+      this._toast(CONFIG.messages.edit.reloadFailed); // the file could not be read (N4)
+      return;
+    }
     if (metadata) this.setViewMode("code", metadata);
-  } else {
-    const rawText = await this.orchestrator.readMarkdownFile();
-    if (rawText === null) return; // toast already shown
-    const text = this.preprocessInput(rawText);
-    this.elements.editor.value = text;
-    await this.orchestrator.loadMarkdown(text, theme);
-    this.setViewMode("markdown");
-    this.showKeyHint("markdown");
+    return;
   }
+  // Markdown view (INV-21 Reload order, INV-55): (1) read the file of the save
+  // target first (DocumentLifecycle holds the only fileHandle)
+  const target = this.documents.reloadTarget();
+  if (!target) {
+    const msg = FILE_SYSTEM_HANDLE_SUPPORTED
+      ? CONFIG.codeView.reloadNoFileMsg
+      : CONFIG.codeView.reloadUnavailableMsg;
+    this._toast(msg);
+    return;
+  }
+  let loaded;
+  try {
+    loaded = await this.documents.readFile(target);
+  } catch {
+    this._toast(CONFIG.messages.edit.reloadFailed);
+    return;
+  }
+  // One synchronous step from here: nothing can change the document
+  // between the stale check, the questions and the replace.
+  if (this.documents.isStale(target)) {
+    // the document or the save target changed while the file was read
+    this._toast(CONFIG.messages.edit.reloadCanceled);
+    return;
+  }
+  // (2) refuse while saving (INV-54), (3) ask when unsaved (INV-21)
+  if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
+  // (4) replace synchronously: a new session (BOM and line ending read again;
+  // the wrapper is split by DocumentSession.fromFileText), the same target
+  this.blockEdit.dispatch("documentReplaced");
+  this.documents.reload(loaded);
+  await this._showSessionBody(theme); // #editor, loadMarkdown, view mode, key hint
 }
 ```
 
@@ -3667,34 +3770,12 @@ async renderCodeView(file, fileHandle) {
   return metadata;
 }
 
-// .md fileHandle storage for reload
-_mdFileHandle = null;
-
-async loadMarkdown(text, theme, fileHandle = undefined) {
-  if (fileHandle !== undefined) this._mdFileHandle = fileHandle;
-  this.state.setMarkdownText(text);
+async loadMarkdown(text, theme) {
   this._viewState = "markdown";
+  this.state.setMarkdownText(text);
   this.state.setTheme(theme);
   applyTheme(theme);
   await this.renderAll();
-}
-
-/**
- * Read .md file from stored fileHandle. Returns raw text or null.
- * Shows appropriate toast when unavailable:
- *   - FILE_SYSTEM_HANDLE_SUPPORTED && no handle -> "No file to reload..."
- *   - !FILE_SYSTEM_HANDLE_SUPPORTED           -> "Reload works only in Chrome and Edge."
- */
-async readMarkdownFile() {
-  if (!this._mdFileHandle) {
-    const msg = FILE_SYSTEM_HANDLE_SUPPORTED
-      ? CONFIG.codeView.reloadNoFileMsg
-      : CONFIG.codeView.reloadUnavailableMsg;
-    showToast(msg, CONFIG.codeView.toastDurationMs);
-    return null;
-  }
-  const file = await this._mdFileHandle.getFile();
-  return await file.text();
 }
 ```
 
@@ -3702,7 +3783,7 @@ async readMarkdownFile() {
 
 UIController は RendererOrchestrator のパブリックメソッドのみを呼び出し、内部の SourceFileRenderer に直接アクセスしない。
 
-`_mdFileHandle` は RendererOrchestrator (UseCase層) が保持する。Adapter用Interfaceは不要（ScrollMementoと同じCA意図的逸脱）。
+Markdown の Reload の保存先 (fileHandle) は、DocumentLifecycle (UseCase 層) が持つ `DocumentLocation` だけにある (INV-55)。ファイルは `DocumentLifecycle.readFile(target)` (`reloadTarget()` が記録した保存先) が `MarkdownFileAccess.readFile` で読み、読む間の変化は `isStale(target)` が判定する (5.14.11)。RendererOrchestrator は fileHandle を持たない (旧版の `_mdFileHandle` と `readMarkdownFile()` は廃止。コードビューの fileHandle は従来どおり SourceFileRenderer が持つ)。
 
 **(その場編集。2026-xx-xx 追記)** `[Render]` / `l` / `d` の経路の判定は、純粋関数 `renderRouteFor(isCodeView, isPreRender)` に切り出す。`"theme"` (コードビュー: CSS の切り替えだけ)、`"editorIntoDocument"` (Markdown 表示中: 同じ文書。開いている編集欄を確定してから、改行の正規化だけを行って全体を描画する。裁定 T33)、`"newDocument"` (初期状態: 改行の正規化 → ラッパーの除去 → 新しい文書) の 3 つ。
 
@@ -4300,7 +4381,7 @@ CONFIG を読まず、必要な値は引数で受け取る。`formatRange(text, 
 - SaveDocument は UI を直接扱わない。外部変更の確認は、`SaveRequest.confirmer` (UIController が実装する `OverwriteConfirmPort`) の `confirmOverwrite(reason)` (`Promise<boolean>` を返す) を通して行う (INV-39)。`reason` は、ファイルの更新日時が基準と異なる場合は `"changed"`、基準が不明な場合は `"unknown"` とする。不明な場合に「外部で変更された」と出すと、事実でないことがあり利用者を誤らせるので、文言を分ける。
 - Save: 保存先 (`location.fileHandle`) が無い、または書き込み API が無い場合は Save as と同じ動作にする。権限 → `readLastModified` (`NotFoundError` は `failed`) → 基準と異なれば `confirmOverwrite` → `toFileText` → `writeFile` → `withSaved`。
 - Save as: 保存ダイアログで得た handle と名前で、新しい `DocumentLocation` を返す (以後の Save と Reload の対象)。書き込み API が無い場合は `startDownload` で Blob (`text/markdown;charset=utf-8`) をダウンロードし、`downloadStarted` を返す。ダウンロードでは保存先も基準も変えない (INV-26)。Blob URL は `<a>` の click の 60 秒後に `URL.revokeObjectURL` する (すぐに無効にする必要は無く、ブラウザが blob を読むのに時間がかかっても足りるようにする保険)。ダウンロードは、押下のハンドラの中で、確定 (同期) に続けて同期的に始める (INV-33。ユーザーアクティベーションの中で始まる)。それでも止められた場合 **[一般知識・未検証: iOS Safari など]** は、INV-26 により基準は変わらず、安全側に倒れる (PRT-W06 を iOS Safari でも行う)。
-- `SaveOutcome` は保存を始めたときの `documentId` を持ち、UIController は現在の文書 ID と一致するときだけ反映する (INV-54)。保存中 (`writingFile`) は、文書の置き換えを拒む (INV-54)。
+- `SaveOutcome` は保存を始めたときの `documentId` を持ち、DocumentLifecycle は現在の文書 ID と一致するときだけ反映する (INV-54)。保存中 (`writingFile`) は、文書の置き換えを拒む (INV-54)。
 - 書き込みの可否は `FILE_SYSTEM_WRITE_SUPPORTED` (`typeof window.showSaveFilePicker === "function"` 等) で判定する **[要検証: 判定式]**。`FILE_SYSTEM_HANDLE_SUPPORTED` とは別にする。
 - 5 MB (CON-08) を超えた文書も保存できる (読み込みの上限は変えない)。
 - 保存先は `DocumentLocation` だけを正とする (`RendererOrchestrator._mdFileHandle` は廃止。INV-55)。`DocumentSession` は fileHandle を持たない。
@@ -4510,8 +4591,8 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | **KISS**     | SourceFileRendererのpublicメソッドは3個。SmoothScrollEngineは約60行。過度な抽象化なし。                                                                                                                                                                                                                             |
 | **YAGNI**    | 検索、差分、プラグインシステム、マルチファイルタブは実装しない。指定された機能のみ実装する。                                                                                                                                                                                                                        |
 | **DRY**      | EXT_TO_HLJSは単一のルックアップテーブル。テーマ適用は `applyTheme()`。トーストは `showToast()`。`handleRender()` はキーとボタンで共用。                                                                                                                                                                             |
-| **SoC**      | SourceFileRenderer: コード本体レンダリングのみ（UI chrome は UIController に委譲）。SmoothScrollEngine: アニメーション物理のみ。UIController: イベント配線 + ビューモード管理（setViewMode, showKeyHint）。RendererOrchestrator: レンダリングパイプライン調整のみ（DOM classList 操作なし）。CONFIG: 全定数を集約。 |
-| **SRP**      | 各クラスは変更理由がちょうど1つ。SourceFileRendererはコード描画変更時のみ変更。UIControllerはUI表示変更時のみ変更。RendererOrchestratorはパイプライン変更時のみ変更。 **(その場編集。2026-xx-xx 追記)** MarkdownBlockModel: 本文とブロックの対応だけ。BlockDiff: ブロック列の対応付けだけ。MarkdownTextOps: 文字列の書式操作だけ。MarkdownTable: 表の解析と整形だけ (幅は textWidth.js)。InlineRuns: インラインの書式の並びと書き出しだけ。InvisibleCharOverlay: 編集欄の後ろの印の層だけ。DocumentSession: 保存に関わる値だけ。SaveDocument / SaveDocumentAs: 保存の手順だけ。MarkdownFileAccess: ローカルファイルへの入出力だけ。BlockEditController: ブロック編集の UI イベントだけ。EditPalette: パレットの表示とジェスチャだけ (機能の実行はコールバックで UIController へ) |
+| **SoC**      | SourceFileRenderer: コード本体レンダリングのみ（UI chrome は UIController に委譲）。SmoothScrollEngine: アニメーション物理のみ。UIController: イベント配線 + ビューモード管理（setViewMode, showKeyHint）。DocumentLifecycle: 文書のライフサイクル (セッション・保存先・保存の状態) だけで、UI に触れない。RendererOrchestrator: レンダリングパイプライン調整のみ（DOM classList 操作なし）。CONFIG: 全定数を集約。 |
+| **SRP**      | 各クラスは変更理由がちょうど1つ。SourceFileRendererはコード描画変更時のみ変更。UIControllerはUI表示変更時のみ変更。RendererOrchestratorはパイプライン変更時のみ変更。 **(その場編集。2026-xx-xx 追記)** MarkdownBlockModel: 本文とブロックの対応だけ。BlockDiff: ブロック列の対応付けだけ。MarkdownTextOps: 文字列の書式操作だけ。MarkdownTable: 表の解析と整形だけ (幅は textWidth.js)。InlineRuns: インラインの書式の並びと書き出しだけ。InvisibleCharOverlay: 編集欄の後ろの印の層だけ。DocumentSession: 保存に関わる値だけ。SaveDocument / SaveDocumentAs: 保存の手順だけ。DocumentLifecycle: 文書の作り直しと保存の状態だけ (5.14.11、11-e)。MarkdownFileAccess: ローカルファイルへの入出力だけ。BlockEditController: ブロック編集の UI イベントだけ。EditPalette: パレットの表示とジェスチャだけ (機能の実行はコールバックで UIController へ) |
 | **OCP**      | EXT_TO_HLJSへの拡張子追加にロジック変更は不要。新レンダラーはUIControllerを変更せずRendererOrchestratorに追加可能。                                                                                                                                                                                                 |
 | **LSP**      | MermaidRendererとPlantUMLRendererは共にDiagramRendererを継承し、互換性のある `render()` インターフェースを持つ。                                                                                                                                                                                                    |
 | **ISP**      | 不要なインターフェースへの依存を強制するクラスはない。SourceFileRendererはダイアグラムレンダリングインターフェースに依存しない。                                                                                                                                                                                    |
@@ -4521,7 +4602,7 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | **CQS**      | `isPreRenderState()` / `isCodeViewActive()` は純粋なクエリ（副作用なし）。`render()` / `reload()` はコマンド + CodeViewMeta 返却（CQS の実用的例外: レンダリング副作用とメタデータ返却を分離すると呼び出し側が複雑化するため）。`destroy()` / `setViewMode()` は純粋なコマンド。 **(その場編集。2026-xx-xx 追記)** `isBodyChanged()` / `toFileText()` / `diffBlocks()` / `toBody()` は副作用の無いクエリ。`isEditing()` / `hasUncommittedChange()` / `canUndo()` は副作用は無いが可変の状態を読むクエリ (純粋ではない) |
 | **POLA**     | `L` = ライト、`D` = ダーク — 両ビューで一貫。`C` = 常にクリア。`N` = 常に新規タブ。Ctrl+C = ブラウザネイティブコピー（修飾キーガードにより bare key ショートカットと衝突しない）。`setViewMode()` で全ビュー切替を統一API化。リロードはファイルが読み込まれている場合のみ発火。 **(その場編集。2026-xx-xx 追記)** パレットのボタンは「押して離した」ときだけ動き、ずらすと移動になる。Esc は常に「取消 / 閉じる」。閲覧中 (編集モードでない) のプレビューの操作は従来どおり |
 | **PIE**      | 自己説明的な命名: SourceFileRenderer、SmoothScrollEngine、EXT_TO_HLJS、keyHintDurationMs。CONFIGのキーは自然な英語として読める。                                                                                                                                                                                    |
-| **CA**       | 依存の方向は内側へ: Framework(UIController) → UseCase(Orchestrator) → Entity(Renderers, ApplicationState)。Renderers はドメインコアレンダリングのため Entity に分類。循環依存なし。CONFIGは境界上の純粋データオブジェクト。**意図的逸脱:** ScrollMemento は Adapter 層だが UseCase(Orchestrator) が直接所有する。2メソッドのクラスに対して Interface を挟むのはオーバーエンジニアリングのため、実用上許容する。 **(その場編集。2026-xx-xx 追記)** Entity: MarkdownBlockModel / BlockDiff / MarkdownTextOps / MarkdownTable / InlineRuns / DocumentSession (文書の値だけで、ブラウザの型を持たない)。UseCase: RendererOrchestrator / SaveDocument / SaveDocumentAs / DocumentLocation (保存先の値。fileHandle は不透明な参照として扱い、Entity からは使わない)。Adapter: MarkdownFileAccess / ScrollMemento。Framework: BlockEditController / EditPalette / UIController / InvisibleCharOverlay。UseCase の SaveDocument は UI を直接扱わず、`confirmOverwrite` のポートを通す。依存は内向き |
+| **CA**       | 依存の方向は内側へ: Framework(UIController) → UseCase(Orchestrator) → Entity(Renderers, ApplicationState)。Renderers はドメインコアレンダリングのため Entity に分類。循環依存なし。CONFIGは境界上の純粋データオブジェクト。**意図的逸脱:** ScrollMemento は Adapter 層だが UseCase(Orchestrator) が直接所有する。2メソッドのクラスに対して Interface を挟むのはオーバーエンジニアリングのため、実用上許容する。 **(その場編集。2026-xx-xx 追記)** Entity: MarkdownBlockModel / BlockDiff / MarkdownTextOps / MarkdownTable / InlineRuns / DocumentSession (文書の値だけで、ブラウザの型を持たない)。UseCase: RendererOrchestrator / DocumentLifecycle / SaveDocument / SaveDocumentAs / DocumentLocation (保存先の値。fileHandle は不透明な参照として扱い、Entity からは使わない)。Adapter: MarkdownFileAccess / ScrollMemento。Framework: BlockEditController / EditPalette / UIController / InvisibleCharOverlay。UseCase の SaveDocument は UI を直接扱わず、`confirmOverwrite` のポートを通す。依存は内向き |
 | **純粋性 (R7)** | **(その場編集。2026-xx-xx 追加)** `pure`: MarkdownBlockModel / BlockDiff / MarkdownTextOps / MarkdownTable / InlineRuns / DocumentSession (不変の値) / `splitMarkdownWrapper` 等の変換関数 / `textWidth.js` の `displayWidth`。`semi-pure-b`: `ScrollMemento.captureAnchor`、`MarkdownFileAccess.readLastModified`。`non-pure`: 状態を持つコントローラ、書き込み、DOM の更新。純粋な core と非純粋な shell は別ファイル (R7.9) |
 | **命名規則** | CSS: 既存のcamelCase ID規約を維持。JS: メソッドはcamelCase、クラスはPascalCase、モジュールレベル定数はUPPER_SNAKE。                                                                                                                                                                                                 |
 

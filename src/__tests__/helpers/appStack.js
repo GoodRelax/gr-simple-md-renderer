@@ -13,7 +13,7 @@ import BlockEditController from "../../js/classes/BlockEditController.js";
 import EditPalette from "../../js/classes/EditPalette.js";
 import MarkdownFileAccess from "../../js/classes/MarkdownFileAccess.js";
 import UIController from "../../js/classes/UIController.js";
-import { createUiElements, trackGlobalListeners } from "./uiMocks.js";
+import { createUiElements, trackGlobalListeners, createDocuments } from "./uiMocks.js";
 
 export { createUiElements, trackGlobalListeners };
 
@@ -87,17 +87,18 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
   );
   const scrollEngine = { startScroll: vi.fn(), stopScroll: vi.fn(), destroy: vi.fn() };
   const fileAccess = fakeAccess ?? new MarkdownFileAccess(window);
+  const documents = createDocuments(fileAccess);
   const { result: ui, dispose } = trackGlobalListeners(
     () =>
       new UIController(orchestrator, state, elements, scrollEngine, {
-        fileAccess,
+        documents,
         isApple,
         ...(clipboard === undefined ? {} : { clipboard }),
         createPalette: (host) => new EditPalette(host, { isApple }),
         createBlockEdit: (host) => new BlockEditController(preview, orchestrator, markdownRenderer, scrollMemento, host),
       }),
   );
-  const app = { ui, orchestrator, markdownRenderer, state, elements, preview, sourceFileRenderer, scrollEngine, fileAccess, mermaidLib };
+  const app = { ui, orchestrator, markdownRenderer, state, elements, preview, sourceFileRenderer, scrollEngine, fileAccess, documents, mermaidLib };
   app.paletteRoot = () => document.body.querySelector(":scope > div.edit-palette");
   app.blockEditor = () => preview.querySelector(".md-block-editing > textarea.md-block-editor");
   app.block = (pred) => {

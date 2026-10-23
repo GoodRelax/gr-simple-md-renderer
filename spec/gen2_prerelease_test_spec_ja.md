@@ -3230,6 +3230,7 @@
 | AT-FA | `MarkdownFileAccess` | INV-24〜26、CON-14 | MarkdownFileAccess.test.js | 01〜08 |
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
 | AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |
+| AT-DLC | `DocumentLifecycle` (UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`)、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56 | DocumentLifecycle.test.js | 01〜22 |
 | AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js | 01〜67 (25 は欠番。41 は AT.1 の注) |
 | AT-KEY | 主の修飾キーのショートカット | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜07 |
 | AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
@@ -3238,7 +3239,7 @@
 | AT-CFG | `CONFIG.edit` と文言 | 5.2、CON-06 | config.edit.test.js、UIController.editMode.test.js、config.test.js (09) | 01〜09 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと | 5.8.1、5.15.2 | themeColors.test.js、hljsThemePlugin.test.js | 01〜20 |
-| AT-STA | `src/js` と `src/css` の静的な検査 | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜16 |
+| AT-STA | `src/js` と `src/css` の静的な検査 | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜17 |
 | AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
 | AT-PERF | 性能と計算量の上限 | INV-42、INV-51 | performance.inplaceEdit.test.js | 01〜10 |
 
@@ -3256,6 +3257,7 @@ ID を持たない試験ファイル (その場編集の前からあるクラス
 | AT-STA-14 | アプリの class (`.grsmd-table-tab`・`.md-block-hidden`・`.md-block-empty`) の CSS は、描画側が作った要素 (`#preview > …`) だけに当たる。不可視ブロックの帯のホバーのカーソルは pointer (リリース前の試験の N2 / N3) |
 | AT-STA-15 | `src/js` の `config.js` の外に、利用者に見える英文の文字列が無い (R15)。文字列とテンプレートの字句のうち、文の終わり (2 文字以上の語と `.` `?` `!`) を持つもの、または空白を含み大文字と小文字で始まるものを数える (`console.*`・例外・import は除く)。検査そのものの試験を含む |
 | AT-STA-16 | トーストが画面の中で折り返す (`.toast` は `nowrap` でなく、`max-width: calc(100vw - 32px)`・中央揃え。`#toastContainer` も画面より広くならない。R11) |
+| AT-STA-17 | `DocumentLifecycle.js` (UseCase 層) は config を import せず、`window` / `document` を使わない。`UIController.js` は `fileAccess`・`DocumentSession`・`DocumentLocation`・`SaveDocument`・`SaveDocumentAs` を使わない (保存先とファイルの入口は DocumentLifecycle だけ。INV-55) |
 | AT-PERF-07 | 1 MB の文書に 1,000 行 × 5 列の表: 中ほどのセル (500 行目) を初めて開くまで、セルの確定から次のセル、書式の適用が、それぞれ `commitBudgetMs` (300 ms) 以内 (INV-51)。表の操作 (行の追加) は、jsdom では DOMPurify が遅いので時間を記録するだけとし、時間の判定は e2e の `tableCell.e2e.js` (Chromium、PRT-X23) で行う (行の追加で作る HTML は小さな表の分の 1 回だけであることを AT-PERF-08 で数える) |
 | AT-PERF-08 | 表の編集の間の 1 回の操作で、表全体の HTML を作らない (INV-47、INV-51) |
 | AT-PERF-09 | 5,000 個のリンクを持つ 250 KB の段落で、書式のポップオーバーを開いたときの 1 フレームのボタンの判定が予算の中 (INV-51、INV-69) |

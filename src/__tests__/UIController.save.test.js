@@ -20,7 +20,7 @@ vi.mock("../js/classes/ModalController.js", () => ({
 
 import { showToast } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
-import { saveOperationStateMachine } from "../js/classes/UIController.js";
+import { saveOperationStateMachine } from "../js/classes/DocumentLifecycle.js";
 import { setupApp, dropEvent, settle, BASE_TITLE } from "./helpers/appStack.js";
 import { tap, pointer, keydown } from "./helpers/editDom.js";
 import { fakeFileAccess, fakeFileHandle, deferred, domError } from "./helpers/fakeFs.js";
@@ -100,13 +100,13 @@ function recordSteps() {
     steps.push("commit");
     return Object.getPrototypeOf(app.orchestrator).commitBlock.apply(app.orchestrator, args);
   });
-  vi.spyOn(app.ui.saveDocument, "execute").mockImplementation(function (...args) {
+  vi.spyOn(app.ui.documents.saveDocument, "execute").mockImplementation(function (...args) {
     steps.push("execute");
-    return Object.getPrototypeOf(app.ui.saveDocument).execute.apply(app.ui.saveDocument, args);
+    return Object.getPrototypeOf(app.ui.documents.saveDocument).execute.apply(app.ui.documents.saveDocument, args);
   });
-  vi.spyOn(app.ui.saveDocumentAs, "execute").mockImplementation(function (...args) {
+  vi.spyOn(app.ui.documents.saveDocumentAs, "execute").mockImplementation(function (...args) {
     steps.push("executeAs");
-    return Object.getPrototypeOf(app.ui.saveDocumentAs).execute.apply(app.ui.saveDocumentAs, args);
+    return Object.getPrototypeOf(app.ui.documents.saveDocumentAs).execute.apply(app.ui.documents.saveDocumentAs, args);
   });
   return steps;
 }
@@ -162,7 +162,7 @@ describe("AT-UI-44 unrendered #editor changes are taken in before saving", () =>
   ])("%s: XYZ is in the model before the first await and in the written text; clean afterwards (except download)", async (name, opts, button, written) => {
     const permission = deferred();
     await withDocument({ ...opts, permission: permission.promise });
-    const session = app.ui._session;
+    const session = app.ui.documents.session;
     showPalette();
     typeInEditor(app.elements.editor.value + "XYZ\n");
     press(paletteButton(button));
@@ -172,10 +172,10 @@ describe("AT-UI-44 unrendered #editor changes are taken in before saving", () =>
     await settle();
     expect(written(access)).toContain("XYZ");
     if (name === "download") {
-      expect(app.ui._session).toBe(session);
+      expect(app.ui.documents.session).toBe(session);
       expect(isDirtyTitle()).toBe(true);
     } else {
-      expect(app.ui._session.documentId).toBe(session.documentId);
+      expect(app.ui.documents.session.documentId).toBe(session.documentId);
       expect(isDirtyTitle()).toBe(false);
     }
   });
@@ -209,7 +209,7 @@ describe("AT-UI-27 / 28 / 29 / 06 / 39 save results", () => {
     expect(showToast).toHaveBeenCalledWith(M.saved("doc.md"), TOAST_MS);
 
     await app.ui.requestSaveAs();
-    expect(app.ui._location.fileName).toBe("picked.md");
+    expect(app.ui.documents.location.fileName).toBe("picked.md");
     await app.ui.requestSave();
     expect(access.calls).toContain("writeFile:picked.md");
   });
@@ -218,10 +218,11 @@ describe("AT-UI-27 / 28 / 29 / 06 / 39 save results", () => {
     const permission = deferred();
     await withDocument({ permission: permission.promise });
     const saving = app.ui.requestSave();
-    const { session, location } = { session: app.ui._session, location: app.ui._location };
-    app.ui._finishSave({ status: "saved", documentId: 999, session: { documentId: 999 }, location: { fileName: "x.md" }, message: "m" });
-    expect(app.ui._session).toBe(session);
-    expect(app.ui._location).toBe(location);
+    const { session, location } = { session: app.ui.documents.session, location: app.ui.documents.location };
+    const result = app.ui.documents.finishSave({ status: "saved", documentId: 999, session: { documentId: 999 }, location: { fileName: "x.md" }, message: "m" });
+    expect(result).toEqual({ applied: false, message: "m" }); // the toast is still shown (11-e)
+    expect(app.ui.documents.session).toBe(session);
+    expect(app.ui.documents.location).toBe(location);
     permission.resolve("granted");
     await saving;
   });
@@ -284,11 +285,11 @@ describe("AT-UI-27 / 28 / 29 / 06 / 39 save results", () => {
     await withDocument(makeOpts());
     openChanged();
     pointer(document.body, "pointerdown");
-    const baseline = app.ui._session;
+    const baseline = app.ui.documents.session;
     await app.ui.requestSave();
     expect(showToast).toHaveBeenCalledWith(message(), TOAST_MS);
     expect(isDirtyTitle()).toBe(stillDirty);
-    if (stillDirty) expect(app.ui._session).toBe(baseline);
+    if (stillDirty) expect(app.ui.documents.session).toBe(baseline);
   });
 
   it("AT-UI-65 a canceled save dialog shows no toast and stays unsaved", async () => {
@@ -313,17 +314,17 @@ describe("AT-UI-41 the save rows of 5.14.11", () => {
     openChanged();
     pointer(document.body, "pointerdown");
     expect(app.orchestrator.canUndo()).toBe(true);
-    const before = { session: app.ui._session, location: app.ui._location };
+    const before = { session: app.ui.documents.session, location: app.ui.documents.location };
     const reset = vi.spyOn(app.markdownRenderer, "resetExternalImageConsent");
     await app.ui[method]();
-    if (sessionRow === "same") expect(app.ui._session).toBe(before.session);
+    if (sessionRow === "same") expect(app.ui.documents.session).toBe(before.session);
     else {
-      expect(app.ui._session).not.toBe(before.session);
-      expect(app.ui._session.documentId).toBe(before.session.documentId);
-      expect(app.ui._session.isBodyChanged(app.orchestrator.getBody())).toBe(false);
+      expect(app.ui.documents.session).not.toBe(before.session);
+      expect(app.ui.documents.session.documentId).toBe(before.session.documentId);
+      expect(app.ui.documents.session.isBodyChanged(app.orchestrator.getBody())).toBe(false);
     }
-    if (locationRow === "same") expect(app.ui._location).toBe(before.location);
-    else expect(app.ui._location.fileName).toBe("picked.md");
+    if (locationRow === "same") expect(app.ui.documents.location).toBe(before.location);
+    else expect(app.ui.documents.location.fileName).toBe("picked.md");
     expect(reset).not.toHaveBeenCalled();
     expect(app.orchestrator.canUndo()).toBe(true);
   });
@@ -334,17 +335,17 @@ describe("AT-SSM 11-e save operation (14 cells), with UI stimuli", () => {
     const permission = deferred();
     await withDocument({ permission: permission.promise });
     showPalette();
-    const execute = vi.spyOn(app.ui.saveDocument, "execute");
-    const executeAs = vi.spyOn(app.ui.saveDocumentAs, "execute");
+    const execute = vi.spyOn(app.ui.documents.saveDocument, "execute");
+    const executeAs = vi.spyOn(app.ui.documents.saveDocumentAs, "execute");
     press(paletteButton("paletteSave"));
-    expect(app.ui._saveOperationState).toBe("writingFile");
+    expect(app.ui.documents.saveOperationState).toBe("writingFile");
     press(paletteButton("paletteSave"));
     press(paletteButton("paletteSaveAs"));
     expect(execute).toHaveBeenCalledTimes(1);
     expect(executeAs).not.toHaveBeenCalled();
     permission.resolve("granted");
     await settle();
-    expect(app.ui._saveOperationState).toBe("idle");
+    expect(app.ui.documents.saveOperationState).toBe("idle");
     press(paletteButton("paletteSaveAs"));
     expect(executeAs).toHaveBeenCalledTimes(1);
     await settle();
@@ -357,9 +358,9 @@ describe("AT-SSM 11-e save operation (14 cells), with UI stimuli", () => {
   ])("%s: writingFile -> idle", async (_name, opts) => {
     await withDocument(opts);
     const saving = app.ui.requestSave();
-    expect(app.ui._saveOperationState).toBe("writingFile");
+    expect(app.ui.documents.saveOperationState).toBe("writingFile");
     await saving;
-    expect(app.ui._saveOperationState).toBe("idle");
+    expect(app.ui.documents.saveOperationState).toBe("idle");
   });
 
   it("AT-SSM-06 saveCanceled: writingFile -> idle, no toast", async () => {
@@ -367,17 +368,32 @@ describe("AT-SSM 11-e save operation (14 cells), with UI stimuli", () => {
     picker.catch(() => {});
     await withDocument({ picker });
     await app.ui.requestSaveAs();
-    expect(app.ui._saveOperationState).toBe("idle");
+    expect(app.ui.documents.saveOperationState).toBe("idle");
     expect(showToast).not.toHaveBeenCalled();
   });
 
-  it.each(["fileWritten", "downloadStarted", "writeFailed", "saveCanceled"])("AT-SSM-03..06 %s in idle: nothing", async (event) => {
+  it.each(["fileWritten", "downloadStarted", "writeFailed", "saveCanceled"])("AT-SSM-03..06 documents.finishSave(%s) in idle returns null and changes nothing", async (event) => {
     await withDocument();
-    const session = app.ui._session;
-    app.ui._finishSave({ status: { fileWritten: "saved", downloadStarted: "downloadStarted", writeFailed: "failed", saveCanceled: "canceled" }[event], documentId: session.documentId, session: { documentId: session.documentId }, location: null, message: "x" });
-    expect(app.ui._session).toBe(session);
+    const session = app.ui.documents.session;
+    const result = app.ui.documents.finishSave({ status: { fileWritten: "saved", downloadStarted: "downloadStarted", writeFailed: "failed", saveCanceled: "canceled" }[event], documentId: session.documentId, session: { documentId: session.documentId }, location: null, message: "x" });
+    expect(result).toBeNull();
+    expect(app.ui.documents.session).toBe(session);
+    expect(app.ui.documents.saveOperationState).toBe("idle");
+  });
+
+  it("AT-SSM-03..06 through the UI: a save outcome that comes in idle shows no toast and changes nothing", async () => {
+    const permission = deferred();
+    await withDocument({ permission: permission.promise });
+    const saving = app.ui.requestSave();
+    // the save state goes back to idle before the use case settles (white box: another outcome)
+    app.ui.documents.finishSave({ status: "failed", documentId: app.ui.documents.session.documentId, session: app.ui.documents.session, location: app.ui.documents.location, message: null });
+    const session = app.ui.documents.session;
+    permission.resolve("granted");
+    await saving;
+    expect(access.writes).toHaveLength(1); // the file was written, but its outcome came in idle
     expect(showToast).not.toHaveBeenCalled();
-    expect(app.ui._saveOperationState).toBe("idle");
+    expect(app.ui.documents.session).toBe(session);
+    expect(app.ui.documents.saveOperationState).toBe("idle");
   });
 
   const REPLACES = [
@@ -395,13 +411,13 @@ describe("AT-SSM 11-e save operation (14 cells), with UI stimuli", () => {
     await withDocument({ permission: permission.promise });
     typeInEditor(app.elements.editor.value + "x\n");
     const saving = app.ui.requestSave();
-    const { session, location } = { session: app.ui._session, location: app.ui._location };
+    const { session, location } = { session: app.ui.documents.session, location: app.ui.documents.location };
     const model = app.orchestrator.getModel();
     await act();
     expect(showToast).toHaveBeenCalledWith(M.savingInProgress, TOAST_MS);
     expect(confirmSpy).not.toHaveBeenCalled();
-    expect(app.ui._session).toBe(session);
-    expect(app.ui._location).toBe(location);
+    expect(app.ui.documents.session).toBe(session);
+    expect(app.ui.documents.location).toBe(location);
     expect(app.orchestrator.getModel()).toBe(model);
     expect(app.orchestrator.isPreRenderState()).toBe(false);
     permission.resolve("granted");
@@ -420,6 +436,37 @@ describe("AT-SSM 11-e save operation (14 cells), with UI stimuli", () => {
     expect(rerender).toHaveBeenCalled();
     expect(showToast).not.toHaveBeenCalledWith(M.savingInProgress, TOAST_MS);
     permission.resolve("granted");
+    await saving;
+  });
+
+  it("AT-SSM-07 writingFile: a Save as that finishes right after Reload read the file still refuses the Reload (INV-54; the read and the checks are one synchronous step)", async () => {
+    const picker = deferred();
+    await withDocument({ picker: picker.promise });
+    const saving = app.ui.requestSaveAs();
+    expect(app.ui.documents.saveOperationState).toBe("writingFile");
+    const read = deferred();
+    access.readFile = () => read.promise;
+    const reloading = app.ui.handleReload();
+    const body = app.orchestrator.getBody();
+    const session = app.ui.documents.session;
+    // the Save as outcome comes in the same turn, in the microtask right after the read settles
+    read.resolve({ bytesHead: new Uint8Array([35, 32, 79]), text: "# Old file\n", lastModified: 500 });
+    void Promise.resolve().then(() => {
+      const picked = fakeFileHandle({ name: "picked.md" });
+      app.ui.documents.finishSave({
+        status: "saved",
+        documentId: session.documentId,
+        session: session.withSaved(body, 3000),
+        location: { fileName: "picked.md", fileHandle: picked },
+        message: M.saved("picked.md"),
+      });
+    });
+    await reloading;
+    expect(showToast).toHaveBeenCalledWith(M.savingInProgress, TOAST_MS);
+    expect(app.orchestrator.getBody()).toBe(body);
+    expect(app.elements.editor.value).not.toContain("Old file");
+    expect(app.ui.documents.location.fileName).toBe("picked.md"); // the save itself was applied
+    picker.resolve(fakeFileHandle({ name: "picked.md" }));
     await saving;
   });
 
@@ -486,8 +533,8 @@ describe("the handwritten save steps follow the 11-e action names", () => {
       steps.push("applyEditorText");
       return Object.getPrototypeOf(app.ui)._takeEditorIntoModel.apply(app.ui, args);
     });
-    vi.spyOn(app.ui.saveDocument, "execute").mockImplementation(() => (steps.push("runSaveDocument"), new Promise(() => {})));
-    vi.spyOn(app.ui.saveDocumentAs, "execute").mockImplementation(() => (steps.push("runSaveDocumentAs"), new Promise(() => {})));
+    vi.spyOn(app.ui.documents.saveDocument, "execute").mockImplementation(() => (steps.push("runSaveDocument"), new Promise(() => {})));
+    vi.spyOn(app.ui.documents.saveDocumentAs, "execute").mockImplementation(() => (steps.push("runSaveDocumentAs"), new Promise(() => {})));
     press(paletteButton(button));
     const expected = saveOperationStateMachine[event].idle.actions.filter((a) => !CONDITIONAL.has(a) || steps.includes(a));
     expect(steps).toEqual(expected);
