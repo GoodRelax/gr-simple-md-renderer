@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach, onTestFinished } from "vitest";
 import MarkdownFileAccess from "../js/classes/MarkdownFileAccess.js";
+import { CONFIG } from "../js/config.js";
 import { fakeFileHandle, domError } from "./helpers/fakeFs.js";
 import { withBom, toCrlf } from "./helpers/samples.js";
 
@@ -46,6 +47,9 @@ describe("MarkdownFileAccess (Adapter: local file read/write, no network)", () =
     const p = access.startSavePicker("notes.md");
     expect(calls).toEqual(["notes.md"]);
     expect((await p).name).toBe("notes.md");
+    // the file type name the save dialog shows comes from CONFIG (R15)
+    expect(picker.mock.calls[0][0].types).toEqual([{ description: CONFIG.messages.edit.saveFileType, accept: { "text/markdown": [".md"] } }]);
+    expect(CONFIG.messages.edit.saveFileType).toBe("Markdown");
   });
 
   it("AT-FA-04 readFile returns the first bytes (with BOM), the decoded text and lastModified", async () => {

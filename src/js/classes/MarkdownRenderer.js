@@ -202,12 +202,12 @@ export default class MarkdownRenderer {
   }
 
   /**
-   * @purity pure
+   * @purity semi-pure-a
    * @param {Error} error
    * @returns {string}
    */
   _errorHtml(error) {
-    return `<pre style="color:red;">Markdown Parse Error: ${escapeHtml(String(error?.message))}</pre>`;
+    return `<pre style="color:red;">${escapeHtml(CONFIG.messages.markdown.parseError(String(error?.message)))}</pre>`;
   }
 
   // ---- DOM writes ----
@@ -491,7 +491,7 @@ export default class MarkdownRenderer {
     wrapper.classList.add("md-block-table"); // positions the tab (style.css)
     const tab = document.createElement("span");
     tab.className = "grsmd-table-tab";
-    tab.textContent = "Markdown";
+    tab.textContent = CONFIG.messages.edit.tableTab;
     tab.title = CONFIG.messages.edit.tableSourceTab;
     wrapper.appendChild(tab);
     this._tabById.set(blockId, tab);

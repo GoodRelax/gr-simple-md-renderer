@@ -169,6 +169,15 @@ export default class TableCellEditor {
   }
 
   /**
+   * The open cell's element (to scroll it into view, INV-52), or null.
+   * @purity semi-pure-b
+   * @returns {HTMLElement|null}
+   */
+  openCellElement() {
+    return this._cell ? this._cell.element : null;
+  }
+
+  /**
    * @purity semi-pure-b
    * @returns {boolean}
    */
@@ -330,13 +339,16 @@ export default class TableCellEditor {
    * kept aside, and the cell shows a copy to edit, as rendered (WYSIWYG)
    * when the cell's HTML and the written-back Markdown both match what is
    * shown, or else as its text (a raw cell). caret: where the click was.
+   * selectAll: the cell's whole text is selected instead (a table just
+   * inserted, INV-52: typing replaces it).
    * @purity non-pure
    * @param {number} row
    * @param {number} col
    * @param {{x: number, y: number}|null} [caret]
+   * @param {boolean} [selectAll]
    * @returns {boolean} true when a cell opened
    */
-  openCell(row, col, caret = null) {
+  openCell(row, col, caret = null, selectAll = false) {
     if (!this._session || this._cell) return false;
     const table = this.renderer.getTableElement(this._session.blockId);
     const parsed = this._sessionTable();
@@ -365,7 +377,8 @@ export default class TableCellEditor {
     this._listen(element, true);
     this.editGeneration++;
     element.focus({ preventScroll: true });
-    this._placeCaret(element, point);
+    if (selectAll) this._selectAll(element);
+    else this._placeCaret(element, point);
     return true;
   }
 
@@ -870,6 +883,20 @@ export default class TableCellEditor {
     element[method]("drop", this._onDrop);
     element[method]("compositionstart", this._onCompositionStart);
     element[method]("compositionend", this._onCompositionEnd);
+  }
+
+  /**
+   * The whole text of the cell selected (INV-52).
+   * @purity non-pure
+   * @param {HTMLElement} element
+   */
+  _selectAll(element) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range);
   }
 
   /**

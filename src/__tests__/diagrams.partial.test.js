@@ -83,6 +83,24 @@ describe("partial diagram rendering (INV-23, INV-42)", () => {
     expect(preview.querySelectorAll("img.plantuml-diagram")).toHaveLength(2);
   });
 
+  it("AT-DG-03 the consent, the alt text and the tooltip come from CONFIG (R14, R15)", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    blocks(PUML("A -> B"));
+    await Promise.race([new PlantUMLRenderer(preview, encoder).render("light"), Promise.resolve()]);
+    expect(confirm).toHaveBeenCalledWith(CONFIG.messages.plantuml.consent);
+    const img = preview.querySelector("img.plantuml-diagram");
+    expect(img.alt).toBe(CONFIG.messages.plantuml.diagramAlt);
+    expect(img.alt).toBe("PlantUML Diagram");
+    expect(img.title).toBe(CONFIG.messages.diagram.tooltip);
+  });
+
+  it("AT-DG-03 Cancel shows the canceled text in place of each diagram", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    blocks(PUML("A -> B"));
+    await new PlantUMLRenderer(preview, encoder).render("light");
+    expect(preview.querySelector(".plantuml-error").textContent).toBe("PlantUML diagram (not sent)");
+  });
+
   it("AT-DG-04 a partial render leaves PlantUML images outside the root alone", async () => {
     const [done, edited] = blocks(`<div class="plantuml-wrapper"><img class="plantuml-diagram" src="${SERVER}OLD"></div>`, PUML("X"));
     const oldImg = done.querySelector("img");
@@ -101,6 +119,7 @@ describe("partial diagram rendering (INV-23, INV-42)", () => {
     const nodes = [...mermaid.run.mock.calls[0][0].nodes];
     expect(nodes).toHaveLength(1);
     expect(b.contains(nodes[0])).toBe(true);
+    expect(nodes[0].title).toBe(CONFIG.messages.diagram.tooltip);
   });
 
   it("AT-DG-05 Mermaid accepts a list of roots", async () => {

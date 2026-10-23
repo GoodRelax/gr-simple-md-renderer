@@ -249,6 +249,29 @@ export default class ScrollMemento {
   }
 
   /**
+   * The least scroll that brings the element into what is shown (INV-52,
+   * after an insert): none when it is in view; else its nearer edge goes to
+   * that edge of what is shown (its top, when it is taller). Not smooth.
+   * No element, or one without a box: nothing.
+   * @param {Element|null} element
+   * @purity non-pure
+   */
+  reveal(element) {
+    if (!element || element.getClientRects().length === 0) return;
+    const rect = element.getBoundingClientRect();
+    const top = this._shownTop();
+    const bottom = this.useDocumentScroll
+      ? window.innerHeight
+      : this.container.getBoundingClientRect().top + this.container.clientHeight;
+    let delta = 0;
+    if (rect.top < top) delta = rect.top - top;
+    else if (rect.bottom > bottom) delta = Math.min(rect.bottom - bottom, rect.top - top);
+    if (delta === 0) return;
+    if (this.useDocumentScroll) window.scrollTo(0, window.scrollY + delta);
+    else this.container.scrollTop += delta;
+  }
+
+  /**
    * Scroll so that the element's top is back where captureAnchor saw it.
    * No element or no anchor, or an element without a box (a hidden block
    * outside edit mode reads as top 0): nothing changes (spec 5.14.9).

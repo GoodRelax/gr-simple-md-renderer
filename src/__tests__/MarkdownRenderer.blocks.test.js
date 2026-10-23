@@ -277,6 +277,6 @@ describe("MarkdownRenderer.renderBlocks / replaceBlocks (real marked, DOMPurify,
     r.renderBlocks(m);
     expect(preview.querySelector("img")).toBeNull();
     expect(preview.querySelectorAll(".md-block pre")).toHaveLength(2);
-    expect(preview.querySelector(".md-block pre").textContent).toBe("Markdown Parse Error: <img src=x onerror=alert(1)>");
+    expect(preview.querySelector(".md-block pre").textContent).toBe("Couldn't read this Markdown: <img src=x onerror=alert(1)>");
   });
 });

@@ -253,3 +253,51 @@ describe("MarkdownBlockModel (Entity, pure; real marked lexer)", () => {
     }
   });
 });
+
+describe("MarkdownBlockModel.insertAt (INV-52, request 1)", () => {
+  const T = "| a |\n|---|\n| b |";
+
+  it.each([
+    ["inside a paragraph: the paragraph is cut in two", "Line one\nLine two\n\nZ", 9, "Line one\n\n" + T + "\n\nLine two\n\nZ"],
+    ["inside a list: two lists", "- a\n- b", 4, "- a\n\n" + T + "\n\n- b"],
+    ["at a block start", "A\n\nB", 3, "A\n\n" + T + "\n\nB"],
+    ["at the end of a block's text", "A\n\nB", 1, "A\n\n" + T + "\n\nB"],
+    ["into an empty body", "", 0, T],
+  ])("AT-BM-28 insertAt puts the block at an offset with blank lines only where needed (%s)", (_n, body, offset, expected) => {
+    const m = model(body);
+    const change = m.insertAt(offset, T, lexer, MAX);
+    expect(change.model.toBody()).toBe(expected);
+    expect(change.isChanged).toBe(true);
+    const table = change.model.getBlocks().find((b) => b.type === "table");
+    expect(change.insertedBlockId).toBe(table.id);
+    expect(change.anchorBlockId).toBe(table.id);
+  });
+
+  it("AT-BM-29 insertAt: the anchor is the block at anchorOffset in the new model", () => {
+    const m = model("Line one\nLine two\n\nZ");
+    const change = m.insertAt(9, T, lexer, MAX, { anchorOffset: 0 });
+    expect(change.anchorBlockId).toBe(change.model.getBlocks()[0].id);
+    expect(change.model.getBlocks()[0].raw).toBe("Line one");
+  });
+
+  it("AT-BM-30 startOffsetOf: the body offset of a block, -1 when unknown", () => {
+    const m = model("\nA\n\nB\n");
+    expect(m.startOffsetOf(ids(m)[0])).toBe(1);
+    expect(m.startOffsetOf(ids(m)[1])).toBe(4);
+    expect(m.startOffsetOf(999)).toBe(-1);
+  });
+
+  it("AT-BM-31 insertAfter is insertAt after the block (unchanged results)", () => {
+    const m = model("A\n\nB\n");
+    expect(m.insertAfter(1, "T", lexer, MAX).model.toBody()).toBe(m.insertAt(3, "T", lexer, MAX).model.toBody());
+  });
+});
+
+describe("MarkdownBlockModel.insertAt removeBefore (review L4)", () => {
+  it("AT-BM-32 removeBefore takes characters away right before the offset in the same change", () => {
+    const m = model("x  \ny\n");
+    const change = m.insertAt(3, "T", lexer, MAX, { removeBefore: 2 });
+    expect(change.model.toBody()).toBe("x\n\nT\n\ny\n");
+    expect(change.model.getBlocks().find((b) => b.raw.startsWith("T")).id).toBe(change.insertedBlockId);
+  });
+});

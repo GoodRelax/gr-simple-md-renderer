@@ -1,6 +1,7 @@
 import { CONFIG } from "../config.js";
 
 const DIAGRAM_SELECTOR = ".mermaid, .plantuml-wrapper";
+const D = CONFIG.messages.diagram; // button labels and feedback
 
 export default class DiagramCopyController {
   /**
@@ -55,7 +56,7 @@ export default class DiagramCopyController {
 
     const svgBtn = document.createElement("button");
     svgBtn.className = "diagram-copy-btn";
-    svgBtn.textContent = "Copy SVG";
+    svgBtn.textContent = D.copySvg;
     /** @purity non-pure */
     svgBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -64,7 +65,7 @@ export default class DiagramCopyController {
 
     const pngBtn = document.createElement("button");
     pngBtn.className = "diagram-copy-btn";
-    pngBtn.textContent = "Copy PNG";
+    pngBtn.textContent = D.copyPng;
     /** @purity non-pure */
     pngBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -203,10 +204,10 @@ export default class DiagramCopyController {
         blob = new Blob([svgText], { type: "image/svg+xml" });
       }
       await navigator.clipboard.write([new ClipboardItem({ "image/svg+xml": blob })]);
-      this.showFeedback(btn, "Copied!", "Copy SVG");
+      this.showFeedback(btn, D.copied, D.copySvg);
     } catch (err) {
       console.error("SVG copy failed:", err);
-      this.showFeedback(btn, "Failed", "Copy SVG", CONFIG.ui.copyFeedbackDuration * 4);
+      this.showFeedback(btn, D.copyFailed, D.copySvg, CONFIG.ui.copyFeedbackDuration * 4);
     }
   }
 
@@ -241,10 +242,10 @@ export default class DiagramCopyController {
         pngBlob = await (await fetch(pngUrl)).blob();
       }
       await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
-      this.showFeedback(btn, "Copied!", "Copy PNG");
+      this.showFeedback(btn, D.copied, D.copyPng);
     } catch (err) {
       console.error("PNG copy failed:", err);
-      this.showFeedback(btn, "Failed", "Copy PNG", CONFIG.ui.copyFeedbackDuration * 4);
+      this.showFeedback(btn, D.copyFailed, D.copyPng, CONFIG.ui.copyFeedbackDuration * 4);
     }
   }
 }

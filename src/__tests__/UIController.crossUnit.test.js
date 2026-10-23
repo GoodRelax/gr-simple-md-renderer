@@ -103,7 +103,7 @@ function typeInCell(text) {
 
 describe("AT-UI-51 K-1 an open popover stays open while the cell moves or the table changes (5.15.1, 11-f)", () => {
   const cases = [
-    ["Table options", "paletteTableOptions", "paletteTableMenu"],
+    ["Align column", "paletteTableOptions", "paletteTableMenu"],
     ["Format", "paletteFormat", "paletteFormatMenu"],
   ];
   for (const [name, opener, menuId] of cases) {
@@ -236,7 +236,7 @@ describe("AT-UI-53 T-3 (1) Ctrl+B in a WYSIWYG cell, then Ctrl+Z (INV-48, INV-59
 describe("AT-UI-54 T-3 (2) Esc with a popover open while a cell is open (INV-53, INV-64)", () => {
   for (const [name, opener, menuId] of [
     ["Format", "paletteFormat", "paletteFormatMenu"],
-    ["Table options", "paletteTableOptions", "paletteTableMenu"],
+    ["Align column", "paletteTableOptions", "paletteTableMenu"],
   ]) {
     it(`${name}: the first Esc closes the popover only, the second takes the cell back; the palette stays`, async () => {
       await withDocument();
@@ -383,7 +383,7 @@ describe("AT-UI-59 T-3 (7) Ctrl+S / Ctrl+Shift+S with a changed cell open (INV-5
 });
 
 describe("AT-UI-60 T-3 (8) an opener that the crossing disables closes its popover (11-f openerDisabled, real setButtonStates)", () => {
-  it("Ctrl+S with Table options open: the cell closes, Table options is disabled, the popover closes", async () => {
+  it("Ctrl+S with Align column open: the cell closes, Align column is disabled, the popover closes", async () => {
     await withDocument();
     tap(cellEl(1, 0));
     press(btn("paletteTableOptions"));
@@ -466,7 +466,7 @@ describe("AT-UI-66 review L3 / L4 / L5", () => {
     const ta = app.blockEditor();
     ta.setSelectionRange(0, 5);
     press(btn("paletteFormat"));
-    press(popoverButton("Paste link from clipboard"));
+    press(popoverButton("Paste copied link"));
     expect(pending.read).toHaveBeenCalledTimes(1);
     expect(app.ui._isReadingClipboard).toBe(true);
     keydown(ta, "Escape");
@@ -490,7 +490,7 @@ describe("AT-UI-66 review L3 / L4 / L5", () => {
       tap(app.block((b) => b.type === "paragraph").el.firstElementChild);
       app.blockEditor().setSelectionRange(0, 5);
       press(btn("paletteFormat"));
-      press(popoverButton("Paste link from clipboard"));
+      press(popoverButton("Paste copied link"));
     };
     pasteOnce();
     keydown(app.blockEditor(), "Escape");
@@ -517,7 +517,7 @@ describe("AT-UI-67 a huge block: a format that cannot be applied is told (owner 
     document.dispatchEvent(new Event("selectionchange"));
     await frame(); // the button states follow in the next frame (INV-51)
     expect(btn("paletteBold").getAttribute("aria-disabled")).toBe("false");
-    expect(M.formatNotApplicable).toBe("This format cannot be applied here.");
+    expect(M.formatNotApplicable).toBe("You can't use this format here.");
     showToast.mockClear();
     press(btn("paletteBold"));
     expect(ta.value).toBe(before);
@@ -530,7 +530,7 @@ describe("AT-UI-67 a huge block: a format that cannot be applied is told (owner 
     showToast.mockClear();
     app.ui._runPaletteCommand("linkRemove");
     expect(ta.value).toBe(before);
-    expect(M.linkNotRemovable).toBe("There is no link to remove here.");
+    expect(M.linkNotRemovable).toBe("There's no link to remove here.");
     expect(showToast).toHaveBeenCalledWith(M.linkNotRemovable, TOAST_MS);
   });
 

@@ -206,7 +206,7 @@ describe("UIController.setupFileDrop", () => {
 
     await vi.waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Binary file"),
+        expect.stringContaining("only open text files"),
       );
     });
     expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
@@ -247,7 +247,7 @@ describe("UIController.setupFileDrop", () => {
 
     await vi.waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Binary file"),
+        expect.stringContaining("only open text files"),
       );
     });
     expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
@@ -276,7 +276,7 @@ describe("UIController.setupFileDrop", () => {
 
     await vi.waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
-        expect.stringContaining("too large"),
+        expect.stringContaining("too big"),
       );
     });
     expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
@@ -314,7 +314,7 @@ describe("UIController.setupFileDrop", () => {
       const setView = vi.spyOn(controller, "setViewMode");
       alertSpy.mockClear();
       document.dispatchEvent(event);
-      await vi.waitFor(() => expect(alertSpy).toHaveBeenCalledWith("Failed to read the dropped file."));
+      await vi.waitFor(() => expect(alertSpy).toHaveBeenCalledWith("Couldn't read this file."));
       expect(mockOrchestrator.clear).toHaveBeenCalled();
       expect(setView).toHaveBeenLastCalledWith("initial");
       expect(setView).not.toHaveBeenCalledWith("code", expect.anything());
@@ -371,7 +371,7 @@ describe("UIController.setupFileDrop", () => {
       mockOrchestrator.reloadCodeView.mockRejectedValue(new DOMException("gone", "NotFoundError"));
       showToast.mockClear();
       await expect(controller.handleReload()).resolves.toBeUndefined();
-      expect(showToast).toHaveBeenCalledWith("Reload failed. The file could not be read.", expect.any(Number));
+      expect(showToast).toHaveBeenCalledWith("Couldn't reload the file.", expect.any(Number));
     });
   });
 });

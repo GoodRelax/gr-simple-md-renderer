@@ -167,7 +167,7 @@ describe.each(PATHS)("MarkdownRenderer via %s", (path) => {
       const pre = preview.querySelector("pre");
       expect(pre).not.toBeNull();
       expect(pre.textContent).toBe(
-        "Markdown Parse Error: <img src=x onerror=alert(1)>",
+        "Couldn't read this Markdown: <img src=x onerror=alert(1)>",
       );
     });
   });

@@ -415,7 +415,7 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     expect(showToast).toHaveBeenCalledWith(M.blockSplitFailed, CONFIG.codeView.toastDurationMs);
   });
 
-  it("a parse exception shows 'Markdown Parse Error' again, keeps the body, and rejects nothing", async () => {
+  it("a parse exception shows the read error again, keeps the body, and rejects nothing", async () => {
     app = await setupApp();
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(app.markdownRenderer, "lex").mockImplementation(() => {
@@ -425,7 +425,7 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
       throw new Error("boom");
     });
     await dropMd("# A\n");
-    expect(app.preview.textContent).toContain("Markdown Parse Error: boom");
+    expect(app.preview.textContent).toContain("Couldn't read this Markdown: boom");
     expect(app.orchestrator.getBody()).toBe("# A\n");
     expect(app.ui._isDocumentDirty()).toBe(false);
     expect(error).toHaveBeenCalled();

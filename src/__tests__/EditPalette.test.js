@@ -218,7 +218,7 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
       paletteRowDelete: "Delete row",
       paletteColumn: "Insert column",
       paletteColumnDelete: "Delete column",
-      paletteTableOptions: "Table options",
+      paletteTableOptions: "Align column",
       paletteUndo: "Undo (Ctrl+Z)",
     };
     for (const [id, label] of Object.entries(labels)) {
@@ -246,7 +246,7 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
   it("AT-PAL-03 the three popovers: ids, labels and buttons (5.1, 5.15.3)", () => {
     expect(popover.getAttribute("aria-label")).toBe("Mermaid samples");
     expect(formatMenu.getAttribute("aria-label")).toBe("Text format");
-    expect(tableMenu.getAttribute("aria-label")).toBe("Table options");
+    expect(tableMenu.getAttribute("aria-label")).toBe("Align column");
     for (const el of [popover, formatMenu, tableMenu]) {
       expect(el.parentNode).toBe(document.body);
       expect(el.getAttribute("role")).toBe("toolbar");
@@ -259,14 +259,14 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
       ["paletteColorBlue", "Text color: Blue"],
       ["paletteColorGreen", "Text color: Green"],
       ["paletteColorNone", "Remove text color"],
-      ["paletteLinkPaste", "Paste link from clipboard"],
+      ["paletteLinkPaste", "Paste copied link"],
       ["paletteLinkRemove", "Remove link"],
     ]);
     expect(items(tableMenu)).toEqual([
       ["paletteAlignLeft", "Align left"],
       ["paletteAlignCenter", "Align center"],
       ["paletteAlignRight", "Align right"],
-      ["paletteAlignNone", "Default alignment"],
+      ["paletteAlignNone", "Remove alignment"],
     ]);
     for (const color of ["red", "blue", "green"]) {
       const b = formatMenu.querySelector(`.edit-palette-swatch-${color}`);

@@ -569,7 +569,7 @@ describe("AT-CFG-04 / 05 text and key hints", () => {
   it("AT-CFG-04 messages.edit is ASCII only (functions called with 'a.md')", () => {
     for (const [key, value] of Object.entries(CONFIG.messages.edit)) {
       const text = typeof value === "function" ? value("a.md") : value;
-      expect(/^[\x20-\x7e]*$/.test(text), key).toBe(true);
+      expect(/^[\x20-\x7e\n]*$/.test(text), key).toBe(true); // a confirm may break lines (A08)
     }
   });
 

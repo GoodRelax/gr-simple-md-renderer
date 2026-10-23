@@ -622,3 +622,62 @@ describe("ScrollMemento reading anchor (5.1, PRT-X08)", () => {
     });
   });
 });
+
+describe("ScrollMemento.reveal (INV-52: the least scroll to an opened cell or editor)", () => {
+  function fakeBox(getTop, height) {
+    return {
+      getBoundingClientRect: () => ({ top: getTop(), bottom: getTop() + height }),
+      getClientRects: () => [{}],
+    };
+  }
+  function container(scrollTop = 1000) {
+    return { scrollTop, clientHeight: 500, getBoundingClientRect: () => ({ top: 0 }) };
+  }
+
+  it.each([
+    ["in view: no scroll", 100, 30, 1000],
+    ["below the bottom: its bottom comes to the bottom edge", 600, 30, 1130],
+    ["above the top: its top comes to the top edge", -80, 30, 920],
+    ["taller than the view and below: its top comes to the top edge", 300, 900, 1300],
+  ])("AT-SM-36 the preview scrolls the least (%s)", (_n, top, height, expected) => {
+    stubMatchMedia(false);
+    const c = container();
+    const memento = new ScrollMemento(c);
+    const base = top + c.scrollTop;
+    memento.reveal(fakeBox(() => base - c.scrollTop, height));
+    expect(c.scrollTop).toBe(expected);
+  });
+
+  it("AT-SM-37 on touch devices the document scrolls at once (scrollTo, not smooth), below the top bar", () => {
+    stubMatchMedia(true);
+    vi.stubGlobal("scrollY", 400);
+    vi.stubGlobal("innerHeight", 800);
+    const scrollTo = vi.fn();
+    vi.stubGlobal("scrollTo", scrollTo);
+    const memento = new ScrollMemento(container());
+    memento.reveal(fakeBox(() => 900, 40));
+    expect(scrollTo).toHaveBeenCalledWith(0, 540);
+    scrollTo.mockClear();
+    memento.reveal(fakeBox(() => 10, 40));
+    expect(scrollTo).not.toHaveBeenCalled(); // no top bar here: 10 is in view
+    const bar = document.createElement("div");
+    bar.id = "topbar";
+    bar.getBoundingClientRect = () => ({ top: 0, bottom: 50 });
+    document.body.appendChild(bar);
+    try {
+      memento.reveal(fakeBox(() => 10, 40)); // under the bar: its top goes to the bar's bottom
+      expect(scrollTo).toHaveBeenCalledWith(0, 360);
+    } finally {
+      bar.remove();
+    }
+  });
+
+  it("AT-SM-38 no element, or one without a box: nothing", () => {
+    stubMatchMedia(false);
+    const c = container(50);
+    const memento = new ScrollMemento(c);
+    memento.reveal(null);
+    memento.reveal({ getClientRects: () => [], getBoundingClientRect: () => ({ top: 9999, bottom: 10000 }) });
+    expect(c.scrollTop).toBe(50);
+  });
+});

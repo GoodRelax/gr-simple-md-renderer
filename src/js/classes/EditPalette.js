@@ -18,6 +18,9 @@ const FORMAT_OPEN = "formatMenuOpen";
 const TABLE_OPEN = "tableMenuOpen";
 const MINIMIZED = "minimized";
 
+// Tooltips and aria-labels (config.js, R15)
+const L = CONFIG.messages.palette;
+
 const POPOVER_GAP_PX = 4;
 const MINIMIZED_CLASS = "edit-palette-minimized";
 const UNSAVED_CLASS = "edit-palette-unsaved";
@@ -59,40 +62,40 @@ const ICONS = {
 const POPOVERS = {
   mermaid: {
     id: "paletteMermaidMenu",
-    label: "Mermaid samples",
+    label: L.mermaidMenu,
     openState: MERMAID_OPEN,
     runEvent: "mermaidButtonRun",
     items: [
-      { command: "insertMermaid", arg: "flowchart", label: "Flowchart", icon: "mermaid", stateKey: null },
-      { command: "insertMermaid", arg: "sequence", label: "Sequence diagram", icon: "seq", stateKey: null },
-      { command: "insertMermaid", arg: "state", label: "State diagram", icon: "state", stateKey: null },
-      { command: "insertMermaid", arg: "class", label: "Class diagram", icon: "class", stateKey: null },
+      { command: "insertMermaid", arg: "flowchart", label: L.flowchart, icon: "mermaid", stateKey: null },
+      { command: "insertMermaid", arg: "sequence", label: L.sequence, icon: "seq", stateKey: null },
+      { command: "insertMermaid", arg: "state", label: L.state, icon: "state", stateKey: null },
+      { command: "insertMermaid", arg: "class", label: L.class, icon: "class", stateKey: null },
     ],
   },
   format: {
     id: "paletteFormatMenu",
-    label: "Text format",
+    label: L.format,
     openState: FORMAT_OPEN,
     runEvent: "formatButtonRun",
     items: [
-      { id: "paletteColorRed", command: "textColor", arg: "red", label: "Text color: Red", icon: "colorSwatch", stateKey: "textColor" },
-      { id: "paletteColorBlue", command: "textColor", arg: "blue", label: "Text color: Blue", icon: "colorSwatch", stateKey: "textColor" },
-      { id: "paletteColorGreen", command: "textColor", arg: "green", label: "Text color: Green", icon: "colorSwatch", stateKey: "textColor" },
-      { id: "paletteColorNone", command: "textColor", arg: "none", label: "Remove text color", icon: "colorNone", stateKey: "textColor" },
-      { id: "paletteLinkPaste", command: "linkPaste", label: "Paste link from clipboard", icon: "linkPaste", stateKey: "linkPaste" },
-      { id: "paletteLinkRemove", command: "linkRemove", label: "Remove link", icon: "linkRemove", stateKey: "linkRemove" },
+      { id: "paletteColorRed", command: "textColor", arg: "red", label: L.colorRed, icon: "colorSwatch", stateKey: "textColor" },
+      { id: "paletteColorBlue", command: "textColor", arg: "blue", label: L.colorBlue, icon: "colorSwatch", stateKey: "textColor" },
+      { id: "paletteColorGreen", command: "textColor", arg: "green", label: L.colorGreen, icon: "colorSwatch", stateKey: "textColor" },
+      { id: "paletteColorNone", command: "textColor", arg: "none", label: L.colorNone, icon: "colorNone", stateKey: "textColor" },
+      { id: "paletteLinkPaste", command: "linkPaste", label: L.linkPaste, icon: "linkPaste", stateKey: "linkPaste" },
+      { id: "paletteLinkRemove", command: "linkRemove", label: L.linkRemove, icon: "linkRemove", stateKey: "linkRemove" },
     ],
   },
   table: {
     id: "paletteTableMenu",
-    label: "Table options",
+    label: L.tableOptions,
     openState: TABLE_OPEN,
     runEvent: "tableOptionsButtonRun",
     items: [
-      { id: "paletteAlignLeft", command: "alignColumn", arg: "left", label: "Align left", icon: "alignLeft", stateKey: "tableOptions" },
-      { id: "paletteAlignCenter", command: "alignColumn", arg: "center", label: "Align center", icon: "alignCenter", stateKey: "tableOptions" },
-      { id: "paletteAlignRight", command: "alignColumn", arg: "right", label: "Align right", icon: "alignRight", stateKey: "tableOptions" },
-      { id: "paletteAlignNone", command: "alignColumn", arg: "none", label: "Default alignment", icon: "alignNone", stateKey: "tableOptions" },
+      { id: "paletteAlignLeft", command: "alignColumn", arg: "left", label: L.alignLeft, icon: "alignLeft", stateKey: "tableOptions" },
+      { id: "paletteAlignCenter", command: "alignColumn", arg: "center", label: L.alignCenter, icon: "alignCenter", stateKey: "tableOptions" },
+      { id: "paletteAlignRight", command: "alignColumn", arg: "right", label: L.alignRight, icon: "alignRight", stateKey: "tableOptions" },
+      { id: "paletteAlignNone", command: "alignColumn", arg: "none", label: L.alignNone, icon: "alignNone", stateKey: "tableOptions" },
     ],
   },
 };
@@ -100,7 +103,8 @@ const POPOVERS = {
 /**
  * Palette layout (5.15.1): 7 columns x 2 rows, no separators. mod is the
  * primary modifier shown in the tooltips ("Ctrl", or "Cmd" on Apple platforms).
- * @purity pure
+ * The labels come from CONFIG.messages.palette.
+ * @purity semi-pure-a
  * @param {string} mod
  * @returns {Array<Array<object|string>>}
  */
@@ -108,21 +112,21 @@ function paletteRows(mod) {
   return [
     [
       "grip",
-      { id: "paletteBold", command: "bold", label: `Bold (${mod}+B)`, icon: "bold", stateKey: "bold" },
-      { id: "paletteItalic", command: "italic", label: `Italic (${mod}+I)`, icon: "italic", stateKey: "italic" },
-      { id: "paletteFormat", command: "openPopover", popover: "format", label: "Text format", icon: "format", stateKey: "format" },
-      { id: "paletteMermaid", command: "openPopover", popover: "mermaid", label: "Insert Mermaid sample", icon: "mermaid", stateKey: "insertMermaid" },
-      { id: "paletteSave", command: "save", label: `Save (${mod}+S)`, icon: "save", stateKey: null },
-      { id: "paletteSaveAs", command: "saveAs", label: `Save as (${mod}+Shift+S)`, icon: "saveas", stateKey: null },
+      { id: "paletteBold", command: "bold", label: L.bold(mod), icon: "bold", stateKey: "bold" },
+      { id: "paletteItalic", command: "italic", label: L.italic(mod), icon: "italic", stateKey: "italic" },
+      { id: "paletteFormat", command: "openPopover", popover: "format", label: L.format, icon: "format", stateKey: "format" },
+      { id: "paletteMermaid", command: "openPopover", popover: "mermaid", label: L.mermaid, icon: "mermaid", stateKey: "insertMermaid" },
+      { id: "paletteSave", command: "save", label: L.save(mod), icon: "save", stateKey: null },
+      { id: "paletteSaveAs", command: "saveAs", label: L.saveAs(mod), icon: "saveas", stateKey: null },
     ],
     [
-      { id: "paletteTable", command: "insertTable", label: "Insert table", icon: "table", stateKey: "insertTable" },
-      { id: "paletteRow", command: "insertRow", label: "Insert row", icon: "row", stateKey: "insertRow" },
-      { id: "paletteRowDelete", command: "rowDelete", label: "Delete row", icon: "rowDelete", stateKey: "rowDelete" },
-      { id: "paletteColumn", command: "insertColumn", label: "Insert column", icon: "col", stateKey: "insertColumn" },
-      { id: "paletteColumnDelete", command: "columnDelete", label: "Delete column", icon: "colDelete", stateKey: "columnDelete" },
-      { id: "paletteTableOptions", command: "openPopover", popover: "table", label: "Table options", icon: "tableOptions", stateKey: "tableOptions" },
-      { id: "paletteUndo", command: "undo", label: `Undo (${mod}+Z)`, icon: "undo", stateKey: "undo" },
+      { id: "paletteTable", command: "insertTable", label: L.insertTable, icon: "table", stateKey: "insertTable" },
+      { id: "paletteRow", command: "insertRow", label: L.insertRow, icon: "row", stateKey: "insertRow" },
+      { id: "paletteRowDelete", command: "rowDelete", label: L.rowDelete, icon: "rowDelete", stateKey: "rowDelete" },
+      { id: "paletteColumn", command: "insertColumn", label: L.insertColumn, icon: "col", stateKey: "insertColumn" },
+      { id: "paletteColumnDelete", command: "columnDelete", label: L.columnDelete, icon: "colDelete", stateKey: "columnDelete" },
+      { id: "paletteTableOptions", command: "openPopover", popover: "table", label: L.tableOptions, icon: "tableOptions", stateKey: "tableOptions" },
+      { id: "paletteUndo", command: "undo", label: L.undo(mod), icon: "undo", stateKey: "undo" },
     ],
   ];
 }
@@ -281,12 +285,12 @@ export default class EditPalette {
     this._openers = {}; // popover key -> its opener button
     this._popovers = {}; // popover key -> element
 
-    const mod = isApple ? "Cmd" : "Ctrl";
+    const mod = isApple ? L.modifier.apple : L.modifier.other;
     this._root = document.createElement("div");
     this._root.id = "editPalette";
     this._root.className = "edit-palette";
     this._root.setAttribute("role", "toolbar");
-    this._root.setAttribute("aria-label", "Edit palette");
+    this._root.setAttribute("aria-label", L.root);
     this._root.style.position = "fixed";
     this._root.hidden = true;
     for (const items of paletteRows(mod)) this._root.appendChild(this._buildRow(items));
@@ -798,7 +802,7 @@ export default class EditPalette {
         const grip = document.createElement("div");
         grip.id = "paletteGrip";
         grip.className = "edit-palette-grip";
-        grip.title = "Move palette (long press: minimize / restore)";
+        grip.title = L.grip;
         grip.setAttribute("aria-label", grip.title);
         grip.innerHTML = ICONS.grip;
         this._grip = grip;

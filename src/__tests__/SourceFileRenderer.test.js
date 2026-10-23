@@ -46,9 +46,8 @@ describe("SourceFileRenderer", () => {
         defaultTheme: "dark",
         keyHintDurationMs: 3000,
         toastDurationMs: 3000,
-        reloadUnavailableMsg:
-          "Reload not available (Chrome/Edge 86+ required)",
-        reloadNoFileMsg: "No file to reload. Drop a file to enable reload.",
+        reloadUnavailableMsg: "Reload works only in Chrome and Edge.",
+        reloadNoFileMsg: "No file to reload. Drop a file first.",
       },
     };
     const previewEl = document.createElement("div");

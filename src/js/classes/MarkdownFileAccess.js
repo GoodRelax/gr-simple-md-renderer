@@ -1,3 +1,5 @@
+import { CONFIG } from "../config.js";
+
 // How long a download's blob: URL stays valid after the click. There is no
 // need to revoke it at once: a minute leaves the browser all the time it
 // may take to read the blob (a margin; spec 5.14.7).
@@ -52,7 +54,7 @@ export default class MarkdownFileAccess {
     try {
       return this._win.showSaveFilePicker({
         suggestedName,
-        types: [{ description: "Markdown", accept: { "text/markdown": [".md"] } }],
+        types: [{ description: CONFIG.messages.edit.saveFileType, accept: { "text/markdown": [".md"] } }],
       });
     } catch (error) {
       return Promise.reject(error);

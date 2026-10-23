@@ -12,6 +12,8 @@
 
 > v2.2 の変更 (続き): その場編集の UI の改善 (仕様の改訂履歴 2026-xx-xx の 2 件目) に合わせてセクション X (UI 改善) を追加し、PRT-F01 / F02 / O01 / D02 / J01 / L01 / M04 / Q01 / U10 / U12 / U20 / U21 / U24 / U27 / U28 / U36 / V01〜V05 / V07 / V09 / V10 / V12 / V13 / V14 / W01 / W08 を改訂した (U27 / U36 / V13 / V14 / X16 は、リリース前の試験で見つかった手順の誤りも直した。M04 / Q01 / U10 / U20 と、セクション X の X02 / X08 / X14 / X18 は、全体のレビューとリリース前の試験の修正 (2026-10-23) に合わせて改めた)。自動テストの ID の行き先として「自動テスト (AT) の一覧」の章を追加し、前提条件 P-02 の件数の固定 (214 件) をやめた。
 
+> v2.3 の変更 (2026-10-23、develop 版の改善): 画面の英語の文言の書き換え (仕様の改訂履歴 2026-10-23。オーナーの裁定 R1〜R15) に合わせて、各ケースが引く画面の文言とボタンの名前を改めた。Insert table / Mermaid の挿入の改訂 (INV-52。改善要望 1) に合わせて PRT-V07 / V08 を改訂し、PRT-V15〜V20 を追加した。改訂・追加したケースの判定は空欄 (未実施) に戻している。
+
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
 ---
@@ -297,7 +299,7 @@
 | ------------ | --------------------------------------------------------- |
 | **前提条件** | ページが任意の状態                                        |
 | **手順**     | 1. `.png` ファイルをページにドラッグ＆ドロップ            |
-| **期待結果** | - アラートに "Binary file is not supported." が表示される |
+| **期待結果** | - アラートに "GRSMD can only open text files." が表示される |
 |              | - ファイルは処理されない (コードビューに遷移しない)       |
 |              | - アプリケーション状態は変更されない                      |
 
@@ -314,7 +316,7 @@
 | ------------ | --------------------------------------------------------------------------- |
 | **前提条件** | ページが任意の状態                                                          |
 | **手順**     | 1. 5MB を超えるテキストファイルをページにドラッグ＆ドロップ                 |
-| **期待結果** | - アラートに "Dropped file is too large. Maximum file size is 5 MB." が表示 |
+| **期待結果** | - アラートに "This file is too big. The limit is 5 MB." が表示 |
 |              | - ファイルは処理されない                                                    |
 
 | 結果 | Pass / Fail / N/A |
@@ -421,7 +423,7 @@
 | ------------ | ------------------------------------------------------------------------------------ |
 | **前提条件** | Ctrl+V で Markdown をペーストしてレンダリング済み (D&D ではない)                     |
 | **手順**     | 1. `r` キーを押す                                                                    |
-| **期待結果** | - 画面上部にトースト "No file to reload. Drop a file to enable reload." が表示される |
+| **期待結果** | - 画面上部にトースト "No file to reload. Drop a file first." が表示される |
 |              | - トーストは約 3 秒後に自動消滅する                                                  |
 |              | - トーストの位置が画面上部 (top: 60px) である                                        |
 
@@ -725,7 +727,7 @@
 |              | 3. メッセージに地球絵文字が含まれていることを確認           |
 | **期待結果** | - 確認ダイアログが表示される                                |
 |              | - OK で PlantUML サーバーにリクエストが送信され、描画される |
-|              | - キャンセルで "Rendering Canceled" と表示される            |
+|              | - キャンセルで "PlantUML diagram (not sent)" と表示される            |
 |              | - キャンセル時は PlantUML サーバーへの通信が発生しない      |
 
 | 結果 | Pass / Fail / N/A |
@@ -1281,10 +1283,10 @@
 | **前提条件** | `edit-html.md` を表示 (参照リンクの定義と HTML コメントを含む) |
 | **手順** | 1. パレットを表示し、細い帯を目視する |
 | | 2. 帯にマウスを乗せる |
-| | 3. "link definition" の帯をクリックする |
+| | 3. "Hidden link address" の帯をクリックする |
 | | 4. パレットを閉じて目視する |
 | **期待結果** | - 1 で、定義とコメントの位置に細い帯が見える |
-| | - 2 で、種類 ("link definition" / "hidden HTML") が表示され、マウスのカーソルが指の形 (pointer) になる |
+| | - 2 で、種類 ("Hidden link address" / "Hidden HTML") が表示され、マウスのカーソルが指の形 (pointer) になる |
 | | - 3 で、定義の原文が編集欄に開く |
 | | - 4 で、帯は見えない |
 
@@ -1440,7 +1442,7 @@
 | **前提条件** | `sample-data-2.md` を表示。上部の `#editor` の末尾に `XYZ` を打ち込み、Render は押していない。パレットを表示 |
 | **手順** | 1. プレビューの段落をクリックする |
 | **期待結果** | - 編集欄は開かず、`#editor` の内容で全体が描画し直される (末尾に `XYZ` が表示される) |
-| | - "The top editor had unrendered changes. Rendered them first." のトーストが表示される |
+| | - "Updated from the top box. Try again." のトーストが表示される |
 | | - `#editor` に打ち込んだ `XYZ` は残っている |
 
 | 結果 | Pass / Fail / N/A |
@@ -1747,7 +1749,7 @@
 | | - 3 で、編集欄に ` X` が戻る (編集欄自身の Redo)。`#editor` の内容は変わらない |
 | | - 4 で、1 回目に ` X` が消え、2 回目 (編集欄に変更が無い) は単位の Undo になり、編集欄が変更なしで閉じる。Undo の記録が無いので文書は変わらない |
 | | - 5 で、`#editor` の内容は手順の前と同じ (`Alpha para.` と `Beta para.`)、タブのタイトルに `* ` が付かない |
-| | - 6 で、トースト「The top editor had unrendered changes. ...」は出ず、「Alpha para. X」が確定され、「Beta para.」の編集欄が開く。`#editor` は `Alpha para. X` と `Beta para.` になる |
+| | - 6 で、トースト「Updated from the top box. ...」は出ず、「Alpha para. X」が確定され、「Beta para.」の編集欄が開く。`#editor` は `Alpha para. X` と `Beta para.` になる |
 | | - 7 で、Ctrl+Z はブラウザに渡る (編集モードでない。裁定 Q3) が、`#editor` の内容も文書も変わらない (5.7 (6) の `#editor` の `beforeinput` のガード) |
 
 | 結果 | Pass / Fail / N/A |
@@ -1768,7 +1770,7 @@
 | | 4. `#editor` に空白と改行だけを入力し、上部バーの [Render Light] を押す。確認ダイアログで OK を押す |
 | | 5. ページを新規に読み込み、`#editor` を空のままプレビューをダブルクリックして空の文書を始め、何も入力せずに上部バーの [Render Light] を押す |
 | | 6. 手順 1 と同じく `#editor` を消して段落をクリックし、確認ダイアログで Cancel を押す。続けて `#editor` をクリックしてフォーカスを置き、Ctrl+Z (macOS は Cmd+Z) を 3 回押す |
-| **期待結果** | - 1 と 3 で、「The top editor is empty. OK: replace the whole document with an empty one. Cancel: put the document back into the top editor.」が出る。Cancel の後、`#editor` に文書の本文が戻り、プレビューは押す前のまま、タブのタイトルの `* ` は消える (ほかに未保存の変更が無い場合)。トースト、保存ダイアログ、権限の確認は出ない |
+| **期待結果** | - 1 と 3 で、「The top box is empty.\nOK: make the document empty.\nCancel: put the document back in the top box.」が出る。Cancel の後、`#editor` に文書の本文が戻り、プレビューは押す前のまま、タブのタイトルの `* ` は消える (ほかに未保存の変更が無い場合)。トースト、保存ダイアログ、権限の確認は出ない |
 | | - 2 で、確認ダイアログは出ず、段落の編集欄が開く |
 | | - 4 で、プレビューは空のブロック 1 つになる (従来の動作) |
 | | - 5 で、確認ダイアログは出ない |
@@ -1909,9 +1911,9 @@
 | **前提条件** | 段落を開き、段落の途中にカーソルを置いた |
 | **手順** | 1. パレットのボタンを目視する |
 | | 2. Insert table を押して離す |
-| | 3. 外側をクリックして確定し、編集欄が無い状態でボタンを目視する |
-| **期待結果** | - 1 で、Insert row と Insert column は無効表示。Format は有効。Delete row・Delete column・Table options は無効 (セルの編集中だけ有効) |
-| | - 2 で、カーソル位置に、前後に空行を補った表の雛形が挿入される (確定すると段落 / 表 / 段落に分かれて描画される) |
+| | 3. 外側をクリックしてセルを閉じ、編集欄が無い状態でボタンを目視する |
+| **期待結果** | - 1 で、Insert row と Insert column は無効表示。Format は有効。Delete row・Delete column・Align column は無効 (セルの編集中だけ有効) |
+| | - 2 で、編集欄が確定され、段落がカーソルの行の後ろで割られて、その間 (段落が 1 行なら段落の下) に表が描画される。表の見出しの Col1 が、文字を選んだ状態で開く (挿入の位置の細かい決まりは PRT-V16) |
 | | - 3 で、Format は無効。Insert table・Mermaid・Save・Save as は有効 |
 | | - 有効・無効のすべての条件は仕様 5.15.5 の表のとおり |
 
@@ -1927,9 +1929,10 @@
 | 項目 | 詳細 |
 | --- | --- |
 | **前提条件** | パレットを表示 |
-| **手順** | 1. Mermaid ボタンを押し、ポップオーバーで Flowchart を選ぶ。確定する |
+| **手順** | 1. Mermaid ボタンを押し、ポップオーバーで Flowchart を選ぶ。外側をクリックして確定する |
 | | 2. Sequence diagram / State diagram / Class diagram でも同じ操作をする |
-| **期待結果** | - どの雛形も挿入され、確定すると図として描画される (エラーが出ない) |
+| **期待結果** | - どの雛形も、挿入の後にその原文の編集欄が開き、カーソルは図の 1 行目の末尾 (例: `flowchart TD` の後ろ) にある |
+| | - 確定すると図として描画される (エラーが出ない) |
 | | - ポップオーバーは、選んだ後に閉じる |
 
 | 結果 | Pass / Fail / N/A |
@@ -1964,7 +1967,7 @@
 | --- | --- |
 | **前提条件** | パレットを表示 |
 | **手順** | 1. `d` (ダーク) と `l` (ライト) で切り替えて、パレットを目視する (DevTools でボタンの色を確かめる) |
-| | 2. 表のセルを開き (セルの編集中)、Table options のポップオーバーを開いて、有効中 (今の列の配置) のボタンと、無効なボタンにマウスを載せる |
+| | 2. 表のセルを開き (セルの編集中)、Align column のポップオーバーを開いて、有効中 (今の列の配置) のボタンと、無効なボタンにマウスを載せる |
 | | 3. 段落を開いて 1 文字変え、グリップを長押しして最小化する |
 | **期待結果** | - 地・枠・アイコン (グリップを含む)・有効中・無効・状態表示の色と、Format のポップオーバーの文字色の見本が、仕様 5.15.2 の表のとおり |
 | | - ボタンのホバーの地が 5.15.2 の値になる。2 で、有効中のボタンと無効なボタンは、マウスを載せても地が変わらない |
@@ -2026,7 +2029,7 @@
 | | 5. Esc を 2 回押して (1 回目はポップオーバーだけを閉じる) 編集を取り消し、表のセルをクリックしてセルを開いたまま、印刷プレビューを開く |
 | **期待結果** | - 1 で、パレットは消えずに同じ位置にある |
 | | - 2 で、パレット・ポップオーバー・編集欄の枠・不可視ブロックの帯・表のつまみ (「Markdown」) が印刷に出ない |
-| | - 3 で、7 列 × 2 段 (1 段目 grip・Bold・Italic・Format・Mermaid・Save・Save as、2 段目 Insert table・Insert row・Delete row・Insert column・Delete column・Table options・Undo)。区切りの線は無い |
+| | - 3 で、7 列 × 2 段 (1 段目 grip・Bold・Italic・Format・Mermaid・Save・Save as、2 段目 Insert table・Insert row・Delete row・Insert column・Delete column・Align column・Undo)。区切りの線は無い |
 | | - 4 で、パレット・ポップオーバー・編集欄の枠と、見えない文字の印 (薄い背景) が印刷に出ない (文字そのものは出る) |
 | | - 5 で、セルの編集の枠と表のつまみが印刷に出ない |
 
@@ -2055,6 +2058,134 @@
 | --- | --- |
 | 判定 | |
 | 備考 | 要求: INV-52、INV-27、INV-59 (b)、OS-18 (仕様 5.14.6) |
+
+---
+
+### PRT-V15: 空の文書で表を作る
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | 初期状態 (`#editor` が空) |
+| **手順** | 1. [Edit] を押す |
+| | 2. パレットの Insert table を押して離す |
+| | 3. `Name` と打ち、Tab を押す |
+| **期待結果** | - 1 で、空のブロックの編集欄が開く (INV-31) |
+| | - 2 で、Markdown の原文は出ず、文書は表だけになり、見出しの Col1 が文字を選んだ状態で開く |
+| | - 3 で、Col1 が `Name` に置き換わり、Col2 が開く。`#editor` の 1 行目は `\| Name \| Col2 \| Col3 \|` |
+| | - 2 の直後 (セルが開く前) に `n` や `c` を打っても、新しいタブも Clear の確認も出ない (打った文字は捨てる。オーナーの裁定 D5) |
+| | - 実機 (iPhone の Safari、Android の Chrome) では、2 の後に画面のキーボードが出るかを記録する (セルは描画の後に開くので、ユーザーの操作の外のフォーカスになり、iOS では出ないおそれがある。未確認) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-52、INV-31。改善要望 1-1。自動: e2e/insertBlock.e2e.js |
+
+---
+
+### PRT-V16: 編集中の表の挿入の位置
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | パレットを表示。次の文書を表示した: 段落 `Line one` / `Line two` (2 行)、リスト `- a` / `- b`、引用 `> a` / `> b`、下線の見出し `Title` / `=====` (それぞれ空行で区切る) |
+| **手順** | 1. 段落を開き、カーソルを `Line\| one` (4 文字目) に置いて Insert table を押す。Esc で閉じ、Undo を押す (以下、毎回 Esc と Undo で戻す) |
+| | 2. 段落を開き、カーソルを 2 行目の行頭に置いて押す。Esc、Undo |
+| | 3. 段落を開き、カーソルを先頭に置いて押す。Esc、Undo |
+| | 4. 段落を開き、カーソルを 2 行目の途中に置いて押す。Esc、Undo |
+| | 5. リストを開き、カーソルを `- a` の末尾に置いて押す。Esc、Undo |
+| | 6. 引用を開き、カーソルを `> a` の末尾に置いて押す。Esc、Undo |
+| | 7. 下線の見出しを開き、カーソルを `Tit\|le` に置いて押す。Esc、Undo |
+| | 8. 段落を開き、`Line one` から `Line two` の途中までを選んで押す |
+| | 9. リストを `- a` / `  more` / `- b` (項目 a が 2 行) に書き換え、カーソルを `- a` の末尾に置いて押す |
+| | 10. 段落を `x` + 空白 2 つ / `y` (改行の印のある 2 行) に書き換え、カーソルを 1 行目に置いて押す |
+| | 11. 段落を `one\` / `two` (`\` の改行) に書き換え、カーソルを 1 行目に置いて押す。Esc と Undo で戻し、リストを `- a\` / `- b` に書き換え、カーソルを `- a\` の末尾に置いて押す |
+| | 12. 段落を `alpha beta` / `gamma delta` の 2 行にし、`beta` から `gamma` までを選んでパレットの Bold を押す。続けて、カーソルを 1 行目の末尾に置いて Insert table を押す |
+| **期待結果** | - 1 と 2 で、`Line one` / 表 / `Line two` (段落が 2 つに割れる) |
+| | - 3 で、表 / `Line one` `Line two` (段落の上に入る。段落は割れない) |
+| | - 4 で、`Line one` `Line two` / 表 (段落の下に入る) |
+| | - 5 で、`- a` / 表 / `- b` (リストが 2 つになり、表はリストの外にある) |
+| | - 6 で、`> a` / 表 / `> b` (引用が 2 つになる) |
+| | - 7 で、`Title` の見出し / 表 (下線の見出しは割れない) |
+| | - 8 で、選択の終わりの行 (2 行目) で決まり、段落の下に入る |
+| | - 9 で、`- a` `  more` / 表 / `- b` (項目の境目で割る。`more` は項目 a に残る。オーナーの裁定 D6) |
+| | - 10 で、`x` / 表 / `y` になり、`x` の後ろの空白 2 つは消える (改行でなくなるため。INV-71 (6))。Undo で `x` + 空白 2 つ / `y` に戻る |
+| | - 11 で、`one` / 表 / `two` になり、`\` は消える (段落の末尾に `\` が文字として出ない)。Undo で戻る。後半のリストでは、`- a\` / 表 / `- b` になり、項目の末尾の `\` は、もともと文字として見えているので残る |
+| | - 12 で、段落は割れず、`alpha **beta` / `gamma** delta` の段落の下に表が入る (太字の `**` が文字として出ない。文字色・リンク・画像・HTML のコメントが 2 行にまたがる場合も同じ) |
+| | - どの場合も、語の途中で切れず、Col1 が文字を選んだ状態で開き、Markdown の原文は出ない |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-52。改善要望 1-2、オーナーの裁定 2026-10-23 (範囲の選択は選択の終わり)、厳格なレビューの M1 / L1 の裁定 (行内の書式をまたいで割らない。`\` の改行も除く)。自動: e2e/insertBlock.e2e.js、AT-INS |
+
+---
+
+### PRT-V17: コード・数式・HTML・表の原文の中では挿入を断る
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | パレットを表示。コードブロック (```` ```js ````)、Mermaid、PlantUML、数式のブロック (`$$`)、HTML のブロック (`<details>`)、字下げのコード (4 文字の字下げ)、リストの中のコードブロック (`- 手順` の下に字下げした ```` ```sh ````)、引用の中のコードブロック (`> ```` ` で始まるもの)、リストの中の表、表、を含む文書を表示した (PlantUML の同意は Cancel) |
+| **手順** | 1. それぞれのブロックを開き (表は右上のつまみ「Markdown」で原文を開く。リスト・引用の中のコードと表は、その行にカーソルを置く)、Insert table を押す |
+| | 2. 同じく、Mermaid ボタンで Flowchart を選ぶ |
+| **期待結果** | - どの場合も、トースト「Can't insert here. Try outside this block.」が出る |
+| | - 編集欄は開いたままで、文字もカーソルも変わらず、文書も変わらない |
+| | - Insert table と Mermaid のボタンは、これらのブロックの中でも有効表示のまま (押下を断る。無効なボタンの押下はパレットの移動になるため。INV-35) |
+| | - 外部への通信は起きない (PlantUML は同意の確認を出さない) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-52、INV-35、5.15.5。改善要望 1-3、オーナーの裁定 D7 (リストの中の表)。自動: e2e/insertBlock.e2e.js、AT-INS-05 / 06 / 15、AT-UI-36 |
+
+---
+
+### PRT-V18: 表の挿入の Undo
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | パレットを表示。段落 `Para one.` を表示した |
+| **手順** | 1. 段落を開き、文字を `Line one` / `Line two` (2 行) に書き換え、カーソルを 1 行目の途中に置いて Insert table を押す |
+| | 2. Esc でセルを閉じ、パレットの Undo を押す |
+| | 3. もう一度 Undo のボタンを見る |
+| **期待結果** | - 1 で、`Line one` / 表 / `Line two` になる |
+| | - 2 で、表だけが消え、段落は `Line one` `Line two` の 1 つに戻る (書き換えは残る) |
+| | - 3 で、Undo は無効 (記録は 1 件だけ。書き換えそのものは、もう戻せない。INV-48) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-52、INV-48 (確定と挿入は別の変更の単位)。自動: e2e/insertBlock.e2e.js、AT-UI-36、AT-ORC-25 |
+
+---
+
+### PRT-V19: 挿入の後のスクロール
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | パレットを表示。画面より長い文書 (段落 80 個など) を表示した |
+| **手順** | 1. 画面の上の方の段落を開き、Insert table を押す |
+| | 2. Esc で閉じ、画面の下の端にある段落を開いて Esc で閉じる (最後に開いたブロック)。Insert table を押す |
+| **期待結果** | - 1 で、開いたセルは画面の中にあり、画面はスクロールしない (開いた段落の上端も動かない) |
+| | - 2 で、表は画面の下の端より下に入り、開いた Col1 の下端が画面の下の端に来るだけスクロールする (真ん中までは動かない)。滑らかなスクロールはしない |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-52 (挿入の後)、INV-46。画面の端は、浮いているパレットと画面のキーボードを考えない (パレットは動かせる。裁定の「画面の端」のとおり)。自動: e2e/insertBlock.e2e.js、AT-SM-36〜38 |
+
+---
+
+### PRT-V20: 表の挿入の性能
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Chrome、一般的な PC。1 MB の文書を表示し、パレットを表示した |
+| **手順** | 1. 文書の中ほどの段落を開き、1 語を書き換えて、Insert table を押す。押してから Col1 が開くまでを、DevTools の Performance で測る (3 回) |
+| **期待結果** | - 3 回とも、押してから Col1 が開くまで 300 ms 以内 (Mermaid と PlantUML の描画を除く) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-51 (オーナーの裁定 2026-10-23)。自動: AT-PERF-10 (`GRSMD_PERF=1`。jsdom で中央値約 49 ms、2026-10-23) |
 
 ---
 
@@ -2091,7 +2222,7 @@
 | **前提条件** | PRT-W01 と同じ前提で、新しく D&D した文書を編集した |
 | **手順** | 1. Save → 権限の確認で拒否する |
 | | 2. Save as → 保存ダイアログでキャンセルする |
-| **期待結果** | - 1 で、エラーのトースト ("Write permission was denied. Your changes are kept.") が出て、内容は保たれ、`* ` は残る |
+| **期待結果** | - 1 で、エラーのトースト ("Save not allowed. Your changes are kept.") が出て、内容は保たれ、`* ` は残る |
 | | - 2 で、トーストは出ず、内容は保たれ、`* ` は残る |
 
 | 結果 | Pass / Fail / N/A |
@@ -2108,7 +2239,7 @@
 | **前提条件** | `.md` を D&D して編集した。その後、同じファイルを外部のエディタで変更して保存した |
 | **手順** | 1. Save を押し、上書きの確認で Cancel を選ぶ |
 | | 2. もう一度 Save を押し、OK を選ぶ |
-| **期待結果** | - 1 で、"This file was changed outside GRSMD. Overwrite it?" の確認が出て、Cancel ではファイルは書き換わらず、`* ` は残る |
+| **期待結果** | - 1 で、"Something outside GRSMD changed this file. Replace it with your version?" の確認が出て、Cancel ではファイルは書き換わらず、`* ` は残る |
 | | - 2 で、GRSMD の内容で上書きされる |
 
 | 結果 | Pass / Fail / N/A |
@@ -2159,7 +2290,7 @@
 | **手順** | 1. Save as を押す |
 | | 2. タブを閉じようとする |
 | **期待結果** | - 1 で、元のファイル名 (無ければ `untitled.md`) のダウンロードが始まる |
-| | - "Download started: <名前>. The tab stays marked unsaved." のトーストが出る |
+| | - "Downloading: <名前>. It's still not saved." のトーストが出る |
 | | - タブのタイトルの `* ` は残る |
 | | - Console に CSP 違反が出ない |
 | | - 2 で、離脱の確認が出る |
@@ -2195,7 +2326,7 @@
 | **手順** | 1. パレットの Save を押す |
 | | 2. もう一度コードを変え (確定しない)、編集欄の中で Ctrl+S (macOS は Cmd+S) を押す |
 | **期待結果** | - 1・2 とも、ブロックが確定されてから保存される (保存したファイルに変更が含まれる) |
-| | - "Save could not start. Press Save again." などのアクティベーションの失効のエラーが出ない |
+| | - "Save couldn't start. Press Save again." などのアクティベーションの失効のエラーが出ない |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -2300,7 +2431,7 @@
 | **前提条件** | `.md` の複製を D&D して編集した (Chrome / Edge) |
 | **手順** | 1. エクスプローラーでそのファイルを削除 (または移動) する |
 | | 2. Save を押す |
-| **期待結果** | - "The file was not found. Use Save as." のトーストが出る |
+| **期待結果** | - "Couldn't find the file. Use Save as." のトーストが出る |
 | | - 内容は保たれ、`* ` は残る |
 
 | 結果 | Pass / Fail / N/A |
@@ -2319,7 +2450,7 @@
 | | 2. `c` を押す |
 | | 3. `d` を押す |
 | | 4. 権限の確認で許可する |
-| **期待結果** | - 1・2 は実行されず、"Saving. Try again when the save finishes." のトーストが出る |
+| **期待結果** | - 1・2 は実行されず、"Still saving. Try again in a moment." のトーストが出る |
 | | - 3 のテーマの切り替えは実行される |
 | | - 4 で、保存が完了し、保存されたのは元の文書の内容である (取り違えが無い) |
 
@@ -2423,8 +2554,8 @@
 | **前提条件** | `.md` の複製を D&D して表示した (Chrome / Edge) |
 | **手順** | 1. エクスプローラーでそのファイルを削除し、`r` を押す |
 | | 2. (再現できる場合) 大きなファイルで `r` を押し、読み込みの間に Save as を完了させる |
-| **期待結果** | - 1 で、"Reload failed. The file could not be read." のトーストが出て、何も変わらない |
-| | - 2 で、"Reload canceled. The document changed while reading." のトーストが出て、何も変わらない |
+| **期待結果** | - 1 で、"Couldn't reload the file." のトーストが出て、何も変わらない |
+| | - 2 で、"Reload stopped: the document changed." のトーストが出て、何も変わらない |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -2568,7 +2699,7 @@
 | **前提条件** | パレットを表示。3 行 3 列の表のセルを開いた |
 | **手順** | 1. Insert row、Delete row、Insert column、Delete column を順に押す |
 |  | 2. 見出しの行のセルで Delete row を見る。列が 1 つの表で Delete column を見る |
-|  | 3. Table options を開いて中央を押す |
+|  | 3. Align column を開いて中央を押す |
 |  | 4. パレットの Undo を押す |
 | **期待結果** | - 1 で、それぞれ 1 回の操作になり、次のセルが開く (行の追加: 下の行の同じ列、行の削除: 1 つ上、列の追加: 右の列、列の削除: 1 つ左) |
 |  | - 2 で、そのボタンは無効 (D2) |
@@ -2789,7 +2920,7 @@
 | | - 5 で、パレットが表示され、空のブロックの編集欄が開く |
 | | - 6 で、編集欄は開かず、`#editor` の内容で全体が描画し直され、トーストが出る (INV-45)。パレットは表示される |
 | | - 7 で、1 と同じ結果になる |
-| | - 8 で、クリックと同じく、パレットが表示され、表の原文の編集欄が開き、トースト「This table cannot be edited by cell. Opened its Markdown instead.」が出る (オーナーの裁定 Q-c、2026-10-22) |
+| | - 8 で、クリックと同じく、パレットが表示され、表の原文の編集欄が開き、トースト「Can't edit by cell. Opened as Markdown.」が出る (オーナーの裁定 Q-c、2026-10-22) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -2897,13 +3028,13 @@
 |  | - 5 で、セルにリンクが描かれ、原文は `[文字](https://x.example/p\|q)` (URL の縦棒の前に `\` が付いた形) になり、表が崩れない |
 |  | - 6 で、語がリンクになる。許可した後は、同じオリジンの別のページでも確認が出ないことがある (許可は `goodrelax.github.io` で共有される。取り消しはブラウザのサイトの設定) **[要検証: ブラウザごとの記憶のしかた]**。サイトの設定で「確認する」に戻した後は、再び許可の確認が出る。Firefox・Safari では貼り付けのボタンが出ることがある **[要検証]** |
 |  | - 7 で、ページのリンクの文字 (無ければ URL) を文字とするリンクが入り、その文字が選ばれている |
-|  | - 8 で、何も変わらず「There is no URL in the clipboard.」のトーストが出る |
-|  | - 9 で、何も変わらず「The text being edited changed while the clipboard was read. Nothing was pasted.」のトーストが出る。ただし、ブロック編集欄の Tab (フォーカスが移るだけで、対象・選択・世代が変わらない) の後に許可した場合は、トーストは出ず、語がリンクになる |
-|  | - 10 で、`<…>` / `%5C` / `%3C` の形で書かれ、リンクの行き先が正しい。空白・制御文字などの入ったものは URL として扱わず、Ctrl+V は普通の貼り付け、ボタンは「There is no URL in the clipboard.」になる |
+|  | - 8 で、何も変わらず「Couldn't find a copied link.」のトーストが出る |
+|  | - 9 で、何も変わらず「The text changed, so no link was added.」のトーストが出る。ただし、ブロック編集欄の Tab (フォーカスが移るだけで、対象・選択・世代が変わらない) の後に許可した場合は、トーストは出ず、語がリンクになる |
+|  | - 10 で、`<…>` / `%5C` / `%3C` の形で書かれ、リンクの行き先が正しい。空白・制御文字などの入ったものは URL として扱わず、Ctrl+V は普通の貼り付け、ボタンは「Couldn't find a copied link.」になる |
 |  | - 11 で、リンクが外れ、文字と他の書式は残る。参照リンクの定義は残る。裸の URL などは `https\://…`・`www\.…`・`a\@…` と書かれ、描画でリンクに戻らない |
 |  | - 12 で、「リンクを貼る」は無効になる (オーナーの裁定 F-R1)。`Hello!` の末尾では `Hello\![…](…)` になり、画像にならない |
 |  | - 13 で、途中を選んだ場合はリンクにならず普通に置き換わる。全体を選んだ場合は画像がリンクで包まれる (オーナーの裁定 F-R3) |
-|  | - 14 で、付けられなければ何も変わらず「A link cannot be pasted here.」のトーストが出る (オーナーの裁定 F-R2) |
+|  | - 14 で、付けられなければ何も変わらず「You can't paste a link here.」のトーストが出る (オーナーの裁定 F-R2) |
 |  | - 15 で、ボタンの選択ありと同じ形になる: 裸の URL は文字と URL が新しい URL になり (`[https://new.example/](https://new.example/)`)、普通のリンクは URL だけが置き換わり、参照リンクは普通のリンク `[ref](https://new.example/)` になる (定義は残る) |
 |  | - どの手順でも、Network に外部への要求が無い (ページの題名を取りに行かない。HTML の画像も読まない) |
 
@@ -3014,7 +3145,7 @@
 | **手順** | 1. パレットを表示し、表の中ほどのセルをクリックする |
 |  | 2. 文字を変えて Tab を押す |
 |  | 3. 文字を変えて、同じ表の別のセルをクリックする |
-|  | 4. Insert row、Insert column、Table options の中央を押す |
+|  | 4. Insert row、Insert column、Align column の中央を押す |
 |  | 5. 文字を選んで Bold を押す |
 | **期待結果** | - 1〜5 の、それぞれの押下から次のセルが開く (表示が更新される) までが 300 ms 以内 |
 |  | - 自動の計測: `GRSMD_PERF=1 npm run test:e2e` の `INV-51 (PRT-X23)` (Chromium。押下から次の描画のフレームまで。列の追加と配置も測る)。2026-10-22 の実測は、開く約 80 ms、確定 (Tab) 約 125 ms、同じ表の別のセルの押下約 150 ms、行の追加約 155 ms、列の追加約 130 ms、配置約 130 ms、書式約 80 ms |
@@ -3035,7 +3166,7 @@
 |  | 2. 表 B の `<b title="t">x</b>` のセル、`x<!-- c -->` のセル、普通の文字のセルを、それぞれクリックする (毎回 Esc で閉じる) |
 |  | 3. 表 B の `x<!-- c -->` のセルをクリックし、`x` の後ろに `!` を打って、外側をクリックする |
 |  | 4. 表 C の右のセル (`<form>b`) をクリックする |
-| **期待結果** | - 1 で、表 A の原文の編集欄が開き、トースト (「This table cannot be edited by cell. …」) が出る |
+| **期待結果** | - 1 で、表 A の原文の編集欄が開き、トースト (「Can't edit by cell. …」) が出る |
 |  | - 2 で、`<b title="t">x</b>` と `x<!-- c -->` のセルは、原文のセルとして開く (セルの中にそのセルの原文が文字として出る。薄い黄色の地)。普通の文字のセルは描画のまま開く |
 |  | - 3 で、原文はそのセルが `x!<!-- c -->` の形になり、コメントが残る (WYSIWYG で書き出すと、コメントが黙って消えるため) |
 |  | - 4 で、そのセルは原文のセルとして開き、`<form>b` が文字として出る (表の中では、行の 2 つ目の `<form>` が無視されて `b` だけが描かれ、そのセルだけの描画 `<form>b</form>` と合わないため。INV-62 (2)。この照合が無いと、WYSIWYG で書き出したときに `<form>` が黙って消える) |
@@ -3058,7 +3189,7 @@
 | 単体・結合の試験 | vitest + jsdom (`npm test`)。置き場は `src/__tests__/`。ブラウザの配置・印刷・クリップボードの許可など jsdom で試せないものは PRT で確かめる |
 | ID | `describe` / `it` の名前の先頭に `AT-<族>-<番号>` と書く。1 つの ID を `(a)` `(b)` などで複数の `it` に分けてよい。1 つの ID は 1 つの要求を確かめる試験のまとまりを指し、複数の `it` (別のファイルを含む) にまたがってよい (`(a)` `(b)` を付けることも、付けないこともある。同じファイルの中で `(a)` `(b)` なしに複数の `it` に付くものは約 30 件 (例: AT-BSM-15、AT-PAL-03 / 10 / 11、AT-THM-14 / 18))。違う要求の試験に同じ ID を使わない。ファイルをまたぐもの: AT-BSM-01 / 02 / 03 / 08 / 09〜14 / 16 (`BlockEditController.stateMachine.test.js` の表の交点の試験と、`UIController.editMode.test.js` / `UIController.save.test.js` の結合の試験)、AT-UI-41 / 43 / 46 (`UIController.document.test.js` / `UIController.editMode.test.js` / `UIController.save.test.js` / `UIController.handleRender.test.js`。AT-UI-41 の中身は 5.14.11 の表の行ごと)、AT-BEC-35 (`BlockEditController.link.test.js` と `UIController.link.test.js` の「Remove link」の試験)。族の中で番号を足すときは、その族の最後の番号の次から振る。付け直した番号: 同じ番号が 2 つの試験に付いていたものを、AT-UI-39 (セルを開いた表の試験) → AT-UI-61、AT-UI-39 (保存ダイアログの取消) → AT-UI-65、AT-DBL-07 (タッチのダブルタップ) → AT-DBL-13 に付け直した (全体のレビューの T-4)。残る注: AT-MR-09 と AT-TCE-29 は名前ではなくコメントにだけある (AT-TCE-29 は AT-TCE-10 の describe の中)。AT-BEC-28 は中身の違う 2 つの describe (`BlockEditController.test.js` と `BlockEditController.keys.test.js` の (5)) に付いている (上の決めごとの例外) |
 | 番号の無い族 | AT-MT・AT-TW は `describe` の名前を族の名前だけで書く (関数ごとのまとまり) |
-| 時間の試験 | AT-PERF のうち時間を測るもの (02〜07、09) は、環境変数 `GRSMD_PERF=1` のときだけ動く (`describe.runIf`。ふだんはスキップと数える)。計算量の上限を数えるもの (01、08) は常に動く。AT-HB の大きなブロックの試験 (`MarkdownTextOps.insertHardBreak.test.js` の AT-HB-14〜19 と、字句解析の上限の AT-HB-26〜28) は、常に字句解析の回数を確かめ、時間は `GRSMD_PERF=1` のときだけ確かめる |
+| 時間の試験 | AT-PERF のうち時間を測るもの (02〜07、09、10) は、環境変数 `GRSMD_PERF=1` のときだけ動く (`describe.runIf`。ふだんはスキップと数える)。計算量の上限を数えるもの (01、08) は常に動く。AT-HB の大きなブロックの試験 (`MarkdownTextOps.insertHardBreak.test.js` の AT-HB-14〜19 と、字句解析の上限の AT-HB-26〜28) は、常に字句解析の回数を確かめ、時間は `GRSMD_PERF=1` のときだけ確かめる |
 | スキップ | vitest のスキップは次に限る: 上の時間の試験 (`GRSMD_PERF=1` でないとき)、`MarkdownRenderer.test.js` の「parse error path」の試験 (`it.runIf(path === "render")`。描画の経路ごとに繰り返す試験のうち、`render` 以外の経路の分は常にスキップ)、`textWidth.test.js` の幅 0 の範囲表と Unicode の照合 (`it.skipIf`。Node の Unicode の版が 16.0 でないとき)。e2e のスキップは、`tableCell.e2e.js` の時間の試験 (`GRSMD_PERF=1` でないとき、および Chromium 以外のブラウザ) と、`crossUnit.e2e.js` の N1 (本物のタッチの列は Chromium の CDP だけで作れるので、Chromium 以外) に限る |
 | e2e | Playwright (`npm run test:e2e` = `build:e2e` で `output/e2e/` にビルドし、`playwright test`。`playwright.config.js` の projects は Chromium と WebKit。Firefox は `npm run test:e2e:firefox` で選んだときだけ動く)。初めて動かす前に、ブラウザを `npx playwright install chromium webkit` で取得する (外部からのダウンロード。`e2e/README.md`)。置き場は `e2e/`。AT の ID は持たない。PRT との対応は AT.4 の表で引く (PRT の本文に e2e のファイル名を書いていないものもある) |
 
@@ -3071,11 +3202,12 @@
 | AT-WRAP | `splitMarkdownWrapper` と `preprocessInput` | INV-38、5.13 | splitMarkdownWrapper.test.js、preprocessInput.test.js | 01〜19 |
 | AT-EOL | 改行コードと BOM の変換 | INV-44、5.14.1 | lineEnding.test.js | 01〜07 |
 | AT-SES | `DocumentSession` | INV-38、INV-44、INV-55 | DocumentSession.test.js | 01〜11 |
-| AT-BM | `MarkdownBlockModel` | INV-41、INV-42、INV-48 | MarkdownBlockModel.test.js | 01〜27 |
+| AT-BM | `MarkdownBlockModel` | INV-41、INV-42、INV-48、INV-52 | MarkdownBlockModel.test.js | 01〜32 |
 | AT-PTR | `MarkdownBlockModel.planTableReplace` | INV-42、11-c の `canKeepTableId` | MarkdownBlockModel.planTableReplace.test.js | 01〜07 |
 | AT-DIFF | `BlockDiff.diffBlocks` | INV-42 | BlockDiff.test.js | 01〜10 |
 | AT-RT | サンプルとフィクスチャの往復 | INV-38、INV-41、INV-44 | roundTrip.samples.test.js | 01〜06 |
 | AT-TXT | `MarkdownTextOps` (挿入など) | INV-52 | MarkdownTextOps.test.js | 01〜16 |
+| AT-INS | `MarkdownTextOps.planBlockInsert` / `insertOffset` / `cutLineEndBreak` (雛形の挿入の位置と、断る場所、行内の書式をまたぐ境目、大きな段落、割った行の行末の空白と `\`) | INV-52 | MarkdownTextOps.planBlockInsert.test.js | 01〜19 |
 | AT-FR | `MarkdownTextOps.formatRange` (書式、リンク) | INV-66、INV-67、INV-69 | MarkdownTextOps.formatRange.test.js、MarkdownTextOps.link.test.js | 01〜64 |
 | AT-HB | `MarkdownTextOps.insertHardBreak` と確定の後始末 | INV-71 | MarkdownTextOps.insertHardBreak.test.js | 01〜61 |
 | AT-IR | `InlineRuns` (並び、正規形、表記の保持) | INV-67、INV-69、INV-72、5.14.14 | InlineRuns.test.js | 01〜53 |
@@ -3084,10 +3216,10 @@
 | AT-CL | `ClipboardLink` | INV-69 | ClipboardLink.test.js | 01〜04 |
 | AT-MR | `MarkdownRenderer` のブロックの描画 | INV-41〜43、INV-47 | MarkdownRenderer.blocks.test.js、MarkdownRenderer.test.js、diagrams.partial.test.js | 01〜14 (09 は `MarkdownRenderer.test.js` のコメントにだけある。AT.1 の注) |
 | AT-DG | 図と PlantUML の部分描画 | INV-02、INV-23 | diagrams.partial.test.js | 01〜07 |
-| AT-SM | `ScrollMemento` (アンカー、読んでいる位置) | INV-46、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜35 |
-| AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R5) | INV-42、INV-46〜48、INV-62 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜24 (06b を含む)、R1〜R5、T1〜T6 |
+| AT-SM | `ScrollMemento` (アンカー、読んでいる位置、挿入の後の最小のスクロール) | INV-46、INV-52、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜38 |
+| AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R5) | INV-42、INV-46〜48、INV-62 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜27 (06b を含む)、R1〜R5、T1〜T6 |
 | AT-BEC | `BlockEditController` (ジェスチャ、外側、IME、キー、リンク) | INV-27〜30、INV-40、INV-69 | BlockEditController.test.js、BlockEditController.keys.test.js、BlockEditController.link.test.js、UIController.link.test.js (35) | 01〜35 |
-| AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致) | 11-c | BlockEditController.stateMachine.test.js、UIController.editMode.test.js、UIController.save.test.js | 01〜25 |
+| AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致) | 11-c | BlockEditController.stateMachine.test.js、UIController.editMode.test.js、UIController.save.test.js | 01〜27 |
 | AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
@@ -3103,12 +3235,12 @@
 | AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
 | AT-PAN | `DiagramPanController` (図のパンの終わり) | INV-16b、FS-09 | DiagramPanController.test.js | 01〜03 |
 | AT-SFR | `SourceFileRenderer` (コードビューの Reload) | INV-15 | SourceFileRenderer.test.js | 01 |
-| AT-CFG | `CONFIG.edit` と文言 | 5.2、CON-06 | config.edit.test.js、UIController.editMode.test.js | 01〜08 |
+| AT-CFG | `CONFIG.edit` と文言 | 5.2、CON-06 | config.edit.test.js、UIController.editMode.test.js、config.test.js (09) | 01〜09 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと | 5.8.1、5.15.2 | themeColors.test.js、hljsThemePlugin.test.js | 01〜20 |
-| AT-STA | `src/js` と `src/css` の静的な検査 | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜14 |
+| AT-STA | `src/js` と `src/css` の静的な検査 | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜16 |
 | AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
-| AT-PERF | 性能と計算量の上限 | INV-42、INV-51 | performance.inplaceEdit.test.js | 01〜09 |
+| AT-PERF | 性能と計算量の上限 | INV-42、INV-51 | performance.inplaceEdit.test.js | 01〜10 |
 
 ID を持たない試験ファイル (その場編集の前からあるクラスの試験、`stateTable.test.js` など) と、ID を持つファイルの中の ID の無い試験 (`staticChecks.test.js` の「style.css for in-place editing」の一部、`MarkdownRenderer.purifyConfig.test.js` の設定を 1 度だけ与えることの試験など) も `npm test` の全件に含まれる。
 
@@ -3122,9 +3254,12 @@ ID を持たない試験ファイル (その場編集の前からあるクラス
 | AT-STA-12 と (ID なし)、AT-PAL-27 | 編集まわりの CSS に `url()` と `@font-face` が無い (CSP、外部の取得をしない)。`url()` は AT-STA-12 (編集の規則のセレクタと宣言の両方)、`@font-face` は `staticChecks.test.js` の「style.css for in-place editing」の ID の無い試験、印刷の規則は AT-PAL-27 |
 | AT-STA-13 | `MarkdownRenderer` の `PURIFY_CONFIG` が凍結され (`Object.isFrozen`。中の配列も)、決めた値と一致する (`toEqual`)。MathML の `semantics` / `annotation` と `encoding` を足し、`style` を禁じる (OS-14)。置き場は `MarkdownRenderer.purifyConfig.test.js` |
 | AT-STA-14 | アプリの class (`.grsmd-table-tab`・`.md-block-hidden`・`.md-block-empty`) の CSS は、描画側が作った要素 (`#preview > …`) だけに当たる。不可視ブロックの帯のホバーのカーソルは pointer (リリース前の試験の N2 / N3) |
+| AT-STA-15 | `src/js` の `config.js` の外に、利用者に見える英文の文字列が無い (R15)。文字列とテンプレートの字句のうち、文の終わり (2 文字以上の語と `.` `?` `!`) を持つもの、または空白を含み大文字と小文字で始まるものを数える (`console.*`・例外・import は除く)。検査そのものの試験を含む |
+| AT-STA-16 | トーストが画面の中で折り返す (`.toast` は `nowrap` でなく、`max-width: calc(100vw - 32px)`・中央揃え。`#toastContainer` も画面より広くならない。R11) |
 | AT-PERF-07 | 1 MB の文書に 1,000 行 × 5 列の表: 中ほどのセル (500 行目) を初めて開くまで、セルの確定から次のセル、書式の適用が、それぞれ `commitBudgetMs` (300 ms) 以内 (INV-51)。表の操作 (行の追加) は、jsdom では DOMPurify が遅いので時間を記録するだけとし、時間の判定は e2e の `tableCell.e2e.js` (Chromium、PRT-X23) で行う (行の追加で作る HTML は小さな表の分の 1 回だけであることを AT-PERF-08 で数える) |
 | AT-PERF-08 | 表の編集の間の 1 回の操作で、表全体の HTML を作らない (INV-47、INV-51) |
 | AT-PERF-09 | 5,000 個のリンクを持つ 250 KB の段落で、書式のポップオーバーを開いたときの 1 フレームのボタンの判定が予算の中 (INV-51、INV-69) |
+| AT-PERF-10 | 1 MB の文書で、開いた段落の Insert table の押下 (確定・挿入・部分描画) から Col1 が開くまで、5 回の中央値が `commitBudgetMs` (300 ms) 以内 (INV-51、INV-52) |
 | AT-UI-51〜60 | 単位をまたぐ結合の試験 (全体のレビューの K-1・K-2・T-3 (1)〜(8)): ポップオーバーが開いたままのセルの移動と表の操作、押し続けた Esc、WYSIWYG のセルの Ctrl+B と Ctrl+Z、ポップオーバーとセルの Esc、見えない文字をまたぐ Bold、最小化中のセル、最小化 → `e` → ダブルクリック、テーマの切り替え、変更のあるセルでの保存、`openerDisabled` の本物の経路 |
 | AT-UI-64、AT-UI-66 (L5) | クリップボードの読み取りは 1 回ずつ (AT-UI-64: 待つ間は「リンクを貼る」が無効で、2 回目の押下は無視し、リンクは 1 回だけ入る。AT-UI-66 の L5: 待つ間に編集モードを出ると待ちを解き、結果は捨てる。全体のレビューの FX-1) |
 | AT-UI-48〜50 | リンクを貼る・外すのボタンの状態、押した時点の読み取り、クリップボードを待つ間に対象・選択・世代が変わったら適用しない (偽のクリップボードを遅らせる。INV-69) |
@@ -3146,6 +3281,8 @@ ID を持たない試験ファイル (その場編集の前からあるクラス
 | tableCell.e2e.js | セルの入力と Tab、Esc・Shift+Enter・Ctrl+Z、原文のセルと表のつまみ、編集モードの外のダブルクリック、表の時間の試験 (`GRSMD_PERF=1`、Chromium だけ) | PRT-X01〜03、PRT-X08、PRT-X14、PRT-X21、PRT-X23 |
 | editModeScroll.e2e.js | 編集モードの出入りで読んでいる位置を保つ (マウスとタッチ) | PRT-X08 |
 | link.e2e.js | リンクを貼る・外す | PRT-X18 |
+| insertBlock.e2e.js | Insert table / Mermaid の挿入: 空の文書、行の境目で割る位置 (上・下・中・リスト・引用・下線の見出し)、断る場所とトースト (リストの中の表、字下げのコード、引用の中のコード、同意を Cancel にした PlantUML を含む)、行内の書式をまたぐ境目、`\` の改行、割った行の行末の空白、押した直後の打鍵がショートカットにならない、Undo で表だけが消える、挿入の後の最小のスクロール | PRT-V15〜V19 |
+| toast.e2e.js | 幅 375 px で、トーストが画面の中で折り返す (長いファイル名も折る) | (5.12、オーナーの裁定 R11) |
 | crossUnit.e2e.js | 単位をまたぐ動き: 変更のあるセルの移動でポップオーバーが開いたまま (K-1)、外部画像の入った HTML の貼り付けと画像のあるセルの編集で通信しない (S-2)、色のセルを残したままの Render Dark、図のコードを開いた後のボタンなしの移動でスクロールしない (U20)、文書の class にアプリの CSS が当たらない・帯のカーソル・数式の大きさ (N2 / N3 / M04)、[?] の長押し (N1。Chromium だけ)、スマートフォンの配置 (N6)、編集モードの出入りでブロックが動かず、つまみが表の真上にある (P1) | PRT-X04、PRT-X08、PRT-X11、PRT-U10、PRT-U20、PRT-Q01、PRT-M04 |
 
 ---
@@ -3258,6 +3395,12 @@ ID を持たない試験ファイル (その場編集の前からあるクラス
 | PRT-V12      | 編集パレット | キーボード操作 |      |
 | PRT-V13      | 編集パレット | パレットの配置と印刷 |      |
 | PRT-V14      | 編集パレット | パレットの書式と表の Enter を編集欄の Ctrl+Z で戻せる |      |
+| PRT-V15      | 編集パレット | 空の文書で表を作る |      |
+| PRT-V16      | 編集パレット | 編集中の表の挿入の位置 |      |
+| PRT-V17      | 編集パレット | コード・数式・HTML・表の原文の中では挿入を断る |      |
+| PRT-V18      | 編集パレット | 表の挿入の Undo |      |
+| PRT-V19      | 編集パレット | 挿入の後のスクロール |      |
+| PRT-V20      | 編集パレット | 表の挿入の性能 |      |
 | PRT-W01      | 保存と保護 | 上書き保存 (Chrome / Edge) |      |
 | PRT-W02      | 保存と保護 | 権限の拒否 / 保存ダイアログのキャンセル |      |
 | PRT-W03      | 保存と保護 | 外部での変更の確認 |      |

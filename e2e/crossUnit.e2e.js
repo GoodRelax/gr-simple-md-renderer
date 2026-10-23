@@ -19,7 +19,7 @@ async function openEditMode(page, markdown) {
 const cell = (page, r, c) => page.locator("#preview table").first().locator("tr").nth(r).locator("th, td").nth(c);
 const openCell = (page) => page.locator("#preview .grsmd-cell-editing");
 
-test("T-3 (9) K-1: Table options and Format stay open while a changed cell moves on with Tab and Enter, and on Insert row", async ({ page }) => {
+test("T-3 (9) K-1: Align column and Format stay open while a changed cell moves on with Tab and Enter, and on Insert row", async ({ page }) => {
   await openEditMode(page, ["| A | B |", "| --- | --- |", "| x | y |", "| p | q |", ""].join("\n"));
   for (const [opener, menu] of [["#paletteTableOptions", "#paletteTableMenu"], ["#paletteFormat", "#paletteFormatMenu"]]) {
     await cell(page, 1, 0).click();

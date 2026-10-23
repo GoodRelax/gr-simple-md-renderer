@@ -71,19 +71,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * @purity non-pure
    */
   askConsent() {
-    return window.confirm(
-      `Security & Confidentiality Warning
-
-` +
-        `Your data will be sent to an external PlantUML rendering server.
-
-` +
-        `[OK]: data -> \u{1F310} official server -> render PlantUML
-
-` +
-        `[Cancel]: Render Markdown without PlantUML`,
-
-    );
+    return window.confirm(CONFIG.messages.plantuml.consent);
   }
 
   /**
@@ -174,9 +162,9 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     const encoded = this.encoder.encode(code);
     const img = document.createElement("img");
     img.src = `${CONFIG.plantuml.serverUrl}${encoded}`;
-    img.alt = "PlantUML Diagram";
+    img.alt = CONFIG.messages.plantuml.diagramAlt;
     img.className = "plantuml-diagram";
-    img.title = "Ctrl+Scroll: zoom | Double-click: reset | Drag: pan";
+    img.title = CONFIG.messages.diagram.tooltip;
     img.style.maxWidth = "100%";
     return img;
   }

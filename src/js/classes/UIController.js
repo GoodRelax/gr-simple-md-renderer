@@ -121,6 +121,10 @@ export const saveOperationStateMachine = Object.freeze({
   replaceRequested: Object.freeze({ idle: null, writingFile: cell("writingFile", ["rejectReplace", "showSavingToast"]) }),
 });
 
+// The one-key shortcuts of setupKeyboard (3.12) that wait until an inserted
+// block's cell or source has opened (INV-52, owner ruling D5).
+const ONE_KEY_SHORTCUTS = new Set(["l", "d", "r", "n", "c", "e"]);
+
 // SaveOutcome.status -> 11-e event
 const SAVE_EVENT_BY_STATUS = Object.freeze({
   saved: "fileWritten",
@@ -327,9 +331,10 @@ export default class UIController {
   _formatFileInfo(metadata) {
     if (!metadata) return "";
     const { fileName, fileSize, lineCount, updatedAtStr } = metadata;
-    const sizeStr = (fileSize / 1024).toFixed(2) + " KB";
-    const linesStr = lineCount.toLocaleString() + " lines";
-    return `${fileName}  |  ${linesStr}  |  ${sizeStr}\nUpdated: ${updatedAtStr}`;
+    const text = CONFIG.messages.fileInfo;
+    const sizeStr = text.size((fileSize / 1024).toFixed(2));
+    const linesStr = text.lines(lineCount.toLocaleString());
+    return `${fileName}  |  ${linesStr}  |  ${sizeStr}\n${text.updated(updatedAtStr)}`;
   }
 
   // ---- Affordance management ----
@@ -346,11 +351,7 @@ export default class UIController {
       el.id = "affordanceText";
       this.elements.preview.appendChild(el);
     }
-    const msg =
-      "Get started:\n\n" +
-      "  1. Paste Markdown (Ctrl+V)  ->  Markdown Preview                     \n" +
-      "  2. Drop a .md file          ->  Markdown Preview                     \n" +
-      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)";
+    const msg = CONFIG.messages.startScreen;
     // FS-16: Pad with whitespace lines so iOS Safari has rendered content
     // to register click events across the entire preview area.
     const pad = "\n" + " \n".repeat(50);
@@ -665,6 +666,9 @@ export default class UIController {
       // it, so the focus has already left when the key reaches the document.
       if (isTypingTarget(document.activeElement) || isTypingTarget(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return; // INV-14: modifier guard
+      // INV-52: until the inserted block's cell or source opens, a typed
+      // letter is not a shortcut (owner ruling D5)
+      if (this.blockEdit.isInsertPending() && ONE_KEY_SHORTCUTS.has(e.key)) return;
 
       switch (e.key) {
         case "ArrowUp":
@@ -1340,10 +1344,10 @@ export default class UIController {
         this._refreshDirtyMark();
         break;
       case "insertTable":
-        this._insertBlock(CONFIG.edit.tableTemplate);
+        void this._insertBlock(CONFIG.edit.tableTemplate, "cell");
         break;
       case "insertMermaid":
-        this._insertBlock(CONFIG.edit.mermaidSamples[arg]);
+        void this._insertBlock(CONFIG.edit.mermaidSamples[arg], "source");
         break;
       default:
         break;
@@ -1454,20 +1458,26 @@ export default class UIController {
   }
 
   /**
-   * Insert table / Mermaid sample (INV-52): at the caret while editing,
-   * else after the last opened block (or at the end) as one model change.
+   * Insert table / Mermaid sample (INV-52, 11-c blockInsertRequested):
+   * while editing, the editor is committed and the block goes in at a line
+   * boundary of it (or the press is refused with a toast); else after the
+   * last opened block (or at the end). Each is a change of its own. After
+   * the render, a table's first cell (opens "cell") or the Mermaid block's
+   * source (opens "source") is opened.
    * @param {string} blockText
+   * @param {"cell"|"source"} opens
+   * @returns {Promise<void>} settles when the opening after the render is done
    * @purity non-pure
    */
-  _insertBlock(blockText) {
-    if (this.blockEdit.isEditingCell()) return; // W7: not while a cell is open
-    if (this.blockEdit.isEditing()) {
-      this._editInBlock((range) => MarkdownTextOps.insertBlockText(range.text, range.selEnd, blockText));
-    } else if (this._editorChangedSinceRender) {
+  _insertBlock(blockText, opens) {
+    if (this.blockEdit.isEditingCell()) return Promise.resolve(); // W7: not while a cell is open
+    if (!this.blockEdit.isEditing() && this._editorChangedSinceRender) {
       this._renderFromEditorFirst();
-    } else {
-      this.orchestrator.insertAfter(this.blockEdit.getLastOpenedBlockId(), blockText);
+      return Promise.resolve();
     }
+    const opening = this.blockEdit.dispatch("blockInsertRequested", { kind: "insert", raw: blockText, opens });
+    this._refreshDirtyMark();
+    return opening ?? Promise.resolve();
   }
 
   // ---- Save (11-e, spec 5.14.7) ----
@@ -1646,58 +1656,7 @@ export default class UIController {
 
   /** @purity non-pure */
   setupPromptText() {
-    const COPY_PAYLOAD = `
-## Output Format
-
-- Output the entire content **as a single Markdown code block** so it can be copied in one go.
-- **Enclose the entire Markdown with six backticks \` \`\`\`\`\`\` \` at the beginning and end.** Specify its language as markdown.
-- **Use these six backticks only once as the outermost enclosure.**
-- **Never output speculation or fabrications.** If something is unclear or requires investigation, explicitly state so.
-- This method is called **MCBSMD** (Multiple Code Blocks in a Single Markdown)
-
-### Code and Diagram Block Rules
-
-- As a rule, use Mermaid for diagrams. Use PlantUML only when the diagram cannot be expressed in Mermaid.
-- Any diagrams or software code inside the Markdown must each be enclosed in their own code blocks using triple backticks \` \`\`\` \`.
-- Each code block must specify a language or file type (e.g., \` \`\`\`python \` or \` \`\`\`mermaid \`).
-- Each code or diagram block must be preceded by a descriptive title in the format **title:**
-  (e.g., \`**System Architecture:**\`, \`**Login Flow:**\`)
-- Always follow the structure below for every code or diagram block:
-
-  > **title:**
-  >
-  > \`\`\`language
-  > (code or diagram content here without truncation or abbreviation)
-  > \`\`\`
-  >
-  > Write the explanation for the code block here, immediately after the block, following a blank line.
-
-- Do not write explanations inside the code blocks.
-- In all diagrams, prefer alphanumeric characters and underscores (\`_\`); non-ASCII text (no spaces) is allowed only when non-English is more appropriate for the diagram. Special symbols (e.g., \`\\\`, \`/\`, \`|\`, \`<\`, \`>\`, \`{\`, \`}\`) are strictly prohibited.
-- Output all diagram content without omission. Never use \`...\` or any shorthand.
-
-### Diagram Label and Notation Rules
-
-- All arrows and relationship lines in diagrams MUST have labels. Follow these notation rules:
-  1. Mermaid \`flowchart\` and \`graph\`: place the label inside the arrow using pipes (e.g., \`A -->|Label| B\`)
-  2. Other Mermaid diagrams / All PlantUML: place the label after the arrow using a colon (e.g., \`A --> B : Label\`)
-- For line breaks in labels or node text:
-  1. Mermaid: use \`<br/>\` inside a quoted string (e.g., \`A -->|"Line1<br/>Line2"| B\`, \`A["Line1<br/>Line2"]\`)
-  2. PlantUML: use \`\\n\` (e.g., \`A -> B : Line1\\nLine2\`)
-
-### Math Rules
-
-- Use standard LaTeX notation for all mathematical formulas.
-  1. Inline math: always use single dollar signs. Place a space before the opening \`$\`
-     and a space after the closing \`$\`
-     (e.g., \`The function is $y = x + 1$ here.\`)
-  2. Block equations: always place \`$$\` on its own line, above and below the formula.
-     Example:
-     > $$
-     > E = mc^2
-     > $$
-`;
-    this.elements.promptText.value = COPY_PAYLOAD;
+    this.elements.promptText.value = CONFIG.messages.prompt.body;
   }
 
   /**
@@ -1736,7 +1695,7 @@ export default class UIController {
   /** @purity non-pure */
   showCopySuccess() {
     const original = this.elements.copyPromptBtn.textContent;
-    this.elements.copyPromptBtn.textContent = "Copied!";
+    this.elements.copyPromptBtn.textContent = CONFIG.messages.prompt.copied;
     /** @purity non-pure */
     setTimeout(() => {
       this.elements.copyPromptBtn.textContent = original;

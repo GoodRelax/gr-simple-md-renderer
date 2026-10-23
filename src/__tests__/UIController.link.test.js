@@ -91,10 +91,10 @@ async function openAndSelect(start, part) {
   return ta;
 }
 
-/** Press Format, then Paste link from clipboard. */
+/** Press Format, then Paste copied link. */
 function pressPasteLink() {
   press(btn("paletteFormat"));
-  press(popoverButton("Paste link from clipboard"));
+  press(popoverButton("Paste copied link"));
 }
 
 describe("AT-UI-48 Paste link / Remove link button states (5.15.5, INV-51)", () => {
@@ -103,11 +103,11 @@ describe("AT-UI-48 Paste link / Remove link button states (5.15.5, INV-51)", () 
 
   it("not editing: both off; a caret in text: Paste on, Remove off; on a link: Remove on", async () => {
     await withDocument(fakeClipboard("https://example.com/"));
-    expect(off(popoverButton("Paste link from clipboard"))).toBe(true);
+    expect(off(popoverButton("Paste copied link"))).toBe(true);
     expect(off(popoverButton("Remove link"))).toBe(true);
     const ta = await openAndSelect("See", "");
     openFormat();
-    expect(off(popoverButton("Paste link from clipboard"))).toBe(false);
+    expect(off(popoverButton("Paste copied link"))).toBe(false);
     expect(off(popoverButton("Remove link"))).toBe(true);
     pointer(document.body, "pointerdown");
     await openAndSelect("A [link]", "link");
@@ -121,16 +121,16 @@ describe("AT-UI-48 Paste link / Remove link button states (5.15.5, INV-51)", () 
     const ta = await openAndSelect("# Title", "");
     ta.setSelectionRange(0, 0);
     openFormat();
-    expect(off(popoverButton("Paste link from clipboard"))).toBe(true);
+    expect(off(popoverButton("Paste copied link"))).toBe(true);
     ta.setSelectionRange(3, 3);
     document.dispatchEvent(new Event("selectionchange"));
     await nextFrame();
-    expect(off(popoverButton("Paste link from clipboard"))).toBe(false);
+    expect(off(popoverButton("Paste copied link"))).toBe(false);
     pointer(document.body, "pointerdown");
     const tb = await openAndSelect("A [link]", "");
     tb.setSelectionRange(4, 4); // in the link's text
     openFormat();
-    expect(off(popoverButton("Paste link from clipboard"))).toBe(true);
+    expect(off(popoverButton("Paste copied link"))).toBe(true);
   });
 
   it("the popover closed: the link states are not worked out (the inline range is not lexed per frame)", async () => {
@@ -158,7 +158,7 @@ describe("AT-UI-48 Paste link / Remove link button states (5.15.5, INV-51)", () 
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
     openFormat();
-    expect(off(popoverButton("Paste link from clipboard"))).toBe(false);
+    expect(off(popoverButton("Paste copied link"))).toBe(false);
     expect(off(popoverButton("Remove link"))).toBe(true);
   });
 });
@@ -326,7 +326,7 @@ describe("AT-UI-64 one read of the clipboard at a time (review FX-1)", () => {
     pressPasteLink();
     expect(clipboard.read).toHaveBeenCalledTimes(1);
     press(btn("paletteFormat")); // open the popover again while the read waits
-    expect(off(popoverButton("Paste link from clipboard"))).toBe(true);
+    expect(off(popoverButton("Paste copied link"))).toBe(true);
     app.ui._runPaletteCommand("linkPaste"); // a press that gets through anyway
     expect(clipboard.read).toHaveBeenCalledTimes(1);
     clipboard.release();
@@ -334,6 +334,6 @@ describe("AT-UI-64 one read of the clipboard at a time (review FX-1)", () => {
     expect(ta.value).toBe("See the [example](https://u.example/) here.");
     expect(showToast).not.toHaveBeenCalled();
     await nextFrame();
-    expect(off(popoverButton("Paste link from clipboard"))).toBe(false);
+    expect(off(popoverButton("Paste copied link"))).toBe(false);
   });
 });
