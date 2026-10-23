@@ -12,6 +12,7 @@ vi.mock("../js/utils.js", async () => {
 
 import RendererOrchestrator from "../js/classes/RendererOrchestrator.js";
 import ApplicationState from "../js/classes/ApplicationState.js";
+import { CONFIG } from "../js/config.js";
 import { waitForDOMStability } from "../js/utils.js";
 import { makeLexer } from "./helpers/samples.js";
 import { deferred } from "./helpers/fakeFs.js";
@@ -232,13 +233,78 @@ describe("RendererOrchestrator edit API (INV-47, INV-48, spec 5.14.3)", () => {
     expect(t.orchestrator.getBody()).toBe("A\n\nB\n\nC\n");
   });
 
-  it("AT-ORC-09 only the last commit is kept for undo (OS-18)", async () => {
+  it("AT-ORC-09 every unit can be undone in turn, and redone in turn (INV-48, owner ruling D4)", async () => {
     const t = await loaded();
     await t.orchestrator.commitBlock(t.idOf("A"), "A2");
     await t.orchestrator.commitBlock(t.idOf("C"), "C2");
+    expect(t.orchestrator.canRedo()).toBe(false);
     await t.orchestrator.undoLastCommit();
     expect(t.orchestrator.getBody()).toBe("A2\n\nB\n\nC\n");
+    expect(t.orchestrator.canUndo()).toBe(true);
+    expect(t.orchestrator.canRedo()).toBe(true);
+    await t.orchestrator.undoLastCommit();
+    expect(t.orchestrator.getBody()).toBe("A\n\nB\n\nC\n");
     expect(t.orchestrator.canUndo()).toBe(false);
+    await t.orchestrator.undoLastCommit(); // nothing left: no change
+    expect(t.orchestrator.getBody()).toBe("A\n\nB\n\nC\n");
+    await t.orchestrator.redoLastCommit();
+    expect(t.orchestrator.getBody()).toBe("A2\n\nB\n\nC\n");
+    await t.orchestrator.redoLastCommit();
+    expect(t.orchestrator.getBody()).toBe("A2\n\nB\n\nC2\n");
+    expect(t.orchestrator.canRedo()).toBe(false);
+    await t.orchestrator.redoLastCommit(); // nothing left
+    expect(t.orchestrator.getBody()).toBe("A2\n\nB\n\nC2\n");
+    expect(t.orchestrator.canUndo()).toBe(true);
+  });
+
+  it("AT-ORC-09b at most CONFIG.edit.undoMaxSteps units are kept; the oldest goes first", async () => {
+    expect(CONFIG.edit.undoMaxSteps).toBe(30);
+    const t = await loaded("A0\n");
+    const max = CONFIG.edit.undoMaxSteps;
+    for (let i = 1; i <= max + 5; i++) await t.orchestrator.commitBlock(t.orchestrator.getModel().getBlocks()[0].id, `A${i}`);
+    let undone = 0;
+    while (t.orchestrator.canUndo()) {
+      await t.orchestrator.undoLastCommit();
+      undone++;
+    }
+    expect(undone).toBe(max);
+    expect(t.orchestrator.getBody()).toBe("A5\n");
+    let redone = 0;
+    while (t.orchestrator.canRedo()) {
+      await t.orchestrator.redoLastCommit();
+      redone++;
+    }
+    expect(redone).toBe(max);
+    expect(t.orchestrator.getBody()).toBe(`A${max + 5}\n`);
+  });
+
+  it("AT-ORC-09c a new unit after an undo empties the redo record; a full render and a cleared document empty both (D6)", async () => {
+    const t = await loaded();
+    await t.orchestrator.commitBlock(t.idOf("A"), "A2");
+    await t.orchestrator.undoLastCommit();
+    expect(t.orchestrator.canRedo()).toBe(true);
+    await t.orchestrator.commitBlock(t.idOf("B"), "B2");
+    expect(t.orchestrator.canRedo()).toBe(false);
+    await t.orchestrator.undoLastCommit();
+    expect(t.orchestrator.canRedo()).toBe(true);
+    await t.orchestrator.renderAll();
+    expect([t.orchestrator.canUndo(), t.orchestrator.canRedo()]).toEqual([false, false]);
+    await t.orchestrator.commitBlock(t.idOf("C"), "C2");
+    await t.orchestrator.undoLastCommit();
+    t.orchestrator.clearDocument();
+    expect([t.orchestrator.canUndo(), t.orchestrator.canRedo()]).toEqual([false, false]);
+  });
+
+  it("AT-ORC-09d a redone model keeps the id counter: ids given after it are larger than every id before (R4)", async () => {
+    const t = await loaded();
+    const seen = new Set(t.ids());
+    await t.orchestrator.commitBlock(t.idOf("B"), "B2");
+    t.ids().forEach((id) => seen.add(id));
+    await t.orchestrator.undoLastCommit();
+    await t.orchestrator.redoLastCommit();
+    expect(t.orchestrator.getBody()).toBe("A\n\nB2\n\nC\n");
+    await t.orchestrator.commitBlock(t.idOf("C"), "C9");
+    expect(t.idOf("C9")).toBeGreaterThan(Math.max(...seen));
   });
 
   it("AT-ORC-10 ids given after an undo are larger than every id given before", async () => {
@@ -319,7 +385,7 @@ describe("RendererOrchestrator edit API (INV-47, INV-48, spec 5.14.3)", () => {
     await t.orchestrator.undoLastCommit();
     expect(t.orchestrator.getBody()).toBe("A\n\nB\n\nC\n");
     await t.orchestrator.insertAfter(null, "E");
-    expect(t.orchestrator.getBody()).toBe("A\n\nB\n\nC\n\nE");
+    expect(t.orchestrator.getBody()).toBe("A\n\nB\n\nC\n\nE\n"); // the last newline stays (L1)
   });
 
   it("AT-ORC-14 after a new document, pending and running partial renders drop their anchors; one full render runs", async () => {
@@ -620,7 +686,9 @@ describe("RendererOrchestrator.insertBlock (INV-52, request 1)", () => {
     expect(blockId).toBe(inserted.id);
     await t.orchestrator.undoLastCommit();
     expect(t.orchestrator.getBody()).toBe(committed);
-    expect(t.orchestrator.canUndo()).toBe(false);
+    expect(t.orchestrator.canUndo()).toBe(true); // the commit before is its own unit
+    await t.orchestrator.undoLastCommit();
+    expect(t.orchestrator.getBody()).toBe("Line one\nLine two\n\nZ\n");
   });
 
   it("AT-ORC-26 insertBlock with a scroll anchor: the block at anchorOffset keeps its place (INV-46)", async () => {

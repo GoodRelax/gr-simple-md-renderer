@@ -557,12 +557,27 @@ blockquote {
   margin: 12px 0 0;
 }
 
-/* Help: title row with the language switch (HelpLanguageSwitch) */
+/* Help: all its text at 75% of the page's (B6); sizes inside are in em */
+#helpModal .modal-content {
+  font-size: 75%;
+}
+
+#helpModal .close-btn {
+  font-size: 1.75em;
+}
+
+/* Help: title row with the language switch (HelpLanguageSwitch). It stays
+   at the top while the help scrolls (B4): .modal is the scroller. */
 .help-head {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  margin: -8px 0 8px;
+  padding: 8px 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: inherit;
 }
 
 /* on a narrow screen only the title wraps; the switch and the close button stay on its line */
@@ -586,7 +601,7 @@ blockquote {
   border: 1px solid #999;
   border-radius: 6px;
   overflow: hidden;
-  font-size: 13px;
+  font-size: 0.8125em;
 }
 
 .help-lang button {
@@ -632,7 +647,7 @@ blockquote {
 }
 
 .help-version {
-  font-size: 12px;
+  font-size: 0.75em;
   color: #59636e;
   font-family: monospace;
 }
@@ -1151,16 +1166,16 @@ body.dark.edit-mode #preview > .md-block-table > .grsmd-table-tab {
    CONFIG.edit.textColors; the dark theme shows its pair. */
 /* Dark, screen only: print keeps the light colors (spec 5.8.1) */
 @media screen {
-  body.dark #preview span[style*="#B84F00" i] {
-    color: #E0661A !important;
+  body.dark #preview span[style*="#CF222E" i] {
+    color: #F85149 !important;
   }
 
-  body.dark #preview span[style*="#0072B2" i] {
-    color: #56B4E9 !important;
+  body.dark #preview span[style*="#0550AE" i] {
+    color: #58A6FF !important;
   }
 
-  body.dark #preview span[style*="#007A58" i] {
-    color: #009E73 !important;
+  body.dark #preview span[style*="#1A7F37" i] {
+    color: #3FB950 !important;
   }
 }
 
@@ -1216,6 +1231,59 @@ body.dark.edit-mode #preview > .md-block-hidden {
 body.dark.edit-mode #preview > .md-block-hidden.md-block-editing {
   border: none;
   background: none;
+}
+
+/* The line between blocks where a new block goes in (INV-73, owner ruling
+   B1): edit mode only, on the body (position: fixed) over the gap. The
+   dashed line is at --grsmd-gap-line from its top; the "+" sits on it. */
+.grsmd-gap-insert {
+  position: fixed;
+  z-index: 200; /* over the preview; under the toasts, the palette and the modals */
+  box-sizing: border-box;
+  cursor: pointer;
+  --grsmd-gap-line: 50%;
+}
+
+.grsmd-gap-insert[hidden] {
+  display: none;
+}
+
+.grsmd-gap-insert::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--grsmd-gap-line);
+  border-top: 2px dashed #0969da;
+  transform: translateY(-1px);
+}
+
+.grsmd-gap-insert-plus {
+  position: absolute;
+  left: -2px;
+  top: var(--grsmd-gap-line);
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0969da;
+  color: #ffffff;
+  font: bold 14px/18px sans-serif;
+  text-align: center;
+  user-select: none;
+}
+
+body.dark .grsmd-gap-insert::before {
+  border-top-color: #4493f8;
+}
+
+body.dark .grsmd-gap-insert-plus {
+  background: #1f6feb;
+}
+
+/* The editor opened in a gap (INV-73): only the editor shows */
+#preview > .md-block-gap {
+  display: block;
 }
 
 /* The empty first block of an empty document (INV-49): edit mode only */
@@ -1360,15 +1428,15 @@ body.dark.edit-mode #preview > .md-block-empty.md-block-editing {
 
 /* Text color swatches (5.15.2): the light values of CONFIG.edit.textColors */
 .edit-palette-swatch-red:not([aria-disabled="true"]) {
-  color: #B84F00;
+  color: #CF222E;
 }
 
 .edit-palette-swatch-blue:not([aria-disabled="true"]) {
-  color: #0072B2;
+  color: #0550AE;
 }
 
 .edit-palette-swatch-green:not([aria-disabled="true"]) {
-  color: #007A58;
+  color: #1A7F37;
 }
 
 .edit-palette-grip {
@@ -1468,15 +1536,15 @@ body.dark.edit-mode #preview > .md-block-empty.md-block-editing {
 }
 
 .dark .edit-palette-swatch-red:not([aria-disabled="true"]) {
-  color: #E0661A;
+  color: #F85149;
 }
 
 .dark .edit-palette-swatch-blue:not([aria-disabled="true"]) {
-  color: #56B4E9;
+  color: #58A6FF;
 }
 
 .dark .edit-palette-swatch-green:not([aria-disabled="true"]) {
-  color: #009E73;
+  color: #3FB950;
 }
 
 .dark .edit-palette.edit-palette-minimized.edit-palette-unsaved .edit-palette-grip::after {
@@ -1492,6 +1560,7 @@ body.dark.edit-mode #preview > .md-block-empty.md-block-editing {
 @media print {
   .edit-palette,
   .edit-palette-popover,
+  .grsmd-gap-insert,
   #preview > .md-block-hidden,
   #preview > .md-block-empty,
   .md-invisible-overlay,

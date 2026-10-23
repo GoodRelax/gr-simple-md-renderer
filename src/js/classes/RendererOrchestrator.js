@@ -51,7 +51,7 @@ function measureCommit() {
  * model of the Markdown document (spec 5.14.3).
  * Does NOT manipulate DOM classList or UI chrome (delegated to UIController).
  *
- * In-place editing (INV-47): a commit, insert or undo updates the model
+ * In-place editing (INV-47): a commit, insert, undo or redo updates the model
  * synchronously inside the caller's event handler and tells the
  * ModelChangedPort; only the DOM work goes into one serial render queue.
  * Each render goes from the last rendered model to the model current at
@@ -89,7 +89,8 @@ export default class RendererOrchestrator {
     // Block editing state (INV-47, INV-48)
     this._currentModel = null;
     this._renderedModel = null;
-    this._previousModel = null; // undo record (1 entry)
+    this._undoModels = []; // undo record: the models before each unit, oldest first (INV-48)
+    this._redoModels = []; // redo record: the models an undo left, oldest first
     this._renderQueue = Promise.resolve();
     this._generation = 0; // bumped when the document is rebuilt or dropped
     this._pendingAnchor = null; // { scroll, blockId } of the latest request
@@ -139,7 +140,15 @@ export default class RendererOrchestrator {
    * @purity semi-pure-b
    */
   canUndo() {
-    return this._previousModel !== null;
+    return this._undoModels.length > 0;
+  }
+
+  /**
+   * @returns {boolean} true when the last undo can be redone (INV-48)
+   * @purity semi-pure-b
+   */
+  canRedo() {
+    return this._redoModels.length > 0;
   }
 
   // ---- Commands ----
@@ -209,7 +218,7 @@ export default class RendererOrchestrator {
   }
 
   /**
-   * Drop the Markdown document: no model, no undo record, and queued partial
+   * Drop the Markdown document: no model, no undo or redo record, and queued partial
    * renders and anchors are discarded. No full render is queued (INV-47).
    * @purity non-pure
    */
@@ -217,7 +226,7 @@ export default class RendererOrchestrator {
     this._generation++;
     this._currentModel = null;
     this._renderedModel = null;
-    this._previousModel = null;
+    this._forgetHistory();
     this._pendingAnchor = null;
     this.state.setMarkdownText("");
   }
@@ -260,7 +269,7 @@ export default class RendererOrchestrator {
 
   /**
    * Full render of state.markdownText (spec 5.14.4). The model is rebuilt
-   * synchronously (new generation, empty undo record); the drawing by block
+   * synchronously (new generation, empty undo and redo records); the drawing by block
    * (PlantUML with its consent dialog) runs in the render queue.
    * @returns {Promise<void>} settles when the render is done
    * @purity non-pure
@@ -268,7 +277,7 @@ export default class RendererOrchestrator {
   renderAll() {
     this._generation++;
     this._pendingAnchor = null;
-    this._previousModel = null;
+    this._forgetHistory();
     const previous = this._currentModel;
     this._currentModel = this._newModel(this.state.markdownText);
     this._noticeWholeDocument(previous, this._currentModel);
@@ -296,7 +305,7 @@ export default class RendererOrchestrator {
       clearCommitMark();
       return Promise.resolve();
     }
-    this._previousModel = model;
+    this._recordUnit(model);
     return this._applyChange(change, scroll, change.anchorBlockId);
   }
 
@@ -336,7 +345,7 @@ export default class RendererOrchestrator {
     void blockId; // the table: its id is in the plan (anchorBlockId)
     markCommitStart();
     const pending = this._pendingAnchor;
-    this._previousModel = change.base;
+    this._recordUnit(change.base);
     const rendered = this._applyChange(change, null, change.anchorBlockId);
     this._pendingAnchor = pending;
     return rendered;
@@ -433,41 +442,37 @@ export default class RendererOrchestrator {
       change = model.insertAt(at.offset, raw, this._lexer, maxCells, { anchorOffset: at.anchorOffset, removeBefore: at.removeBefore ?? 0 });
       anchorBlockId = change.anchorBlockId;
     }
-    this._previousModel = model;
+    this._recordUnit(model);
     return { rendering: this._applyChange(change, scroll, anchorBlockId), blockId: change.insertedBlockId };
   }
 
   /**
-   * Undo the last change (INV-48, spec 5.14.9). New ids keep growing.
+   * Undo the last change (INV-48, spec 5.14.9): the model before it comes
+   * back, and the current one goes on the redo record. New ids keep growing.
    * @returns {Promise<void>}
    * @purity non-pure
    */
   undoLastCommit() {
     const current = this._currentModel;
-    const previous = this._previousModel;
-    if (!current || !previous) return Promise.resolve();
-    const restored = previous.withNextBlockId(this._nextBlockId);
-    const restoredBlocks = restored.getBlocks();
-    // The first restored block; when the undo only removes blocks, the block
-    // that now takes the place of the first removed one.
-    let index = restoredBlocks.findIndex((b) => current.findIndexById(b.id) < 0);
-    if (index < 0) {
-      const removed = current.getBlocks().findIndex((b) => restored.findIndexById(b.id) < 0);
-      index = Math.min(Math.max(removed, 0), restoredBlocks.length - 1);
-    }
-    const anchorBlockId = restoredBlocks.length === 0 ? null : restoredBlocks[index].id;
-    let element = null;
-    if (anchorBlockId !== null) {
-      element = this.markdownRenderer.getBlockElement(anchorBlockId);
-      if (!element) {
-        const same = current.getBlocks()[index];
-        element = same ? this.markdownRenderer.getBlockElement(same.id) : null;
-      }
-    }
-    const scroll = this._capture(element);
-    this._previousModel = null;
-    const change = { model: restored, isChanged: true, anchorBlockId };
-    return this._applyChange(change, scroll, anchorBlockId);
+    if (!current || this._undoModels.length === 0) return Promise.resolve();
+    const previous = this._undoModels.pop();
+    this._redoModels.push(current.withoutJoinedBody());
+    return this._restoreModel(previous);
+  }
+
+  /**
+   * Redo the last undone change (INV-48): the model the last undo left comes
+   * back, and the current one goes on the undo record. New ids keep growing
+   * (R4).
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  redoLastCommit() {
+    const current = this._currentModel;
+    if (!current || this._redoModels.length === 0) return Promise.resolve();
+    const next = this._redoModels.pop();
+    this._undoModels.push(current.withoutJoinedBody());
+    return this._restoreModel(next);
   }
 
   /**
@@ -541,6 +546,61 @@ export default class RendererOrchestrator {
   // ---- internals ----
 
   /**
+   * A new change of the model (INV-48): the model before it goes on the undo
+   * record (the oldest beyond CONFIG.edit.undoMaxSteps goes), and the redo
+   * record is emptied. A record keeps no joined body text (1 MB each for a
+   * 1 MB document); it shares the blocks with the models around it.
+   * @purity non-pure
+   * @param {MarkdownBlockModel} before
+   */
+  _recordUnit(before) {
+    this._undoModels.push(before.withoutJoinedBody());
+    const extra = this._undoModels.length - CONFIG.edit.undoMaxSteps;
+    if (extra > 0) this._undoModels.splice(0, extra);
+    this._redoModels = [];
+  }
+
+  /**
+   * @purity non-pure
+   */
+  _forgetHistory() {
+    this._undoModels = [];
+    this._redoModels = [];
+  }
+
+  /**
+   * Make a recorded model current again (Undo or Redo), numbered from the
+   * current counter so no id comes back (INV-48), with the partial render of
+   * INV-42. The anchor is the first block that comes back; when only blocks
+   * go, the block that now takes the place of the first one gone (INV-46).
+   * @purity non-pure
+   * @param {MarkdownBlockModel} recorded
+   * @returns {Promise<void>}
+   */
+  _restoreModel(recorded) {
+    const current = this._currentModel;
+    const restored = recorded.withNextBlockId(this._nextBlockId);
+    const restoredBlocks = restored.getBlocks();
+    let index = restoredBlocks.findIndex((b) => current.findIndexById(b.id) < 0);
+    if (index < 0) {
+      const removed = current.getBlocks().findIndex((b) => restored.findIndexById(b.id) < 0);
+      index = Math.min(Math.max(removed, 0), restoredBlocks.length - 1);
+    }
+    const anchorBlockId = restoredBlocks.length === 0 ? null : restoredBlocks[index].id;
+    let element = null;
+    if (anchorBlockId !== null) {
+      element = this.markdownRenderer.getBlockElement(anchorBlockId);
+      if (!element) {
+        const same = current.getBlocks()[index];
+        element = same ? this.markdownRenderer.getBlockElement(same.id) : null;
+      }
+    }
+    const scroll = this._capture(element);
+    const change = { model: restored, isChanged: true, anchorBlockId };
+    return this._applyChange(change, scroll, anchorBlockId, true);
+  }
+
+  /**
    * A new model numbered from the app-wide counter, which then moves on.
    * @purity non-pure
    */
@@ -559,9 +619,12 @@ export default class RendererOrchestrator {
 
   /**
    * Make the change current (synchronously), notify, and queue a partial render.
+   * force: render even when the model is the one last rendered (an undo
+   * right after a cell commit brings back that very model, while the cell
+   * was written in place, INV-47).
    * @purity non-pure
    */
-  _applyChange(change, scroll, anchorBlockId) {
+  _applyChange(change, scroll, anchorBlockId, force = false) {
     const previous = this._currentModel;
     this._currentModel = change.model;
     this._nextBlockId = Math.max(this._nextBlockId, change.model.getNextBlockId());
@@ -570,7 +633,7 @@ export default class RendererOrchestrator {
     if (this._modelChangedListener) this._modelChangedListener.onModelChanged(change);
     this._noticeWholeDocument(previous, change.model);
     const generation = this._generation;
-    return this._enqueue(() => this._renderPartial(generation));
+    return this._enqueue(() => this._renderPartial(generation, force));
   }
 
   /**

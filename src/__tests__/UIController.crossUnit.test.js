@@ -149,13 +149,13 @@ describe("AT-UI-51 K-1 an open popover stays open while the cell moves or the ta
 describe("AT-UI-52 K-2 a held Esc acts once (owner ruling Q-a, INV-14, 5.11)", () => {
   const repeatEsc = (el) => keydown(el, "Escape", { repeat: true });
 
-  it("in a cell: the first Esc cancels the cell, the repeats do not hide the palette", async () => {
+  it("in a cell: the first Esc applies the cell (D1), the repeats do not hide the palette", async () => {
     await withDocument();
     tap(cellEl(1, 0));
     const cell = typeInCell("changed");
     keydown(cell, "Escape");
     expect(app.ui.blockEdit.isEditingCell()).toBe(false);
-    expect(tableRaw()).not.toContain("changed");
+    expect(tableRaw()).toContain("changed");
     repeatEsc(document.activeElement ?? document.body);
     repeatEsc(document.body);
     expect(app.ui.palette.isShown()).toBe(true);
@@ -204,7 +204,7 @@ describe("AT-UI-52 K-2 a held Esc acts once (owner ruling Q-a, INV-14, 5.11)", (
 });
 
 describe("AT-UI-53 T-3 (1) Ctrl+B in a WYSIWYG cell, then Ctrl+Z (INV-48, INV-59 (c))", () => {
-  it("Ctrl+Z right after Ctrl+B takes the cell's change back and keeps the record (INV-48 (1))", async () => {
+  it("Ctrl+Z right after Ctrl+B applies the cell's change and undoes it; Redo brings it back (INV-48 (1), D3)", async () => {
     await withDocument();
     tap(cellEl(1, 0));
     selectCellText();
@@ -214,8 +214,12 @@ describe("AT-UI-53 T-3 (1) Ctrl+B in a WYSIWYG cell, then Ctrl+Z (INV-48, INV-59
     ctrl(openCellEl(), "z");
     expect(app.ui.blockEdit.isEditingCell()).toBe(false);
     expect(tableRaw()).not.toContain("**");
+    await settle();
     expect(cellEl(1, 0).querySelector("strong")).toBe(null);
     expect(app.orchestrator.canUndo()).toBe(false);
+    expect(app.orchestrator.canRedo()).toBe(true);
+    ctrl(document.body, "y");
+    expect(tableRaw()).toContain("**x**");
   });
 
   it("Ctrl+B, Tab, Ctrl+Z: the unit Undo goes back to the table before the format", async () => {
@@ -238,7 +242,7 @@ describe("AT-UI-54 T-3 (2) Esc with a popover open while a cell is open (INV-53,
     ["Format", "paletteFormat", "paletteFormatMenu"],
     ["Align column", "paletteTableOptions", "paletteTableMenu"],
   ]) {
-    it(`${name}: the first Esc closes the popover only, the second takes the cell back; the palette stays`, async () => {
+    it(`${name}: the first Esc closes the popover only, the second applies the cell; the palette stays`, async () => {
       await withDocument();
       tap(cellEl(1, 0));
       typeInCell("changed");
@@ -252,7 +256,7 @@ describe("AT-UI-54 T-3 (2) Esc with a popover open while a cell is open (INV-53,
       expect(openCellEl().textContent).toBe("changed");
       keydown(openCellEl(), "Escape");
       expect(app.ui.blockEdit.isEditingCell()).toBe(false);
-      expect(tableRaw()).not.toContain("changed");
+      expect(tableRaw()).toContain("changed"); // applied (D1)
       expect(app.ui.palette.isShown()).toBe(true);
     });
   }
@@ -295,9 +299,11 @@ describe("AT-UI-56 T-3 (4) a cell open while the palette is minimized (INV-68)",
       selectCellText();
       ctrl(openCellEl(), "b");
       expect(openCellEl().querySelector("strong")?.textContent).toBe("y");
-      ctrl(openCellEl(), "z"); // the cell's change
-      expect(cellEl(1, 1).querySelector("strong")).toBe(null);
-      ctrl(document.body, "z"); // the unit: the Tab's commit
+      ctrl(openCellEl(), "z"); // the cell's change: applied, then undone
+      expect(app.ui.blockEdit.isEditingCell()).toBe(false);
+      expect(tableRaw()).not.toContain("**y**");
+      expect(tableRaw()).toContain("x1");
+      ctrl(document.body, "z"); // the unit before: the Tab's commit
       expect(tableRaw()).not.toContain("x1");
       expect(root.classList.contains("edit-palette-unsaved")).toBe(false);
       expect(app.ui.palette.isMinimized()).toBe(true);

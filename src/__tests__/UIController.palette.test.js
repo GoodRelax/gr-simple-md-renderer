@@ -219,7 +219,7 @@ describe("palette wiring of unit A (5.15.5, INV-68)", () => {
     for (const id of ["paletteRowDelete", "paletteColumnDelete", "paletteTableOptions"]) expect(off(btn(id)), id).toBe(true);
   });
 
-  it("Esc with the Format popover open closes only the popover; the next Esc cancels the editor (INV-53, PRT-V12)", async () => {
+  it("Esc with the Format popover open closes only the popover; the next Esc applies and closes the editor (INV-53, PRT-V12, D9)", async () => {
     await withDocument();
     const ta = open(isPara("Hello"));
     ta.value = "Changed.";
@@ -235,11 +235,11 @@ describe("palette wiring of unit A (5.15.5, INV-68)", () => {
     expect(app.ui.palette.isShown()).toBe(true);
     keydown(ta, "Escape");
     expect(app.blockEditor()).toBeNull();
-    expect(app.orchestrator.getBody()).toBe(DOC);
+    expect(app.orchestrator.getBody()).toBe(DOC.replace("Hello word here.", "Changed."));
     expect(app.ui.palette.isShown()).toBe(true);
   });
 
-  it("INV-68: minimizing keeps the open editor, its text and edit mode; the dot follows unsaved (cancel, commit, Undo)", async () => {
+  it("INV-68: minimizing keeps the open editor, its text and edit mode; the dot follows unsaved (Esc, Undo, commit, Undo)", async () => {
     await withDocument();
     const root = app.paletteRoot();
     const grip = root.querySelector(".edit-palette-grip");
@@ -261,9 +261,12 @@ describe("palette wiring of unit A (5.15.5, INV-68)", () => {
       expect(app.ui.palette.isShown()).toBe(true);
       expect(root.classList.contains("edit-palette-unsaved")).toBe(true);
 
-      keydown(ta, "Escape"); // cancel: nothing unsaved any more
+      keydown(ta, "Escape"); // applied (D1): still unsaved
       expect(app.blockEditor()).toBeNull();
       expect(app.ui.palette.isMinimized()).toBe(true);
+      expect(root.classList.contains("edit-palette-unsaved")).toBe(true);
+      keydown(document.body, "z", { ctrlKey: true, code: "KeyZ" }); // taken back: nothing unsaved any more
+      expect(app.orchestrator.getBody()).toBe(DOC);
       expect(root.classList.contains("edit-palette-unsaved")).toBe(false);
 
       ta = open(isPara("Hello"));
@@ -381,11 +384,14 @@ describe("AT-UI-36 / 37 Insert table and Mermaid samples", () => {
     await selectInEditor(ta, 4, 4);
     press(btn("paletteTable"));
     await settle();
-    keydown(openCellEl(), "Escape");
+    keydown(openCellEl(), "Escape"); // the cell is unchanged: nothing more
     press(btn("paletteUndo"));
     await settle();
     expect(app.orchestrator.getBody()).toBe(DOC.replace("Second para.", "Line one\nLine two"));
-    expect(app.orchestrator.canUndo()).toBe(false);
+    expect(app.orchestrator.canUndo()).toBe(true); // the commit before is a unit of its own
+    press(btn("paletteUndo"));
+    await settle();
+    expect(app.orchestrator.getBody()).toBe(DOC);
   });
 
   it.each([

@@ -119,15 +119,19 @@ test.describe("while editing a block: cut at a line boundary", () => {
     await expect(page.locator("#paletteSave")).toBeVisible();
   });
 
-  test("Undo once: only the table goes; the edit made before it stays", async ({ page }) => {
+  test("Undo once: only the table goes; the edit made before it stays (a unit of its own: the next Undo)", async ({ page }) => {
     await openEditMode(page, DOC);
     await editBlock(page, "Para one.", "Line one\nLine two", 4);
     await page.locator("#paletteTable").click();
     await expect(editingCell(page)).toHaveText("Col1");
-    await page.keyboard.press("Escape");
+    await page.keyboard.press("Escape"); // the cell is unchanged: nothing more
     await page.locator("#paletteUndo").click();
     await settled(page);
     expect(await body(page)).toBe("# Doc\n\nLine one\nLine two\n\nEnd.\n");
+    await expect(page.locator("#paletteUndo")).not.toHaveAttribute("aria-disabled", "true");
+    await page.locator("#paletteUndo").click();
+    await settled(page);
+    expect(await body(page)).toBe(DOC);
     await expect(page.locator("#paletteUndo")).toHaveAttribute("aria-disabled", "true");
   });
 

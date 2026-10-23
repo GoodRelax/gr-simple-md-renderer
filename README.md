@@ -70,10 +70,14 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document is shown |
-   | | `Ctrl+Z` | Undo while the edit palette is shown (in a block you have changed, the browser undoes your typing) |
+   | | `Esc` | Apply the open block or cell and close it; with nothing open, hide the edit palette |
+   | | `Ctrl+Z` | Undo while the edit palette is shown, up to 30 changes (in a block you have changed, the browser undoes your typing) |
+   | | `Ctrl+Y` / `Ctrl+Shift+Z` | Redo while the edit palette is shown, up to 30 changes (in an open block, the browser redoes your typing) |
    | | `Ctrl+B` / `Ctrl+I` | Bold / Italic while editing |
 
-   On a Mac, use `Cmd` instead of `Ctrl`.
+   On a Mac, use `Cmd` instead of `Ctrl` (Redo is `Cmd+Shift+Z`).
+
+   In edit mode, a dashed line with `+` shows between two blocks, above the first one and below the last one; click it (on a phone, tap the gap, then the line) to add a new block there.
 
 4. If your Markdown contains PlantUML blocks or external images, you will be asked for permission before anything is sent to an external server
 
@@ -215,10 +219,14 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書を表示している間、保存 / 名前を付けて保存 |
-   | | `Ctrl+Z` | 編集パレットを表示している間、元に戻す（変更したブロックの中では、ブラウザが入力を元に戻す） |
+   | | `Esc` | 開いているブロックやセルを反映して閉じる。何も開いていなければ編集パレットを隠す |
+   | | `Ctrl+Z` | 編集パレットを表示している間、元に戻す（30 回まで。変更したブロックの中では、ブラウザが入力を元に戻す） |
+   | | `Ctrl+Y` / `Ctrl+Shift+Z` | 編集パレットを表示している間、やり直す（30 回まで。開いているブロックの中では、ブラウザが入力をやり直す） |
    | | `Ctrl+B` / `Ctrl+I` | 編集中に太字 / 斜体 |
 
-   Mac では `Ctrl` の代わりに `Cmd` を使います。
+   Mac では `Ctrl` の代わりに `Cmd` を使います（やり直しは `Cmd+Shift+Z`）。
+
+   編集モードでは、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下に、点線と `+` が出ます。押すと（スマートフォンでは、すき間をタップしてから点線をタップ）、そこに新しいブロックを入れます。
 
 4. Markdown に PlantUML ブロックや外部画像が含まれる場合、外部サーバーへ送信する前に許可確認が表示されます
 

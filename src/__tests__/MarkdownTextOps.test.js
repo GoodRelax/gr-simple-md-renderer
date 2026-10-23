@@ -151,7 +151,7 @@ describe("MarkdownTextOps (pure; marked is the reference for tables)", () => {
   it.each([
     ["start", "Para", 0, "B\n\nPara"],
     ["end", "Para", 4, "Para\n\nB"],
-    ["end after a newline", "Para\n", 5, "Para\n\nB"],
+    ["end after a newline: the last newline stays (L1)", "Para\n", 5, "Para\n\nB\n"],
     ["blank line already before", "A\n\nC", 3, "A\n\nB\n\nC"],
     ["blank line already after", "A\n\nC", 1, "A\n\nB\n\nC"],
     ["empty text", "", 0, "B"],

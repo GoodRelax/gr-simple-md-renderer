@@ -11,9 +11,9 @@ import { setupEdit, flush } from "./helpers/editStack.js";
 import { diagramTransitions, tableTransitions } from "./helpers/specDiagram.js";
 import { pointer, tap, keydown } from "./helpers/editDom.js";
 
-// Spec 11-c: every cell of the 27 x 4 table (AT-BSM-01..18, AT-BSM-19..25
-// for the table cells, AT-BSM-26..27 for the inserts; 15 is the definition
-// check). The state is judged
+// Spec 11-c: every cell of the 29 x 4 table (AT-BSM-01..18, AT-BSM-19..25
+// for the table cells, AT-BSM-26..27 for the inserts, AT-BSM-28 Redo,
+// AT-BSM-29 the gap insert; 15 is the definition check). The state is judged
 // from outside only:
 //   browsingPreview = a tap on a block opens nothing
 //   editModeIdle    = not editing, and a tap on a block opens it
@@ -76,6 +76,7 @@ function spyAll() {
     startEmptyDocument: vi.spyOn(s.orchestrator, "startEmptyDocument"),
     replaceBlocks: vi.spyOn(s.markdownRenderer, "replaceBlocks"),
     undoLastCommit: vi.spyOn(s.orchestrator, "undoLastCommit"),
+    redoLastCommit: vi.spyOn(s.orchestrator, "redoLastCommit"),
   };
   for (const name of ["showPalette", "hidePalette", "renderFromEditor", "onEditorInput", "showToast"]) {
     s.host[name].mockClear();
@@ -141,6 +142,12 @@ const TARGETS = {
   tableOperationRequested: () => ({ op: { kind: "insertRow" } }),
   blockInsertRequested: () => ({ kind: "insert", raw: CONFIG.edit.tableTemplate, opens: "cell" }),
   insertedBlockRendered: () => ({ ...cellTarget(0, 0), selectAll: true }),
+  // the gap between Hello and Second (in editingBlock, Hello's commit gives it a new id)
+  gapInsertRequested: () => ({
+    kind: "gap",
+    afterBlockId: s.block((b) => b.raw.startsWith("Hello")).block.id,
+    beforeBlockId: s.block((b) => b.raw.startsWith("Second")).block.id,
+  }),
 };
 
 // Expected cells: [next state or null for "-", side effects (sorted)].
@@ -168,7 +175,8 @@ const TABLE = {
   cellBelowRequested: { [B]: null, [I]: null, [E]: null, [C]: [I, ["replaceTableBlock"]] },
   tableOperationRequested: { [B]: null, [I]: null, [E]: null, [C]: [C, ["replaceTableBlock"]] },
   pointerPressedOutside: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
-  escapePressed: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [I, []], [C]: [I, []] },
+  // Esc applies and closes (owner ruling D1)
+  escapePressed: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
   saveRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
   saveAsRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
   documentReplaced: { [B]: null, [I]: null, [E]: [I, []], [C]: [I, []] },
@@ -176,14 +184,19 @@ const TABLE = {
   viewSwitchedToCode: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [B, ["hidePalette"]], [C]: [B, ["hidePalette"]] },
   fullRenderRequested: { [B]: [B, []], [I]: [I, []], [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
   editorFocused: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
-  // E and C have a change: [hasUncommittedChange] restores (the else cells are in the details)
-  undoRequested: { [B]: null, [I]: [I, ["undoLastCommit"]], [E]: [I, []], [C]: [I, []] },
+  // E and C have a change: [hasUncommittedChange] applies it and undoes that
+  // unit (D3; the else cells are in the details)
+  undoRequested: { [B]: null, [I]: [I, ["undoLastCommit"]], [E]: [I, ["commitBlock", "undoLastCommit"]], [C]: [I, ["replaceTableBlock", "undoLastCommit"]] },
+  // E and C have a change: nothing to redo, they stay open (R2)
+  redoRequested: { [B]: null, [I]: [I, ["redoLastCommit"]], [E]: [E, []], [C]: [C, []] },
   // no target: [else] -> editModeIdle / clearSelection, showPalette
   previewDoubleClicked: { [B]: [I, ["showPalette"]], [I]: null, [E]: null, [C]: null },
   // judged before the render: the insertedBlockRendered after it is AT-BSM-27
   blockInsertRequested: { [B]: null, [I]: [I, ["insertBlock"]], [E]: [I, ["commitBlock", "insertBlock"]], [C]: null },
   // [isCellEditableTable]
   insertedBlockRendered: { [B]: null, [I]: [C, []], [E]: null, [C]: null },
+  // [else]: an empty editor opens in the gap (INV-73)
+  gapInsertRequested: { [B]: null, [I]: [E, []], [E]: [E, ["commitBlock"]], [C]: [E, ["replaceTableBlock"]] },
 };
 
 const IDS = {
@@ -214,15 +227,17 @@ const IDS = {
   tableOperationRequested: "AT-BSM-25",
   blockInsertRequested: "AT-BSM-26",
   insertedBlockRendered: "AT-BSM-27",
+  redoRequested: "AT-BSM-28",
+  gapInsertRequested: "AT-BSM-29",
 };
 
 const CELLS = Object.entries(TABLE).flatMap(([event, row]) =>
   STATES.map((state) => [IDS[event], event, state, row[state]]),
 );
 
-describe("AT-BSM 11-c block edit state machine: all 108 cells", () => {
-  it("covers 27 events x 4 states", () => {
-    expect(CELLS).toHaveLength(108);
+describe("AT-BSM 11-c block edit state machine: all 116 cells", () => {
+  it("covers 29 events x 4 states", () => {
+    expect(CELLS).toHaveLength(116);
   });
 
   it.each(CELLS)("%s %s in %s", async (_id, event, state, cell) => {
@@ -256,9 +271,36 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the spec", () =
   it("guards are evaluated in the order of the spec", () => {
     const u = blockEditStateMachine.undoRequested[E];
     expect(u.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
-      [I, "hasUncommittedChange", ["restoreOriginalRaw"]],
+      [I, "hasUncommittedChange", ["commitBlock", "undoJustCommitted"]],
       [I, "else", ["commitBlock", "undoLastUnit"]],
     ]);
+    const uc = blockEditStateMachine.undoRequested[C];
+    expect(uc.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+      [I, "hasUncommittedChange", ["commitCell", "endTableSession", "undoJustCommitted"]],
+      [I, "else", ["commitCell", "endTableSession", "undoLastUnit"]],
+    ]);
+    const r = blockEditStateMachine.redoRequested[E];
+    expect(r.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+      [E, "hasUncommittedChange", []],
+      [I, "else", ["commitBlock", "redoLastUnit"]],
+    ]);
+    const rc = blockEditStateMachine.redoRequested[C];
+    expect(rc.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+      [C, "hasUncommittedChange", []],
+      [I, "else", ["commitCell", "endTableSession", "redoLastUnit"]],
+    ]);
+    expect(blockEditStateMachine.redoRequested[I]).toMatchObject({ to: I, actions: ["redoLastUnit"] });
+    expect(blockEditStateMachine.redoRequested[B]).toBeNull();
+    const g = blockEditStateMachine.gapInsertRequested[I];
+    expect(g.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+      [I, "hasUnrenderedEditor", ["renderFromEditor", "showToast"]],
+      [E, "else", ["resolveBlockById", "openBlockEditor"]],
+    ]);
+    expect(blockEditStateMachine.gapInsertRequested[E]).toMatchObject({ to: E, actions: ["commitBlock", "resolveBlockById", "openBlockEditor"] });
+    expect(blockEditStateMachine.gapInsertRequested[C]).toMatchObject({
+      to: E,
+      actions: ["commitCell", "endTableSession", "resolveBlockById", "openBlockEditor"],
+    });
     const d = blockEditStateMachine.previewDoubleClicked[B];
     expect(d.map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
       [I, "hasUnrenderedEditor", ["clearSelection", "showPalette", "renderFromEditor", "showToast"]],
@@ -352,7 +394,7 @@ describe("AT-BSM cell details", () => {
     expect(s.bec.isEditing()).toBe(false);
   });
 
-  it("AT-BSM-08 Esc while editing restores the original raw; during IME it does nothing (guard isImeIdle)", async () => {
+  it("AT-BSM-08 Esc while editing applies and closes; during IME it does nothing (guard isImeIdle); Undo then takes it back", async () => {
     await inState(E);
     const ta = s.editor();
     ta.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
@@ -361,7 +403,28 @@ describe("AT-BSM cell details", () => {
     ta.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
     s.bec.dispatch("escapePressed");
     expect(s.bec.isEditing()).toBe(false);
-    expect(helloEl().firstElementChild.textContent).toBe("Hello world.");
+    expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
+    await flush();
+    expect(helloEl().firstElementChild.textContent).toBe("Hello changed.");
+    s.bec.dispatch("undoRequested");
+    expect(s.orchestrator.getBody()).toBe(DOC);
+  });
+
+  it("AT-BSM-08 Esc in a changed cell applies it and ends the table session (owner ruling D1)", async () => {
+    await inState(C);
+    keydown(cellEl(1, 0), "Escape");
+    expect(s.bec.isEditing()).toBe(false);
+    expect(s.orchestrator.getBody()).toContain("| x changed |");
+    s.bec.dispatch("undoRequested");
+    expect(s.orchestrator.getBody()).toBe(DOC);
+  });
+
+  it("AT-BSM-08 Esc with everything deleted removes the block, as a press outside; Ctrl+Z brings it back (D9)", async () => {
+    await inState(E);
+    s.editor().value = "";
+    s.bec.dispatch("escapePressed");
+    expect(s.orchestrator.getBody()).not.toContain("Hello");
+    s.bec.dispatch("undoRequested");
     expect(s.orchestrator.getBody()).toBe(DOC);
   });
 
@@ -398,7 +461,7 @@ describe("AT-BSM cell details", () => {
     expect(observedState()).toBe(I);
   });
 
-  it("AT-BSM-17 undoRequested in editingBlock with a change restores the raw and keeps the record (INV-48 (1))", async () => {
+  it("AT-BSM-17 undoRequested in editingBlock with a change applies it and undoes that unit only; Redo brings it back (INV-48 (1), D3)", async () => {
     s = await setupEdit(DOC);
     tap(helloEl().firstElementChild);
     s.editor().value = "Hello changed.";
@@ -409,6 +472,89 @@ describe("AT-BSM cell details", () => {
     expect(s.editor()).toBeNull();
     expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
     expect(s.orchestrator.canUndo()).toBe(true);
+    expect(s.orchestrator.canRedo()).toBe(true);
+    s.bec.dispatch("redoRequested");
+    expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed.").replace("Second para.", "Second changed."));
+  });
+
+  it("AT-BSM-17 R1: a change the commit drops (only line end spaces) closes the editor and undoes nothing before it", async () => {
+    s = await setupEdit(DOC);
+    tap(helloEl().firstElementChild);
+    s.editor().value = "Hello changed.";
+    pointer(document.body, "pointerdown"); // a unit
+    tap(secondEl().firstElementChild);
+    s.editor().value = "Second para.   "; // INV-71 (6): no line break, the commit keeps the raw
+    expect(s.bec.hasUncommittedChange()).toBe(true);
+    const undo = vi.spyOn(s.orchestrator, "undoLastCommit");
+    s.bec.dispatch("undoRequested");
+    expect(s.editor()).toBeNull();
+    expect(undo).not.toHaveBeenCalled();
+    expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
+  });
+
+  it("AT-BSM-17 R1 in a cell: a changed cell whose commit makes no unit closes and undoes nothing before it", async () => {
+    s = await setupEdit(DOC);
+    tap(helloEl().firstElementChild);
+    s.editor().value = "Hello changed.";
+    pointer(document.body, "pointerdown"); // a unit
+    tap(cellEl(1, 0));
+    typeInCell(cellEl(1, 0), "x changed");
+    expect(s.bec.hasUncommittedChange()).toBe(true);
+    // the cell commit makes no unit (the model stays as it is)
+    vi.spyOn(s.orchestrator, "replaceTableBlock").mockReturnValue(Promise.resolve());
+    const undo = vi.spyOn(s.orchestrator, "undoLastCommit");
+    s.bec.dispatch("undoRequested");
+    expect(s.bec.isEditing()).toBe(false);
+    expect(undo).not.toHaveBeenCalled();
+    expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
+  });
+
+  it("AT-BSM-28 redoRequested: unchanged editor or cell closes first; a changed one stays and keeps the redo record (R2); #editor changes render instead (R3)", async () => {
+    s = await setupEdit(DOC);
+    tap(helloEl().firstElementChild);
+    s.editor().value = "Hello changed.";
+    pointer(document.body, "pointerdown");
+    s.bec.dispatch("undoRequested");
+    expect(s.orchestrator.canRedo()).toBe(true);
+    // a changed editor: nothing
+    tap(secondEl().firstElementChild);
+    s.editor().value = "Second changed.";
+    s.bec.dispatch("redoRequested");
+    expect(s.editor()).not.toBeNull();
+    expect(s.orchestrator.canRedo()).toBe(true);
+    // unchanged again: it closes, then the redo
+    s.editor().value = "Second para.";
+    s.bec.dispatch("redoRequested");
+    expect(s.editor()).toBeNull();
+    expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
+    expect(s.orchestrator.canRedo()).toBe(false);
+    // a cell without a change: the session ends, then the redo (nothing left here)
+    s.bec.dispatch("undoRequested");
+    tap(cellEl(1, 0));
+    expect(s.bec.isEditingCell()).toBe(true);
+    s.bec.dispatch("redoRequested");
+    expect(s.bec.isEditing()).toBe(false);
+    expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
+    // R3
+    s.bec.dispatch("undoRequested");
+    const redo = vi.spyOn(s.orchestrator, "redoLastCommit");
+    s.host.editorChanged = true;
+    s.bec.dispatch("redoRequested");
+    expect(s.host.renderFromEditor).toHaveBeenCalled();
+    expect(redo).not.toHaveBeenCalled();
+  });
+
+  it("AT-BSM-28 a new unit after an undo empties the redo record", async () => {
+    s = await setupEdit(DOC);
+    tap(helloEl().firstElementChild);
+    s.editor().value = "Hello changed.";
+    pointer(document.body, "pointerdown");
+    s.bec.dispatch("undoRequested");
+    expect(s.orchestrator.canRedo()).toBe(true);
+    tap(secondEl().firstElementChild);
+    s.editor().value = "Second changed.";
+    s.bec.dispatch("escapePressed");
+    expect(s.orchestrator.canRedo()).toBe(false);
   });
 
   it("AT-BSM-17 undoLastUnit with unrendered #editor changes renders from #editor instead (INV-45)", async () => {
@@ -466,8 +612,8 @@ describe("AT-BSM cell details", () => {
 });
 
 describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () => {
-  it("has the same 27 events, and the same next state in all 108 cells (the first alternative of a choice)", () => {
-    expect(Object.keys(TABLE)).toHaveLength(27);
+  it("has the same 29 events, and the same next state in all 116 cells (the first alternative of a choice)", () => {
+    expect(Object.keys(TABLE)).toHaveLength(29);
     expect(Object.keys(blockEditStateMachine).sort()).toEqual(Object.keys(TABLE).sort());
     for (const [event, row] of Object.entries(TABLE)) {
       for (const state of STATES) {
@@ -478,7 +624,7 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () 
           // the cell the TABLE above expects: the else of a double click without
           // a target, the [else] of Enter on the last row, else the first one
           let expected = cells[0];
-          if (event === "previewDoubleClicked" || event === "cellBelowRequested") expected = cells[cells.length - 1];
+          if (event === "previewDoubleClicked" || event === "cellBelowRequested" || event === "gapInsertRequested") expected = cells[cells.length - 1];
           if (event === "cellTapped" && state !== C) expected = cells[0];
           expect(expected.to, `${event} x ${state}`).toBe(row[state][0]);
         }
@@ -495,8 +641,10 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () 
     expect(act("blockTappedWithUnrenderedEditor", I)).toEqual(["renderFromEditor", "showToast"]);
     expect(act("otherBlockTapped", E)).toEqual(["commitBlock", "resolveBlockById", "openBlockEditor"]);
     expect(act("escapePressed", I)).toEqual(["hidePalette"]);
-    expect(act("escapePressed", E)).toEqual(["restoreOriginalRaw"]);
+    expect(act("escapePressed", E)).toEqual(["commitBlock"]);
     expect(blockEditStateMachine.escapePressed[E].guard).toBe("isImeIdle");
+    expect(act("escapePressed", C)).toEqual(["commitCell", "endTableSession"]);
+    expect(blockEditStateMachine.escapePressed[C].guard).toBe("isImeIdle");
     expect(act("documentReplaced", E)).toEqual(["discardBlockEditor"]);
     expect(act("documentCleared", E)).toEqual(["discardBlockEditor", "hidePalette"]);
     expect(act("viewSwitchedToCode", E)).toEqual(["discardBlockEditor", "hidePalette"]);

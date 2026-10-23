@@ -353,3 +353,52 @@ describe.runIf(PERF)("AT-PERF-02..07, 09 and 10 timing (GRSMD_PERF=1 only)", () 
     s.teardown();
   }, PERF_TIMEOUT_MS);
 });
+
+describe.runIf(PERF)("AT-PERF-11 the undo record on 1 MB (INV-48, GRSMD_PERF=1 only)", () => {
+  // The heap the records keep after 30 commits, as RendererOrchestrator
+  // records them (withoutJoinedBody). A record must not keep a whole body:
+  // not through a block's raw, the leading blank lines or a link's text.
+  const RECORD_BUDGET_MIB = 4;
+  const MEMORY_TIMEOUT_MS = 120000;
+  const variants = () => {
+    const doc = makeOneMegabyteDoc();
+    const defs = Array.from({ length: 20 }, (_, i) => `[reference-${i}]: https://example.com/a/long/path/${i} "A title for reference ${i}"`).join("\n");
+    return [
+      ["a plain document", doc],
+      ["20 reference definitions at the top", `${defs}\n\n${doc}`],
+      ["40 leading blank lines", `${"\n".repeat(40)}${doc}`],
+    ];
+  };
+  let gc;
+  beforeAll(async () => {
+    const v8 = await import("node:v8");
+    const vm = await import("node:vm");
+    v8.setFlagsFromString("--expose-gc");
+    gc = vm.runInNewContext("gc");
+  });
+  const heap = () => {
+    gc();
+    gc();
+    return process.memoryUsage().heapUsed;
+  };
+
+  it.each(variants())("%s: 30 records keep less than RECORD_BUDGET_MIB", (name, doc) => {
+    const lexer = makeLexer();
+    let model = MarkdownBlockModel.fromBody(doc, lexer, 1);
+    const paragraphs = model.getBlocks().filter((b) => b.type === "paragraph").map((b) => b.raw);
+    const record = [];
+    for (let i = 0; i < CONFIG.edit.undoMaxSteps; i++) {
+      const raw = paragraphs[(i * 97) % paragraphs.length];
+      const target = model.getBlocks().find((b) => b.raw === raw) ?? model.getBlocks().find((b) => b.type === "paragraph");
+      model.toBody(); // the current model's body is joined, as in the app
+      const change = model.replaceBlock(target.id, `${target.raw.trimEnd()} edit${i}`, lexer, CONFIG.edit.diffMaxCells);
+      record.push(model.withoutJoinedBody());
+      model = change.model;
+    }
+    const withRecord = heap();
+    record.length = 0;
+    const kept = (withRecord - heap()) / (1024 * 1024);
+    console.log(`AT-PERF-11 ${name}: 30 records keep ${kept.toFixed(2)} MiB`);
+    expect(kept).toBeLessThan(RECORD_BUDGET_MIB);
+  }, MEMORY_TIMEOUT_MS);
+});

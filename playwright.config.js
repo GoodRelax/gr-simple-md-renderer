@@ -42,7 +42,10 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "webkit", use: { ...devices["Desktop Safari"] } },
+    // WebKit only: one retry. Under a heavy load its frames can stop for a
+    // while and a click waits for "stable" until the timeout (develop shows
+    // it too; UI fixes review L8). A retried pass is reported as "flaky".
+    { name: "webkit", retries: 1, use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
     command: `npx --no-install vite preview --outDir ../output/e2e --host 127.0.0.1 --port ${PORT} --strictPort`,

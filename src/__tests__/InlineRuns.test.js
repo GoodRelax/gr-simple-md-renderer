@@ -9,9 +9,9 @@ import InlineRuns from "../js/classes/InlineRuns.js";
 
 const app = new Marked();
 app.use(markedKatex({ throwOnError: false }));
-const RED = "#B84F00";
-const BLUE = "#0072B2";
-const COLORS = [RED, BLUE, "#007A58"];
+const RED = "#CF222E";
+const BLUE = "#0550AE";
+const COLORS = [RED, BLUE, "#1A7F37"];
 
 /** The app's inline lexer (same marked setup), with reference definitions. */
 function lexInline(src, links = {}) {
@@ -193,8 +193,18 @@ describe("AT-IR apply: text color (INV-66)", () => {
   });
 
   it("AT-IR-22 a color read from the source keeps the case it was written in", () => {
-    const src = '<span style="color: #0072b2">x</span>';
+    const src = '<span style="color: #0550ae">x</span>';
     expect(roundTrip(src)).toBe(src);
+  });
+
+  it.each(["#B84F00", "#0072B2", "#007A58"])("AT-IR-23 the former palette color %s is a verbatim piece, not a color (B3)", (old) => {
+    const src = `<span style="color: ${old}">x</span>`;
+    const runs = runsOf(src);
+    expect(runs.some((r) => r.marks.color !== null)).toBe(false);
+    expect(roundTrip(src)).toBe(src);
+    // the palette's color goes around the piece; the old color stays as written
+    const colored = InlineRuns.serialize(InlineRuns.apply(runs, 0, runs.length, { kind: "color", value: RED }).runs);
+    expect(colored).toContain(src);
   });
 });
 

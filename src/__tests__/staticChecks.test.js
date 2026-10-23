@@ -377,7 +377,7 @@ describe("style.css for in-place editing", () => {
     expect(ruleBody(css, ".edit-palette-status")).toMatch(/max-width:\s*220px/);
     expect(css).toMatch(/\.edit-palette-btn\[aria-disabled="true"\]/);
     expect(css).not.toMatch(/edit-palette-btn:disabled|edit-palette-btn:focus-visible/);
-    for (const [color, light, dark] of [["red", "#B84F00", "#E0661A"], ["blue", "#0072B2", "#56B4E9"], ["green", "#007A58", "#009E73"]]) {
+    for (const [color, light, dark] of [["red", "#CF222E", "#F85149"], ["blue", "#0550AE", "#58A6FF"], ["green", "#1A7F37", "#3FB950"]]) {
       const sel = `.edit-palette-swatch-${color}:not([aria-disabled="true"])`;
       expect(ruleBody(css, sel), sel).toContain(`color: ${light};`);
       expect(ruleBody(css, `.dark ${sel}`), sel).toContain(`color: ${dark};`);

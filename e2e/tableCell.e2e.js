@@ -42,7 +42,7 @@ test("type in a cell, Tab to the next: the source is aligned, the table element 
   await expect(page.locator("#editor")).toHaveValue(/\*\*bold!\*\*/);
 });
 
-test("Esc takes the open cell's change back; Shift+Enter is a <br>; Ctrl+Z undoes the last cell", async ({ page }) => {
+test("Esc applies the open cell's change (D1); Shift+Enter is a <br>; Ctrl+Z undoes the last cells in turn", async ({ page }) => {
   await openEditMode(page);
   await cell(page, 2, 1).click();
   await page.keyboard.press("End");
@@ -53,11 +53,17 @@ test("Esc takes the open cell's change back; Shift+Enter is a <br>; Ctrl+Z undoe
   await page.locator("#preview h1").click(); // outside: commit
   await expect(page.locator("#editor")).toHaveValue(/\| plain<br>two \|/);
   await cell(page, 1, 0).click();
+  await page.keyboard.press("End");
   await page.keyboard.type("zzz");
   await page.keyboard.press("Escape");
-  await expect(cell(page, 1, 0)).toHaveText("Yamada");
+  await expect(cell(page, 1, 0)).toHaveText("Yamadazzz");
+  await expect(cell(page, 1, 0)).not.toHaveClass(/grsmd-cell-editing/);
   await expect(page.locator("#paletteSave")).toBeVisible(); // W4: the palette stays
-  await page.keyboard.press(process.platform === "darwin" ? "Meta+z" : "Control+z");
+  const undo = process.platform === "darwin" ? "Meta+z" : "Control+z";
+  await page.keyboard.press(undo);
+  await expect(cell(page, 1, 0)).toHaveText("Yamada");
+  await expect(page.locator("#editor")).toHaveValue(/plain<br>two/);
+  await page.keyboard.press(undo);
   await expect(page.locator("#editor")).not.toHaveValue(/plain<br>two/);
 });
 

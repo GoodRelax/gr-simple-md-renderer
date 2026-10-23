@@ -211,15 +211,51 @@ function splitBody(body, lexer) {
  * @returns {object}
  */
 function freezeLinks(links) {
+  if (links && Object.isFrozen(links)) return links; // a model's own (frozen) copy
   const copy = {};
+  // the lexer's strings may be cut from the whole body (ownString)
   for (const [label, link] of Object.entries(links || {})) {
-    copy[label] = Object.freeze({ href: link.href, title: link.title });
+    copy[ownString(label)] = Object.freeze({ href: ownString(link.href), title: ownString(link.title) });
   }
   return Object.freeze(copy);
 }
 
+/**
+ * The frozen links of a model when fresh lexer links say the same, else
+ * the fresh ones: the models of the undo record share one value (INV-48).
+ * @purity pure
+ * @param {object} kept - a model's frozen links
+ * @param {object} fresh - marked tokens.links
+ * @returns {object}
+ */
+function sameLinks(kept, fresh) {
+  const keys = Object.keys(fresh || {});
+  if (keys.length !== Object.keys(kept).length) return fresh;
+  for (const key of keys) {
+    const a = kept[key];
+    const b = fresh[key];
+    if (!a || a.href !== b.href || a.title !== b.title) return fresh;
+  }
+  return kept;
+}
+
 // The body of each model, joined on the first toBody() (the model is frozen).
 const BODIES = new WeakMap();
+
+// Below this length an engine copies a substring anyway (V8: 13).
+const SHORT_STRING = 16;
+
+/**
+ * A string equal to s that does not keep alive a larger string it was cut
+ * from. A raw cut from a new 1 MB body may be a view on that body, and the
+ * undo record keeps 30 models (INV-48): each would keep its own body.
+ * @purity pure
+ * @param {string} s
+ * @returns {string}
+ */
+function ownString(s) {
+  return typeof s !== "string" || s.length < SHORT_STRING ? s : JSON.parse(JSON.stringify(s));
+}
 
 /**
  * Markdown source as a list of blocks (Entity, immutable value; spec 5.14.2).
@@ -237,7 +273,9 @@ export default class MarkdownBlockModel {
    */
   constructor(leading, blocks, nextBlockId, links, isWholeDocument = false) {
     this._leading = leading;
-    this._blocks = Object.freeze(blocks.map((b) => Object.freeze({ ...b })));
+    // a frozen block is a model's own and is shared as it is (INV-48: the
+    // undo record holds many models of mostly the same blocks)
+    this._blocks = Object.freeze(blocks.map((b) => (Object.isFrozen(b) ? b : Object.freeze({ ...b }))));
     this._nextBlockId = nextBlockId;
     this.links = freezeLinks(links);
     this.isWholeDocument = isWholeDocument;
@@ -268,6 +306,16 @@ export default class MarkdownBlockModel {
    */
   static toEditableText(raw) {
     return raw.replace(/\n+$/, "");
+  }
+
+  /**
+   * The same model as a new value whose body text is not joined yet: what
+   * the undo record keeps (INV-48). The blocks are shared.
+   * @purity pure
+   * @returns {MarkdownBlockModel}
+   */
+  withoutJoinedBody() {
+    return new MarkdownBlockModel(this._leading, this._blocks, this._nextBlockId, this.links, this.isWholeDocument);
   }
 
   /**
@@ -385,7 +433,13 @@ export default class MarkdownBlockModel {
       const model = this._relex(body, lexer, maxCells);
       return { model, isChanged: true, anchorBlockId: model._blockIdAt(start), keptId: false };
     }
-    const model = new MarkdownBlockModel(split.leading, kept, this._nextBlockId, split.links, split.isWholeDocument);
+    const model = new MarkdownBlockModel(
+      ownString(split.leading),
+      this._sharedBlocks(kept),
+      this._nextBlockId,
+      sameLinks(this.links, split.links),
+      split.isWholeDocument,
+    );
     return { model, isChanged: true, anchorBlockId: blockId, keptId: true };
   }
 
@@ -429,6 +483,20 @@ export default class MarkdownBlockModel {
     const insertedBlockId = model._blockIdAt(edit.selEnd - raw.length);
     const anchorBlockId = anchorOffset === undefined ? insertedBlockId : model._blockIdAt(anchorOffset);
     return { model, isChanged: true, anchorBlockId, insertedBlockId };
+  }
+
+  /**
+   * The body offset of the gap after a block (INV-73): where the next block
+   * starts, the end of the body after the last one; null is the gap before
+   * the first block (after the leading blank lines). An unknown id: the end.
+   * @purity pure
+   * @param {number|null} afterBlockId
+   * @returns {number}
+   */
+  gapOffset(afterBlockId) {
+    if (afterBlockId === null) return this._offsetOf(0);
+    const index = this.findIndexById(afterBlockId);
+    return index < 0 ? this.toBody().length : this._offsetOf(index + 1);
   }
 
   /**
@@ -560,6 +628,25 @@ export default class MarkdownBlockModel {
     const keep = new Map(matches.map((m) => [m.newIndex, this._blocks[m.oldIndex].id]));
     let next = this._nextBlockId;
     const numbered = blocks.map((b, i) => ({ id: keep.has(i) ? keep.get(i) : next++, ...b }));
-    return new MarkdownBlockModel(leading, numbered, next, links, isWholeDocument);
+    return new MarkdownBlockModel(ownString(leading), this._sharedBlocks(numbered), next, sameLinks(this.links, links), isWholeDocument);
+  }
+
+  /**
+   * The blocks of a new model from a new body: a block equal to this
+   * model's block of the same id is that very (frozen) block, and the raw of
+   * any other block is its own string (ownString), so the new body is not
+   * kept by it.
+   * @purity pure
+   * @param {{id: number, type: string, raw: string, separatorAfter: string}[]} numbered
+   * @returns {object[]}
+   */
+  _sharedBlocks(numbered) {
+    const old = new Map(this._blocks.map((b) => [b.id, b]));
+    /** @purity pure */
+    return numbered.map((b) => {
+      const same = old.get(b.id);
+      if (same && same.raw === b.raw && same.type === b.type && same.separatorAfter === b.separatorAfter) return same;
+      return { ...b, raw: ownString(b.raw), separatorAfter: ownString(b.separatorAfter) };
+    });
   }
 }

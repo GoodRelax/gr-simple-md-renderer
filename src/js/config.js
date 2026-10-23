@@ -173,6 +173,7 @@ export const CONFIG = {
       formatNotApplicable: "You can't use this format here.", // INV-71 huge blocks (owner ruling Q-f)
       linkNotRemovable: "There's no link to remove here.", // INV-71 huge blocks (as Q-f)
       insertNotPossible: "Can't insert here. Try outside this block.", // an insert the block cannot take
+      gapInsert: "Insert a block here", // the line and "+" between blocks (INV-73)
       statusUnsaved: (name) => `${name} * unsaved`,
       statusSaved: (name) => `${name} - saved`,
     },
@@ -231,9 +232,9 @@ export const CONFIG = {
     paletteMarginPx: 16, // gap from viewport bottom-right (INV-32)
     paletteLongPressMs: 500, // grip long press toggles minimized (INV-68)
     textColors: { // INV-66; the light value is written in the source
-      red: { light: "#B84F00", dark: "#E0661A" },
-      blue: { light: "#0072B2", dark: "#56B4E9" },
-      green: { light: "#007A58", dark: "#009E73" },
+      red: { light: "#CF222E", dark: "#F85149" },
+      blue: { light: "#0550AE", dark: "#58A6FF" },
+      green: { light: "#1A7F37", dark: "#3FB950" },
     },
     invisibleMarkMaxChars: 50000, // INV-70: no marks layer above this length
     invisibleMarkMaxMarks: 2000, // INV-70: ... nor above this many marks
@@ -249,9 +250,11 @@ export const CONFIG = {
     editorSyncMaxChars: 100000,
     diffMaxCells: 250000, // max LCS table cells for the middle range (INV-42)
     titleUnsavedPrefix: "* ", // document.title prefix while dirty (INV-50)
+    undoMaxSteps: 30, // Undo and Redo keep this many units each; the oldest goes first (INV-48)
+    gapHitPx: 6, // B1: the insert line shows within this distance of a gap between blocks (INV-73)
     tableTemplate:
       "| Col1 | Col2 | Col3 |\n|---|---|---|\n|  |  |  |\n|  |  |  |\n|  |  |  |",
-    tableLineBreak: "<br>", // inserted on Enter inside a table (INV-27)
+    tableLineBreak: "<br>", // inserted on Shift+Enter inside a table's source (INV-27)
     mermaidSamples: {
       flowchart:
         "```mermaid\nflowchart TD\n    Start([Start]) -->|input| Check{Valid}\n    Check -->|yes| Process[Process_data]\n    Check -->|no| Error[Show_error]\n    Process -->|done| End([End])\n    Error -->|retry| Start\n```",

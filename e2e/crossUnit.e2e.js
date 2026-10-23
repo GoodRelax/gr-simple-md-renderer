@@ -5,8 +5,8 @@ import { test, expect, renderMarkdown, settled } from "./fixtures.js";
 // N6. Every test also checks (fixtures) that no request leaves for an
 // external host and that nothing is logged as an error.
 
-const RED_LIGHT = "rgb(184, 79, 0)"; // #B84F00
-const RED_DARK = "rgb(224, 102, 26)"; // #E0661A
+const RED_LIGHT = "rgb(207, 34, 46)"; // #CF222E
+const RED_DARK = "rgb(248, 81, 73)"; // #F85149
 const IMG = "https://img.example/a.png";
 
 async function openEditMode(page, markdown) {
@@ -86,7 +86,7 @@ test("T-3 (6): a cell colored and left changed, then [Render Dark]: committed, a
   await expect(cell(page, 1, 0).locator("span[style]")).toHaveCSS("color", RED_LIGHT);
   await page.locator("#renderDark").click();
   await expect(page.locator("body")).toHaveClass(/\bdark\b/);
-  await expect(page.locator("#editor")).toHaveValue(/<span style="color: #B84F00">word<\/span>/);
+  await expect(page.locator("#editor")).toHaveValue(/<span style="color: #CF222E">word<\/span>/);
   await expect(openCell(page)).toHaveCount(0);
   await expect(cell(page, 1, 0).locator("span[style]")).toHaveCSS("color", RED_DARK);
 });

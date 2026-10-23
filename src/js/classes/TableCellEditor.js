@@ -410,19 +410,12 @@ export default class TableCellEditor {
   }
 
   /**
-   * Cancel the open cell (Esc, INV-48 (1)): its children come back.
-   * @purity non-pure
-   */
-  revertCell() {
-    if (this._cell) this._closeDom(true);
-  }
-
-  /**
-   * Drop the open cell without committing (the document is replaced).
+   * Drop the open cell without committing (the document is replaced): its
+   * children come back.
    * @purity non-pure
    */
   discardCell() {
-    this.revertCell();
+    if (this._cell) this._closeDom(true);
   }
 
   /**
@@ -1076,7 +1069,10 @@ export default class TableCellEditor {
       e.preventDefault();
       if (!e.repeat) this.host.dispatch("escapePressed"); // a held Esc acts once (ruling Q-a)
     } else if (this._isRedo(e)) {
-      e.preventDefault(); // INV-59: there is no Redo (OS-18)
+      // INV-59: the browser's Redo never acts in a cell; an unchanged cell
+      // closes and the app redoes, a changed one does nothing (11-c)
+      e.preventDefault();
+      if (!e.repeat) this.host.dispatch("redoRequested");
     }
   }
 

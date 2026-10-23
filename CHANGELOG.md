@@ -26,15 +26,14 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 - Help: an `English | Japanese` switch next to the close button shows one
   language at a time. The first language follows the browser's language;
   the choice is kept in memory only. Both languages have the same sections
-  (the Japanese help gains Sample Data), and Editing is split into six short
-  groups.
+  (the Japanese help gains Sample Data).
 - Help: a **Download GRSMD** button at the top (the latest GitHub release's
   `GRSMD.html`, opened in a new tab), a one-line note that it is a single
   HTML file that works offline, and the version of the open file.
 - Help: Reload works in Chrome and Edge only; Esc (also closes the help),
-  Copy SVG / Copy PNG (PC), printing, how Insert table / Mermaid samples places the new block, pasting
-  on a phone, where the Download button goes, and that the clipboard
-  permission note applies on goodrelax.github.io.
+  Copy SVG / Copy PNG (PC), printing, pasting on a phone, where the
+  Download button goes, and that the clipboard permission note applies on
+  goodrelax.github.io.
 - While the help or the AI prompt is open, the one-key shortcuts (L, D, R,
   N, C, E, arrows, Esc) no longer act on the page behind it; Esc closes it.
   Opening it moves the focus in (the help's chosen language, or the prompt's
@@ -44,8 +43,38 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 - Page metadata: the title stays short; the former name and the reason for
   the rename are in the descriptions (also Open Graph and Twitter), the
   keywords and the JSON-LD.
+- Esc in a block editor or a table cell now applies the change and closes
+  it (it used to discard it). Ctrl+Z right after it takes the change back.
+  With a change still open, the palette's Undo (and Ctrl+Z outside the
+  editor) applies it and undoes it, so Redo can bring it back. Esc during
+  IME composition still only cancels the composition.
+- Undo goes back up to 30 changes (it was 1), and Redo goes forward again
+  with Ctrl+Y or Ctrl+Shift+Z (Mac: Cmd+Shift+Z). There is no Redo button.
+  In an open block, Redo is always the browser's (typing undone with Ctrl+Z
+  comes back). The undo history does not keep a full copy of the text per
+  change: 30 changes of a 1 MB document take about 2 MB (also with reference
+  link definitions or many blank lines at the top).
+- Enter in a table's Markdown source is a plain new line; Shift+Enter
+  inserts `<br>`.
+- The palette's red, blue and green are GitHub's colors (light `#CF222E`,
+  `#0550AE`, `#1A7F37`; dark `#F85149`, `#58A6FF`, `#3FB950`), easier to
+  tell apart. Text written with the former colors keeps its color as
+  written.
+- Help: the title row (title, language switch, close button) stays at the
+  top while the help scrolls; the help's text is 75% of its former size;
+  the Editing chapter is gone. Details lists Esc, Undo / Redo and the new
+  insert line. The note on the clipboard permission of Paste copied link
+  (shared by the pages of goodrelax.github.io in Chrome and Edge, and how
+  to withdraw it) moves to Privacy & Security.
 
 ### Added
+
+- In edit mode, a dashed line with "+" shows in the gap between two blocks
+  (and before the first and after the last one) under the mouse; click it
+  to type a new block there, for example below a diagram or a table at the
+  end of the document. On a phone, tap the gap to show the line, then tap
+  the line. An empty one changes nothing; one Undo removes the new block.
+  A block added at the end keeps the file's last newline.
 
 - Date-time versions: `npm run build:release` shows the release's version in
   the help; any other build shows "Development build" and the time of the
