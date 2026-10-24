@@ -286,3 +286,31 @@ describe("AT-FR the selection after a format (5.14.14)", () => {
     expect(again.text).toBe(text);
   });
 });
+
+// The end spaces of a line are found from the first of their run, in time
+// linear in the line (review of the render hang, ReDoS). /[ \t]+$/ read a
+// long run of spaces again from every start in it when the run was not at
+// the end: 100,000 spaces took several seconds per line. This check runs
+// always (as AT-WRAP-20): it now takes a few ms, so the budget leaves a
+// wide margin on a loaded machine.
+const LONG_RUN_BUDGET_MS = 1000;
+
+describe("AT-FR a long run of spaces inside a line (linear end-space search)", () => {
+  const run = " ".repeat(100000);
+  const timedCan = (text) => {
+    const at = text.lastIndexOf("x");
+    const t0 = performance.now();
+    const can = MarkdownTextOps.canFormatRange(text, at, at + 1, lexBlocks);
+    return { can, ms: performance.now() - t0 };
+  };
+
+  it.each([
+    ["AT-FR-65", "a paragraph line", `a${run}x`],
+    ["AT-FR-66", "an ATX heading", `# a${run}x`],
+    ["AT-FR-67", "a table cell", `| a |\n| - |\n| b${run}x |`],
+  ])("%s 100,000 spaces before the last word of %s: the word can be formatted, within 1,000 ms", (_id, _name, text) => {
+    const { can, ms } = timedCan(text);
+    expect(can).toBe(true);
+    expect(ms).toBeLessThan(LONG_RUN_BUDGET_MS);
+  });
+});

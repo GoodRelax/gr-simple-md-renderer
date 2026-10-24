@@ -1,9 +1,9 @@
 import { nextFrame } from "../utils.js";
+import MarkdownTextOps from "./MarkdownTextOps.js";
 
 // INV-70: characters that look like a space or like nothing. ZWJ (U+200D)
 // and the variation selectors are not here: an emoji stays one glyph.
 const MARKED_RUN = /[\u00a0\u2007\u202f\u200b\u200c\u2060\ufeff\u00ad]+/g;
-const LINE_END_SPACES = / {2,}$/;
 const OVERLAID_CLASS = "md-block-editor-overlaid";
 
 /**
@@ -69,10 +69,10 @@ export default class InvisibleCharOverlay {
       if (n > 0) push("\n", false);
       let body = line;
       let tail = "";
-      const end = lineEndFlags[n] ? LINE_END_SPACES.exec(line) : null;
-      if (end) {
-        body = line.slice(0, end.index);
-        tail = end[0];
+      const end = lineEndFlags[n] ? MarkdownTextOps.lineBreakSpaceCount(line) : 0;
+      if (end > 0) {
+        body = line.slice(0, line.length - end);
+        tail = line.slice(line.length - end);
       }
       let last = 0;
       for (const m of body.matchAll(MARKED_RUN)) {

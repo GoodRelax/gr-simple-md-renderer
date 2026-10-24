@@ -60,6 +60,12 @@ export const CONFIG = {
   rendering: {
     stabilityTimeout: 1000,
     stabilityDebounce: 50,
+    // Code blocks of the Markdown view (5.8.1): highlight.js has language
+    // patterns that are quadratic in a long block. A block without a
+    // language is detected from its first highlightDetectChars characters;
+    // a block longer than highlightMaxChars is not highlighted (plain text).
+    highlightDetectChars: 3072,
+    highlightMaxChars: 20480,
   },
   plantuml: {
     imageLoadTimeout: 5000,

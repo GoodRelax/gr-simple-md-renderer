@@ -22,6 +22,8 @@
 
 > v2.6 の変更 (続き、2026-10-25、レビューの 1 回目の直し): PRT-Z02 に手順 8・9 (メニューのコピーと Shift+Delete)、PRT-Z05 に手順 5 (吹き出しのコピー) を足し、PRT-Z07 の期待結果を INV-74 の目標 (50 ms、300 ms、4 MiB) にした (実測は備考だけ)。AT-RNG を 51 まで足した。
 
+> v2.6 の変更 (続き、2026-10-25、Render が終わらない不具合 (ReDoS) の直し): PRT は変えていない。AT の目録に AT-RUN (新)、AT-WRAP-20〜22、AT-STA-18 / 19、AT-FR-65〜67、AT-HB-62〜64、AT-INS-20 / 21、AT-ICO-20、AT-BM-35 / 36、AT-MR-15〜19 を足し、時間の試験の例外 (時間の上限を常に確かめるもの) を書いた。e2e の load.e2e.js / fileDrop.e2e.js に、先頭に空行 41 行の文書の試験を足した (WebKit は直す前でも通る既知の制限)。
+
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
 ---
@@ -3697,7 +3699,7 @@
 | 単体・結合の試験 | vitest + jsdom (`npm test`)。置き場は `src/__tests__/`。ブラウザの配置・印刷・クリップボードの許可など jsdom で試せないものは PRT で確かめる |
 | ID | `describe` / `it` の名前の先頭に `AT-<族>-<番号>` と書く。1 つの ID を `(a)` `(b)` などで複数の `it` に分けてよい。1 つの ID は 1 つの要求を確かめる試験のまとまりを指し、複数の `it` (別のファイルを含む) にまたがってよい (`(a)` `(b)` を付けることも、付けないこともある。同じファイルの中で `(a)` `(b)` なしに複数の `it` に付くものは約 30 件 (例: AT-BSM-15、AT-PAL-03 / 10 / 11、AT-THM-14 / 18))。違う要求の試験に同じ ID を使わない。ファイルをまたぐもの: AT-BSM-01 / 02 / 03 / 08 / 09〜14 / 16 (`BlockEditController.stateMachine.test.js` の表の交点の試験と、`UIController.editMode.test.js` / `UIController.save.test.js` の結合の試験)、AT-UI-41 / 43 / 46 (`UIController.document.test.js` / `UIController.editMode.test.js` / `UIController.save.test.js` / `UIController.handleRender.test.js`。AT-UI-41 の中身は 5.14.11 の表の行ごと)、AT-BEC-35 (`BlockEditController.link.test.js` と `UIController.link.test.js` の「Remove link」の試験)。族の中で番号を足すときは、その族の最後の番号の次から振る。付け直した番号: 同じ番号が 2 つの試験に付いていたものを、AT-UI-39 (セルを開いた表の試験) → AT-UI-61、AT-UI-39 (保存ダイアログの取消) → AT-UI-65、AT-DBL-07 (タッチのダブルタップ) → AT-DBL-13 に付け直した (全体のレビューの T-4)。残る注: AT-MR-09 と AT-TCE-29 は名前ではなくコメントにだけある (AT-TCE-29 は AT-TCE-10 の describe の中)。AT-BEC-28 は中身の違う 2 つの describe (`BlockEditController.test.js` と `BlockEditController.keys.test.js` の (5)) に付いている (上の決めごとの例外) |
 | 番号の無い族 | AT-MT・AT-TW は `describe` の名前を族の名前だけで書く (関数ごとのまとまり) |
-| 時間の試験 | AT-PERF のうち時間を測るもの (02〜07、09、10、12) とメモリを測るもの (11、13) は、環境変数 `GRSMD_PERF=1` のときだけ動く (`describe.runIf`。ふだんはスキップと数える)。計算量の上限を数えるもの (01、08) は常に動く。AT-HB の大きなブロックの試験 (`MarkdownTextOps.insertHardBreak.test.js` の AT-HB-14〜19 と、字句解析の上限の AT-HB-26〜28) は、常に字句解析の回数を確かめ、時間は `GRSMD_PERF=1` のときだけ確かめる |
+| 時間の試験 | AT-PERF のうち時間を測るもの (02〜07、09、10、12) とメモリを測るもの (11、13) は、環境変数 `GRSMD_PERF=1` のときだけ動く (`describe.runIf`。ふだんはスキップと数える)。計算量の上限を数えるもの (01、08) は常に動く。AT-HB の大きなブロックの試験 (`MarkdownTextOps.insertHardBreak.test.js` の AT-HB-14〜19 と、字句解析の上限の AT-HB-26〜28) は、常に字句解析の回数を確かめ、時間は `GRSMD_PERF=1` のときだけ確かめる。**例外 (正規表現の計算量、ReDoS):** AT-WRAP-20 / 21、AT-FR-65〜67、AT-HB-62 / 63、AT-INS-20 / 21、AT-ICO-20、AT-BM-35 / 36、AT-RUN-03、AT-MR-15 / 16 は、時間の上限 (1,000 ms) を常に確かめる。直した後は数 ms で、上限まで 60 倍以上あり、負荷の高い機械でも揺れない (調整役の裁定 2026-10-25)。直す前は 4.4 s〜数時間で、上限との差は小さいもので約 4 倍 (AT-HB-62・AT-ICO-20 の 4.4 s)。4 倍より速い機械では、この 2 つは直す前でも通りうる (直す前に落ちることは、記録した機械で確かめた。調整役の裁定 Q5) |
 | スキップ | vitest のスキップは次に限る: 上の時間の試験 (`GRSMD_PERF=1` でないとき)、`MarkdownRenderer.test.js` の「parse error path」の試験 (`it.runIf(path === "render")`。描画の経路ごとに繰り返す試験のうち、`render` 以外の経路の分は常にスキップ)、`textWidth.test.js` の幅 0 の範囲表と Unicode の照合 (`it.skipIf`。Node の Unicode の版が 16.0 でないとき)。e2e のスキップは、`tableCell.e2e.js` と `blockRange.e2e.js` の時間の試験 (`GRSMD_PERF=1` でないとき、および Chromium 以外のブラウザ) と、`crossUnit.e2e.js` の N1 (本物のタッチの列は Chromium の CDP だけで作れるので、Chromium 以外) に限る |
 | e2e | Playwright (`npm run test:e2e` = `build:e2e` で `output/e2e/` にビルドし、`playwright test`。`playwright.config.js` の projects は Chromium と WebKit。Firefox は `npm run test:e2e:firefox` で選んだときだけ動く)。初めて動かす前に、ブラウザを `npx playwright install chromium webkit` で取得する (外部からのダウンロード。`e2e/README.md`)。置き場は `e2e/`。AT の ID は持たない。PRT との対応は AT.4 の表で引く (PRT の本文に e2e のファイル名を書いていないものもある) |
 
@@ -3707,22 +3709,23 @@
 
 | 族 | 対象 | 主な要求 | ファイル (`src/__tests__/`) | 番号 |
 | --- | --- | --- | --- | --- |
-| AT-WRAP | `splitMarkdownWrapper` と `preprocessInput` | INV-38、5.13 | splitMarkdownWrapper.test.js、preprocessInput.test.js | 01〜19 |
+| AT-WRAP | `splitMarkdownWrapper` と `preprocessInput` (20 / 21: 先頭の空行が多い文書を、空行の数に比例する時間で判定する。22: 規則 1 の空白の範囲 (NBSP・U+3000・`\f`・`\v` を含む、改行以外のすべての空白) を固定する) | INV-38、5.13 | splitMarkdownWrapper.test.js、preprocessInput.test.js | 01〜22 |
 | AT-EOL | 改行コードと BOM の変換 | INV-44、5.14.1 | lineEnding.test.js | 01〜07 |
+| AT-RUN | `trailingRunLength` / `trimTrailingRun` / `trailingRun` (末尾の並びを末尾から数える。線形) | 3.2 (`textTransforms.js`) | trailingRun.test.js | 01〜03 |
 | AT-SES | `DocumentSession` | INV-38、INV-44、INV-55 | DocumentSession.test.js | 01〜11 |
-| AT-BM | `MarkdownBlockModel` (33: すき間の位置、34: 記録とブロックの共有) | INV-41、INV-42、INV-48、INV-52、INV-73 | MarkdownBlockModel.test.js | 01〜34 |
+| AT-BM | `MarkdownBlockModel` (33: すき間の位置、34: 記録とブロックの共有、35: ブロックの中の長い改行の並びで線形、36: `>` の無い `<` の多い HTML のブロックで、タグの数え方が線形) | INV-41、INV-42、INV-48、INV-52、INV-73 | MarkdownBlockModel.test.js | 01〜36 |
 | AT-PTR | `MarkdownBlockModel.planTableReplace` | INV-42、11-c の `canKeepTableId` | MarkdownBlockModel.planTableReplace.test.js | 01〜07 |
 | AT-DIFF | `BlockDiff.diffBlocks` | INV-42 | BlockDiff.test.js | 01〜10 |
 | AT-RT | サンプルとフィクスチャの往復 | INV-38、INV-41、INV-44 | roundTrip.samples.test.js | 01〜06 |
 | AT-TXT | `MarkdownTextOps` (挿入など) | INV-52 | MarkdownTextOps.test.js | 01〜16 |
-| AT-INS | `MarkdownTextOps.planBlockInsert` / `insertOffset` / `cutLineEndBreak` (雛形の挿入の位置と、断る場所、行内の書式をまたぐ境目、大きな段落、割った行の行末の空白と `\`) | INV-52 | MarkdownTextOps.planBlockInsert.test.js | 01〜19 |
-| AT-FR | `MarkdownTextOps.formatRange` (書式、リンク) | INV-66、INV-67、INV-69 | MarkdownTextOps.formatRange.test.js、MarkdownTextOps.link.test.js | 01〜64 |
-| AT-HB | `MarkdownTextOps.insertHardBreak` と確定の後始末 | INV-71 | MarkdownTextOps.insertHardBreak.test.js | 01〜61 |
+| AT-INS | `MarkdownTextOps.planBlockInsert` / `insertOffset` / `cutLineEndBreak` (雛形の挿入の位置と、断る場所、行内の書式をまたぐ境目、大きな段落、割った行の行末の空白と `\`。20 / 21: 行の中の長い空白の並び・長い改行の並びで線形) | INV-52 | MarkdownTextOps.planBlockInsert.test.js | 01〜21 |
+| AT-FR | `MarkdownTextOps.formatRange` (書式、リンク。65〜67: 段落・見出し・表のセルの行の中の長い空白の並びで、`canFormatRange` が線形) | INV-66、INV-67、INV-69 | MarkdownTextOps.formatRange.test.js、MarkdownTextOps.link.test.js | 01〜67 |
+| AT-HB | `MarkdownTextOps.insertHardBreak` と確定の後始末 (62 / 63: 行の中の長い空白の並びで、`hardBreakLines` と後始末が線形。64: `lineBreakSpaceCount`) | INV-71 | MarkdownTextOps.insertHardBreak.test.js | 01〜64 |
 | AT-IR | `InlineRuns` (並び、正規形、表記の保持。23: 以前の 3 色はそのままの片) | INV-67、INV-69、INV-72、5.14.14 | InlineRuns.test.js | 01〜53 |
 | AT-MT | `MarkdownTable` (解析、整形、行・列の操作) | INV-61、INV-65 | MarkdownTable.test.js | (番号なし) |
 | AT-TW | `textWidth.displayWidth` | INV-61、5.14.13 | textWidth.test.js | (番号なし) |
 | AT-CL | `ClipboardLink` | INV-69 | ClipboardLink.test.js | 01〜04 |
-| AT-MR | `MarkdownRenderer` のブロックの描画 | INV-41〜43、INV-47 | MarkdownRenderer.blocks.test.js、MarkdownRenderer.test.js、diagrams.partial.test.js | 01〜14 (09 は `MarkdownRenderer.test.js` のコメントにだけある。AT.1 の注) |
+| AT-MR | `MarkdownRenderer` のブロックの描画 (15〜19: コードブロックの色付けの上限。言語の無い長いブロックと上限を超えるブロックの時間、20,480 / 20,481 文字の境目、先頭の 3,072 文字での言語の判定、CONFIG の値。5.14.4) | INV-41〜43、INV-47 | MarkdownRenderer.blocks.test.js、MarkdownRenderer.test.js、diagrams.partial.test.js、MarkdownRenderer.highlightLimit.test.js | 01〜19 (09 は `MarkdownRenderer.test.js` のコメントにだけある。AT.1 の注) |
 | AT-DG | 図と PlantUML の部分描画 | INV-02、INV-23 | diagrams.partial.test.js | 01〜07 |
 | AT-SM | `ScrollMemento` (アンカー、読んでいる位置、挿入の後の最小のスクロール) | INV-46、INV-52、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜38 |
 | AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R5、Undo / Redo の記録 09〜09d) | INV-42、INV-46〜48、INV-62 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜27 (06b、09b〜09d を含む)、R1〜R5、T1〜T6 |
@@ -3733,7 +3736,7 @@
 | AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
-| AT-ICO | `InvisibleCharOverlay` | INV-70 | InvisibleCharOverlay.test.js | 01〜19 |
+| AT-ICO | `InvisibleCharOverlay` (20: 行の中の長い空白の並びで、行末の空白の判定が線形) | INV-70 | InvisibleCharOverlay.test.js | 01〜20 |
 | AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜35 (21・22・29 は欠番) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
@@ -3749,7 +3752,7 @@
 | AT-CFG | `CONFIG.edit` と文言 | 5.2、CON-06 | config.edit.test.js、UIController.editMode.test.js、config.test.js (09) | 01〜09 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと | 5.8.1、5.15.2 | themeColors.test.js、hljsThemePlugin.test.js | 01〜20 |
-| AT-STA | `src/js` と `src/css` の静的な検査 | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜17 |
+| AT-STA | `src/js` と `src/css` の静的な検査 | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜19 |
 | AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
 | AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ) | INV-42、INV-48、INV-51、INV-74 | performance.inplaceEdit.test.js | 01〜13 |
 | AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11) (`ModalController`) | SC-16、FS-10、CON-03、CON-12、5.1、5.11 | HelpLanguageSwitch.test.js、ModalController.test.js | 01〜11 |
@@ -3770,6 +3773,8 @@ ID を持たない試験ファイル (その場編集の前からあるクラス
 | AT-STA-15 | `src/js` の `config.js` の外に、利用者に見える英文の文字列が無い (R15)。文字列とテンプレートの字句のうち、文の終わり (2 文字以上の語と `.` `?` `!`) を持つもの、または空白を含み大文字と小文字で始まるものを数える (`console.*`・例外・import は除く)。検査そのものの試験を含む |
 | AT-STA-16 | トーストが画面の中で折り返す (`.toast` は `nowrap` でなく、`max-width: calc(100vw - 32px)`・中央揃え。`#toastContainer` も画面より広くならない。R11) |
 | AT-STA-17 | `DocumentLifecycle.js` (UseCase 層) は config を import せず、`window` / `document` を使わない。`UIController.js` は `fileAccess`・`DocumentSession`・`DocumentLocation`・`SaveDocument`・`SaveDocumentAs` を使わない (保存先とファイルの入口は DocumentLifecycle だけ。INV-55) |
+| AT-STA-18 | `src/js` の正規表現 (正規表現の字句と、字句の文字列から作る `RegExp`) に、入れ子の量指定子が無い (ReDoS)。入れ子の量指定子は、繰り返す群 (`*`・`+`、または上限が 2 以上の `{n}`・`{n,}`・`{n,m}`) が、可変の部分 (`*`・`+`・`?`・`{n,}`・m > n の `{n,m}`、または選択の `\|`) を持つもの。例 `(?:\s*\n)*`・`(a+)+`・`(a+){2,8}`・`(?:a?a?)*`・`(?:\s\|\n)*`。遅延の `?` と、群の頭の `(?:`・`(?=`・`(?<name>` などの `?` は量指定子と数えない。線形と確かめたもの (区切りの文字を内側の量指定子が取れず、分け方が 1 通り: 空行の並び 2 件と引用の印 3 件) だけを、理由のコメント付きの一覧で許す。一覧の型は、src/js にあって検査が見つけるものに限る。検査そのものの試験を含む (5.13)。**この検査が見ない形:** 入れ子の無い型が、始まりの位置ごとに長い並びを読み直して 2 乗の時間になるもの (例 `/[ \t]+$/` に、末尾でない長い空白の並び)。分け方の数ではなく、やり直しの回数で遅くなるため、AT-STA-19 が見る |
+| AT-STA-19 | `src/js` の正規表現に、(1) 先頭に錨 (`^`) が無く、1 つの字 (文字・エスケープ・文字の組) を上限なく繰り返す (`*`・`+`・`{n,}`) 所で始まり、その後ろに型が続くもの (例 `/[ \t]+$/`・`/ {2,}$/`・`/\n*$/`・`/(?:^\|[ \t]+)#+[ \t]*$/`。先頭の群は選択の枝ごとに見る。先頭の後ろ読みなどは飛ばす。繰り返す群は AT-STA-18) が無い。長い並びの中のどの位置からも試し、そのたびに並びの残りを読み直すので 2 乗の時間になる (ReDoS)。並びだけの型 (`/\s+/`) はそこで一致するので線形。許す一覧は無い (末尾の並びは `trailingRunLength` などで数える。AT-RUN)。(2) 後ろ読み (`(?<=`・`(?<!`) が無い (Safari 16.4 より前で構文の誤りになり、スクリプト全体が動かない。P-05 の iOS 15+)。検査そのものの試験を含む。**この検査が見ない形:** 字で始まり、後ろの長い並びがその字も取れるもの (例 `MarkdownBlockModel` の `TAG_RE` `/<…[^>]*?(\/?)>/` に、`>` の無い `<` の多い文字列。`<` ごとに残りを全部読む)。2 乗になるかは、並びの前の部分がその並びの中で一致しうるかで決まり (閉じフェンスの `` /\n`{n}\s*$/ `` は `\s` が `\n` を取れるが、`` ` `` が続くので線形)、型の字面だけでは誤りなく分けられないため、静的な検査にしない。`TAG_RE` は最後の `>` より後ろを読まない形に直し、時間の試験 AT-BM-36 で見る |
 | AT-PERF-07 | 1 MB の文書に 1,000 行 × 5 列の表: 中ほどのセル (500 行目) を初めて開くまで、セルの確定から次のセル、書式の適用が、それぞれ `commitBudgetMs` (300 ms) 以内 (INV-51)。表の操作 (行の追加) は、jsdom では DOMPurify が遅いので時間を記録するだけとし、時間の判定は e2e の `tableCell.e2e.js` (Chromium、PRT-X23) で行う (行の追加で作る HTML は小さな表の分の 1 回だけであることを AT-PERF-08 で数える) |
 | AT-PERF-08 | 表の編集の間の 1 回の操作で、表全体の HTML を作らない (INV-47、INV-51) |
 | AT-PERF-09 | 5,000 個のリンクを持つ 250 KB の段落で、書式のポップオーバーを開いたときの 1 フレームのボタンの判定が予算の中 (INV-51、INV-69) |
@@ -3790,9 +3795,9 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 
 | ファイル (`e2e/`) | 確かめること | 主な PRT |
 | --- | --- | --- |
-| load.e2e.js | 起動 (CSP を持ち、エラーが無い)、Markdown・数式・コード・Mermaid の描画でエラーが無い | PRT-A01、PRT-R01、PRT-T03 |
+| load.e2e.js | 起動 (CSP を持ち、エラーが無い)、Markdown・数式・コード・Mermaid の描画でエラーが無い、先頭に空行 41 行の文書が描画される (5.13。既知の制限: 直す前に落ちるのは Chromium だけ。WebKit は約 1 s で一致なしを返すので直す前でも通る。退行は AT-WRAP-20 と Chromium で見る。時間の検査は機械しだいになるので足さない) | PRT-A01、PRT-R01、PRT-T03 |
 | guards.e2e.js | 試験の土台の検査 (CSP の違反、`console.error`、外への要求を記録できること) | (e2e の全件の前提) |
-| fileDrop.e2e.js | `.md` のドロップは Markdown の表示、それ以外のテキストはコードビュー | PRT-C01、PRT-E01 |
+| fileDrop.e2e.js | `.md` のドロップは Markdown の表示 (先頭に空行 41 行のものも。5.13。load.e2e.js と同じ既知の制限: 直す前に落ちるのは Chromium だけ)、それ以外のテキストはコードビュー | PRT-C01、PRT-E01 |
 | externalConsent.e2e.js | 外部画像と PlantUML は、同意の前・拒否の後に通信しない | PRT-T02、PRT-M02 |
 | save.e2e.js | Save as のダウンロードと保存ダイアログ (偽の picker) | PRT-W06 (ダウンロード)。偽の picker の試験は、PRT-W05 / W16 などの Save as で選んだファイルへ書き込む経路と同じ (本物の保存ダイアログは自動にできないので、ダイアログそのものは PRT で確かめる) |
 | theme.e2e.js | 配色 (ライト・ダーク・コードビュー) と印刷の色、印刷に出ないもの | PRT-X16、PRT-X19、PRT-V13 |

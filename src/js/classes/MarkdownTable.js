@@ -1,5 +1,6 @@
 import MarkdownTextOps from "./MarkdownTextOps.js";
 import { displayWidth } from "../textWidth.js";
+import { trailingRun, trimTrailingRun } from "../textTransforms.js";
 
 // A delimiter cell of a GFM table: dashes with optional colons.
 const DELIMITER_CELL = /^:?-+:?$/;
@@ -26,7 +27,7 @@ export default class MarkdownTable {
    * @returns {{aligns: string[], rows: string[][], extras: string[][]}|null}
    */
   static parse(raw) {
-    const lines = raw.replace(/\n+$/, "").split("\n");
+    const lines = trimTrailingRun(raw, "\n").split("\n");
     if (lines.length < 2) return null;
     const header = MarkdownTable._cells(lines[0]);
     const delimiter = MarkdownTable._cells(lines[1]);
@@ -186,7 +187,7 @@ export default class MarkdownTable {
     if (token.type !== "table") return token.raw;
     const table = MarkdownTable.parse(token.raw);
     if (!table) return token.raw;
-    return MarkdownTable.format(table) + /\n*$/.exec(token.raw)[0];
+    return MarkdownTable.format(table) + trailingRun(token.raw, "\n");
   }
 
   /**
