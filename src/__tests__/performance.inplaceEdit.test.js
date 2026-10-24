@@ -402,3 +402,83 @@ describe.runIf(PERF)("AT-PERF-11 the undo record on 1 MB (INV-48, GRSMD_PERF=1 o
     expect(kept).toBeLessThan(RECORD_BUDGET_MIB);
   }, MEMORY_TIMEOUT_MS);
 });
+
+// INV-74: a block range on 1 MB. Timing and memory: GRSMD_PERF=1 only.
+describe.runIf(PERF)("AT-PERF-12 / 13 a block range on 1 MB (INV-74, INV-51, INV-48; GRSMD_PERF=1 only)", () => {
+  const PERF_TIMEOUT_MS = 120000;
+  const RECORD_BUDGET_MIB = 4;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("AT-PERF-12 1 MB: deleting 100 blocks, and deleting every block, each from the call to the DOM swap <= commitBudgetMs (median of 5)", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const stack = realStack();
+    const doc = makeOneMegabyteDoc();
+    const middle = [];
+    const all = [];
+    for (let i = 0; i < 5; i++) {
+      await stack.orchestrator.loadMarkdown(doc, "light");
+      let blocks = stack.orchestrator.getModel().getBlocks();
+      const at = Math.floor(((i + 1) * blocks.length) / 7);
+      let t0 = performance.now();
+      await stack.orchestrator.deleteBlocks(blocks[at].id, blocks[at + 99].id);
+      middle.push(performance.now() - t0);
+      blocks = stack.orchestrator.getModel().getBlocks();
+      t0 = performance.now();
+      await stack.orchestrator.deleteBlocks(blocks[0].id, blocks[blocks.length - 1].id);
+      all.push(performance.now() - t0);
+      expect(stack.orchestrator.getModel().getBlocks()).toEqual([]);
+    }
+    middle.sort((a, b) => a - b);
+    all.sort((a, b) => a - b);
+    console.log(`AT-PERF-12 100 blocks (ms): ${middle.map((t) => t.toFixed(1)).join(", ")}; every block (ms): ${all.map((t) => t.toFixed(1)).join(", ")}`);
+    expect(middle[2]).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
+    expect(all[2]).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
+    stack.preview.remove();
+  }, PERF_TIMEOUT_MS);
+
+  it("AT-PERF-13 1 MB: the undo record of 30 range deletes, and of one delete of every block, keeps less than RECORD_BUDGET_MIB", async () => {
+    const v8 = await import("node:v8");
+    const vm = await import("node:vm");
+    v8.setFlagsFromString("--expose-gc");
+    const gc = vm.runInNewContext("gc");
+    const heap = () => {
+      gc();
+      gc();
+      return process.memoryUsage().heapUsed;
+    };
+    const lexer = makeLexer();
+    // 30 deletes of 20 blocks each, recorded as RendererOrchestrator records them
+    let model = MarkdownBlockModel.fromBody(makeOneMegabyteDoc(), lexer, 1);
+    const record = [];
+    for (let i = 0; i < CONFIG.edit.undoMaxSteps; i++) {
+      const blocks = model.getBlocks();
+      const at = Math.floor(((i + 1) * blocks.length) / 32);
+      model.toBody();
+      const change = model.removeRange(blocks[at].id, blocks[at + 19].id, lexer, CONFIG.edit.diffMaxCells);
+      record.push(model.withoutJoinedBody());
+      model = change.model;
+    }
+    let withRecord = heap();
+    record.length = 0;
+    const thirty = (withRecord - heap()) / (1024 * 1024);
+    // every block: the record is the only holder of the whole document (its
+    // blocks, and the body text their raws may be cut from)
+    model = MarkdownBlockModel.fromBody(makeOneMegabyteDoc(), lexer, 1);
+    const ends = [model.getBlocks()[0].id, model.getBlocks().at(-1).id]; // no reference to the blocks is kept
+    model.toBody();
+    const empty = model.removeRange(ends[0], ends[1], lexer, CONFIG.edit.diffMaxCells).model;
+    const one = [model.withoutJoinedBody()];
+    model = null;
+    withRecord = heap();
+    one.length = 0;
+    const whole = (withRecord - heap()) / (1024 * 1024);
+    console.log(`AT-PERF-13 30 range deletes keep ${thirty.toFixed(2)} MiB; one delete of every block keeps ${whole.toFixed(2)} MiB (the 1 MB document itself)`);
+    expect(empty.getBlocks()).toEqual([]);
+    expect(thirty).toBeLessThan(RECORD_BUDGET_MIB);
+    expect(whole).toBeLessThan(RECORD_BUDGET_MIB);
+  }, PERF_TIMEOUT_MS);
+});

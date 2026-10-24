@@ -177,6 +177,16 @@ export const CONFIG = {
       statusUnsaved: (name) => `${name} * unsaved`,
       statusSaved: (name) => `${name} - saved`,
     },
+    // The bar of a block range (INV-74, owner ruling U1): icons only, these
+    // are their tooltips and aria-labels. mod as in palette.
+    blockRange: {
+      bar: "Selected blocks",
+      delete: "Delete blocks (Delete)",
+      cut: (mod) => `Cut blocks (${mod}+X)`,
+      copy: (mod) => `Copy blocks (${mod}+C)`,
+      copyFailed: "Couldn't copy the blocks.", // the clipboard refused the write (toast)
+      cutFailed: "Couldn't cut the blocks. Nothing was deleted.", // ... so the cut deleted nothing (toast)
+    },
     // Tooltips and aria-labels of the edit palette (5.15.3). mod is the
     // primary modifier shown ("Ctrl", or "Cmd" on Apple platforms).
     palette: {
@@ -252,6 +262,8 @@ export const CONFIG = {
     titleUnsavedPrefix: "* ", // document.title prefix while dirty (INV-50)
     undoMaxSteps: 30, // Undo and Redo keep this many units each; the oldest goes first (INV-48)
     gapHitPx: 6, // B1: the insert line shows within this distance of a gap between blocks (INV-73)
+    blockRangeBarGapPx: 6, // INV-74: the bar of a block range is this far below (above) the selection's last line
+    blockRangeBarMarginPx: 8, // INV-74: ... and at least this far inside the viewport
     tableTemplate:
       "| Col1 | Col2 | Col3 |\n|---|---|---|\n|  |  |  |\n|  |  |  |\n|  |  |  |",
     tableLineBreak: "<br>", // inserted on Shift+Enter inside a table's source (INV-27)

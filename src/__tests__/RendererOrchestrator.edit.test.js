@@ -713,3 +713,57 @@ describe("RendererOrchestrator.insertBlock (INV-52, request 1)", () => {
     expect(none.blockId).toBeNull();
   });
 });
+
+describe("RendererOrchestrator.deleteBlocks / blocksSource (INV-74, INV-48)", () => {
+  beforeEach(() => {
+    vi.mocked(waitForDOMStability).mockResolvedValue(true);
+  });
+
+  it("AT-RNG-09 deletes a range as one unit: one undo brings all back, one redo takes them again", async () => {
+    const t = await loaded("A\n\nB\n\nC\n\nD\n");
+    const p = t.orchestrator.deleteBlocks(t.idOf("B"), t.idOf("C"));
+    expect(t.orchestrator.getBody()).toBe("A\n\nD\n"); // synchronous (INV-47)
+    expect(t.listener.onModelChanged).toHaveBeenCalledTimes(1);
+    await p;
+    expect(t.markdownRenderer.replaceBlocks).toHaveBeenCalledTimes(1);
+    await t.orchestrator.undoLastCommit();
+    expect(t.orchestrator.getBody()).toBe("A\n\nB\n\nC\n\nD\n");
+    expect(t.orchestrator.canUndo()).toBe(false);
+    await t.orchestrator.redoLastCommit();
+    expect(t.orchestrator.getBody()).toBe("A\n\nD\n");
+  });
+
+  it("AT-RNG-10 the block after the range takes the place of the first block gone (INV-46)", async () => {
+    const t = await loaded("A\n\nB\n\nC\n\nD\n");
+    const b = t.idOf("B");
+    const d = t.idOf("D");
+    await t.orchestrator.deleteBlocks(b, t.idOf("C"));
+    expect(t.calls).toContain(`capture:el${b}`);
+    expect(t.calls).toContain(`restore:el${d}`);
+  });
+
+  it("AT-RNG-11 ids no longer in the model change nothing and record no unit", async () => {
+    const t = await loaded("A\n\nB\n");
+    await t.orchestrator.deleteBlocks(999, t.idOf("B"));
+    expect(t.orchestrator.getBody()).toBe("A\n\nB\n");
+    expect(t.orchestrator.canUndo()).toBe(false);
+    expect(t.listener.onModelChanged).not.toHaveBeenCalled();
+    expect(t.orchestrator.readBlocksSource(999, 999)).toBeNull();
+  });
+
+  it("AT-RNG-12 readBlocksSource gives the raws in order with the blank lines between; the model does not change", async () => {
+    const t = await loaded("A\n\nB\n\n\nC\n");
+    expect(t.orchestrator.readBlocksSource(t.idOf("A"), t.idOf("C"))).toBe("A\n\nB\n\n\nC");
+    expect(t.orchestrator.canUndo()).toBe(false);
+    expect(t.listener.onModelChanged).not.toHaveBeenCalled();
+  });
+
+  it("AT-RNG-13 a new delete empties the redo record (INV-48)", async () => {
+    const t = await loaded("A\n\nB\n\nC\n");
+    await t.orchestrator.commitBlock(t.idOf("A"), "A2");
+    await t.orchestrator.undoLastCommit();
+    expect(t.orchestrator.canRedo()).toBe(true);
+    await t.orchestrator.deleteBlocks(t.idOf("C"), t.idOf("C"));
+    expect(t.orchestrator.canRedo()).toBe(false);
+  });
+});
