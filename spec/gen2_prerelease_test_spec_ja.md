@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.5
+**バージョン:** 2.6
 **日付:** 2026-xx-xx (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -17,6 +17,10 @@
 > v2.4 の変更 (2026-10-23、ヘルプの改善): ツール名の変更 (GR Simple Markdown)、ヘルプの言語のトグル・ダウンロード・版、モーダルを開いている間のキー、版の規則 (仕様 1.7) に合わせて、PRT-A01 / A02 / L01 を改訂し、PRT-L03〜L06 を追加した。前提条件に P-07 を足した。AT に AT-HLP と AT-VER、e2e に help.e2e.js を足した。改訂・追加したケースの判定は空欄 (未実施) に戻している。
 
 > v2.5 の変更 (2026-10-23、UI の直し): Esc は反映して閉じる、Undo / Redo を 30 回まで、すき間からの挿入 (INV-73)、表の原文の Enter、文字色、ヘルプの題名の固定・75%・「編集」の章の削除 (仕様の改訂履歴 2026-10-23 の 4 件目) に合わせて、PRT-L01 / R01 / U05 / U06 / U21 / U28 / U36 / V12 / V13 / V14 / V18 / X02 / X03 / X09 / X11 を改訂し、PRT-L07 / L08 とセクション Y (PRT-Y01〜Y09) を追加した。改訂・追加したケースの判定は空欄 (未実施) に戻して実施する。
+
+> v2.6 の変更 (2026-10-24、複数ブロックの削除・カット・コピー): プレビューの文字の選択で最上位のブロックをまとめて削除・カット・コピーする機能 (INV-74。仕様の改訂履歴 2026-10-24) に合わせて、セクション Z (PRT-Z01〜Z08) を追加した。AT に AT-RNG、AT-BSM-30〜32、AT-PERF-12 / 13、e2e に blockRange.e2e.js を足した。
+
+> v2.6 の変更 (続き、2026-10-25、レビューの 1 回目の直し): PRT-Z02 に手順 8・9 (メニューのコピーと Shift+Delete)、PRT-Z05 に手順 5 (吹き出しのコピー) を足し、PRT-Z07 の期待結果を INV-74 の目標 (50 ms、300 ms、4 MiB) にした (実測は備考だけ)。AT-RNG を 51 まで足した。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -3508,6 +3512,180 @@
 
 ---
 
+## セクション Z: 複数ブロックの削除・カット・コピー (2026-10-24)
+
+### PRT-Z01: ドラッグで選んで消す (マウス)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC (Chrome / Edge と Safari)。見出し・段落 3 つ・リスト・表・コード・Mermaid の図を含む文書を表示し、[Edit] で編集モードにする。ライトとダーク |
+| **手順** | 1. 段落 A の途中から段落 B の途中まで、文字をドラッグで選ぶ (ボタンを離す前と後を見る) |
+|  | 2. 帯の [削除] (ゴミ箱) にマウスを置き、押す |
+|  | 3. Ctrl+Z (Mac は Cmd+Z) を押す。続けて Ctrl+Shift+Z を押す |
+|  | 4. 段落 C の中の数文字だけを選び、帯の [削除] を押してから、すぐ外へずらして離す。もう一度押して、その上で離す |
+|  | 5. Save で保存する |
+| **期待結果** | - 1 で、A から B までのブロックに青い枠が付く。ボタンを押している間は帯が出ず、離すと、選択の最後の行のすぐ下に帯 [削除][カット][コピー] (アイコンだけ) が出る。ブロックの編集欄は開かない |
+|  | - 2 で、tooltip が `Delete blocks (Delete)`。押すと A から B までのブロックが消え、確認のダイアログもトーストも出ない。枠・帯・選択が消える。消えた所にあった次のブロックが、画面の同じ位置に来る |
+|  | - 3 で、Undo 1 回で A から B までがすべて戻り、Redo 1 回で再び消える |
+|  | - 4 で、ずらして離したときは何も起きず、上で離したときは段落 C が消える (ブロック 1 つでも効く。D4) |
+|  | - 5 で、保存したファイルに、消した結果が入っている。タブのタイトルの `* ` が消える |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-74 (1)〜(3)、INV-46、INV-48、SC-22 (オーナーの裁定 D1、D2、D4、D5、D10)。自動では blockRange.e2e.js、AT-RNG-14 / 23 / 27、AT-RNG-31 |
+
+---
+### PRT-Z02: キーとクリップボード (Delete / Backspace / カット / コピー)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC (Windows の Chrome / Edge と、Mac の Safari)。PRT-Z01 と同じ文書。テキストエディター (メモ帳など) を開いておく |
+| **手順** | 1. 段落 A と B を選び、Ctrl+C (Mac は Cmd+C) を押す。テキストエディターに貼る |
+|  | 2. 同じ選択のまま、帯の [コピー] を押す。テキストエディターに貼る |
+|  | 3. 段落 A と B を選び、Ctrl+X (Mac は Cmd+X) を押す。テキストエディターに貼る |
+|  | 4. Ctrl+Z を押す。段落 A だけを選んで Delete を押す。Ctrl+Z を押し、段落 B だけを選んで Backspace を押す |
+|  | 5. 段落 A を選び、Delete を押し続ける |
+|  | 6. 帯の 3 つのボタンの tooltip を見る (Mac では Cmd と書かれる) |
+|  | 7. (開発者ツールで `document.execCommand = () => false` として書き込みを断らせ) 段落 A を選んで Ctrl+X、続けて Ctrl+C を押す |
+|  | 8. (7 を戻すため再読み込みして) 段落 A と B を選び、右クリックのメニューの「コピー」を押す (Mac は「編集 > コピー」も)。テキストエディターに貼る |
+|  | 9. 段落 A と B を選び、Shift+Delete を押す。Ctrl+Z を押す |
+| **期待結果** | - 1 で、貼った文字は A と B の Markdown の原文そのもの (`**` などの記号を含む。間の空行もそのまま。最後の改行は無い)。文書は変わらず、選択と枠は残り、帯の [コピー] が一瞬 ✓ になる (D7、D11、U3) |
+|  | - 2 で、1 と同じ文字が貼られ、[コピー] が一瞬 ✓ になる |
+|  | - 3 で、貼った文字は 1 と同じで、A と B は文書から消える (D3)。✓ は出ない |
+|  | - 4 で、Delete と Backspace のどちらでもブロックが消え、Undo 1 回で戻る (D8) |
+|  | - 5 で、消えるのは段落 A だけ (押し続けても 1 回) |
+|  | - 6 で、`Delete blocks (Delete)` / `Cut blocks (Ctrl+X)` / `Copy blocks (Ctrl+C)` (Mac は `Cmd+X` / `Cmd+C`) |
+|  | - 7 で、Ctrl+X は A を消さず、トースト `Couldn't cut the blocks. Nothing was deleted.` を 1 つ出す。Ctrl+C はクリップボードの API で書ければ ✓、書けなければトースト `Couldn't copy the blocks.` (調整役の裁定 2026-10-24) |
+|  | - 8 で、貼った文字は 1 と同じ原文で、[コピー] が一瞬 ✓ になる (オーナーの裁定 2026-10-25) |
+|  | - 9 で、Delete と同じく A と B が消え (切り取りではない)、Undo 1 回で戻る (オーナーの裁定 2026-10-25) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-74 (3) (4)、INV-14 (4)、CON-12 (書くだけで読まない。ブラウザが読み取りの許可を求めないこと)。自動では blockRange.e2e.js (Chromium は本物のクリップボードも読む)、AT-RNG-24 / 26 / 34〜37 |
+
+---
+### PRT-Z03: いろいろなブロックと全部の選択
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC (Chrome / Edge と Safari)。PRT-Z01 と同じ文書に、数式のブロック (`$$`)、引用、生 HTML (`<details>`)、参照リンクの定義を足す |
+| **手順** | 1. リストの 2 つ目の項目の文字だけを選ぶ |
+|  | 2. 表のセルの文字から、その下のコードと図をまたいで、最後の段落まで選び、Delete を押す。Ctrl+Z を押す |
+|  | 3. 段落の右の空いた所 (行の終わりより右) からドラッグを始め、次の段落の途中で終える |
+|  | 4. 段落 A の行末から段落 B の先頭まで (どちらのブロックの文字も含まないように) 選ぶ |
+|  | 5. Ctrl+A (Mac は Cmd+A) を押し、帯の位置を見て、Delete を押す。Ctrl+Z を押す |
+|  | 6. リストの直後の段落を選んで消す (前と後がリストの場合) |
+| **期待結果** | - 1 で、リスト全体に枠が付く (D13) |
+|  | - 2 で、表・コード・図・最後の段落が消え、Undo 1 回ですべて戻る (図も描き直される) |
+|  | - 3 で、次の段落と始まりの段落 (選択が入った方) だけに枠が付く。余白の分だけ広くは消さない (U2) |
+|  | - 4 で、帯は出ない (どのブロックの文字も選んでいない) |
+|  | - 5 で、すべてのブロックに枠が付き、帯は画面の中に出る (最後の行が画面の外でも。U4)。Delete で空のブロックが 1 つだけになり (INV-49)、Undo で全部戻る。保存先とファイル名は変わらない ([Clear] とは違う) |
+|  | - 6 で、前後のリストが 1 つにつながる (1 つずつ消すときと同じ) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-74 (1) (3)、INV-41、INV-49 (調整役の裁定 U2、U4)。自動では blockRange.e2e.js、AT-RNG-01〜08 / 15〜18 |
+
+---
+### PRT-Z04: Esc の順、すき間、編集モードの外、編集中の押下
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC (Chrome / Edge と Safari)。PRT-Z01 と同じ文書 |
+| **手順** | 1. 編集モードで段落 A と B を選ぶ。すき間 (段落と段落の間) にマウスを置く |
+|  | 2. 書式のポップオーバーを開いてから Esc を押す。もう一度 Esc、もう一度 Esc を押す |
+|  | 3. 編集モードを抜け、段落 A と B を選んで Delete と Ctrl+C を押す。テキストエディターに貼る |
+|  | 4. 編集モードで段落 C を開いて文字を変え、開いたまま段落 A から B までドラッグで選ぶ |
+|  | 5. 上部の入力欄 (`#editor`) の中で文字を選び、Delete と Ctrl+C を押す |
+| **期待結果** | - 1 で、範囲がある間はすき間の点線と「+」が出ない |
+|  | - 2 で、1 回目の Esc はポップオーバーだけを閉じ、2 回目は選択を解き (枠と帯が消え、パレットは出たまま)、3 回目でパレットが閉じる (D14、INV-53) |
+|  | - 3 で、枠も帯も出ず、Delete は何もせず、貼った文字は見えている文字 (記号なし) (D9) |
+|  | - 4 で、段落 C は押した時点で確定して閉じ (INV-30)、その後に選んだ A から B に枠と帯が出る |
+|  | - 5 で、上部の入力欄の文字が消え・コピーされるだけで、プレビューのブロックは変わらない (U5) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-74 (2) (5) (6)、INV-73、INV-30、INV-53 (オーナーの裁定 D9、D14、調整役の裁定 U5)。自動では blockRange.e2e.js、AT-RNG-20 / 21 / 28 / 32 / 33 / 38 / 39 |
+
+---
+### PRT-Z05: タッチ (iPhone / iPad)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | iPhone (Safari) と iPad (Safari)。PRT-Z01 と同じ文書を表示し、[Edit] で編集モードにする |
+| **手順** | 1. 段落 A の文字を長押しして選び、つまみを段落 B まで動かす |
+|  | 2. 帯の [コピー] をタップする。すき間をタップして点線を出し、点線をタップして開いた欄に貼る (長押しの「ペースト」) |
+|  | 3. 段落 A と B を選び、帯の [削除] をタップする。パレットの Undo をタップする |
+|  | 4. 段落 A と B を選び、帯の [カット] をタップする。すき間の欄に貼る |
+|  | 5. 段落 A と B を選び、OS の吹き出しの「コピー」をタップする。すき間の欄に貼る |
+| **期待結果** | - 1 で、A から B までに枠が付き、帯は選択の下に出て、OS の吹き出し (コピーなど、選択の上に出る) と重ならない (D10) |
+|  | - 2 で、[コピー] が一瞬 ✓ になり、貼った文字は A と B の原文。タップでブロックの編集欄は開かない |
+|  | - 3 で、A と B が消え、Undo で戻る |
+|  | - 4 で、A と B が消え、貼った所に原文が入る (D12) |
+|  | - 5 で、貼った文字は帯の [コピー] と同じ原文 (オーナーの裁定 2026-10-25) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-74、INV-73 (タッチ)。自動では blockRange.e2e.js の touch (WebKit と Chromium の合成のタップ。本物の長押しの選択と OS の吹き出しはこの試験で見る) |
+
+---
+### PRT-Z06: 上部の入力欄の未描画の変更と、入力中のキー
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC (Chrome / Edge)。PRT-Z01 と同じ文書。日本語の IME |
+| **手順** | 1. 編集モードで、上部の入力欄の末尾に 1 行足す (描画しない)。プレビューの段落 A と B を選んで Delete を押す |
+|  | 2. 同じように上部の入力欄を変えてから、段落 A と B を選んで Ctrl+C を押す |
+|  | 3. 段落 C を開き、編集欄の中で数文字を選んで Delete を押す。日本語を変換している間に Delete と Backspace を押す |
+| **期待結果** | - 1 で、上部の入力欄の内容で全体が描かれ、トースト `Updated from the top box. Try again.` が出る。A と B は消えない (INV-45) |
+|  | - 2 で、全体の描画はせず、画面に出ている A と B の原文がコピーされる |
+|  | - 3 で、編集欄の文字だけが消え、変換中のキーは変換の文字だけに効く。ブロックは消えない (U5) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-74 (6)、INV-45、INV-14 (IME)。自動では blockRange.e2e.js、AT-RNG-29、AT-RNG-33 |
+
+---
+### PRT-Z07: 1 MB の文書の全部の削除と Undo のメモリ
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Chrome / Edge。1 MB の文書 (`sample-data-2.md` を約 70 回つないだもの) を表示し、パレットを表示。DevTools の Performance と Memory |
+| **手順** | 1. Ctrl+A を押す |
+|  | 2. Delete を押す (1 と 2 を Performance で記録する) |
+|  | 3. Ctrl+Z を押す。段落を 20 個ずつ選んで消す、を 30 回行い、ヒープのスナップショットを編集の前と比べる |
+| **期待結果** | - 1 で、Ctrl+A の後に枠と帯を出すフレームの処理 (Performance の、その rAF の Task。スクリプトとスタイル・レイアウトの再計算) が 50 ms 以内 (INV-74 (性能) (a)) |
+|  | - 2 で、Delete から表示の差し替えまで 300 ms 以内 (INV-74 (性能) (b)) |
+|  | - 3 で、Undo で全部が戻る。30 回の記録で増えた分が 4 MiB 未満 (INV-74 (性能) (c)) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-74 の性能、INV-51、INV-48。自動では blockRange.e2e.js の時間の試験 (`GRSMD_PERF=1`、Chromium。50 ms と 300 ms を検査する) と AT-PERF-12 / 13 (`GRSMD_PERF=1`)。**実測 (この 1 か所だけに書く。2026-10-25、e2e の合成の 1 MB の文書、Chromium、5 回):** Ctrl+A の後のフレーム 9.8〜21.9 ms (枠をビューポートの近くだけにする前は 34〜68 ms)、Delete から差し替えまで 93〜116 ms。AT-PERF-12 (jsdom) 全部の削除の中央値 0.16〜0.23 秒、AT-PERF-13 30 回の記録 2.1〜2.3 MiB (全部を消した 1 件の記録は、消した文書そのもの 0.8〜1.2 MiB) |
+
+---
+### PRT-Z08: テーマ別の色と印刷
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC (Chrome / Edge と Safari)。ライトとダーク |
+| **手順** | 1. 編集モードで段落 A と B を選び、枠と帯の色を見る。帯の [コピー] を押す |
+|  | 2. 選んだまま、印刷のプレビューを開く |
+| **期待結果** | - 1 で、枠は編集の青 (ライト `#0969da`、ダーク `#4493f8`)、帯の地はパレットと同じ。✓ の間のボタンは青 |
+|  | - 2 で、枠も帯も印刷に出ない |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-74 (2)、5.1、5.8.1。自動では AT-RNG-22 (帯の属性) |
+
+---
 ## 自動テスト (AT) の一覧
 
 この章は、PRT の備考と仕様が引く自動テストの ID (`AT-<族>-<番号>`) の行き先である。手で行う試験ではないので、判定の欄は持たない (前提条件 P-02 で全件の合格を確かめる)。
@@ -3519,8 +3697,8 @@
 | 単体・結合の試験 | vitest + jsdom (`npm test`)。置き場は `src/__tests__/`。ブラウザの配置・印刷・クリップボードの許可など jsdom で試せないものは PRT で確かめる |
 | ID | `describe` / `it` の名前の先頭に `AT-<族>-<番号>` と書く。1 つの ID を `(a)` `(b)` などで複数の `it` に分けてよい。1 つの ID は 1 つの要求を確かめる試験のまとまりを指し、複数の `it` (別のファイルを含む) にまたがってよい (`(a)` `(b)` を付けることも、付けないこともある。同じファイルの中で `(a)` `(b)` なしに複数の `it` に付くものは約 30 件 (例: AT-BSM-15、AT-PAL-03 / 10 / 11、AT-THM-14 / 18))。違う要求の試験に同じ ID を使わない。ファイルをまたぐもの: AT-BSM-01 / 02 / 03 / 08 / 09〜14 / 16 (`BlockEditController.stateMachine.test.js` の表の交点の試験と、`UIController.editMode.test.js` / `UIController.save.test.js` の結合の試験)、AT-UI-41 / 43 / 46 (`UIController.document.test.js` / `UIController.editMode.test.js` / `UIController.save.test.js` / `UIController.handleRender.test.js`。AT-UI-41 の中身は 5.14.11 の表の行ごと)、AT-BEC-35 (`BlockEditController.link.test.js` と `UIController.link.test.js` の「Remove link」の試験)。族の中で番号を足すときは、その族の最後の番号の次から振る。付け直した番号: 同じ番号が 2 つの試験に付いていたものを、AT-UI-39 (セルを開いた表の試験) → AT-UI-61、AT-UI-39 (保存ダイアログの取消) → AT-UI-65、AT-DBL-07 (タッチのダブルタップ) → AT-DBL-13 に付け直した (全体のレビューの T-4)。残る注: AT-MR-09 と AT-TCE-29 は名前ではなくコメントにだけある (AT-TCE-29 は AT-TCE-10 の describe の中)。AT-BEC-28 は中身の違う 2 つの describe (`BlockEditController.test.js` と `BlockEditController.keys.test.js` の (5)) に付いている (上の決めごとの例外) |
 | 番号の無い族 | AT-MT・AT-TW は `describe` の名前を族の名前だけで書く (関数ごとのまとまり) |
-| 時間の試験 | AT-PERF のうち時間を測るもの (02〜07、09、10) は、環境変数 `GRSMD_PERF=1` のときだけ動く (`describe.runIf`。ふだんはスキップと数える)。計算量の上限を数えるもの (01、08) は常に動く。AT-HB の大きなブロックの試験 (`MarkdownTextOps.insertHardBreak.test.js` の AT-HB-14〜19 と、字句解析の上限の AT-HB-26〜28) は、常に字句解析の回数を確かめ、時間は `GRSMD_PERF=1` のときだけ確かめる |
-| スキップ | vitest のスキップは次に限る: 上の時間の試験 (`GRSMD_PERF=1` でないとき)、`MarkdownRenderer.test.js` の「parse error path」の試験 (`it.runIf(path === "render")`。描画の経路ごとに繰り返す試験のうち、`render` 以外の経路の分は常にスキップ)、`textWidth.test.js` の幅 0 の範囲表と Unicode の照合 (`it.skipIf`。Node の Unicode の版が 16.0 でないとき)。e2e のスキップは、`tableCell.e2e.js` の時間の試験 (`GRSMD_PERF=1` でないとき、および Chromium 以外のブラウザ) と、`crossUnit.e2e.js` の N1 (本物のタッチの列は Chromium の CDP だけで作れるので、Chromium 以外) に限る |
+| 時間の試験 | AT-PERF のうち時間を測るもの (02〜07、09、10、12) とメモリを測るもの (11、13) は、環境変数 `GRSMD_PERF=1` のときだけ動く (`describe.runIf`。ふだんはスキップと数える)。計算量の上限を数えるもの (01、08) は常に動く。AT-HB の大きなブロックの試験 (`MarkdownTextOps.insertHardBreak.test.js` の AT-HB-14〜19 と、字句解析の上限の AT-HB-26〜28) は、常に字句解析の回数を確かめ、時間は `GRSMD_PERF=1` のときだけ確かめる |
+| スキップ | vitest のスキップは次に限る: 上の時間の試験 (`GRSMD_PERF=1` でないとき)、`MarkdownRenderer.test.js` の「parse error path」の試験 (`it.runIf(path === "render")`。描画の経路ごとに繰り返す試験のうち、`render` 以外の経路の分は常にスキップ)、`textWidth.test.js` の幅 0 の範囲表と Unicode の照合 (`it.skipIf`。Node の Unicode の版が 16.0 でないとき)。e2e のスキップは、`tableCell.e2e.js` と `blockRange.e2e.js` の時間の試験 (`GRSMD_PERF=1` でないとき、および Chromium 以外のブラウザ) と、`crossUnit.e2e.js` の N1 (本物のタッチの列は Chromium の CDP だけで作れるので、Chromium 以外) に限る |
 | e2e | Playwright (`npm run test:e2e` = `build:e2e` で `output/e2e/` にビルドし、`playwright test`。`playwright.config.js` の projects は Chromium と WebKit。Firefox は `npm run test:e2e:firefox` で選んだときだけ動く)。初めて動かす前に、ブラウザを `npx playwright install chromium webkit` で取得する (外部からのダウンロード。`e2e/README.md`)。置き場は `e2e/`。AT の ID は持たない。PRT との対応は AT.4 の表で引く (PRT の本文に e2e のファイル名を書いていないものもある) |
 
 ### AT.2 族の一覧
@@ -3549,8 +3727,9 @@
 | AT-SM | `ScrollMemento` (アンカー、読んでいる位置、挿入の後の最小のスクロール) | INV-46、INV-52、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜38 |
 | AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R5、Undo / Redo の記録 09〜09d) | INV-42、INV-46〜48、INV-62 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜27 (06b、09b〜09d を含む)、R1〜R5、T1〜T6 |
 | AT-BEC | `BlockEditController` (ジェスチャ、外側、IME、キー、リンク) | INV-27〜30、INV-40、INV-69 | BlockEditController.test.js、BlockEditController.keys.test.js、BlockEditController.link.test.js、UIController.link.test.js (35) | 01〜35 |
-| AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致) | 11-c | BlockEditController.stateMachine.test.js、BlockEditController.gap.test.js (29)、UIController.editMode.test.js、UIController.save.test.js | 01〜29 |
+| AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致。30〜32: ブロックの範囲) | 11-c | BlockEditController.stateMachine.test.js、BlockEditController.gap.test.js (29)、UIController.editMode.test.js、UIController.save.test.js | 01〜32 |
 | AT-GAP | `BlockGapInsert` (すき間の当たり判定、表のつまみ・リンクなどを避けること、点線の表示と押下、マウスの移動を 1 フレームに 1 回にまとめること、押下と消去で残りの移動を捨てること、click にならない押下の後も追うこと) | INV-73 | BlockGapInsert.test.js | 01〜02 |
+| AT-RNG | ブロックの範囲: `MarkdownBlockModel.removeRange` / `rangeSource` (01〜08)、`RendererOrchestrator.deleteBlocks` / `readBlocksSource` (09〜13)、`BlockRangeSelection` (選択の解決、帯、押して離す、Esc、INV-45、14〜30、40、41。読むだけで表示を変えないこと 45、帯の押下で読み直すこと 46、ビューポートの近くだけの枠 47)、UIController のキーとクリップボード (31〜38)、すき間を出さないこと (39)、書き込みの失敗のトースト (25、42〜44)、ブラウザの `copy` の事象 (48、49)、Shift+Delete (50)、帯の位置の純粋な関数 `placementNearLine` (51) | INV-74、INV-14、INV-45、INV-46、INV-48、INV-73 | MarkdownBlockModel.removeRange.test.js、RendererOrchestrator.edit.test.js、BlockRangeSelection.test.js、UIController.blockRange.test.js、BlockGapInsert.test.js (39)、floatingPlacement.test.js (51) | 01〜51 |
 | AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
@@ -3572,7 +3751,7 @@
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと | 5.8.1、5.15.2 | themeColors.test.js、hljsThemePlugin.test.js | 01〜20 |
 | AT-STA | `src/js` と `src/css` の静的な検査 | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜17 |
 | AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
-| AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ) | INV-42、INV-48、INV-51 | performance.inplaceEdit.test.js | 01〜11 |
+| AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ) | INV-42、INV-48、INV-51、INV-74 | performance.inplaceEdit.test.js | 01〜13 |
 | AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11) (`ModalController`) | SC-16、FS-10、CON-03、CON-12、5.1、5.11 | HelpLanguageSwitch.test.js、ModalController.test.js | 01〜11 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
 
@@ -3594,6 +3773,8 @@ ID を持たない試験ファイル (その場編集の前からあるクラス
 | AT-PERF-07 | 1 MB の文書に 1,000 行 × 5 列の表: 中ほどのセル (500 行目) を初めて開くまで、セルの確定から次のセル、書式の適用が、それぞれ `commitBudgetMs` (300 ms) 以内 (INV-51)。表の操作 (行の追加) は、jsdom では DOMPurify が遅いので時間を記録するだけとし、時間の判定は e2e の `tableCell.e2e.js` (Chromium、PRT-X23) で行う (行の追加で作る HTML は小さな表の分の 1 回だけであることを AT-PERF-08 で数える) |
 | AT-PERF-08 | 表の編集の間の 1 回の操作で、表全体の HTML を作らない (INV-47、INV-51) |
 | AT-PERF-09 | 5,000 個のリンクを持つ 250 KB の段落で、書式のポップオーバーを開いたときの 1 フレームのボタンの判定が予算の中 (INV-51、INV-69) |
+| AT-PERF-12 | 1 MB の文書で、100 ブロックの範囲の削除と、全部のブロックの削除が、それぞれ呼び出しから DOM の差し替えまで 5 回の中央値で `commitBudgetMs` (300 ms) 以内 (INV-74、INV-51) |
+| AT-PERF-13 | 1 MB の文書で、20 ブロックずつ 30 回の範囲の削除の Undo の記録、および全部の削除の 1 件の記録が、4 MiB 未満 (INV-74、INV-48) |
 | AT-PERF-10 | 1 MB の文書で、開いた段落の Insert table の押下 (確定・挿入・部分描画) から Col1 が開くまで、5 回の中央値が `commitBudgetMs` (300 ms) 以内 (INV-51、INV-52) |
 | AT-UI-51〜60 | 単位をまたぐ結合の試験 (全体のレビューの K-1・K-2・T-3 (1)〜(8)): ポップオーバーが開いたままのセルの移動と表の操作、押し続けた Esc、WYSIWYG のセルの Ctrl+B と Ctrl+Z、ポップオーバーとセルの Esc、見えない文字をまたぐ Bold、最小化中のセル、最小化 → `e` → ダブルクリック、テーマの切り替え、変更のあるセルでの保存、`openerDisabled` の本物の経路 |
 | AT-UI-64、AT-UI-66 (L5) | クリップボードの読み取りは 1 回ずつ (AT-UI-64: 待つ間は「リンクを貼る」が無効で、2 回目の押下は無視し、リンクは 1 回だけ入る。AT-UI-66 の L5: 待つ間に編集モードを出ると待ちを解き、結果は捨てる。全体のレビューの FX-1) |
@@ -3616,6 +3797,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | save.e2e.js | Save as のダウンロードと保存ダイアログ (偽の picker) | PRT-W06 (ダウンロード)。偽の picker の試験は、PRT-W05 / W16 などの Save as で選んだファイルへ書き込む経路と同じ (本物の保存ダイアログは自動にできないので、ダイアログそのものは PRT で確かめる) |
 | theme.e2e.js | 配色 (ライト・ダーク・コードビュー) と印刷の色、印刷に出ないもの | PRT-X16、PRT-X19、PRT-V13 |
 | uiFixes.e2e.js | UI の直し: Esc で反映して Ctrl+Z / Redo、ポップオーバー → ブロック → パレットの Esc の順 (D9)、編集欄の中の Redo はブラウザ (M5)、IME の変換中の Esc (Chromium)、Undo / Redo の単位、表の原文の Enter / Shift+Enter、文字色、すき間からの挿入 (マウスとタッチ)、Pixel 7 の上部バーの上ではすき間が反応しない (M1、Chromium)、1 MB でマウスの移動 1 回の処理 (M3。`GRSMD_PERF=1`、Chromium) | PRT-Y01、Y03 (M5 の部分)、Y05〜Y08、PRT-U05 |
+| blockRange.e2e.js | ブロックの範囲: マウスのドラッグで枠と帯 (選択の下)、[削除] / Delete / Backspace、Undo / Redo、Ctrl+C / Ctrl+X と帯の [カット] / [コピー] の原文 (Chromium は本物のクリップボードも)、✓、表・コード・リスト・図を含む範囲、Ctrl+A と Delete (INV-49)、Esc の順、すき間の「+」を出さない、編集モードの外ではブラウザのまま、`#editor` の未描画の変更 (INV-45)、帯の上下の位置 (下に場所の無い段落で必ず上)、ブラウザの `copy` の事象 (メニュー・吹き出しのコピー) も原文、Shift+Delete、タッチのタップ、1 MB の Ctrl+A の後のフレーム (50 ms) と全部の削除の時間 (300 ms。`GRSMD_PERF=1`、Chromium)。テストの名は確かめる INV-74 の細目を持つ | PRT-Z01〜Z07 |
 | tableCell.e2e.js | セルの入力と Tab、Esc (反映)・Shift+Enter・Ctrl+Z、原文のセルと表のつまみ、編集モードの外のダブルクリック、表の時間の試験 (`GRSMD_PERF=1`、Chromium だけ) | PRT-X01〜03、PRT-X08、PRT-X14、PRT-X21、PRT-X23 |
 | editModeScroll.e2e.js | 編集モードの出入りで読んでいる位置を保つ (マウスとタッチ) | PRT-X08 |
 | link.e2e.js | リンクを貼る・外す | PRT-X18 |
@@ -3802,6 +3984,14 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-Y07      | UI の直し | 表の原文の Enter と Shift+Enter |      |
 | PRT-Y08      | UI の直し | 文字色 (GitHub の 3 色) |      |
 | PRT-Y09      | UI の直し | 1 MB の文書の 30 回の Undo のメモリと時間 |      |
+| PRT-Z01      | 複数ブロック | ドラッグで選んで消す (マウス) |      |
+| PRT-Z02      | 複数ブロック | キーとクリップボード (Delete / Backspace / カット / コピー) |      |
+| PRT-Z03      | 複数ブロック | いろいろなブロックと全部の選択 |      |
+| PRT-Z04      | 複数ブロック | Esc の順、すき間、編集モードの外、編集中の押下 |      |
+| PRT-Z05      | 複数ブロック | タッチ (iPhone / iPad) |      |
+| PRT-Z06      | 複数ブロック | 上部の入力欄の未描画の変更と、入力中のキー |      |
+| PRT-Z07      | 複数ブロック | 1 MB の文書の全部の削除と Undo のメモリ |      |
+| PRT-Z08      | 複数ブロック | テーマ別の色と印刷 |      |
 
 **テスター:** \_\_\_\_\_\_\_\_\_\_
 **日付:** \_\_\_\_\_\_\_\_\_\_

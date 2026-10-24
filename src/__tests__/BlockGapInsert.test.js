@@ -31,7 +31,7 @@ function setup(spans) {
     findBlockIdAt: (el) => ids.get(el) ?? null,
     isTableTab: (el) => tabs.has(el),
   };
-  const host = { onGapChosen: vi.fn() };
+  const host = { onGapChosen: vi.fn(), isSuppressed: () => false };
   const frames = [];
   const gaps = new BlockGapInsert(preview, locator, host, { requestFrame: (fn) => frames.push(fn) });
   gaps.enable();
@@ -265,5 +265,16 @@ describe("AT-GAP-02 the line", () => {
     move(t.wrappers[0], 100, 70);
     t.frame();
     expect(t.gaps.shownGap()).toBeNull();
+  });
+});
+
+describe("AT-RNG-39 no gap while blocks are selected (INV-74 (2))", () => {
+  it("gapAt is null while host.isSuppressed() is true, and back after", () => {
+    t = setup([[20, 60], [80, 120]]);
+    let selected = true;
+    t.host.isSuppressed = () => selected;
+    expect(t.gaps.gapAt(100, 70)).toBeNull();
+    selected = false;
+    expect(ids(t.gaps.gapAt(100, 70))).toEqual([1, 2]);
   });
 });

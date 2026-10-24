@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform } from "../js/utils.js";
+import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform, isTypingTarget } from "../js/utils.js";
 
 describe("escapeHtml", () => {
   it("escapes < and >", () => {
@@ -115,5 +115,28 @@ describe("isApplePlatform (INV-14: Cmd is the primary modifier)", () => {
     [undefined, false],
   ])("%j -> %s", (nav, expected) => {
     expect(isApplePlatform(nav)).toBe(expected);
+  });
+});
+
+describe("isTypingTarget (INV-14; also INV-74 (1): one check for both, review L5)", () => {
+  it("an input, a textarea, a contenteditable element and the inside of a toolbar take the keys; the rest do not", () => {
+    const make = (html) => {
+      const box = document.createElement("div");
+      box.innerHTML = html;
+      document.body.appendChild(box);
+      return box;
+    };
+    const box = make('<input><textarea></textarea><div contenteditable="true">x</div><div role="toolbar"><button>b</button></div><button>c</button><select><option>o</option></select>');
+    const [input, textarea, editable, toolbar, button, select] = box.children;
+    expect(isTypingTarget(input)).toBe(true);
+    expect(isTypingTarget(textarea)).toBe(true);
+    // jsdom has no isContentEditable: set it as a browser does
+    Object.defineProperty(editable, "isContentEditable", { value: true });
+    expect(isTypingTarget(editable)).toBe(true);
+    expect(isTypingTarget(toolbar.firstChild)).toBe(true);
+    expect(isTypingTarget(button)).toBe(false);
+    expect(isTypingTarget(select)).toBe(false); // as INV-14 lists them
+    expect(isTypingTarget(null)).toBe(false);
+    box.remove();
   });
 });

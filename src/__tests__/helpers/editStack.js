@@ -10,6 +10,7 @@ import ScrollMemento from "../../js/classes/ScrollMemento.js";
 import RendererOrchestrator from "../../js/classes/RendererOrchestrator.js";
 import ApplicationState from "../../js/classes/ApplicationState.js";
 import BlockEditController from "../../js/classes/BlockEditController.js";
+import BlockRangeSelection from "../../js/classes/BlockRangeSelection.js";
 
 // Test files that use this helper must mock utils.waitForDOMStability
 // (jsdom has no ResizeObserver), as performance.inplaceEdit.test.js does.
@@ -42,6 +43,8 @@ export function fakeHost() {
     onEditorInput: vi.fn(),
     onEditStateChanged: vi.fn(),
     showToast: vi.fn(),
+    writeClipboardNow: vi.fn(() => true), // a block range's source (INV-74)
+    writeClipboardLater: vi.fn(() => Promise.resolve(true)),
   };
   return host;
 }
@@ -76,13 +79,26 @@ export async function setupEdit(md, { editMode = true } = {}) {
     { render: vi.fn(), reload: vi.fn(), destroy: vi.fn() },
   );
   const host = fakeHost();
-  const bec = new BlockEditController(preview, orchestrator, markdownRenderer, scrollMemento, host);
+  // the block range's frames are run by s.frame() (INV-74: shown once per frame)
+  const frames = [];
+  let ranges = null;
+  /** @purity non-pure */
+  const createRanges = (rangeHost) => {
+    ranges = new BlockRangeSelection(preview, markdownRenderer, rangeHost, { requestFrame: (fn) => frames.push(fn) });
+    return ranges;
+  };
+  const bec = new BlockEditController(preview, orchestrator, markdownRenderer, scrollMemento, host, undefined, undefined, createRanges);
   if (md !== null) await orchestrator.loadMarkdown(md, "light");
   if (editMode) {
     host.shown = true; // UIController shows the palette, then tells the controller
     bec.dispatch("paletteShown");
   }
-  const s = { preview, orchestrator, markdownRenderer, scrollMemento, mermaidLib, host, bec };
+  const s = { preview, orchestrator, markdownRenderer, scrollMemento, mermaidLib, host, bec, ranges };
+  /** Run the frames asked for so far, then show the selection now (BlockRangeSelection.update). */
+  s.frame = () => {
+    frames.splice(0).forEach((fn) => fn());
+    ranges.update();
+  };
   /** First block matching pred, with its wrapper on screen. */
   s.block = (pred) => {
     const block = orchestrator.getModel().getBlocks().find(pred);
