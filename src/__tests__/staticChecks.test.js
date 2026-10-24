@@ -285,6 +285,257 @@ function proseLiterals(src) {
   return out;
 }
 
+// ---- regular expressions (AT-STA-18) ----
+
+/**
+ * The patterns of a JS source: regex literals, and the first argument of
+ * RegExp(...) / new RegExp(...) when it is built from string literals (a
+ * part that is not a literal is read as "0", e.g. a count in {n}).
+ * @param {string} src
+ * @returns {{pattern: string, line: number}[]}
+ */
+function regexPatterns(src) {
+  const out = [];
+  const lineOf = (pos) => src.slice(0, pos).split("\n").length;
+  const textOf = (node) => {
+    if (node?.type === "Literal" && typeof node.value === "string") return node.value;
+    if (node?.type === "TemplateLiteral") return node.quasis.map((q) => q.value.cooked ?? q.value.raw).join("0");
+    if (node?.type === "BinaryExpression" && node.operator === "+") {
+      const left = textOf(node.left);
+      const right = textOf(node.right);
+      return left === null && right === null ? null : (left ?? "0") + (right ?? "0");
+    }
+    return null;
+  };
+  walk(parseAst(src), (node) => {
+    if (node.type === "Literal" && node.regex) out.push({ pattern: node.regex.pattern, line: lineOf(node.start) });
+    if ((node.type === "NewExpression" || node.type === "CallExpression") && node.callee.type === "Identifier" && node.callee.name === "RegExp") {
+      const pattern = textOf(node.arguments[0]);
+      if (pattern !== null) out.push({ pattern, line: lineOf(node.start) });
+    }
+  });
+  return out;
+}
+
+/**
+ * Whether a pattern has a nested quantifier: a repeated group (*, +, or
+ * {n} / {n,} / {n,m} with an upper bound of 2 or more) that holds a
+ * variable part: a variable quantifier (*, +, ?, {n,}, or {n,m} with
+ * m > n) or an alternation (|). Examples: (?:\s*\n)*, (a+)+, (a+){2,8},
+ * (?:a?a?)*, (?:\s|\n)*. Such a group may split one text in many ways and
+ * take exponential (or high polynomial) time on a text it does not match
+ * (ReDoS). Escapes and character classes are skipped; a lookaround counts
+ * as a group; the ? of a lazy quantifier and of a group's (?:, (?=, (?<name>
+ * is not a quantifier.
+ * @param {string} pattern
+ * @returns {boolean}
+ */
+function hasNestedQuantifier(pattern) {
+  const stack = []; // per open group: does it hold a variable part
+  let last = null; // the group that just closed, or null
+  let afterQuantifier = false; // a ? here is a lazy mark
+  for (let i = 0; i < pattern.length; i++) {
+    const ch = pattern[i];
+    if (ch === "?" && afterQuantifier) {
+      afterQuantifier = false;
+      continue;
+    }
+    afterQuantifier = false;
+    const brace = ch === "{" ? /^\{(\d+)(,(\d*))?\}/.exec(pattern.slice(i)) : null;
+    if (ch === "*" || ch === "+" || ch === "?" || brace) {
+      const lower = brace ? Number(brace[1]) : ch === "+" ? 1 : 0;
+      const upper = !brace ? (ch === "?" ? 1 : Infinity) : brace[2] === undefined ? lower : brace[3] === "" ? Infinity : Number(brace[3]);
+      if (last && last.hasVariable && upper >= 2) return true;
+      if (upper !== lower && stack.length > 0) stack[stack.length - 1].hasVariable = true;
+      if (brace) i += brace[0].length - 1;
+      afterQuantifier = true;
+      last = null;
+      continue;
+    }
+    if (ch === "\\") i++;
+    else if (ch === "[") {
+      for (i++; i < pattern.length && pattern[i] !== "]"; i++) if (pattern[i] === "\\") i++;
+    } else if (ch === "(") {
+      stack.push({ hasVariable: false });
+      const kind = /^\(\?(?::|=|!|<=|<!|<[A-Za-z_$][\w$]*>)/.exec(pattern.slice(i));
+      if (kind) i += kind[0].length - 1;
+    } else if (ch === ")") {
+      last = stack.pop() ?? null;
+      if (last && stack.length > 0 && last.hasVariable) stack[stack.length - 1].hasVariable = true;
+      continue;
+    } else if (ch === "|" && stack.length > 0) stack[stack.length - 1].hasVariable = true;
+    last = null;
+  }
+  return false;
+}
+
+// Nested quantifiers checked by hand to run in linear time: the repeated
+// group has a delimiter that its inner quantifier cannot match, so a text
+// splits into repeats in exactly one way.
+// - Blank lines: white space that is not a newline, then the newline.
+// - Quote marks: ">", then spaces and tabs (which are not ">").
+const LINEAR_NESTED = new Map([
+  ["classes/BlockEditController.js", ["^(?:[ \\t]*\\n)*"]], // _gapText: leading blank lines
+  ["textTransforms.js", ["^(?:[^\\S\\n]*\\n)*(`{3,})markdown\\s*\\n"]], // WRAPPER_OPEN_RE: 5.13 rule 1
+  ["classes/MarkdownTextOps.js", ["^[ \\t]*(?:>[ \\t]*)+", "^[ \\t]*(?:>[ \\t]*)*", "^[ \\t]*(?:>[ \\t]*)*$"]], // quote marks
+]);
+
+describe("AT-STA-18 regular expressions in src/js have no nested quantifier (ReDoS)", () => {
+  it("AT-STA-18 the check below finds nested quantifiers and passes plain ones", () => {
+    expect(hasNestedQuantifier("^(?:\\s*\\n)*(`{3,})markdown\\s*\\n")).toBe(true);
+    expect(hasNestedQuantifier("(a+)+")).toBe(true);
+    expect(hasNestedQuantifier("(?:a|b*)*c")).toBe(true);
+    expect(hasNestedQuantifier("((?:ab)+)*")).toBe(true);
+    expect(hasNestedQuantifier("(a{1,3}){2,}")).toBe(true);
+    expect(hasNestedQuantifier("(x*?y)+?")).toBe(true);
+    // an outer quantifier with an upper bound of 2 or more (review L1 (1))
+    expect(hasNestedQuantifier("(a+){2,8}b")).toBe(true);
+    expect(hasNestedQuantifier("(a+){2}b")).toBe(true);
+    // an inner ? (review L1 (2)), not the ? of (?: or of a lazy quantifier
+    expect(hasNestedQuantifier("(?:a?a?)*b")).toBe(true);
+    expect(hasNestedQuantifier("(?<name>a?)+")).toBe(true);
+    // an alternation, whose branches may overlap (review L1 (3))
+    expect(hasNestedQuantifier("(?:\\s|\\n)*x")).toBe(true);
+    expect(hasNestedQuantifier("(?:a|a)*b")).toBe(true);
+    expect(hasNestedQuantifier("((?:a|b)c)+")).toBe(true);
+    expect(hasNestedQuantifier("(?:\\s*\\n)?")).toBe(false);
+    expect(hasNestedQuantifier("(a+)?")).toBe(false);
+    expect(hasNestedQuantifier("(a+){0,1}")).toBe(false);
+    expect(hasNestedQuantifier("(a+){1}")).toBe(false);
+    expect(hasNestedQuantifier("(?:ab)*")).toBe(false);
+    expect(hasNestedQuantifier("(?:ab)*?c")).toBe(false);
+    expect(hasNestedQuantifier("(?=ab)(?<n>cd)+")).toBe(false);
+    expect(hasNestedQuantifier("a+?(b)*")).toBe(false);
+    expect(hasNestedQuantifier("a|b*")).toBe(false);
+    expect(hasNestedQuantifier("(ab)*c+")).toBe(false);
+    expect(hasNestedQuantifier("a*(b)*")).toBe(false);
+    expect(hasNestedQuantifier("[(a+)]*")).toBe(false);
+    expect(hasNestedQuantifier("\\(a+\\)*")).toBe(false);
+    expect(hasNestedQuantifier("(a{3})*")).toBe(false);
+    expect(regexPatterns('const r = /(a+)+/g; new RegExp("\\\\n`{" + n + "}\\\\s*$");')).toEqual([
+      { pattern: "(a+)+", line: 1 },
+      { pattern: "\\n`{0}\\s*$", line: 1 },
+    ]);
+  });
+
+  it("AT-STA-18 every nested quantifier in src/js is one checked to be linear", () => {
+    const found = [];
+    for (const f of FILES) {
+      for (const { pattern, line } of regexPatterns(read(f))) {
+        if (hasNestedQuantifier(pattern) && !(LINEAR_NESTED.get(rel(f)) ?? []).includes(pattern)) found.push(`${rel(f)}:${line} /${pattern}/`);
+      }
+    }
+    expect(found).toEqual([]);
+    // the list holds only patterns that are in src/js and that the check finds
+    for (const [file, patterns] of LINEAR_NESTED) {
+      const inFile = regexPatterns(read(resolve(jsDir, file))).map((p) => p.pattern);
+      for (const pattern of patterns) {
+        expect(inFile, `${file} /${pattern}/`).toContain(pattern);
+        expect(hasNestedQuantifier(pattern), pattern).toBe(true);
+      }
+    }
+  });
+});
+
+/** The end of the group that opens at i (the index of its ")"), or -1. */
+function groupEnd(pattern, i) {
+  let depth = 0;
+  for (; i < pattern.length; i++) {
+    const ch = pattern[i];
+    if (ch === "\\") i++;
+    else if (ch === "[") {
+      for (i++; i < pattern.length && pattern[i] !== "]"; i++) if (pattern[i] === "\\") i++;
+    } else if (ch === "(") depth++;
+    else if (ch === ")" && --depth === 0) return i;
+  }
+  return -1;
+}
+
+/** The top-level alternatives of a group's body. */
+function alternatives(body) {
+  const out = [];
+  let depth = 0;
+  let from = 0;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (ch === "\\") i++;
+    else if (ch === "[") {
+      for (i++; i < body.length && body[i] !== "]"; i++) if (body[i] === "\\") i++;
+    } else if (ch === "(") depth++;
+    else if (ch === ")") depth--;
+    else if (ch === "|" && depth === 0) {
+      out.push(body.slice(from, i));
+      from = i + 1;
+    }
+  }
+  out.push(body.slice(from));
+  return out;
+}
+
+/**
+ * Whether a pattern is not anchored at the start and begins with one atom
+ * (a character, an escape or a class) repeated without bound (*, +, {n,}),
+ * with more pattern after it, as in /[ \t]+$/, / {2,}$/ or /\n*$/. The engine
+ * tries a match from every position of a long run of that atom, and each
+ * try reads the rest of the run again before the part after it fails: the
+ * time is quadratic in the run (ReDoS). A first group counts through its
+ * alternatives (/(?:^|[ \t]+)#+$/); a lookaround at the start is skipped; a
+ * repeated group is AT-STA-18's case. A pattern that is the run alone
+ * (/\s+/) succeeds where it starts, so it is linear.
+ * @param {string} pattern
+ * @param {string} [after] - the pattern that follows (inside a group)
+ * @returns {boolean}
+ */
+function startsWithRunThenMore(pattern, after = "") {
+  if (pattern === "" || pattern.startsWith("^")) return false;
+  if (pattern[0] === "(") {
+    const end = groupEnd(pattern, 0);
+    const rest = pattern.slice(end + 1);
+    if (/^\(\?(?:=|!|<=|<!)/.test(pattern)) return startsWithRunThenMore(rest, after);
+    if (/^(?:[*+?]|\{\d+(?:,\d*)?\})/.test(rest)) return false;
+    const head = /^\((?:\?(?::|<[A-Za-z_$][\w$]*>))?/.exec(pattern)[0];
+    return alternatives(pattern.slice(head.length, end)).some((alt) => startsWithRunThenMore(alt, rest + after));
+  }
+  let end = 0;
+  if (pattern[0] === "\\") end = 1;
+  else if (pattern[0] === "[") {
+    for (end = 1; end < pattern.length && pattern[end] !== "]"; end++) if (pattern[end] === "\\") end++;
+  }
+  const rest = pattern.slice(end + 1);
+  const quantifier = /^(?:[*+]|\{\d+,\})\??/.exec(rest);
+  return quantifier !== null && rest.slice(quantifier[0].length) + after !== "";
+}
+
+describe("AT-STA-19 regular expressions in src/js do not start with a run that the rest may reject (ReDoS), and have no lookbehind", () => {
+  it("AT-STA-19 the check below finds a leading run with more after it and passes the others", () => {
+    for (const p of ["[ \\t]+$", " {2,}$", " +$", "\\n+$", "\\n*$", "\\\\+$", "(?:^|[ \\t]+)#+[ \\t]*$", "(?<! ) +$", "a*?b", "(x+)y"]) {
+      expect(startsWithRunThenMore(p), p).toBe(true);
+    }
+    for (const p of ["^[ \\t]+$", "\\s+", "[\\n\\r]+", "`+", "\\n`{0}\\s*$", "a+?", "(?:ab)+c", "(a+)*b", "a{3}$", "(?:^|x)y*$", "#{1,6}$"]) {
+      expect(startsWithRunThenMore(p), p).toBe(false);
+    }
+  });
+
+  it("AT-STA-19 no pattern in src/js starts with a run that the rest may reject", () => {
+    const found = [];
+    for (const f of FILES) {
+      for (const { pattern, line } of regexPatterns(read(f))) if (startsWithRunThenMore(pattern)) found.push(`${rel(f)}:${line} /${pattern}/`);
+    }
+    expect(found).toEqual([]);
+  });
+
+  // A lookbehind is a syntax error in Safari before 16.4 (P-05: iOS 15+):
+  // one regex literal with it stops the whole script there. (marked tests
+  // for it with new RegExp in a try, and does without it.)
+  it("AT-STA-19 no lookbehind in src/js (Safari before 16.4, P-05)", () => {
+    const found = [];
+    for (const f of FILES) {
+      for (const { pattern, line } of regexPatterns(read(f))) if (/\(\?<[=!]/.test(pattern)) found.push(`${rel(f)}:${line} /${pattern}/`);
+    }
+    expect(found).toEqual([]);
+  });
+});
+
 // ---- style.css (AT-PAL-27 and the editing rules; the look itself is PRT-V) ----
 
 const css = readFileSync(resolve(here, "../css/style.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");

@@ -30,6 +30,8 @@
 
 **改訂:** 2026-10-24 — レビュー基準を `spec/grsmd_review_standards_ja.md` に置く (上流の gr-sw-maker の基準の写しは `spec/upstream_review_standards_ja.md`。コミット `63e6fdc`)。仕様の中のレビューの規則の参照を、上流がやめた番号 (R2.18・R4.4・R7.1・R7.3・R7.5・R7.6・R7.9) から「章 + 観点の名」に改める (CON-15、3.2、11-b、5.2、5.13、5.14.2、5.16、5.16.1)。1.4 のディレクトリの木に 2 つのファイルを足す。11-b に、状態遷移図と表を 1 つの原稿から作らないことを既知の制限として書く。動きは変えない。
 
+**改訂:** 2026-10-25 — 不具合の修正: 先頭の空行が多い文書 (約 25 行から 1 行ごとに時間が 2 倍。41 行で Chromium は数時間) の描画とペースト、`.md` の読み込みが終わらなかった。ラッパーの判定 (5.13 規則 1) の正規表現が、空行の並びの分け方をすべて試していた (ReDoS)。空行を 1 行ずつ読む形に改め、時間を空行の数に比例させる。判定の結果は変わらない。src の正規表現の入れ子の量指定子を静的な試験で見る (AT-STA-18)。あわせて、行末や末尾の並び (空白・タブ・改行・`\`) を正規表現 (`/[ \t]+$/`・`/ {2,}$/`・`/\n*$/` など 22 か所) で探していた所を、末尾から数える関数 `trailingRunLength` / `trimTrailingRun` / `trailingRun` (`textTransforms.js`) に改める。正規表現は、末尾でない長い並び (行の中の空白 10 万個、コードブロックの中の空行 30 万行など) を始まりの位置ごとに読み直し、2 乗の時間 (数秒〜数十秒) になっていた。結果は変わらない。後ろ読み (`(?<!…)`) は Safari 16.4 より前で構文の誤りになり、スクリプト全体が動かなくなるので使わない (試験仕様 P-05 の iPhone Safari (iOS 15+))。この 2 つの形も静的な試験で見る (AT-STA-19)。行の割り込みの空白 (2 個以上) の決まりを `MarkdownTextOps.lineBreakSpaceCount` の 1 か所にし、`InvisibleCharOverlay` もそれを使う (3.2)。HTML のブロックのタグを数える `TAG_RE` (`MarkdownBlockModel`) は、`>` の無い `<` の多いブロックで 2 乗の時間 (600 KB で 16 s) になっていたので、最後の `>` より後ろを読まない形に改める (数えるタグは変わらない)。Markdown の表示のコードブロックの色付けに上限を設ける (オーナーの裁定): 20,480 文字 (約 20 KB) を超えるブロックは色付けせず、言語の無いブロックは先頭の 3,072 文字 (約 3 KB) だけで言語を判定する (5.14.4、`CONFIG.rendering.highlightMaxChars` / `highlightDetectChars`。言語の無い空行 10 万行のブロックで描画が数十秒止まっていた)。ヘルプ (日英) に 1 行ずつ書く。コードビューの色付けは変えず、中身がその言語らしくないファイルで 2 乗の時間になることを既知の制限として 5.5 に書く (オーナーの裁定)。依存の追加はない (付録A 不変)。
+
 ---
 
 ## 目次
@@ -198,7 +200,7 @@ gr-simple-md-renderer/
 │   │   ├── config.js             # CONFIG, EXT_TO_HLJS, FILE_SYSTEM_HANDLE_SUPPORTED
 │   │   ├── utils.js              # utility functions (applyTheme, showToast, etc.)
 │   │   ├── stateTable.js         # helpers for the transition tables (11-c to 11-f)
-│   │   ├── textTransforms.js     # wrapper split, line endings, BOM (pure)
+│   │   ├── textTransforms.js     # wrapper split, line endings, BOM, trailing runs (pure)
 │   │   ├── textWidth.js          # display width (pure, INV-61)
 │   │   └── classes/              # one class per file
 │   │       ├── ApplicationState.js
@@ -846,6 +848,7 @@ classDiagram
         +insertHardBreak(text, selStart, selEnd, lexers)$ TextEdit
         +stripMeaninglessHardBreaks(raw, lexFull, walkTokens)$ string
         +hardBreakLines(text, lexBlocks)$ boolean[]
+        +lineBreakSpaceCount(text)$ number
         +insertTableRow(tableRaw, caretOffset)$ TextEdit
         +insertTableColumn(tableRaw, caretOffset)$ TextEdit
         +insertBlockText(text, caretOffset, blockText)$ TextEdit
@@ -1242,7 +1245,7 @@ classDiagram
 
 | クラス / モジュール | メンバと決めごと |
 | --- | --- |
-| `textTransforms.js` | `splitMarkdownWrapper(text)` / `detectLineEnding(text)` / `normalizeLineEndings(text)` / `convertLineEndings(lfText, lineEnding)` / `hasUtf8Bom(bytes)`。すべて `@purity pure` (5.13、5.14.1) |
+| `textTransforms.js` | `splitMarkdownWrapper(text)` / `detectLineEnding(text)` / `normalizeLineEndings(text)` / `convertLineEndings(lfText, lineEnding)` / `hasUtf8Bom(bytes)` / `trailingRunLength(text, chars)` / `trimTrailingRun(text, chars)` / `trailingRun(text, chars)` (末尾の `chars` の文字の並びの長さ・それを除いた文字列・その並び。末尾から数え、並びの長さに比例する時間。`MarkdownTextOps`・`MarkdownBlockModel`・`MarkdownTable`・`InvisibleCharOverlay` の行末の空白と末尾の改行は、これで求める。正規表現の `/[ \t]+$/` などは長い並びで 2 乗の時間になり、後ろ読みは Safari 16.4 より前で使えないため。AT-RUN、AT-STA-19)。すべて `@purity pure` (5.13、5.14.1) |
 | `stateTable.js` | 状態遷移表 (11-c / 11-d / 11-e / 11-f) をデータとして作る補助 (すべて `@purity pure`。凍結した値だけを作る)。`cell(to, actions, guard)` (表の 1 つの交点 `{to, actions, guard?}`) / `row(states, cells)` (1 つの出来事の行。状態ごとの交点。`null` は変化なし) / `choice(...cells)` (ガード付きの選択肢を上から順に試す 1 つの交点。11-b。最後はガードなし (else) でよい) / `selectCell(entry, isGuardTrue)` (交点から、ガードが真の最初の選択肢を選ぶ。無ければ `null`) |
 | `textWidth.js` | `displayWidth(text)` / `codePointWidth(cp)` (`@purity pure`。INV-61、5.14.13。範囲表は Unicode 16.0.0 から作った定数) |
 | `MarkdownTable` | `+parse(raw)$` / `+format(table)$` / `+formatTablesIn(text, lexer)$` / `+trimCell(text)$` (セルの前後の空白とタブを除く。`parse` とセルの確定で同じ規則) / `+insertRow$` / `+deleteRow$` / `+insertColumn$` / `+deleteColumn$` / `+setAlignment$` (すべて `@purity pure`。5.14.13) |
@@ -3076,6 +3079,8 @@ const CONFIG = {
   rendering: {
     stabilityTimeout: 1000, // DOM stability wait timeout (ms)
     stabilityDebounce: 50, // ResizeObserver debounce (ms)
+    highlightDetectChars: 3072, // a code block without a language is detected from this many characters (5.14.4)
+    highlightMaxChars: 20480, // a longer code block is not highlighted (5.14.4)
   },
   plantuml: {
     imageLoadTimeout: 5000, // Image load timeout (ms)
@@ -3662,6 +3667,13 @@ class SourceFileRenderer {
 4. ハイライト済みHTMLを行に分割し、各行を `<span class="code-line">` で囲む。行境界をまたぐspanタグは閉じて再度開く処理を行う。
 5. `#codeViewBody` のみを含むHTML文字列を返す (ヘッダー、ステータスバー、キーヒントは生成しない)
 6. `{ html, lineCount, language }` オブジェクトを返す
+
+**既知の制限 (コードビューの色付けの時間。オーナーの裁定 2026-10-25):**
+
+- **理由:** コードビュー (最大 5 MB、CON-08) は、拡張子で決めた言語でファイルを丸ごと色付けする。highlight.js の言語の型には、中身がその言語らしくないと 2 乗の時間になるものがある。Markdown のコードブロックの上限 (5.14.4 の 20,480 文字) は、コードビューには当てない。当てると、普通の大きさのソースファイルの多くが色を失う。分けて色付けする案は、複数行のコメントや文字列の色がずれ、型によっては速くならないので採らない。
+- **影響:** 中身がその言語らしくないファイルを開くと、表示まで長くかかる。測った例 (Node の highlight.js 11.12.0 を直に呼んだ、色付けだけの時間。画面の描画の時間ではない。レビューの記録 R2-12): `.js` で空行だけの 200 KB が 17.6 s、`.cs` で改行の無い文の 200 KB が 132 s。本物のコードは線形で、`.js` の 1 MB が 0.41 s、5 MB が 1.95 s。
+- **回避:** 中身に合う拡張子のファイルを開く (色付けの要らない文字のファイルは `.txt` などにする)。
+- TODO.md に載せている。
 
 ### 5.6 SmoothScrollEngine
 
@@ -4496,7 +4508,7 @@ UIController.preprocessInput() は、AIツールが出力する外側のMarkdown
 
 入力は LF に正規化済みの文字列とする (すべての経路で「改行の正規化 → split」の順。5.14.1)。
 
-1. 先頭の空行 (空白だけの行を含む) に続いて、3 個以上のバッククォート、`markdown` (大文字小文字を区別しない)、任意の空白、改行、が並ぶ部分を `prefix` の候補とする (現行コードの `markdown\s*\n` と同じ範囲)。
+1. 先頭の空行 (空白だけの行を含む) に続いて、3 個以上のバッククォート、`markdown` (大文字小文字を区別しない)、任意の空白、改行、が並ぶ部分を `prefix` の候補とする (現行コードの `markdown\s*\n` と同じ範囲)。先頭の空行は 1 行ずつ (改行以外の空白 + 改行) 読み、判定の時間を空行の数に比例させる (空行の並びを何通りにも分けられる正規表現は、ラッパーの無い文書で空行 1 行ごとに時間が 2 倍になる。ReDoS。AT-WRAP-20〜22、AT-STA-18)。
 2. 末尾にある「改行 + 候補と **同じ数** のバッククォート + 任意の空白と改行」を `suffix` の候補とする。
 3. **両方の候補が揃った場合だけ** 除去する (`prefix` と `suffix` に入れる)。片方しか無い場合は何も除去しない (`markdown` 言語の例のコードブロックで始まる普通の文書や、コードブロックで終わる普通の文書を壊さないため)。
 4. `prefix + body + suffix === text` が常に成り立つ (除去したものをすべて正確に返す)。`trim` はしない。
@@ -4551,9 +4563,17 @@ UIController.preprocessInput() は、AIツールが出力する外側のMarkdown
 
 全体描画 (初回、ドロップ、Reload、`l` / `d`、`#editor` からの描画) でも、ブロックごとに `.md-block` を作って描画する。生 HTML のまとめ (INV-41) によって、`<details>` などの表示は従来の `marked.parse` と同じになる。PlantUML は従来どおり `mode: "consent"` で描画する。全体描画では HTML のキャッシュと Undo の記録を空にする。全体描画も、キューに入れた時点の描画の世代を持ち、実行の時点で世代が進んでいれば何もしない (続けて入った全体描画は最後の 1 回だけが描き、PlantUML の確認も 1 回だけ出る)。空の文書 (ブロックが 0 個) では、ID を持たない空のブロック (`.md-block.md-block-empty`) を 1 つ置く (INV-49)。編集モードでそれを開いた編集欄の確定は、本文が空白だけでなければ `insertAfter(null, text)` で入れ、空白だけなら何もしない。
 
+**コードブロックの色付けの上限 (全体描画と部分再描画の両方。`MarkdownRenderer._highlight`。オーナーの裁定 2026-10-25):** Markdown の表示のコードブロック (Mermaid と PlantUML を除く) は、次のとおり highlight.js で色付けする。大きさはコードの文字列の長さ (`textContent.length`。UTF-16 の単位。marked が付ける最後の改行を含む) で数える。
+
+1. 長さが 20,480 文字 (約 20 KB。`CONFIG.rendering.highlightMaxChars`) を超えるブロックは、言語の有無にかかわらず色付けせず、文字のまま (エスケープしたまま) にする (`hljs` の class だけを付け、地の色をほかのコードブロックとそろえる)。highlight.js の言語の型には、長いブロックで 2 乗の時間になるものがある (JavaScript の `'use strict'` の型は空行 25 KB で 270 ms、C# の関数の宣言の型は 10 KB で 340 ms)。上限の内では、1 ブロックの最悪は約 1.25 s。
+2. 言語の指定 (`language-*` / `lang-*`、または言語の名の class。highlight.js の `languageDetectRe` と同じ読み方で、情報文字列が `-` だけのフェンスの `language--` は言語の指定にならない) が無いブロックは、先頭の 3,072 文字 (約 3 KB。`CONFIG.rendering.highlightDetectChars`) だけで言語を判定し (`hljs.highlightAuto`)、判定した言語でブロック全体を色付けする。判定できなければ plaintext とする。言語の判定は、すべての言語の型をその文字列に当てるため、ブロック全体に当てると長いブロックで止まる (空行 10 万行で数十秒)。判定の時間は約 40 ms まで。
+3. 言語の指定があるブロックは、上限の内なら従来どおりその言語で色付けする。
+
+コードビュー (5.5) はこの上限の対象外 (5.5 の既知の制限。オーナーの裁定 2026-10-25)。
+
 #### 5.14.5 テキスト操作 (`MarkdownTextOps`, `@purity pure`)
 
-CONFIG を読まず、必要な値は引数で受け取る。`formatRange(text, selStart, selEnd, op, {lexBlocks, lexInline, colors})` (Bold / Italic / 文字色 / リンク。INV-66 / 67 / 69。5.14.14 / 5.14.15)、`insertLink(text, caret, label, link, context)` / `canInsertLink(text, caret, context)` (オーナーの裁定 F-R1 の位置の判定と、marked での読み直しの照合) / `removeLink(text, selStart, selEnd, context)` / `canRemoveLink(text, selStart, selEnd, context)` (外して読み直しまで通るか) (INV-69。5.14.15)、`canFormatRange(text, selStart, selEnd, lexBlocks)` (5.15.5)、`insertHardBreak(text, selStart, selEnd, {lexBlocks, lexInline})` (INV-71 の (1)〜(5))、`stripMeaninglessHardBreaks(raw, lexFull, walkTokens)` (INV-71 の (6))、`hardBreakLines(text, lexBlocks)` (INV-70 の行末の印を付ける行)、`insertTableRow` / `insertTableColumn` (列はバックスラッシュの付かない縦棒だけで区切る。コードスパンの中の縦棒も区切りとして数える。区切り行にも区切りのセルを足し、配置指定は既定とする)、`insertBlockText` (前後に空行が無ければ補って挿入する。`MarkdownBlockModel.insertAt` が使う。INV-52)、`planBlockInsert(text, caret, blockType, {lexBlocks, lexInline, maxInlineChars})` (INV-52 の挿入の位置: `{kind: "above" | "below" | "split", line}` (境目の行) か `{kind: "refuse"}`。ブロックだけの字句解析で、リストの項目と引用の中を、行の番号を数えながらたどる) / `insertOffset(text, plan)` (確定した文字列の中の、その境目の位置。割るときは境目の前の行の終わり。末尾の改行は含めない) / `cutLineEndBreak(text, plan, lexBlocks)` (割った上の部分の最後の行の、改行でなくなる行末の空白の数、または `\` の改行の 1。その行がコード・HTML・数式の中なら 0。確定した文字列の全体の、ブロックだけの字句解析 1 回)、`insertTextAt` (`<br>` の挿入に使う)、`splitTableRow(line)` (表の行をセルに分ける。逃がされていない縦棒で区切り、`{segments, first, last}` を返す。`MarkdownTable` と共有する)、`changedRange(before, after)` (2 つの文字列の共通の先頭と末尾を除いた、置き換える 1 つの区間 `{start, end, text}`。5.14.6 の Undo の対象にする挿入に使う)。
+CONFIG を読まず、必要な値は引数で受け取る。`formatRange(text, selStart, selEnd, op, {lexBlocks, lexInline, colors})` (Bold / Italic / 文字色 / リンク。INV-66 / 67 / 69。5.14.14 / 5.14.15)、`insertLink(text, caret, label, link, context)` / `canInsertLink(text, caret, context)` (オーナーの裁定 F-R1 の位置の判定と、marked での読み直しの照合) / `removeLink(text, selStart, selEnd, context)` / `canRemoveLink(text, selStart, selEnd, context)` (外して読み直しまで通るか) (INV-69。5.14.15)、`canFormatRange(text, selStart, selEnd, lexBlocks)` (5.15.5)、`insertHardBreak(text, selStart, selEnd, {lexBlocks, lexInline})` (INV-71 の (1)〜(5))、`stripMeaninglessHardBreaks(raw, lexFull, walkTokens)` (INV-71 の (6))、`hardBreakLines(text, lexBlocks)` (INV-70 の行末の印を付ける行)、`lineBreakSpaceCount(text)` (1 行の末尾の、行の割り込みの空白の数。2 個以上ならその数、そうでなければ 0。末尾から数える。`hardBreakLines`・確定の後始末・`cutLineEndBreak` と、`InvisibleCharOverlay` の行末の印の空白は、この 1 つの決まりで求める)、`insertTableRow` / `insertTableColumn` (列はバックスラッシュの付かない縦棒だけで区切る。コードスパンの中の縦棒も区切りとして数える。区切り行にも区切りのセルを足し、配置指定は既定とする)、`insertBlockText` (前後に空行が無ければ補って挿入する。`MarkdownBlockModel.insertAt` が使う。INV-52)、`planBlockInsert(text, caret, blockType, {lexBlocks, lexInline, maxInlineChars})` (INV-52 の挿入の位置: `{kind: "above" | "below" | "split", line}` (境目の行) か `{kind: "refuse"}`。ブロックだけの字句解析で、リストの項目と引用の中を、行の番号を数えながらたどる) / `insertOffset(text, plan)` (確定した文字列の中の、その境目の位置。割るときは境目の前の行の終わり。末尾の改行は含めない) / `cutLineEndBreak(text, plan, lexBlocks)` (割った上の部分の最後の行の、改行でなくなる行末の空白の数、または `\` の改行の 1。その行がコード・HTML・数式の中なら 0。確定した文字列の全体の、ブロックだけの字句解析 1 回)、`insertTextAt` (`<br>` の挿入に使う)、`splitTableRow(line)` (表の行をセルに分ける。逃がされていない縦棒で区切り、`{segments, first, last}` を返す。`MarkdownTable` と共有する)、`changedRange(before, after)` (2 つの文字列の共通の先頭と末尾を除いた、置き換える 1 つの区間 `{start, end, text}`。5.14.6 の Undo の対象にする挿入に使う)。
 
 - 行の文脈: `lexBlocks` (モデルと同じブロックだけの字句解析) のトークンを、リストの項目と引用の中までたどり、行ごとに、その行が属する末端のブロック (段落、リストの項目の文字、見出し、コード、HTML、数式、表など) と、行の先頭のリスト・引用の印の長さを求める。末端のブロックの行が編集欄の行の末尾に見つからない場合 (行末の空白を除いて比べる) は、その行の文脈は不明とする (書式は無効、Enter は普通の改行)。
 - インラインの範囲 (INV-67 (6)): 選択の両端が同じ末端のブロックにあり、その種類が段落・リストの項目の文字・見出し・表である場合だけ。段落は各行のリスト・引用の印の後ろ、見出しは `#` の印と閉じの `#` を除いた文字 (セットテキストは下線の行を除く)、表は 1 つのセル (区切り行を除く。前後の空白とタブを除く)。選択の端の改行は除き、行の印の上の端はその隣の文字へ寄せる。

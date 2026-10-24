@@ -328,3 +328,21 @@ describe("AT-ICO geometry and size", () => {
     expect(frames).toHaveLength(1);
   });
 });
+
+// The line end spaces are found from the first of their run (review of the
+// render hang): linear in the line. Runs always, as AT-FR-65.
+const LONG_RUN_BUDGET_MS = 1000;
+
+describe("AT-ICO a long run of spaces inside a line (linear line-end-space search)", () => {
+  it("AT-ICO-20 segments: 100,000 spaces inside a flagged line are not marked; its end spaces are, within 1,000 ms", () => {
+    const run = " ".repeat(100000);
+    const t0 = performance.now();
+    const parts = InvisibleCharOverlay.segments(`a${run}x  `, [true]);
+    const ms = performance.now() - t0;
+    expect(parts).toEqual([
+      { text: `a${run}x`, mark: false },
+      { text: "  ", mark: true },
+    ]);
+    expect(ms).toBeLessThan(LONG_RUN_BUDGET_MS);
+  });
+});

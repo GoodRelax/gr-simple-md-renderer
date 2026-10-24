@@ -239,3 +239,29 @@ describe("AT-INS-19 a paragraph over the huge block limit: no inline lexing, cut
     expect(calls).toBe(1);
   });
 });
+
+// The line break spaces before a cut are found from the first of their run
+// (review of the render hang): linear in the line. Runs always, as AT-FR-65.
+const LONG_RUN_BUDGET_MS = 1000;
+
+describe("AT-INS a long run of spaces inside the line before a cut (linear line-end-space search)", () => {
+  it("AT-INS-20 cutLineEndBreak: 100,000 spaces inside the line, then a line break: 2 go, within 1,000 ms", () => {
+    const text = `a${" ".repeat(100000)}x  \ny`;
+    const t0 = performance.now();
+    const count = MarkdownTextOps.cutLineEndBreak(text, { kind: "split", line: 1 }, lexBlocks);
+    const ms = performance.now() - t0;
+    expect(count).toBe(2);
+    expect(ms).toBeLessThan(LONG_RUN_BUDGET_MS);
+  });
+});
+
+describe("AT-INS a long run of newlines inside the editor text (linear trailing-newline search)", () => {
+  it("AT-INS-21 insertOffset below a code block of 300,000 blank lines: the end of its text, within 1,000 ms", () => {
+    const inner = "```\n" + "\n".repeat(300000) + "x\n```";
+    const t0 = performance.now();
+    const offset = MarkdownTextOps.insertOffset(inner + "\n", { kind: "below", line: 0 });
+    const ms = performance.now() - t0;
+    expect(offset).toBe(inner.length);
+    expect(ms).toBeLessThan(LONG_RUN_BUDGET_MS);
+  });
+});
