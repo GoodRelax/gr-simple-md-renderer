@@ -153,9 +153,9 @@ function alignPart(body, start, part, lexer) {
  * from a short window and becomes a token of its own (one per skipped
  * definition, as marked gives one token per definition); the tokens of the
  * whole-body lexing go on after it, so the body is lexed about once
- * (R5.1). Only where a gap cannot be filled that way is the rest of the body
- * lexed again. The first definition of a label wins in links, as in one
- * parse of the whole body.
+ * (R5 Algorithms and Data Structures). Only where a gap cannot be filled
+ * that way is the rest of the body lexed again. The first definition of a
+ * label wins in links, as in one parse of the whole body.
  * @purity pure
  * @param {string} body
  * @param {(src: string) => object[]} lexer

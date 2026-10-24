@@ -78,7 +78,8 @@ test("a cell with math opens as its text; the table tab opens the source", async
 });
 
 // Timing depends on the machine and on the other tests running at the same
-// time: only with GRSMD_PERF=1, as the vitest timing checks (R6.1, Q8).
+// time: only with GRSMD_PERF=1, as the vitest timing checks
+// (R6 Independence, Q8).
 test("INV-51 (PRT-X23): 1 MB with a 1,000 x 5 table, each step within 300 ms in Chromium", async ({ page, browserName }) => {
   test.skip(browserName !== "chromium", "INV-51 is measured in Chrome");
   test.skip(process.env.GRSMD_PERF !== "1", "timing: GRSMD_PERF=1 only");
