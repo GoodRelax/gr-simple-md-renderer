@@ -96,6 +96,14 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   tag and GitHub release commands. A test keeps `package.json`,
   `package-lock.json`, this file and `README.md` on the same version.
 
+- Review standard: `spec/grsmd_review_standards_ja.md` is the rule for code
+  reviews before a feature goes into `develop`. It takes the review standard
+  of gr-sw-maker (a verbatim copy, pinned to commit `63e6fdc`, is
+  `spec/upstream_review_standards_ja.md`), maps its rows onto GRSMD, marks
+  the rows that do not apply, and adds GRSMD's own rows (privacy, single
+  file, documents in step, tests that fail before the fix). The spec now
+  names review rules by chapter and name instead of the old row numbers.
+
 ## [Unreleased] - 2026-10-10
 
 ### Security

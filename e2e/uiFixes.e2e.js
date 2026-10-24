@@ -269,7 +269,8 @@ test.describe("a phone: the top bar over the preview (review M1)", () => {
 });
 
 // Timing depends on the machine: only with GRSMD_PERF=1, as the other timing
-// checks (R6.1, Q8). Review M3: following the mouse in edit mode on 1 MB.
+// checks (R6 Independence, Q8). Review M3: following the mouse in edit mode
+// on 1 MB.
 const MOVE_FRAME_BUDGET_MS = 4; // a quarter of a 60 Hz frame
 test("INV-51 / INV-73 (review M3): 1 MB in edit mode, the frame that follows a mouse move takes at most 4 ms in Chromium", async ({ page, browserName }) => {
   test.skip(browserName !== "chromium", "INV-51 is measured in Chrome");

@@ -195,7 +195,7 @@ describe("MarkdownBlockModel (Entity, pure; real marked lexer)", () => {
     expect(ids(out)[3]).toBe(3);
   });
 
-  it("AT-BM-23 operations never change the original model (R7.5)", () => {
+  it("AT-BM-23 operations never change the original model (R7 Immutability of Pure-Side Classes)", () => {
     const m = model("A\n\nB\n\nC\n");
     const before = JSON.stringify(m.getBlocks());
     m.replaceBlock(2, "Z", lexer, MAX);

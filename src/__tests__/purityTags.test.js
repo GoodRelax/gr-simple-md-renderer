@@ -15,7 +15,7 @@ function listJs(dir) {
   });
 }
 
-describe("@purity tags (CON-15, R7.6, spec 5.16.2)", () => {
+describe("@purity tags (CON-15, R7 `@purity` Tag, spec 5.16.2)", () => {
   it("AT-PUR-01 every function and method in src/js has exactly one valid @purity tag", () => {
     let total = 0;
     let tagged = 0;

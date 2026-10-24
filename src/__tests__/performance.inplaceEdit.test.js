@@ -167,7 +167,7 @@ describe("AT-PERF-08 a table session never makes the whole table's HTML inside a
   });
 });
 
-// Timing checks: only with GRSMD_PERF=1 (they depend on the machine; R6.1, Q8).
+// Timing checks: only with GRSMD_PERF=1 (they depend on the machine; R6 Independence, Q8).
 describe.runIf(PERF)("AT-PERF-02..07, 09 and 10 timing (GRSMD_PERF=1 only)", () => {
   const PERF_TIMEOUT_MS = 60000;
 
