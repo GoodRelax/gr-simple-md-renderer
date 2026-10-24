@@ -1281,6 +1281,87 @@ body.dark .grsmd-gap-insert-plus {
   background: #1f6feb;
 }
 
+/* A block range (INV-74, owner ruling D1): the blocks the selection
+   touches get a frame in the edit color; it wins over the hover outline. */
+body.edit-mode #preview > .md-block.md-block-range {
+  outline: 2px solid #0969da;
+  outline-offset: 2px;
+}
+
+body.dark.edit-mode #preview > .md-block.md-block-range {
+  outline-color: #4493f8;
+}
+
+/* The bar of a block range (INV-74): Delete, Cut, Copy right under the
+   selection's last line; on the body (position: fixed), as the gap line */
+.grsmd-block-range-bar {
+  position: fixed;
+  z-index: 300; /* over the gap line; under the palette, the toasts and the modals */
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #f6f7f8;
+  border: 1px solid #d9dbde;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.grsmd-block-range-bar[hidden] {
+  display: none;
+}
+
+.grsmd-block-range-btn {
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2328;
+  background: transparent;
+  border: 1px solid #c4c7cb;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.grsmd-block-range-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.grsmd-block-range-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* the check of a copy (D11): the edit color for a moment */
+.grsmd-block-range-btn.is-copied {
+  color: #0969da;
+}
+
+body.dark .grsmd-block-range-bar {
+  background: #151b23;
+  border-color: #3d444d;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+body.dark .grsmd-block-range-btn {
+  color: #f0f6fc;
+  background: #212830;
+  border-color: #3d444d;
+}
+
+body.dark .grsmd-block-range-btn:hover {
+  background: #262c36;
+}
+
+body.dark .grsmd-block-range-btn.is-copied {
+  color: #4493f8;
+}
+
 /* The editor opened in a gap (INV-73): only the editor shows */
 #preview > .md-block-gap {
   display: block;
@@ -1561,6 +1642,7 @@ body.dark.edit-mode #preview > .md-block-empty.md-block-editing {
   .edit-palette,
   .edit-palette-popover,
   .grsmd-gap-insert,
+  .grsmd-block-range-bar,
   #preview > .md-block-hidden,
   #preview > .md-block-empty,
   .md-invisible-overlay,
@@ -1568,9 +1650,10 @@ body.dark.edit-mode #preview > .md-block-empty.md-block-editing {
     display: none !important;
   }
 
-  /* INV-53: no cell frame and no marks in print */
+  /* INV-53: no cell frame and no marks in print; no block range frame (INV-74) */
   #preview td.grsmd-cell-editing,
-  #preview th.grsmd-cell-editing {
+  #preview th.grsmd-cell-editing,
+  body.edit-mode #preview > .md-block.md-block-range {
     outline: none;
   }
 

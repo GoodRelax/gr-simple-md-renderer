@@ -310,6 +310,42 @@ export default class RendererOrchestrator {
   }
 
   /**
+   * Delete the blocks from firstId to lastId as one undoable change
+   * (INV-74, INV-48). The block that comes into the place of the first one
+   * gone keeps that place on screen (INV-46). Ids not in the current model
+   * (a newer render or an undo removed them) change nothing.
+   * @param {number} firstId
+   * @param {number} lastId
+   * @returns {Promise<void>} settles when the render is done
+   * @purity non-pure
+   */
+  deleteBlocks(firstId, lastId) {
+    const model = this._currentModel;
+    if (!model) return Promise.resolve();
+    markCommitStart();
+    const change = model.removeRange(firstId, lastId, this._lexer, CONFIG.edit.diffMaxCells);
+    if (!change.isChanged) {
+      clearCommitMark();
+      return Promise.resolve();
+    }
+    const scroll = this._capture(this.markdownRenderer.getBlockElement(firstId));
+    this._recordUnit(model);
+    return this._applyChange(change, scroll, change.anchorBlockId);
+  }
+
+  /**
+   * The source of the blocks from firstId to lastId (INV-74), or null when
+   * they are not in the current model.
+   * @param {number} firstId
+   * @param {number} lastId
+   * @returns {string|null}
+   * @purity semi-pure-b
+   */
+  readBlocksSource(firstId, lastId) {
+    return this._currentModel ? this._currentModel.rangeSource(firstId, lastId) : null;
+  }
+
+  /**
    * The change a table block's new text would make (INV-42, INV-62), on
    * base (the current model by default; a table operation after a cell
    * commit plans on the cell commit's model). keptId: the table keeps its

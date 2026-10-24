@@ -76,6 +76,20 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Added
 
+- In edit mode, drag over the text of some blocks (on a phone, long press
+  and move the handles) to select those blocks whole: they get a blue frame
+  and a small bar [Delete] [Cut] [Copy] shows under the selection (above it
+  when there is no room). Even one block works. `Delete` / `Backspace`
+  delete them, `Ctrl+X` cuts and `Ctrl+C` copies their Markdown source
+  whole (Mac: `Cmd`), as do the context menu's Copy, a phone's callout and
+  a Mac's Edit menu; Shift+Delete deletes too. The Copy button shows a check
+  for a moment. No dialog
+  or toast; one Undo brings all deleted blocks back. `Esc` clears the
+  selection first. Outside edit mode a selection stays the browser's own.
+  The clipboard is only written, never read; if the browser refuses the
+  write, a toast says so and a cut deletes nothing. Paste with the existing ways
+  (a block's editor, or the "+" between blocks).
+
 - In edit mode, a dashed line with "+" shows in the gap between two blocks
   (and before the first and after the last one) under the mouse; click it
   to type a new block there, for example below a diagram or a table at the

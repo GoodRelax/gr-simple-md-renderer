@@ -493,6 +493,49 @@ export default class MarkdownBlockModel {
   }
 
   /**
+   * Remove the blocks from firstId to lastId (in body order, both kept in
+   * the range) with their separators, as one change (INV-74). The body is
+   * lexed again as for replaceBlock() with an empty text; neighbours may
+   * join (two lists). The anchor is the block that now starts where the
+   * first removed block started. Unknown ids or lastId before firstId:
+   * isChanged false and this model.
+   * @purity pure
+   * @param {number} firstId
+   * @param {number} lastId
+   * @param {(src: string) => object[]} lexer
+   * @param {number} maxCells
+   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null}}
+   */
+  removeRange(firstId, lastId, lexer, maxCells) {
+    const first = this.findIndexById(firstId);
+    const last = this.findIndexById(lastId);
+    if (first < 0 || last < first) return { model: this, isChanged: false, anchorBlockId: null };
+    const start = this._offsetOf(first);
+    const body = this.toBody();
+    const model = this._relex(body.slice(0, start) + body.slice(this._offsetOf(last + 1)), lexer, maxCells);
+    return { model, isChanged: true, anchorBlockId: model._blockIdAt(start) };
+  }
+
+  /**
+   * The source of the blocks from firstId to lastId (INV-74): the body from
+   * the start of the first to the end of the last one's raw, the blank
+   * lines between them as they are, without the trailing newlines of the
+   * last (as its editor shows it). null for unknown ids or lastId before
+   * firstId.
+   * @purity pure
+   * @param {number} firstId
+   * @param {number} lastId
+   * @returns {string|null}
+   */
+  rangeSource(firstId, lastId) {
+    const first = this.findIndexById(firstId);
+    const last = this.findIndexById(lastId);
+    if (first < 0 || last < first) return null;
+    const end = this._offsetOf(last) + MarkdownBlockModel.toEditableText(this._blocks[last].raw).length;
+    return this.toBody().slice(this._offsetOf(first), end);
+  }
+
+  /**
    * The body offset of the gap after a block (INV-73): where the next block
    * starts, the end of the body after the last one; null is the gap before
    * the first block (after the leading blank lines). An unknown id: the end.

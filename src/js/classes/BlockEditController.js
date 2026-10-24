@@ -5,6 +5,7 @@ import InvisibleCharOverlay from "./InvisibleCharOverlay.js";
 import TableCellEditor from "./TableCellEditor.js";
 import ClipboardLink from "./ClipboardLink.js";
 import BlockGapInsert from "./BlockGapInsert.js";
+import BlockRangeSelection from "./BlockRangeSelection.js";
 import { cell, row, choice, selectCell } from "../stateTable.js";
 
 const BROWSING = "browsingPreview";
@@ -20,6 +21,10 @@ const PLACED_KINDS = new Set(["block", "cell", "tableSource"]);
 const OPENING_ACTIONS = new Set(["openBlockEditor", "startTableSession", "openTableSourceWithToast"]);
 // Actions that open or close a cell: the host refreshes the palette after them.
 const CELL_ACTIONS = new Set(["openCell", "commitCell", "discardCell", "endTableSession"]);
+// The toasts of a block range (config.js) and the 11-c event of each
+// button of its bar (INV-74).
+const RANGE_MESSAGES = CONFIG.messages.blockRange;
+const RANGE_EVENTS = { delete: "blockRangeDeleteRequested", cut: "blockRangeCutRequested", copy: "blockRangeCopyRequested" };
 
 // Targets a tap never opens (INV-29). The list is kept as written in the
 // spec: user HTML may contain the same classes and roles, and they stay
@@ -131,9 +136,10 @@ export const blockEditStateMachine = Object.freeze({
   ),
   pointerPressedOutside: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
   // Esc applies and closes (INV-28, owner ruling D1); Ctrl+Z then takes it back.
+  // A block range is taken away first (INV-74, owner ruling D14).
   escapePressed: transitions(
     null,
-    cell(BROWSING, ["hidePalette"]),
+    choice(cell(IDLE, ["clearBlockRange"], "hasBlockRange"), cell(BROWSING, ["hidePalette"])),
     cell(IDLE, ["commitBlock"], "isImeIdle"),
     cell(IDLE, ["commitCell", "endTableSession"], "isImeIdle"),
   ),
@@ -214,6 +220,24 @@ export const blockEditStateMachine = Object.freeze({
     cell(EDITING, ["commitBlock", "resolveBlockById", "openBlockEditor"]),
     cell(EDITING, ["commitCell", "endTableSession", "resolveBlockById", "openBlockEditor"]),
   ),
+  // INV-74 (owner rulings D1 to D14): the blocks a selection touches in the
+  // preview are deleted (Delete, Backspace, the bar), cut (Ctrl+X) or
+  // copied (Ctrl+C) as a whole. A delete or a cut is one unit; with an
+  // unrendered #editor change nothing happens but the full render (INV-45).
+  // A copy changes nothing, so it copies what is on screen.
+  blockRangeDeleteRequested: transitions(
+    null,
+    choice(cell(IDLE, ["renderFromEditor", "showToast"], "hasUnrenderedEditor"), cell(IDLE, ["deleteBlockRange"])),
+    null,
+    null,
+  ),
+  blockRangeCutRequested: transitions(
+    null,
+    choice(cell(IDLE, ["renderFromEditor", "showToast"], "hasUnrenderedEditor"), cell(IDLE, ["cutBlockRange"])),
+    null,
+    null,
+  ),
+  blockRangeCopyRequested: transitions(null, cell(IDLE, ["copyBlockRange"]), null, null),
   // INV-52: the inserted block has been drawn and nothing else happened
   // meanwhile: a table opens its first cell, a Mermaid block its source.
   insertedBlockRendered: transitions(
@@ -241,7 +265,11 @@ export const blockEditStateMachine = Object.freeze({
  *   onEditorInput() (refresh the unsaved mark), onEditStateChanged() (an
  *   editor or a cell opened or closed: unsaved mark and palette buttons),
  *   onTransitionEnded() (an 11-c crossing ended: the deferred button states),
- *   showToast(message) (the table toasts of 11-c).
+ *   showToast(message) (the table toasts of 11-c),
+ *   writeClipboardNow(text) (a block range's source to the clipboard inside
+ *   the key or button handler, INV-74 (4): true when written) and
+ *   writeClipboardLater(text) (the same through navigator.clipboard: a
+ *   promise of whether it was written).
  * Table cells (editingCell, INV-62 to INV-65) are edited by a
  * TableCellEditor that this class owns and drives through 11-c.
  */
@@ -254,6 +282,7 @@ export default class BlockEditController {
    * @param {object} host - BlockEditHost
    * @param {(textarea: HTMLTextAreaElement, options: object) => InvisibleCharOverlay} [createOverlay] - INV-70
    * @param {(gapHost: object) => BlockGapInsert} [createGaps] - INV-73
+   * @param {(rangeHost: object) => BlockRangeSelection} [createRanges] - INV-74
    * @purity non-pure
    */
   constructor(
@@ -264,6 +293,7 @@ export default class BlockEditController {
     host,
     createOverlay = (textarea, options) => new InvisibleCharOverlay(textarea, options),
     createGaps = (gapHost) => new BlockGapInsert(preview, blockLocator, gapHost),
+    createRanges = (rangeHost) => new BlockRangeSelection(preview, blockLocator, rangeHost, { isApple: Boolean(host.isApple) }),
   ) {
     this.preview = preview;
     this.orchestrator = orchestrator;
@@ -295,7 +325,19 @@ export default class BlockEditController {
       { dispatch: (event) => this.dispatch(event), onCellInput: () => this.host.onEditorInput() },
       { isApple: Boolean(host.isApple) },
     );
-    this._gaps = createGaps({ onGapChosen: (target) => this.dispatch("gapInsertRequested", target) });
+    this._gaps = createGaps({
+      onGapChosen: (target) => this.dispatch("gapInsertRequested", target),
+      isSuppressed: () => this._ranges.hasRange(), // no "+" while blocks are selected (INV-74)
+    });
+    this._ranges = createRanges({
+      canSelect: () => this._blockEditState === IDLE && !this.isEditing(),
+      isPaletteNode: (node) => this.host.isPaletteNode(node),
+      /** @purity non-pure */
+      onRangeChanged: (range) => {
+        if (range) this._gaps.hide();
+      },
+      onActionRequested: (kind, range) => this.dispatch(RANGE_EVENTS[kind], range),
+    });
   }
 
   /**
@@ -403,6 +445,17 @@ export default class BlockEditController {
    */
   isCellElement(node) {
     return this._cells.containsNode(node);
+  }
+
+  /**
+   * The block range the selection makes in edit mode (INV-74), read now:
+   * {kind: "blockRange", firstId, lastId}, or null (none, not editModeIdle,
+   * or the focus in a text entry). Shows nothing.
+   * @purity semi-pure-b
+   * @returns {{kind: "blockRange", firstId: number, lastId: number}|null}
+   */
+  readBlockRange() {
+    return this._ranges.readRange();
   }
 
   /**
@@ -698,6 +751,8 @@ export default class BlockEditController {
         return Boolean(target?.op) && this._cells.canApplyOperation(target.op);
       case "canInsertBlock":
         return this._insertPlan(target).kind !== "refuse";
+      case "hasBlockRange":
+        return this._ranges.readRange() !== null;
       default:
         throw new Error(`Unknown block edit guard: ${guard}`);
     }
@@ -803,6 +858,18 @@ export default class BlockEditController {
         case "showInsertRefusedToast":
           this.host.showToast(CONFIG.messages.edit.insertNotPossible);
           break;
+        case "clearBlockRange":
+          this._ranges.clearSelection();
+          break;
+        case "copyBlockRange":
+          this._copyBlockRange(target);
+          break;
+        case "cutBlockRange":
+          this._cutBlockRange(target);
+          break;
+        case "deleteBlockRange":
+          this._deleteBlockRange(target);
+          break;
         default:
           // showToast: inside renderFromEditor; enqueueFullRender: by the caller
           break;
@@ -825,6 +892,66 @@ export default class BlockEditController {
     // The empty block exists only after the full render.
     this._settle(IDLE);
     return rendering.then(() => this._openEmptyAfterRender());
+  }
+
+  /**
+   * INV-74 (4): the source of the range to the clipboard (the host writes
+   * it, nothing is read). Written now, or else a little later through
+   * navigator.clipboard: the Copy button shows a check once written (U3),
+   * or a toast says it failed. Ids no longer in the model: nothing.
+   * @purity non-pure
+   * @param {{kind: string, firstId: number, lastId: number}|null} target
+   */
+  _copyBlockRange(target) {
+    const text = this._readRangeSource(target);
+    if (text === null) return;
+    if (this.host.writeClipboardNow(text)) {
+      this._ranges.showCopied();
+      return;
+    }
+    /** @purity non-pure */
+    void this.host.writeClipboardLater(text).then((isWritten) => {
+      if (isWritten) this._ranges.showCopied();
+      else this.host.showToast(RANGE_MESSAGES.copyFailed);
+    });
+  }
+
+  /**
+   * INV-74 (4): a cut deletes only when its source was written now; else
+   * its blocks stay, nothing is written later, and a toast says so
+   * (coordinator ruling 2026-10-24).
+   * @purity non-pure
+   * @param {{kind: string, firstId: number, lastId: number}|null} target
+   */
+  _cutBlockRange(target) {
+    const text = this._readRangeSource(target);
+    if (text === null) return;
+    if (this.host.writeClipboardNow(text)) this._deleteBlockRange(target);
+    else this.host.showToast(RANGE_MESSAGES.cutFailed);
+  }
+
+  /**
+   * INV-74 (3): the blocks of the range go as one unit, and the selection
+   * with them. The scroll anchor is taken first, while the layout is clean
+   * (taking the frame off first would lay the preview out again, INV-51).
+   * @purity non-pure
+   * @param {{kind: string, firstId: number, lastId: number}|null} target
+   */
+  _deleteBlockRange(target) {
+    if (target?.kind === "blockRange") void this.orchestrator.deleteBlocks(target.firstId, target.lastId);
+    this._ranges.clearSelection();
+  }
+
+  /**
+   * The source of a block range target, or null (no range, or its ids are
+   * no longer in the model).
+   * @purity semi-pure-b
+   * @param {{kind: string, firstId: number, lastId: number}|null} target
+   * @returns {string|null}
+   */
+  _readRangeSource(target) {
+    if (target?.kind !== "blockRange") return null;
+    return this.orchestrator.readBlocksSource(target.firstId, target.lastId);
   }
 
   /**
@@ -935,16 +1062,20 @@ export default class BlockEditController {
     this._blockEditState = next;
     if (wasBrowsing && next !== BROWSING) {
       this._gaps.enable();
+      this._ranges.enable();
       document.addEventListener("pointerdown", this._onPointerDown, true);
       document.addEventListener("pointerup", this._onPointerUp, true);
       document.addEventListener("pointercancel", this._onPointerCancel, true);
     } else if (!wasBrowsing && next === BROWSING) {
       this._gaps.disable();
+      this._ranges.disable();
       document.removeEventListener("pointerdown", this._onPointerDown, true);
       document.removeEventListener("pointerup", this._onPointerUp, true);
       document.removeEventListener("pointercancel", this._onPointerCancel, true);
       this._press = null;
     }
+    // a block range is only for editModeIdle (INV-74): an editor or a cell takes it away
+    if (next === EDITING || next === CELL) this._ranges.reset();
   }
 
   /**

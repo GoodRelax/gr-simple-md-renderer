@@ -184,7 +184,8 @@
               <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette</li>
               <li>
                 <code>Esc</code> : Apply the open block or cell and close it.
-                With nothing open, hide the edit palette.
+                With blocks selected, clear the selection first. With nothing open, hide
+                the edit palette.
               </li>
               <li>
                 <code>Ctrl+Z</code> / <code>Ctrl+Y</code> (or <code>Ctrl+Shift+Z</code>) : Undo / Redo
@@ -196,6 +197,14 @@
                 Edit mode: point between two blocks, above the first one or below the last
                 one (on a phone, tap there) to show a dashed line with <code>+</code>. Click it
                 to add a new block there.
+              </li>
+              <li>
+                Edit mode: drag over the text of some blocks (on a phone, long press and move
+                the handles) to select those blocks whole; a bar shows under the selection.
+                <code>Delete</code> / <code>Backspace</code> delete them, <code>Ctrl+X</code>
+                cuts and <code>Ctrl+C</code> copies their Markdown (Mac: <code>Cmd</code>; a
+                menu's Copy copies it too). One Undo brings deleted blocks back. To copy only some of the text you see, leave
+                edit mode first.
               </li>
               <li><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code> : Save / Save as (Mac: <code>Cmd</code>)</li>
               <li><code>[Clear]</code> / <code>C</code> : Clear and reset</li>
@@ -339,13 +348,16 @@
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
               <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
               <li>
-                <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。何も開いていなければ、編集パレットを隠します。
+                <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。ブロックを選んでいれば、まず選択を解きます。何も開いていなければ、編集パレットを隠します。
               </li>
               <li>
                 <code>Ctrl+Z</code> / <code>Ctrl+Y</code>（または <code>Ctrl+Shift+Z</code>）: 編集パレットを表示している間の Undo / Redo（30 回まで。Mac は <code>Cmd+Z</code> / <code>Cmd+Shift+Z</code>）。開いたブロックの中では、Redo はいつも入力のやり直しです。Undo も、ブロックに変更があれば入力の取り消しです。
               </li>
               <li>
                 編集モードで、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下にマウスを置く（スマートフォンではタップする）と、点線と <code>+</code> が出ます。押すと、そこに新しいブロックを入れます。
+              </li>
+              <li>
+                編集モードで、ブロックの文字をドラッグで選ぶ（スマートフォンでは長押ししてつまみを動かす）と、選択がかかったブロックが丸ごと選ばれ、選択の下に帯が出ます。<code>Delete</code> / <code>Backspace</code> で削除、<code>Ctrl+X</code> でカット、<code>Ctrl+C</code> でその Markdown をコピー（Mac は <code>Cmd</code>。メニューのコピーも同じ）。消したブロックは Undo 1 回で戻ります。見えている文字の一部だけをコピーするときは、編集モードを抜けてから選びます。
               </li>
               <li><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code> : Save / Save as（Mac は <code>Cmd</code>）</li>
               <li><code>[Clear]</code> / <code>C</code> : 初期化</li>

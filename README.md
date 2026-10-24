@@ -70,7 +70,9 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document is shown |
-   | | `Esc` | Apply the open block or cell and close it; with nothing open, hide the edit palette |
+   | | `Esc` | Apply the open block or cell and close it; with blocks selected, clear the selection; with nothing open, hide the edit palette |
+   | | `Delete` / `Backspace` | In edit mode, delete the selected blocks, also with `Shift` (one Undo brings them back) |
+   | | `Ctrl+X` / `Ctrl+C` | In edit mode with blocks selected, cut / copy their Markdown whole (a menu's Copy copies it too) |
    | | `Ctrl+Z` | Undo while the edit palette is shown, up to 30 changes (in a block you have changed, the browser undoes your typing) |
    | | `Ctrl+Y` / `Ctrl+Shift+Z` | Redo while the edit palette is shown, up to 30 changes (in an open block, the browser redoes your typing) |
    | | `Ctrl+B` / `Ctrl+I` | Bold / Italic while editing |
@@ -78,6 +80,8 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    On a Mac, use `Cmd` instead of `Ctrl` (Redo is `Cmd+Shift+Z`).
 
    In edit mode, a dashed line with `+` shows between two blocks, above the first one and below the last one; click it (on a phone, tap the gap, then the line) to add a new block there.
+
+   In edit mode, drag over the text of some blocks (on a phone, long press) to select those blocks whole: they get a frame, and a bar [Delete] [Cut] [Copy] shows under the selection. No dialog asks; one Undo brings deleted blocks back. To copy only part of the text you see, leave edit mode first.
 
 4. If your Markdown contains PlantUML blocks or external images, you will be asked for permission before anything is sent to an external server
 
@@ -219,7 +223,9 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書を表示している間、保存 / 名前を付けて保存 |
-   | | `Esc` | 開いているブロックやセルを反映して閉じる。何も開いていなければ編集パレットを隠す |
+   | | `Esc` | 開いているブロックやセルを反映して閉じる。ブロックを選んでいれば選択を解く。何も開いていなければ編集パレットを隠す |
+   | | `Delete` / `Backspace` | 編集モードで、選んだブロックを削除（`Shift` を押していても同じ。Undo 1 回で戻る） |
+   | | `Ctrl+X` / `Ctrl+C` | 編集モードでブロックを選んでいる間、その Markdown を丸ごとカット / コピー（メニューのコピーも同じ） |
    | | `Ctrl+Z` | 編集パレットを表示している間、元に戻す（30 回まで。変更したブロックの中では、ブラウザが入力を元に戻す） |
    | | `Ctrl+Y` / `Ctrl+Shift+Z` | 編集パレットを表示している間、やり直す（30 回まで。開いているブロックの中では、ブラウザが入力をやり直す） |
    | | `Ctrl+B` / `Ctrl+I` | 編集中に太字 / 斜体 |
@@ -227,6 +233,8 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    Mac では `Ctrl` の代わりに `Cmd` を使います（やり直しは `Cmd+Shift+Z`）。
 
    編集モードでは、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下に、点線と `+` が出ます。押すと（スマートフォンでは、すき間をタップしてから点線をタップ）、そこに新しいブロックを入れます。
+
+   編集モードで、ブロックの文字をドラッグで選ぶ（スマートフォンでは長押し）と、選択がかかったブロックが丸ごと選ばれて枠が付き、選択の下に帯 [削除][カット][コピー] が出ます。確認は出ません。消したブロックは Undo 1 回で戻ります。見えている文字の一部だけをコピーするときは、編集モードを抜けてから選びます。
 
 4. Markdown に PlantUML ブロックや外部画像が含まれる場合、外部サーバーへ送信する前に許可確認が表示されます
 

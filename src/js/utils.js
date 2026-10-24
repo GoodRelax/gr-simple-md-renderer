@@ -216,6 +216,22 @@ export function nextFrame(cb) {
 }
 
 /**
+ * INV-14: a key typed into an input, a textarea (the block editor included),
+ * a contenteditable element or a role="toolbar" (the edit palette) is not a
+ * document shortcut. The role is checked as written (ruling T2). The same
+ * focus keeps a block range (INV-74 (1)) from being made.
+ * @purity semi-pure-b
+ * @param {Element|null} el - the focused element
+ * @returns {boolean}
+ */
+export function isTypingTarget(el) {
+  if (!el) return false;
+  if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") return true;
+  if (el.isContentEditable) return true;
+  return typeof el.closest === "function" && el.closest('[role="toolbar"]') !== null;
+}
+
+/**
  * @purity non-pure
  * @param {number} id - from nextFrame
  */
