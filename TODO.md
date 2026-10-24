@@ -26,9 +26,9 @@
 - [x] その場編集（SC-22〜24）を `feature/inplace-edit` で実装した。リリース前の実機テスト（試験仕様のセクション U / V / W と、既存の A〜T のやり直し）が残る
 
 ### 純粋関数への切り出し（その場編集の実装中に見つけた、編集機能の範囲外の指摘）
-- [ ] F-B1 `DiagramZoomController.zoom`：次の倍率の上限・下限を決める規則が、レイアウトを読みスタイルを書く状態付きのメソッドの中で計算されている。規則を純粋関数に切り出す（R7.2）
-- [ ] F-B2 `DiagramCopyController.inlineSvgStyles` / `convertForeignObjects`：複製を組み立てるループの中で `getComputedStyle` を読んでいる（R7.4）。`convertForeignObjects` は文字の配置の計算（R7.2）と DOM の生成も混ざっている。読み取りと計算と生成を分ける
-- [ ] F-B3 `SmoothScrollEngine._loop`：速度と摩擦の物理計算が `scrollBy` と `requestAnimationFrame` と混ざっている。計算を純粋関数に切り出す（R7.2）
+- [ ] F-B1 `DiagramZoomController.zoom`：次の倍率の上限・下限を決める規則が、レイアウトを読みスタイルを書く状態付きのメソッドの中で計算されている。規則を純粋関数に切り出す（R7 計算ロジックの純粋性）
+- [ ] F-B2 `DiagramCopyController.inlineSvgStyles` / `convertForeignObjects`：複製を組み立てるループの中で `getComputedStyle` を読んでいる（R7 収集と処理の分離）。`convertForeignObjects` は文字の配置の計算（R7 計算ロジックの純粋性）と DOM の生成も混ざっている。読み取りと計算と生成を分ける
+- [ ] F-B3 `SmoothScrollEngine._loop`：速度と摩擦の物理計算が `scrollBy` と `requestAnimationFrame` と混ざっている。計算を純粋関数に切り出す（R7 計算ロジックの純粋性）
 
 ### 表示の既存の不具合（その場編集の手動テストで見つかった、main と同じもの）
 - [x] KaTeX の文字の大きさが 1.5em にならず 1.21em になる：ビルドの CSS で KaTeX の `.katex{font:1.21em ...}` が、アプリの `.katex{font-size:1.5em}` より後ろに来る（CSS の順序）。試験仕様 PRT-M04。→ 2026-10-23 に解決（アプリの規則を `#preview .katex` にして詳細度で勝つ。1.5em に戻る）
@@ -36,7 +36,8 @@
 - [x] `<meta name="viewport">` が無い：幅 768px 未満の端末では 980px のレイアウトになる（スマートフォンでの表示）。→ 追加しない（決定。仕様書の「`<meta name="viewport">` は追加しない」のとおり、追加すると iPhone の既存のレイアウトが崩れる）。既知の制約として扱う
 
 ### 構造の整理（その場編集のコードレビューで受容した指摘）
-- [x] `UIController` の責務が多い（約 1,740 行。2026-10-23）。「文書のライフサイクル」（セッション・保存先・保存の状態）を別のクラスへ分ける（R2.2 / R2.10）。→ 2026-10-23 に `DocumentLifecycle`（UseCase 層）へ分けた（`feature/uicontroller-split`。動きは変えない）
-- [ ] `UIController` に、パレットの機能の振り分け（`_runPaletteCommand` から `_insertBlock` まで。約 190 行）が残っている。別のクラスへ分けるか決める（R2.2）
-- [ ] `SaveDocument` が内部で `SaveDocumentAs` を作り、その `outcome` / `failureMessage` を借りている（DocumentLifecycle も例外の経路で使う）。両方の use case が使う純粋な関数（例：`saveOutcome.js`）に出し、`SaveDocument` には `SaveDocumentAs` を注入する（R2.7 / R2.2）
-- [ ] メンバの並び：`BlockEditController` の non-pure の `dispatch` が semi-pure-b のクエリより前にある。`UIController.js` の先頭の純粋関数（`classifyDroppedFile` / `hasNullByte` / `renderRouteFor`）を別ファイル（例：`dropClassification.js`）へ移す（R7.7 / R7.9）
+- [x] `UIController` の責務が多い（約 1,740 行。2026-10-23）。「文書のライフサイクル」（セッション・保存先・保存の状態）を別のクラスへ分ける（R2 SRP / R2 SoC）。→ 2026-10-23 に `DocumentLifecycle`（UseCase 層）へ分けた（`feature/uicontroller-split`。動きは変えない）
+- [ ] `UIController` に、パレットの機能の振り分け（`_runPaletteCommand` から `_insertBlock` まで。約 190 行）が残っている。別のクラスへ分けるか決める（R2 SRP）
+- [ ] `SaveDocument` が内部で `SaveDocumentAs` を作り、その `outcome` / `failureMessage` を借りている（DocumentLifecycle も例外の経路で使う）。両方の use case が使う純粋な関数（例：`saveOutcome.js`）に出し、`SaveDocument` には `SaveDocumentAs` を注入する（R2 DRY / R2 SRP）
+- [ ] メンバの並び：`BlockEditController` の non-pure の `dispatch` が semi-pure-b のクエリより前にある。`UIController.js` の先頭の純粋関数（`classifyDroppedFile` / `hasNullByte` / `renderRouteFor`）を別ファイル（例：`dropClassification.js`）へ移す（R7 構造の分離（並び順） / R7 構造の分離（ファイル））
+- [ ] キャッシュ方針：部分再描画の HTML のキャッシュについて、レビュー基準の「R2 キャッシュ方針」が求める 4 つの項目（対象・無効化の契機・許容する陳腐化・同時の失効の挙動）が、仕様の 1 か所にそろっていない（対象と無効化は 3.2・5.14.3・5.14.4、採った理由は 5.16.1。陳腐化と同時の失効は書かれていない）。1 か所にまとめて書く

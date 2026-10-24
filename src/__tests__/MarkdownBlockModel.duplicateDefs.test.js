@@ -53,7 +53,7 @@ describe("INV-41 duplicate reference definitions keep the round trip (INV-41)", 
   });
 });
 
-describe("duplicate definitions cost about one lexing of the body (R5.1, INV-51)", () => {
+describe("duplicate definitions cost about one lexing of the body (R5 Algorithms and Data Structures, INV-51)", () => {
   /** A lexer that counts the characters it is given. */
   function countingLexer() {
     const counter = { chars: 0 };
