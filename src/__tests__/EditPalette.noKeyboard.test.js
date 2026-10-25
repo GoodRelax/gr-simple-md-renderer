@@ -37,7 +37,7 @@ describe("AT-PAL-20 the palette takes no keyboard focus and no keys (INV-53)", (
     palette.setButtonStates(ALL_ON);
     const { root, popover, formatMenu, tableMenu } = paletteElements();
     const buttons = [root, popover, formatMenu, tableMenu].flatMap((el) => [...el.querySelectorAll("button")]);
-    expect(buttons.length).toBe(13 + 4 + 6 + 4);
+    expect(buttons.length).toBe(13 + 4 + 6 + 2 + 4); // Text format: 6 formats and 2 math (owner ruling 2026-10-25)
     for (const b of buttons) expect(b.tabIndex, b.id || b.getAttribute("aria-label")).toBe(-1);
     expect(root.querySelector('[tabindex="0"]')).toBeNull();
     expect(palette.focus).toBeUndefined();

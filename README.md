@@ -81,6 +81,8 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
 
    In edit mode, a dashed line with `+` shows between two blocks, above the first one and below the last one; click it (on a phone, tap the gap, then the line) to add a new block there.
 
+   In an open block, the second row of the edit palette's Text format adds math: Insert inline math puts a formula at the cursor, and Insert math boxes adds three equations (Maxwell, Einstein, Schroedinger), each with its name.
+
    In edit mode, drag over the text of some blocks (on a phone, long press) to select those blocks whole: they get a frame, and a bar [Delete] [Cut] [Copy] shows under the selection. No dialog asks; one Undo brings deleted blocks back. To copy only part of the text you see, leave edit mode first.
 
 4. If your Markdown contains PlantUML blocks or external images, you will be asked for permission before anything is sent to an external server
@@ -233,6 +235,8 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    Mac では `Ctrl` の代わりに `Cmd` を使います（やり直しは `Cmd+Shift+Z`）。
 
    編集モードでは、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下に、点線と `+` が出ます。押すと（スマートフォンでは、すき間をタップしてから点線をタップ）、そこに新しいブロックを入れます。
+
+   ブロックを開いているとき、編集パレットの Text format の 2 段目で数式を入れられます。Insert inline math は、カーソルの位置に式を入れます。Insert math boxes は、3 つの方程式（Maxwell、Einstein、Schroedinger）を、それぞれの名前と一緒に入れます。
 
    編集モードで、ブロックの文字をドラッグで選ぶ（スマートフォンでは長押し）と、選択がかかったブロックが丸ごと選ばれて枠が付き、選択の下に帯 [削除][カット][コピー] が出ます。確認は出ません。消したブロックは Undo 1 回で戻ります。見えている文字の一部だけをコピーするときは、編集モードを抜けてから選びます。
 
