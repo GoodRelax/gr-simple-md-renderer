@@ -80,7 +80,7 @@ export function renderRouteFor(isCodeView, isPreRender) {
 
 // The one-key shortcuts of setupKeyboard (3.12) that wait until an inserted
 // block's cell or source has opened (INV-52, owner ruling D5).
-const ONE_KEY_SHORTCUTS = new Set(["i", "l", "d", "r", "n", "c", "e"]);
+const ONE_KEY_SHORTCUTS = new Set(["i", "f", "l", "d", "r", "n", "c", "e"]);
 
 /**
  * Translates UI events into use-case calls.
@@ -99,7 +99,8 @@ export default class UIController {
    *   createBlockEdit(host) -> BlockEditController, isApple (Cmd is the
    *   primary shortcut modifier, INV-14), clipboard (what the Paste link
    *   button reads, INV-69; navigator.clipboard when not given),
-   *   documentIndex (DocumentIndex; optional)
+   *   documentIndex (DocumentIndex; optional), createSearch(host) ->
+   *   DocumentSearch (optional)
    * @purity non-pure
    */
   constructor(orchestrator, state, elements, scrollEngine, services) {
@@ -129,6 +130,7 @@ export default class UIController {
     this._isEditorTextStale = false; // #editor not yet given the body after a large commit (INV-47)
     this.palette = services.createPalette(this._paletteHost());
     this.blockEdit = services.createBlockEdit(this._blockEditHost());
+    this.documentSearch = services.createSearch ? services.createSearch(this._searchHost()) : null;
     this.orchestrator.setModelChangedListener(this);
 
     this.setupEventListeners();
@@ -187,6 +189,7 @@ export default class UIController {
     const affordance = document.getElementById("affordanceText");
     this.elements.editBtn.disabled = mode === "code"; // OS-06
     this.documentIndex?.setAvailable(mode === "markdown");
+    this.documentSearch?.setMode(mode);
 
     switch (mode) {
       case "code":
@@ -626,6 +629,10 @@ export default class UIController {
         case "i":
           this.documentIndex?.toggle();
           break;
+        case "f":
+          e.preventDefault(); // the f is not typed into the search box
+          this.documentSearch?.open();
+          break;
         case "l":
           this.handleRender("light");
           break;
@@ -654,11 +661,13 @@ export default class UIController {
           // it (5.11, 11-c escapePressed). A held Esc acts once: its repeats do
           // nothing (owner ruling Q-a).
           if (e.repeat) break;
-          if (this.orchestrator.isPreRenderState() || this.orchestrator.isCodeViewActive()) break;
-          // The Index closes last: after the block editor, the block range
-          // and the palette (owner ruling 2026-10-25).
-          if (!this.palette.isShown() && this.documentIndex?.isShown()) this.documentIndex.hide();
-          else this.blockEdit.dispatch("escapePressed");
+          if (this.orchestrator.isPreRenderState()) break;
+          // The order (owner rulings 2026-10-25): the block editor, the
+          // popover, the block range and the palette (11-c), then Search,
+          // then the Index. The code view has no palette.
+          if (this.palette.isShown()) this.blockEdit.dispatch("escapePressed");
+          else if (this.documentSearch?.isShown()) this.documentSearch.hide();
+          else if (this.documentIndex?.isShown()) this.documentIndex.hide();
           break;
       }
     });
@@ -701,6 +710,12 @@ export default class UIController {
       if (this.orchestrator.isPreRenderState() || this.orchestrator.isCodeViewActive()) return noAction;
       /** @purity non-pure */
       return () => (e.shiftKey ? this.requestSaveAs() : this.requestSave());
+    }
+    if (letter === "f" && !e.shiftKey) {
+      // INV-80 (owner ruling S6): in edit mode the primary + F opens Search,
+      // also from the block editor; elsewhere the browser's find stays.
+      if (!this.palette.isShown() || !this.documentSearch) return null;
+      return () => this.documentSearch.open();
     }
     const isRedo = (letter === "z" && e.shiftKey) || (letter === "y" && !e.shiftKey && !this._isApple);
     if ((letter === "z" && !e.shiftKey) || isRedo) {
@@ -888,6 +903,7 @@ export default class UIController {
     }
     this._editorChangedSinceRender = false;
     this._refreshDirtyMark();
+    this.documentSearch?.refresh();
   }
 
   /**
@@ -1169,6 +1185,7 @@ export default class UIController {
   _showPalette() {
     this.orchestrator.keepReadingPosition(() => this.palette.show());
     this.blockEdit.dispatch("paletteShown");
+    this.documentSearch?.setReplaceEnabled(true);
     this._refreshDirtyMark();
   }
 
@@ -1180,6 +1197,7 @@ export default class UIController {
     this._endClipboardWait();
     this.blockEdit.dispatch("paletteHidden");
     this.orchestrator.keepReadingPosition(() => this.palette.hide());
+    this.documentSearch?.setReplaceEnabled(false);
   }
 
   /**
@@ -1315,6 +1333,25 @@ export default class UIController {
    */
   _toast(message) {
     showToast(message, CONFIG.codeView.toastDurationMs);
+  }
+
+  /**
+   * The port DocumentSearch calls back (INV-80). Before a replace, the open
+   * block editor or cell is committed (11-c replaceRequested) and #editor's
+   * unrendered changes are taken in, as for a save (INV-56 asks first).
+   * @purity non-pure
+   */
+  _searchHost() {
+    return {
+      /** @purity non-pure */
+      beforeReplace: () => {
+        if (this._editorChangedSinceRender && !this._confirmEditorIntoDocument()) return false;
+        this.blockEdit.dispatch("replaceRequested");
+        if (this._editorChangedSinceRender) this._takeEditorIntoModel(this.state.currentTheme);
+        return true;
+      },
+      toast: (message) => this._toast(message),
+    };
   }
 
   /**

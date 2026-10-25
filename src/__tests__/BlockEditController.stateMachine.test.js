@@ -11,9 +11,10 @@ import { setupEdit, flush } from "./helpers/editStack.js";
 import { diagramTransitions, tableTransitions } from "./helpers/specDiagram.js";
 import { pointer, tap, keydown } from "./helpers/editDom.js";
 
-// Spec 11-c: every cell of the 32 x 4 table (AT-BSM-01..18, AT-BSM-19..25
+// Spec 11-c: every cell of the 33 x 4 table (AT-BSM-01..18, AT-BSM-19..25
 // for the table cells, AT-BSM-26..27 for the inserts, AT-BSM-28 Redo,
-// AT-BSM-29 the gap insert, AT-BSM-30..32 the block range; 15 is the
+// AT-BSM-29 the gap insert, AT-BSM-30..32 the block range, AT-BSM-33 the
+// replace of Search (INV-80); 15 is the
 // definition check). The state is judged
 // from outside only:
 //   browsingPreview = a tap on a block opens nothing
@@ -190,6 +191,7 @@ const TABLE = {
   escapePressed: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
   saveRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
   saveAsRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
+  replaceRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
   documentReplaced: { [B]: null, [I]: null, [E]: [I, []], [C]: [I, []] },
   documentCleared: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [B, ["hidePalette"]], [C]: [B, ["hidePalette"]] },
   viewSwitchedToCode: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [B, ["hidePalette"]], [C]: [B, ["hidePalette"]] },
@@ -247,15 +249,16 @@ const IDS = {
   blockRangeDeleteRequested: "AT-BSM-30",
   blockRangeCutRequested: "AT-BSM-31",
   blockRangeCopyRequested: "AT-BSM-32",
+  replaceRequested: "AT-BSM-33",
 };
 
 const CELLS = Object.entries(TABLE).flatMap(([event, row]) =>
   STATES.map((state) => [IDS[event], event, state, row[state]]),
 );
 
-describe("AT-BSM 11-c block edit state machine: all 128 cells", () => {
-  it("covers 32 events x 4 states", () => {
-    expect(CELLS).toHaveLength(128);
+describe("AT-BSM 11-c block edit state machine: all 132 cells", () => {
+  it("covers 33 events x 4 states", () => {
+    expect(CELLS).toHaveLength(132);
   });
 
   it.each(CELLS)("%s %s in %s", async (_id, event, state, cell) => {
@@ -630,8 +633,8 @@ describe("AT-BSM cell details", () => {
 });
 
 describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () => {
-  it("has the same 32 events, and the same next state in all 128 cells (the first alternative of a choice)", () => {
-    expect(Object.keys(TABLE)).toHaveLength(32);
+  it("has the same 33 events, and the same next state in all 132 cells (the first alternative of a choice)", () => {
+    expect(Object.keys(TABLE)).toHaveLength(33);
     expect(Object.keys(blockEditStateMachine).sort()).toEqual(Object.keys(TABLE).sort());
     for (const [event, row] of Object.entries(TABLE)) {
       for (const state of STATES) {
@@ -687,6 +690,7 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () 
     expect(act("pointerPressedOutside", E)).toEqual(["commitBlock"]);
     expect(act("saveRequested", E)).toEqual(["commitBlock"]);
     expect(act("saveAsRequested", E)).toEqual(["commitBlock"]);
+    expect(act("replaceRequested", E)).toEqual(["commitBlock"]);
   });
 });
 

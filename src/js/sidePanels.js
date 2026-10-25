@@ -1,7 +1,7 @@
 // The part of the window the document scrolls in, and the column of
-// floating panels (#sidePanels: the Index) at its right edge (INV-77, owner
-// rulings 2026-10-25). #preview scrolls on a desktop; on a touch device the
-// page scrolls, under the sticky top bar (FS-15).
+// floating panels (#sidePanels: Search above the Index) at its right edge
+// (INV-77, INV-80, owner rulings 2026-10-25). #preview scrolls on a desktop;
+// on a touch device the page scrolls, under the sticky top bar (FS-15).
 
 /** Least room between the panels and the view's edges. */
 const EDGE_MARGIN_PX = 8;

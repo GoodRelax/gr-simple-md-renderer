@@ -462,6 +462,17 @@ blockquote {
     display: none !important;
   }
 
+  /* Search's marks are not printed (INV-80 (8)) */
+  .search-hit {
+    outline: none !important;
+  }
+
+  ::highlight(grsmd-search),
+  ::highlight(grsmd-search-current) {
+    background-color: transparent;
+    color: inherit;
+  }
+
   #preview {
     overflow: visible;
     height: auto;
@@ -879,13 +890,10 @@ body.dark #keyHint {
   pointer-events: none; /* only the panels take presses */
 }
 
+#searchPanel,
 #indexPanel {
   pointer-events: auto;
   box-sizing: border-box;
-  min-height: 0; /* shrinks in the column, then scrolls itself */
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 6px 0;
   background: rgba(255, 255, 255, 0.75);
   color: #1f2328;
   border: 1px solid #d1d9e0;
@@ -893,8 +901,73 @@ body.dark #keyHint {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-#indexPanel[hidden] {
+#indexPanel {
+  min-height: 0; /* shrinks in the column, then scrolls itself */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 0;
+}
+
+#searchPanel {
+  flex: none;
+  padding: 4px;
+}
+
+#searchPanel[hidden],
+#indexPanel[hidden],
+#replaceRow[hidden] {
   display: none;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.search-row + .search-row {
+  margin-top: 4px;
+}
+
+.search-row input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  padding: 2px 4px;
+}
+
+.search-row button {
+  font-size: 12px;
+  padding: 1px 5px;
+}
+
+#searchCase[aria-pressed="true"],
+#searchRegex[aria-pressed="true"] {
+  background: #0969da;
+  color: #fff;
+}
+
+#searchCount {
+  min-width: 4em;
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* The block or code line of the current match, and its text (INV-80) */
+.search-hit {
+  outline: 2px solid #bf8700;
+  outline-offset: 2px;
+}
+
+::highlight(grsmd-search) {
+  background-color: #ffd33d;
+  color: #1f2328;
+}
+
+::highlight(grsmd-search-current) {
+  background-color: #ffa657;
+  color: #1f2328;
 }
 
 .index-entry {
@@ -953,6 +1026,7 @@ body.dark #keyHint {
 }
 
 @media screen {
+  body.dark #searchPanel,
   body.dark #indexPanel {
     background: rgba(21, 27, 35, 0.75);
     color: #f0f6fc;
@@ -962,6 +1036,20 @@ body.dark #keyHint {
   body.dark .index-entry:hover,
   body.dark .index-entry:focus-visible {
     background: rgba(56, 139, 253, 0.25);
+  }
+
+  body.dark .search-hit {
+    outline-color: #d29922;
+  }
+
+  body.dark ::highlight(grsmd-search) {
+    background-color: #9e6a03;
+    color: #f0f6fc;
+  }
+
+  body.dark ::highlight(grsmd-search-current) {
+    background-color: #bd561d;
+    color: #f0f6fc;
   }
 }
 

@@ -125,6 +125,12 @@ export const CONFIG = {
     index: {
       empty: "This document has no headings.", // DocumentIndex with no heading
     },
+    search: { // DocumentSearch: the count beside the query, and a toast
+      count: (current, total) => (current > 0 ? `${current} / ${total}` : total),
+      none: "No results",
+      invalid: "Invalid pattern",
+      replaced: (count) => `Replaced ${count}.`,
+    },
     markdown: {
       parseError: (message) => `Couldn't read this Markdown: ${message}`, // marked threw
     },
@@ -336,8 +342,8 @@ export const CONFIG = {
   },
   // Keyboard hint text per view mode
   keyHints: {
-    markdown: "[I] Index; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
-    code:     "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
+    markdown: "[I] Index; [F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
+    code:     "[F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
   },
 };
 

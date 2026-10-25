@@ -37,6 +37,7 @@ import BlockEditController from "./classes/BlockEditController.js";
 import UIController from "./classes/UIController.js";
 import HelpLanguageSwitch from "./classes/HelpLanguageSwitch.js";
 import DocumentIndex from "./classes/DocumentIndex.js";
+import DocumentSearch from "./classes/DocumentSearch.js";
 
 // ========================================
 // Initialization
@@ -51,6 +52,7 @@ const elements = {
   indexBtn: document.getElementById("indexBtn"),
   indexPanel: document.getElementById("indexPanel"),
   sidePanels: document.getElementById("sidePanels"),
+  searchBtn: document.getElementById("searchBtn"),
   renderLightBtn: document.getElementById("renderLight"),
   renderDarkBtn: document.getElementById("renderDark"),
   reloadBtn: document.getElementById("reloadBtn"),
@@ -128,6 +130,34 @@ new UIController(orchestrator, state, elements, scrollEngine, {
   documents,
   isApple,
   documentIndex,
+  createSearch: (host) =>
+    new DocumentSearch(
+      {
+        button: elements.searchBtn,
+        column: elements.sidePanels,
+        panel: document.getElementById("searchPanel"),
+        preview: elements.preview,
+        topbar: elements.topbar,
+        input: document.getElementById("searchInput"),
+        matchCase: document.getElementById("searchCase"),
+        regex: document.getElementById("searchRegex"),
+        count: document.getElementById("searchCount"),
+        prev: document.getElementById("searchPrev"),
+        next: document.getElementById("searchNext"),
+        close: document.getElementById("searchClose"),
+        replaceRow: document.getElementById("replaceRow"),
+        replaceInput: document.getElementById("replaceInput"),
+        replaceOne: document.getElementById("replaceOneBtn"),
+        replaceAll: document.getElementById("replaceAllBtn"),
+      },
+      {
+        getModel: () => orchestrator.getModel(),
+        blockElement: (id) => markdownRenderer.getBlockElement(id),
+        replaceBody: (body, offset) => orchestrator.replaceBody(body, offset),
+      },
+      host,
+      CONFIG.messages.search,
+    ),
   createPalette: (host) => new EditPalette(host, { isApple }),
   createBlockEdit: (host) =>
     new BlockEditController(elements.preview, orchestrator, markdownRenderer, scrollManager, host),

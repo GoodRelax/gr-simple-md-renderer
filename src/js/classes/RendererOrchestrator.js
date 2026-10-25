@@ -334,6 +334,30 @@ export default class RendererOrchestrator {
   }
 
   /**
+   * Replace the whole body as one undoable change (search and replace,
+   * INV-80): blocks whose text did not change keep their ids, so the render
+   * is partial (INV-42); the block at offset keeps its place on screen
+   * (INV-46).
+   * @param {string} body
+   * @param {number} offset - a body offset in the changed part
+   * @returns {Promise<void>} settles when the render is done
+   * @purity non-pure
+   */
+  replaceBody(body, offset) {
+    const model = this._currentModel;
+    if (!model) return Promise.resolve();
+    markCommitStart();
+    const change = model.withBody(body, this._lexer, CONFIG.edit.diffMaxCells);
+    if (!change.isChanged) {
+      clearCommitMark();
+      return Promise.resolve();
+    }
+    const scroll = this._capture(this.markdownRenderer.getBlockElement(model.blockIdAt(offset)));
+    this._recordUnit(model);
+    return this._applyChange(change, scroll, change.model.blockIdAt(offset));
+  }
+
+  /**
    * The source of the blocks from firstId to lastId (INV-74), or null when
    * they are not in the current model.
    * @param {number} firstId
