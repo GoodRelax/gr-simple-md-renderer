@@ -56,9 +56,13 @@ const ICONS = {
   alignCenter: `<svg viewBox="0 0 24 24" ${STROKE}><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg>`,
   alignRight: `<svg viewBox="0 0 24 24" ${STROKE}><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg>`,
   alignNone: `<svg viewBox="0 0 24 24" ${STROKE}><path d="M3 12h4M10 12h4M17 12h4"/></svg>`,
+  mathInline: `<svg viewBox="0 0 24 24" ${STROKE}><path d="M17 5H7l5.5 7L7 19h10"/></svg>`,
+  mathBox: `<svg viewBox="0 0 24 24" ${STROKE}><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M15.5 8h-7l4 4-4 4h7"/></svg>`,
 };
 
 // Popovers (5.15.1, 11-f). stateKey: the key of setButtonStates(); null = always enabled.
+// A popover of more rows (Text format: the formats, then the math) has rows
+// instead of items.
 const POPOVERS = {
   mermaid: {
     id: "paletteMermaidMenu",
@@ -77,13 +81,20 @@ const POPOVERS = {
     label: L.format,
     openState: FORMAT_OPEN,
     runEvent: "formatButtonRun",
-    items: [
-      { id: "paletteColorRed", command: "textColor", arg: "red", label: L.colorRed, icon: "colorSwatch", stateKey: "textColor" },
-      { id: "paletteColorBlue", command: "textColor", arg: "blue", label: L.colorBlue, icon: "colorSwatch", stateKey: "textColor" },
-      { id: "paletteColorGreen", command: "textColor", arg: "green", label: L.colorGreen, icon: "colorSwatch", stateKey: "textColor" },
-      { id: "paletteColorNone", command: "textColor", arg: "none", label: L.colorNone, icon: "colorNone", stateKey: "textColor" },
-      { id: "paletteLinkPaste", command: "linkPaste", label: L.linkPaste, icon: "linkPaste", stateKey: "linkPaste" },
-      { id: "paletteLinkRemove", command: "linkRemove", label: L.linkRemove, icon: "linkRemove", stateKey: "linkRemove" },
+    rows: [
+      [
+        { id: "paletteColorRed", command: "textColor", arg: "red", label: L.colorRed, icon: "colorSwatch", stateKey: "textColor" },
+        { id: "paletteColorBlue", command: "textColor", arg: "blue", label: L.colorBlue, icon: "colorSwatch", stateKey: "textColor" },
+        { id: "paletteColorGreen", command: "textColor", arg: "green", label: L.colorGreen, icon: "colorSwatch", stateKey: "textColor" },
+        { id: "paletteColorNone", command: "textColor", arg: "none", label: L.colorNone, icon: "colorNone", stateKey: "textColor" },
+        { id: "paletteLinkPaste", command: "linkPaste", label: L.linkPaste, icon: "linkPaste", stateKey: "linkPaste" },
+        { id: "paletteLinkRemove", command: "linkRemove", label: L.linkRemove, icon: "linkRemove", stateKey: "linkRemove" },
+      ],
+      [
+        // owner ruling 2026-10-25: inline math, and the three math boxes in one press
+        { id: "paletteInlineMath", command: "insertInlineMath", label: L.inlineMath, icon: "mathInline", stateKey: "insertInlineMath" },
+        { id: "paletteMathBox", command: "insertMathBox", label: L.mathBox, icon: "mathBox", stateKey: "insertMathBox" },
+      ],
     ],
   },
   table: {
@@ -264,7 +275,8 @@ function createButton(id, label, iconHtml) {
  *   runCommand(command, arg) - bold, italic, undo, save, saveAs, insertTable,
  *     insertRow, rowDelete, insertColumn, columnDelete, insertMermaid (arg: a
  *     CONFIG.edit.mermaidSamples key), textColor (red / blue / green / none),
- *     linkPaste, linkRemove, alignColumn (left / center / right / none)
+ *     linkPaste, linkRemove, alignColumn (left / center / right / none),
+ *     insertInlineMath, insertMathBox
  *   onPopoverOpened(key) - optional: a popover (format / mermaid / table)
  *     has just opened (its button states can be set now, 5.15.5)
  */
@@ -376,7 +388,8 @@ export default class EditPalette {
    *   linkPaste?: boolean, linkRemove?: boolean, insertTable?: boolean,
    *   insertMermaid?: boolean, undo?: boolean, insertRow?: boolean,
    *   insertColumn?: boolean, rowDelete?: boolean, columnDelete?: boolean,
-   *   tableOptions?: boolean, alignment?: "left"|"center"|"right"|"none"|null}} states
+   *   tableOptions?: boolean, insertInlineMath?: boolean, insertMathBox?: boolean,
+   *   alignment?: "left"|"center"|"right"|"none"|null}} states
    */
   setButtonStates(states) {
     for (const [button, info] of this._buttons) {
@@ -836,11 +849,20 @@ export default class EditPalette {
     popover.style.position = "fixed";
     popover.hidden = true;
     const key = Object.keys(POPOVERS).find((k) => POPOVERS[k] === def);
-    for (const item of def.items) {
-      const button = createButton(item.id ?? null, item.label, ICONS[item.icon]);
-      if (item.icon === "colorSwatch") button.classList.add("edit-palette-swatch", `edit-palette-swatch-${item.arg}`);
-      this._buttons.set(button, { command: item.command, arg: item.arg, stateKey: item.stateKey, popover: key });
-      popover.appendChild(button);
+    if (def.rows) popover.classList.add("edit-palette-popover-rows");
+    for (const items of def.rows ?? [def.items]) {
+      let parent = popover;
+      if (def.rows) {
+        parent = document.createElement("div");
+        parent.className = "edit-palette-popover-row";
+        popover.appendChild(parent);
+      }
+      for (const item of items) {
+        const button = createButton(item.id ?? null, item.label, ICONS[item.icon]);
+        if (item.icon === "colorSwatch") button.classList.add("edit-palette-swatch", `edit-palette-swatch-${item.arg}`);
+        this._buttons.set(button, { command: item.command, arg: item.arg, stateKey: item.stateKey, popover: key });
+        parent.appendChild(button);
+      }
     }
     return popover;
   }

@@ -76,6 +76,19 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Added
 
+- Math templates in the edit palette: the Text format popover has a second
+  row with two buttons. **Insert inline math** puts the formula for Euler's
+  number (Napier's constant) at the cursor of the open block; a space goes
+  before or after it only where Markdown needs one to read it as math, and
+  where it would not read as math (or not as before) nothing changes and a
+  toast says so. It is off in a table cell. **Insert math boxes** adds three
+  display equations at once, each under its name: Maxwell's Equations,
+  Einstein Field Equations and Christoffel Symbols, and Schroedinger
+  Equation, Wavefunction Normalization, and Pauli Matrices. They go in like
+  Insert table and the Mermaid samples (the open block is applied and cut at
+  the cursor line; refused inside code, math, HTML and a table's source),
+  nothing opens afterwards so they are seen drawn, and one Undo takes all
+  of them away. The help says so in both languages.
 - In edit mode, drag over the text of some blocks (on a phone, long press
   and move the handles) to select those blocks whole: they get a blue frame
   and a small bar [Delete] [Cut] [Copy] shows under the selection (above it

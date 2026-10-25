@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.7
+**バージョン:** 2.9
 **日付:** 2026-xx-xx (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -24,7 +24,9 @@
 
 > v2.6 の変更 (続き、2026-10-25、Render が終わらない不具合 (ReDoS) の直し): PRT は変えていない。AT の目録に AT-RUN (新)、AT-WRAP-20〜22、AT-STA-18 / 19、AT-FR-65〜67、AT-HB-62〜64、AT-INS-20 / 21、AT-ICO-20、AT-BM-35 / 36、AT-MR-15〜19 を足し、時間の試験の例外 (時間の上限を常に確かめるもの) を書いた。e2e の load.e2e.js / fileDrop.e2e.js に、先頭に空行 41 行の文書の試験を足した (WebKit は直す前でも通る既知の制限)。
 
-> v2.7 の変更 (2026-10-24、同梱 OSS の表記): 仕様の付録 A.2 と INV-75・INV-76 に合わせて、セクション AA (PRT-AA01 / AA02) を追加した。AT に AT-OSS、e2e に notices.e2e.js を足した。ヘルプの節の並びに「Licenses」/「ライセンス」を加えたので、PRT-L01 の期待結果の節の並び (自動では help.e2e.js の「PRT-L03」の試験と AT-HLP-05) も変わる (2026-10-25、レビューの 1 回目の L2 で PRT-L01 を直した。判定は空欄)。レビューの 1 回目の直しで、AT-OSS に 07 (本物のビルドで、手で書く一覧の項目を外すと検査が落ちること) を足した。追加したケースの判定は空欄 (未実施)。
+> v2.8 の変更 (2026-10-25、数式のテンプレ): パレットの Text format の 2 段目 (行内の数式・数式ボックス。仕様の改訂履歴 2026-10-25 の数式のテンプレ) に合わせて、PRT-V21 を追加した。AT に AT-MATH (新)、AT-BM-37、AT-PAL-36、AT-UI-68 / 69、AT-PERF-09 (b) を足し、AT-PAL-03 / 19 / 20 / 23 を 2 段目の 2 つのボタンに合わせて改めた。e2e に math.e2e.js を足した。
+
+> v2.9 の変更 (2026-10-24、同梱 OSS の表記): 仕様の付録 A.2 と INV-75・INV-76 に合わせて、セクション AA (PRT-AA01 / AA02) を追加した。AT に AT-OSS、e2e に notices.e2e.js を足した。ヘルプの節の並びに「Licenses」/「ライセンス」を加えたので、PRT-L01 の期待結果の節の並び (自動では help.e2e.js の「PRT-L03」の試験と AT-HLP-05) も変わる (2026-10-25、レビューの 1 回目の L2 で PRT-L01 を直した。判定は空欄)。レビューの 1 回目の直しで、AT-OSS に 07 (本物のビルドで、手で書く一覧の項目を外すと検査が落ちること) を足した。追加したケースの判定は空欄 (未実施)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -2331,6 +2333,29 @@
 | 判定 | |
 | 備考 | 要求: INV-51 (オーナーの裁定 2026-10-23)。自動: AT-PERF-10 (`GRSMD_PERF=1`。jsdom で中央値約 49 ms、2026-10-23) |
 
+### PRT-V21: 数式のテンプレ (Text format の 2 段目)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Chrome と Safari (iPhone か Mac)。段落と表のある文書を表示し、パレットを表示した。ライトとダークの両方で見る |
+| **手順** | 1. 段落を開き、語と語の間にカーソルを置いて、Format (A のアイコン) を押す |
+| | 2. 2 段目の左のボタン (Insert inline math) を押し、Esc で閉じる |
+| | 3. 別の段落を開き、`costs $5 and` に書き換えて、末尾にカーソルを置き、Insert inline math を押す |
+| | 4. 段落を開き、行の中ほどにカーソルを置いて、Format の 2 段目の右のボタン (Insert math boxes) を押す |
+| | 5. パレットの Undo を 1 回押し、続けて Ctrl+Shift+Z (Mac は Cmd+Shift+Z) を押す |
+| | 6. 表のセルを開いて Format を押す。表の Markdown のつまみで原文を開き、セルの文字の中にカーソルを置いて Insert inline math を押す |
+| **期待結果** | - 1 で、ポップオーバーが 2 段になり、1 段目に文字色の 4 つとリンクの 2 つ、2 段目に数式の 2 つが左にそろって並ぶ。tooltip は `Insert inline math: Euler's number (Napier's constant)` と `Insert math boxes: Maxwell, Einstein, Schroedinger`。ポップオーバーは画面の中に収まる |
+| | - 2 で、カーソルの位置に `$e = \lim …$` が入り (前後に空白が 1 つずつ。すでに空白があれば足さない)、カーソルは式の直後にある。閉じると、ネイピア数の式が行内に描かれ、赤い字 (KaTeX のエラー) は出ない |
+| | - 3 で、トースト `You can't insert math here.` が出て、文字は変わらない。太字の語 (`**Note**`) の末尾 (閉じの `**` の前) で押すと、空白を足さずに太字の中に入る (`**Note $…$**`) |
+| | - 4 で、段落がカーソルの行で割れ、`Maxwell's Equations` / 式 / `Einstein Field Equations and Christoffel Symbols` / 式 / `Schroedinger Equation, Wavefunction Normalization, and Pauli Matrices` / 式 が入る。3 つの式は中央に描かれ、赤い字は出ない。編集欄は開かない |
+| | - 5 で、Undo 1 回で 3 つの式と名前が全部消え、Redo で全部戻る |
+| | - 6 で、セルの編集中は数式の 2 つのボタンが無効。表の原文の中では、そのセルに式が入る |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-52、5.15.1、5.15.5 (オーナーの裁定 2026-10-25)。自動: e2e/math.e2e.js、AT-MATH、AT-UI-68 / 69、AT-PAL-36 |
+
 ---
 
 ## セクション W: 保存と未保存の保護
@@ -3754,11 +3779,12 @@
 | AT-EOL | 改行コードと BOM の変換 | INV-44、5.14.1 | lineEnding.test.js | 01〜07 |
 | AT-RUN | `trailingRunLength` / `trimTrailingRun` / `trailingRun` (末尾の並びを末尾から数える。線形) | 3.2 (`textTransforms.js`) | trailingRun.test.js | 01〜03 |
 | AT-SES | `DocumentSession` | INV-38、INV-44、INV-55 | DocumentSession.test.js | 01〜11 |
-| AT-BM | `MarkdownBlockModel` (33: すき間の位置、34: 記録とブロックの共有、35: ブロックの中の長い改行の並びで線形、36: `>` の無い `<` の多い HTML のブロックで、タグの数え方が線形) | INV-41、INV-42、INV-48、INV-52、INV-73 | MarkdownBlockModel.test.js | 01〜36 |
+| AT-BM | `MarkdownBlockModel` (33: すき間の位置、34: 記録とブロックの共有、35: ブロックの中の長い改行の並びで線形、36: `>` の無い `<` の多い HTML のブロックで、タグの数え方が線形、37: 複数のブロックの挿入の `lastInsertedBlockId` と、1 ブロックでは `insertedBlockId` と同じこと) | INV-41、INV-42、INV-48、INV-52、INV-73 | MarkdownBlockModel.test.js | 01〜37 |
 | AT-PTR | `MarkdownBlockModel.planTableReplace` | INV-42、11-c の `canKeepTableId` | MarkdownBlockModel.planTableReplace.test.js | 01〜07 |
 | AT-DIFF | `BlockDiff.diffBlocks` | INV-42 | BlockDiff.test.js | 01〜10 |
 | AT-RT | サンプルとフィクスチャの往復 | INV-38、INV-41、INV-44 | roundTrip.samples.test.js | 01〜06 |
 | AT-TXT | `MarkdownTextOps` (挿入など) | INV-52 | MarkdownTextOps.test.js | 01〜16 |
+| AT-MATH | パレットの数式: `MarkdownTextOps.insertInlineMath` / `canInsertInlineMath` (01: カーソルの位置と、要るときだけ足す前後の空白。リスト・見出し・引用・2 行目の行頭・表の原文のセル・太字の中、選択の終わり。02: F-R1 と同じ断る所。03: 位置は良いが読み直しで合わないときは何も変えない (ボタンは有効のまま)。04: 空白だけの行では段落として入れる) と、テンプレ (05: 行内のテンプレが行内の数式 1 つ、数式ボックスが名前の段落と `$$` の 6 ブロック、KaTeX の `throwOnError: true` で、行内の式は行内の形 (`displayMode: false`)、3 つの式は表示の形でエラー無く描け、`MarkdownRenderer` で `.katex-error` が無い。06: 強調の記号のすぐ内側では、その側に空白を足さない (レビューの L1)) | INV-52、5.15.5 (オーナーの裁定 2026-10-25) | MarkdownTextOps.math.test.js | 01〜06 |
 | AT-INS | `MarkdownTextOps.planBlockInsert` / `insertOffset` / `cutLineEndBreak` (雛形の挿入の位置と、断る場所、行内の書式をまたぐ境目、大きな段落、割った行の行末の空白と `\`。20 / 21: 行の中の長い空白の並び・長い改行の並びで線形) | INV-52 | MarkdownTextOps.planBlockInsert.test.js | 01〜21 |
 | AT-FR | `MarkdownTextOps.formatRange` (書式、リンク。65〜67: 段落・見出し・表のセルの行の中の長い空白の並びで、`canFormatRange` が線形) | INV-66、INV-67、INV-69 | MarkdownTextOps.formatRange.test.js、MarkdownTextOps.link.test.js | 01〜67 |
 | AT-HB | `MarkdownTextOps.insertHardBreak` と確定の後始末 (62 / 63: 行の中の長い空白の並びで、`hardBreakLines` と後始末が線形。64: `lineBreakSpaceCount`) | INV-71 | MarkdownTextOps.insertHardBreak.test.js | 01〜64 |
@@ -3778,14 +3804,14 @@
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
 | AT-ICO | `InvisibleCharOverlay` (20: 行の中の長い空白の並びで、行末の空白の判定が線形) | INV-70 | InvisibleCharOverlay.test.js | 01〜20 |
-| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜35 (21・22・29 は欠番) |
+| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜36 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
 | AT-FA | `MarkdownFileAccess` | INV-24〜26、CON-14 | MarkdownFileAccess.test.js | 01〜08 |
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
 | AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |
 | AT-DLC | `DocumentLifecycle` (UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`)、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56 | DocumentLifecycle.test.js | 01〜22 |
-| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js | 01〜67 (25 は欠番。41 は AT.1 の注) |
+| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js | 01〜69 (25 は欠番。41 は AT.1 の注。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)) |
 | AT-KEY | 主の修飾キーのショートカット (08: Redo のキー) | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜08 |
 | AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
 | AT-PAN | `DiagramPanController` (図のパンの終わり) | INV-16b、FS-09 | DiagramPanController.test.js | 01〜03 |
@@ -3819,7 +3845,7 @@ ID を持たない試験ファイル (その場編集の前からあるクラス
 | AT-STA-19 | `src/js` の正規表現に、(1) 先頭に錨 (`^`) が無く、1 つの字 (文字・エスケープ・文字の組) を上限なく繰り返す (`*`・`+`・`{n,}`) 所で始まり、その後ろに型が続くもの (例 `/[ \t]+$/`・`/ {2,}$/`・`/\n*$/`・`/(?:^\|[ \t]+)#+[ \t]*$/`。先頭の群は選択の枝ごとに見る。先頭の後ろ読みなどは飛ばす。繰り返す群は AT-STA-18) が無い。長い並びの中のどの位置からも試し、そのたびに並びの残りを読み直すので 2 乗の時間になる (ReDoS)。並びだけの型 (`/\s+/`) はそこで一致するので線形。許す一覧は無い (末尾の並びは `trailingRunLength` などで数える。AT-RUN)。(2) 後ろ読み (`(?<=`・`(?<!`) が無い (Safari 16.4 より前で構文の誤りになり、スクリプト全体が動かない。P-05 の iOS 15+)。検査そのものの試験を含む。**この検査が見ない形:** 字で始まり、後ろの長い並びがその字も取れるもの (例 `MarkdownBlockModel` の `TAG_RE` `/<…[^>]*?(\/?)>/` に、`>` の無い `<` の多い文字列。`<` ごとに残りを全部読む)。2 乗になるかは、並びの前の部分がその並びの中で一致しうるかで決まり (閉じフェンスの `` /\n`{n}\s*$/ `` は `\s` が `\n` を取れるが、`` ` `` が続くので線形)、型の字面だけでは誤りなく分けられないため、静的な検査にしない。`TAG_RE` は最後の `>` より後ろを読まない形に直し、時間の試験 AT-BM-36 で見る |
 | AT-PERF-07 | 1 MB の文書に 1,000 行 × 5 列の表: 中ほどのセル (500 行目) を初めて開くまで、セルの確定から次のセル、書式の適用が、それぞれ `commitBudgetMs` (300 ms) 以内 (INV-51)。表の操作 (行の追加) は、jsdom では DOMPurify が遅いので時間を記録するだけとし、時間の判定は e2e の `tableCell.e2e.js` (Chromium、PRT-X23) で行う (行の追加で作る HTML は小さな表の分の 1 回だけであることを AT-PERF-08 で数える) |
 | AT-PERF-08 | 表の編集の間の 1 回の操作で、表全体の HTML を作らない (INV-47、INV-51) |
-| AT-PERF-09 | 5,000 個のリンクを持つ 250 KB の段落で、書式のポップオーバーを開いたときの 1 フレームのボタンの判定が予算の中 (INV-51、INV-69) |
+| AT-PERF-09 | 5,000 個のリンクを持つ 250 KB の段落で、書式のポップオーバーを開いたときの 1 フレームのボタンの判定 (行内の数式を含む。大きなブロックなので行内の数式は無効) が予算の中 (INV-51、INV-69)。(b): 字句解析する最大の段落 (`invisibleMarkMaxChars` の手前まで、約 1,000 個のリンク) で、行内の数式の位置の判定を含めて同じ予算の中 (jsdom で 12〜44 ms、2026-10-25) |
 | AT-PERF-12 | 1 MB の文書で、100 ブロックの範囲の削除と、全部のブロックの削除が、それぞれ呼び出しから DOM の差し替えまで 5 回の中央値で `commitBudgetMs` (300 ms) 以内 (INV-74、INV-51) |
 | AT-PERF-13 | 1 MB の文書で、20 ブロックずつ 30 回の範囲の削除の Undo の記録、および全部の削除の 1 件の記録が、4 MiB 未満 (INV-74、INV-48) |
 | AT-PERF-10 | 1 MB の文書で、開いた段落の Insert table の押下 (確定・挿入・部分描画) から Col1 が開くまで、5 回の中央値が `commitBudgetMs` (300 ms) 以内 (INV-51、INV-52) |
@@ -3849,6 +3875,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | editModeScroll.e2e.js | 編集モードの出入りで読んでいる位置を保つ (マウスとタッチ) | PRT-X08 |
 | link.e2e.js | リンクを貼る・外す | PRT-X18 |
 | insertBlock.e2e.js | Insert table / Mermaid の挿入: 空の文書、行の境目で割る位置 (上・下・中・リスト・引用・下線の見出し)、断る場所とトースト (リストの中の表、字下げのコード、引用の中のコード、同意を Cancel にした PlantUML を含む)、行内の書式をまたぐ境目、`\` の改行、割った行の行末の空白、押した直後の打鍵がショートカットにならない、Undo で表だけが消える、挿入の後の最小のスクロール | PRT-V15〜V19 |
+| math.e2e.js | パレットの数式: Text format の 2 段の並び、行内の数式がカーソルに入り Esc で KaTeX が描く、読めないときのトースト、数式ボックスの 3 つの式 (エラー無く描け、何も開かない)・Undo 1 回と Redo、数式のブロックの中で断る | PRT-V21 |
 | toast.e2e.js | 幅 375 px で、トーストが画面の中で折り返す (長いファイル名も折る) | (5.12、オーナーの裁定 R11) |
 | help.e2e.js | ヘルプ: ブラウザの言語 (`en-US` / `ja-JP`) で最初の言語が決まる、トグルで片方だけになり閉じて開いても保つ、ダウンロードのリンクの属性、版が "Development build" と UTC の時刻、開いている間の 1 キーが裏に効かず Esc で閉じる (パレットを出しておき、Esc の後も出たままであること。プロンプトのモーダルも)、開くとフォーカスが中へ移り、Tab / Shift+Tab が中を回り、閉じると [?] へ戻る、トグルと × をキーボードだけで押せる、外への要求が無い、題名の行がスクロールしても上に残る、ヘルプの文字が 12px、クリップボードの許可の開示が日英のプライバシーの章にあり編集の章が無い | PRT-L01、PRT-L03、PRT-L05、PRT-L07、PRT-L08 |
 | crossUnit.e2e.js | 単位をまたぐ動き: 変更のあるセルの移動でポップオーバーが開いたまま (K-1)、外部画像の入った HTML の貼り付けと画像のあるセルの編集で通信しない (S-2)、色のセルを残したままの Render Dark、図のコードを開いた後のボタンなしの移動でスクロールしない (U20)、文書の class にアプリの CSS が当たらない・帯のカーソル・数式の大きさ (N2 / N3 / M04)、[?] の長押し (N1。Chromium だけ)、スマートフォンの配置 (N6)、編集モードの出入りでブロックが動かず、つまみが表の真上にある (P1) | PRT-X04、PRT-X08、PRT-X11、PRT-U10、PRT-U20、PRT-Q01、PRT-M04 |
@@ -3976,6 +4003,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-V18      | 編集パレット | 表の挿入の Undo |      |
 | PRT-V19      | 編集パレット | 挿入の後のスクロール |      |
 | PRT-V20      | 編集パレット | 表の挿入の性能 |      |
+| PRT-V21      | 編集パレット | 数式のテンプレ |      |
 | PRT-W01      | 保存と保護 | 上書き保存 (Chrome / Edge) |      |
 | PRT-W02      | 保存と保護 | 権限の拒否 / 保存ダイアログのキャンセル |      |
 | PRT-W03      | 保存と保護 | 外部での変更の確認 |      |
