@@ -1265,9 +1265,12 @@ export default class UIController {
       // open (INV-51); off while a read of the clipboard waits (one at a time)
       linkPaste: isLinkMenuOpen && !this._isReadingClipboard && this.blockEdit.canPasteLink(),
       linkRemove: isLinkMenuOpen && this.blockEdit.canRemoveLink(),
+      // the place of inline math is lexed only while the format popover is open, as the links (INV-51)
+      insertInlineMath: isLinkMenuOpen && this.blockEdit.canInsertInlineMath(),
       format: isEditing,
       insertTable: cell === null, // W7
       insertMermaid: cell === null,
+      insertMathBox: cell === null, // as Mermaid (INV-52)
       undo: this.orchestrator.canUndo() || this.blockEdit.hasUncommittedChange(), // INV-48
       insertRow: isInTableSource || cell !== null,
       insertColumn: isInTableSource || cell !== null,
@@ -1402,6 +1405,14 @@ export default class UIController {
       case "insertMermaid":
         void this._insertBlock(CONFIG.edit.mermaidSamples[arg], "source");
         break;
+      case "insertInlineMath":
+        // INV-52: the result must read as the math and as before; else nothing changes
+        if (this.blockEdit.insertInlineMath(CONFIG.edit.inlineMathTemplate)) this._refreshDirtyMark();
+        else this._toast(CONFIG.messages.edit.mathNotInsertable);
+        break;
+      case "insertMathBox":
+        void this._insertBlock(CONFIG.edit.mathBoxesTemplate, "none"); // the math boxes open nothing
+        break;
       default:
         break;
     }
@@ -1511,14 +1522,15 @@ export default class UIController {
   }
 
   /**
-   * Insert table / Mermaid sample (INV-52, 11-c blockInsertRequested):
+   * Insert table / Mermaid sample / math boxes (INV-52, 11-c blockInsertRequested):
    * while editing, the editor is committed and the block goes in at a line
    * boundary of it (or the press is refused with a toast); else after the
    * last opened block (or at the end). Each is a change of its own. After
    * the render, a table's first cell (opens "cell") or the Mermaid block's
-   * source (opens "source") is opened.
+   * source (opens "source") is opened; the math boxes (opens "none") open
+   * nothing.
    * @param {string} blockText
-   * @param {"cell"|"source"} opens
+   * @param {"cell"|"source"|"none"} opens
    * @returns {Promise<void>} settles when the opening after the render is done
    * @purity non-pure
    */

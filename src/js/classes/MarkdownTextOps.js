@@ -15,7 +15,7 @@ const BLANKS = " \t";
 const COLOR_OPEN = /^<span style="color: (#[0-9A-Fa-f]{6})">$/;
 const SPAN_OPEN = /^<span(?:\s[^>]*)?>$/i;
 const SPAN_CLOSE = /^<\/span\s*>$/i;
-// INV-52: Insert table / Mermaid refuses in an editor opened on these
+// INV-52: Insert table / Mermaid / math boxes refuse in an editor opened on these
 // blocks, or with the caret in such a block of the editor text at any depth
 // (top level, a list item, a quote; a table there too: owner ruling D7).
 const REFUSING_BLOCKS = new Set(["code", "html", "blockKatex", "table"]);
@@ -34,6 +34,9 @@ const CUT_BLOCKS = new Set(["paragraph", "list", "blockquote"]);
 // on a 1,000-line block); the candidates not decided by then stay as they
 // are (what is shown does not change).
 const STRIP_MAX_LEXES = 8;
+// What may follow the closing "$" of inline math (marked-katex-extension's
+// inline rule without nonStandard; the palette's inline math, INV-52).
+const MATH_CLOSE_FOLLOW = /^[\s?!.,:\uff1f\uff01\u3002\uff0c\uff1a]/;
 
 /**
  * @purity pure
@@ -51,6 +54,15 @@ function countNewlines(s) {
  */
 function rawOf(tokens) {
   return tokens.map((t) => t.raw).join("");
+}
+
+/**
+ * A token of type with this raw is in tokens, at any depth.
+ * @purity pure
+ * @returns {boolean}
+ */
+function hasToken(tokens, type, raw) {
+  return tokens.some((t) => (t.type === type && t.raw === raw) || (Array.isArray(t.tokens) && hasToken(t.tokens, type, raw)));
 }
 
 /**
@@ -183,7 +195,7 @@ export default class MarkdownTextOps {
   }
 
   /**
-   * Where Insert table / Mermaid goes in an open block editor (INV-52): the
+   * Where Insert table / Mermaid / math boxes go in an open block editor (INV-52): the
    * text is cut at a line boundary, after the caret line (before it when
    * the caret is at the start of the line); a side that would be blank is
    * not made ("above" / "below"). Only a paragraph, a list or a quote is
@@ -377,13 +389,11 @@ export default class MarkdownTextOps {
    */
   static insertLink(text, caret, label, link, context) {
     const c = MarkdownTextOps._clamp(caret, text);
-    const lexed = MarkdownTextOps._lexedRange(text, c, c, context, true);
-    if (!lexed) return MarkdownTextOps._insertLinkOnBlankLine(text, c, label, link, context);
-    if (!lexed.segments.some((g) => g.from <= c && c <= g.to)) return null;
-    if (lexed.range.inTableCell && MarkdownTextOps._outsideRowPipes(text, c)) return null;
+    const place = MarkdownTextOps._inlineInsertPlace(text, c, context);
+    if (!place) return null;
+    if (!place.lexed) return MarkdownTextOps._insertLinkOnBlankLine(text, c, label, link, context);
+    const { lexed, offset: o } = place;
     const { segments, inline, tokens, runs, colors } = lexed;
-    const o = MarkdownTextOps._toInline(segments, c);
-    if (MarkdownTextOps._cutsInsertion(tokens, 0, o)) return null;
     // the top-level tokens at the caret (a palette color span with its content is one group)
     const groupStart = MarkdownTextOps._tokenGroups(tokens, colors);
     let ta = -1;
@@ -419,32 +429,68 @@ export default class MarkdownTextOps {
   }
 
   /**
-   * insertLink on a line with only spaces that is in no block (an empty
-   * editor, or an empty line between blocks): the link starts a paragraph.
-   * null on any other line.
+   * Where an inline piece (a link, inline math) can go in at the caret c
+   * (owner ruling F-R1): {lexed, offset} with c in the text of one inline
+   * range (offset: c in its own text), not on the marks of a line, not
+   * outside a table row's pipes, and not inside a code span, an inline HTML
+   * tag, a link, an image, inline math, an entity, an escape or the markers
+   * of emphasis; {lexed: null} on a line with only spaces that is in no
+   * block (an empty editor, or an empty line between blocks), where the
+   * piece starts a paragraph (_paragraphOnBlankLine); else null.
+   * @purity pure
+   * @returns {{lexed: object|null, offset?: number}|null}
+   */
+  static _inlineInsertPlace(text, c, context) {
+    const lexed = MarkdownTextOps._lexedRange(text, c, c, context, true);
+    if (!lexed) {
+      const lines = text.split("\n");
+      const n = MarkdownTextOps._lineIndexAt(text, c);
+      if (lines[n].trim() !== "") return null;
+      if (text.trim() !== "" && MarkdownTextOps._leafLines(text, context.lexBlocks)?.[n]?.leaf) return null;
+      return { lexed: null };
+    }
+    if (!lexed.segments.some((g) => g.from <= c && c <= g.to)) return null;
+    if (lexed.range.inTableCell && MarkdownTextOps._outsideRowPipes(text, c)) return null;
+    const offset = MarkdownTextOps._toInline(lexed.segments, c);
+    if (MarkdownTextOps._cutsInsertion(lexed.tokens, 0, offset)) return null;
+    return { lexed, offset };
+  }
+
+  /**
+   * paragraph put on the blank line of the caret c (a place of
+   * _inlineInsertPlace with no inline range) as a paragraph of its own: the
+   * line's spaces go (four would make a code block); a blank line is kept
+   * on each side that has a block. {text, at} (at: where paragraph starts),
+   * or null when the result does not add just that paragraph.
+   * @purity pure
+   * @returns {{text: string, at: number}|null}
+   */
+  static _paragraphOnBlankLine(text, c, paragraph, lexBlocks) {
+    const lines = text.split("\n");
+    const n = MarkdownTextOps._lineIndexAt(text, c);
+    const before = n > 0 && lines[n - 1].trim() !== "" ? "\n" : "";
+    const after = n + 1 < lines.length && lines[n + 1].trim() !== "" ? "\n" : "";
+    const start = MarkdownTextOps._lineStart(lines, n);
+    const next = text.slice(0, start) + before + paragraph + after + text.slice(start + lines[n].length);
+    if (!MarkdownTextOps._addsOneParagraph(text, next, paragraph, lexBlocks)) return null;
+    return { text: next, at: start + before.length };
+  }
+
+  /**
+   * insertLink on a blank line in no block: the link starts a paragraph.
    * @purity pure
    * @returns {{text: string, selStart: number, selEnd: number}|null}
    */
   static _insertLinkOnBlankLine(text, c, label, link, context) {
-    const lines = text.split("\n");
-    const n = MarkdownTextOps._lineIndexAt(text, c);
-    if (lines[n].trim() !== "") return null;
-    if (text.trim() !== "" && MarkdownTextOps._leafLines(text, context.lexBlocks)?.[n]?.leaf) return null;
     const result = InlineRuns.insertLinkAt([], 0, label, link);
     if (!result) return null;
     const layout = InlineRuns.layout(result.runs);
     const check = context.lexInline(layout.text);
     if (rawOf(check) !== layout.text) return null;
     if (JSON.stringify(InlineRuns.signature(InlineRuns.fromTokens(check))) !== JSON.stringify(InlineRuns.signature(result.runs))) return null;
-    // the line's spaces go (four would make a code block); a blank line is
-    // kept on each side that has a block, so the link is a paragraph of its own
-    const before = n > 0 && lines[n - 1].trim() !== "" ? "\n" : "";
-    const after = n + 1 < lines.length && lines[n + 1].trim() !== "" ? "\n" : "";
-    const start = MarkdownTextOps._lineStart(lines, n);
-    const next = text.slice(0, start) + before + layout.text + after + text.slice(start + lines[n].length);
-    if (!MarkdownTextOps._addsOneParagraph(text, next, layout.text, context.lexBlocks)) return null;
-    const at = start + before.length;
-    return { text: next, selStart: at + layout.unitFrom[0], selEnd: at + layout.unitTo[result.runs.length - 1] };
+    const put = MarkdownTextOps._paragraphOnBlankLine(text, c, layout.text, context.lexBlocks);
+    if (!put) return null;
+    return { text: put.text, selStart: put.at + layout.unitFrom[0], selEnd: put.at + layout.unitTo[result.runs.length - 1] };
   }
 
   /**
@@ -495,6 +541,105 @@ export default class MarkdownTextOps {
    */
   static canInsertLink(text, caret, context) {
     return MarkdownTextOps.insertLink(text, caret, "x", InlineRuns.inlineLink("u"), { ...context, localCheck: true }) !== null;
+  }
+
+  /**
+   * The palette's inline math (INV-52, owner ruling 2026-10-25): math (a
+   * "$...$" template) goes in at the caret, where a link could go in (owner
+   * ruling F-R1), or as a paragraph of its own on a line with only spaces
+   * that is in no block. A space goes before it unless a space or the start
+   * of the inline range is there, and after it unless a space, one of
+   * ?!.,: (half or full width) or the end is there (marked-katex-extension
+   * reads "$...$" as math only so). The inner edges of emphasis count as
+   * the start and the end (marked lexes its inside on its own: "**Note
+   * $...$**"; review L1). The result is lexed again: the
+   * template must be one inline math token and the rest must read as
+   * before (INV-67 (8)). The caret ends right after the math. null when it
+   * does not apply.
+   * @purity pure
+   * @param {string} text
+   * @param {number} caret
+   * @param {string} math
+   * @param {{lexBlocks: Function, lexInline: Function, colors?: string[]}} context
+   * @returns {{text: string, selStart: number, selEnd: number}|null}
+   */
+  static insertInlineMath(text, caret, math, context) {
+    const c = MarkdownTextOps._clamp(caret, text);
+    const place = MarkdownTextOps._inlineInsertPlace(text, c, context);
+    if (!place) return null;
+    if (!place.lexed) return MarkdownTextOps._insertMathOnBlankLine(text, c, math, context);
+    const { segments, inline, tokens, runs, colors } = place.lexed;
+    const o = place.offset;
+    const before = inline.slice(0, o);
+    const after = inline.slice(o);
+    const edge = MarkdownTextOps._emphasisEdgeAt(tokens, 0, o);
+    const lead = o === 0 || edge.start || before.endsWith(" ") ? "" : " ";
+    const trail = after === "" || edge.end || MATH_CLOSE_FOLLOW.test(after[0]) ? "" : " ";
+    const at = o + lead.length;
+    const next = before + lead + math + trail + after;
+    const check = context.lexInline(next);
+    if (rawOf(check) !== next || !hasToken(check, "inlineKatex", math)) return null;
+    // the inserted runs (spaces and the math atom) aside, the runs read as before
+    const added = math.length + lead.length + trail.length;
+    const now = InlineRuns.fromTokens(check, { colors });
+    const atom = now.filter((r) => r.srcFrom >= o && r.srcFrom < o + added && !(r.type === "text" && r.text === " "));
+    if (atom.length !== 1 || atom[0].type !== "atom" || atom[0].src !== math || atom[0].srcFrom !== at) return null;
+    const rest = now.filter((r) => r.srcFrom < o || r.srcFrom >= o + added);
+    if (JSON.stringify(InlineRuns.signature(rest)) !== JSON.stringify(InlineRuns.signature(runs))) return null;
+    return MarkdownTextOps._writeInline(text, segments, next, at + math.length, at + math.length);
+  }
+
+  /**
+   * The Insert inline math button (5.15.5): the caret is where
+   * insertInlineMath could put math. Only the place is checked (one inline
+   * lexing, as Paste link: INV-51); the reading of the result is checked
+   * when pressed.
+   * @purity pure
+   * @param {string} text
+   * @param {number} caret
+   * @param {{lexBlocks: Function, lexInline: Function, colors?: string[]}} context
+   * @returns {boolean}
+   */
+  static canInsertInlineMath(text, caret, context) {
+    return MarkdownTextOps._inlineInsertPlace(text, MarkdownTextOps._clamp(caret, text), context) !== null;
+  }
+
+  /**
+   * insertInlineMath on a blank line in no block: the math is a paragraph
+   * of its own. null when it would not read so.
+   * @purity pure
+   * @returns {{text: string, selStart: number, selEnd: number}|null}
+   */
+  static _insertMathOnBlankLine(text, c, math, context) {
+    const check = context.lexInline(math);
+    if (check.length !== 1 || check[0].type !== "inlineKatex" || check[0].raw !== math) return null;
+    const put = MarkdownTextOps._paragraphOnBlankLine(text, c, math, context.lexBlocks);
+    if (!put) return null;
+    const end = put.at + math.length;
+    return { text: put.text, selStart: end, selEnd: end };
+  }
+
+  /**
+   * The offset o (a place of _inlineInsertPlace) is right inside the
+   * markers of emphasis (strong, em, del; at any depth): at the start of
+   * its inside (start) or at the end (end). marked lexes that inside on its
+   * own, so those edges are the start and the end of an inline text there.
+   * @purity pure
+   * @returns {{start: boolean, end: boolean}}
+   */
+  static _emphasisEdgeAt(tokens, start, o) {
+    let pos = start;
+    for (const token of tokens) {
+      const from = pos;
+      const to = pos + token.raw.length;
+      pos = to;
+      if (!(from < o && o < to) || !["strong", "em", "del"].includes(token.type)) continue;
+      const inner = MarkdownTextOps._innerOf(token);
+      if (!inner) continue;
+      const deeper = MarkdownTextOps._emphasisEdgeAt(token.tokens, from + inner.from, o);
+      return { start: deeper.start || o === from + inner.from, end: deeper.end || o === from + inner.to };
+    }
+    return { start: false, end: false };
   }
 
   /**

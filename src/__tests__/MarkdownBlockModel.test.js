@@ -270,7 +270,36 @@ describe("MarkdownBlockModel.insertAt (INV-52, request 1)", () => {
     expect(change.isChanged).toBe(true);
     const table = change.model.getBlocks().find((b) => b.type === "table");
     expect(change.insertedBlockId).toBe(table.id);
+    expect(change.lastInsertedBlockId).toBe(table.id); // one block: the same (AT-BM-37)
     expect(change.anchorBlockId).toBe(table.id);
+  });
+
+  const MORE = "N1\n\n$$\nx\n$$\n\nN2\n\n$$\ny\n$$";
+
+  it.each([
+    ["inside a paragraph", "Line one\nLine two\n\nZ", 9, `Line one\n\n${MORE}\n\nLine two\n\nZ`],
+    ["into an empty body", "", 0, MORE],
+    ["at the end of a body that ends with a newline", "A\n", 2, `A\n\n${MORE}\n`],
+  ])("AT-BM-37 insertAt of more blocks: insertedBlockId is the first, lastInsertedBlockId the last (%s)", (_n, body, offset, expected) => {
+    const change = model(body).insertAt(offset, MORE, lexer, MAX);
+    expect(change.model.toBody()).toBe(expected);
+    const blocks = change.model.getBlocks();
+    const first = blocks.find((b) => b.raw === "N1");
+    const last = blocks.filter((b) => b.type === "blockKatex").pop();
+    expect(last.raw.startsWith("$$\ny")).toBe(true);
+    expect(change.insertedBlockId).toBe(first.id);
+    expect(change.lastInsertedBlockId).toBe(last.id);
+    expect(change.anchorBlockId).toBe(first.id);
+  });
+
+  it("AT-BM-37 insertAfter of more blocks gives the last one too; one block gives the same id twice", () => {
+    const m = model("A\n\nB");
+    const more = m.insertAfter(m.getBlocks()[0].id, "N\n\nM", lexer, MAX);
+    expect(more.model.toBody()).toBe("A\n\nN\n\nM\n\nB");
+    const [, n, mm] = more.model.getBlocks();
+    expect([more.insertedBlockId, more.lastInsertedBlockId]).toEqual([n.id, mm.id]);
+    const one = m.insertAfter(m.getBlocks()[0].id, "N", lexer, MAX);
+    expect(one.lastInsertedBlockId).toBe(one.insertedBlockId);
   });
 
   it("AT-BM-29 insertAt: the anchor is the block at anchorOffset in the new model", () => {

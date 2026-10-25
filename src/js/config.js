@@ -179,6 +179,7 @@ export const CONFIG = {
       formatNotApplicable: "You can't use this format here.", // INV-71 huge blocks (owner ruling Q-f)
       linkNotRemovable: "There's no link to remove here.", // INV-71 huge blocks (as Q-f)
       insertNotPossible: "Can't insert here. Try outside this block.", // an insert the block cannot take
+      mathNotInsertable: "You can't insert math here.", // inline math that would not read as math there (INV-52)
       gapInsert: "Insert a block here", // the line and "+" between blocks (INV-73)
       statusUnsaved: (name) => `${name} * unsaved`,
       statusSaved: (name) => `${name} - saved`,
@@ -227,6 +228,8 @@ export const CONFIG = {
       alignCenter: "Align center",
       alignRight: "Align right",
       alignNone: "Remove alignment", // R6
+      inlineMath: "Insert inline math: Euler's number (Napier's constant)", // owner ruling 2026-10-25
+      mathBox: "Insert math boxes: Maxwell, Einstein, Schroedinger",
     },
   },
   // New: smooth scroll physics parameters
@@ -273,6 +276,42 @@ export const CONFIG = {
     tableTemplate:
       "| Col1 | Col2 | Col3 |\n|---|---|---|\n|  |  |  |\n|  |  |  |\n|  |  |  |",
     tableLineBreak: "<br>", // inserted on Shift+Enter inside a table's source (INV-27)
+    // The palette's math (Text format, owner ruling 2026-10-25): inline math at
+    // the caret, and the three math boxes, each under its name, in one insert.
+    inlineMathTemplate: String.raw`$e = \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^{n} = \sum_{k=0}^{\infty} \frac{1}{k!}$`,
+    mathBoxesTemplate: [
+      "Maxwell's Equations",
+      "",
+      "$$",
+      String.raw`\begin{aligned}`,
+      String.raw`\nabla \cdot \mathbf{E} &= \frac{\rho}{\varepsilon_0} \\`,
+      String.raw`\nabla \cdot \mathbf{B} &= 0 \\`,
+      String.raw`\nabla \times \mathbf{E} &= -\frac{\partial \mathbf{B}}{\partial t} \\`,
+      String.raw`\nabla \times \mathbf{B} &= \mu_0 \mathbf{J} + \mu_0 \varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}`,
+      String.raw`\end{aligned}`,
+      "$$",
+      "",
+      "Einstein Field Equations and Christoffel Symbols",
+      "",
+      "$$",
+      String.raw`\begin{aligned}`,
+      String.raw`R_{\mu\nu} - \frac{1}{2} R \, g_{\mu\nu} + \Lambda g_{\mu\nu} &= \frac{8 \pi G}{c^{4}} T_{\mu\nu} \\`,
+      String.raw`\Gamma^{\lambda}_{\mu\nu} &= \frac{1}{2} g^{\lambda\sigma} \left( \partial_{\mu} g_{\sigma\nu} + \partial_{\nu} g_{\sigma\mu} - \partial_{\sigma} g_{\mu\nu} \right)`,
+      String.raw`\end{aligned}`,
+      "$$",
+      "",
+      "Schroedinger Equation, Wavefunction Normalization, and Pauli Matrices",
+      "",
+      "$$",
+      String.raw`\begin{aligned}`,
+      String.raw`i\hbar \frac{\partial}{\partial t} \Psi(\mathbf{r}, t) &= \left[ -\frac{\hbar^{2}}{2m} \nabla^{2} + V(\mathbf{r}, t) \right] \Psi(\mathbf{r}, t) \\`,
+      String.raw`\langle \Psi \mid \Psi \rangle &= \int \lvert \Psi \rvert^{2} \, d^{3}r = 1 \\`,
+      String.raw`\sigma_x &= \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}, \quad`,
+      String.raw`\sigma_y = \begin{pmatrix} 0 & -i \\ i & 0 \end{pmatrix}, \quad`,
+      String.raw`\sigma_z = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}`,
+      String.raw`\end{aligned}`,
+      "$$",
+    ].join("\n"),
     mermaidSamples: {
       flowchart:
         "```mermaid\nflowchart TD\n    Start([Start]) -->|input| Check{Valid}\n    Check -->|yes| Process[Process_data]\n    Check -->|no| Error[Show_error]\n    Process -->|done| End([End])\n    Error -->|retry| Start\n```",

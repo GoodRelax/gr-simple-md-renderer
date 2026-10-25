@@ -330,7 +330,7 @@ describe.runIf(PERF)("AT-PERF-02..07, 09 and 10 timing (GRSMD_PERF=1 only)", () 
     s.teardown();
   }, PERF_TIMEOUT_MS);
 
-  it("AT-PERF-09 1 MB with one 250 KB paragraph of 5,000 links (INV-51, INV-69): one frame's button states (Format open: canFormat, Paste link, Remove link) <= commitBudgetMs", async () => {
+  it("AT-PERF-09 1 MB with one 250 KB paragraph of 5,000 links (INV-51, INV-69): one frame's button states (Format open: canFormat, Paste link, Remove link, inline math) <= commitBudgetMs", async () => {
     const lines = [];
     for (let i = 0; i < 5000; i++) lines.push(`l${i} see [a link ${i}](https://example.com/${i}) t`);
     const s = await setupEdit(`${lines.join("\n")}\n\n${makeOneMegabyteDoc()}`);
@@ -341,6 +341,7 @@ describe.runIf(PERF)("AT-PERF-02..07, 09 and 10 timing (GRSMD_PERF=1 only)", () 
       s.bec.canFormatSelection();
       s.bec.canPasteLink();
       s.bec.canRemoveLink();
+      expect(s.bec.canInsertInlineMath()).toBe(false); // a huge block: off, not lexed (5.15.5)
       return performance.now() - t0;
     };
     const times = [];
@@ -350,6 +351,37 @@ describe.runIf(PERF)("AT-PERF-02..07, 09 and 10 timing (GRSMD_PERF=1 only)", () 
     }
     console.log(`AT-PERF-09 one frame of button states (ms): ${times.map((t) => t.toFixed(1)).join(", ")}`);
     for (const ms of times) expect(ms).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
+    s.teardown();
+  }, PERF_TIMEOUT_MS);
+
+  it("AT-PERF-09 (b) the largest paragraph that is lexed (just under invisibleMarkMaxChars, 1,000 links): the same frame, inline math lexed too", async () => {
+    const lines = [];
+    let length = 0;
+    for (let i = 0; length < CONFIG.edit.invisibleMarkMaxChars - 100; i++) {
+      lines.push(`l${i} see [a link ${i}](https://example.com/${i}) t`);
+      length += lines[lines.length - 1].length + 1;
+    }
+    const s = await setupEdit(`${lines.join("\n")}\n\n${makeOneMegabyteDoc()}`);
+    tap(s.block((b) => b.raw.startsWith("l0 ")).el.firstElementChild);
+    const ta = s.editor();
+    expect(ta.value.length).toBeLessThanOrEqual(CONFIG.edit.invisibleMarkMaxChars); // not a huge block: lexed
+    const frame = () => {
+      const t0 = performance.now();
+      s.bec.canFormatSelection();
+      s.bec.canPasteLink();
+      s.bec.canRemoveLink();
+      const canMath = s.bec.canInsertInlineMath();
+      return { ms: performance.now() - t0, canMath };
+    };
+    const middle = ta.value.indexOf(" t\n", Math.floor(ta.value.length / 2)) + 2;
+    const results = [];
+    for (const at of [ta.value.length, middle, ta.value.indexOf("a link 9") + 2]) {
+      ta.setSelectionRange(at, at);
+      results.push(frame()); // a new caret: nothing kept from before for these checks
+    }
+    console.log(`AT-PERF-09 (b) one frame of button states (ms): ${results.map((r) => r.ms.toFixed(1)).join(", ")}`);
+    expect(results.map((r) => r.canMath)).toEqual([true, true, false]); // the last caret is in a link's text
+    for (const r of results) expect(r.ms).toBeLessThanOrEqual(CONFIG.edit.commitBudgetMs);
     s.teardown();
   }, PERF_TIMEOUT_MS);
 });

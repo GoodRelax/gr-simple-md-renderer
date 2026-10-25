@@ -40,6 +40,8 @@ const ALL_ON = {
   rowDelete: true,
   columnDelete: true,
   tableOptions: true,
+  insertInlineMath: true,
+  insertMathBox: true,
   alignment: null,
 };
 
@@ -261,6 +263,8 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
       ["paletteColorNone", "Remove text color"],
       ["paletteLinkPaste", "Paste copied link"],
       ["paletteLinkRemove", "Remove link"],
+      ["paletteInlineMath", "Insert inline math: Euler's number (Napier's constant)"],
+      ["paletteMathBox", "Insert math boxes: Maxwell, Einstein, Schroedinger"],
     ]);
     expect(items(tableMenu)).toEqual([
       ["paletteAlignLeft", "Align left"],
@@ -276,6 +280,27 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
     for (const b of [...formatMenu.querySelectorAll("button"), ...tableMenu.querySelectorAll("button")]) {
       expect(b.getAttribute("title")).toBe(b.getAttribute("aria-label"));
       expect(b.querySelector("svg")).not.toBeNull();
+    }
+  });
+
+  it("AT-PAL-36 Text format has two rows: the formats, then inline math and the math boxes (owner ruling 2026-10-25)", () => {
+    expect(formatMenu.classList.contains("edit-palette-popover-rows")).toBe(true);
+    const rows = [...formatMenu.children];
+    expect(rows.map((r) => r.className)).toEqual(["edit-palette-popover-row", "edit-palette-popover-row"]);
+    const ids = (r) => [...r.children].map((el) => el.id);
+    expect(ids(rows[0])).toEqual(["paletteColorRed", "paletteColorBlue", "paletteColorGreen", "paletteColorNone", "paletteLinkPaste", "paletteLinkRemove"]);
+    expect(ids(rows[1])).toEqual(["paletteInlineMath", "paletteMathBox"]);
+    // one press each: no submenu mark, no popover of their own
+    for (const id of ["paletteInlineMath", "paletteMathBox"]) {
+      const b = formatMenu.querySelector(`#${id}`);
+      expect(b.querySelectorAll("svg"), id).toHaveLength(1);
+      expect(b.hasAttribute("aria-expanded"), id).toBe(false);
+      expect(b.tabIndex, id).toBe(-1);
+    }
+    // the other popovers keep one row of buttons
+    for (const el of [popover, tableMenu]) {
+      expect(el.classList.contains("edit-palette-popover-rows")).toBe(false);
+      expect([...el.children].every((c) => c.tagName === "BUTTON")).toBe(true);
     }
   });
 
@@ -621,6 +646,8 @@ describe("AT-PAL popovers (5.15.1, 11-f, INV-37, INV-53)", () => {
       ["paletteFormat", formatMenu, "paletteColorNone", ["textColor", "none"]],
       ["paletteFormat", formatMenu, "paletteLinkPaste", ["linkPaste", undefined]],
       ["paletteFormat", formatMenu, "paletteLinkRemove", ["linkRemove", undefined]],
+      ["paletteFormat", formatMenu, "paletteInlineMath", ["insertInlineMath", undefined]], // AT-PAL-36
+      ["paletteFormat", formatMenu, "paletteMathBox", ["insertMathBox", undefined]],
       ["paletteTableOptions", tableMenu, "paletteAlignLeft", ["alignColumn", "left"]],
       ["paletteTableOptions", tableMenu, "paletteAlignCenter", ["alignColumn", "center"]],
       ["paletteTableOptions", tableMenu, "paletteAlignRight", ["alignColumn", "right"]],
@@ -766,6 +793,8 @@ describe("AT-PAL states, status, life cycle, security", () => {
       textColor: ["paletteColorRed", "paletteColorBlue", "paletteColorGreen", "paletteColorNone"],
       linkPaste: ["paletteLinkPaste"],
       linkRemove: ["paletteLinkRemove"],
+      insertInlineMath: ["paletteInlineMath"],
+      insertMathBox: ["paletteMathBox"],
       insertTable: ["paletteTable"],
       insertMermaid: ["paletteMermaid"],
       undo: ["paletteUndo"],
