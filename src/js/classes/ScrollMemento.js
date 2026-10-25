@@ -4,6 +4,10 @@ const STICKY_BAR_ID = "topbar";
 // one screen pixel and one more (see _scrollSearchSpan)
 const SCROLL_SEARCH_MIN_PX = 2;
 const SCROLL_SEARCH_MAX_PX = 32;
+// what the user does to move the view: a wheel turn, a finger moving, a key
+// (arrows, Page Down, the Index's Enter), a press (the scroll bar, an Index
+// entry) (INV-78)
+const USER_ACTS = ["wheel", "touchmove", "keydown", "pointerdown"];
 
 export default class ScrollMemento {
   /**
@@ -55,6 +59,30 @@ export default class ScrollMemento {
       }
     }
     if (last !== best) window.scrollTo(0, best);
+  }
+
+  /**
+   * From now on, whether the user has acted (USER_ACTS): a full render that
+   * ends after that leaves the view where the user took it (INV-78). The
+   * acts are seen in the capture phase, before any handler can stop them.
+   * stop() removes the listeners.
+   * @returns {{hasActed: () => boolean, stop: () => void}}
+   * @purity non-pure
+   */
+  watchUserActs() {
+    let hasActed = false;
+    /** @purity non-pure */
+    const mark = () => {
+      hasActed = true;
+    };
+    for (const type of USER_ACTS) window.addEventListener(type, mark, true);
+    return {
+      hasActed: () => hasActed,
+      /** @purity non-pure */
+      stop: () => {
+        for (const type of USER_ACTS) window.removeEventListener(type, mark, true);
+      },
+    };
   }
 
   /**

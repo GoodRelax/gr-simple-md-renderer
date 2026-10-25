@@ -87,6 +87,7 @@
       <div id="fileInfo"></div>
 
       <div id="controls">
+        <button id="indexBtn" aria-expanded="false" aria-controls="indexPanel" disabled>Index</button>
         <button id="renderLight">Render<br />Light</button>
         <button id="renderDark">Render<br />Dark</button>
         <button id="reloadBtn">Re-<br />load</button>
@@ -100,6 +101,9 @@
 
     <div id="keyHint"></div>
     <div id="preview"></div>
+    <div id="sidePanels">
+      <nav id="indexPanel" aria-label="Index" hidden></nav>
+    </div>
 
     <div id="toastContainer"></div>
 
@@ -177,6 +181,7 @@
           <div class="modal-section" data-help-section="details">
             <h3>Details</h3>
             <ul>
+              <li><code>[Index]</code> / <code>I</code> : Show or hide the list of headings. Click a heading to jump to it</li>
               <li><code>[Render Light]</code> / <code>L</code> : Render / switch to light mode</li>
               <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
               <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge)</li>
@@ -185,7 +190,7 @@
               <li>
                 <code>Esc</code> : Apply the open block or cell and close it.
                 With blocks selected, clear the selection first. With nothing open, hide
-                the edit palette.
+                the edit palette. With the edit palette hidden, hide the Index.
               </li>
               <li>
                 <code>Ctrl+Z</code> / <code>Ctrl+Y</code> (or <code>Ctrl+Shift+Z</code>) : Undo / Redo
@@ -357,13 +362,14 @@
           <div class="modal-section" data-help-section="details">
             <h3>詳細</h3>
             <ul>
+              <li><code>[Index]</code> / <code>I</code> : 見出しの一覧（目次）の表示・非表示。見出しを押すと、そこへ飛びます</li>
               <li><code>[Render Light]</code> / <code>L</code> : レンダリング/ライトモード切替</li>
               <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
               <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード（Chrome / Edge）</li>
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
               <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
               <li>
-                <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。ブロックを選んでいれば、まず選択を解きます。何も開いていなければ、編集パレットを隠します。
+                <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。ブロックを選んでいれば、まず選択を解きます。何も開いていなければ、編集パレットを隠します。編集パレットも出ていなければ、目次を隠します。
               </li>
               <li>
                 <code>Ctrl+Z</code> / <code>Ctrl+Y</code>（または <code>Ctrl+Shift+Z</code>）: 編集パレットを表示している間の Undo / Redo（30 回まで。Mac は <code>Cmd+Z</code> / <code>Cmd+Shift+Z</code>）。開いたブロックの中では、Redo はいつも入力のやり直しです。Undo も、ブロックに変更があれば入力の取り消しです。

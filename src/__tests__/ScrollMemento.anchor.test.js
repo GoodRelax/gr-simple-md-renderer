@@ -681,3 +681,24 @@ describe("ScrollMemento.reveal (INV-52: the least scroll to an opened cell or ed
     expect(c.scrollTop).toBe(50);
   });
 });
+
+describe("ScrollMemento user acts (INV-78)", () => {
+  it("AT-SM-39 watchUserActs sees a wheel, a finger moving, a key and a press from the start, and stop() lets go", () => {
+    stubMatchMedia(false);
+    const memento = new ScrollMemento({ scrollTop: 0 });
+    for (const type of ["wheel", "touchmove", "keydown", "pointerdown"]) {
+      const acts = memento.watchUserActs();
+      expect(acts.hasActed()).toBe(false);
+      document.body.dispatchEvent(new Event(type, { bubbles: false }));
+      expect(acts.hasActed(), type).toBe(true);
+      acts.stop();
+    }
+    const acts = memento.watchUserActs();
+    window.dispatchEvent(new Event("scroll"));
+    window.dispatchEvent(new Event("pointermove"));
+    expect(acts.hasActed()).toBe(false);
+    acts.stop();
+    window.dispatchEvent(new Event("keydown"));
+    expect(acts.hasActed()).toBe(false);
+  });
+});

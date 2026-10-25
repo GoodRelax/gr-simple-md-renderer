@@ -76,6 +76,15 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Added
 
+- Index: an **Index** button left of Render Light (or the `i` key) shows the
+  document's headings (h1 to h6) in a panel floating at the right edge of the
+  Markdown view, under the top bar. Its ground lets 25 % of the text behind
+  show through, and the panel scrolls by itself. Press a heading to bring it
+  to the top of the view; the panel stays open until Index, `i` or `Esc` is
+  pressed (`Esc` hides the edit palette first). The list follows every
+  render, commit and Undo. Math in a heading is shown as its TeX source. The
+  button is off on the start screen and in the code view, and the panel is
+  not printed. The help says so in both languages.
 - Math templates in the edit palette: the Text format popover has a second
   row with two buttons. **Insert inline math** puts the formula for Euler's
   number (Napier's constant) at the cursor of the open block; a space goes
@@ -150,6 +159,10 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Fixed
 
+- A full render (Render, a theme switch, a dropped or pasted document) no
+  longer takes the view back to where it was when the render began if you
+  scrolled while the diagrams were being drawn (the Index, the mouse wheel,
+  a finger, a key or the scroll bar): the view stays where you took it.
 - In edit mode, Delete now deletes the selected blocks in Microsoft Edge
   too. Edge shows its mini menu (Copilot, Copy, Search) beside a text
   selection, and while it shows, the keys do not reach the page. A mouse

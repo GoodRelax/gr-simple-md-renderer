@@ -80,7 +80,7 @@ export function renderRouteFor(isCodeView, isPreRender) {
 
 // The one-key shortcuts of setupKeyboard (3.12) that wait until an inserted
 // block's cell or source has opened (INV-52, owner ruling D5).
-const ONE_KEY_SHORTCUTS = new Set(["l", "d", "r", "n", "c", "e"]);
+const ONE_KEY_SHORTCUTS = new Set(["i", "l", "d", "r", "n", "c", "e"]);
 
 /**
  * Translates UI events into use-case calls.
@@ -98,7 +98,8 @@ export default class UIController {
    *   documents (DocumentLifecycle), createPalette(host) -> EditPalette,
    *   createBlockEdit(host) -> BlockEditController, isApple (Cmd is the
    *   primary shortcut modifier, INV-14), clipboard (what the Paste link
-   *   button reads, INV-69; navigator.clipboard when not given)
+   *   button reads, INV-69; navigator.clipboard when not given),
+   *   documentIndex (DocumentIndex; optional)
    * @purity non-pure
    */
   constructor(orchestrator, state, elements, scrollEngine, services) {
@@ -112,6 +113,7 @@ export default class UIController {
 
     // Session, save target and save state (INV-55, 11-e)
     this.documents = services.documents;
+    this.documentIndex = services.documentIndex ?? null;
     this._isApple = Boolean(services.isApple);
     this._clipboard = "clipboard" in services ? () => services.clipboard : () => navigator.clipboard;
     this._editorChangedSinceRender = false; // INV-45
@@ -184,6 +186,7 @@ export default class UIController {
     const editor = this.elements.editor;
     const affordance = document.getElementById("affordanceText");
     this.elements.editBtn.disabled = mode === "code"; // OS-06
+    this.documentIndex?.setAvailable(mode === "markdown");
 
     switch (mode) {
       case "code":
@@ -620,6 +623,9 @@ export default class UIController {
           if (!this.orchestrator.isPreRenderState())
             this.scrollEngine.startScroll(+1);
           break;
+        case "i":
+          this.documentIndex?.toggle();
+          break;
         case "l":
           this.handleRender("light");
           break;
@@ -648,8 +654,11 @@ export default class UIController {
           // it (5.11, 11-c escapePressed). A held Esc acts once: its repeats do
           // nothing (owner ruling Q-a).
           if (e.repeat) break;
-          if (!this.orchestrator.isPreRenderState() && !this.orchestrator.isCodeViewActive())
-            this.blockEdit.dispatch("escapePressed");
+          if (this.orchestrator.isPreRenderState() || this.orchestrator.isCodeViewActive()) break;
+          // The Index closes last: after the block editor, the block range
+          // and the palette (owner ruling 2026-10-25).
+          if (!this.palette.isShown() && this.documentIndex?.isShown()) this.documentIndex.hide();
+          else this.blockEdit.dispatch("escapePressed");
           break;
       }
     });

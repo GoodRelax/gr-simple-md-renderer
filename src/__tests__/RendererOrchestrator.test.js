@@ -25,7 +25,11 @@ function createOrchestrator() {
   };
   const mermaidRenderer = { render: vi.fn().mockResolvedValue(undefined) };
   const plantumlRenderer = { render: vi.fn().mockResolvedValue(undefined) };
-  const scrollManager = { save: vi.fn().mockReturnValue(0), restore: vi.fn() };
+  const scrollManager = {
+    save: vi.fn().mockReturnValue(0),
+    restore: vi.fn(),
+    watchUserActs: vi.fn(() => ({ hasActed: () => false, stop: vi.fn() })),
+  };
   const preview = document.createElement("div");
   const mockMetadata = {
     fileName: "test.py",
@@ -209,6 +213,35 @@ describe("RendererOrchestrator", () => {
       expect("_mdFileHandle" in orchestrator).toBe(false);
       expect(orchestrator.readMarkdownFile).toBeUndefined();
       expect(RendererOrchestrator.prototype.loadMarkdown.length).toBe(2);
+    });
+  });
+
+  describe("full render and the user's scrolling (INV-78)", () => {
+    it("AT-ORC-28 the view goes back to where it was only if the user did not act while the render ran; the watch ends", async () => {
+      const { orchestrator, scrollManager, mermaidRenderer } = createOrchestrator();
+      scrollManager.save.mockReturnValue(120);
+      let acted = false;
+      const stop = vi.fn();
+      scrollManager.watchUserActs.mockImplementation(() => ({ hasActed: () => acted, stop }));
+
+      await orchestrator.loadMarkdown("# a", "light");
+      expect(scrollManager.restore).toHaveBeenCalledWith(120);
+      expect(stop).toHaveBeenCalledTimes(1);
+
+      scrollManager.restore.mockClear();
+      mermaidRenderer.render.mockImplementation(async () => {
+        acted = true; // e.g. an Index entry pressed while the diagrams are drawn
+      });
+      await orchestrator.reRender("light");
+      expect(scrollManager.restore).not.toHaveBeenCalled();
+      expect(stop).toHaveBeenCalledTimes(2);
+
+      // a render that fails still ends the watch
+      mermaidRenderer.render.mockRejectedValue(new Error("boom"));
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      await orchestrator.reRender("light");
+      expect(stop).toHaveBeenCalledTimes(3);
+      consoleError.mockRestore();
     });
   });
 });

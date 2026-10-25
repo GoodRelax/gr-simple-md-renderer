@@ -36,16 +36,21 @@ import EditPalette from "./classes/EditPalette.js";
 import BlockEditController from "./classes/BlockEditController.js";
 import UIController from "./classes/UIController.js";
 import HelpLanguageSwitch from "./classes/HelpLanguageSwitch.js";
+import DocumentIndex from "./classes/DocumentIndex.js";
 
 // ========================================
 // Initialization
 // ========================================
 
 const elements = {
+  topbar: document.getElementById("topbar"),
   editor: document.getElementById("editor"),
   fileInfo: document.getElementById("fileInfo"),
   keyHint: document.getElementById("keyHint"),
   preview: document.getElementById("preview"),
+  indexBtn: document.getElementById("indexBtn"),
+  indexPanel: document.getElementById("indexPanel"),
+  sidePanels: document.getElementById("sidePanels"),
   renderLightBtn: document.getElementById("renderLight"),
   renderDarkBtn: document.getElementById("renderDark"),
   reloadBtn: document.getElementById("reloadBtn"),
@@ -109,9 +114,20 @@ const documents = new DocumentLifecycle(fileAccess, {
 // editing parts and is their host (BlockEditHost, EditPaletteHost).
 // INV-14: Cmd is the primary shortcut modifier on Apple platforms.
 const isApple = isApplePlatform(navigator);
+const documentIndex = new DocumentIndex(
+  {
+    button: elements.indexBtn,
+    panel: elements.indexPanel,
+    column: elements.sidePanels,
+    preview: elements.preview,
+    topbar: elements.topbar,
+  },
+  { emptyText: CONFIG.messages.index.empty },
+);
 new UIController(orchestrator, state, elements, scrollEngine, {
   documents,
   isApple,
+  documentIndex,
   createPalette: (host) => new EditPalette(host, { isApple }),
   createBlockEdit: (host) =>
     new BlockEditController(elements.preview, orchestrator, markdownRenderer, scrollManager, host),

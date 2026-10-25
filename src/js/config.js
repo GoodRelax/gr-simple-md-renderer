@@ -122,6 +122,9 @@ export const CONFIG = {
       copied: "Copied!",
       copyFailed: "Failed",
     },
+    index: {
+      empty: "This document has no headings.", // DocumentIndex with no heading
+    },
     markdown: {
       parseError: (message) => `Couldn't read this Markdown: ${message}`, // marked threw
     },
@@ -330,7 +333,7 @@ export const CONFIG = {
   },
   // Keyboard hint text per view mode
   keyHints: {
-    markdown: "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
+    markdown: "[I] Index; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
     code:     "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
   },
 };

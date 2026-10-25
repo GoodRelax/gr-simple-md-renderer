@@ -457,7 +457,8 @@ blockquote {
   /* Transient screen messages are not printed; !important beats the inline
      display that UIController.showKeyHint sets. */
   #keyHint,
-  #toastContainer {
+  #toastContainer,
+  #sidePanels {
     display: none !important;
   }
 
@@ -860,6 +861,108 @@ body.view-code.dark #fileInfo {
 body.dark #keyHint {
   background: #3d444d;
   color: #ffffff;
+}
+
+/* ============================================================
+   Index (DocumentIndex): a column of floating panels over the
+   preview at its right edge; 75 % opaque so the text behind shows
+   through (owner rulings 2026-10-25, INV-77). sidePanels.js sets
+   the column's top, right and max-height.
+   ============================================================ */
+#sidePanels {
+  position: fixed;
+  z-index: 350; /* over the preview's layers and the toasts; under the palette and the modals */
+  width: min(360px, calc(100vw - 16px));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none; /* only the panels take presses */
+}
+
+#indexPanel {
+  pointer-events: auto;
+  box-sizing: border-box;
+  min-height: 0; /* shrinks in the column, then scrolls itself */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 0;
+  background: rgba(255, 255, 255, 0.75);
+  color: #1f2328;
+  border: 1px solid #d1d9e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#indexPanel[hidden] {
+  display: none;
+}
+
+.index-entry {
+  display: block;
+  width: 100%;
+  padding: 3px 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.index-entry:hover,
+.index-entry:focus-visible {
+  background: rgba(9, 105, 218, 0.15);
+}
+
+.index-h1 {
+  font-weight: bold;
+}
+
+.index-h2 {
+  padding-left: 28px;
+}
+
+.index-h3 {
+  padding-left: 44px;
+}
+
+.index-h4 {
+  padding-left: 60px;
+}
+
+.index-h5 {
+  padding-left: 76px;
+}
+
+.index-h6 {
+  padding-left: 92px;
+}
+
+.index-h3,
+.index-h4,
+.index-h5,
+.index-h6 {
+  font-size: 13px;
+}
+
+.index-empty {
+  margin: 4px 12px;
+  font-size: 14px;
+}
+
+@media screen {
+  body.dark #indexPanel {
+    background: rgba(21, 27, 35, 0.75);
+    color: #f0f6fc;
+    border-color: #3d444d;
+  }
+
+  body.dark .index-entry:hover,
+  body.dark .index-entry:focus-visible {
+    background: rgba(56, 139, 253, 0.25);
+  }
 }
 
 /* ============================================================

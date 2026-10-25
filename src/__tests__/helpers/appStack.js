@@ -13,6 +13,7 @@ import BlockEditController from "../../js/classes/BlockEditController.js";
 import EditPalette from "../../js/classes/EditPalette.js";
 import MarkdownFileAccess from "../../js/classes/MarkdownFileAccess.js";
 import UIController from "../../js/classes/UIController.js";
+import DocumentIndex from "../../js/classes/DocumentIndex.js";
 import { createUiElements, trackGlobalListeners, createDocuments } from "./uiMocks.js";
 
 export { createUiElements, trackGlobalListeners };
@@ -55,11 +56,12 @@ export async function settle() {
  * @returns {Promise<object>}
  */
 /**
- * @param {{fileAccess?: object, isApple?: boolean, clipboard?: object|null}} [opts] - fileAccess: a fake
+ * @param {{fileAccess?: object, isApple?: boolean, clipboard?: object|null, withIndex?: boolean}} [opts] - fileAccess: a fake
  *   MarkdownFileAccess (save tests); isApple: Cmd is the primary modifier (INV-14);
- *   clipboard: a fake navigator.clipboard (INV-69; null: none)
+ *   clipboard: a fake navigator.clipboard (INV-69; null: none); withIndex: the
+ *   Index (INV-77) as main.js composes it (app.index, app.indexBtn, app.indexPanel)
  */
-export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipboard } = {}) {
+export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipboard, withIndex = false } = {}) {
   vi.stubGlobal("matchMedia", () => ({ matches: false }));
   document.title = BASE_TITLE;
   const elements = createUiElements({ attach: true });
@@ -88,17 +90,31 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
   const scrollEngine = { startScroll: vi.fn(), stopScroll: vi.fn(), destroy: vi.fn() };
   const fileAccess = fakeAccess ?? new MarkdownFileAccess(window);
   const documents = createDocuments(fileAccess);
+  let documentIndex;
+  if (withIndex) {
+    const make = (tag, id) => Object.assign(document.createElement(tag), { id });
+    const button = make("button", "indexBtn");
+    const column = make("div", "sidePanels");
+    const panel = make("nav", "indexPanel");
+    panel.hidden = true;
+    column.append(panel);
+    elements._bar.prepend(button);
+    document.body.append(column);
+    documentIndex = new DocumentIndex({ button, panel, column, preview, topbar: elements._bar }, { emptyText: "none" });
+  }
   const { result: ui, dispose } = trackGlobalListeners(
     () =>
       new UIController(orchestrator, state, elements, scrollEngine, {
         documents,
         isApple,
         ...(clipboard === undefined ? {} : { clipboard }),
+        ...(documentIndex ? { documentIndex } : {}),
         createPalette: (host) => new EditPalette(host, { isApple }),
         createBlockEdit: (host) => new BlockEditController(preview, orchestrator, markdownRenderer, scrollMemento, host),
       }),
   );
   const app = { ui, orchestrator, markdownRenderer, state, elements, preview, sourceFileRenderer, scrollEngine, fileAccess, documents, mermaidLib };
+  if (documentIndex) Object.assign(app, { index: documentIndex, indexBtn: documentIndex.button, indexPanel: documentIndex.panel });
   app.paletteRoot = () => document.body.querySelector(":scope > div.edit-palette");
   app.blockEditor = () => preview.querySelector(".md-block-editing > textarea.md-block-editor");
   app.block = (pred) => {
@@ -111,6 +127,8 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
     ui.palette.hide();
     app.paletteRoot()?.remove();
     for (const el of document.body.querySelectorAll(":scope > div.edit-palette-popover")) el.remove();
+    documentIndex?.hide();
+    documentIndex?.column.remove();
     elements._bar.remove();
     preview.remove();
     document.title = BASE_TITLE;
