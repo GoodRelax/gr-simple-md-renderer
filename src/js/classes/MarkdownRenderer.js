@@ -1,6 +1,7 @@
 import { escapeHtml } from "../utils.js";
 import { CONFIG } from "../config.js";
 import ExternalImageGate from "./ExternalImageGate.js";
+import { MATH_PENDING_CLASS } from "../lazyMath.js";
 
 // DOMPurify defaults, plus the MathML wrappers KaTeX emits:
 // <semantics><mrow>...</mrow><annotation encoding="application/x-tex">TeX</annotation></semantics>.
@@ -38,9 +39,10 @@ export default class MarkdownRenderer {
   /**
    * @param {HTMLElement} preview
    * @param {object} marked
-   * @param {object} hljs
+   * @param {object|null} hljs - null until highlight.js has run (useLibrary, INV-81)
    * @param {object} purify - DOMPurify (marked has no built-in sanitizer)
    * @param {ExternalImageGate} [imageGate]
+   * @param {object|null} [math] - the lazyMath of marked's math extension, when KaTeX runs on demand
    * @purity non-pure
    */
   constructor(
@@ -49,10 +51,13 @@ export default class MarkdownRenderer {
     hljs,
     purify,
     imageGate = new ExternalImageGate(preview),
+    math = null,
   ) {
     this.preview = preview;
     this.marked = marked;
     this.hljs = hljs;
+    this.math = math;
+    this._missing = new Set(); // libraries a render needed and did not have (INV-81)
     // Private DOMPurify instance: mermaid sanitizes its labels with the same
     // bundled DOMPurify, and our hook must not change what mermaid sees.
     this.purify = purify(window);
@@ -481,6 +486,62 @@ export default class MarkdownRenderer {
     return this._staleIds.has(blockId);
   }
 
+  // ---- Libraries that run on demand (INV-81) ----
+
+  /**
+   * A library has run: "hljs" colors the code from now on, "katex" draws the
+   * math (the HTML that shows a formula pending is made again).
+   * @purity non-pure
+   * @param {string} name
+   * @param {object} library
+   */
+  useLibrary(name, library) {
+    if (name === "hljs") this.hljs = library;
+    if (name !== "katex" || !this.math) return;
+    this.math.useKatex(library);
+    const marker = `class="${MATH_PENDING_CLASS}"`;
+    for (const [key, html] of [...this._htmlCache]) {
+      if (html.includes(marker)) this._htmlCache.delete(key);
+    }
+    for (const [id, html] of [...this._htmlById]) {
+      if (html.includes(marker)) this._htmlById.delete(id);
+    }
+    for (const id of [...this._writtenKeys.keys()]) {
+      if (this._wrapperById.get(id)?.querySelector(`.${MATH_PENDING_CLASS}`)) {
+        this._writtenKeys.delete(id);
+        this._htmlById.delete(id);
+      }
+    }
+  }
+
+  /**
+   * The libraries the renders since the last call needed and did not have.
+   * @purity non-pure
+   * @returns {string[]}
+   */
+  takeMissingLibraries() {
+    if (this.math?.takePending()) this._missing.add("katex");
+    const names = [...this._missing];
+    this._missing.clear();
+    return names;
+  }
+
+  /**
+   * Color the code blocks drawn before highlight.js had run.
+   * @purity non-pure
+   */
+  highlightPending() {
+    if (!this.hljs) return;
+    try {
+      /** @purity non-pure */
+      this.preview.querySelectorAll(HIGHLIGHT_SELECTOR).forEach((block) => {
+        if (!block.classList.contains("hljs")) this._highlight(block);
+      });
+    } catch (hljsError) {
+      console.error("Syntax highlighting error:", hljsError);
+    }
+  }
+
   // ---- internals ----
 
   /**
@@ -631,8 +692,14 @@ export default class MarkdownRenderer {
   _afterInsert(root) {
     this.imageGate.apply(root);
     try {
+      const blocks = root.querySelectorAll(HIGHLIGHT_SELECTOR);
+      if (!this.hljs) {
+        // colored when highlight.js has run (highlightPending, INV-81)
+        if (blocks.length > 0) this._missing.add("hljs");
+        return;
+      }
       /** @purity non-pure */
-      root.querySelectorAll(HIGHLIGHT_SELECTOR).forEach((block) => this._highlight(block));
+      blocks.forEach((block) => this._highlight(block));
     } catch (hljsError) {
       console.error("Syntax highlighting error:", hljsError);
     }

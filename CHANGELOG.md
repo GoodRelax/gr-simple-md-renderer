@@ -17,6 +17,19 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- Faster startup: the page is usable before the whole file has arrived
+  (about 0.3 s on a 4 Mbps line with a 100 ms round trip, where it took
+  about 3 s; a new tab is fast too). The file now starts with the styles,
+  the page and the app itself; mermaid, highlight.js, KaTeX and the
+  PlantUML encoder come after it as data that runs when a document needs
+  it, or when the page is idle. Until then a formula shows its TeX source
+  in a dashed box, code is shown without colors and a diagram shows
+  "Loading diagram..."; each is drawn as soon as its library is in. The
+  code view waits for highlight.js. A file dropped or text pasted while the
+  page is still loading is opened once the app runs (the browser no longer
+  opens the dropped file instead). Still one file, with the same
+  Content-Security-Policy rules: every script, the libraries' data included,
+  runs only by its hash.
 - The save dialog (Save as, or Save of a document that has no file yet;
   Chrome and Edge) now opens in the folder you last used instead of the
   browser's default: the folder of the `.md` file you dropped or last chose

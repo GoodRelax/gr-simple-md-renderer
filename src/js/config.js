@@ -121,6 +121,8 @@ export const CONFIG = {
       copyPng: "Copy PNG",
       copied: "Copied!",
       copyFailed: "Failed",
+      loading: "Loading diagram...", // a Mermaid box before mermaid has run (INV-81)
+      loadFailed: "The diagram library could not be loaded.",
     },
     index: {
       empty: "This document has no headings.", // DocumentIndex with no heading

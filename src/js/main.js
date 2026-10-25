@@ -1,10 +1,10 @@
 // ========================================
 // Vendored libraries (bundled at build time; no runtime CDN fetch)
 // ========================================
+// The core (INV-81): marked, DOMPurify and the math tokenizer. mermaid,
+// highlight.js, KaTeX and the PlantUML encoder are in the file after the
+// core, and run on demand (LibraryLoader; src/js/lazy/).
 import { marked } from "marked";
-import mermaid from "mermaid";
-import hljs from "highlight.js/lib/common";
-import plantumlEncoder from "plantuml-encoder";
 import markedKatex from "marked-katex-extension";
 import DOMPurify from "dompurify";
 
@@ -17,6 +17,8 @@ import "katex/dist/katex.min.css";
 // ========================================
 import { CONFIG } from "./config.js";
 import { isApplePlatform } from "./utils.js";
+import { lazyMath } from "./lazyMath.js";
+import LibraryLoader from "./classes/LibraryLoader.js";
 import ApplicationState from "./classes/ApplicationState.js";
 import ScrollMemento from "./classes/ScrollMemento.js";
 import MarkdownRenderer from "./classes/MarkdownRenderer.js";
@@ -65,27 +67,39 @@ const elements = {
   copyPromptBtn: document.getElementById("copyPromptBtn"),
 };
 
-marked.use(markedKatex({ throwOnError: false }));
+// window.__grsmdBoot comes from src/js/boot.js, which runs before the core.
+// mermaid sanitizes its labels with the core's DOMPurify (one copy in the file).
+const boot = window.__grsmdBoot;
+boot.shared.dompurify = DOMPurify;
+const libraries = new LibraryLoader(boot);
+
+const math = lazyMath(markedKatex, { throwOnError: false });
+marked.use(math.extension);
 
 const state = new ApplicationState();
 const scrollManager = new ScrollMemento(elements.preview);
 const markdownRenderer = new MarkdownRenderer(
   elements.preview,
   marked,
-  hljs,
+  null,
   DOMPurify,
+  undefined,
+  math,
 );
-const mermaidRenderer = new MermaidRenderer(elements.preview, mermaid);
+const mermaidRenderer = new MermaidRenderer(elements.preview, null);
 const plantumlRenderer = new PlantUMLRenderer(
   elements.preview,
-  plantumlEncoder,
+  null,
+  () => libraries.get("plantuml"),
 );
 
 // SourceFileRenderer is owned by RendererOrchestrator
 const sourceFileRenderer = new SourceFileRenderer(
   CONFIG,
   elements.preview,
-  hljs,
+  null,
+  undefined,
+  () => libraries.get("hljs"),
 );
 
 const orchestrator = new RendererOrchestrator(
@@ -96,6 +110,7 @@ const orchestrator = new RendererOrchestrator(
   scrollManager,
   elements.preview,
   sourceFileRenderer,
+  libraries,
 );
 
 // SmoothScrollEngine: used by UIController keyboard handler
@@ -120,7 +135,7 @@ const documentIndex = new DocumentIndex(
   scrollManager,
   { emptyText: CONFIG.messages.index.empty },
 );
-new UIController(orchestrator, state, elements, scrollEngine, {
+const ui = new UIController(orchestrator, state, elements, scrollEngine, {
   documents,
   isApple,
   documentIndex,
@@ -170,3 +185,10 @@ if (window.matchMedia("(pointer: fine)").matches) {
     new DiagramPanController(elements.preview);
   }
 }
+
+// The core runs (INV-81): a drop or paste made before it is taken now, and
+// the libraries run one by one when the page is idle (owner ruling 2026-10-25).
+const early = boot.takeEarlyInput();
+if (early) ui.receiveEarlyInput(early);
+libraries.preloadWhenIdle((name, library) => orchestrator.libraryLoaded(name, library));
+performance.mark("grsmd-core-ready");

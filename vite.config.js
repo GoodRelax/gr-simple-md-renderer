@@ -2,12 +2,13 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { defineConfig } from "vite";
+import { build as viteBuild, defineConfig } from "vite";
 import { configDefaults } from "vitest/config";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { CONFIG } from "./src/js/config.js";
 import { separatedOf, separatedOfEpochSeconds, stampBuildVersion } from "./tools/version.mjs";
-import { collectNotices, formatHelpList, formatNotices, stampNotices, verdictOf } from "./tools/notices.mjs";
+import { APP_VIRTUAL, collectNotices, formatHelpList, formatNotices, stampNotices, verdictOf } from "./tools/notices.mjs";
+import { DATA_ID_PREFIX, LAZY_LIBRARIES, layoutForFastStartup } from "./tools/fastStartup.mjs";
 
 // Keep only the woff2 source in each @font-face rule, dropping the woff/ttf
 // fallback copies. woff2 is supported by every browser that can run this app
@@ -39,19 +40,144 @@ export const noHljsThemeCss = {
 
 // Fail the build if the output still imports code from the network. All
 // libraries must be bundled; a leftover CDN import would make the app depend
-// on that host to start. Listed after viteSingleFile so it sees the final HTML.
+// on that host to start. Listed after fastStartup so it sees the final HTML,
+// the on-demand libraries' data included.
+// The Oxc minifier (Vite 8) may emit import(`...`) with a template literal.
+const REMOTE_IMPORT = /\bimport\b[^;]*?\bfrom\s*["']https?:\/\/|\bimport\s*\(\s*["'`]https?:\/\//;
+
+export function hasExternalImport(code) {
+  return REMOTE_IMPORT.test(code) || code.includes("cdnjs");
+}
+
 const noExternalImports = {
   name: "no-external-imports",
+  enforce: "post",
   generateBundle(_options, bundle) {
-    // The Oxc minifier (Vite 8) may emit import(`...`) with a template literal.
-    const remoteImport =
-      /\bimport\b[^;]*?\bfrom\s*["']https?:\/\/|\bimport\s*\(\s*["'`]https?:\/\//;
     for (const file of Object.values(bundle)) {
       const code = file.type === "chunk" ? file.code : String(file.source);
-      if (remoteImport.test(code) || code.includes("cdnjs")) {
+      if (hasExternalImport(code)) {
         this.error(`External import or "cdnjs" found in ${file.fileName}`);
       }
     }
+  },
+};
+
+// Fast startup (INV-81, spec 5.17): the core (the app, marked, DOMPurify)
+// runs right after the markup; mermaid, highlight.js, KaTeX and the PlantUML
+// encoder are each built alone (an IIFE) and put after it as data blocks
+// that run on demand (src/js/classes/LibraryLoader.js). The layout is in
+// tools/fastStartup.mjs. mermaid's "dompurify" is the core's (one copy, as
+// before), and marked-katex-extension's "katex" in the core is a stand-in:
+// src/js/lazyMath.js draws with the KaTeX that runs on demand.
+const SHARED_DOMPURIFY = `${APP_VIRTUAL}shared-dompurify`;
+const KATEX_STAND_IN = `${APP_VIRTUAL}katex-stand-in`;
+const ON_DEMAND_PACKAGES = /[\\/]node_modules[\\/](?:mermaid|highlight\.js|katex|plantuml-encoder)[\\/]/;
+
+const sharedDompurify = {
+  name: "shared-dompurify",
+  enforce: "pre",
+  resolveId(source) {
+    return source === "dompurify" ? SHARED_DOMPURIFY : null;
+  },
+  load(id) {
+    return id === SHARED_DOMPURIFY ? "export default globalThis.__grsmdBoot.shared.dompurify;" : null;
+  },
+};
+
+// One on-demand script built alone: an IIFE, minified, nothing split off.
+async function buildIife(projectDir, entry, sharesDompurify) {
+  const result = await viteBuild({
+    configFile: false,
+    logLevel: "warn",
+    root: projectDir,
+    publicDir: false,
+    plugins: sharesDompurify ? [sharedDompurify] : [],
+    build: {
+      write: false,
+      minify: true,
+      lib: { entry: join(projectDir, entry), formats: ["iife"], name: "grsmdOnDemand", fileName: () => "on-demand.js" },
+      rolldownOptions: { output: { codeSplitting: false } },
+    },
+  });
+  const outputs = (Array.isArray(result) ? result : [result]).flatMap((r) => r.output);
+  if (outputs.length !== 1 || outputs[0].type !== "chunk") {
+    throw new Error(`${entry}: expected one script, got ${outputs.map((o) => o.fileName).join(", ")}`);
+  }
+  const [chunk] = outputs;
+  const modules = Object.entries(chunk.modules).map(([id, info]) => ({ id, renderedLength: info.renderedLength }));
+  return { code: chunk.code, modules };
+}
+
+// lazyModules() gives the modules of the on-demand scripts to the
+// third-party notices.
+export function fastStartup() {
+  let projectDir = "";
+  let parts = null;
+  let lazyModules = [];
+  const coreModules = [];
+  return {
+    name: "fast-startup",
+    apply: "build",
+    enforce: "post",
+    lazyModules: () => lazyModules,
+    configResolved(config) {
+      projectDir = dirname(config.root); // root is <project>/src
+    },
+    async buildStart() {
+      coreModules.length = 0;
+      const boot = await buildIife(projectDir, "src/js/boot.js", false);
+      const libraries = [];
+      lazyModules = [];
+      for (const { name, entry, sharesDompurify } of LAZY_LIBRARIES) {
+        const built = await buildIife(projectDir, entry, sharesDompurify);
+        if (hasExternalImport(built.code)) this.error(`External import or "cdnjs" found in ${name}`);
+        libraries.push({ name, code: built.code });
+        lazyModules.push(...built.modules);
+      }
+      parts = { boot: boot.code, libraries };
+    },
+    renderChunk(_code, chunk) {
+      coreModules.push(...Object.keys(chunk.modules));
+      return null;
+    },
+    generateBundle(_options, bundle) {
+      // the KaTeX CSS (no fonts) stays in the core's <style>
+      const heavy = coreModules.filter((id) => ON_DEMAND_PACKAGES.test(id) && !/\.css($|\?)/.test(id));
+      if (heavy.length > 0) this.error(`the core must not bundle an on-demand library: ${heavy[0]}`);
+      for (const file of Object.values(bundle)) {
+        if (file.type !== "asset" || !file.fileName.endsWith(".html")) continue;
+        try {
+          file.source = layoutForFastStartup(String(file.source), parts);
+        } catch (error) {
+          this.error(`${file.fileName}: ${error.message}`);
+        }
+      }
+    },
+  };
+}
+
+// Before Vite's own resolver: the core's marked-katex-extension gets the stand-in.
+const katexStandIn = {
+  name: "katex-stand-in",
+  apply: "build",
+  enforce: "pre",
+  resolveId(source, importer) {
+    if (source === "katex" && /marked-katex-extension/.test(importer ?? "")) return KATEX_STAND_IN;
+    return null;
+  },
+  load(id) {
+    if (id !== KATEX_STAND_IN) return null;
+    return 'export default { renderToString() { throw new Error("KaTeX runs on demand (src/js/lazyMath.js)"); } };';
+  },
+};
+
+// The dev server has no data blocks: the receiver and the libraries come
+// from src/js/lazy/dev.js, which runs before main.js.
+const devLibraries = {
+  name: "dev-libraries",
+  apply: "serve",
+  transformIndexHtml() {
+    return [{ tag: "script", attrs: { type: "module", src: "/js/lazy/dev.js" }, injectTo: "head" }];
   },
 };
 
@@ -108,7 +234,7 @@ export function buildVersion() {
  * @returns {object}  the Vite plugin
  * @purity non-pure
  */
-export function thirdPartyNotices() {
+export function thirdPartyNotices({ moreModules = () => [] } = {}) {
   let mode = "";
   let projectDir = "";
   const modules = [];
@@ -154,7 +280,7 @@ export function thirdPartyNotices() {
      * @purity non-pure
      */
     generateBundle(_options, bundle) {
-      const outcome = collectNotices({ modules, nodeModules: join(projectDir, "node_modules"), fs });
+      const outcome = collectNotices({ modules: [...modules, ...moreModules()], nodeModules: join(projectDir, "node_modules"), fs });
       const { error, warning } = verdictOf(outcome, mode);
       if (error) this.error(error);
       if (warning) this.warn(warning);
@@ -173,10 +299,11 @@ export function thirdPartyNotices() {
 }
 
 // Content-Security-Policy for the built single file (INV-20), as defense in
-// depth behind DOMPurify. vite-plugin-singlefile inlines the module script, so
-// script-src allows exactly that script by its sha256 hash. Listed after
-// viteSingleFile so it hashes the final inlined code. Build only: the dev
-// server serves the script from a URL and injects its own client.
+// depth behind DOMPurify. script-src allows exactly the file's scripts by
+// their sha256 hashes: the receiver, the core, the arrival notes, and the
+// on-demand libraries' data blocks, which LibraryLoader runs as scripts of
+// their own (INV-81). Listed last so it hashes the final text. Build only:
+// the dev server serves the script from a URL and injects its own client.
 //
 // img-src allows https: because external images load after the user consents
 // (INV-19) and a <meta> CSP cannot change at runtime. The consent gate is
@@ -200,6 +327,17 @@ export function buildCsp(scriptHashes) {
   ].join("; ");
 }
 
+// The script elements of an HTML text, outside comments: [attributes, text].
+// A comment is skipped whole, and a script's text is taken whole (its
+// "</script" are escaped, tools/fastStartup.mjs), whichever starts first.
+export function scriptElementsOf(html) {
+  const found = [];
+  for (const m of html.matchAll(/<!--[\s\S]*?-->|<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    if (!m[0].startsWith("<!--")) found.push([m[1], m[2]]);
+  }
+  return found;
+}
+
 export const contentSecurityPolicy = {
   name: "content-security-policy",
   apply: "build",
@@ -208,21 +346,23 @@ export const contentSecurityPolicy = {
     for (const file of Object.values(bundle)) {
       if (file.type !== "asset" || !file.fileName.endsWith(".html")) continue;
       const html = String(file.source);
-      // Comments may hold disabled snippets; they never execute.
-      const live = html.replace(/<!--[\s\S]*?-->/g, "");
 
       const hashes = [];
-      // Inlined code has "</script" and "<!--" escaped by viteSingleFile, so
-      // each match is one real <script> element.
-      for (const [, attrs, body] of live.matchAll(
-        /<script\b([^>]*)>([\s\S]*?)<\/script>/gi,
-      )) {
+      // Comments may hold disabled snippets; they never execute.
+      for (const [attrs, body] of scriptElementsOf(html)) {
         if (/\ssrc\s*=/i.test(attrs)) {
           this.error(`${file.fileName}: <script src> is not allowed (inline only)`);
         }
-        const type = /\stype\s*=\s*["']?([^"'\s>]*)/i.exec(attrs)?.[1] ?? "";
-        // Data blocks such as application/ld+json never execute.
-        if (!SCRIPT_TYPES.has(type.toLowerCase())) continue;
+        const type = (/\stype\s*=\s*["']?([^"'\s>]*)/i.exec(attrs)?.[1] ?? "").toLowerCase();
+        if (type === "text/plain") {
+          // a library's data runs as a script of its own: hashed too; any
+          // other text/plain block fails (nothing runs unlisted)
+          const id = /\sid\s*=\s*["']?([^"'\s>]*)/i.exec(attrs)?.[1] ?? "";
+          if (!id.startsWith(DATA_ID_PREFIX)) this.error(`${file.fileName}: a text/plain script that is not a library's data block`);
+        } else if (!SCRIPT_TYPES.has(type)) {
+          // Data blocks such as application/ld+json never execute.
+          continue;
+        }
         // The HTML parser turns CR LF / CR into LF before the browser hashes.
         const source = body.replace(/\r\n?/g, "\n");
         hashes.push(createHash("sha256").update(source, "utf8").digest("base64"));
@@ -242,6 +382,8 @@ export const contentSecurityPolicy = {
   },
 };
 
+const onDemand = fastStartup();
+
 export default defineConfig({
   root: "src",
   build: {
@@ -256,7 +398,16 @@ export default defineConfig({
       plugins: [katexWoff2Only, noHljsThemeCss],
     },
   },
-  plugins: [buildVersion(), viteSingleFile(), noExternalImports, thirdPartyNotices(), contentSecurityPolicy],
+  plugins: [
+    buildVersion(),
+    devLibraries,
+    katexStandIn,
+    viteSingleFile(),
+    onDemand,
+    noExternalImports,
+    thirdPartyNotices({ moreModules: onDemand.lazyModules }),
+    contentSecurityPolicy,
+  ],
   test: {
     environment: "jsdom",
     root: ".",

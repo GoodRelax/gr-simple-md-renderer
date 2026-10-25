@@ -5,13 +5,15 @@ import { replaceCodeBlock, queryAllIn } from "../utils.js";
 export default class PlantUMLRenderer extends DiagramRenderer {
   /**
    * @param {HTMLElement} preview
-   * @param {object} plantumlEncoder
+   * @param {object|null} plantumlEncoder - null: loadEncoder gives it when first needed (INV-81)
+   * @param {Function|null} [loadEncoder] - () => Promise of the encoder
    * @purity non-pure
    */
-  constructor(preview, plantumlEncoder) {
+  constructor(preview, plantumlEncoder, loadEncoder = null) {
     super();
     this.preview = preview;
     this.encoder = plantumlEncoder;
+    this.loadEncoder = loadEncoder;
     // Placeholders created here -> { code, theme }. A user-written
     // .plantuml-pending element is not in this map and never sends (INV-23).
     this._pending = new WeakMap();
@@ -53,6 +55,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
         return;
       }
 
+      await this._encoderReady();
       const promises = [];
       /** @purity non-pure */
       blocks.forEach((block) => {
@@ -62,6 +65,29 @@ export default class PlantUMLRenderer extends DiagramRenderer {
       await Promise.allSettled(promises);
     } catch (error) {
       console.error("PlantUML rendering error:", error);
+    }
+  }
+
+  /**
+   * @param {string} name
+   * @param {object} library
+   * @purity non-pure
+   */
+  useLibrary(name, library) {
+    if (name === "plantuml") this.encoder = library;
+  }
+
+  /**
+   * The encoder, once it has run; a failure to load is logged, and the
+   * encoding then fails as an encoding error.
+   * @purity non-pure
+   */
+  async _encoderReady() {
+    if (this.encoder || !this.loadEncoder) return;
+    try {
+      this.encoder = await this.loadEncoder();
+    } catch (error) {
+      console.error("PlantUML encoder could not be loaded:", error);
     }
   }
 
@@ -98,7 +124,8 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   /**
    * [Render] on a pending box: ask with the usual dialog, and send only on OK
    * (INV-23, INV-02). Cancel keeps the box. The dialog and the image request
-   * start synchronously, inside the click.
+   * start synchronously, inside the click (once the encoder has run; it runs
+   * when the page is idle, INV-81).
    * @param {HTMLElement} placeholder
    * @param {string} [theme]
    * @returns {Promise<boolean>}
@@ -109,7 +136,26 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     if (!entry || !placeholder.isConnected) return Promise.resolve(false);
     if (!this.askConsent()) return Promise.resolve(false);
     this._pending.delete(placeholder);
-    const img = this.createImage(this.applyTheme(entry.code, theme ?? entry.theme));
+    if (!this.encoder) return this._encoderReady().then(() => this._sendPending(placeholder, entry, theme));
+    return this._sendPending(placeholder, entry, theme);
+  }
+
+  /**
+   * @param {HTMLElement} placeholder
+   * @param {{code: string, theme: string}} entry
+   * @param {string} [theme]
+   * @returns {Promise<boolean>}
+   * @purity non-pure
+   */
+  _sendPending(placeholder, entry, theme) {
+    let img;
+    try {
+      img = this.createImage(this.applyTheme(entry.code, theme ?? entry.theme));
+    } catch (error) {
+      console.error("PlantUML encoding error:", error);
+      placeholder.replaceWith(this.createErrorElement(CONFIG.messages.plantuml.encodingFailed));
+      return Promise.resolve(false);
+    }
     placeholder.replaceWith(this.createWrapper(img));
     return this.waitForImageLoad(img, CONFIG.plantuml.imageLoadTimeout);
   }

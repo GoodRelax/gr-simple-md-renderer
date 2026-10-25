@@ -10,15 +10,17 @@ export default class SourceFileRenderer {
   /**
    * @param {object} config  - global CONFIG object
    * @param {HTMLElement} previewEl - #preview element
-   * @param {object} hljs - bundled highlight.js instance (shared with MarkdownRenderer)
+   * @param {object|null} hljs - highlight.js (shared with MarkdownRenderer); null: loadHljs gives it
    * @param {boolean} [fileHandleSupported] - a drop gives a file handle (CON-01)
+   * @param {Function|null} [loadHljs] - () => Promise of highlight.js; the code view waits for it (owner ruling 2026-10-25, INV-81)
    * @purity non-pure
    */
-  constructor(config, previewEl, hljs, fileHandleSupported = FILE_SYSTEM_HANDLE_SUPPORTED) {
+  constructor(config, previewEl, hljs, fileHandleSupported = FILE_SYSTEM_HANDLE_SUPPORTED, loadHljs = null) {
     this._cfg = config;
     this._fileHandleSupported = fileHandleSupported;
     this._previewEl = previewEl;
     this._hljs = hljs;
+    this._loadHljs = loadHljs;
     this._fileHandle = null;
     this._fileName = "";
     this._lastScrollTop = 0;
@@ -38,6 +40,7 @@ export default class SourceFileRenderer {
     this._lastScrollTop = 0;
 
     const text = await file.text();
+    await this._hljsReady();
     const { html, lineCount, language } = this._buildCodeBody(text, file);
     this._previewEl.innerHTML = html;
     this._applyCodeTheme(theme);
@@ -71,6 +74,7 @@ export default class SourceFileRenderer {
     this._lastScrollTop = window.scrollY;
     const file = await this._fileHandle.getFile();
     const text = await file.text();
+    await this._hljsReady();
     const { html, lineCount, language } = this._buildCodeBody(text, file);
     this._previewEl.innerHTML = html;
     this._applyCodeTheme(theme);
@@ -96,7 +100,29 @@ export default class SourceFileRenderer {
     this._lastScrollTop = 0;
   }
 
+  /**
+   * @param {string} name
+   * @param {object} library
+   * @purity non-pure
+   */
+  useLibrary(name, library) {
+    if (name === "hljs") this._hljs = library;
+  }
+
   // ---- private helpers ----
+
+  /**
+   * highlight.js, once it has run; without it the code is shown plain.
+   * @purity non-pure
+   */
+  async _hljsReady() {
+    if (this._hljs || !this._loadHljs) return;
+    try {
+      this._hljs = await this._loadHljs();
+    } catch (error) {
+      console.error("highlight.js could not be loaded:", error);
+    }
+  }
 
   /**
    * Build the code body HTML string (no header, status bar, or key hint).
@@ -117,7 +143,7 @@ export default class SourceFileRenderer {
     // Highlight only languages present in the bundle. Unknown extensions and
     // languages missing from the bundle are shown as plaintext (no
     // highlightAuto: it is slow on large files and guesses unreliably).
-    let lang = mapped && this._hljs.getLanguage(mapped) ? mapped : null;
+    let lang = mapped && this._hljs?.getLanguage(mapped) ? mapped : null;
     let highlighted;
     try {
       highlighted = lang

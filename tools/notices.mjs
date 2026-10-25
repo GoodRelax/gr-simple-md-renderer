@@ -49,6 +49,8 @@ export const DEFAULT_EXTRAS = {
 
 const LICENSE_FILE = /^(licen[cs]e|copying|notice)(\.(md|txt|markdown))?$/i;
 const NODE_MODULES = "/node_modules/";
+/** The prefix of the app's own virtual modules (vite.config.js, fast startup): its own code. */
+export const APP_VIRTUAL = "\0grsmd-";
 /** Folders that hold built (compiled or bundled) files rather than sources. */
 const PREBUILT_DIRS = ["dist", "build", "bundled", "lib", "esm", "es", "umd", "cjs"];
 /** devDependencies that bundle a package's files into one. */
@@ -608,6 +610,7 @@ function bundleOf(modules, helpers) {
   const katexCssRoots = new Set();
   const unknownVirtual = [];
   for (const { id, renderedLength } of modules) {
+    if (id.startsWith(APP_VIRTUAL)) continue; // the app's own code
     if (id.startsWith("\0")) {
       if (!contributes(id, renderedLength)) continue;
       const helper = helpers.find((h) => h.id === id);

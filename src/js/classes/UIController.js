@@ -568,6 +568,24 @@ export default class UIController {
   }
 
   /**
+   * The last drop or paste made before the core ran (INV-81 (4), boot.js):
+   * handled as if it came now, with the same rules (the file handle was
+   * asked for inside the drop, CON-01).
+   * @param {{kind: "drop", file: File, handlePromise: Promise|null}|{kind: "paste", text: string}} early
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  async receiveEarlyInput(early) {
+    if (early.kind === "drop") {
+      await this._handleDroppedFile(early.file, FILE_SYSTEM_HANDLE_SUPPORTED ? early.handlePromise : null);
+      return;
+    }
+    if (!this.orchestrator.isPreRenderState() || this.elements.editor.value.trim() !== "") return;
+    if (!early.text.trim()) return;
+    await this._startPastedDocument(early.text, systemTheme());
+  }
+
+  /**
    * Global paste handler: auto-render when in initial state and editor is empty.
    * @purity non-pure
    */
