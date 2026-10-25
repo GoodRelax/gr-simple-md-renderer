@@ -7,6 +7,7 @@ import ClipboardLink from "./ClipboardLink.js";
 import BlockGapInsert from "./BlockGapInsert.js";
 import BlockRangeSelection from "./BlockRangeSelection.js";
 import { cell, row, choice, selectCell } from "../stateTable.js";
+import { isPastActivation } from "../utils.js";
 
 const BROWSING = "browsingPreview";
 const IDLE = "editModeIdle";
@@ -1436,8 +1437,7 @@ export default class BlockEditController {
     const press = this._press;
     this._press = null;
     if (!press || press.pointerId !== e.pointerId) return;
-    const moved = Math.hypot(e.clientX - press.x, e.clientY - press.y);
-    if (moved > CONFIG.pan.activationThresholdPx) return;
+    if (isPastActivation(press, { x: e.clientX, y: e.clientY })) return; // a drag, judged at the release only
     const isTap = press.target !== null && this._isSelectionEmpty();
     const target = press.target?.kind === "cell" ? { ...press.target, caret: { ...press.target.caret, x: e.clientX, y: e.clientY } } : press.target;
     const isEditing = this._blockEditState === EDITING || this._blockEditState === CELL;

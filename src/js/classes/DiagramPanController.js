@@ -1,4 +1,4 @@
-import { CONFIG } from "../config.js";
+import { isPastActivation } from "../utils.js";
 
 export default class DiagramPanController {
   /**
@@ -41,10 +41,8 @@ export default class DiagramPanController {
         return;
       }
       if (!s.active) {
-        const dx = e.clientX - s.startX;
-        const dy = e.clientY - s.startY;
-        const t = CONFIG.pan.activationThresholdPx;
-        if (dx * dx + dy * dy < t * t) return;
+        // past the threshold, the rule that tells a tap from a drag elsewhere too (exactly 5 px does not pan)
+        if (!isPastActivation({ x: s.startX, y: s.startY }, { x: e.clientX, y: e.clientY })) return;
         s.active = true;
         this.setCursor(s.container, true);
       }

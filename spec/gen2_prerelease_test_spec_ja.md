@@ -24,7 +24,7 @@
 
 > v2.6 の変更 (続き、2026-10-25、Render が終わらない不具合 (ReDoS) の直し): PRT は変えていない。AT の目録に AT-RUN (新)、AT-WRAP-20〜22、AT-STA-18 / 19、AT-FR-65〜67、AT-HB-62〜64、AT-INS-20 / 21、AT-ICO-20、AT-BM-35 / 36、AT-MR-15〜19 を足し、時間の試験の例外 (時間の上限を常に確かめるもの) を書いた。e2e の load.e2e.js / fileDrop.e2e.js に、先頭に空行 41 行の文書の試験を足した (WebKit は直す前でも通る既知の制限)。
 
-> v2.6 の変更 (続き、2026-10-25、Edge のミニメニューの直し): PRT-Z01 に手順 6 (Edge でミニメニューが出ず、Delete 1 回で消えること) を足した。AT-RNG-52 を足した。
+> v2.6 の変更 (続き、2026-10-25、Edge のミニメニューの直し): PRT-Z01 に手順 6 (Edge でミニメニューが出ず、Delete 1 回で消えること) を足した。AT-RNG-52 を足した。閾値の判断を `utils.isPastActivation` の 1 か所にしたので、AT-PAN-04 (図のパンは 5px ちょうどでは始まらない) と utils.test.js の isPastActivation の試験を足した。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -3751,7 +3751,7 @@
 | AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js | 01〜67 (25 は欠番。41 は AT.1 の注) |
 | AT-KEY | 主の修飾キーのショートカット (08: Redo のキー) | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜08 |
 | AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
-| AT-PAN | `DiagramPanController` (図のパンの終わり) | INV-16b、FS-09 | DiagramPanController.test.js | 01〜03 |
+| AT-PAN | `DiagramPanController` (図のパンの終わり 01〜03、始まりは閾値を超えたとき (5px ちょうどでは始まらない。`utils.isPastActivation`) 04) | INV-16b、FS-09 | DiagramPanController.test.js | 01〜04 |
 | AT-SFR | `SourceFileRenderer` (コードビューの Reload) | INV-15 | SourceFileRenderer.test.js | 01 |
 | AT-CFG | `CONFIG.edit` と文言 | 5.2、CON-06 | config.edit.test.js、UIController.editMode.test.js、config.test.js (09) | 01〜09 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |

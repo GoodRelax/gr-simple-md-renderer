@@ -120,6 +120,9 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   that menu, also when the drag starts with a block open; a click
   (also on the selected text, which still clears the selection), the
   right-click menu and the selection itself are as before.
+- A diagram's drag-to-pan now starts only past 5 px of movement, as every
+  other tap-versus-drag decision does; a move of exactly 5 px no longer
+  pans.
 - A document with many leading blank lines no longer hangs on Render, paste
   or opening a `.md` file. The check for an AI ```` ```markdown ```` wrapper
   tried every way to split the blank lines, so each line doubled the time

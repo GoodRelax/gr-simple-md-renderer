@@ -1,5 +1,5 @@
 import { CONFIG } from "../config.js";
-import { nextFrame, isTypingTarget } from "../utils.js";
+import { nextFrame, isTypingTarget, isPastActivation } from "../utils.js";
 import { placementNearLine } from "../floatingPlacement.js";
 
 // Tooltips and aria-labels (config.js, owner ruling U1)
@@ -218,15 +218,17 @@ export default class BlockRangeSelection {
   }
 
   /**
-   * The press became a drag: it moved past activationThresholdPx by the
-   * point (as BlockEditController tells a tap from a drag), or did before.
+   * The press became a drag: the point is past the threshold
+   * (utils.isPastActivation, the rule BlockEditController uses too), or an
+   * earlier move was. Unlike BlockEditController, which looks at the release
+   * only, a move that went past and came back stays a drag here.
    * @purity pure
    * @param {{x: number, y: number, isDrag: boolean}} press
    * @param {{clientX: number, clientY: number}} point
    * @returns {boolean}
    */
   _isDragFrom(press, point) {
-    return press.isDrag || Math.hypot(point.clientX - press.x, point.clientY - press.y) > CONFIG.pan.activationThresholdPx;
+    return press.isDrag || isPastActivation(press, { x: point.clientX, y: point.clientY });
   }
 
   /**

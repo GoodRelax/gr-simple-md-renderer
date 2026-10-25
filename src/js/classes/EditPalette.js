@@ -1,5 +1,5 @@
 import { CONFIG } from "../config.js";
-import { nextFrame, cancelFrame } from "../utils.js";
+import { nextFrame, cancelFrame, isPastActivation } from "../utils.js";
 import { cell, row, choice, selectCell } from "../stateTable.js";
 
 // 11-d gesture states
@@ -480,7 +480,7 @@ export default class EditPalette {
   _isGestureGuardTrue(guard, input) {
     switch (guard) {
       case "hasMovedBeyondThreshold":
-        return Math.hypot(input.x - this._gesture.start.x, input.y - this._gesture.start.y) > CONFIG.pan.activationThresholdPx;
+        return isPastActivation(this._gesture.start, input);
       case "isPaletteButton":
         return this._root.contains(this._gesture.button);
       default:

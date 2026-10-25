@@ -1,5 +1,20 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform, isTypingTarget } from "../js/utils.js";
+import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform, isTypingTarget, isPastActivation } from "../js/utils.js";
+import { CONFIG } from "../js/config.js";
+
+describe("isPastActivation (the one rule of a tap versus a drag)", () => {
+  it("is past only beyond activationThresholdPx (Euclidean); exactly the threshold is not", () => {
+    expect(CONFIG.pan.activationThresholdPx).toBe(5);
+    const from = { x: 10, y: 20 };
+    expect(isPastActivation(from, { x: 10, y: 20 })).toBe(false);
+    expect(isPastActivation(from, { x: 15, y: 20 })).toBe(false); // exactly 5 px
+    expect(isPastActivation(from, { x: 13, y: 24 })).toBe(false); // 3-4-5
+    expect(isPastActivation(from, { x: 7, y: 16 })).toBe(false); // the other way
+    expect(isPastActivation(from, { x: 15.01, y: 20 })).toBe(true);
+    expect(isPastActivation(from, { x: 13, y: 25 })).toBe(true);
+    expect(isPastActivation(from, { x: 10, y: 14 })).toBe(true);
+  });
+});
 
 describe("escapeHtml", () => {
   it("escapes < and >", () => {

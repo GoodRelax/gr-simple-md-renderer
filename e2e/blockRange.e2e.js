@@ -362,10 +362,19 @@ test("INV-74 (2): the bar goes above the selection when there is no room under i
   expect(Math.abs(before.y + before.height - (viewport.height - 10))).toBeLessThan(2);
   await drag(page, para(page, target), para(page, target), { fromX: 2, toX: 40 });
   await expect(bar(page)).toBeVisible();
-  const barBox = await bar(page).boundingBox();
-  const pBox = await para(page, target).boundingBox();
-  expect(barBox.y + barBox.height).toBeLessThanOrEqual(viewport.height);
-  expect(barBox.y + barBox.height).toBeLessThanOrEqual(pBox.y + 1); // above the line
+  // the bar is placed once a frame: wait for the place to settle above the line, then read it
+  const place = async () => {
+    const barBox = await bar(page).boundingBox();
+    const pBox = await para(page, target).boundingBox();
+    return { barBottom: barBox.y + barBox.height, lineTop: pBox.y };
+  };
+  await expect.poll(async () => {
+    const { barBottom, lineTop } = await place();
+    return barBottom <= lineTop + 1; // above the line
+  }).toBe(true);
+  const { barBottom, lineTop } = await place();
+  expect(barBottom).toBeLessThanOrEqual(viewport.height);
+  expect(barBottom).toBeLessThanOrEqual(lineTop + 1);
 });
 
 test("INV-74 (4): a copy the browser starts (menu, callout) writes the blocks' source while blocks are selected (owner ruling 2026-10-25)", async ({ page }) => {
