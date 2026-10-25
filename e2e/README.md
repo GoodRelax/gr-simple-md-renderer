@@ -36,7 +36,8 @@ npm run test:e2e:firefox
 ```
 
 Both scripts build the app into the gitignored `output/e2e/` first (`npm run build:e2e`; same
-build as `docs/index.html`, `docs/` is not touched) and serve it with `vite preview` on
+build as `docs/index.html`, plus the beta `grsmd-beta.html` that `tools/buildBeta.mjs` makes
+from it, as `npm run build:beta` does; `docs/` is not touched) and serve it with `vite preview` on
 `127.0.0.1`. The port is derived from the checkout path so parallel worktrees do not collide;
 set `GRSMD_E2E_PORT` to fix it. The Playwright version matches gr-scheduler (1.62.1).
 One browser only (after `npm run build:e2e`): `npx playwright test --project=webkit`.
