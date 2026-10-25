@@ -100,7 +100,8 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   show through, and the panel scrolls by itself. Press a heading to bring it
   to the top of the view; the panel stays open until Index, `i` or `Esc` is
   pressed (`Esc` hides the edit palette first). The list follows every
-  render, commit and Undo. Math in a heading is shown as its TeX source. The
+  render, commit and Undo (only the changed blocks' headings are built
+  again). Math in a heading is shown as its TeX source. The
   button is off on the start screen and in the code view, and the panel is
   not printed. The help says so in both languages.
 - Math templates in the edit palette: the Text format popover has a second
@@ -179,8 +180,11 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 - A full render (Render, a theme switch, a dropped or pasted document) no
   longer takes the view back to where it was when the render began if you
-  scrolled while the diagrams were being drawn (the Index, the mouse wheel,
-  a finger, a key or the scroll bar): the view stays where you took it.
+  moved the view while the diagrams were being drawn (the Index, Search,
+  the mouse wheel, a finger, a scroll key or the scroll bar): the view comes
+  back to the text you were reading when you last moved it, even when the
+  diagrams above it grow. Other keys (such as Shift) and presses outside the
+  text do not count: the view goes back where it was.
 - In edit mode, Delete now deletes the selected blocks in Microsoft Edge
   too. Edge shows its mini menu (Copilot, Copy, Search) beside a text
   selection, and while it shows, the keys do not reach the page. A mouse

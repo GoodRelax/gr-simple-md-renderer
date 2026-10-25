@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.10
+**バージョン:** 2.14
 **日付:** 2026-xx-xx (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -35,6 +35,8 @@
 > v2.12 の変更 (2026-10-25、保存のダイアログのフォルダ): 仕様の INV-79 に合わせて、セクション AC (PRT-AC01 / AC02) を追加した。AT に AT-FA-09、AT-DLC-23 を足した。e2e は足していない (本物の保存のダイアログは Playwright で開けず、偽の picker では `startIn` の受け渡ししか見られないので、それは AT-FA-09 で見る)。追加したケースの判定は空欄 (未実施)。
 
 > v2.13 の変更 (2026-10-25、検索と置換): 仕様の SC-26・INV-80・FS-22 に合わせて、セクション AD (PRT-AD01〜AD11) を追加した。AT に AT-SRCH (新。01〜12) と AT-BSM-33 (11-c の `replaceRequested`) を足した。e2e に search.e2e.js を足した。目次の Esc の順が変わったので (検索が目次より先)、PRT-AB02 の手順はそのまま (検索を出さなければ同じ)。追加したケースの判定は空欄 (未実施)。
+
+> v2.14 の変更 (2026-10-25、目次と保存のダイアログのレビュー 1 回目の直し): 仕様の INV-78 (利用者が最後に動かした所へ戻す。数えるのはビューを動かす操作だけ) と INV-77 (2) (変わったブロックの項目だけを作り直す。1 MB で 50 ms 以下) の改めに合わせて、PRT-AB07 を書き直し、PRT-AB02 にキーボードの手順を、PRT-AB03 に目次のスクロールと変わらない項目の確認を足した。AT-SM-39 を `watchUserMoves` に書き直し、AT-SM-40 / 41、AT-PERF-14 を足し、AT-ORC-28、AT-IDX-06 / 07 / 09、AT-SRCH-08 を改めた。index.e2e.js にリサイズとキーボード、確定と目次のスクロール、テーマの切り替えの間のホイール・Shift・本文の外の押下を足し、index.e2e.js と search.e2e.js の試験の名前に要求の ID を付けた。PRT-K01 の 1 行目を今のキーのヒントに、AT-DLC の要求の欄に INV-79 を足した。追加・改めたケースの判定は空欄 (未実施)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -635,7 +637,7 @@
 |              | 2. キーヒントが表示されることを確認                                 |
 |              | 3. 何もせず 5 秒待つ                                                |
 | **期待結果** | - キーヒントが画面上部 (top: 60px 付近) に表示される                |
-|              | - 1行目: `[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;` (Markdown 表示のとき。文字列は `CONFIG.keyHints.markdown` の正本に合わせる) |
+|              | - 1行目: `[I] Index; [F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;` (Markdown 表示のとき。文字列は `CONFIG.keyHints.markdown` の正本に合わせる) |
 |              | - 2行目: `[Up][Down] Scroll Up/Down;`                               |
 |              | - 5 秒後にフェードアウトする                                        |
 
@@ -3793,15 +3795,19 @@
 | --- | --- |
 | **前提条件** | 見出しのある文書を描画している |
 | **手順** | 1. `i` で出す・消す |
-|  | 2. 目次を出し、`e` で編集モードにして、ブロックを開く |
-|  | 3. Esc を 3 回押す |
+|  | 2. Tab で [Index] にフォーカスを移し、Enter で出す |
+|  | 3. 目次の項目をクリックせずに、Tab で項目へ移り (Safari は Option+Tab)、Enter と Space で飛ぶ |
+|  | 4. 目次を出し、`e` で編集モードにして、ブロックを開く |
+|  | 5. Esc を 3 回押す |
 | **期待結果** | - `i` で目次が切り替わる |
+|  | - 手順 2 で目次が出て、フォーカスは [Index] に残る |
+|  | - 手順 3 で、Tab で項目を順に移れ、Enter / Space で押した見出しが上端の 8 px 下に来る |
 |  | - Esc は、1 回目で編集欄を確定して閉じ、2 回目でパレットを隠し、3 回目で目次を消す |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-77 (4)、5.11、オーナーの裁定 T7。自動では index.e2e.js、AT-IDX-10 (c) |
+| 備考 | 要求: INV-77 (4)(7)、5.11、オーナーの裁定 T7。自動では index.e2e.js、AT-IDX-10 (c) |
 
 ---
 
@@ -3814,7 +3820,7 @@
 |  | 2. Ctrl+Z (Mac は Cmd+Z) |
 |  | 3. 見出しを含むブロックの範囲を消す (INV-74) |
 | **期待結果** | - 手順 1 で、編集欄を確定してから飛ぶ。目次の項目が新しい見出しになる |
-|  | - 手順 2・3 のたびに、目次が今の見出しに作り直される。目次のスクロールの位置は保つ |
+|  | - 手順 2・3 のたびに、目次が今の見出しに作り直される。目次のスクロールの位置は保ち、変わらない見出しの項目はそのまま (ちらつかない) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -3876,21 +3882,24 @@
 
 ---
 
-### PRT-AB07: 描画の途中で動かしても戻されない
+### PRT-AB07: 描画の途中で動かした所に留まる
 
 | 項目 | 詳細 |
 | --- | --- |
-| **前提条件** | 図 (Mermaid) が多く、見出しの多い文書 |
-| **手順** | 1. 文書を描画し、図を描き終える前に、目次の項目を押す |
-|  | 2. 文書を描画し直し ([Render Dark] など)、図を描き終える前にホイールでスクロールする |
-|  | 3. 文書を描画し直し、何もしないで待つ |
-| **期待結果** | - 手順 1・2 で、描き終えた後も、利用者が動かした所が見えたまま (描画の前の位置へ戻らない) |
-|  | - 手順 3 では、今どおり描画の前の位置に戻る |
+| **前提条件** | 図 (Mermaid) が多く、図の下に見出しの多い文書 (例: 図 40 個の後に節 60 個) を描画し、図を描き終えている |
+| **手順** | 1. 図の下の節が上端に来るまでスクロールし、[Render Dark] を押して、図を描き終える前に目次の項目を押す |
+|  | 2. [Render Light] を押し、図を描き終える前にホイールで少し (100 px ほど) スクロールする |
+|  | 3. [Render Dark] を押し、図を描き終える前に Shift を押す |
+|  | 4. [Render Light] を押し、図を描き終える前にキーのヒント (本文の外) を押す |
+|  | 5. [Render Dark] を押し、何もしないで待つ |
+| **期待結果** | - 手順 1 で、描き終えた後も、押した見出しが上端の 8 px 下に見えたまま |
+|  | - 手順 2 で、描き終えた後も、スクロールした時に上端に見えていた所が同じ所に見えたまま (図が描かれて上が伸びても、ずれない) |
+|  | - 手順 3・4・5 では、描画の前の位置に戻る (Shift と本文の外の押下はビューを動かさないので数えない) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-78、INV-09。自動では index.e2e.js、AT-SM-39、AT-ORC-28 |
+| 備考 | 要求: INV-78、INV-09 (調整役の裁定 2026-10-25、レビュー 1 回目の Q1)。自動では index.e2e.js (INV-78 の 4 件)、AT-SM-39〜41、AT-ORC-28 |
 
 ---
 
@@ -4177,9 +4186,9 @@
 | AT-CL | `ClipboardLink` | INV-69 | ClipboardLink.test.js | 01〜04 |
 | AT-MR | `MarkdownRenderer` のブロックの描画 (15〜19: コードブロックの色付けの上限。言語の無い長いブロックと上限を超えるブロックの時間、20,480 / 20,481 文字の境目、先頭の 3,072 文字での言語の判定、CONFIG の値。5.14.4) | INV-41〜43、INV-47 | MarkdownRenderer.blocks.test.js、MarkdownRenderer.test.js、diagrams.partial.test.js、MarkdownRenderer.highlightLimit.test.js | 01〜19 (09 は `MarkdownRenderer.test.js` のコメントにだけある。AT.1 の注) |
 | AT-DG | 図と PlantUML の部分描画 | INV-02、INV-23 | diagrams.partial.test.js | 01〜07 |
-| AT-SM | `ScrollMemento` (アンカー、読んでいる位置、挿入の後の最小のスクロール。39: 利用者の操作の見張り `watchUserActs`) | INV-46、INV-52、INV-78、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜39 |
-| AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R5、Undo / Redo の記録 09〜09d。28: 全体の描画の間に利用者が動かしたら戻さない) | INV-42、INV-46〜48、INV-62、INV-78 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜28 (06b、09b〜09d を含む)、R1〜R5、T1〜T6 |
-| AT-IDX | `DocumentIndex` (01: h1〜h6 だけを文書の順に段の class 付きで並べ、引用・リスト・コード・利用者の `.md-block` の中は入れない。02: 数式は TeX、書式を落とし空白をまとめ、空の見出しは入れない。03: 見出しが無いときの文言。04: toggle と `aria-expanded`・`hidden`。05: `setAvailable`。06: 表示中のブロックの変化で 1 フレームに 1 回作り直し、スクロールを保つ。隠している間は作らない。07: 押下で見出しが上端の 8 px 下 (`#preview` とページ)。08: 外れた見出しは作り直してから飛ぶ。09: 列の置き場所。10: UIController の結線 ((a) 初期・コードビューで無効、(b) `i` と修飾キー・入力欄・挿入の待ち、(c) Esc の順、(d) Clear)) | INV-77、5.11 | DocumentIndex.test.js、UIController.index.test.js | 01〜10 |
+| AT-SM | `ScrollMemento` (アンカー、読んでいる位置、挿入の後の最小のスクロール。39〜41: 利用者がビューを動かす操作の見張り `watchUserMoves` (39: ホイール・指の移動・スクロールのキー・Space・スクロールバーの押下の後のスクロールで読んでいる位置を覚える。40: Shift、入力欄の中のスクロールのキー、本文の外と中の押下、ポインタの移動は数えない。41: パネルのスクロールは数えない、`scrollTargetTo` はその場で覚える、`stop()`)) | INV-46、INV-52、INV-78、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜41 |
+| AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R5、Undo / Redo の記録 09〜09d。28: 全体の描画の間に利用者が動かしたら、最後に動かした所の読んでいる位置へ戻し (`restoreReadingAnchor`)、動かさなければ描画の前の位置へ戻す) | INV-42、INV-46〜48、INV-62、INV-78 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜28 (06b、09b〜09d を含む)、R1〜R5、T1〜T6 |
+| AT-IDX | `DocumentIndex` (01: h1〜h6 だけを文書の順に段の class 付きで並べ、引用・リスト・コード・利用者の `.md-block` の中は入れない。02: 数式は TeX、書式を落とし空白をまとめ、空の見出しは入れない。03: 見出しが無いときの文言。04: toggle と `aria-expanded`・`hidden`。05: `setAvailable`。06: 表示中のブロックの変化で 1 フレームに 1 回、変わったブロックの項目だけを作り直し (変わらない項目は同じ要素)、全体の描画ではまるごと作り、どちらもスクロールを保つ。隠している間は作らない。07: 押下で `ScrollMemento.scrollTargetTo(見出し, 8)`。08: 外れた見出しは作り直してから飛ぶ。09: 列の置き場所 (`ScrollMemento.shownTop` / `shownRight`) とリサイズ。10: UIController の結線 ((a) 初期・コードビューで無効、(b) `i` と修飾キー・入力欄・挿入の待ち、(c) Esc の順、(d) Clear)) | INV-77、5.11 | DocumentIndex.test.js、UIController.index.test.js | 01〜10 |
 | AT-BEC | `BlockEditController` (ジェスチャ、外側、IME、キー、リンク) | INV-27〜30、INV-40、INV-69 | BlockEditController.test.js、BlockEditController.keys.test.js、BlockEditController.link.test.js、UIController.link.test.js (35) | 01〜35 |
 | AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致。30〜32: ブロックの範囲、33: 検索の置換 (`replaceRequested`)) | 11-c | BlockEditController.stateMachine.test.js、BlockEditController.gap.test.js (29)、UIController.editMode.test.js、UIController.save.test.js | 01〜33 |
 | AT-GAP | `BlockGapInsert` (すき間の当たり判定、表のつまみ・リンクなどを避けること、点線の表示と押下、マウスの移動を 1 フレームに 1 回にまとめること、押下と消去で残りの移動を捨てること、click にならない押下の後も追うこと) | INV-73 | BlockGapInsert.test.js | 01〜02 |
@@ -4191,11 +4200,11 @@
 | AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜36 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
-| AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: `expandReplacement` を `String.replace` と比べる。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数))。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(d) 置換の前の確定 (`replaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否) | INV-80、INV-48、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜12 |
+| AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: `expandReplacement` を `String.replace` と比べる。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数))。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(d) 置換の前の確定 (`replaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否) | INV-80、INV-48、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜12 |
 | AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル) | INV-24〜26、INV-79、CON-14 | MarkdownFileAccess.test.js | 01〜09 |
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
 | AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |
-| AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`)、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56 | DocumentLifecycle.test.js | 01〜23 |
+| AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`)、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56、INV-79 | DocumentLifecycle.test.js | 01〜23 |
 | AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js | 01〜69 (25 は欠番。41 は AT.1 の注。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)) |
 | AT-KEY | 主の修飾キーのショートカット (08: Redo のキー) | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜08 |
 | AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
@@ -4206,7 +4215,7 @@
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと | 5.8.1、5.15.2 | themeColors.test.js、hljsThemePlugin.test.js | 01〜20 |
 | AT-STA | `src/js` と `src/css` の静的な検査 | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜19 |
 | AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
-| AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ) | INV-42、INV-48、INV-51、INV-74 | performance.inplaceEdit.test.js | 01〜13 |
+| AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ、14: 目次を出したままの確定・Undo の後の作り直しの時間。jsdom に大きな文書が残ると遅くなるので別のファイル) | INV-42、INV-48、INV-51、INV-74、INV-77 | performance.inplaceEdit.test.js、performance.index.test.js | 01〜14 |
 | AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11) (`ModalController`) | SC-16、FS-10、CON-03、CON-12、5.1、5.11 | HelpLanguageSwitch.test.js、ModalController.test.js | 01〜11 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
 | AT-OSS | 同梱 OSS の表記: 数えるパッケージ、表記が漏れるときにビルドを失敗させること (許さないライセンス、文が無い、一覧に無い束ねられたコード、古くなった一覧、宣言した依存、dist の確かめの記録、コメントを壊す文)、一覧のコード・上書き・待ちの文、読む段と処理の段、文の取り出し、コメントとヘルプの一覧の形、CSP の hash が変わらないこと、プラグインの並び、`@purity`、本物のビルドで一覧の項目を 1 つずつ外すと落ちること (07) | 付録 A.2、INV-75、INV-76 | notices.test.js | 01〜07 |
@@ -4233,6 +4242,7 @@ ID を持たない試験ファイル (その場編集の前からあるクラス
 | AT-PERF-09 | 5,000 個のリンクを持つ 250 KB の段落で、書式のポップオーバーを開いたときの 1 フレームのボタンの判定 (行内の数式を含む。大きなブロックなので行内の数式は無効) が予算の中 (INV-51、INV-69)。(b): 字句解析する最大の段落 (`invisibleMarkMaxChars` の手前まで、約 1,000 個のリンク) で、行内の数式の位置の判定を含めて同じ予算の中 (jsdom で 12〜44 ms、2026-10-25) |
 | AT-PERF-12 | 1 MB の文書で、100 ブロックの範囲の削除と、全部のブロックの削除が、それぞれ呼び出しから DOM の差し替えまで 5 回の中央値で `commitBudgetMs` (300 ms) 以内 (INV-74、INV-51) |
 | AT-PERF-13 | 1 MB の文書で、20 ブロックずつ 30 回の範囲の削除の Undo の記録、および全部の削除の 1 件の記録が、4 MiB 未満 (INV-74、INV-48) |
+| AT-PERF-14 | 見出しの多い 1 MB の文書 (短い節が9,318 個) で目次を出したまま、確定の後と Undo の後の目次の作り直しが、それぞれ 5 回の中央値で 50 ms 以下 (INV-77 (2)。調整役の裁定 2026-10-25)。最初の一覧は時間を記録するだけ (jsdom の実測、2026-10-25: 最初の一覧 715 ms、確定の後 1.4 ms、Undo の後 1.5 ms) |
 | AT-PERF-10 | 1 MB の文書で、開いた段落の Insert table の押下 (確定・挿入・部分描画) から Col1 が開くまで、5 回の中央値が `commitBudgetMs` (300 ms) 以内 (INV-51、INV-52) |
 | AT-UI-51〜60 | 単位をまたぐ結合の試験 (全体のレビューの K-1・K-2・T-3 (1)〜(8)): ポップオーバーが開いたままのセルの移動と表の操作、押し続けた Esc、WYSIWYG のセルの Ctrl+B と Ctrl+Z、ポップオーバーとセルの Esc、見えない文字をまたぐ Bold、最小化中のセル、最小化 → `e` → ダブルクリック、テーマの切り替え、変更のあるセルでの保存、`openerDisabled` の本物の経路 |
 | AT-UI-64、AT-UI-66 (L5) | クリップボードの読み取りは 1 回ずつ (AT-UI-64: 待つ間は「リンクを貼る」が無効で、2 回目の押下は無視し、リンクは 1 回だけ入る。AT-UI-66 の L5: 待つ間に編集モードを出ると待ちを解き、結果は捨てる。全体のレビューの FX-1) |
@@ -4264,8 +4274,8 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | toast.e2e.js | 幅 375 px で、トーストが画面の中で折り返す (長いファイル名も折る) | (5.12、オーナーの裁定 R11) |
 | help.e2e.js | ヘルプ: ブラウザの言語 (`en-US` / `ja-JP`) で最初の言語が決まる、トグルで片方だけになり閉じて開いても保つ、ダウンロードのリンクの属性、版が "Development build" と UTC の時刻、開いている間の 1 キーが裏に効かず Esc で閉じる (パレットを出しておき、Esc の後も出たままであること。プロンプトのモーダルも)、開くとフォーカスが中へ移り、Tab / Shift+Tab が中を回り、閉じると [?] へ戻る、トグルと × をキーボードだけで押せる、外への要求が無い、題名の行がスクロールしても上に残る、ヘルプの文字が 12px、クリップボードの許可の開示が日英のプライバシーの章にあり編集の章が無い | PRT-L01、PRT-L03、PRT-L05、PRT-L07、PRT-L08 |
 | crossUnit.e2e.js | 単位をまたぐ動き: 変更のあるセルの移動でポップオーバーが開いたまま (K-1)、外部画像の入った HTML の貼り付けと画像のあるセルの編集で通信しない (S-2)、色のセルを残したままの Render Dark、図のコードを開いた後のボタンなしの移動でスクロールしない (U20)、文書の class にアプリの CSS が当たらない・帯のカーソル・数式の大きさ (N2 / N3 / M04)、[?] の長押し (N1。Chromium だけ)、スマートフォンの配置 (N6)、編集モードの出入りでブロックが動かず、つまみが表の真上にある (P1) | PRT-X04、PRT-X08、PRT-X11、PRT-U10、PRT-U20、PRT-Q01、PRT-M04 |
-| index.e2e.js | 目次: 右端に浮き 25% 透け、目次自体がスクロールし、押した見出しが上端の 8 px 下、開いたまま、`i`。図を描き終える前の押下が描き終えた後も保たれる (INV-78)。編集欄の確定と Esc の順。ダークの地、印刷に出ない、Clear で無効 | PRT-AB01〜AB05、PRT-AB07 |
-| search.e2e.js | 検索と置換: `f` と入力ごとの検索、↓ / ↑、Enter は何もしない、箱の中の Esc、正規表現と不正な式、大きい表の正しい行と右端の列、置換 (編集モードだけ、Replace / All、トースト、Ctrl+Z 1 回、置換欄の Enter)、Esc の順 (パレット → 検索 → 目次)、コードビュー、印刷。時間の試験 (GRSMD_PERF=1。1 MB の 1 キーと ↓ が 4 ms 以下、All が 300 ms 以内) | PRT-AD01〜AD03、AD05、AD08、AD10、AD11 |
+| index.e2e.js | 目次: 右端に浮き 25% 透け、目次自体がスクロールし、押した見出しが上端の 8 px 下、開いたまま、`i`。図を描き終える前の押下が描き終えた後も保たれる (INV-78)。テーマの切り替えの間のホイール 100 px は読んでいる位置に留まり、Shift と本文の外の押下では元の位置に戻る (INV-78)。リサイズで置き直し、開いてもフォーカスは [Index]、Tab / Enter / Space (INV-77 (6)(7))。確定で目次のスクロールと変わらない項目を保つ (INV-77 (2))。編集欄の確定と Esc の順。ダークの地、印刷に出ない、Clear で無効。試験の名前に要求の ID | PRT-AB01〜AB05、PRT-AB07 |
+| search.e2e.js | 検索と置換: `f` と入力ごとの検索、↓ / ↑、Enter は何もしない、箱の中の Esc、正規表現と不正な式、大きい表の正しい行と右端の列、置換 (編集モードだけ、Replace / All、トースト、Ctrl+Z 1 回、置換欄の Enter)、Esc の順 (パレット → 検索 → 目次)、コードビュー、印刷。時間の試験 (GRSMD_PERF=1。1 MB の 1 キーと ↓ が 4 ms 以下、All が 300 ms 以内)。試験の名前に要求の ID | PRT-AD01〜AD03、AD05、AD08、AD10、AD11 |
 | notices.e2e.js | 同梱 OSS の表記: ビルドしたファイルの最後のコメントに、直接の依存 7 件 (入れた版)・ほかの dist の中のコード・KaTeX のフォントの表記があること、先頭の案内のコメントが CSP の後にあること、ヘルプの「Licenses」/「ライセンス」の一覧 (日英) | PRT-AA01、PRT-AA02 |
 
 ---
@@ -4463,7 +4473,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-AB04      | 目次 | 使えないとき・見出しなし・印刷 |      |
 | PRT-AB05      | 目次 | テーマ |      |
 | PRT-AB06      | 目次 | タッチ (iPhone / iPad) |      |
-| PRT-AB07      | 目次 | 描画の途中で動かしても戻されない |      |
+| PRT-AB07      | 目次 | 描画の途中で動かした所に留まる |      |
 | PRT-AC01      | 保存のダイアログ | 前回のフォルダから開く (Chrome / Edge) |      |
 | PRT-AC02      | 保存のダイアログ | ダイアログの無いブラウザとアプリのストレージ |      |
 | PRT-AD01      | 検索と置換 | 通常の検索 |      |

@@ -39,8 +39,8 @@ function type(value) {
 beforeEach(async () => {
   vi.spyOn(window, "confirm").mockReturnValue(true);
   Element.prototype.scrollIntoView = vi.fn();
-  Element.prototype.scrollBy = vi.fn();
   Range.prototype.getBoundingClientRect = () => ({ top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 });
+  Range.prototype.getClientRects = () => [{}];
   showToast.mockClear();
   app = await setupApp({ withSearch: true, withIndex: true });
 });
@@ -49,8 +49,8 @@ afterEach(() => {
   app?.teardown();
   app = null;
   delete Element.prototype.scrollIntoView;
-  delete Element.prototype.scrollBy;
   delete Range.prototype.getBoundingClientRect;
+  delete Range.prototype.getClientRects;
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });

@@ -44,7 +44,6 @@ import DocumentSearch from "./classes/DocumentSearch.js";
 // ========================================
 
 const elements = {
-  topbar: document.getElementById("topbar"),
   editor: document.getElementById("editor"),
   fileInfo: document.getElementById("fileInfo"),
   keyHint: document.getElementById("keyHint"),
@@ -117,13 +116,8 @@ const documents = new DocumentLifecycle(fileAccess, {
 // INV-14: Cmd is the primary shortcut modifier on Apple platforms.
 const isApple = isApplePlatform(navigator);
 const documentIndex = new DocumentIndex(
-  {
-    button: elements.indexBtn,
-    panel: elements.indexPanel,
-    column: elements.sidePanels,
-    preview: elements.preview,
-    topbar: elements.topbar,
-  },
+  { button: elements.indexBtn, panel: elements.indexPanel, column: elements.sidePanels, preview: elements.preview },
+  scrollManager,
   { emptyText: CONFIG.messages.index.empty },
 );
 new UIController(orchestrator, state, elements, scrollEngine, {
@@ -137,7 +131,6 @@ new UIController(orchestrator, state, elements, scrollEngine, {
         column: elements.sidePanels,
         panel: document.getElementById("searchPanel"),
         preview: elements.preview,
-        topbar: elements.topbar,
         input: document.getElementById("searchInput"),
         matchCase: document.getElementById("searchCase"),
         regex: document.getElementById("searchRegex"),
@@ -150,6 +143,7 @@ new UIController(orchestrator, state, elements, scrollEngine, {
         replaceOne: document.getElementById("replaceOneBtn"),
         replaceAll: document.getElementById("replaceAllBtn"),
       },
+      scrollManager,
       {
         getModel: () => orchestrator.getModel(),
         blockElement: (id) => markdownRenderer.getBlockElement(id),

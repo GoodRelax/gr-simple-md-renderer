@@ -104,7 +104,7 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
     panel.hidden = true;
     column.append(panel);
     elements._bar.prepend(button);
-    documentIndex = new DocumentIndex({ button, panel, column, preview, topbar: elements._bar }, { emptyText: "none" });
+    documentIndex = new DocumentIndex({ button, panel, column, preview }, scrollMemento, { emptyText: "none" });
   }
   let searchEl = null;
   if (withSearch) {
@@ -125,7 +125,6 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
       column,
       panel,
       preview,
-      topbar: elements._bar,
       input: find("searchInput"),
       matchCase: find("searchCase"),
       regex: find("searchRegex"),
@@ -151,6 +150,7 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
               createSearch: (host) =>
                 new DocumentSearch(
                   searchEl,
+                  scrollMemento,
                   {
                     getModel: () => orchestrator.getModel(),
                     blockElement: (id) => markdownRenderer.getBlockElement(id),

@@ -1561,13 +1561,11 @@ export default class BlockEditController {
 
   /**
    * A press on the scroll bar of the preview (or of the page): not "outside",
-   * and not a double click on the preview.
+   * and not a double click on the preview (ScrollMemento owns the check).
    * @purity semi-pure-b
    */
   _isScrollbarPress(e) {
-    const el = e.target;
-    if (el !== this.preview && el !== document.documentElement) return false;
-    return (el.clientWidth > 0 && e.offsetX > el.clientWidth) || (el.clientHeight > 0 && e.offsetY > el.clientHeight);
+    return this.scrollMemento.isScrollbarPress(e);
   }
 
   /**

@@ -4,7 +4,7 @@
 // Replacing is for the edit mode of the Markdown view only; one replace, or
 // one replace of all, is one change for Undo (INV-48).
 
-import { placeSidePanels, revealInView } from "../sidePanels.js";
+import { placeSidePanels } from "../sidePanels.js";
 import { searchPattern, findMatches, replaceOne, replaceAll } from "../textSearch.js";
 import { nextFrame, cancelFrame } from "../utils.js";
 
@@ -19,7 +19,7 @@ const HIGHLIGHT_CURRENT = "grsmd-search-current";
 export const TYPING_PAUSE_MS = 150;
 /** A regular expression is searched when typing stops for this long (owner ruling S13). */
 export const REGEX_TYPING_PAUSE_MS = 300;
-/** Where a match is scrolled to: a quarter of the view down, at least this far below its top. */
+/** Where a match is scrolled to: a quarter of what is shown down, at least this far below its top. */
 const REVEAL_RATIO = 0.25;
 const REVEAL_MIN_PX = 8;
 
@@ -78,9 +78,10 @@ function textRanges(element, text, matchCase, atLeast) {
 
 export default class DocumentSearch {
   /**
-   * @param {object} elements - button, column, panel, preview, topbar,
-   *   input, matchCase, regex, count, prev, next, close, replaceRow,
-   *   replaceInput, replaceOne, replaceAll
+   * @param {object} elements - button, column, panel, preview, input,
+   *   matchCase, regex, count, prev, next, close, replaceRow, replaceInput,
+   *   replaceOne, replaceAll
+   * @param {ScrollMemento} scrollMemento - where the view is and how it scrolls
    * @param {object} documents - getModel() (MarkdownBlockModel|null),
    *   blockElement(blockId), replaceBody(text, offset) -> Promise
    * @param {object} host - beforeReplace(): boolean (commits the open
@@ -88,22 +89,23 @@ export default class DocumentSearch {
    * @param {object} messages - CONFIG.messages.search
    * @purity non-pure
    */
-  constructor(elements, documents, host, messages) {
+  constructor(elements, scrollMemento, documents, host, messages) {
     this.el = elements;
+    this.scrollMemento = scrollMemento;
     this.documents = documents;
     this.host = host;
     this.messages = messages;
     this._mode = "initial";
-    this._pattern = null;
-    this._searchedKey = null; // the query and options of the matches
-    this._text = "";
+    this._pattern = null; // the pattern of the matches, or null: an empty query or an invalid expression
+    this._searchedKey = null; // the query and options of the matches, or null: not searched yet
+    this._text = ""; // the text the matches are in
     this._matches = [];
-    this._current = -1;
-    this._hit = null; // the block or line marked
-    this._typingTimer = 0; // the move (or the regular expression search) after typing stops
-    this._pendingSteps = 0; // next / previous presses not yet moved to
-    this._stepFrame = 0;
-    this._onResize = () => placeSidePanels(this.el.column, this.el.preview, this.el.topbar);
+    this._current = -1; // the index of the match gone to, or -1: none yet
+    this._hit = null; // the block or line marked, or null: none
+    this._typingTimer = 0; // the move (or the regular expression search) after typing stops, or 0: none
+    this._pendingSteps = 0; // next / previous presses not yet moved to (negative: back)
+    this._stepFrame = 0; // the frame that moves (a nextFrame id), or 0: none asked for
+    this._onResize = () => placeSidePanels(this.el.column, this.scrollMemento);
     this._wire();
   }
 
@@ -358,7 +360,8 @@ export default class DocumentSearch {
     const target = current ?? this._tableRow(element, before) ?? element;
     const box = current ? current.startContainer.parentElement : target;
     box.scrollIntoView?.({ block: "nearest", inline: "nearest" });
-    revealInView(this.el.preview, this.el.topbar, target.getBoundingClientRect().top, REVEAL_RATIO, REVEAL_MIN_PX);
+    const shown = window.innerHeight - this.scrollMemento.shownTop();
+    this.scrollMemento.scrollTargetTo(target, Math.max(REVEAL_MIN_PX, REVEAL_RATIO * shown));
   }
 
   /**

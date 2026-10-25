@@ -28,7 +28,7 @@ async function headingTop(page, text) {
   }, text);
 }
 
-test("shows the headings over the preview, scrolls by itself, jumps and stays open", async ({ page }) => {
+test("INV-77 (1)(3)(4)(6): shows the headings over the preview, scrolls by itself, jumps and stays open", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await renderMarkdown(page, sections(60));
   await settled(page);
@@ -63,7 +63,7 @@ test("shows the headings over the preview, scrolls by itself, jumps and stays op
   await expect(panel).toBeVisible();
 });
 
-test("a jump made while the diagrams are drawn is kept (INV-78)", async ({ page }) => {
+test("INV-78: a jump made while the diagrams are drawn is kept", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   // The press comes the moment the headings are in the preview, before any
   // diagram is drawn (a MutationObserver callback runs before the render
@@ -101,7 +101,7 @@ ${DIAGRAMS}`,
   expect(Math.abs((await headingTop(page, "Section 30")) - 8)).toBeLessThanOrEqual(1);
 });
 
-test("Esc closes the palette first and the Index last; a block edit is applied by the press", async ({ page }) => {
+test("INV-77 (4), INV-30: Esc closes the palette first and the Index last; a block edit is applied by the press", async ({ page }) => {
   await renderMarkdown(page, sections(10));
   await settled(page);
   await page.locator("#indexBtn").click();
@@ -124,7 +124,7 @@ test("Esc closes the palette first and the Index last; a block edit is applied b
   await expect(page.locator("#indexPanel")).toBeHidden();
 });
 
-test("dark colors, nothing in print, off after Clear", async ({ page }) => {
+test("INV-77 (5)(6): dark colors, nothing in print, off after Clear", async ({ page }) => {
   await renderMarkdown(page, sections(3));
   await settled(page);
   await page.keyboard.press("d");
@@ -140,3 +140,162 @@ test("dark colors, nothing in print, off after Clear", async ({ page }) => {
   await expect(page.locator("#indexBtn")).toBeDisabled();
   await expect(page.locator("#indexPanel")).toBeHidden();
 });
+
+test("INV-77 (6)(7): placed again on a resize; opening keeps the focus on [Index]; Tab goes through the entries, Enter and Space jump", async ({ page, browserName }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await renderMarkdown(page, sections(30));
+  await settled(page);
+  const panel = page.locator("#indexPanel");
+  await page.locator("#indexBtn").focus();
+  await page.keyboard.press("Enter");
+  await expect(panel).toBeVisible();
+  expect(await page.evaluate(() => document.activeElement.id)).toBe("indexBtn");
+
+  const place = () =>
+    page.evaluate(() => {
+      const column = document.querySelector("#sidePanels").getBoundingClientRect();
+      const preview = document.querySelector("#preview");
+      const right = preview.getBoundingClientRect().left + preview.clientLeft + preview.clientWidth;
+      return { gap: right - column.right, below: window.innerHeight - column.bottom };
+    });
+  await page.setViewportSize({ width: 900, height: 500 });
+  await expect.poll(async () => Math.abs((await place()).gap - 8)).toBeLessThanOrEqual(1);
+  expect((await place()).below).toBeGreaterThanOrEqual(7);
+
+  // WebKit moves the focus with Tab to text fields only (Safari's default)
+  const first = panel.getByRole("button", { name: "Section 20", exact: true });
+  await first.focus();
+  if (browserName === "chromium") {
+    await page.keyboard.press("Tab");
+    await expect(panel.getByRole("button", { name: "Sub 20.1", exact: true })).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+  }
+  await expect(first).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect.poll(async () => Math.abs((await headingTop(page, "Section 20")) - 8)).toBeLessThanOrEqual(1);
+  await panel.getByRole("button", { name: "Section 5", exact: true }).focus();
+  await page.keyboard.press(" ");
+  await expect.poll(async () => Math.abs((await headingTop(page, "Section 5")) - 8)).toBeLessThanOrEqual(1);
+});
+
+test("INV-77 (2): a commit builds the entries of its block only, and the Index keeps its scroll", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await renderMarkdown(page, sections(60));
+  await settled(page);
+  await page.locator("#indexBtn").click();
+  const panel = page.locator("#indexPanel");
+  await panel.evaluate((el) => {
+    el.scrollTop = 300;
+    window.__e2eEntry = [...el.querySelectorAll(".index-entry")].find((e) => e.textContent === "Section 50");
+  });
+  await page.locator("#editBtn").click();
+  await page.locator("#preview p").first().click();
+  const editor = page.locator("textarea.md-block-editor");
+  await editor.fill("Changed text.\n\n## New heading");
+  await page.keyboard.press("Escape"); // applies and closes (INV-28)
+  await expect(editor).toHaveCount(0);
+  await settled(page);
+  const after = await panel.evaluate((el) => ({
+    texts: [...el.querySelectorAll(".index-entry")].slice(0, 4).map((e) => e.textContent),
+    scrollTop: el.scrollTop,
+    kept: window.__e2eEntry.isConnected && window.__e2eEntry.parentNode === el,
+  }));
+  expect(after.texts).toEqual(["Index test", "Section 1", "New heading", "Sub 1.1"]);
+  expect(after.scrollTop).toBe(300);
+  expect(after.kept).toBe(true);
+});
+
+// INV-78 (review round 1, M1): the three cases of the review, during a theme
+// switch. The diagrams are above the text: while they are drawn again they
+// are short code blocks, so what is below them moves up and back.
+const MOVED_DOC = `${DIAGRAMS}\n${sections(60)}`;
+
+/**
+ * Switch to dark and, the moment the blocks are in the preview (before any
+ * diagram is drawn), do act: "wheel" (a wheel turn and 100 px of scroll),
+ * "shift" (Shift pressed) or "press" (a press on the key hint, outside the
+ * text). For "wheel", window.__e2eMark is the reader's place after the
+ * scroll: the first block below the top of the preview and how far below.
+ * Resolves with the number of diagrams drawn at the act.
+ */
+function switchThemeWith(page, act) {
+  return page.evaluate(
+    (kind) =>
+      new Promise((resolve) => {
+        const preview = document.querySelector("#preview");
+        const observer = new MutationObserver(() => {
+          if (!preview.querySelector("h2")) return;
+          observer.disconnect();
+          const drawn = preview.querySelectorAll(".mermaid > svg").length;
+          if (kind === "wheel") {
+            preview.addEventListener(
+              "scroll",
+              () => {
+                const top = preview.getBoundingClientRect().top;
+                const block = [...preview.children].find((b) => b.getBoundingClientRect().bottom > top);
+                const el = block.firstElementChild;
+                window.__e2eMark = { el, top: el.getBoundingClientRect().top - top };
+                resolve(drawn);
+              },
+              { once: true },
+            );
+            preview.dispatchEvent(new WheelEvent("wheel", { bubbles: true, deltaY: 100 }));
+            preview.scrollBy(0, 100);
+            return;
+          }
+          if (kind === "shift") document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Shift", bubbles: true }));
+          else document.querySelector("#keyHint").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "mouse", button: 0 }));
+          resolve(drawn);
+        });
+        observer.observe(preview, { childList: true });
+        document.querySelector("#renderDark").click();
+      }),
+    act,
+  );
+}
+
+test("INV-78 (M1): a wheel turn of 100 px during a theme switch is kept at the reader's place", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await renderMarkdown(page, MOVED_DOC);
+  await settled(page);
+  await expect(page.locator("#preview .mermaid > svg")).toHaveCount(DIAGRAM_COUNT);
+  await page.evaluate(() => {
+    const preview = document.querySelector("#preview");
+    const heading = [...preview.querySelectorAll("h2")].find((h) => h.textContent === "Section 10");
+    preview.scrollTop += heading.getBoundingClientRect().top - preview.getBoundingClientRect().top;
+  });
+  expect(await switchThemeWith(page, "wheel"), "the act came before the diagrams were drawn").toBe(0);
+  await settled(page);
+  await expect(page.locator("#preview .mermaid > svg")).toHaveCount(DIAGRAM_COUNT);
+  const mark = await page.evaluate(() => {
+    const { el, top } = window.__e2eMark;
+    const now = el.getBoundingClientRect().top - document.querySelector("#preview").getBoundingClientRect().top;
+    return { inDiagram: !!el.closest(".mermaid"), connected: el.isConnected, top, now };
+  });
+  expect(mark.inDiagram).toBe(false);
+  expect(mark.connected).toBe(true);
+  expect(Math.abs(mark.now - mark.top)).toBeLessThanOrEqual(1);
+});
+
+for (const [act, name] of [
+  ["shift", "Shift"],
+  ["press", "a press on the key hint (outside the text)"],
+]) {
+  test(`INV-78 (M1): ${name} during a theme switch does not move the view: it goes back where it was`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await renderMarkdown(page, MOVED_DOC);
+    await settled(page);
+    await expect(page.locator("#preview .mermaid > svg")).toHaveCount(DIAGRAM_COUNT);
+    // at the end: while the diagrams are short, the document is too short to stay there
+    const before = await page.evaluate(() => {
+      const preview = document.querySelector("#preview");
+      preview.scrollTop = preview.scrollHeight;
+      return preview.scrollTop;
+    });
+    expect(await switchThemeWith(page, act), "the act came before the diagrams were drawn").toBe(0);
+    await settled(page);
+    await expect(page.locator("#preview .mermaid > svg")).toHaveCount(DIAGRAM_COUNT);
+    const after = await page.evaluate(() => document.querySelector("#preview").scrollTop);
+    expect(Math.abs(after - before)).toBeLessThanOrEqual(1);
+  });
+}

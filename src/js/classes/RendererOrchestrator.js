@@ -738,18 +738,21 @@ export default class RendererOrchestrator {
     const model = this._currentModel;
     if (!model) return;
     const scrollTop = this.scrollManager.save();
-    // INV-78: the view goes back to scrollTop only if the user has not moved
-    // it while the diagrams were drawn (the Index, a wheel, a key)
-    const userActs = this.scrollManager.watchUserActs();
+    // INV-78: when the user moves the view while the diagrams are drawn (a
+    // wheel, a scroll key, the Index), the view goes back to where they
+    // were reading last; otherwise to scrollTop, as before
+    const userMoves = this.scrollManager.watchUserMoves();
     try {
       this.markdownRenderer.renderBlocks(model);
       this._renderedModel = model;
       await this.mermaidRenderer.render(this.state.currentTheme);
       await this.plantumlRenderer.render(this.state.currentTheme, this.preview, "consent");
       await waitForDOMStability(this.preview);
-      if (!userActs.hasActed()) this.scrollManager.restore(scrollTop);
+      const place = userMoves.place();
+      if (place) this.scrollManager.restoreReadingAnchor(place);
+      else this.scrollManager.restore(scrollTop);
     } finally {
-      userActs.stop();
+      userMoves.stop();
     }
   }
 

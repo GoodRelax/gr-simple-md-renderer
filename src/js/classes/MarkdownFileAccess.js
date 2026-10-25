@@ -17,7 +17,7 @@ export default class MarkdownFileAccess {
    */
   constructor(win = window) {
     this._win = win;
-    this._lastFile = null; // INV-79: the last file dropped or chosen in this tab (memory only)
+    this._lastFile = null; // INV-79: the last file dropped or chosen in this tab (memory only), or null: none yet
   }
 
   /**

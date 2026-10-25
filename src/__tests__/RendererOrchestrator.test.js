@@ -28,7 +28,7 @@ function createOrchestrator() {
   const scrollManager = {
     save: vi.fn().mockReturnValue(0),
     restore: vi.fn(),
-    watchUserActs: vi.fn(() => ({ hasActed: () => false, stop: vi.fn() })),
+    watchUserMoves: vi.fn(() => ({ place: () => null, stop: vi.fn() })),
   };
   const preview = document.createElement("div");
   const mockMetadata = {
@@ -217,23 +217,27 @@ describe("RendererOrchestrator", () => {
   });
 
   describe("full render and the user's scrolling (INV-78)", () => {
-    it("AT-ORC-28 the view goes back to where it was only if the user did not act while the render ran; the watch ends", async () => {
+    it("AT-ORC-28 the view goes back to where the user last moved it while the render ran, else to where it was; the watch ends", async () => {
       const { orchestrator, scrollManager, mermaidRenderer } = createOrchestrator();
       scrollManager.save.mockReturnValue(120);
-      let acted = false;
+      scrollManager.restoreReadingAnchor = vi.fn();
+      let place = null;
       const stop = vi.fn();
-      scrollManager.watchUserActs.mockImplementation(() => ({ hasActed: () => acted, stop }));
+      scrollManager.watchUserMoves.mockImplementation(() => ({ place: () => place, stop }));
 
       await orchestrator.loadMarkdown("# a", "light");
       expect(scrollManager.restore).toHaveBeenCalledWith(120);
+      expect(scrollManager.restoreReadingAnchor).not.toHaveBeenCalled();
       expect(stop).toHaveBeenCalledTimes(1);
 
       scrollManager.restore.mockClear();
+      const moved = { element: document.createElement("p"), anchor: { offsetTop: 30 } };
       mermaidRenderer.render.mockImplementation(async () => {
-        acted = true; // e.g. an Index entry pressed while the diagrams are drawn
+        place = moved; // e.g. a wheel turn or an Index entry while the diagrams are drawn
       });
       await orchestrator.reRender("light");
       expect(scrollManager.restore).not.toHaveBeenCalled();
+      expect(scrollManager.restoreReadingAnchor).toHaveBeenCalledWith(moved);
       expect(stop).toHaveBeenCalledTimes(2);
 
       // a render that fails still ends the watch

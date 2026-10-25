@@ -5,6 +5,7 @@ import hljs from "highlight.js/lib/common";
 import DOMPurify from "dompurify";
 import MarkdownRenderer from "../js/classes/MarkdownRenderer.js";
 import MarkdownBlockModel from "../js/classes/MarkdownBlockModel.js";
+import ScrollMemento from "../js/classes/ScrollMemento.js";
 import DocumentSearch, { TYPING_PAUSE_MS, REGEX_TYPING_PAUSE_MS } from "../js/classes/DocumentSearch.js";
 import { CONFIG } from "../js/config.js";
 
@@ -25,6 +26,7 @@ let search;
 let els;
 let host;
 let replaced;
+let memento;
 
 class FakeHighlight {
   constructor(...ranges) {
@@ -40,7 +42,6 @@ function render(body) {
 function setup() {
   const make = (tag, id, attrs = {}) => Object.assign(document.createElement(tag), { id }, attrs);
   els = {
-    topbar: make("div", "topbar"),
     button: make("button", "searchBtn"),
     column: make("div", "sidePanels"),
     panel: make("div", "searchPanel"),
@@ -63,8 +64,7 @@ function setup() {
   els.replaceRow.append(els.replaceInput, els.replaceOne, els.replaceAll);
   els.panel.append(els.input, els.matchCase, els.regex, els.count, els.prev, els.next, els.close, els.replaceRow);
   els.column.append(els.panel);
-  els.topbar.append(els.button);
-  document.body.prepend(els.topbar);
+  document.body.prepend(els.button);
   document.body.append(els.column);
   replaced = [];
   host = { beforeReplace: vi.fn(() => true), toast: vi.fn() };
@@ -78,7 +78,8 @@ function setup() {
       return Promise.resolve();
     }),
   };
-  search = new DocumentSearch(els, documents, host, M);
+  memento = new ScrollMemento(preview);
+  search = new DocumentSearch(els, memento, documents, host, M);
   search.documents = documents;
 }
 
@@ -98,16 +99,17 @@ const current = () => [...(CSS.highlights.get("grsmd-search-current")?.ranges ??
 
 beforeEach(() => {
   preview = Object.assign(document.createElement("div"), { id: "preview" });
-  preview.scrollBy = vi.fn();
   document.body.append(preview);
   const markedLib = new Marked();
   markedLib.use(markedKatex({ throwOnError: false }));
   lexer = (src) => markedLib.lexer(src);
   renderer = new MarkdownRenderer(preview, markedLib, hljs, DOMPurify);
+  vi.stubGlobal("matchMedia", () => ({ matches: false }));
   vi.stubGlobal("Highlight", FakeHighlight);
   vi.stubGlobal("CSS", { highlights: new Map() });
   Element.prototype.scrollIntoView = vi.fn();
   Range.prototype.getBoundingClientRect = () => ({ top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 });
+  Range.prototype.getClientRects = () => [{}];
   setup();
   search.setMode("markdown");
   search.setReplaceEnabled(true);
@@ -116,10 +118,11 @@ beforeEach(() => {
 afterEach(() => {
   search.hide();
   preview.remove();
-  els.topbar.remove();
+  els.button.remove();
   els.column.remove();
   delete Element.prototype.scrollIntoView;
   delete Range.prototype.getBoundingClientRect;
+  delete Range.prototype.getClientRects;
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -195,6 +198,7 @@ describe("DocumentSearch (INV-80)", () => {
   it("AT-SRCH-08 the block of the match is marked and the n-th place of the text in it is the current one, also in a big table; a match across cells goes to its row", async () => {
     const rows = Array.from({ length: 30 }, (_, i) => `| r${i} | value ${i % 10} |`).join("\n");
     render(`# T\n\n| No | Value |\n| --- | --- |\n${rows}\n`);
+    const scrollTargetTo = vi.spyOn(memento, "scrollTargetTo");
     search.open();
     type("value 7");
     await wait(TYPING_PAUSE_MS + 50);
@@ -207,18 +211,16 @@ describe("DocumentSearch (INV-80)", () => {
     expect(hl.startContainer.parentElement.closest("tr").cells[0].textContent).toBe("r27");
     expect(CSS.highlights.get("grsmd-search").ranges).toHaveLength(2); // the other places of the block
     expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
-    expect(preview.scrollBy).toHaveBeenCalled();
+    // a quarter of what is shown down (jsdom: #preview at 0, the window 768 px high)
+    expect(scrollTargetTo).toHaveBeenLastCalledWith(hl, 0.25 * window.innerHeight);
 
     // the rendered text does not read "r12 | value" (two cells): its row instead
-    const scrolledTo = [];
-    vi.spyOn(HTMLTableRowElement.prototype, "getBoundingClientRect").mockImplementation(function () {
-      scrolledTo.push(this.cells[0].textContent);
-      return { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 };
-    });
     type("r12 | value");
     await wait(TYPING_PAUSE_MS + 50);
     expect(current()).toEqual([]);
-    expect(scrolledTo).toContain("r12");
+    const row = scrollTargetTo.mock.lastCall[0];
+    expect(row.tagName).toBe("TR");
+    expect(row.cells[0].textContent).toBe("r12");
   });
 
   it("AT-SRCH-09 replacing: edit mode only (S4), the open edits first (beforeReplace), Replace moves on past the new text, All counts in a toast; a plain template is literal", async () => {

@@ -33,7 +33,7 @@ async function currentMatch(page) {
 
 const DOC = "# Alpha\n\nThe cat sat.\n\n## Beta\n\nA cat and a cat.\n\n```js\nconst cat = 1;\n```\n";
 
-test("f opens it; the source is searched as you type; Down / Up move round the ends; Enter does nothing; Esc in the box closes it", async ({ page }) => {
+test("INV-80 (3)(4)(6)(7): f opens it; the source is searched as you type; Down / Up move round the ends; Enter does nothing; Esc in the box closes it", async ({ page }) => {
   await renderMarkdown(page, DOC);
   await settled(page);
   await page.locator("#preview").click({ position: { x: 5, y: 5 } });
@@ -54,7 +54,7 @@ test("f opens it; the source is searched as you type; Down / Up move round the e
   await expect(page.locator("#searchPanel")).toBeHidden();
 });
 
-test("a regular expression is searched when typing stops; an invalid one says so", async ({ page }) => {
+test("INV-80 (2)(3): a regular expression is searched when typing stops; an invalid one says so", async ({ page }) => {
   await renderMarkdown(page, DOC);
   await settled(page);
   await page.locator("#searchBtn").click();
@@ -66,7 +66,7 @@ test("a regular expression is searched when typing stops; an invalid one says so
   await expectCount(page, "Invalid pattern");
 });
 
-test("a big table: the n-th match goes to its own row, also to the right edge of a wide row", async ({ page }) => {
+test("INV-80 (4): a big table: the n-th match goes to its own row, also to the right edge of a wide row", async ({ page }) => {
   await page.setViewportSize({ width: 1000, height: 700 });
   const rows = Array.from({ length: 400 }, (_, i) => `| r${i + 1} | value ${(i + 1) % 10} | ${"lorem ipsum dolor sit amet ".repeat(3)} | far right ${i + 1} |`);
   await renderMarkdown(page, ["# Big table", "", "| No | Value | Text | End |", "| --- | --- | --- | --- |", ...rows, ""].join("\n"));
@@ -84,7 +84,7 @@ test("a big table: the n-th match goes to its own row, also to the right edge of
   await expect.poll(async () => (await currentMatch(page))?.inView).toBe(true);
 });
 
-test("replacing: edit mode only, Replace goes on, All counts in a toast, one Ctrl+Z takes it back; Enter in the replace box does nothing", async ({ page }) => {
+test("INV-80 (5): replacing: edit mode only, Replace goes on, All counts in a toast, one Ctrl+Z takes it back; Enter in the replace box does nothing", async ({ page }) => {
   await renderMarkdown(page, DOC);
   await settled(page);
   await page.locator("#searchBtn").click();
@@ -114,7 +114,7 @@ test("replacing: edit mode only, Replace goes on, All counts in a toast, one Ctr
   await expect(page.locator("#preview")).toContainText("The dog sat.");
 });
 
-test("Esc outside the box: the palette, then Search, then the Index", async ({ page }) => {
+test("INV-80 (6), INV-77 (4): Esc outside the box: the palette, then Search, then the Index", async ({ page }) => {
   await renderMarkdown(page, DOC);
   await settled(page);
   await page.locator("#indexBtn").click();
@@ -131,7 +131,7 @@ test("Esc outside the box: the palette, then Search, then the Index", async ({ p
   await expect(page.locator("#indexPanel")).toBeHidden();
 });
 
-test("the code view searches its lines and has no replace row; nothing of Search is printed", async ({ page }) => {
+test("INV-80 (1)(5)(8): the code view searches its lines and has no replace row; nothing of Search is printed", async ({ page }) => {
   await dropFile(page, { name: "a.py", text: "a = 1\ncat = 2\nprint(cat)\n" });
   await expect(page.locator("body")).toHaveClass(/\bview-code\b/);
   await page.locator("#searchBtn").click();

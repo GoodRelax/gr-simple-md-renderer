@@ -206,7 +206,8 @@ export function shortcutLetter(e, isApple) {
 
 /**
  * Run cb in the next animation frame (a short timer where there is none,
- * e.g. jsdom). Returns the id for cancelFrame.
+ * e.g. jsdom). Returns the id for cancelFrame: never 0 (frame and timer ids
+ * start at 1), so 0 can stand for "none asked for".
  * @purity non-pure
  * @param {() => void} cb
  * @returns {number}
