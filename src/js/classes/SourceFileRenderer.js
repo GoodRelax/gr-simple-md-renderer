@@ -12,7 +12,8 @@ export default class SourceFileRenderer {
    * @param {HTMLElement} previewEl - #preview element
    * @param {object|null} hljs - highlight.js (shared with MarkdownRenderer); null: loadHljs gives it
    * @param {boolean} [fileHandleSupported] - a drop gives a file handle (CON-01)
-   * @param {Function|null} [loadHljs] - () => Promise of highlight.js; the code view waits for it (owner ruling 2026-10-25, INV-81)
+   * @param {Function|null} [loadHljs] - () => Promise of highlight.js; the code view waits for it
+   *   (owner ruling 2026-10-25), at most config.codeView.highlightWaitMs (INV-81 (3))
    * @purity non-pure
    */
   constructor(config, previewEl, hljs, fileHandleSupported = FILE_SYSTEM_HANDLE_SUPPORTED, loadHljs = null) {
@@ -21,6 +22,8 @@ export default class SourceFileRenderer {
     this._previewEl = previewEl;
     this._hljs = hljs;
     this._loadHljs = loadHljs;
+    this._shown = null; // { text, file } of the code shown plain while highlight.js is awaited
+    this._missing = false; // shown plain since the last takeMissingLibraries
     this._fileHandle = null;
     this._fileName = "";
     this._lastScrollTop = 0;
@@ -31,27 +34,19 @@ export default class SourceFileRenderer {
    * @param {File} file
    * @param {FileSystemFileHandle|null} fileHandle
    * @param {'light'|'dark'} theme
-   * @returns {Promise<CodeViewMeta>}
+   * @param {Function} [isCurrent] - () => false when another document was
+   *   opened while the file was read or highlight.js awaited: nothing is shown
+   * @returns {Promise<CodeViewMeta|null>} null when it is no longer current
    * @purity non-pure
    */
-  async render(file, fileHandle, theme) {
+  async render(file, fileHandle, theme, isCurrent = () => true) {
+    const text = await file.text();
+    await this._hljsReady();
+    if (!isCurrent()) return null;
     this._fileHandle = fileHandle;
     this._fileName = file.name;
     this._lastScrollTop = 0;
-
-    const text = await file.text();
-    await this._hljsReady();
-    const { html, lineCount, language } = this._buildCodeBody(text, file);
-    this._previewEl.innerHTML = html;
-    this._applyCodeTheme(theme);
-
-    return {
-      fileName: file.name,
-      fileSize: file.size,
-      lineCount,
-      language,
-      updatedAtStr: formatDateTime(file.lastModified),
-    };
+    return this._show(text, file, theme);
   }
 
   /**
@@ -59,10 +54,12 @@ export default class SourceFileRenderer {
    * Shows a toast if fileHandle is unavailable: the browser gives none, or
    * this file came without one (as the Markdown view says, release test N5).
    * @param {'light'|'dark'} theme
-   * @returns {Promise<CodeViewMeta|null>} null if fileHandle is unavailable
+   * @param {Function} [isCurrent] - as for render
+   * @returns {Promise<CodeViewMeta|null>} null if fileHandle is unavailable,
+   *   or when it is no longer current
    * @purity non-pure
    */
-  async reload(theme) {
+  async reload(theme, isCurrent = () => true) {
     if (!this._fileHandle) {
       const codeView = this._cfg.codeView;
       showToast(
@@ -75,18 +72,37 @@ export default class SourceFileRenderer {
     const file = await this._fileHandle.getFile();
     const text = await file.text();
     await this._hljsReady();
-    const { html, lineCount, language } = this._buildCodeBody(text, file);
-    this._previewEl.innerHTML = html;
-    this._applyCodeTheme(theme);
+    if (!isCurrent()) return null;
+    const metadata = this._show(text, file, theme);
     window.scrollTo(0, this._lastScrollTop);
+    return metadata;
+  }
 
-    return {
-      fileName: file.name,
-      fileSize: file.size,
-      lineCount,
-      language,
-      updatedAtStr: formatDateTime(file.lastModified),
-    };
+  /**
+   * The code shown plain (highlight.js came too late) colored now, where
+   * the view is; null when there is nothing to color.
+   * @returns {CodeViewMeta|null}
+   * @purity non-pure
+   */
+  recolor() {
+    if (!this._shown || !this._hljs) return null;
+    const { text, file } = this._shown;
+    const scrollTop = window.scrollY;
+    const metadata = this._show(text, file, null);
+    window.scrollTo(0, scrollTop);
+    return metadata;
+  }
+
+  /**
+   * Whether the code was shown plain for want of highlight.js since the
+   * last call (INV-81 (3)).
+   * @returns {string[]}
+   * @purity non-pure
+   */
+  takeMissingLibraries() {
+    const names = this._missing ? ["hljs"] : [];
+    this._missing = false;
+    return names;
   }
 
   /**
@@ -98,6 +114,7 @@ export default class SourceFileRenderer {
     this._fileHandle = null;
     this._fileName = "";
     this._lastScrollTop = 0;
+    this._shown = null;
   }
 
   /**
@@ -112,15 +129,47 @@ export default class SourceFileRenderer {
   // ---- private helpers ----
 
   /**
-   * highlight.js, once it has run; without it the code is shown plain.
+   * Show the code body; the theme is kept when it is null (recolor).
+   * @param {string} text
+   * @param {File} file
+   * @param {'light'|'dark'|null} theme
+   * @returns {CodeViewMeta}
+   * @purity non-pure
+   */
+  _show(text, file, theme) {
+    const { html, lineCount, language } = this._buildCodeBody(text, file);
+    this._previewEl.innerHTML = html;
+    if (theme) this._applyCodeTheme(theme);
+    const plain = !this._hljs && this._loadHljs !== null;
+    this._shown = plain ? { text, file } : null;
+    if (plain) this._missing = true;
+    return {
+      fileName: file.name,
+      fileSize: file.size,
+      lineCount,
+      language,
+      updatedAtStr: formatDateTime(file.lastModified),
+    };
+  }
+
+  /**
+   * highlight.js, once it has run, waited for at most
+   * config.codeView.highlightWaitMs; past that (or when it cannot load) the
+   * code is shown plain and colored when it comes (recolor).
    * @purity non-pure
    */
   async _hljsReady() {
     if (this._hljs || !this._loadHljs) return;
+    let timer = 0;
+    /** @purity non-pure */
+    const limit = new Promise((resolve) => (timer = setTimeout(() => resolve(null), this._cfg.codeView.highlightWaitMs)));
     try {
-      this._hljs = await this._loadHljs();
+      const hljs = await Promise.race([this._loadHljs(), limit]);
+      if (hljs) this._hljs = hljs;
     } catch (error) {
       console.error("highlight.js could not be loaded:", error);
+    } finally {
+      clearTimeout(timer);
     }
   }
 

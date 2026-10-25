@@ -18,14 +18,16 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 ### Changed
 
 - Faster startup: the page is usable before the whole file has arrived
-  (about 0.3 s on a 4 Mbps line with a 100 ms round trip, where it took
-  about 3 s; a new tab is fast too). The file now starts with the styles,
+  (about 0.4 s on a 4 Mbps line with a 100 ms round trip, where it took
+  about 3.2 s; a new tab is fast too). The file now starts with the styles,
   the page and the app itself; mermaid, highlight.js, KaTeX and the
   PlantUML encoder come after it as data that runs when a document needs
   it, or when the page is idle. Until then a formula shows its TeX source
   in a dashed box, code is shown without colors and a diagram shows
-  "Loading diagram..."; each is drawn as soon as its library is in. The
-  code view waits for highlight.js. A file dropped or text pasted while the
+  "Loading diagram..." (a PlantUML diagram too, after you allow it); each
+  is drawn as soon as its library is in. The code view waits up to 3
+  seconds for highlight.js, then shows the code plain and colors it when
+  highlight.js comes. A file dropped or text pasted while the
   page is still loading is opened once the app runs (the browser no longer
   opens the dropped file instead). Still one file, with the same
   Content-Security-Policy rules: every script, the libraries' data included,

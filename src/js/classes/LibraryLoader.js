@@ -1,18 +1,16 @@
 // The libraries that run on demand (INV-81 (2), spec 5.17): mermaid,
 // highlight.js, KaTeX and the PlantUML encoder are in the file as data
 // blocks (<script type="text/plain" id="grsmd-lib-NAME">) after the core,
-// each followed by a one-line script that says it has arrived. A library
-// runs once: its data goes into a new <script> element, whose text the
-// build's CSP allows by its sha256 hash (no unsafe-eval, no unsafe-inline),
-// and the library hands itself over through window.__grsmdBoot.provide.
-// A library the page already provides (the dev server imports them) is
-// used as it is.
+// each followed by a one-line script that says it has arrived and hands
+// the block over by reference (boot.js keeps it). A library runs once: the
+// block's text goes into a new <script> element, whose text the build's CSP
+// allows by its sha256 hash (no unsafe-eval, no unsafe-inline), and the
+// library hands itself over through window.__grsmdBoot.provide. The block
+// is never looked up by its id: a document's element with the same id
+// would stand in for it (INV-81 (5)). A library the page already provides
+// (the dev server imports them) is used as it is.
 
-/** The libraries, in the order they arrive (O2). */
-export const LIBRARY_NAMES = Object.freeze(["mermaid", "hljs", "katex", "plantuml"]);
-
-/** The id of a library's data block. */
-export const DATA_ID_PREFIX = "grsmd-lib-";
+import { LIBRARY_NAMES } from "../libraryNames.js";
 
 /**
  * Run a function when the page has nothing else to do.
@@ -26,7 +24,7 @@ function whenIdle(task) {
 
 export default class LibraryLoader {
   /**
-   * @param {{arrived: Set<string>, provided: Map<string, object>, onArrive: Function|null}} boot - window.__grsmdBoot
+   * @param {{arrived: Set<string>, data: Map<string, Element>, provided: Map<string, object>, onArrive: Function|null}} boot - window.__grsmdBoot
    * @param {Document} [doc]
    * @param {{idle?: Function}} [options] - idle: runs a task when the page is idle
    * @purity non-pure
@@ -64,21 +62,36 @@ export default class LibraryLoader {
   }
 
   /**
-   * The library now: run at once when its data has arrived, else null.
-   * A library that fails to run is null, and get() rejects with the error.
+   * Whether the library could not run (its data was not there, the CSP
+   * stopped it, or it failed): it never will in this page.
+   * @param {string} name
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
+  hasFailed(name) {
+    return this._failed.has(name);
+  }
+
+  /**
+   * The library now: run at once when its data has arrived; null while it
+   * has not arrived. A library that cannot run throws its error (logged
+   * once; hasFailed tells it beforehand), and get() rejects with it.
    * @param {string} name
    * @returns {object|null}
+   * @throws {Error} the library cannot run
    * @purity non-pure
    */
   loadIfArrived(name) {
+    const failed = this._failed.get(name);
+    if (failed) throw failed;
     const library = this.peek(name);
-    if (library || !this.isArrived(name) || this._failed.has(name)) return library;
+    if (library || !this.isArrived(name)) return library;
     try {
       return this._run(name);
     } catch (error) {
       this._failed.set(name, error);
       console.error(`Library ${name} could not run:`, error);
-      return null;
+      throw error;
     }
   }
 
@@ -93,11 +106,7 @@ export default class LibraryLoader {
     let promise = this._promises.get(name);
     if (promise) return promise;
     /** @purity non-pure */
-    promise = this._arrival(name).then(() => {
-      const library = this.loadIfArrived(name);
-      if (library) return library;
-      throw this._failed.get(name);
-    });
+    promise = this._arrival(name).then(() => this.loadIfArrived(name));
     this._promises.set(name, promise);
     return promise;
   }
@@ -122,8 +131,12 @@ export default class LibraryLoader {
       this._arrival(name).then(() =>
         this.idle(() => {
           const had = this.peek(name);
-          const library = this.loadIfArrived(name);
-          if (library && !had) onLoaded(name, library);
+          try {
+            const library = this.loadIfArrived(name);
+            if (!had) onLoaded(name, library);
+          } catch {
+            // logged by loadIfArrived; a render that needs it shows the failure
+          }
           index++;
           next();
         }),
@@ -165,14 +178,16 @@ export default class LibraryLoader {
   }
 
   /**
-   * Run a library's data as a script; its data block is dropped after.
+   * Run a library's data as a script; its data block is dropped after. The
+   * block is the one its arrival note handed over (never found by id).
    * @param {string} name
    * @returns {object}
    * @purity non-pure
    */
   _run(name) {
-    const data = this.doc.getElementById(`${DATA_ID_PREFIX}${name}`);
+    const data = this.boot.data.get(name);
     if (!data) throw new Error(`no data block for ${name}`);
+    this.boot.data.delete(name);
     const script = this.doc.createElement("script");
     script.textContent = data.textContent;
     this.doc.head.append(script);

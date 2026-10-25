@@ -1,13 +1,16 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import { JSDOM } from "jsdom";
-import LibraryLoader, { LIBRARY_NAMES, DATA_ID_PREFIX } from "../js/classes/LibraryLoader.js";
-import { LAZY_LIBRARIES, DATA_ID_PREFIX as BUILD_DATA_ID_PREFIX } from "../../tools/fastStartup.mjs";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const BOOT = readFileSync(resolve(here, "../js/boot.js"), "utf8");
+// Chrome and Edge give a file handle with a drop (CON-01); jsdom has none.
+vi.mock("../js/earlyInput.js", async () => ({
+  ...(await vi.importActual("../js/earlyInput.js")),
+  FILE_SYSTEM_HANDLE_SUPPORTED: true,
+}));
+
+import { JSDOM } from "jsdom";
+import LibraryLoader from "../js/classes/LibraryLoader.js";
+import { installBoot } from "../js/boot.js";
+import { LIBRARY_NAMES, DATA_ID_PREFIX } from "../js/libraryNames.js";
+import { LAZY_LIBRARIES, DATA_ID_PREFIX as BUILD_DATA_ID_PREFIX, arrivalNote } from "../../tools/fastStartup.mjs";
 
 /** jsdom has no User Timing marks: a list stands in (window.marks). */
 function withMarks(window) {
@@ -17,13 +20,14 @@ function withMarks(window) {
 
 /**
  * A page that runs its scripts, with the receiver in it, as the built file
- * has it before the core runs. Libraries come as data blocks added later.
+ * has it before the core runs. Libraries come as data blocks added later,
+ * each followed by its arrival note (run as the file's own script).
  */
-function page() {
-  const dom = new JSDOM("<!doctype html><html><head></head><body></body></html>", { runScripts: "dangerously" });
-  withMarks(dom.window);
-  dom.window.eval(BOOT);
+function page(body = "") {
+  const dom = new JSDOM(`<!doctype html><html><head></head><body>${body}</body></html>`, { runScripts: "dangerously" });
   const { window } = dom;
+  withMarks(window);
+  installBoot(window);
   const idleTasks = [];
   const loader = new LibraryLoader(window.__grsmdBoot, window.document, { idle: (task) => idleTasks.push(task) });
   /** The data block of a library, then (by default) its arrival note. */
@@ -33,14 +37,21 @@ function page() {
     data.id = `${DATA_ID_PREFIX}${name}`;
     data.textContent = code;
     window.document.body.append(data);
-    if (arrive) window.__grsmdBoot.arrive(name);
+    if (arrive) runNote(name);
+    return data;
+  };
+  /** The note after the data block, as the build writes it. */
+  const runNote = (name) => {
+    const note = window.document.createElement("script");
+    note.textContent = arrivalNote(name);
+    window.document.body.append(note);
   };
   const runIdle = () => {
     const task = idleTasks.shift();
     if (task) task();
     return task !== undefined;
   };
-  return { window, loader, addData, runIdle, idleTasks };
+  return { window, loader, addData, runNote, runIdle, idleTasks };
 }
 
 const flush = async () => {
@@ -52,10 +63,11 @@ afterEach(() => {
 });
 
 describe("LibraryLoader (INV-81 (2), spec 5.17.2)", () => {
-  it("AT-FAST-01 the names and the data id are the build's (O2 order)", () => {
-    expect(LIBRARY_NAMES).toEqual(LAZY_LIBRARIES.map((l) => l.name));
+  it("AT-FAST-01 the names and the data id are one list for the loader and the build (O2 order)", () => {
+    expect(LAZY_LIBRARIES.map((l) => l.name)).toEqual(LIBRARY_NAMES);
     expect(LIBRARY_NAMES).toEqual(["mermaid", "hljs", "katex", "plantuml"]);
-    expect(DATA_ID_PREFIX).toBe(BUILD_DATA_ID_PREFIX);
+    expect(BUILD_DATA_ID_PREFIX).toBe(DATA_ID_PREFIX);
+    expect(DATA_ID_PREFIX).toBe("grsmd-lib-");
   });
 
   it("AT-FAST-02 data that arrived first: loadIfArrived runs it at once, once; its data block and script leave", () => {
@@ -67,40 +79,42 @@ describe("LibraryLoader (INV-81 (2), spec 5.17.2)", () => {
     expect(lib).toEqual({ name: "hljs", runs: 1 });
     expect(loader.loadIfArrived("hljs")).toBe(lib);
     expect(window.runs).toBe(1);
-    expect(window.document.getElementById(`${DATA_ID_PREFIX}hljs`)).toBeNull();
-    expect(window.document.querySelectorAll("script")).toHaveLength(0);
+    expect(window.document.querySelectorAll('script[type="text/plain"]')).toHaveLength(0);
   });
 
   it("AT-FAST-03 data not yet in: loadIfArrived is null and runs nothing; get() settles when it arrives", async () => {
-    const { window, loader, addData } = page();
+    const { window, loader, addData, runNote } = page();
     expect(loader.loadIfArrived("katex")).toBeNull();
+    expect(loader.hasFailed("katex")).toBe(false);
     const got = loader.get("katex");
     expect(loader.get("katex")).toBe(got); // the same promise
     // the data block is parsed but its arrival note has not run yet
     addData("katex", undefined, false);
     await flush();
     expect(window.runs).toBeUndefined();
-    window.__grsmdBoot.arrive("katex");
+    runNote("katex");
     await expect(got).resolves.toEqual({ name: "katex", runs: 1 });
     await loader.get("katex");
     expect(window.runs).toBe(1);
   });
 
-  it("AT-FAST-04 a library that does not hand itself over (blocked or failing): null, logged once, get() rejects", async () => {
+  it("AT-FAST-04 a library that does not hand itself over (blocked or failing): hasFailed, loadIfArrived throws (logged once), get() rejects", async () => {
     const { loader, addData } = page();
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     addData("mermaid", "/* provides nothing */");
-    expect(loader.loadIfArrived("mermaid")).toBeNull();
-    expect(loader.loadIfArrived("mermaid")).toBeNull();
+    expect(() => loader.loadIfArrived("mermaid")).toThrow(/mermaid did not run/);
+    expect(loader.hasFailed("mermaid")).toBe(true);
+    expect(() => loader.loadIfArrived("mermaid")).toThrow(/mermaid did not run/);
     expect(error).toHaveBeenCalledTimes(1);
     await expect(loader.get("mermaid")).rejects.toThrow(/mermaid did not run/);
   });
 
-  it("AT-FAST-05 an arrival without a data block fails the same way", async () => {
-    const { window, loader } = page();
+  it("AT-FAST-05 an arrival without its data block fails the same way", async () => {
+    const { loader, runNote } = page();
     vi.spyOn(console, "error").mockImplementation(() => {});
-    window.__grsmdBoot.arrive("plantuml");
+    runNote("plantuml"); // the element before the note is not the block
     await expect(loader.get("plantuml")).rejects.toThrow(/no data block for plantuml/);
+    expect(loader.hasFailed("plantuml")).toBe(true);
   });
 
   it("AT-FAST-06 a library the page provides (the dev server) is used as it is, with no data block", async () => {
@@ -153,13 +167,49 @@ describe("LibraryLoader (INV-81 (2), spec 5.17.2)", () => {
     while (runIdle()) await flush();
     expect(loaded).toEqual(["hljs", "katex", "plantuml"]);
   });
+
+  it("AT-FAST-44 (C1) a document's element with a data block's id never stands in: the real block runs, the element stays, nothing else runs", () => {
+    // a document shown in the preview before the libraries arrived; its
+    // text is a script the CSP would allow (an arrival note)
+    const doc =
+      '<div id="preview"><span id="grsmd-lib-katex">__grsmdBoot.arrive("hljs")</span>' +
+      '<script type="text/plain" id="grsmd-lib-mermaid">window.hijacked = true</script></div>';
+    const { window, loader, addData } = page(doc);
+    addData("katex");
+    addData("mermaid");
+    expect(loader.loadIfArrived("katex")).toEqual({ name: "katex", runs: 1 });
+    expect(loader.loadIfArrived("mermaid")).toEqual({ name: "mermaid", runs: 2 });
+    expect(window.hijacked).toBeUndefined();
+    expect([...window.__grsmdBoot.arrived].sort()).toEqual(["katex", "mermaid"]); // no "hljs"
+    expect(window.marks.filter((m) => m.startsWith("grsmd-arrived-"))).toEqual(["grsmd-arrived-katex", "grsmd-arrived-mermaid"]);
+    expect(window.document.querySelector("#preview span").textContent).toBe('__grsmdBoot.arrive("hljs")');
+    expect(window.document.querySelector("#preview script")).not.toBeNull();
+  });
+
+  it("AT-FAST-45 (C1) arrive() keeps only a text/plain script with the library's own id as its data block", () => {
+    const { window } = page();
+    const boot = window.__grsmdBoot;
+    const make = (tag, attrs) => {
+      const el = window.document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+      return el;
+    };
+    boot.arrive("hljs", make("span", { id: "grsmd-lib-hljs" }));
+    boot.arrive("katex", make("script", { id: "grsmd-lib-katex" })); // no type: it would run
+    boot.arrive("mermaid", make("script", { type: "text/plain", id: "grsmd-lib-hljs" })); // another's id
+    boot.arrive("plantuml", null);
+    expect(boot.data.size).toBe(0);
+    const real = make("script", { type: "text/plain", id: "grsmd-lib-plantuml" });
+    boot.arrive("plantuml", real);
+    expect(boot.data.get("plantuml")).toBe(real);
+  });
 });
 
 describe("boot.js, the receiver before the core (INV-81 (4))", () => {
   function receiver() {
     const dom = new JSDOM('<!doctype html><html><body><textarea id="editor"></textarea><input id="searchInput"></body></html>', { runScripts: "dangerously" });
     withMarks(dom.window);
-    dom.window.eval(BOOT);
+    installBoot(dom.window);
     return dom.window;
   }
   function drop(window, files, handle) {
@@ -237,7 +287,7 @@ describe("boot.js, the receiver before the core (INV-81 (4))", () => {
     const boot = window.__grsmdBoot;
     const told = [];
     boot.onArrive = (name) => told.push(name);
-    boot.arrive("hljs");
+    boot.arrive("hljs", null);
     boot.provide("hljs", { x: 1 });
     expect([...boot.arrived]).toEqual(["hljs"]);
     expect(told).toEqual(["hljs"]);

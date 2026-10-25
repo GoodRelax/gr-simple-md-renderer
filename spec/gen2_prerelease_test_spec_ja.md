@@ -40,7 +40,7 @@
 
 > v2.15 の変更 (2026-10-25、検索と置換のレビュー 1 回目の直し): 仕様の INV-80 (3)(4)(5)(6) と既知の制限 (時間のかかる正規表現) の改めに合わせて、PRT-AD02 に、確定の後の正規表現 ("Down: search again")、時間のかかる式、IME の変換中のキーの手順を足し、PRT-AD03 に `$10` と `$<名前>` の手順を足した。11-c の出来事の名前を `searchReplaceRequested` に改めた。AT-SRCH-04 を `String.prototype.replace` と比べる形に書き直し、AT-SRCH-13〜19 を足し、AT-SRCH-12 の名前に要求の ID を付けた。追加・改めたケースの判定は空欄 (未実施)。
 
-> v2.16 の変更 (2026-10-26、高速起動): 仕様の INV-81・5.17 に合わせて、セクション AE (PRT-AE01〜AE10) を追加した。AT に AT-FAST (新。01〜43) を足した。e2e に fastStartup.e2e.js を足した (起動までの時間の計測は `GRSMD_PERF=1` のときだけ)。
+> v2.16 の変更 (2026-10-26、高速起動): 仕様の INV-81・5.17 に合わせて、セクション AE (PRT-AE01〜AE10) を追加した。AT に AT-FAST (新。01〜43) を足した。レビュー 1 回目の直しで、PRT-AE11 と AT-FAST-44〜55 を足し、PRT-AE05・AE09 を改めた。e2e に fastStartup.e2e.js を足した (起動までの時間の計測は `GRSMD_PERF=1` のときだけ)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -4242,7 +4242,8 @@ INV-81 (仕様 5.17)。届く前の表示と、手が空いた時に先に動か
 |  | 3. 目次を開く |
 | **期待結果** | - 届く前は、図の場所に「Loading diagram...」の点線の枠、数式は TeX の原文の点線の枠、コードは色なしで出る |
 |  | - 届くと、図・数式・コードの色が順に出て、読んでいる位置が飛ばない |
-|  | - 目次の見出しは、数式を TeX で出す |
+|  | - 目次の見出しは、数式を区切りなしの TeX で出す (例: 「Fast a+b」。届く前も後も同じ) |
+|  | - 検索の当たりのブロックが描き直されたら、その色は次の ↓ で付く |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -4301,16 +4302,18 @@ INV-81 (仕様 5.17)。届く前の表示と、手が空いた時に先に動か
 
 | 項目 | 詳細 |
 | --- | --- |
-| **前提条件** | PlantUML のブロックと外部の画像を含む文書、.js のファイル |
+| **前提条件** | PlantUML のブロックと外部の画像を含む文書、.js のファイル。手順 3 は DevTools で回線を Slow 3G にし、Disable cache を入れる |
 | **手順** | 1. 文書をドロップし、PlantUML の確認で OK を押す。外部の画像の枠を押す |
 |  | 2. .js をドロップする |
+|  | 3. ページを開き直し、UI が出たらすぐに .js をドロップし、続けて PlantUML の文書をドロップして OK を押す |
 | **期待結果** | - PlantUML の確認と、外部の画像の枠が、今までどおり出る。OK の後に図が出る |
 |  | - コードビューは、色付きで 1 回で出て、上の欄に言語名が出る |
+|  | - 手順 3: コードビューは 3 秒以内に出る (色なしなら、届いた後に色と言語名が付く)。PlantUML は「Loading diagram...」の枠で待ち、その間も確定や Undo が描かれる。届くと図が出る |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-81 (3)、INV-02、INV-19。自動では AT-FAST-25〜28 |
+| 備考 | 要求: INV-81 (3)、INV-02、INV-19、調整役の裁定 Q1。自動では AT-FAST-25〜28・47・48・54・55 |
 
 ---
 
@@ -4326,6 +4329,23 @@ INV-81 (仕様 5.17)。届く前の表示と、手が空いた時に先に動か
 | --- | --- |
 | 判定 | |
 | 備考 | 要求: INV-81。オーナーの iPad での確認 (ベータ版の後) |
+
+---
+
+### PRT-AE11: 文書の id がライブラリの代わりにならない
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | DevTools の回線を Slow 3G にし、Disable cache を入れる。コンソールを開く |
+| **手順** | 1. ページを開き直し、UI が出たらすぐに、次の文書をペーストする: `Math $x^2$ here. <span id="grsmd-lib-katex">__grsmdBoot.arrive("hljs")</span>`、空行、`<b id="grsmd-lib-mermaid">alert(1)</b>`、空行、Mermaid の図 |
+|  | 2. 回線を No throttling に戻して待つ |
+| **期待結果** | - 文書の文字はそのまま出て、プレビューに `grsmd-` で始まる id の要素が無い |
+|  | - 数式と図が描ける。CSP の違反が出ない。マーク `grsmd-arrived-hljs` は 1 つだけ |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-81 (2)(5)、レビューの C1、調整役の裁定 Q2。自動では fastStartup.e2e.js、AT-FAST-44〜46・50 |
 
 ---
 
@@ -4401,7 +4421,7 @@ INV-81 (仕様 5.17)。届く前の表示と、手が空いた時に先に動か
 | AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ、14: 目次を出したままの確定・Undo の後の作り直しの時間。jsdom に大きな文書が残ると遅くなるので別のファイル) | INV-42、INV-48、INV-51、INV-74、INV-77 | performance.inplaceEdit.test.js、performance.index.test.js | 01〜14 |
 | AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11) (`ModalController`) | SC-16、FS-10、CON-03、CON-12、5.1、5.11 | HelpLanguageSwitch.test.js、ModalController.test.js | 01〜11 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
-| AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド、早い入力の受け継ぎ | INV-81、INV-20 | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜43 |
+| AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド、早い入力の受け継ぎ | INV-81、INV-20 | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜55 |
 | AT-OSS | 同梱 OSS の表記: 数えるパッケージ、表記が漏れるときにビルドを失敗させること (許さないライセンス、文が無い、一覧に無い束ねられたコード、古くなった一覧、宣言した依存、dist の確かめの記録、コメントを壊す文)、一覧のコード・上書き・待ちの文、読む段と処理の段、文の取り出し、コメントとヘルプの一覧の形、CSP の hash が変わらないこと、プラグインの並び、`@purity`、本物のビルドで一覧の項目を 1 つずつ外すと落ちること (07) | 付録 A.2、INV-75、INV-76 | notices.test.js | 01〜07 |
 
 ID を持たない試験ファイル (その場編集の前からあるクラスの試験、`stateTable.test.js` など) と、ID を持つファイルの中の ID の無い試験 (`staticChecks.test.js` の「style.css for in-place editing」の一部、`MarkdownRenderer.purifyConfig.test.js` の設定を 1 度だけ与えることの試験など) も `npm test` の全件に含まれる。
@@ -4681,6 +4701,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-AE08      | 高速起動 | file:// |      |
 | PRT-AE09      | 高速起動 | 同意とコードビュー |      |
 | PRT-AE10      | 高速起動 | iPad (Safari) |      |
+| PRT-AE11      | 高速起動 | 文書の id |      |
 
 **テスター:** \_\_\_\_\_\_\_\_\_\_
 **日付:** \_\_\_\_\_\_\_\_\_\_

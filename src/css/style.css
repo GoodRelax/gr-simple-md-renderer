@@ -1613,9 +1613,11 @@ body.dark.edit-mode #preview > .md-block-empty.md-block-editing {
   }
 }
 
-/* Before a library has run (INV-81): a Mermaid box says it is loading, and
-   a formula shows its TeX source (owner ruling 2026-10-25) */
-.mermaid.mermaid-loading {
+/* Before a library has run (INV-81): a Mermaid box (and a PlantUML box
+   after the consent) says it is loading, and a formula shows its TeX source
+   (owner ruling 2026-10-25) */
+.mermaid.mermaid-loading,
+.plantuml-loading {
   border: 2px dashed #868e96;
   padding: 12px;
   border-radius: 4px;
@@ -1647,6 +1649,7 @@ div.math-pending {
 
 @media screen {
   .dark .mermaid.mermaid-loading,
+  .dark .plantuml-loading,
   .dark .math-pending {
     background-color: #151b23;
     color: #9198a1;

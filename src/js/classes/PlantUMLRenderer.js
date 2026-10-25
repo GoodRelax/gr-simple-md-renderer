@@ -17,6 +17,12 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     // Placeholders created here -> { code, theme }. A user-written
     // .plantuml-pending element is not in this map and never sends (INV-23).
     this._pending = new WeakMap();
+    // Boxes waiting for the encoder after the consent (INV-81 (3)) -> { code, theme }
+    this._loading = new WeakMap();
+    this._encoderWait = null; // the promise of the encoder being awaited
+    // The answer of the last full render's dialog (true / false), or null:
+    // it asked nothing (INV-81 (3), "repeat")
+    this._answer = null;
   }
 
   /**
@@ -24,17 +30,23 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * mode "consent" (full render): one confirm, then send (INV-02).
    * mode "placeholder" (partial render after an edit): send nothing and show
    * a pending box with a [Render] button instead (INV-23).
+   * mode "repeat" (blocks drawn again because KaTeX ran, no one acted): the
+   * answer of the last full render's dialog, without asking again; the
+   * placeholder when it asked nothing (INV-81 (3)).
+   * Before the encoder has run, the blocks sent show "Loading diagram..."
+   * and are drawn when it comes; the render does not wait for it (INV-81 (3)).
    * @param {string} theme
    * @param {ParentNode|ParentNode[]} [root]
-   * @param {"consent"|"placeholder"} [mode]
+   * @param {"consent"|"placeholder"|"repeat"} [mode]
    * @purity non-pure
    */
   async render(theme, root = this.preview, mode = "consent") {
     try {
+      if (mode === "consent") this._answer = null;
       const blocks = queryAllIn(root, "code.language-plantuml, code.language-puml");
       if (blocks.length === 0) return;
 
-      if (mode === "placeholder") {
+      if (mode === "placeholder" || (mode === "repeat" && this._answer === null)) {
         /** @purity non-pure */
         blocks.forEach((block) => {
           replaceCodeBlock(block, this.createPendingElement(block.textContent, theme));
@@ -42,7 +54,8 @@ export default class PlantUMLRenderer extends DiagramRenderer {
         return;
       }
 
-      const permitted = this.askConsent();
+      const permitted = mode === "repeat" ? this._answer : this.askConsent();
+      this._answer = permitted;
 
       if (!permitted) {
         /** @purity non-pure */
@@ -55,7 +68,12 @@ export default class PlantUMLRenderer extends DiagramRenderer {
         return;
       }
 
-      await this._encoderReady();
+      if (!this.encoder && this.loadEncoder) {
+        // not awaited: the render queue goes on (edits, Undo, other documents)
+        for (const block of blocks) replaceCodeBlock(block, this._loadingBox(block.textContent, theme));
+        this._drawWhenEncoded();
+        return;
+      }
       const promises = [];
       /** @purity non-pure */
       blocks.forEach((block) => {
@@ -79,16 +97,82 @@ export default class PlantUMLRenderer extends DiagramRenderer {
 
   /**
    * The encoder, once it has run; a failure to load is logged, and the
-   * encoding then fails as an encoding error.
+   * encoding then fails as an encoding error. One wait at a time.
+   * @returns {Promise<void>}
    * @purity non-pure
    */
-  async _encoderReady() {
-    if (this.encoder || !this.loadEncoder) return;
-    try {
-      this.encoder = await this.loadEncoder();
-    } catch (error) {
-      console.error("PlantUML encoder could not be loaded:", error);
+  _encoderReady() {
+    if (this.encoder || !this.loadEncoder) return Promise.resolve();
+    if (!this._encoderWait) {
+      /** @purity non-pure */
+      this._encoderWait = this.loadEncoder().then(
+        /** @purity non-pure */
+        (encoder) => {
+          this.encoder = encoder;
+        },
+        /** @purity non-pure */
+        (error) => {
+          console.error("PlantUML encoder could not be loaded:", error);
+        },
+      ).finally(
+        /** @purity non-pure */
+        () => {
+          this._encoderWait = null;
+        },
+      );
     }
+    return this._encoderWait;
+  }
+
+  /**
+   * A box for a block that was allowed to be sent and waits for the
+   * encoder: "Loading diagram..." as a Mermaid box says.
+   * @param {string} code
+   * @param {string} theme
+   * @returns {HTMLDivElement}
+   * @purity non-pure
+   */
+  _loadingBox(code, theme) {
+    const box = document.createElement("div");
+    box.className = "plantuml-loading";
+    box.textContent = CONFIG.messages.diagram.loading;
+    this._loading.set(box, { code, theme });
+    return box;
+  }
+
+  /**
+   * When the encoder has come, the loading boxes still shown are drawn.
+   * @purity non-pure
+   */
+  _drawWhenEncoded() {
+    /** @purity non-pure */
+    this._encoderReady().then(() => {
+      for (const box of this.preview.querySelectorAll(".plantuml-loading")) {
+        if (this._loading.has(box)) this._drawLoading(box);
+      }
+    });
+  }
+
+  /**
+   * Send one loading box's diagram (its consent was given).
+   * @param {HTMLElement} box
+   * @returns {Promise<boolean>}
+   * @purity non-pure
+   */
+  _drawLoading(box) {
+    const entry = this._loading.get(box);
+    this._loading.delete(box);
+    if (!entry || !box.isConnected) return Promise.resolve(false);
+    let img;
+    try {
+      img = this.createImage(this.applyTheme(entry.code, entry.theme));
+    } catch (error) {
+      console.error("PlantUML encoding error:", error);
+      box.replaceWith(this.createErrorElement(CONFIG.messages.plantuml.encodingFailed));
+      return Promise.resolve(false);
+    }
+    box.replaceWith(this.createWrapper(img));
+    return this.waitForImageLoad(img, CONFIG.plantuml.imageLoadTimeout);
   }
 
   /**
@@ -136,28 +220,10 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     if (!entry || !placeholder.isConnected) return Promise.resolve(false);
     if (!this.askConsent()) return Promise.resolve(false);
     this._pending.delete(placeholder);
-    if (!this.encoder) return this._encoderReady().then(() => this._sendPending(placeholder, entry, theme));
-    return this._sendPending(placeholder, entry, theme);
-  }
-
-  /**
-   * @param {HTMLElement} placeholder
-   * @param {{code: string, theme: string}} entry
-   * @param {string} [theme]
-   * @returns {Promise<boolean>}
-   * @purity non-pure
-   */
-  _sendPending(placeholder, entry, theme) {
-    let img;
-    try {
-      img = this.createImage(this.applyTheme(entry.code, theme ?? entry.theme));
-    } catch (error) {
-      console.error("PlantUML encoding error:", error);
-      placeholder.replaceWith(this.createErrorElement(CONFIG.messages.plantuml.encodingFailed));
-      return Promise.resolve(false);
-    }
-    placeholder.replaceWith(this.createWrapper(img));
-    return this.waitForImageLoad(img, CONFIG.plantuml.imageLoadTimeout);
+    const box = this._loadingBox(entry.code, theme ?? entry.theme);
+    placeholder.replaceWith(box);
+    if (this.encoder || !this.loadEncoder) return this._drawLoading(box);
+    return this._encoderReady().then(() => this._drawLoading(box));
   }
 
   /**

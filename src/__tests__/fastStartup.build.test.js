@@ -11,6 +11,7 @@ import { contentSecurityPolicy, scriptElementsOf, hasExternalImport } from "../.
 import {
   LAZY_LIBRARIES,
   DATA_ID_PREFIX,
+  arrivalNote,
   endsAtItsEndTag,
   escapeScriptData,
   classicCore,
@@ -65,12 +66,12 @@ describe("the startup layout (INV-81 (1), spec 5.17.1)", () => {
       at("<script>window.__grsmdBoot={}</script>"),
       at('<script>(()=>{"use strict";'),
       at(`<script type="text/plain" id="${DATA_ID_PREFIX}mermaid">`),
-      at('<script>__grsmdBoot.arrive("mermaid")</script>'),
+      at(`<script>${arrivalNote("mermaid")}</script>`),
       at(`id="${DATA_ID_PREFIX}hljs"`),
       at(`id="${DATA_ID_PREFIX}katex"`),
       at("<style>@font-face{font-family:K"),
       at(`id="${DATA_ID_PREFIX}plantuml"`),
-      at('<script>__grsmdBoot.arrive("plantuml")</script>'),
+      at(`<script>${arrivalNote("plantuml")}</script>`),
       at("</body>"),
     ];
     expect([...order].sort((a, b) => a - b)).toEqual(order);
@@ -84,6 +85,17 @@ describe("the startup layout (INV-81 (1), spec 5.17.1)", () => {
     expect(() => layoutForFastStartup("<html><body></body></html>", PARTS)).toThrow(/unexpected layout/);
     const scriptInBody = SINGLEFILE.replace('<script type="module" crossorigin>', "</head><body><script type=\"module\">");
     expect(() => layoutForFastStartup(scriptInBody, PARTS)).toThrow();
+  });
+
+  it("AT-FAST-46 (C1) the arrival note hands over the element right before it (the data block), by reference", () => {
+    expect(arrivalNote("katex")).toBe('__grsmdBoot.arrive("katex",document.currentScript.previousElementSibling)');
+    const html = layoutForFastStartup(SINGLEFILE, PARTS);
+    for (const { name } of LAZY_LIBRARIES) {
+      const data = html.indexOf(`<script type="text/plain" id="${DATA_ID_PREFIX}${name}">`);
+      const end = html.indexOf("</script>", data) + "</script>".length;
+      // only white space between the block and its note: the note's previous element is the block
+      expect(html.slice(end).startsWith(`\n<script>${arrivalNote(name)}</script>`), name).toBe(true);
+    }
   });
 
   it("AT-FAST-31 the core runs as a classic script in strict mode; import.meta fails the build", () => {
@@ -187,7 +199,7 @@ describe("AT-FAST-39 the real build (INV-81)", () => {
     const coreEnd = html.indexOf("</script>", html.indexOf('<script>(()=>{"use strict";')) + 9;
     expect(coreEnd).toBeLessThan(html.indexOf(`id="${DATA_ID_PREFIX}mermaid"`));
     // the third-party notices (a long comment) come after everything
-    expect(html.indexOf("THIRD-PARTY SOFTWARE NOTICES")).toBeGreaterThan(html.indexOf('__grsmdBoot.arrive("plantuml")'));
+    expect(html.indexOf("THIRD-PARTY SOFTWARE NOTICES")).toBeGreaterThan(html.indexOf(arrivalNote("plantuml")));
     const usable = gzipSync(html.slice(0, coreEnd)).length;
     console.log(`fast_startup_usable_prefix_gzip=${usable} total_gzip=${viteGzip}`);
     // the libraries are not in the core: what comes before them is a small part

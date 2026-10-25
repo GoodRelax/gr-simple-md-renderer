@@ -7,6 +7,7 @@
 
 import { placeSidePanels } from "../sidePanels.js";
 import { nextFrame, cancelFrame } from "../utils.js";
+import { MATH_PENDING_CLASS } from "../lazyMath.js";
 
 /** A heading's tag (h1 to h6), read on the children of a block the renderer made (a user-written .md-block is never a direct child of #preview). */
 const HEADING_TAG = /^H[1-6]$/;
@@ -15,7 +16,8 @@ const JUMP_MARGIN_PX = 8;
 
 /**
  * The text of a heading for the index: math as its TeX source (KaTeX keeps
- * it in the annotation), everything else as plain text.
+ * it in the annotation; a formula still waiting for KaTeX keeps the same in
+ * data-tex, INV-81 (3)), everything else as plain text.
  * @purity semi-pure-a
  * @param {HTMLElement} heading
  * @returns {string}
@@ -24,6 +26,9 @@ function headingText(heading) {
   const copy = heading.cloneNode(true);
   for (const math of copy.querySelectorAll(".katex")) {
     math.replaceWith(math.querySelector("annotation")?.textContent ?? "");
+  }
+  for (const math of copy.querySelectorAll(`.${MATH_PENDING_CLASS}[data-tex]`)) {
+    math.replaceWith(math.dataset.tex);
   }
   return copy.textContent.replace(/\s+/g, " ").trim();
 }

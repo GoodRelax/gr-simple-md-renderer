@@ -10,24 +10,37 @@
 //   5 the core, a classic script (the module code in a strict function)
 //   6 mermaid, 7 highlight.js, 8 KaTeX: each a data block
 //     <script type="text/plain" id="grsmd-lib-NAME"> and a one-line script
-//     that says it has arrived
+//     that says it has arrived and hands the block over by reference (the
+//     loader never looks it up by id: a document's id could stand in)
 //   9 <style>: the KaTeX @font-face rules (fonts as data URIs)
 //  10 the PlantUML encoder, as 6 to 8
 // The functions here are pure; vite.config.js runs them on the build output.
 
-/** The on-demand libraries in the order they are put in the file (O2). */
-export const LAZY_LIBRARIES = Object.freeze([
-  Object.freeze({ name: "mermaid", entry: "src/js/lazy/mermaid.js", sharesDompurify: true }),
-  Object.freeze({ name: "hljs", entry: "src/js/lazy/hljs.js", sharesDompurify: false }),
-  Object.freeze({ name: "katex", entry: "src/js/lazy/katex.js", sharesDompurify: false }),
-  Object.freeze({ name: "plantuml", entry: "src/js/lazy/plantuml.js", sharesDompurify: false }),
-]);
+import { DATA_ID_PREFIX, LIBRARY_NAMES } from "../src/js/libraryNames.js";
+
+export { DATA_ID_PREFIX };
+
+/**
+ * The on-demand libraries in the order they are put in the file (O2), with
+ * their entries (src/js/lazy/NAME.js). mermaid's "dompurify" is the core's.
+ */
+export const LAZY_LIBRARIES = Object.freeze(
+  LIBRARY_NAMES.map((name) => Object.freeze({ name, entry: `src/js/lazy/${name}.js`, sharesDompurify: name === "mermaid" })),
+);
 
 /** The KaTeX fonts come right after this library. */
 export const FONTS_AFTER = "katex";
 
-/** The id of a library's data block (LibraryLoader's DATA_ID_PREFIX). */
-export const DATA_ID_PREFIX = "grsmd-lib-";
+/**
+ * The script after a library's data block: the data is all in, and here it
+ * is (the element right before the script, made by the parser).
+ * @purity pure
+ * @param {string} name
+ * @returns {string}
+ */
+export function arrivalNote(name) {
+  return `__grsmdBoot.arrive(${JSON.stringify(name)},document.currentScript.previousElementSibling)`;
+}
 
 /**
  * Whether the HTML parser ends a script element whose text is this at the
@@ -151,7 +164,7 @@ export function layoutForFastStartup(html, { boot, libraries }) {
   for (const { name, code } of libraries) {
     tail.push(
       `<script type="text/plain" id="${DATA_ID_PREFIX}${name}">${escapeScriptData(code, name)}</script>`,
-      `<script>__grsmdBoot.arrive("${name}")</script>`,
+      `<script>${arrivalNote(name)}</script>`,
     );
     if (name === FONTS_AFTER) tail.push(`<style>${fonts}</style>`);
   }

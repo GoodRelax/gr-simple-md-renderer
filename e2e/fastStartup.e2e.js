@@ -61,6 +61,15 @@ test("INV-81 (3): before the libraries arrive, TeX, plain code and a Loading box
   expect(await markAt(page, "grsmd-arrived-mermaid")).toBeNull();
   await renderMarkdown(page, RICH);
   const preview = page.locator("#preview");
+  // the Index lists the heading's math as TeX, as it will after KaTeX (INV-77)
+  await page.locator("#indexBtn").click();
+  await expect(page.locator("#indexPanel")).toHaveText("Fast a+b");
+  await page.locator("#indexBtn").click();
+  // a search hit in the heading's block (drawn again when KaTeX comes)
+  await page.keyboard.press("f");
+  await page.locator("#searchInput").fill("Fast");
+  await page.locator("#searchNext").click();
+  await expect(preview.locator(".search-hit")).toContainText("Fast");
   await expect(preview.locator(".mermaid.mermaid-loading")).toHaveText("Loading diagram...");
   await expect(preview.locator(".math-pending").first()).toBeVisible();
   await expect(preview.locator(".math-pending").first()).toHaveText("$a+b$");
@@ -71,9 +80,48 @@ test("INV-81 (3): before the libraries arrive, TeX, plain code and a Loading box
   await expect(preview.locator(".katex")).toHaveCount(2, { timeout: 30000 });
   await expect(preview.locator("code .hljs-keyword").first()).toBeVisible({ timeout: 30000 });
   await expect(preview.locator(".math-pending, .mermaid-loading")).toHaveCount(0);
-  // the Index lists the heading with its math as TeX
+  // the hit's block was drawn again: its mark comes with the next move (spec 5.17.3)
+  await expect(preview.locator(".search-hit")).toHaveCount(0);
+  await page.locator("#searchNext").click();
+  await expect(preview.locator(".search-hit")).toContainText("Fast");
+  await page.locator("#searchClose").click();
   await page.locator("#indexBtn").click();
-  await expect(page.locator("#indexPanel")).toContainText("Fast a+b");
+  await expect(page.locator("#indexPanel")).toHaveText("Fast a+b");
+});
+
+test("INV-81 (5) (review C1): a document's element with a library's data id never runs or stands in for the library", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "network throttling (CDP) is Chromium only");
+  test.setTimeout(60000);
+  const cdp = await throttle(page, 0.3, 100);
+  await page.goto("/", { waitUntil: "commit" });
+  await page.waitForFunction(() => performance.getEntriesByName("grsmd-core-ready").length > 0);
+  expect(await markAt(page, "grsmd-arrived-katex")).toBeNull();
+  await renderMarkdown(
+    page,
+    [
+      'Math $x^2$ here. <span id="grsmd-lib-katex">__grsmdBoot.arrive("hljs")</span>',
+      "",
+      '<b id="grsmd-lib-mermaid">alert(1)</b>',
+      "",
+      "```mermaid",
+      "flowchart LR",
+      "  A --> B",
+      "```",
+      "",
+    ].join("\n"),
+  );
+  const preview = page.locator("#preview");
+  await expect(preview.locator(".math-pending")).toHaveCount(1);
+  // the document's ids are dropped when sanitized; its text stays
+  await expect(preview.locator('[id^="grsmd-"]')).toHaveCount(0);
+  await expect(preview).toContainText('__grsmdBoot.arrive("hljs")');
+  await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  await expect(preview.locator(".katex")).toHaveCount(1, { timeout: 30000 });
+  await expect(preview.locator(".mermaid svg")).toHaveCount(1, { timeout: 30000 });
+  await expect(preview).toContainText("alert(1)");
+  // hljs arrived once (its own note), not from the document's text
+  expect(await page.evaluate(() => performance.getEntriesByName("grsmd-arrived-hljs").length)).toBe(1);
+  // the fixtures fail the test on any CSP violation or console error
 });
 
 test("INV-81 (4): a file dropped before the core runs does not leave the page, and opens when the core runs (PRT-AE06)", async ({ page, browserName }) => {

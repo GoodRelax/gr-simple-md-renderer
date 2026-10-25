@@ -125,7 +125,7 @@ export function fastStartup() {
     },
     async buildStart() {
       coreModules.length = 0;
-      const boot = await buildIife(projectDir, "src/js/boot.js", false);
+      const boot = await buildIife(projectDir, "src/js/bootScript.js", false);
       const libraries = [];
       lazyModules = [];
       for (const { name, entry, sharesDompurify } of LAZY_LIBRARIES) {

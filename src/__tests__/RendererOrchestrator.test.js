@@ -167,7 +167,8 @@ describe("RendererOrchestrator", () => {
 
       await orchestrator.reloadCodeView("light");
 
-      expect(sourceFileRenderer.reload).toHaveBeenCalledWith("light");
+      // the second argument tells whether this code view is still the one to show (INV-81 (3))
+      expect(sourceFileRenderer.reload).toHaveBeenCalledWith("light", expect.any(Function));
       expect(sourceFileRenderer.reload).toHaveBeenCalledOnce();
     });
 

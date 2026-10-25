@@ -257,6 +257,7 @@ export const CONFIG = {
     toastDurationMs: 3000,
     reloadUnavailableMsg: "Reload works only in Chrome and Edge.",
     reloadNoFileMsg: "No file to reload. Drop a file first.",
+    highlightWaitMs: 3000, // the code view waits this long for highlight.js, then shows the code plain (INV-81 (3))
   },
   // In-place Markdown editing (SC-22 to SC-24)
   edit: {
@@ -425,7 +426,6 @@ export const BINARY_EXTENSIONS = new Set([
   ".db", ".sqlite", ".sqlite3",
 ]);
 
-// FileSystemFileHandle availability check (CON-01)
-export const FILE_SYSTEM_HANDLE_SUPPORTED =
-  typeof DataTransferItem !== "undefined" &&
-  typeof DataTransferItem.prototype.getAsFileSystemHandle === "function";
+// FileSystemFileHandle availability check (CON-01): the receiver before the
+// core uses it too (earlyInput.js)
+export { FILE_SYSTEM_HANDLE_SUPPORTED } from "./earlyInput.js";

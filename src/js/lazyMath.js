@@ -2,7 +2,9 @@
 // the math ($...$, $$...$$) as it always does, so the tokens, the blocks and
 // the edit model are the same with or without KaTeX; only drawing waits.
 // Until KaTeX has run, a formula is shown as its TeX source in a pending
-// box (owner ruling 2026-10-25), and the renderer draws it again later.
+// box (owner ruling 2026-10-25), and the renderer draws it again later. The
+// box keeps the formula's TeX (no delimiters) in data-tex, as KaTeX keeps it
+// in its annotation, for the Index (INV-77).
 
 import { escapeHtml } from "./utils.js";
 
@@ -15,11 +17,11 @@ export const MATH_PENDING_CLASS = "math-pending";
  * @param {Function} markedKatex - marked-katex-extension
  * @param {object} options - KaTeX options, as for markedKatex
  * @param {object|null} [katex] - KaTeX, when it is there from the start
- * @returns {{extension: object, useKatex: Function, isReady: Function, takePending: Function}}
+ * @returns {{extension: object, useKatex: Function, isReady: Function, pendingCount: Function}}
  */
 export function lazyMath(markedKatex, options, katex = null) {
   let current = katex;
-  let pending = false;
+  let pending = 0;
   const extension = markedKatex(options);
   for (const ext of extension.extensions) {
     const block = ext.level === "block";
@@ -27,9 +29,9 @@ export function lazyMath(markedKatex, options, katex = null) {
     /** @purity non-pure */
     ext.renderer = (token) => {
       if (current) return current.renderToString(token.text, { ...options, displayMode: token.displayMode }) + (block ? "\n" : "");
-      pending = true;
+      pending++;
       const tag = block ? "div" : "span";
-      return `<${tag} class="${MATH_PENDING_CLASS}">${escapeHtml(token.raw.trim())}</${tag}>${block ? "\n" : ""}`;
+      return `<${tag} class="${MATH_PENDING_CLASS}" data-tex="${escapeHtml(token.text)}">${escapeHtml(token.raw.trim())}</${tag}>${block ? "\n" : ""}`;
     };
   }
   return {
@@ -49,14 +51,13 @@ export function lazyMath(markedKatex, options, katex = null) {
       return current !== null;
     },
     /**
-     * Whether a formula was drawn pending since the last call.
-     * @returns {boolean}
-     * @purity non-pure
+     * How many formulas have been drawn pending so far (it only grows): a
+     * caller compares it before and after making HTML.
+     * @returns {number}
+     * @purity semi-pure-b
      */
-    takePending() {
-      const was = pending;
-      pending = false;
-      return was;
+    pendingCount() {
+      return pending;
     },
   };
 }

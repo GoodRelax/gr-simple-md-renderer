@@ -1,36 +1,57 @@
-// The receiver that runs before the core (INV-81 (4)). The build puts it
-// right after the markup, as a classic script, so it runs while the rest of
-// the file is still arriving. It defines the one global the core and the
-// on-demand libraries share, window.__grsmdBoot:
-//   arrive(name)       - the script after a library's data block: the data is all in
+// The receiver that runs before the core (INV-81 (4)). The build makes an
+// IIFE of src/js/bootScript.js and puts it right after the markup, as a
+// classic script, so it runs while the rest of the file is still arriving.
+// It defines the one global the core and the on-demand libraries share,
+// window.__grsmdBoot:
+//   arrive(name, data) - the script after a library's data block: the data is
+//                        all in; data is that block, kept by reference (5)
 //   provide(name, lib) - a library's own script, when it runs
 //   shared             - what the core lends the libraries (DOMPurify for mermaid)
 //   takeEarlyInput()   - the core takes the last drop or paste made before it ran
 // Until the core takes over, a drop never makes the browser open the file
 // (leaving the page), and the last file dropped or text pasted is kept in
 // memory only, for the core to use as if it came now. Nothing is stored.
-/** @purity non-pure */
-(() => {
-  /**
-   * @purity semi-pure-a
-   * @param {EventTarget|null} target
-   * @returns {boolean}
-   */
-  const isOtherField = (target) =>
-    (target?.tagName === "TEXTAREA" || target?.tagName === "INPUT") && target.id !== "editor";
+// The rules are the core's own (earlyInput.js).
 
+import { FILE_SYSTEM_HANDLE_SUPPORTED, dropHandlePromise, isOtherField, pasteStartsDocument } from "./earlyInput.js";
+import { DATA_ID_PREFIX } from "./libraryNames.js";
+
+/**
+ * Whether an element is the data block of the library: a parser-made
+ * <script type="text/plain"> with the library's id. The note that calls
+ * arrive() comes right after it in the file.
+ * @purity semi-pure-a
+ * @param {Element|null} data
+ * @param {string} name
+ * @returns {boolean}
+ */
+function isDataBlock(data, name) {
+  return data?.tagName === "SCRIPT" && data.type === "text/plain" && data.id === `${DATA_ID_PREFIX}${name}`;
+}
+
+/**
+ * Put window.__grsmdBoot in place and receive drops and pastes until the
+ * core takes over.
+ * @purity non-pure
+ * @param {Window} win
+ */
+export function installBoot(win) {
+  const doc = win.document;
   const boot = {
     arrived: new Set(),
+    data: new Map(), // name -> its data block (by reference: a document's id never stands in, INV-81 (5))
     provided: new Map(),
     shared: {},
     onArrive: null,
     early: null,
     /**
      * @param {string} name
+     * @param {Element|null} data - the element right before the note
      * @purity non-pure
      */
-    arrive(name) {
-      performance.mark(`grsmd-arrived-${name}`);
+    arrive(name, data) {
+      if (isDataBlock(data, name)) boot.data.set(name, data);
+      win.performance.mark(`grsmd-arrived-${name}`);
       boot.arrived.add(name);
       if (boot.onArrive) boot.onArrive(name);
     },
@@ -48,9 +69,9 @@
      * @purity non-pure
      */
     takeEarlyInput() {
-      document.removeEventListener("dragover", onDragOver);
-      document.removeEventListener("drop", onDrop);
-      document.removeEventListener("paste", onPaste);
+      doc.removeEventListener("dragover", onDragOver);
+      doc.removeEventListener("drop", onDrop);
+      doc.removeEventListener("paste", onPaste);
       const early = boot.early;
       boot.early = null;
       return early;
@@ -66,7 +87,6 @@
   }
 
   /**
-   * The handle is asked for at once, inside the event (CON-01).
    * @param {DragEvent} e
    * @purity non-pure
    */
@@ -74,32 +94,25 @@
     e.preventDefault();
     const file = e.dataTransfer?.files?.[0];
     if (!file) return;
-    const item = e.dataTransfer.items?.[0];
-    const handlePromise =
-      typeof item?.getAsFileSystemHandle === "function"
-        ? Promise.resolve(item.getAsFileSystemHandle()).catch(() => null)
-        : null;
+    const handlePromise = dropHandlePromise(e.dataTransfer.items?.[0], FILE_SYSTEM_HANDLE_SUPPORTED);
     boot.early = { kind: "drop", file, handlePromise };
   }
 
   /**
-   * A paste into the empty top editor (or the page) starts a document once
-   * the core runs, as it would then.
    * @param {ClipboardEvent} e
    * @purity non-pure
    */
   function onPaste(e) {
-    if (isOtherField(e.target)) return;
-    const editor = document.getElementById("editor");
-    if (editor && editor.value.trim() !== "") return;
+    const editor = doc.getElementById("editor");
+    if (isOtherField(e.target, editor)) return;
     const text = e.clipboardData?.getData("text/plain") ?? "";
-    if (!text.trim()) return;
+    if (!pasteStartsDocument(editor?.value ?? "", text)) return;
     e.preventDefault();
     boot.early = { kind: "paste", text };
   }
 
-  document.addEventListener("dragover", onDragOver);
-  document.addEventListener("drop", onDrop);
-  document.addEventListener("paste", onPaste);
-  window.__grsmdBoot = boot;
-})();
+  doc.addEventListener("dragover", onDragOver);
+  doc.addEventListener("drop", onDrop);
+  doc.addEventListener("paste", onPaste);
+  win.__grsmdBoot = boot;
+}

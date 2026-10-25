@@ -137,7 +137,13 @@ export default class RendererOrchestrator {
     const names = new Set([...this.markdownRenderer.takeMissingLibraries(), ...this.mermaidRenderer.takeMissingLibraries()]);
     for (const name of names) {
       this._missingLibraries.add(name);
-      const library = this.libraries.loadIfArrived(name);
+      let library;
+      try {
+        library = this.libraries.loadIfArrived(name);
+      } catch {
+        this._libraryFailed(name); // it never will: say so now (M3)
+        continue;
+      }
       if (library) redrawn = (await this._useLibrary(name, library, step)) || redrawn;
       else this._useWhenArrived(name);
     }
@@ -145,6 +151,7 @@ export default class RendererOrchestrator {
   }
 
   /**
+   * Draw again when the library arrives (one wait per library at a time).
    * @param {string} name
    * @purity non-pure
    */
@@ -153,13 +160,28 @@ export default class RendererOrchestrator {
     this._awaitedLibraries.add(name);
     this.libraries.get(name).then(
       /** @purity non-pure */
-      (library) => this.libraryLoaded(name, library),
+      (library) => {
+        this._awaitedLibraries.delete(name);
+        this.libraryLoaded(name, library);
+      },
       /** @purity non-pure */
-      (error) => {
-        console.error(`Library ${name} could not be loaded:`, error);
-        if (name === "mermaid") this.mermaidRenderer.showLoadFailed();
+      () => {
+        this._awaitedLibraries.delete(name);
+        this._libraryFailed(name);
       },
     );
+  }
+
+  /**
+   * A library could not run (LibraryLoader logged why): what waits for it
+   * says so where it can. mermaid's boxes say so; the math stays TeX and
+   * the code plain.
+   * @param {string} name
+   * @purity non-pure
+   */
+  _libraryFailed(name) {
+    this._missingLibraries.delete(name);
+    if (name === "mermaid") this.mermaidRenderer.showLoadFailed();
   }
 
   /**
@@ -176,7 +198,14 @@ export default class RendererOrchestrator {
     for (const renderer of [this.markdownRenderer, this.mermaidRenderer, this.plantumlRenderer, this.sourceFileRenderer]) {
       renderer.useLibrary?.(name, library);
     }
-    if (!this._missingLibraries.delete(name) || !this._renderedModel) return false;
+    if (!this._missingLibraries.delete(name)) return false;
+    if (name === "hljs" && this._viewState === "code") {
+      // the code view was shown plain after its wait (spec 5.17.3): colored now
+      const metadata = this.sourceFileRenderer.recolor();
+      if (metadata) this._modelChangedListener?.onCodeViewRecolored?.(metadata);
+      return false;
+    }
+    if (!this._renderedModel) return false;
     if (name === "hljs") this.markdownRenderer.highlightPending();
     if (name === "mermaid") await this.mermaidRenderer.renderLoading(this.state.currentTheme);
     if (name !== "katex") return false;
@@ -186,8 +215,9 @@ export default class RendererOrchestrator {
 
   /**
    * The blocks that show a formula as TeX are drawn again (KaTeX has run).
-   * Their diagrams are drawn here unless the full render draws them next;
-   * outside a render the place being read stays where it is.
+   * Their diagrams are drawn here unless the full render draws them next.
+   * Outside a render (no one acted) their PlantUML gets the answer the full
+   * render got (no new dialog), and the place being read stays where it is.
    * @param {"full"|"partial"|"loaded"} step
    * @purity non-pure
    */
@@ -199,7 +229,7 @@ export default class RendererOrchestrator {
     const theme = this.state.currentTheme;
     await this.mermaidRenderer.render(theme, replaced);
     await this._settleLibraries("partial");
-    await this.plantumlRenderer.render(theme, replaced, "placeholder");
+    await this.plantumlRenderer.render(theme, replaced, step === "loaded" ? "repeat" : "placeholder");
     if (!place) return;
     await waitForDOMStability(this.preview);
     this.scrollManager.restoreReadingAnchor(place);
@@ -302,10 +332,11 @@ export default class RendererOrchestrator {
   /**
    * Load a non-.md file into code view.
    * Forces dark theme on first load (FR-06).
-   * Returns CodeViewMeta for UIController to display in #fileInfo.
+   * Returns CodeViewMeta for UIController to display in #fileInfo, or null
+   * when another document was opened meanwhile (nothing was shown).
    * @param {File} file
    * @param {FileSystemFileHandle|null} fileHandle
-   * @returns {Promise<CodeViewMeta>}
+   * @returns {Promise<CodeViewMeta|null>}
    * @purity non-pure
    */
   async renderCodeView(file, fileHandle) {
@@ -317,8 +348,35 @@ export default class RendererOrchestrator {
       file,
       fileHandle,
       CONFIG.codeView.defaultTheme,
+      this._codeViewIsCurrent(),
     );
+    this._settleCodeView();
     return metadata;
+  }
+
+  /**
+   * Whether the code view asked for now is still the one to show: another
+   * file or a Markdown document opened while it read or waited (INV-81 (3),
+   * M1) makes it stale.
+   * @returns {Function} () => boolean
+   * @purity semi-pure-b
+   */
+  _codeViewIsCurrent() {
+    const generation = this._generation;
+    return () => generation === this._generation && this._viewState === "code";
+  }
+
+  /**
+   * The code view was shown plain (highlight.js did not come within its
+   * wait): it is colored when highlight.js arrives.
+   * @purity non-pure
+   */
+  _settleCodeView() {
+    if (!this.libraries) return;
+    for (const name of this.sourceFileRenderer.takeMissingLibraries?.() ?? []) {
+      this._missingLibraries.add(name);
+      this._useWhenArrived(name);
+    }
   }
 
   /**
@@ -362,13 +420,16 @@ export default class RendererOrchestrator {
 
   /**
    * Facade: reload the current code view with a new theme (Sect 5.8).
-   * Returns CodeViewMeta for UIController to update #fileInfo.
+   * Returns CodeViewMeta for UIController to update #fileInfo; null when
+   * there is no file to reload, or another document was opened meanwhile.
    * @param {'light'|'dark'} theme
    * @returns {Promise<CodeViewMeta|null>}
    * @purity non-pure
    */
   async reloadCodeView(theme) {
-    return await this.sourceFileRenderer.reload(theme);
+    const metadata = await this.sourceFileRenderer.reload(theme, this._codeViewIsCurrent());
+    this._settleCodeView();
+    return metadata;
   }
 
   /**
