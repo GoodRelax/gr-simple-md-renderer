@@ -6,7 +6,10 @@ import { test, expect, renderMarkdown, settled } from "./fixtures.js";
 // jump made while the diagrams are still drawn stays (INV-78): the full
 // render used to put the view back where it was when the render began.
 
-test.beforeEach(() => test.slow());
+test.beforeEach(async ({ page }) => {
+  test.slow();
+  await page.goto("/");
+});
 
 function sections(count) {
   const parts = ["# Index test", ""];
@@ -14,7 +17,8 @@ function sections(count) {
   return parts.join("\n");
 }
 
-const DIAGRAMS = Array.from({ length: 6 }, (_, i) => `\`\`\`mermaid\nflowchart TD\n  A${i} --> B${i}\n  B${i} --> C${i}\n\`\`\`\n`).join("\n");
+const DIAGRAM_COUNT = 40;
+const DIAGRAMS = Array.from({ length: DIAGRAM_COUNT }, (_, i) => `\`\`\`mermaid\nflowchart TD\n  A${i} --> B${i}\n  B${i} --> C${i}\n\`\`\`\n`).join("\n");
 
 /** The heading's top below the top of the preview, in CSS px. */
 async function headingTop(page, text) {
@@ -61,12 +65,40 @@ test("shows the headings over the preview, scrolls by itself, jumps and stays op
 
 test("a jump made while the diagrams are drawn is kept (INV-78)", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
-  await renderMarkdown(page, `${DIAGRAMS}\n${sections(40)}`);
-  // at once, before the diagrams and the full render are done
-  await page.locator("#indexBtn").click();
-  await page.locator("#indexPanel").getByRole("button", { name: "Section 30", exact: true }).click();
+  // The press comes the moment the headings are in the preview, before any
+  // diagram is drawn (a MutationObserver callback runs before the render
+  // goes on to Mermaid); a press from Playwright arrives after the render
+  // has ended, too late for the case. The diagrams are below the target, so
+  // their growth cannot move it (WebKit has no scroll anchoring). The press
+  // is what the browser sends for a click (pointerdown first).
+  const drawnAtPress = await page.evaluate(
+    (markdown) =>
+      new Promise((resolve) => {
+        const preview = document.querySelector("#preview");
+        const observer = new MutationObserver(() => {
+          const target = [...preview.querySelectorAll("h2")].find((h) => h.textContent === "Section 30");
+          if (!target) return;
+          observer.disconnect();
+          document.querySelector("#indexBtn").click();
+          const entry = [...document.querySelectorAll("#indexPanel .index-entry")].find((e) => e.textContent === "Section 30");
+          entry.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "mouse", button: 0 }));
+          entry.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerType: "mouse", button: 0 }));
+          entry.click();
+          resolve(preview.querySelectorAll(".mermaid > svg").length);
+        });
+        observer.observe(preview, { childList: true });
+        const editor = document.querySelector("#editor");
+        editor.value = markdown;
+        editor.dispatchEvent(new Event("input", { bubbles: true }));
+        document.querySelector("#renderLight").click();
+      }),
+    `${sections(40)}
+${DIAGRAMS}`,
+  );
+  expect(drawnAtPress, "the press came before the diagrams were drawn").toBe(0);
   await settled(page);
-  expect(Math.abs((await headingTop(page, "Section 30")) - 8)).toBeLessThanOrEqual(40);
+  await expect(page.locator("#preview .mermaid > svg")).toHaveCount(DIAGRAM_COUNT);
+  expect(Math.abs((await headingTop(page, "Section 30")) - 8)).toBeLessThanOrEqual(1);
 });
 
 test("Esc closes the palette first and the Index last; a block edit is applied by the press", async ({ page }) => {
