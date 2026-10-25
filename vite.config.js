@@ -382,69 +382,6 @@ export const contentSecurityPolicy = {
   },
 };
 
-// The beta build (INV-82; npm run build:beta, mode "beta"): the production
-// file with only its robots meta set to "noindex", written as
-// docs/grsmd-beta.html instead of docs/index.html (owner's decision
-// 2026-10-25; no BETA mark and the same help, owner's ruling 2026-10-26).
-// It runs last, after the CSP: the scripts, so the CSP, stay byte for byte
-// those of production. In any other mode Vite leaves the plugin out, so the
-// production file cannot change.
-export const BETA_MODE = "beta";
-export const BETA_FILE = "grsmd-beta.html";
-export const PRODUCTION_ROBOTS = '<meta name="robots" content="index, follow" />';
-export const BETA_ROBOTS = '<meta name="robots" content="noindex" />';
-const ROBOTS_META = /<meta\s+name\s*=\s*["']?robots\b[^>]*>/gi;
-
-/**
- * @param {string} html  the production file, after the CSP
- * @returns {string}  the beta file
- * @purity pure
- */
-export function betaHtmlOf(html) {
-  const robots = html.match(ROBOTS_META) ?? [];
-  if (robots.length !== 1 || robots[0] !== PRODUCTION_ROBOTS) {
-    throw new Error(`the beta needs exactly one ${PRODUCTION_ROBOTS}, found ${robots.length}: ${robots.join(" ")}`);
-  }
-  const beta = html.replace(PRODUCTION_ROBOTS, () => BETA_ROBOTS);
-  if (JSON.stringify(scriptElementsOf(beta)) !== JSON.stringify(scriptElementsOf(html))) {
-    throw new Error("the beta must not change a script (the CSP would differ)");
-  }
-  return beta;
-}
-
-export const betaChannel = {
-  name: "beta-channel",
-  /**
-   * @param {object} _config
-   * @param {{command: string, mode: string}} env
-   * @returns {boolean}
-   * @purity pure
-   */
-  apply: (_config, env) => env.command === "build" && env.mode === BETA_MODE,
-  enforce: "post",
-  /**
-   * @param {object} _options
-   * @param {object} bundle
-   * @purity non-pure
-   */
-  generateBundle(_options, bundle) {
-    const page = bundle["index.html"];
-    const htmlFiles = Object.values(bundle).filter((file) => file.fileName.endsWith(".html"));
-    if (page?.type !== "asset" || htmlFiles.length !== 1) {
-      this.error(`the beta build expects one index.html, found: ${htmlFiles.map((file) => file.fileName).join(", ")}`);
-    }
-    let source;
-    try {
-      source = betaHtmlOf(String(page.source));
-    } catch (error) {
-      this.error(`index.html: ${error.message}`);
-    }
-    // only the beta file is written: docs/index.html is never touched
-    delete bundle["index.html"];
-    this.emitFile({ type: "asset", fileName: BETA_FILE, source });
-  },
-};
-
 const onDemand = fastStartup();
 
 export default defineConfig({
@@ -470,7 +407,6 @@ export default defineConfig({
     noExternalImports,
     thirdPartyNotices({ moreModules: onDemand.lazyModules }),
     contentSecurityPolicy,
-    betaChannel,
   ],
   test: {
     environment: "jsdom",

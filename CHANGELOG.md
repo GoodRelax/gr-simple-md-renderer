@@ -164,13 +164,14 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   tag and GitHub release commands. A test keeps `package.json`,
   `package-lock.json`, this file and `README.md` on the same version.
 
-- A beta build: `npm run build:beta` writes `docs/grsmd-beta.html`, the
-  same file as `docs/index.html` except that it asks search engines not to
-  index it (`<meta name="robots" content="noindex" />`). That robots meta is
-  the only difference (owner's ruling 2026-10-26): no BETA mark, and the same
-  help, Content-Security-Policy and scripts. `docs/index.html` is not
-  touched. It lets the next release be tried on a device without a
-  local server (for example an iPad), at
+- A beta build: `npm run build:beta` makes the production build (into
+  `output/beta/`) and writes `docs/grsmd-beta.html` from it: the same file
+  as `docs/index.html` except that it asks search engines not to index it
+  (`<meta name="robots" content="noindex" />`). That robots meta is the only
+  difference (owner's ruling 2026-10-26): no BETA mark, and the same help,
+  Content-Security-Policy and scripts. `docs/index.html` is not touched. It
+  lets the next release be tried on a device without a local server (for
+  example an iPad), at
   https://goodrelax.github.io/gr-simple-md-renderer/grsmd-beta.html once it
   is placed on `main`.
 

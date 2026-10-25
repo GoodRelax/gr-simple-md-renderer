@@ -6,11 +6,11 @@
     "dev": "vite",
     "build": "vite build",
     "build:release": "vite build --mode release",
-    "build:beta": "vite build --mode beta",
+    "build:beta": "vite build --outDir ../output/beta --emptyOutDir && node tools/buildBeta.mjs output/beta/index.html docs/grsmd-beta.html",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:e2e": "vite build --outDir ../output/e2e --emptyOutDir && vite build --mode beta --outDir ../output/e2e",
+    "build:e2e": "vite build --outDir ../output/e2e --emptyOutDir && node tools/buildBeta.mjs output/e2e/index.html output/e2e/grsmd-beta.html",
     "test:e2e": "npm run build:e2e && playwright test",
     "test:e2e:firefox": "npm run build:e2e && playwright test --config playwright.firefox.config.js"
   },

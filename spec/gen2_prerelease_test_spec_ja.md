@@ -42,7 +42,7 @@
 
 > v2.16 の変更 (2026-10-26、高速起動): 仕様の INV-81・5.17 に合わせて、セクション AE (PRT-AE01〜AE10) を追加した。AT に AT-FAST (新。01〜43) を足した。レビュー 1 回目の直しで、PRT-AE11 と AT-FAST-44〜55 を足し、PRT-AE05・AE09 を改めた。2 回目の直しで、PRT-AE12 と AT-FAST-56・57 を足し、届く前を見る e2e を 3 つのブラウザで流すようにした。e2e に fastStartup.e2e.js を足した (起動までの時間の計測は `GRSMD_PERF=1` のときだけ)。
 
-> v2.17 の変更 (2026-10-26、ベータ版のビルド): 仕様の INV-82・5.18 に合わせて、セクション AF (PRT-AF01〜AF03) を追加した。AT に AT-BETA (新。01〜07) を足した。e2e に beta.e2e.js を足した (`npm run build:e2e` がベータ版も作る)。
+> v2.17 の変更 (2026-10-26、ベータ版のビルド): 仕様の INV-82・5.18 に合わせて、セクション AF (PRT-AF01〜AF03) を追加した。AT に AT-BETA (新。01〜07) を足した。e2e に beta.e2e.js を足した (`npm run build:e2e` がベータ版も作る)。 レビュー 1 回目の直しで、ベータ版を本番のビルドの出力から作る形 (`tools/buildBeta.mjs`) に改め、AT-BETA を 01〜08 に改めた (03・04・05・08 は新しい作りの試験)。beta.e2e.js の試験の名前に INV-82・PRT-AF の ID を付けた。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -4502,7 +4502,7 @@ INV-82 (仕様 5.18)。ベータ版は、本番と同じビルドの robots の 
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
 | AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド、早い入力の受け継ぎ | INV-81、INV-20 | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜57 |
 | AT-OSS | 同梱 OSS の表記: 数えるパッケージ、表記が漏れるときにビルドを失敗させること (許さないライセンス、文が無い、一覧に無い束ねられたコード、古くなった一覧、宣言した依存、dist の確かめの記録、コメントを壊す文)、一覧のコード・上書き・待ちの文、読む段と処理の段、文の取り出し、コメントとヘルプの一覧の形、CSP の hash が変わらないこと、プラグインの並び、`@purity`、本物のビルドで一覧の項目を 1 つずつ外すと落ちること (07) | 付録 A.2、INV-75、INV-76 | notices.test.js | 01〜07 |
-| AT-BETA | ベータ版のビルド: robots の meta だけを変えること、script を変えないこと、プラグインを使うのは mode `beta` のビルドだけ、`grsmd-beta.html` だけを書くこと、scripts、実際の本番とベータ版のビルドの比べ (`index.html` 役のファイルが残る) | INV-82、INV-20 | betaBuild.test.js | 01〜07 |
+| AT-BETA | ベータ版のビルド: robots の meta だけを変えること (違う行が 1 行だけ、script が同じ)、robots の meta を属性の順・大文字小文字にかかわらず数えて 1 つでなければ失敗すること (レビューの L1)、ベータ版だけの mode とプラグインが無いこと (scripts)、`writeBeta` と CLI (書く先の名前、失敗の終了コード)、`build` と `build:beta` を流した実際のビルドの比べ (`docs/index.html` 役のファイルが残る)、コードが mode を読んでも script と CSP が本番と同じこと (レビューの M1 の再現) | INV-82、INV-20 | betaBuild.test.js | 01〜08 |
 
 ID を持たない試験ファイル (その場編集の前からあるクラスの試験、`stateTable.test.js` など) と、ID を持つファイルの中の ID の無い試験 (`staticChecks.test.js` の「style.css for in-place editing」の一部、`MarkdownRenderer.purifyConfig.test.js` の設定を 1 度だけ与えることの試験など) も `npm test` の全件に含まれる。
 

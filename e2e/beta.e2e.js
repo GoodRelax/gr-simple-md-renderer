@@ -1,8 +1,9 @@
 import { test, expect, renderMarkdown, settled } from "./fixtures.js";
 
-// The beta build (INV-82): grsmd-beta.html next to index.html (npm run
-// build:e2e builds both). It differs from production only in its robots meta
-// ("noindex"); it has no BETA mark and the same help (owner's ruling
+// The beta build (INV-82, spec 5.18): grsmd-beta.html next to index.html.
+// npm run build:e2e makes it from that index.html with tools/buildBeta.mjs,
+// as npm run build:beta does. It differs from production only in its robots
+// meta ("noindex"); it has no BETA mark and the same help (owner's ruling
 // 2026-10-26), and it runs the same as production under the same CSP. Every
 // test also checks (fixtures) that no request leaves for an external host and
 // that nothing is logged as an error or a CSP violation.
@@ -40,14 +41,14 @@ async function allLibrariesRan(page) {
   );
 }
 
-test("the beta file is the production file with noindex, byte for byte otherwise", async ({ request }) => {
+test("INV-82, PRT-AF01: the beta file is the production file with noindex, byte for byte otherwise", async ({ request }) => {
   const production = await (await request.get("/")).text();
   const beta = await (await request.get(BETA)).text();
   expect(production.split(PRODUCTION_ROBOTS)).toHaveLength(2);
   expect(beta).toBe(production.replace(PRODUCTION_ROBOTS, BETA_ROBOTS));
 });
 
-test("the beta has noindex, the production CSP and help, and no BETA mark", async ({ page }) => {
+test("INV-82 (4), PRT-AF02: the beta has noindex, the production CSP and help, and no BETA mark", async ({ page }) => {
   await page.goto("/");
   const productionCsp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute("content");
   const productionVersion = await page.locator("#helpModal .help-body[lang='en'] .help-version").textContent();
@@ -67,7 +68,7 @@ test("the beta has noindex, the production CSP and help, and no BETA mark", asyn
   await allLibrariesRan(page);
 });
 
-test("the beta renders Markdown, math, code and Mermaid as production does", async ({ page }) => {
+test("INV-82, PRT-AF02: the beta renders Markdown, math, code and Mermaid as production does", async ({ page }) => {
   const renderedHtml = async (path) => {
     await page.goto(path);
     await allLibrariesRan(page);
