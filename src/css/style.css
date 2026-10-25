@@ -1613,6 +1613,50 @@ body.dark.edit-mode #preview > .md-block-empty.md-block-editing {
   }
 }
 
+/* Before a library has run (INV-81): a Mermaid box (and a PlantUML box
+   after the consent) says it is loading, and a formula shows its TeX source
+   (owner ruling 2026-10-25) */
+.mermaid.mermaid-loading,
+.plantuml-loading {
+  border: 2px dashed #868e96;
+  padding: 12px;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  color: #495057;
+  font-family: monospace;
+  font-size: 13px;
+  cursor: default;
+}
+
+/* nothing to copy yet: the bar keeps its room and shows once it is drawn */
+.diagram-copy-bar:has(+ .mermaid-loading) {
+  visibility: hidden;
+}
+
+.math-pending {
+  border: 1px dashed #868e96;
+  border-radius: 3px;
+  padding: 0 3px;
+  color: #495057;
+  font-family: monospace;
+}
+
+div.math-pending {
+  margin: 8px 0;
+  padding: 8px 12px;
+  white-space: pre-wrap;
+}
+
+@media screen {
+  .dark .mermaid.mermaid-loading,
+  .dark .plantuml-loading,
+  .dark .math-pending {
+    background-color: #151b23;
+    color: #9198a1;
+    border-color: #656c76;
+  }
+}
+
 /* Edit palette (spec 5.15.1, colors 5.15.2) */
 .edit-palette {
   position: fixed;

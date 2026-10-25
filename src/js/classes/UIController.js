@@ -5,6 +5,7 @@ import ModalController from "./ModalController.js";
 import BlockEditController from "./BlockEditController.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
 import ClipboardLink from "./ClipboardLink.js";
+import { dropHandlePromise, isOtherField, pasteStartsDocument } from "../earlyInput.js";
 
 /**
  * An Undo or Redo of the browser's editing history.
@@ -484,15 +485,9 @@ export default class UIController {
     document.addEventListener("drop", async (e) => {
       e.preventDefault();
 
-      const item = e.dataTransfer.items?.[0];
-
-      // CON-01: call synchronously before any await
-      // a handle that cannot be had is no handle; caught here, at once, so
-      // that the awaits before it is used leave no rejection unhandled
-      const handlePromise =
-        FILE_SYSTEM_HANDLE_SUPPORTED && typeof item?.getAsFileSystemHandle === "function"
-          ? Promise.resolve(item.getAsFileSystemHandle()).catch(() => null)
-          : null;
+      // CON-01: call synchronously before any await (the same rule as
+      // before the core ran, earlyInput.js)
+      const handlePromise = dropHandlePromise(e.dataTransfer.items?.[0], FILE_SYSTEM_HANDLE_SUPPORTED);
 
       const file = e.dataTransfer.files[0];
       if (!file) return;
@@ -563,8 +558,38 @@ export default class UIController {
       this._resetToInitial();
       return;
     }
+    // another document was opened while it read or waited for highlight.js
+    // (INV-81 (3)): that one is shown
+    if (!metadata) return;
     this.setViewMode("code", metadata);
     this.showKeyHint("code");
+  }
+
+  /**
+   * The last drop or paste made before the core ran (INV-81 (4), boot.js):
+   * handled as if it came now, with the same rules (earlyInput.js; the file
+   * handle was asked for inside the drop, CON-01).
+   * @param {{kind: "drop", file: File, handlePromise: Promise|null}|{kind: "paste", text: string}} early
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  async receiveEarlyInput(early) {
+    if (early.kind === "drop") {
+      await this._handleDroppedFile(early.file, early.handlePromise);
+      return;
+    }
+    if (!this.orchestrator.isPreRenderState() || !pasteStartsDocument(this.elements.editor.value, early.text)) return;
+    await this._startPastedDocument(early.text, systemTheme());
+  }
+
+  /**
+   * ModelChangedPort: the code view shown plain was colored when
+   * highlight.js came (INV-81 (3)); its language is shown now.
+   * @param {CodeViewMeta} metadata
+   * @purity non-pure
+   */
+  onCodeViewRecolored(metadata) {
+    if (this.elements.fileInfo) this.elements.fileInfo.textContent = this._formatFileInfo(metadata);
   }
 
   /**
@@ -574,19 +599,11 @@ export default class UIController {
   setupAutoRenderOnPaste() {
     /** @purity non-pure */
     document.addEventListener("paste", async (e) => {
-      const target = e.target;
-      const isOtherInput =
-        (target.tagName === "TEXTAREA" || target.tagName === "INPUT") &&
-        target !== this.elements.editor;
-      if (isOtherInput) return;
-      // Only auto-render from initial state with empty editor
-      if (
-        !this.orchestrator.isPreRenderState() ||
-        this.elements.editor.value.trim() !== ""
-      )
-        return;
+      if (isOtherField(e.target, this.elements.editor)) return;
+      // Only auto-render from initial state with empty editor (earlyInput.js)
+      if (!this.orchestrator.isPreRenderState()) return;
       const raw = e.clipboardData.getData("text/plain");
-      if (!raw || !raw.trim()) return;
+      if (!pasteStartsDocument(this.elements.editor.value, raw)) return;
       e.preventDefault();
       await this._startPastedDocument(raw, systemTheme());
     });

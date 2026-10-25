@@ -614,6 +614,7 @@ describe("AT-OSS-07 the real bundle: the lists cover it, and taking out any rule
   beforeAll(async () => {
     const outDir = mkdtempSync(join(tmpdir(), "grsmd-notices-"));
     const modules = [];
+    let fastStartup = null;
     try {
       await build({
         configFile: join(root, "vite.config.js"),
@@ -622,9 +623,16 @@ describe("AT-OSS-07 the real bundle: the lists cover it, and taking out any rule
         plugins: [
           {
             name: "collect-modules",
+            configResolved(config) {
+              // the on-demand libraries are built apart (INV-81); their modules are in the file too
+              fastStartup = config.plugins.find((p) => p.name === "fast-startup");
+            },
             renderChunk(_code, chunk) {
               for (const [id, info] of Object.entries(chunk.modules)) modules.push({ id, renderedLength: info.renderedLength });
               return null;
+            },
+            generateBundle() {
+              modules.push(...fastStartup.lazyModules());
             },
           },
         ],

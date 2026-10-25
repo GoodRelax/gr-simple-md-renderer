@@ -67,6 +67,7 @@ export default class RendererOrchestrator {
    * @param {ScrollMemento} scrollManager
    * @param {HTMLElement} preview
    * @param {SourceFileRenderer} sourceFileRenderer
+   * @param {LibraryLoader|null} [libraries] - the libraries that run on demand (INV-81); null: the renderers have them
    * @purity non-pure
    */
   constructor(
@@ -77,6 +78,7 @@ export default class RendererOrchestrator {
     scrollManager,
     preview,
     sourceFileRenderer,
+    libraries = null,
   ) {
     this.state = state;
     this.markdownRenderer = markdownRenderer;
@@ -99,6 +101,138 @@ export default class RendererOrchestrator {
     this._modelChangedListener = null;
     this._heldBlockId = null; // block with an open editor: its wrapper is kept (Q-d1)
     this._lexer = (src) => this.markdownRenderer.lex(src);
+    this.libraries = libraries;
+    this._missingLibraries = new Set(); // what the screen shows without (drawn again when it runs)
+    this._awaitedLibraries = new Set(); // asked for: drawn again when they arrive
+  }
+
+  // ---- Libraries that run on demand (INV-81, spec 5.17) ----
+
+  /**
+   * A library has run outside a render (the idle preload): the renderers
+   * use it, and what was drawn without it is drawn again, in the queue.
+   * @param {string} name
+   * @param {object} library
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  libraryLoaded(name, library) {
+    return this._enqueue(() => this._useLibrary(name, library, "loaded"));
+  }
+
+  /**
+   * After a render step: a library it needed runs now when its data is in
+   * the page, and the blocks are drawn again before the next frame (no
+   * frame shows them without it); a library still on its way draws them
+   * again when it arrives. step: "full" (the full render draws the
+   * diagrams of the whole preview next) or "partial". Resolves true when
+   * blocks were drawn again (a block passed to it may have left the page).
+   * @param {"full"|"partial"} step
+   * @returns {Promise<boolean>}
+   * @purity non-pure
+   */
+  async _settleLibraries(step) {
+    if (!this.libraries) return false;
+    let redrawn = false;
+    const names = new Set([...this.markdownRenderer.takeMissingLibraries(), ...this.mermaidRenderer.takeMissingLibraries()]);
+    for (const name of names) {
+      this._missingLibraries.add(name);
+      let library;
+      try {
+        library = this.libraries.loadIfArrived(name);
+      } catch {
+        this._libraryFailed(name); // it never will: say so now (M3)
+        continue;
+      }
+      if (library) redrawn = (await this._useLibrary(name, library, step)) || redrawn;
+      else this._useWhenArrived(name);
+    }
+    return redrawn;
+  }
+
+  /**
+   * Draw again when the library arrives (one wait per library at a time).
+   * @param {string} name
+   * @purity non-pure
+   */
+  _useWhenArrived(name) {
+    if (this._awaitedLibraries.has(name)) return;
+    this._awaitedLibraries.add(name);
+    this.libraries.get(name).then(
+      /** @purity non-pure */
+      (library) => {
+        this._awaitedLibraries.delete(name);
+        this.libraryLoaded(name, library);
+      },
+      /** @purity non-pure */
+      () => {
+        this._awaitedLibraries.delete(name);
+        this._libraryFailed(name);
+      },
+    );
+  }
+
+  /**
+   * A library could not run (LibraryLoader logged why): what waits for it
+   * says so where it can. mermaid's boxes say so; the math stays TeX and
+   * the code plain.
+   * @param {string} name
+   * @purity non-pure
+   */
+  _libraryFailed(name) {
+    this._missingLibraries.delete(name);
+    if (name === "mermaid") this.mermaidRenderer.showLoadFailed();
+  }
+
+  /**
+   * Give a library to the renderers; draw again what was drawn without it.
+   * step: "full" or "partial" inside a render (which puts the view back by
+   * itself), "loaded" outside one.
+   * @param {string} name
+   * @param {object} library
+   * @param {"full"|"partial"|"loaded"} step
+   * @returns {Promise<boolean>} true when blocks were replaced (the math)
+   * @purity non-pure
+   */
+  async _useLibrary(name, library, step) {
+    for (const renderer of [this.markdownRenderer, this.mermaidRenderer, this.plantumlRenderer, this.sourceFileRenderer]) {
+      renderer.useLibrary?.(name, library);
+    }
+    if (!this._missingLibraries.delete(name)) return false;
+    if (name === "hljs" && this._viewState === "code") {
+      // the code view was shown plain after its wait (spec 5.17.3): colored now
+      const metadata = this.sourceFileRenderer.recolor();
+      if (metadata) this._modelChangedListener?.onCodeViewRecolored?.(metadata);
+      return false;
+    }
+    if (!this._renderedModel) return false;
+    if (name === "hljs") this.markdownRenderer.highlightPending();
+    if (name === "mermaid") await this.mermaidRenderer.renderLoading(this.state.currentTheme);
+    if (name !== "katex") return false;
+    await this._redrawMath(step);
+    return true;
+  }
+
+  /**
+   * The blocks that show a formula as TeX are drawn again (KaTeX has run).
+   * Their diagrams are drawn here unless the full render draws them next.
+   * Outside a render (no one acted) their PlantUML gets the answer the full
+   * render got (no new dialog), and the place being read stays where it is.
+   * @param {"full"|"partial"|"loaded"} step
+   * @purity non-pure
+   */
+  async _redrawMath(step) {
+    const model = this._renderedModel;
+    const place = step === "loaded" ? this.scrollManager.captureReadingAnchor() : null;
+    const replaced = this.markdownRenderer.replaceBlocks(model, model, this._heldBlockId);
+    if (replaced.length === 0 || step === "full") return;
+    const theme = this.state.currentTheme;
+    await this.mermaidRenderer.render(theme, replaced);
+    await this._settleLibraries("partial");
+    await this.plantumlRenderer.render(theme, replaced, step === "loaded" ? "repeat" : "placeholder");
+    if (!place) return;
+    await waitForDOMStability(this.preview);
+    this.scrollManager.restoreReadingAnchor(place);
   }
 
   // ---- State queries (CQS: pure queries, no side effects) ----
@@ -198,10 +332,11 @@ export default class RendererOrchestrator {
   /**
    * Load a non-.md file into code view.
    * Forces dark theme on first load (FR-06).
-   * Returns CodeViewMeta for UIController to display in #fileInfo.
+   * Returns CodeViewMeta for UIController to display in #fileInfo, or null
+   * when another document was opened meanwhile (nothing was shown).
    * @param {File} file
    * @param {FileSystemFileHandle|null} fileHandle
-   * @returns {Promise<CodeViewMeta>}
+   * @returns {Promise<CodeViewMeta|null>}
    * @purity non-pure
    */
   async renderCodeView(file, fileHandle) {
@@ -213,8 +348,35 @@ export default class RendererOrchestrator {
       file,
       fileHandle,
       CONFIG.codeView.defaultTheme,
+      this._codeViewIsCurrent(),
     );
+    this._settleCodeView();
     return metadata;
+  }
+
+  /**
+   * Whether the code view asked for now is still the one to show: another
+   * file or a Markdown document opened while it read or waited (INV-81 (3),
+   * M1) makes it stale.
+   * @returns {Function} () => boolean
+   * @purity semi-pure-b
+   */
+  _codeViewIsCurrent() {
+    const generation = this._generation;
+    return () => generation === this._generation && this._viewState === "code";
+  }
+
+  /**
+   * The code view was shown plain (highlight.js did not come within its
+   * wait): it is colored when highlight.js arrives.
+   * @purity non-pure
+   */
+  _settleCodeView() {
+    if (!this.libraries) return;
+    for (const name of this.sourceFileRenderer.takeMissingLibraries?.() ?? []) {
+      this._missingLibraries.add(name);
+      this._useWhenArrived(name);
+    }
   }
 
   /**
@@ -258,13 +420,16 @@ export default class RendererOrchestrator {
 
   /**
    * Facade: reload the current code view with a new theme (Sect 5.8).
-   * Returns CodeViewMeta for UIController to update #fileInfo.
+   * Returns CodeViewMeta for UIController to update #fileInfo; null when
+   * there is no file to reload, or another document was opened meanwhile.
    * @param {'light'|'dark'} theme
    * @returns {Promise<CodeViewMeta|null>}
    * @purity non-pure
    */
   async reloadCodeView(theme) {
-    return await this.sourceFileRenderer.reload(theme);
+    const metadata = await this.sourceFileRenderer.reload(theme, this._codeViewIsCurrent());
+    this._settleCodeView();
+    return metadata;
   }
 
   /**
@@ -745,7 +910,9 @@ export default class RendererOrchestrator {
     try {
       this.markdownRenderer.renderBlocks(model);
       this._renderedModel = model;
+      await this._settleLibraries("full");
       await this.mermaidRenderer.render(this.state.currentTheme);
+      await this._settleLibraries("full");
       await this.plantumlRenderer.render(this.state.currentTheme, this.preview, "consent");
       await waitForDOMStability(this.preview);
       const place = userMoves.place();
@@ -772,16 +939,20 @@ export default class RendererOrchestrator {
     const replaced = this.markdownRenderer.replaceBlocks(before, target, this._heldBlockId);
     measureCommit();
     this._renderedModel = target;
+    const redrawn = await this._settleLibraries("partial");
     // Nothing above the anchor block moved when it is the only block that
     // changed and the number of blocks is the same: its top is where it was,
     // so the correction can wait for the one after DOM stability (a
     // correction here forces a layout of the whole preview).
     if (!this._onlyAnchorChanged(before, target, replaced)) this._restoreAnchor(this._renderingAnchor, generation);
     try {
-      if (replaced.length > 0) {
+      // a block drawn again with its math (settled above) left the page
+      const shown = redrawn ? replaced.filter((el) => el.isConnected) : replaced;
+      if (shown.length > 0) {
         const theme = this.state.currentTheme;
-        await this.mermaidRenderer.render(theme, replaced);
-        await this.plantumlRenderer.render(theme, replaced, "placeholder");
+        await this.mermaidRenderer.render(theme, shown);
+        await this._settleLibraries("partial");
+        await this.plantumlRenderer.render(theme, shown, "placeholder");
       }
       await waitForDOMStability(this.preview);
       // Read again: an editor opened meanwhile may have retargeted it.

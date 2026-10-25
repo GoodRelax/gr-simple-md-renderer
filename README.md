@@ -102,13 +102,13 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
 - **Edits are not stored in the browser either.** They live only in the open page until you save them to a file.
 - **Clipboard.** The "Paste copied link" button reads the clipboard only when you press it, so the browser may ask you to allow it. In Chrome and Edge, once you allow it, other pages on goodrelax.github.io can also read your clipboard without asking. To withdraw it, open the site settings for goodrelax.github.io (the icon at the left of the address bar) and set Clipboard to Ask or Block. Pasting a URL onto selected text with Ctrl+V / Cmd+V makes a link without any permission. Nothing read from the clipboard is sent anywhere.
 - **HTML in Markdown is sanitized** with DOMPurify. Scripts and event handlers are removed. Other remote references (video, audio, CSS `url()`, `<style>`) are removed.
-- **Content-Security-Policy:** the built file only runs its own script, and network access is limited to the PlantUML server.
+- **Content-Security-Policy:** the built file only runs its own scripts (each allowed by its hash, the libraries that run on demand included), and network access is limited to the PlantUML server.
 
 ---
 
 ## Development
 
-The source lives in `src/` (multiple files). Vite and vite-plugin-singlefile build it into one file, `docs/index.html`, which GitHub Pages serves.
+The source lives in `src/` (multiple files). Vite and vite-plugin-singlefile build it into one file, `docs/index.html`, which GitHub Pages serves. For a fast start, the file puts the app first; mermaid, highlight.js, KaTeX and the PlantUML encoder are built apart and placed after it, to run on demand (`tools/fastStartup.mjs`, spec 5.17).
 
 ```bash
 npm ci
@@ -267,13 +267,13 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 - **編集内容もブラウザに保存しません。** ファイルに保存するまでは、開いているページの中にだけあります。
 - **クリップボード。** 「リンクを貼る」（Paste copied link）のボタンは、押したときだけクリップボードを読むので、ブラウザが許可を求めることがあります。Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。選んだ文字に URL を Ctrl+V / Cmd+V で貼ってリンクにする方法には、許可が要りません。クリップボードから読んだものは、どこにも送りません。
 - **Markdown 内の HTML は DOMPurify でサニタイズ**します。スクリプトとイベント属性を除去し、その他の外部参照（動画・音声・CSS の `url()`・`<style>`）も除去します。
-- **Content-Security-Policy:** ビルド成果物は自身のスクリプトしか実行せず、通信先も PlantUML サーバーだけに制限しています。
+- **Content-Security-Policy:** ビルド成果物は自身のスクリプト (要るときに動かすライブラリも含め、それぞれハッシュで許したもの) しか実行せず、通信先も PlantUML サーバーだけに制限しています。
 
 ---
 
 ## 開発
 
-ソースは `src/`（複数ファイル）にあります。Vite と vite-plugin-singlefile で 1 ファイルの `docs/index.html` にビルドし、GitHub Pages で配信します。
+ソースは `src/`（複数ファイル）にあります。Vite と vite-plugin-singlefile で 1 ファイルの `docs/index.html` にビルドし、GitHub Pages で配信します。起動を速くするため、ファイルの先頭にアプリを置き、mermaid・highlight.js・KaTeX・PlantUML のエンコーダーは別にまとめて後ろに置き、要るときに動かします (`tools/fastStartup.mjs`、仕様 5.17)。
 
 ```bash
 npm ci

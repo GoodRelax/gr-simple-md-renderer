@@ -8,6 +8,12 @@ import { test as base, expect } from "@playwright/test";
  * - externalRequests: every request whose origin is not the local test
  *   server is aborted before it leaves the browser and recorded here. Nothing
  *   is ever sent to a real external host. At teardown the list must be empty.
+ * - extraOrigins: the one opening in that guard, and a narrow one. A test
+ *   that serves the page itself from a server it started on the loopback
+ *   interface (pausedServer.js) lets that server through with
+ *   extraOrigins.allow(origin). Only "http://127.0.0.1:<port>" is accepted
+ *   (anything else throws), and the list is made new for each test (test
+ *   scope), so an origin one test allows is never let through in another.
  * - pageProblems: console errors, uncaught page errors and CSP violations
  *   (securitypolicyviolation events) seen during the test. At teardown the
  *   list must be empty.
@@ -19,14 +25,25 @@ import { test as base, expect } from "@playwright/test";
 export const test = base.extend({
   allowExternalRequests: [false, { option: true }],
   allowPageProblems: [false, { option: true }],
+  extraOrigins: async ({}, use) => {
+    const allowed = new Set();
+    await use({
+      allow(origin) {
+        if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(origin)) throw new Error(`only a loopback server of this test may be let through: ${origin}`);
+        allowed.add(origin);
+      },
+      has: (origin) => allowed.has(origin),
+    });
+  },
 
   externalRequests: [
-    async ({ context, baseURL, allowExternalRequests }, use) => {
+    async ({ context, baseURL, allowExternalRequests, extraOrigins }, use) => {
       const localOrigin = new URL(baseURL).origin;
       const blocked = [];
       await context.route("**/*", (route) => {
         const url = route.request().url();
-        if (new URL(url).origin === localOrigin) return route.continue();
+        const origin = new URL(url).origin;
+        if (origin === localOrigin || extraOrigins.has(origin)) return route.continue();
         blocked.push(url);
         return route.abort("blockedbyclient");
       });

@@ -1,6 +1,7 @@
 import { escapeHtml } from "../utils.js";
 import { CONFIG } from "../config.js";
 import ExternalImageGate from "./ExternalImageGate.js";
+import { APP_ID_PREFIX } from "../libraryNames.js";
 
 // DOMPurify defaults, plus the MathML wrappers KaTeX emits:
 // <semantics><mrow>...</mrow><annotation encoding="application/x-tex">TeX</annotation></semantics>.
@@ -38,9 +39,10 @@ export default class MarkdownRenderer {
   /**
    * @param {HTMLElement} preview
    * @param {object} marked
-   * @param {object} hljs
+   * @param {object|null} hljs - null until highlight.js has run (useLibrary, INV-81)
    * @param {object} purify - DOMPurify (marked has no built-in sanitizer)
    * @param {ExternalImageGate} [imageGate]
+   * @param {object|null} [math] - the lazyMath of marked's math extension, when KaTeX runs on demand
    * @purity non-pure
    */
   constructor(
@@ -49,10 +51,20 @@ export default class MarkdownRenderer {
     hljs,
     purify,
     imageGate = new ExternalImageGate(preview),
+    math = null,
   ) {
     this.preview = preview;
     this.marked = marked;
     this.hljs = hljs;
+    this.math = math;
+    this._missing = new Set(); // libraries a render needed and did not have (INV-81)
+    // HTML with a formula shown pending (until KaTeX runs, INV-81 (3)): the
+    // cache entries and the wrappers to make again then, chosen by these
+    // sets, not by the text (a document may write the same class)
+    this._mathPendingHtml = new Set(); // the HTML strings
+    this._mathPendingWritten = new Set(); // block ids written in place with one
+    this._mathCountAtWrite = 0; // math.pendingCount() at the last markWrittenInPlace
+    this._mathCountSeen = 0; // math.pendingCount() at the last takeMissingLibraries
     // Private DOMPurify instance: mermaid sanitizes its labels with the same
     // bundled DOMPurify, and our hook must not change what mermaid sees.
     this.purify = purify(window);
@@ -63,6 +75,10 @@ export default class MarkdownRenderer {
     this.imageGate = imageGate;
     /** @purity non-pure */
     this.purify.addHook("afterSanitizeAttributes", (node) => {
+      // the app keeps these ids for itself (INV-81 (5)): a document's own
+      // id like a library's data block id is dropped
+      // (the attribute is read: a form's "id" property may be a field of it)
+      if (node.getAttribute?.("id")?.toLowerCase().startsWith(APP_ID_PREFIX)) node.removeAttribute("id");
       this.imageGate.neutralize(node);
     });
     // Block rendering state. Wrappers are known by reference only (Q1): a
@@ -454,6 +470,10 @@ export default class MarkdownRenderer {
    * @param {object} links - MarkdownBlockModel.links
    */
   markWrittenInPlace(block, links) {
+    // a formula drawn pending since the last mark is in what was written
+    const count = this.math?.pendingCount() ?? 0;
+    if (count > this._mathCountAtWrite) this._mathPendingWritten.add(block.id);
+    this._mathCountAtWrite = count;
     if (!this._wrapperById.has(block.id)) return;
     this._writtenKeys.set(block.id, `${block.raw}\u0000${linksSignature(links)}`);
     this._staleIds.delete(block.id);
@@ -481,6 +501,64 @@ export default class MarkdownRenderer {
     return this._staleIds.has(blockId);
   }
 
+  // ---- Libraries that run on demand (INV-81) ----
+
+  /**
+   * A library has run: "hljs" colors the code from now on, "katex" draws the
+   * math (the HTML that shows a formula pending is made again).
+   * @purity non-pure
+   * @param {string} name
+   * @param {object} library
+   */
+  useLibrary(name, library) {
+    if (name === "hljs") this.hljs = library;
+    if (name !== "katex" || !this.math) return;
+    this.math.useKatex(library);
+    // the HTML that shows a formula pending is made again (spec 5.17.3)
+    for (const [key, html] of [...this._htmlCache]) {
+      if (this._mathPendingHtml.has(html)) this._htmlCache.delete(key);
+    }
+    for (const [id, html] of [...this._htmlById]) {
+      if (this._mathPendingHtml.has(html)) this._htmlById.delete(id);
+    }
+    for (const id of this._mathPendingWritten) {
+      if (!this._writtenKeys.delete(id)) continue;
+      this._htmlById.delete(id);
+    }
+    this._mathPendingHtml.clear();
+    this._mathPendingWritten.clear();
+  }
+
+  /**
+   * The libraries the renders since the last call needed and did not have.
+   * @purity non-pure
+   * @returns {string[]}
+   */
+  takeMissingLibraries() {
+    const count = this.math?.pendingCount() ?? 0;
+    if (count > this._mathCountSeen) this._missing.add("katex");
+    this._mathCountSeen = count;
+    const names = [...this._missing];
+    this._missing.clear();
+    return names;
+  }
+
+  /**
+   * Color the code blocks drawn before highlight.js had run.
+   * @purity non-pure
+   */
+  highlightPending() {
+    if (!this.hljs) return;
+    try {
+      /** @purity non-pure */
+      this.preview.querySelectorAll(HIGHLIGHT_SELECTOR).forEach((block) => {
+        if (!block.classList.contains("hljs")) this._highlight(block);
+      });
+    } catch (hljsError) {
+      console.error("Syntax highlighting error:", hljsError);
+    }
+  }
+
   // ---- internals ----
 
   /**
@@ -490,10 +568,12 @@ export default class MarkdownRenderer {
     const key = `${block.raw}\u0000${signature}`;
     let html = this._htmlCache.get(key);
     if (html === undefined) {
+      const before = this.math?.pendingCount() ?? 0;
       const result = this.blockHtml(block.raw, links);
       if (result.error) console.error("Markdown parse error:", result.error);
       html = result.html;
       this._htmlCache.set(key, html);
+      if ((this.math?.pendingCount() ?? 0) > before) this._mathPendingHtml.add(html);
     }
     return html;
   }
@@ -506,6 +586,11 @@ export default class MarkdownRenderer {
     const live = new Set(model.getBlocks().map((b) => `${b.raw}\u0000${signature}`));
     for (const key of [...this._htmlCache.keys()]) {
       if (!live.has(key)) this._htmlCache.delete(key);
+    }
+    if (this._mathPendingHtml.size === 0) return;
+    const shown = new Set([...this._htmlCache.values(), ...this._htmlById.values()]);
+    for (const html of this._mathPendingHtml) {
+      if (!shown.has(html)) this._mathPendingHtml.delete(html);
     }
   }
 
@@ -591,6 +676,8 @@ export default class MarkdownRenderer {
    */
   _forgetBlocks() {
     this._htmlCache.clear();
+    this._mathPendingHtml.clear();
+    this._mathPendingWritten.clear();
     this._wrapperById.clear();
     this._htmlById.clear();
     this._idByWrapper = new WeakMap();
@@ -631,8 +718,14 @@ export default class MarkdownRenderer {
   _afterInsert(root) {
     this.imageGate.apply(root);
     try {
+      const blocks = root.querySelectorAll(HIGHLIGHT_SELECTOR);
+      if (!this.hljs) {
+        // colored when highlight.js has run (highlightPending, INV-81)
+        if (blocks.length > 0) this._missing.add("hljs");
+        return;
+      }
       /** @purity non-pure */
-      root.querySelectorAll(HIGHLIGHT_SELECTOR).forEach((block) => this._highlight(block));
+      blocks.forEach((block) => this._highlight(block));
     } catch (hljsError) {
       console.error("Syntax highlighting error:", hljsError);
     }
