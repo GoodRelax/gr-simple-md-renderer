@@ -5086,6 +5086,6 @@ MIT・ISC・BSD・Apache-2.0・OFL などは、配布物に著作権の表記と
 
 **分からないこと (法律の判断。推測で決めない):** 1 つの HTML の中のコメントで、MIT・ISC の「含める」と BSD-3-Clause の「配布物に付ける資料で再現する」を満たすか。束ねた先の中の小さなコードや補助関数にまで表記が要るか。(chevrotain と @chevrotain/* 11.1.2 の tarball に NOTICE ファイルは無かった。)OFL のフォントの表記が、フォントの name テーブルとこのコメントで足りるか。jQuery の event を写した元の版 (と、その版の著作権の行)。roughjs が束ねたときの path-data-parser・points-on-curve・points-on-path・hachure-fill の版 (node_modules の版の文を使う)。cytoscape が束ねた gl-matrix の版 (devDependencies は `^3.4.3`。文は 3.4.4 の LICENSE で、著作権の年 (2015-2025) は束ねた版のものと違うかもしれない)。webpack の runtime と browserify の prelude を作った webpack・browser-pack の版 (devDependencies の範囲の中の最新の版の文を使う)。cytoscape が使った @rollup/plugin-commonjs の版 (devDependencies は `^28.0.2`。28 系の最新 28.0.9 の文を使う。js-yaml 4.3.0 は 29.0.3)。browser-pack の著作権の行 (LICENSE に無い)。
 
-**大きさ:** gzip で約 +15.5 kB (2026-10-25 の実測。develop `d077a24` を取り込んだ後で 1,445.59 kB。上限 1,450 kB の残りは約 4.4 kB)。
+**大きさ:** gzip で約 +15.5 kB (2026-10-25 の実測。develop `d077a24` を取り込み、レビューの 2 回目の N1 を直した後で 1,445.64 kB。上限 1,450 kB の残りは約 4.4 kB)。
 
 **試験:** AT-OSS-01〜07 (`notices.test.js`。07 は本物のビルドの module の一覧で、`EMBEDDED`・`IGNORED_MARKS`・`IGNORED_DEPENDENCIES`・`DIST_RECORDS` の項目を 1 つずつ外すと、どれでも検査が落ちることを確かめる)、e2e の `notices.e2e.js`、PRT-AA01 / AA02。
