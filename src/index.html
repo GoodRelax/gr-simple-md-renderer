@@ -87,6 +87,8 @@
       <div id="fileInfo"></div>
 
       <div id="controls">
+        <button id="indexBtn" aria-expanded="false" aria-controls="indexPanel" disabled>Index</button>
+        <button id="searchBtn" aria-expanded="false" aria-controls="searchPanel" disabled>Search</button>
         <button id="renderLight">Render<br />Light</button>
         <button id="renderDark">Render<br />Dark</button>
         <button id="reloadBtn">Re-<br />load</button>
@@ -100,6 +102,25 @@
 
     <div id="keyHint"></div>
     <div id="preview"></div>
+    <div id="sidePanels">
+      <div id="searchPanel" role="search" aria-label="Search" hidden>
+        <div class="search-row">
+          <input id="searchInput" type="text" placeholder="Search" aria-label="Search" spellcheck="false" autocomplete="off" />
+          <button type="button" id="searchCase" aria-pressed="false" title="Match case">Aa</button>
+          <button type="button" id="searchRegex" aria-pressed="false" title="Regular expression">.*</button>
+          <span id="searchCount" aria-live="polite"></span>
+          <button type="button" id="searchPrev" title="Previous (Up)" aria-label="Previous">&uarr;</button>
+          <button type="button" id="searchNext" title="Next (Down)" aria-label="Next">&darr;</button>
+          <button type="button" id="searchClose" title="Close (Esc)" aria-label="Close">&times;</button>
+        </div>
+        <div class="search-row" id="replaceRow">
+          <input id="replaceInput" type="text" placeholder="Replace (edit mode)" aria-label="Replace" spellcheck="false" autocomplete="off" disabled />
+          <button type="button" id="replaceOneBtn" disabled>Replace</button>
+          <button type="button" id="replaceAllBtn" disabled>All</button>
+        </div>
+      </div>
+      <nav id="indexPanel" aria-label="Index" hidden></nav>
+    </div>
 
     <div id="toastContainer"></div>
 
@@ -177,6 +198,15 @@
           <div class="modal-section" data-help-section="details">
             <h3>Details</h3>
             <ul>
+              <li><code>[Index]</code> / <code>I</code> : Show or hide the list of headings. Click a heading to jump to it</li>
+              <li>
+                <code>[Search]</code> / <code>F</code> : Find text in the Markdown source (code view: the file).
+                <code>Aa</code> matches case, <code>.*</code> takes a regular expression. <code>&darr;</code> /
+                <code>&uarr;</code> in the box go to the next / previous match. In edit mode, <code>Ctrl+F</code>
+                (Mac: <code>Cmd+F</code>) opens it too, and <code>Replace</code> / <code>All</code> replace (one
+                <code>Ctrl+Z</code> undoes). <code>Esc</code> in the box closes it. A slow regular expression (such as
+                nested repeats on a long line) can freeze the page: save before you replace with one.
+              </li>
               <li><code>[Render Light]</code> / <code>L</code> : Render / switch to light mode</li>
               <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
               <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge)</li>
@@ -185,7 +215,7 @@
               <li>
                 <code>Esc</code> : Apply the open block or cell and close it.
                 With blocks selected, clear the selection first. With nothing open, hide
-                the edit palette.
+                the edit palette. With the edit palette hidden, hide Search, then the Index.
               </li>
               <li>
                 <code>Ctrl+Z</code> / <code>Ctrl+Y</code> (or <code>Ctrl+Shift+Z</code>) : Undo / Redo
@@ -357,13 +387,17 @@
           <div class="modal-section" data-help-section="details">
             <h3>詳細</h3>
             <ul>
+              <li><code>[Index]</code> / <code>I</code> : 見出しの一覧（目次）の表示・非表示。見出しを押すと、そこへ飛びます</li>
+              <li>
+                <code>[Search]</code> / <code>F</code> : Markdown の原文（コードビューではファイル）から文字を探します。<code>Aa</code> で大文字と小文字を区別し、<code>.*</code> で正規表現にします。検索欄の <code>&darr;</code> / <code>&uarr;</code> で次 / 前へ移ります。編集モードでは <code>Ctrl+F</code>（Mac は <code>Cmd+F</code>）でも開け、<code>Replace</code> / <code>All</code> で置き換えます（<code>Ctrl+Z</code> 1 回で戻ります）。検索欄の <code>Esc</code> で閉じます。時間のかかる正規表現（長い行に当てる、繰り返しの入れ子など）では、ページが固まることがあります。正規表現で置き換える前に保存してください。
+              </li>
               <li><code>[Render Light]</code> / <code>L</code> : レンダリング/ライトモード切替</li>
               <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
               <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード（Chrome / Edge）</li>
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
               <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
               <li>
-                <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。ブロックを選んでいれば、まず選択を解きます。何も開いていなければ、編集パレットを隠します。
+                <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。ブロックを選んでいれば、まず選択を解きます。何も開いていなければ、編集パレットを隠します。編集パレットも出ていなければ、検索、目次の順に隠します。
               </li>
               <li>
                 <code>Ctrl+Z</code> / <code>Ctrl+Y</code>（または <code>Ctrl+Shift+Z</code>）: 編集パレットを表示している間の Undo / Redo（30 回まで。Mac は <code>Cmd+Z</code> / <code>Cmd+Shift+Z</code>）。開いたブロックの中では、Redo はいつも入力のやり直しです。Undo も、ブロックに変更があれば入力の取り消しです。

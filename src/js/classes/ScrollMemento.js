@@ -1,9 +1,16 @@
+import { isTypingTarget } from "../utils.js";
+
 // the top bar stays at the top when the document scrolls (style.css, touch)
 const STICKY_BAR_ID = "topbar";
 // bounds of how far past a request the document scroll is tried (CSS px):
 // one screen pixel and one more (see _scrollSearchSpan)
 const SCROLL_SEARCH_MIN_PX = 2;
 const SCROLL_SEARCH_MAX_PX = 32;
+// INV-78: what moves the view: a wheel turn, a finger moving, a scroll key
+// (not in a text field), a press on the scroll bar. A jump the user asks for
+// (an Index entry, a Search match) goes through scrollTargetTo.
+const USER_ACTS = ["wheel", "touchmove", "keydown", "pointerdown"];
+const MOVE_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
 
 export default class ScrollMemento {
   /**
@@ -15,6 +22,8 @@ export default class ScrollMemento {
     this.useDocumentScroll = window.matchMedia(
       "(any-pointer: coarse)",
     ).matches;
+    // the watch of a full render (INV-78): {moving, place}, or null: none
+    this._watch = null;
   }
 
   /**
@@ -58,6 +67,80 @@ export default class ScrollMemento {
   }
 
   /**
+   * INV-78: from now on, where the user last took the view. After a move
+   * (MOVE_KEYS and USER_ACTS: not Shift, not a press outside the text), each
+   * scroll of the view notes the reader's place (captureReadingAnchor), and
+   * so does a jump the user asked for (scrollTargetTo). The acts are seen in
+   * the capture phase, before any handler can stop them. place() is the last
+   * place noted, or null: the user has not moved the view. stop() removes
+   * the listeners.
+   * @returns {{place: () => object|null, stop: () => void}}
+   * @purity non-pure
+   */
+  watchUserMoves() {
+    const watch = { moving: false, place: null };
+    /** @purity non-pure */
+    const onAct = (e) => {
+      if (this._isMove(e)) watch.moving = true;
+    };
+    /** @purity non-pure */
+    const onScroll = (e) => {
+      if (watch.moving && (e.target === this.container || e.target === document)) watch.place = this.captureReadingAnchor();
+    };
+    for (const type of USER_ACTS) window.addEventListener(type, onAct, true);
+    window.addEventListener("scroll", onScroll, true);
+    this._watch = watch;
+    return {
+      place: () => watch.place,
+      /** @purity non-pure */
+      stop: () => {
+        for (const type of USER_ACTS) window.removeEventListener(type, onAct, true);
+        window.removeEventListener("scroll", onScroll, true);
+        if (this._watch === watch) this._watch = null;
+      },
+    };
+  }
+
+  /**
+   * An act that moves the view (INV-78): a wheel turn, a finger moving, a
+   * scroll key outside a text field, a press on the scroll bar.
+   * @param {Event} e
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
+  _isMove(e) {
+    if (e.type === "keydown") return MOVE_KEYS.has(e.key) && !isTypingTarget(e.target);
+    if (e.type === "pointerdown") return this.isScrollbarPress(e);
+    return true;
+  }
+
+  /**
+   * A press on the scroll bar of the container (or of the page): not
+   * "outside" for the block editor (INV-30), and a move of the view (INV-78).
+   * @param {PointerEvent|MouseEvent} e
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
+  isScrollbarPress(e) {
+    const el = e.target;
+    if (el !== this.container && el !== document.documentElement) return false;
+    return (el.clientWidth > 0 && e.offsetX > el.clientWidth) || (el.clientHeight > 0 && e.offsetY > el.clientHeight);
+  }
+
+  /**
+   * A jump the user asked for (an Index entry, INV-77 (3); a Search match,
+   * INV-80 (4)): the target's top goes offsetPx below the top of what is
+   * shown. During a full render, it is where the view goes back to (INV-78).
+   * @param {Element|Range} target
+   * @param {number} offsetPx
+   * @purity non-pure
+   */
+  scrollTargetTo(target, offsetPx) {
+    this.restoreAnchor({ offsetTop: this.shownTop() + offsetPx }, target);
+    if (this._watch) this._watch.place = this.captureReadingAnchor();
+  }
+
+  /**
    * Where the element's top is in the viewport now (INV-46).
    * @param {Element|null} element
    * @returns {{offsetTop: number}|null}
@@ -80,7 +163,7 @@ export default class ScrollMemento {
    * @purity semi-pure-b
    */
   captureReadingAnchor() {
-    const index = this._placeIndex(this._shownTop());
+    const index = this._placeIndex(this.shownTop());
     if (index < 0) return null;
     const block = this.container.children[index];
     const first = ScrollMemento._placeFrom(block.children, 0, block.children.length, true);
@@ -145,12 +228,23 @@ export default class ScrollMemento {
   }
 
   /**
+   * The right edge of what is shown: the left of the container's scroll bar,
+   * or, when the document scrolls, the left of the page's.
+   * @returns {number}
+   * @purity semi-pure-b
+   */
+  shownRight() {
+    if (this.useDocumentScroll) return document.documentElement.clientWidth;
+    return this.container.getBoundingClientRect().left + this.container.clientLeft + this.container.clientWidth;
+  }
+
+  /**
    * The top of what is shown: the container's top, or, when the document
    * scrolls (touch), the bottom of the sticky top bar (0 without one).
    * @returns {number}
    * @purity semi-pure-b
    */
-  _shownTop() {
+  shownTop() {
     if (!this.useDocumentScroll) return this.container.getBoundingClientRect().top;
     const bar = document.getElementById(STICKY_BAR_ID);
     return bar ? Math.max(0, bar.getBoundingClientRect().bottom) : 0;
@@ -259,7 +353,7 @@ export default class ScrollMemento {
   reveal(element) {
     if (!element || element.getClientRects().length === 0) return;
     const rect = element.getBoundingClientRect();
-    const top = this._shownTop();
+    const top = this.shownTop();
     const bottom = this.useDocumentScroll
       ? window.innerHeight
       : this.container.getBoundingClientRect().top + this.container.clientHeight;

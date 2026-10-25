@@ -93,7 +93,7 @@ export function fakeEditServices() {
     getLastOpenedBlockId: vi.fn(() => null),
     isInsertPending: vi.fn(() => false),
   };
-  const fileAccess = { readFile: vi.fn() };
+  const fileAccess = { readFile: vi.fn(), noteFile: vi.fn() };
   return {
     fileAccess,
     documents: createDocuments(fileAccess),

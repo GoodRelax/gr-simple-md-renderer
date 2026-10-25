@@ -36,6 +36,8 @@ import EditPalette from "./classes/EditPalette.js";
 import BlockEditController from "./classes/BlockEditController.js";
 import UIController from "./classes/UIController.js";
 import HelpLanguageSwitch from "./classes/HelpLanguageSwitch.js";
+import DocumentIndex from "./classes/DocumentIndex.js";
+import DocumentSearch from "./classes/DocumentSearch.js";
 
 // ========================================
 // Initialization
@@ -46,6 +48,10 @@ const elements = {
   fileInfo: document.getElementById("fileInfo"),
   keyHint: document.getElementById("keyHint"),
   preview: document.getElementById("preview"),
+  indexBtn: document.getElementById("indexBtn"),
+  indexPanel: document.getElementById("indexPanel"),
+  sidePanels: document.getElementById("sidePanels"),
+  searchBtn: document.getElementById("searchBtn"),
   renderLightBtn: document.getElementById("renderLight"),
   renderDarkBtn: document.getElementById("renderDark"),
   reloadBtn: document.getElementById("reloadBtn"),
@@ -109,9 +115,43 @@ const documents = new DocumentLifecycle(fileAccess, {
 // editing parts and is their host (BlockEditHost, EditPaletteHost).
 // INV-14: Cmd is the primary shortcut modifier on Apple platforms.
 const isApple = isApplePlatform(navigator);
+const documentIndex = new DocumentIndex(
+  { button: elements.indexBtn, panel: elements.indexPanel, column: elements.sidePanels, preview: elements.preview },
+  scrollManager,
+  { emptyText: CONFIG.messages.index.empty },
+);
 new UIController(orchestrator, state, elements, scrollEngine, {
   documents,
   isApple,
+  documentIndex,
+  createSearch: (host) =>
+    new DocumentSearch(
+      {
+        button: elements.searchBtn,
+        column: elements.sidePanels,
+        panel: document.getElementById("searchPanel"),
+        preview: elements.preview,
+        input: document.getElementById("searchInput"),
+        matchCase: document.getElementById("searchCase"),
+        regex: document.getElementById("searchRegex"),
+        count: document.getElementById("searchCount"),
+        prev: document.getElementById("searchPrev"),
+        next: document.getElementById("searchNext"),
+        close: document.getElementById("searchClose"),
+        replaceRow: document.getElementById("replaceRow"),
+        replaceInput: document.getElementById("replaceInput"),
+        replaceOne: document.getElementById("replaceOneBtn"),
+        replaceAll: document.getElementById("replaceAllBtn"),
+      },
+      scrollManager,
+      {
+        getModel: () => orchestrator.getModel(),
+        blockElement: (id) => markdownRenderer.getBlockElement(id),
+        replaceBody: (body, offset) => orchestrator.replaceBody(body, offset),
+      },
+      host,
+      CONFIG.messages.search,
+    ),
   createPalette: (host) => new EditPalette(host, { isApple }),
   createBlockEdit: (host) =>
     new BlockEditController(elements.preview, orchestrator, markdownRenderer, scrollManager, host),

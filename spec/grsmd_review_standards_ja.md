@@ -100,7 +100,7 @@
 | T1 | 単体の試験 `npx vitest run` | 失敗 0 |
 | T2 | 性能の試験 `GRSMD_PERF=1 npx vitest run` (PowerShell では `$env:GRSMD_PERF = "1"; npx vitest run`) | 失敗 0。AT-PERF の値を報告に書く |
 | T3 | e2e `npm run test:e2e` (Chromium と WebKit) | 失敗 0。retry で通ったもの (flaky) は合格とし、数を報告に書く。2 回とも落ちたものは失敗 (オーナーの裁定、2026-10-24) |
-| T4 | ビルド `npm run build` | Vite が表示する `index.html` の gzip が 1,450 kB 以下 (上限はオーナーの裁定、2026-10-21)。生の大きさも書く |
+| T4 | ビルド `npm run build` | Vite が表示する `index.html` の gzip が 1,460 kB 以下 (上限はオーナーの裁定。2026-10-21 に 1,450 kB、2026-10-25 の検索と置換の裁定 S5 で 1,460 kB)。生の大きさも書く |
 | T5 | ビルドの後の片付け | 機能のブランチでは `docs/index.html` を `git checkout -- docs/index.html` で戻す (機能のブランチで再ビルドしない) |
 | T6 | 実測 (差分に関わるとき) | 数値の目標 (INV-51 など) を、大きな文書 (1 MB) と端の文書 (参照リンクの定義あり、先頭に空行が多いなど) で測る |
 

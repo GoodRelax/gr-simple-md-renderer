@@ -122,6 +122,16 @@ export const CONFIG = {
       copied: "Copied!",
       copyFailed: "Failed",
     },
+    index: {
+      empty: "This document has no headings.", // DocumentIndex with no heading
+    },
+    search: { // DocumentSearch: the count beside the query, and a toast
+      count: (current, total) => (current > 0 ? `${current} / ${total}` : total),
+      none: "No results",
+      invalid: "Invalid pattern",
+      stale: "Down: search again", // a regular expression after the text changed (INV-80 (3))
+      replaced: (count) => `Replaced ${count}.`,
+    },
     markdown: {
       parseError: (message) => `Couldn't read this Markdown: ${message}`, // marked threw
     },
@@ -262,6 +272,9 @@ export const CONFIG = {
     doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
     doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",
+    // INV-79: the save dialog's id; the browser remembers its last folder
+    // by this id (the app stores nothing)
+    savePickerId: "grsmd-markdown",
     commitBudgetMs: 300, // performance target for 1 MB (INV-51), used by tests
     // A longer body is not written into the visible #editor on every commit,
     // undo or insert (laying out 1 MB of textarea text takes ~0.5 s in Chrome).
@@ -330,8 +343,8 @@ export const CONFIG = {
   },
   // Keyboard hint text per view mode
   keyHints: {
-    markdown: "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
-    code:     "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
+    markdown: "[I] Index; [F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
+    code:     "[F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
   },
 };
 

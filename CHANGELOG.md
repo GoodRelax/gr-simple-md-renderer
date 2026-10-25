@@ -17,6 +17,12 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- The save dialog (Save as, or Save of a document that has no file yet;
+  Chrome and Edge) now opens in the folder you last used instead of the
+  browser's default: the folder of the `.md` file you dropped or last chose
+  in this tab, otherwise the folder the browser remembers for this dialog
+  (that one survives a reload). GRSMD itself stores nothing. Browsers
+  without the save dialog (Safari, Firefox, iPhone, iPad) still download.
 - Code blocks in the Markdown view (paste, drop, Render or editing): a
   block longer than 20,480 characters (about 20 KB) is shown without syntax
   highlighting, and a block without a language has its language detected
@@ -76,6 +82,33 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Added
 
+- Search: a **Search** button right of Index (or the `f` key; in edit mode
+  also `Ctrl+F` / `Cmd+F`) shows a search box above the Index. It finds text
+  in the Markdown source (in the code view, the file), including diagram and
+  math source; `Aa` matches case and `.*` takes a regular expression (it is
+  searched when you stop typing). `Down` / `Up` in the box go to the next /
+  previous match; Enter does nothing. The block of the match gets a frame
+  and its text a color (the current one orange), and a big table scrolls to
+  the right row, sideways too. In edit mode, **Replace** and **All** replace
+  the current match or all of them (`$1` and the like with a regular
+  expression, read as the browser's `String.replace` reads them), and one
+  Undo takes it back. A regular expression is run only when you search
+  (stop typing, `Down` / `Up`, Replace / All): after a commit or an Undo
+  the count says "Down: search again". A slow regular expression can still
+  freeze the page while it runs: save before you replace with one. `Esc` in
+  the box closes it;
+  elsewhere `Esc` hides the edit palette first, then Search, then the Index.
+  Nothing of it is stored or printed. The help says so in both languages.
+- Index: an **Index** button left of Render Light (or the `i` key) shows the
+  document's headings (h1 to h6) in a panel floating at the right edge of the
+  Markdown view, under the top bar. Its ground lets 25 % of the text behind
+  show through, and the panel scrolls by itself. Press a heading to bring it
+  to the top of the view; the panel stays open until Index, `i` or `Esc` is
+  pressed (`Esc` hides the edit palette first). The list follows every
+  render, commit and Undo (only the changed blocks' headings are built
+  again). Math in a heading is shown as its TeX source. The
+  button is off on the start screen and in the code view, and the panel is
+  not printed. The help says so in both languages.
 - Math templates in the edit palette: the Text format popover has a second
   row with two buttons. **Insert inline math** puts the formula for Euler's
   number (Napier's constant) at the cursor of the open block; a space goes
@@ -150,6 +183,13 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Fixed
 
+- A full render (Render, a theme switch, a dropped or pasted document) no
+  longer takes the view back to where it was when the render began if you
+  moved the view while the diagrams were being drawn (the Index, Search,
+  the mouse wheel, a finger, a scroll key or the scroll bar): the view comes
+  back to the text you were reading when you last moved it, even when the
+  diagrams above it grow. Other keys (such as Shift) and presses outside the
+  text do not count: the view goes back where it was.
 - In edit mode, Delete now deletes the selected blocks in Microsoft Edge
   too. Edge shows its mini menu (Copilot, Copy, Search) beside a text
   selection, and while it shows, the keys do not reach the page. A mouse

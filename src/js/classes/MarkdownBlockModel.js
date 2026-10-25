@@ -553,6 +553,17 @@ export default class MarkdownBlockModel {
   }
 
   /**
+   * The id of the block that holds a body offset (the last block after the
+   * end), or null without blocks.
+   * @purity pure
+   * @param {number} offset
+   * @returns {number|null}
+   */
+  blockIdAt(offset) {
+    return this._blockIdAt(offset);
+  }
+
+  /**
    * The body offset where a block starts, or -1 for an unknown id.
    * @purity pure
    * @param {number} blockId

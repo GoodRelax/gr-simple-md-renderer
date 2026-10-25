@@ -25,7 +25,11 @@ function createOrchestrator() {
   };
   const mermaidRenderer = { render: vi.fn().mockResolvedValue(undefined) };
   const plantumlRenderer = { render: vi.fn().mockResolvedValue(undefined) };
-  const scrollManager = { save: vi.fn().mockReturnValue(0), restore: vi.fn() };
+  const scrollManager = {
+    save: vi.fn().mockReturnValue(0),
+    restore: vi.fn(),
+    watchUserMoves: vi.fn(() => ({ place: () => null, stop: vi.fn() })),
+  };
   const preview = document.createElement("div");
   const mockMetadata = {
     fileName: "test.py",
@@ -209,6 +213,39 @@ describe("RendererOrchestrator", () => {
       expect("_mdFileHandle" in orchestrator).toBe(false);
       expect(orchestrator.readMarkdownFile).toBeUndefined();
       expect(RendererOrchestrator.prototype.loadMarkdown.length).toBe(2);
+    });
+  });
+
+  describe("full render and the user's scrolling (INV-78)", () => {
+    it("AT-ORC-28 the view goes back to where the user last moved it while the render ran, else to where it was; the watch ends", async () => {
+      const { orchestrator, scrollManager, mermaidRenderer } = createOrchestrator();
+      scrollManager.save.mockReturnValue(120);
+      scrollManager.restoreReadingAnchor = vi.fn();
+      let place = null;
+      const stop = vi.fn();
+      scrollManager.watchUserMoves.mockImplementation(() => ({ place: () => place, stop }));
+
+      await orchestrator.loadMarkdown("# a", "light");
+      expect(scrollManager.restore).toHaveBeenCalledWith(120);
+      expect(scrollManager.restoreReadingAnchor).not.toHaveBeenCalled();
+      expect(stop).toHaveBeenCalledTimes(1);
+
+      scrollManager.restore.mockClear();
+      const moved = { element: document.createElement("p"), anchor: { offsetTop: 30 } };
+      mermaidRenderer.render.mockImplementation(async () => {
+        place = moved; // e.g. a wheel turn or an Index entry while the diagrams are drawn
+      });
+      await orchestrator.reRender("light");
+      expect(scrollManager.restore).not.toHaveBeenCalled();
+      expect(scrollManager.restoreReadingAnchor).toHaveBeenCalledWith(moved);
+      expect(stop).toHaveBeenCalledTimes(2);
+
+      // a render that fails still ends the watch
+      mermaidRenderer.render.mockRejectedValue(new Error("boom"));
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      await orchestrator.reRender("light");
+      expect(stop).toHaveBeenCalledTimes(3);
+      consoleError.mockRestore();
     });
   });
 });

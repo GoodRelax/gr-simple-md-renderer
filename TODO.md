@@ -24,6 +24,11 @@
 ### 性能の試験を流すとき（同梱 OSS の表記のレビューの参考 R2-1、2026-10-25）
 - [ ] 性能の試験（`GRSMD_PERF=1`）は、作業フォルダの同期（OneDrive など）や、ほかの重い処理と同時に流すと、AT-PERF-12 などが上限を超えることがある。静かなときに流し直して判断する（同期を止めて 3 回流すと、AT-PERF-12 の中央値は 157.2 / 153.4 / 154.4 ms で、3 回とも通った）
 
+### 既知の件（目次と検索のレビュー 2026-10-25。どれも develop `c885106` でも同じ）
+- [ ] Firefox の e2e（`npm run test:e2e:firefox`）の 8 件が落ちる: `crossUnit.e2e.js:148`（N6、スマートフォンの配置）、`crossUnit.e2e.js:47`（T-3 (11) S-2、セルへの貼り付け）、`blockRange.e2e.js:380`（INV-74 (4)、ブラウザの `copy`）、`editModeScroll.e2e.js:317` の 4 件と `:337`（タッチ）。タッチのエミュレーション、上部バーのボタンがクリックを遮る、など。製品の不具合か試験の作りかを分けて直す
+- [ ] テーマの切り替えなど全体の描画の途中、ビューが一時ずれる: ブロックを描き替えた直後から約 1 s、読んでいた所から約 1,900 px ずれて見え、図を描き終えた所で一瞬（約 60〜70 ms）約 4,800 px ずれ、終わりに戻る（Chromium・WebKit）。そのずれの間に利用者がスクロールすると、INV-78 のとおり、ずれた所（利用者が見ていた所）に留まる。描き替えの前に読んでいる位置を覚え、描き替えの直後に戻せば、ずれ自体が無くなる
+- [ ] 前からの揺れ: WebKit の `editModeScroll.e2e.js:165`（編集モードの出入りで読んでいる位置を保つ）が、負荷の高いときに再試行で通ることがある。単体の AT-MR-17（`MarkdownRenderer.highlightLimit.test.js`、長いコードブロックの色付けの上限）が、負荷の高いときに落ちることがある
+
 ### `@purity` の検査の範囲（同梱 OSS の表記のレビューの参考 R-4、2026-10-25）
 - [ ] AT-PUR-01 は `src/js` だけを見る。ビルドの道具には、タグの無い関数が残っている: `vite.config.js` の 9 つ（`katexWoff2Only` の Declaration、`noHljsThemeCss` の Once、`noExternalImports` の generateBundle、`buildVersionOf`、`buildVersion` とその configResolved・transformIndexHtml、`buildCsp`、`contentSecurityPolicy` の generateBundle）、`tools/version.mjs` 105 行と `tools/release.mjs` 85 行の無名の関数
 - [ ] タグを付けたうえで、AT-PUR の範囲を `tools/` と `vite.config.js` に広げるか決める（`tools/notices.mjs` と `thirdPartyNotices` は AT-OSS-06 で確かめている）

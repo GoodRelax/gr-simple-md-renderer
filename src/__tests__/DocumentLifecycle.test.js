@@ -333,6 +333,15 @@ describe("AT-DLC save (11-e, INV-33, INV-54)", () => {
     expect(documents.saveOperationState).toBe("idle");
   });
 
+  it("AT-DLC-23 a dropped .md file is noted for the next save dialog's folder (INV-79)", () => {
+    const { access, documents } = setup();
+    const handle = fakeFileHandle({ name: "dropped.md" });
+    documents.openFile("# A\n", false, 1, "dropped.md", handle);
+    expect(access.noted).toEqual([handle]);
+    documents.openFile("# B\n", false, 1, "pasted.md", null); // noteFile ignores null
+    expect(access.noted).toEqual([handle, null]);
+  });
+
   it("AT-DLC-22 isSaving follows the replaceRequested cell of 11-e", () => {
     expect(saveOperationStateMachine.replaceRequested.idle).toBeNull();
     expect(saveOperationStateMachine.replaceRequested.writingFile.to).toBe("writingFile");

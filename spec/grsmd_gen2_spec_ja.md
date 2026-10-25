@@ -44,6 +44,16 @@
 
 **改訂:** 2026-10-25 — 複数ブロックの削除で、Edge のミニメニューが Delete を奪う不具合の直し (オーナーの裁定 S1〜S3)。Edge (156) は、マウスで文字を選ぶと選択の横にミニメニュー (Copilot・コピー・検索など) を出し、それが出ている間は Delete などのキーがページに届かない (ページの側では拾えない)。編集モードで、プレビューの中で始まったマウスの主ボタンのドラッグ (`CONFIG.pan.activationThresholdPx` を超えて動いたもの) が、離したときに editModeIdle で、プレビューに選択を残しているときは、その `mouseup` の既定の動作を止める (`BlockRangeSelection`。Edge のミニメニューが出なくなる。選択・枠・帯は今のまま。押下で開いていた編集欄を確定して閉じたドラッグも止める)。クリック (選んだ文字の上のクリックを含む) は今のまま。右クリックのメニューは止めない。止められないもの (スマホの OS の吹き出し、それでもミニメニューが出る場合) は INV-74 の既知の制限に書く。ヘルプは変えない。あわせて、押した位置から閾値を超えて動いたかの判断を `utils.isPastActivation` の 1 か所にし、BlockEditController (INV-29)・EditPalette (INV-68)・DiagramPanController・BlockRangeSelection がそれを使う。図のパンは、5px ちょうどの移動では始まらなくなる (3.5 の DiagramPanController の段落。レビューの L4、調整役の裁定 Q3)。依存の追加はない (付録A 不変)。
 
+**改訂:** 2026-10-25 — **目次 (Index) を足す (SC-25、INV-77、FS-21。オーナーの裁定 T1〜T8)。** 上部バーの [Render Light] の左の [Index] (または `i`) で、文書の見出し (h1〜h6) の一覧を、プレビューの右端に浮かせて出す。地は 25% 透け (不透明度 75%)、目次自体もスクロールする。項目を押すとその見出しを見えている範囲の上端の 8 px 下へ飛ばし、目次は開いたまま。閉じるのは [Index]・`i`・Esc (Esc はパレットの後。裁定 T7)。描き直し・確定・Undo で作り直す。初期状態とコードビューでは [Index] を無効にする。数式は TeX のまま出す。ヘルプの Details に英日で 1 行ずつ足し、Esc の行に目次を足す。新しいクラス `DocumentIndex` と、右端の列 (`#sidePanels`) とスクロールのモジュール `sidePanels.js`。あわせて、**全体の描画の間に利用者がスクロールしたら、描き終えた後に元の位置へ戻さない (INV-78、INV-09 を改める。調整役の裁定 2026-10-25)。** 図を描いている数秒の間に目次・ホイール・キーで動かしても、描き終えると描画の前の位置へ戻されていた (`RendererOrchestrator._renderFull`)。`ScrollMemento.watchUserActs` で利用者の操作 (ホイール・指の移動・キー・押下) を見て、あれば戻さない。依存の追加はない (付録A 不変)。
+
+**改訂:** 2026-10-25 — **保存のダイアログを前回のフォルダから開く (INV-79。オーナーの依頼、調整役の指示 2026-10-25)。** フォルダを指定する画面はアプリの中では保存のダイアログ (`showSaveFilePicker`。Save as と、保存先の無い文書の Save。Chrome / Edge) だけで、毎回ブラウザの既定のフォルダから始まっていた。ダイアログに `id` (`CONFIG.edit.savePickerId`) を付け、ブラウザが自分でそのダイアログの前回のフォルダを覚えるようにする (再読み込みや新しいタブの後も効く。アプリは何も保存しない)。さらに、このタブで最後にドロップした `.md` か、ダイアログで選んだファイルのハンドルをメモリだけに持ち (`MarkdownFileAccess.noteFile`)、`startIn` に渡して、そのファイルのフォルダから開く。ハンドルを IndexedDB に保存して再読み込みの後も覚えることはしない (オーナーの裁定 2026-10-25。CON-13 を守る)。書き込み API の無いブラウザ (Safari・Firefox・iPhone / iPad) はダウンロードのままで、変わらない。依存の追加はない (付録A 不変)。
+
+**改訂:** 2026-10-25 — **検索と置換を足す (SC-26、INV-80、FS-22。オーナーの裁定 S1〜S14)。** 上部バーの [Index] の右の [Search] (`f`。編集モードでは主 + F も) で、右端の列の目次の上に検索の箱を出す。Markdown の原文 (コードビューではファイルの文字) を、通常の文字か正規表現 ([.*]) で探し、[Aa] で大文字小文字を区別する。検索欄の ↓ / ↑ で次 / 前、Enter は何もしない。今の一致のブロックに枠、その中の一致に色 (今の一致は橙) を付け、大きい表でも原文の n 番目に当たる所 (横にも) へスクロールする。編集モードの間は [Replace] / [All] で置き換え、Undo 1 回で戻る (`RendererOrchestrator.replaceBody`、11-c の新しい出来事 `searchReplaceRequested`)。Esc は、検索欄の中ではすぐ閉じ、外ではパレット → 検索 → 目次 の順 (INV-77 (4) を改める)。新しいクラス `DocumentSearch`、純粋関数のモジュール `textSearch.js`、`MarkdownBlockModel.blockIdAt`。gzip の上限を 1,450 kB から 1,460 kB に上げる (裁定 S5。レビュー基準 T4)。依存の追加はない (付録A 不変)。
+
+**改訂:** 2026-10-25 — **目次と保存のダイアログのレビュー (1 回目) の直し (調整役の裁定 Q1〜Q5)。** **INV-78 を改める:** 全体の描画の間に利用者がビューを動かしたら、描き終えた後は、利用者が最後に動かした所の読んでいる位置 (`captureReadingAnchor`。INV-46) へ戻す (描画で上のブロックの高さが変わっても、読んでいた所に留まる)。数えるのはビューを動かす操作だけ (ホイール、指の移動、入力欄の外のスクロールのキー、スクロールバーの押下、目次・検索で飛ぶ) で、Shift などほかのキーや本文の外の押下 (キーのヒントなど) は数えない (前は、どの操作でも戻さなかったので、Shift を押しただけで描画の前の位置に戻らず、図の分だけずれた)。`ScrollMemento.watchUserActs` を `watchUserMoves` に替え、飛ぶ処理 (`scrollTargetTo`)、見えている範囲の上端と右端 (`shownTop` / `shownRight`)、スクロールバーの押下の判定 (`isScrollbarPress`。`BlockEditController` から移す) を `ScrollMemento` に集める (`sidePanels.js` は列を置くだけにし、`documentView` / `revealInView` を消す。検索も同じ `scrollTargetTo` で一致へ行く)。**INV-77 (2) を改める:** 目次を表示している間の作り直しは、変わったブロックの項目だけにする (1 MB で確定・Undo の後 50 ms 以下。AT-PERF-14)。11-c の表の注に、閲覧中の Esc は `escapePressed` を送らずに検索・目次を閉じることを書く。README に目次の行を足す。依存の追加はない (付録A 不変)。
+
+**改訂:** 2026-10-25 — **検索と置換のレビュー (1 回目) の直し (調整役の裁定 Q1〜Q3)。** 正規表現の置換欄の展開を、自分で書かずにブラウザの `String.prototype.replace` に任せる (`$10`・名前付きの群の無い式の `$<名前>` が違っていた。INV-80 (5))。時間のかかる正規表現でページが固まることを既知の制限として書き、検索の箱を開いている間、確定・Undo のたびに正規表現を自分からは走らせない (件数の所に "Down: search again" を出し、↓ / ↑ などの利用者の操作で探す。INV-80 (3)。ヘルプにも英日で 1 文)。11-c の出来事 `replaceRequested` を `searchReplaceRequested` と改める (11-e の同じ名前の出来事と分ける)。IME の変換中の ↓ / ↑ / Esc は検索で使わない。[Replace] の後、描き直しの前に閉じたか条件を変えたら動かない。不正な式は確定の後も `invalid` のまま。[↑] / [↓] の title を Up / Down にする (Enter は何もしない)。OS-05 をスコープ内と改める。依存の追加はない (付録A 不変)。
+
 ---
 
 ## 目次
@@ -218,6 +228,8 @@ gr-simple-md-renderer/
 │   │   ├── textTransforms.js     # wrapper split, line endings, BOM, trailing runs (pure)
 │   │   ├── textWidth.js          # display width (pure, INV-61)
 │   │   ├── floatingPlacement.js  # where the block range bar goes (pure, INV-74)
+│   │   ├── sidePanels.js         # the right-edge column (#sidePanels) (INV-77)
+│   │   ├── textSearch.js         # search and replace in a text (pure, INV-80)
 │   │   └── classes/              # one class per file
 │   │       ├── ApplicationState.js
 │   │       ├── ScrollMemento.js
@@ -231,6 +243,8 @@ gr-simple-md-renderer/
 │   │       ├── RendererOrchestrator.js
 │   │       ├── ModalController.js
 │   │       ├── HelpLanguageSwitch.js
+│   │       ├── DocumentIndex.js
+│   │       ├── DocumentSearch.js
 │   │       ├── UIController.js
 │   │       ├── DiagramZoomController.js
 │   │       ├── DiagramPanController.js
@@ -321,6 +335,8 @@ gr-simple-md-renderer/
 | SC-22 | ブロック単位のその場編集: 編集モードの間、Markdown プレビュー上のブロックをクリック (タップ) すると原文の編集欄に切り替わる。表のセルをクリックすると、そのセルを描画されたまま編集する (INV-62)。編集モードでないときにプレビューをダブルクリック (ダブルタップ) すると、編集モードに入ってその場所を開く (INV-57)。外側のクリックでも Esc でも確定する (Esc の後の Undo 1 回で戻る)。確定すると変わったブロックだけを再描画する。変更の単位 (用語集) は 30 回まで Undo / Redo できる (INV-48)。ブロックのすき間の点線から新しいブロックを入れられる (INV-73)。プレビューの文字を選ぶと、選択がかかったブロックをまとめて削除・カット・コピーできる (INV-74) |
 | SC-23 | 編集パレット: 上部バーの [Edit] ボタン (`editBtn`) または `e` キーで表示・非表示を切り替える。アイコンのみ。ドラッグで移動できる (位置は記憶しない)。グリップの長押しで最小化・復活 (INV-68)。キーボードでは操作しない (INV-53)。表示中は編集モードになる |
 | SC-24 | 明示保存: Save (元ファイルへ上書き。Chrome/Edge) と Save as (保存ダイアログ。非対応ブラウザはダウンロード) |
+| SC-25 | 目次 (Index): 上部バーの [Index] ボタン (`indexBtn`) または `i` キーで、Markdown ビューの見出し (h1〜h6) の一覧を表示・非表示する。一覧はプレビューの右端に重ねて浮かせ、項目を押すとその見出しへ飛ぶ (INV-77) |
+| SC-26 | 検索と置換: 上部バーの [Search] ボタン (`searchBtn`)、`f`、編集モードでは主 + F で検索の箱を出す。Markdown の原文 (コードビューではファイルの文字) を、通常の文字または正規表現で探す。編集モードの間は、1 件ずつ、またはすべてを置き換えられる (INV-80) |
 
 #### スコープ外
 
@@ -330,7 +346,7 @@ gr-simple-md-renderer/
 | OS-02 | ユーザーアカウント / 認証                                     | 設計上データ永続化なし                                                                                                |
 | OS-03 | localStorage / sessionStorage / Cookie へのユーザーデータ保存 | プライバシー制約 (CON-03)                                                                                             |
 | OS-04 | マルチタブ / マルチファイル編集                               | YAGNI; 単一ファイルビューアのスコープ                                                                                 |
-| OS-05 | コードビュー内ページ内検索                                    | YAGNI; ブラウザのCtrl+Fで十分                                                                                         |
+| OS-05 | コードビュー内ページ内検索                                    | (2026-10-25 に SC-26・INV-80 でスコープ内にした。オーナーの裁定 S3: コードビューでも検索の箱で探す) 元の理由: YAGNI; ブラウザのCtrl+Fで十分 |
 | OS-06 | コードビューでのコード編集 / 修正                             | コードビューは読み取り専用ビューアである。**Markdown の編集は SC-22 によりスコープ内 (2026-xx-xx 改訂)**             |
 | OS-07 | コンテンツによるファイルタイプ検出（マジックバイト全解析）    | 先頭8KBのnullバイト検査で十分（5.4参照）。フルマジックバイト解析はYAGNI。                                             |
 | OS-08 | TypeScript移行                                                | 将来のフェーズに延期                                                                                                  |
@@ -433,7 +449,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-06  | 常時         | 本番成果物はすべてのCSS、JavaScript、HTMLをインラインに含む単一HTMLファイルとすること。                                                                                                                                                                                                                                                                                                                                                                                      |
 | INV-07  | 常時         | システムは実行時にCDNからコードを取得しないこと (全ライブラリはバンドル済み)。ビルド出力に外部URLのimport (`import ... from "https://..."`、`import("https://...")`。動的importはテンプレートリテラルの指定子も含む) または文字列 `cdnjs` が残っている場合、ビルドは失敗すること (vite.config.js の `no-external-imports` プラグイン)。2026-07-16以前のSRI要件は廃止。                                                                                                                                                                                  |
 | INV-08  | 状態駆動     | プレレンダー状態（エディタ空、レンダリング済みコンテンツなし）において、ペーストまたはファイルドロップはシステムテーマで自動レンダリングをトリガーすること。                                                                                                                                                                                                                                                                                                                 |
-| INV-09 | イベント駆動 | レンダリングがトリガーされた場合、システムはレンダリングパイプライン完了後にスクロール位置を保存・復元すること。**ブロックの確定・Undo による部分描画では、INV-46 に従う。** |
+| INV-09 | イベント駆動 | レンダリングがトリガーされた場合、システムはレンダリングパイプライン完了後にスクロール位置を保存・復元すること。**ブロックの確定・Undo による部分描画では、INV-46 に従う。描画の間に利用者がビューを動かした場合は、INV-78 に従う (利用者が最後に動かした所へ戻す)。** |
 | INV-10  | 異常系       | PlantUML画像が5秒以内にロードできなかった場合、システムはダイアグラムの代わりにタイムアウトエラー要素を表示すること。                                                                                                                                                                                                                                                                                                                                                        |
 | INV-11  | イベント駆動 | ファイルがドロップされた場合、システムはCONFIG.fileDrop.maxBytes (5 MB) に対してファイルサイズを検証し、超過ファイルはアラートで拒否すること。                                                                                                                                                                                                                                                                                                                               |
 | INV-12  | 常時         | システムは初回ページロード時およびクリア時にOSのカラースキーム設定（prefers-color-scheme）を適用すること。                                                                                                                                                                                                                                                                                                                                                                   |
@@ -502,6 +518,10 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-74 | イベント駆動 | 編集モードの間 (パレットの表示中。最小化を含む) で、ブロック編集欄もセルも開いていないとき (editModeIdle)、システムはプレビューの文字の選択 (マウスのドラッグ、タッチの長押しの選択) で、最上位のブロック (INV-41) をまとめて削除・カット・コピーできるようにすること (オーナーの裁定 D1〜D14、2026-10-24。調整役の裁定 U1〜U6)。番号付きの細目は、この文の応答を詳しくするもの (2 章の決まり)。(1) **ブロックの範囲:** 選択の始まりの端と終わりの端を、それを含む最上位のブロックに解決し、その間のブロックを含めて対象とする (用語集)。リスト・表・引用・生 HTML のまとまりは全体で 1 ブロック (中の 1 項目の文字だけを選んでも、そのブロック全体。D13)。端がブロックの外 (ブロックの間、プレビューの余白、プレビューの外) にあるとき、またはブロックの中でも見える文字を 1 つも選んでいない位置 (終わりの端がブロックの先頭、始まりの端がブロックの末尾) にあるときは、選択の内側の向きに次のブロックへ丸める (始まりは後ろ、終わりは前。選択の見た目より広く消さない。U2)。対象が 0 個なら範囲にしない。プレビューの外にかかった選択 (Ctrl+A を含む) は、プレビューの中の部分だけを使う (U4)。図の上のドラッグは今どおり図のパン (図から選択を始めることはできない) で、図を含む選択では図のブロックも対象になる。選択の端が、ブロック編集欄・セル・すき間の編集欄・入力要素・帯・パレットの中にあるとき、またはフォーカスが INV-14 の入力の要素 (`utils.isTypingTarget`) にあるときは範囲にしない (U5)。範囲は、キー・帯の押下・`copy` の事象のたびに選択から読み直す (読むだけで、表示を変えない)。枠と帯の表示は、`selectionchange`・スクロール・リサイズを `requestAnimationFrame` で 1 フレームに 1 回にまとめて行う。ブロック 1 つでも範囲になる (D4)。(2) **表示:** 対象のブロックの外枠に枠 (class `md-block-range`、編集の青。5.1) を付ける。枠を付けるのは、対象のうちビューポートとその上下 1 画面分の中にあるブロックだけで、スクロールで追う (見えない所の枠は描かれないので、Ctrl+A の 1 フレームを文書の大きさによらず短くするため。2026-10-25)。選択の最後の行のすぐ下 (`CONFIG.edit.blockRangeBarGapPx`) に帯 [削除][カット][コピー] を出す。下に場所が無ければ最後の行の上に出し、どちらでもビューポートの端から `blockRangeBarMarginPx` の内側に収める (最後の行がビューポートの外でも押せるように。スマホの OS の吹き出し (上に出る) と重ならないように下を先にする。D10、U4。位置の計算は純粋な関数 `floatingPlacement.placementNearLine`)。マウスのボタンを押している間 (ドラッグで選択を作っている間) は帯を出さない (帯がポインタの先に来て、選択を止めないため。枠は追う。窓の外で離して `pointerup` が来なくても、ボタンを押していないマウスの移動で帯を出す。調整役の裁定 2026-10-24)。プレビューの中で始まったマウスの主ボタンの押下が、離すまでに `CONFIG.pan.activationThresholdPx` (5px。ブロックを開くタップとドラッグを分ける値と同じ) を超えて動き (ドラッグ)、離したときに editModeIdle で、プレビューに掛かる選択が空でないときは (離した場所はプレビューの外でもよい。押下で開いていた編集欄を確定して閉じた (INV-30) ドラッグも含む。editModeIdle は押下ではなく離したときに見る)、その `mouseup` の既定の動作を止める (`preventDefault`)。Edge のミニメニュー (選択の横に出る Copilot・コピー・検索などの小さなメニュー) が出ている間は Delete などのキーがページに届かないので、それを出さないため (オーナーの裁定 S1、2026-10-25)。選択も枠も帯もそのままで、`click` の事象も今どおり起きる。クリック (動きが閾値以下。選んだ文字の上のクリックを含む。ブラウザはそのクリックの `mouseup` で選択を解くので、枠と帯も今どおり消える)、離したときに選択が空の押下、開いている編集欄の中のドラッグ、副ボタン・タッチ・ペンの押下は止めない (調整役の裁定 2026-10-25、レビューの H1・H2)。右クリックのメニュー (`contextmenu`) は止めない (自分で開くものでキーを奪わず、(4) のコピーに使う。オーナーの裁定 S2)。帯は `body` の直下の 1 つの要素 (`.grsmd-block-range-bar`、`position: fixed`、`role="toolbar"`) で、ボタンはアイコンだけ、`title` と `aria-label` は `messages.blockRange` (主の修飾キーは INV-14 の判定式で Ctrl / Cmd と書く。U1)。ボタンはフォーカスを取らず、押して離す (押したボタンの上で主ボタンを離したときだけ実行。INV-34 / INV-36 と同じ) で動き、押下で選択を消さない。範囲がある間は、すき間の点線と「+」を出さない (INV-73)。印刷では枠と帯を出さない。(3) **削除:** [削除]、Delete、Backspace (INV-14 の修飾キー (Ctrl・Meta・Alt) なし。Shift は修飾キーに当たらないので、Shift+Delete / Shift+Backspace も同じく消す (Windows の昔からの「切り取り」ではない。オーナーの裁定 2026-10-25)。IME の変換中を除く。押し続けても 1 回) で、対象のブロックを、その後ろの区切りの空行とともに 1 つの変更の単位として消す (`RendererOrchestrator.deleteBlocks`。11-c の `blockRangeDeleteRequested`)。確認のダイアログもトーストも出さない (D2)。選択・枠・帯は消える。消えた最初のブロックの場所に、その位置に来たブロックを保つ (INV-46)。前後のブロックがくっつくことがある (リスト同士など。1 つずつ消すときと同じ)。全部を消すと INV-49 の空のブロックになる (先頭の空行は残る)。[Clear] (INV-21 の確認がある) と違い、セッションと保存先は変えず、Undo 1 回で戻せる。範囲の削除のモデルは、`replaceBlock` と同じく本文全体を字句解析し直す (合意の「局所の再解析」ではない。(性能) の目標に入るので、この経路とする。調整役の裁定 2026-10-24)。(4) **カットとコピー (書き込みの決まりはここだけに書く):** 対象の原文は、最初のブロックの始まりから最後のブロックの原文の終わりまでの本文 (間の空行はそのまま、最後のブロックの末尾の改行は含まない)。[カット] と主 + X は、原文をクリップボードに `text/plain` で書いてから、(3) と同じく消す (D3)。カットは、押下・キーの処理の中ですぐに書けたときだけ消す。書けなかったときは消さず、後から書くこともせず、トースト `messages.blockRange.cutFailed` を 1 つ出す (調整役の裁定 2026-10-24)。[コピー] と主 + C は、原文を書くだけでモデルを変えず、選択も残し、帯のコピーのボタンを `CONFIG.ui.copyFeedbackDuration` の間 ✓ にする (図のコピーのボタンの合図と同じ時間。カットでは出さない。D7、D11、U3)。範囲がある間は、ブラウザが起こす `copy` の事象 (右クリックのメニューの「コピー」、iPhone / iPad の OS の吹き出しの「コピー」、Mac のメニューの「編集 > コピー」) でも、同じく原文を書き、✓ を出す (どれも原文。オーナーの裁定 2026-10-25)。書き込みは押下・キー・事象の処理の中で行う: ブラウザが起こした `copy` の事象ならその `clipboardData` に、それ以外は `document.execCommand("copy")` が起こす `copy` の事象の `clipboardData` に `setData` で書く。それができないときだけ、コピーに限り `navigator.clipboard.writeText` を使う (書けた時点で ✓)。コピーが書けなかったときは、✓ を出さずにトースト `messages.blockRange.copyFailed` を 1 つ出す。成功のトーストは出さない (D2)。既存の `messages.copy.failed` は「文字を選んで Ctrl+C を押す」ように勧める文で、ブロックの範囲ではその Ctrl+C が同じ書き込みになるので使わない。クリップボードを読まない (CON-12)。見えている文字の一部をコピーしたいときは、編集モードを抜けて行う (D7)。貼り付けは今の手段 (ブロック編集欄、すき間の編集欄) で行い、選んだブロックを貼り付けで置き換える仕組みは持たない (D12)。Shift+クリックでの範囲の選択は設けない (D6)。(5) **Esc:** 範囲があるときの Esc は、まず選択を解く (帯と枠が消え、編集モードのまま。11-c の `escapePressed` の [hasBlockRange])。もう一度の Esc でパレットを閉じる (D14)。ポップオーバーを開いているときは、ポップオーバーを閉じるのが先 (INV-53)。(6) **その他:** 範囲は editModeIdle の間だけ (D9)。編集モードでないとき、編集欄・セルを開いているときは、選択もキー (Delete / Backspace / 主 + C / 主 + X) も `copy` の事象もブラウザの既定のまま。編集欄を開いているときのプレビューの押下は今どおり INV-30 の外側の押下で、確定して閉じてから選択が始まる。`#editor` に未描画の変更があるときの削除・カットは、INV-45 の全体描画とトーストだけを行い、消さない。コピーはモデルを変えないので全体描画をせず、画面に出ているモデルの原文を写す (選んでいるのはプレビューに見えているブロックだから。調整役の裁定 2026-10-24)。描画の世代が進んで対象の ID が今のモデルに無いときは何もしない (INV-29 と同じ考え)。**(性能。目標だけを書く。実測は試験仕様の PRT-Z07 の備考)** 1 MB の文書で、(a) 全部を選んだ (Ctrl+A) 後に枠と帯を出す 1 フレーム (その処理と、それが残すスタイルとレイアウトの計算) を 50 ms 以内とする (ブラウザの長いタスクのしきい値。1 回だけの応答なので、繰り返しの処理の 4 ms ではなく、この値とする。調整役の裁定 2026-10-25)。選択を少しずつ広げる繰り返しのフレームは、INV-73 と同じく 4 ms 以内。(b) Delete を押してから DOM の差し替えまでを 300 ms 以内とする (INV-51 と同じ)。(c) 30 回の範囲の削除の Undo の記録を 4 MiB 未満とする (INV-48)。いずれも最新の Chrome で測る (e2e `blockRange.e2e.js` の時間の試験、AT-PERF-12 / 13)。**既知の制限 (ブラウザが選択に出すメニュー。オーナーの裁定 S3、2026-10-25):** (a) iPhone / iPad / Android の OS の選択の吹き出しは止めない (止めるには選択そのものを止めるしかなく、この機能が使えなくなる)。帯は吹き出しと重ならないように下に出す ((2))。(b) (2) の後でも Edge のミニメニューが出たとき (Edge の変更など) は、それが出ている間の Delete などのキーはページに届かない (ページの側では拾えない)。Esc かクリックでメニューを閉じてから押す。Edge の設定でミニメニューを切ることもできる。(c) (2) で確かめたのは Windows の Edge 156 のマウスのドラッグだけ。Ctrl+A での選択 (`mouseup` が無いので (2) は効かない)、プレビューの外で離した場合、Mac の Edge、タッチ・ペンの Edge でミニメニューが出るかは確かめていない (PRT-Z01 で見る)。(d) 右クリックのメニューは止めない (S2)。ヘルプには書かない (S3)。 |
 | INV-75 | 常時 | ビルド成果物 (単一 HTML) は、同梱する第三者のソフトウェアの表記を、付録 A.2 の 3 つの置き場所に持つこと。(1) `</body>` の直前のコメントに、付録 A.2 の数え方で数えたすべての項目の著作権とライセンスの文 (出どころは `node_modules` と `tools/third-party-licenses/` のファイル。ビルドは通信しない)。(2) `<meta charset>` と CSP の後に、そのコメントを指す案内の 1 行。(3) ヘルプの最後の章 (`data-help-section="licenses"`、日英) に、その「名前 版 (ライセンス)」の一覧 |
 | INV-76 | イベント駆動 | ビルドで付録 A.2 の検査が表記の欠けを見つけた場合 (許さないライセンス、文の無いパッケージ、一覧に無い束ねられたコード、古くなった一覧)、システムはビルドを失敗させること。検査が見つけるものの範囲は、付録 A.2 の「検査で見つけるもの」とする |
+| INV-77 | 状態 / イベント駆動 | Markdown ビュー (`_viewState === 'markdown'`) の間、[Index] (`indexBtn`) または `i` が押された場合、システムは目次 (`indexPanel`) の表示と非表示を切り替えること (オーナーの裁定 T1〜T8、2026-10-25)。(1) **中身:** 目次は、描画側が作った最上位のブロック (`#preview > .md-block`) の直下の見出し h1〜h6 を、文書の順に、見出しの深さで段を下げて (class `index-h1`〜`index-h6`) 1 項目ずつ持つ。引用・リストの中の見出し、コードブロックの中の `#`、利用者が書いた `.md-block` の中の見出しは入れない。文字は見出しの文字 (書式は落とす。数式は KaTeX の annotation の TeX。空白はまとめる)。文字の無い見出しは入れない。見出しが 1 つも無ければ `CONFIG.messages.index.empty` を出す。(2) **作り直し:** 表示している間に、プレビューの最上位のブロックが変わった場合 (全体の描画、確定、Undo / Redo、挿入、削除。`MutationObserver` の `childList`)、1 フレームに 1 回まで、変わったブロックの項目だけを作り直す (なくなったブロックの項目を除き、来たブロックの項目を、その後ろで項目を持つ最初のブロックの項目の前に入れる。変わらないブロックの項目はそのまま。すべてのブロックが新しいとき (全体の描画) は一覧をまるごと作る)。目次の中の見えている所は保つ (まるごと作るときは目次のスクロールの位置を戻す。変わったブロックの分だけのときは、見えている項目より上に項目が入っても、ブラウザのスクロールのアンカリング (`overflow-anchor`) で見えている項目は同じ所に留まる。e2e で Chromium と WebKit を確かめた)。表示していない間は作らず、見張らない。**(性能)** 1 MB の文書で、表示している間の確定・Undo の後の作り直しは 50 ms 以下とする (調整役の裁定 2026-10-25。AT-PERF-14、GRSMD_PERF=1)。表示したときの最初の一覧には目標を置かない (実測: レビューの内蔵ブラウザで、直す前の実装の見出し 9,826 個に 181 ms。jsdom (AT-PERF-14、見出し 9,318 個、2026-10-25) では、最初の一覧 715 ms、確定の後の作り直し 1.4 ms、Undo の後 1.5 ms (5 回の中央値)。jsdom では、選択子 `:scope` と `children` の繰り返しが文書の大きさに比例して遅いので、どちらも使わない)。(3) **飛ぶ:** 項目が押された場合、その見出しの上端を、見えている範囲の上端 (デスクトップは `#preview` の上端、タッチ端末 (FS-15) は sticky の上部バーの下端) から 8 px 下へスクロールする (アニメーションしない。`ScrollMemento.scrollTargetTo`)。押下はブロック編集の「外側」(INV-30) なので、開いているブロック編集欄・セルは先に確定する。確定で見出しが描き直されて元の要素が文書から外れていたら、その場で目次を作り直し、同じ順番の項目へ飛ぶ。全体の描画の途中に飛んでも、描き終えた後は飛んだ所に留まる (INV-78)。(4) **閉じる:** [Index]、`i`、Esc でだけ閉じる。項目を押しても、目次の外を押しても閉じない。Esc は、ブロック編集欄・セル・ポップオーバー・ブロックの範囲・パレットのどれかが出ているときはそちらを先にし (5.11)、パレットが出ていないときは検索の箱を先に閉じ (INV-80 (6)。裁定 S9)、どちらも出ていないときに目次を閉じる (裁定 T7。目次だけを消したいときは [Index] で消す)。(5) **使えない時:** 初期状態とコードビューでは [Index] を無効 (`disabled`) にし、目次を閉じる。`i` も何もしない。挿入の待ち (INV-52) の間の `i` も何もしない。(6) **見え方:** 目次は `#preview` の外 (兄弟) の列 `#sidePanels` (`position: fixed`) の中に置く。列は見えている範囲の上端の 4 px 下、見えている範囲の右端 (スクロールバーの左) から 8 px (`ScrollMemento.shownTop` / `shownRight`)、幅 `min(360px, 100vw - 16px)`、高さはウィンドウの下端の 8 px 上まで (中身が少なければ縮む。`sidePanels.placeSidePanels`。表示のときとウィンドウのリサイズで置き直す)。中身があふれたら目次自体がスクロールする (`overscroll-behavior: contain`)。地の不透明度は 75% (5.8.1)、文字は不透明。長い見出しは折り返す。重なりは `z-index: 350` (プレビューの層とトーストより上、パレットとモーダルより下)。印刷では出さない。(7) **アクセシビリティ:** `indexPanel` は `nav` (`aria-label="Index"`)、項目は `button`。[Index] は `aria-controls="indexPanel"` と `aria-expanded` を持つ。Tab で項目へ移れ、Enter / Space で飛ぶ。開いてもフォーカスは移さない |
+| INV-78 | イベント駆動 | 全体の描画 (INV-09。`RendererOrchestrator._renderFull`) の間 (ブロックを描いてから、Mermaid・PlantUML の描画と DOM の安定を待ち終えるまで) に、利用者がビューを動かした場合、システムは描画の終わりに、スクロールの位置を描画の前の位置へ戻さず、利用者が最後に動かした所の読んでいる位置 (`ScrollMemento.captureReadingAnchor`。INV-46) へ戻すこと (調整役の裁定 2026-10-25、レビュー 1 回目の Q1。目次で飛ぶと必ず元の位置へ戻されていた。描画で上のブロックの高さが変わっても、読んでいた所に留まる)。**数える操作** は、ビューを動かすものだけとする: ホイール (`wheel`)、指の移動 (`touchmove`)、入力欄の外のスクロールのキー (`keydown` の ↑・↓・PageUp・PageDown・Home・End・Space)、スクロールバーの押下 (`pointerdown`。`ScrollMemento.isScrollbarPress`)。Shift などほかのキー、本文の外 (キーのヒントなど) と本文の中の押下、ポインタの移動は数えない。`ScrollMemento.watchUserMoves()` が `window` の capture の段階で見る (ハンドラが止めても見える)。数える操作の後は、ビュー (`#preview`、タッチ端末 (FS-15) では文書) がスクロールするたびに、読んでいる位置を覚え直す (操作の前の、描画そのもののスクロールは数えない)。目次の項目と検索の一致へ飛ぶ (`ScrollMemento.scrollTargetTo`) と、その場で覚える。描画を始めた操作 (押したボタン、押したキー) は数えない (見張りは描画の中で始める)。動かす操作が無ければ (動かしてもスクロールが起きなければ) 今どおり描画の前の位置へ戻す。見張りは、描画が失敗しても終える。ブロックの確定・Undo の部分描画 (INV-46) は変えない |
+| INV-79 | イベント駆動 | 保存のダイアログ (`MarkdownFileAccess.startSavePicker`。Save as と、保存先の無い Save) を開く場合、システムは、このタブで最後に覚えたファイルがあればそのファイルのフォルダから (`startIn` にそのハンドル)、無ければブラウザがこのダイアログの `id` (`CONFIG.edit.savePickerId`) で覚えている前回のフォルダから開くこと (オーナーの依頼と裁定、2026-10-25)。(1) **覚えるファイル:** ドロップした `.md` のハンドル (`DocumentLifecycle.openFile`) と、保存のダイアログで選んだファイルのハンドル (選んだ時点。書き込みの成否によらない)。キャンセルしたダイアログと、ハンドルの無いドロップ・貼り付けは、覚えているものを変えない。コードビューのファイルは覚えない (保存しないため)。(2) **メモリだけ:** ハンドルは `MarkdownFileAccess` のフィールドだけに持ち、タブを閉じる・再読み込みで消える。アプリは IndexedDB などに何も書かない (CON-13。ハンドルを IndexedDB に保存して再読み込みの後も覚えることはしない。オーナーの裁定)。`id` の前回のフォルダはブラウザが自分で覚えるもので、アプリのストレージではない (再読み込み・新しいタブの後も効く)。(3) **同期:** ダイアログは今どおり押下のハンドラの中で同期的に開く (INV-33)。(4) **無いブラウザ:** `showSaveFilePicker` の無いブラウザ (Safari、Firefox、iPhone / iPad) は今どおりダウンロードで、フォルダはブラウザの設定のまま (INV-26)。ドロップした `.md` への Save (上書き) は、ダイアログを出さないので変わらない |
+| INV-80 | 状態 / イベント駆動 | Markdown ビューまたはコードビューの間、[Search] (`searchBtn`)、`f` (入力要素の外。表示モードでも編集モードでも。オーナーの裁定 S6・S8)、または編集モードの間の主 + F (ブロック編集欄・セルの中でも) が押された場合、システムは検索の箱 (`searchPanel`) を出して検索欄にフォーカスを移し、その文字を選ぶこと (オーナーの裁定 S1〜S14、2026-10-25)。出ているときの [Search] は閉じる。(1) **探すもの:** Markdown ビューではモデルの本文 (`toBody()`。`#editor` の未描画の変更は探さない)、コードビューでは表示しているファイルの文字 (`#codeViewBody` の行の文字を改行でつないだもの。裁定 S3)。(2) **型:** 通常の文字 (既定。正規表現の記号もただの文字)、または [.*] で JavaScript の正規表現 (フラグ `gm`。[Aa] が切れていれば `i` も)。不正な式は、件数の所に `CONFIG.messages.search.invalid` を出し、何も選ばない。空の一致 (`^` など) も数え、次は 1 文字先から探す。数えて行くのは `MAX_MATCHES` (10,000) 件まで (件数は `10000+`)。(3) **探す時:** 通常の文字は、検索欄の入力ごとに探して件数を出し、入力が `TYPING_PAUSE_MS` (150 ms) 止まったら最初の一致へ行く (1 キーの処理を小さくするため。(性能))。正規表現は、入力が `REGEX_TYPING_PAUSE_MS` (300 ms) 止まったときに探して、最初の一致へ行く (裁定 S13。それまで件数の所は空)。[Aa] / [.*] の切り替えは、すぐ探して最初の一致へ行く。文書が変わったとき (確定、Undo / Redo、置換、新しい文書、Reload、ビューの切り替え、閉じている間に変わった後に開いたとき) は、通常の文字なら前の条件で探し直して件数だけを直す (スクロールしない。今の一致の番号は保つ)。正規表現は、自分からは走らせない (時間のかかる式で確定のたびにページが固まらないため。下の既知の制限。調整役の裁定 2026-10-25、レビュー 1 回目の M2): 一致・枠・色付けを消し、件数の所に `CONFIG.messages.search.stale` ("Down: search again") を出す。利用者が ↓ / ↑ / [↓] / [↑] を押すか、[Replace] / [All] を押すか、式か [Aa] / [.*] を変えたときに、今の文字で探す (↓ / ↑ は探した後に動く。[Replace] / [All] は探した後にそのまま置き換える)。文字が変わっていなければ、どちらも何もしない。不正な式は、文字によらず `invalid` のまま。(4) **行く:** 検索欄の ↓ と [↓] で次、検索欄の ↑ と [↑] で前に行く (端では反対の端へ回る。まだ選んでいなければ、↓ は最初、↑ は最後。IME の変換中の ↓ / ↑ は IME の候補の選択に使い、動かない。レビュー 1 回目の L3)。押下は数えておき、1 フレームに 1 回だけ動く (押し続けたキーの繰り返しをまとめる。(性能))。検索欄と置換欄の Enter は何もしない (裁定 S7・S12)。行った一致のブロック (コードビューでは行) に `.search-hit` を付ける。原文でブロック (行) の始まりから一致までにある同じ文字列の数を n とし (大文字小文字は [Aa] に従う)、描画された文字の n 番目の同じ文字列を今の一致として `grsmd-search-current` (橙)、そのブロックのほかの同じ文字列 (100 か所まで。n がそれより後ならそこまで) を `grsmd-search` (黄) で色付けする (CSS Custom Highlight。DOM は変えない。裁定 S14)。今の一致を `scrollIntoView({block: "nearest", inline: "nearest"})` で横にも見せ、見えている範囲の上端から、その高さの 1/4 (8 px 以上) 下の所へスクロールする (`ScrollMemento.scrollTargetTo`。全体の描画の途中でも、描き終えた後は留まる。INV-78)。描画された文字に n 番目が無いとき (書式の記号・セルをまたぐ一致など) は、表のブロックなら原文の行に当たる行 (1・2 行目は見出しの行、その後は 1 行に 1 行) へ、ほかはブロックの上端へ行く (裁定 S7)。Custom Highlight の無いブラウザでは色付けをせず、枠とスクロールだけを行う。(5) **置換:** 編集モード (パレットの表示中) の間だけ、置換欄・[Replace]・[All] が有効 (裁定 S4)。押されたら、まず 11-c の `searchReplaceRequested` で開いているブロック編集欄・セルを確定し、`#editor` の未描画の変更を取り込む (保存と同じ。INV-56 の確認で取り消されたら何もしない)。[Replace] は今の一致を置換欄の文字に置き換え、置き換えた文字の後ろの最初の一致へ行く (置き換えた文字がまた一致しても、それを飛ばす。描き直しが終わる前に箱を閉じたか、検索の条件を変えたときは、行かない。レビュー 1 回目の L8)。一致をまだ選んでいなければ、最初の一致へ行くだけ。[All] はすべての一致 (10,000 件を超えても全部) を置き換え、件数をトースト (`messages.search.replaced`) で出す。どちらも `RendererOrchestrator.replaceBody` で 1 つの変更として記録する (INV-48。Undo 1 回で戻る)。変わらないブロックは ID を保ち、部分描画にする (INV-42)。正規表現の置換欄は、ブラウザの `String.prototype.replace` に渡して展開する (`$$`・`$&`・`` $` ``・`$'`・`$1`〜`$99`・`$<名前>`。群の数より大きい 2 桁の `$nn` は 1 桁の群と続く数字、名前付きの群の無い式の `$<名前>` はそのまま、など、細かい読み方もブラウザのとおり。調整役の裁定 2026-10-25、レビュー 1 回目の M1)。[Replace] は、同じ式の `y` (sticky) をその一致の位置から当てるので、`^`・後読みも前後の文字を見る。通常の文字では展開しない (置換欄の文字のまま)。(6) **閉じる:** [Search]、[×]、Esc。初期状態になると閉じる。閉じると、印・色付け・待っている移動を消す。Esc は、検索の箱の中にフォーカスがあれば、すぐ検索を閉じる (裁定 S11。IME の変換中を除く)。箱の外では、パレットが出ていれば 11-c の `escapePressed` (編集欄・セル・ポップオーバー・ブロックの範囲・パレット)、出ていなければ検索、検索も出ていなければ目次を閉じる (裁定 S9。INV-77 (4))。コードビューにはパレットが無いので、検索から。(7) **キー:** 検索欄と置換欄は INV-14 の入力要素 (1 文字のショートカットは効かない。主 + Z / Y はその欄のブラウザの Undo / Redo)。主 + F は編集モードの間だけ横取りし、それ以外はブラウザの検索のまま (裁定 S6)。(8) **見え方:** 検索の箱は目次と同じ列 (`#sidePanels`) の上で、目次はその下 (INV-77 (6))。地の不透明度は 75% (5.8.1)。印刷では、箱・枠・色付けを出さない。(9) **保存しない:** 検索と置換の文字と切り替えは、メモリだけに持つ (CON-13)。**(性能。目標だけを書く)** 1 MB の文書で、検索欄の 1 キー (入力) の処理と、↓ / ↑ の 1 押下の処理は、それぞれ 4 ms 以下とする (ビューを動かす処理は、(3)(4) のとおり、その後の 1 回にまとめる。レビュー基準 G10)。[All] は、押下から新しいモデルと Undo の記録までを 300 ms 以内とする (INV-51。続く描き直しは、すべてのブロックが変わると文書を読み込むときと同じ大きさになるので、目標を置かない)。測るのは最新の Chrome (e2e `search.e2e.js` の時間の試験)。2026-10-25 の実測 (この worktree の内蔵ブラウザ、1 MB): 1 キー 0.1〜0.7 ms、↓ 0 ms、[All] (1,593 件) 158 ms。**[要検証]** 同じ内蔵ブラウザでは、1 MB の `#preview` のスクロール 1 回に、develop の配布物でも 300〜500 ms かかった (普通の 1 MB のページは 0.1 ms)。実機の Chrome で確かめる (PRT-AD08)。**既知の制限 (時間のかかる正規表現。調整役の裁定 2026-10-25、レビュー 1 回目の M2):** 利用者の打つ正規表現は、ブラウザの `RegExp` でページの主スレッドの上で走り、途中で止められない。入れ子の量指定子 (例 `(a+)+$`) を長い行に当てると、終わるまでページが固まる (27 文字の行で約 10 秒、1 文字ごとに約 2 倍。Chrome が「ページが応答しません」を出し、そこで閉じると保存していない編集を失う)。理由: 止められるのは Worker で走らせるときだけで、ページの CSP の `script-src` は埋め込んだスクリプトの sha256 だけを許すので、Worker (`blob:` など) を作るには CSP を緩める必要がある (しない)。影響を小さくするため、正規表現は利用者の操作でだけ走らせる ((3))。回避: 入れ子の量指定子を避ける。正規表現の置換の前に保存する。ヘルプ (英日) の [Search] の行に、このことを 1 文で書く |
 | INV-72 | 常時 | WYSIWYG のセルの書き出しでは、システムは表記を次のとおり保つこと。(a) リンク: 開く時点で、セルの原文をインラインの字句解析し、リンクのトークンを出現順に描画の `a` 要素と対応付け (数が合わなければ原文のセルにする)、要素ごとに種類と元の表記 (普通 `[文字](URL)`・参照 `[文字][ラベル]` / `[文字][]` / `[文字]`・`<URL>`・裸の URL) を記録する。書き出しでは、普通のリンクは `[文字](URL)`、参照リンクは `[文字][ラベル]` (省略形で文字が変わった場合は元の文字をラベルとして `[新しい文字][元の文字]`)、`<URL>` と裸の URL は、文字が変わっていなければ元の表記、変わっていれば新しい文字を URL として同じ形 (新しい文字が INV-69 の URL の条件を満たさなければ `[文字](元の URL)`) とする。INV-69 で作ったリンクは普通のリンクとする。(b) 実体参照は文字として書く (`&nbsp;` は U+00A0)。(c) 見えない文字は文字のまま書く (INV-70)。(d) 文字の逃がし: `` \ ``、`` ` ``、`*`、`_` (単語の中を除く)、`[`、`]`、`<`、`\|`、`~`、`$`、`&` を `` \ `` で逃がす (リンクの文字の中で、逃がした `]` の直後の `(` は `\(` と書く (marked はリンクの文字の `\[` `\]` を括弧に戻してから読むので、`\[x\](y)` が中のリンクになる)。リンクの直前の `!` も `\!` と書く。画像にしない。新しいリンクの直前に文字として書かれた `*` `_` `~` も `` \ `` で逃がす。`[` が続くと強調を閉じうるため) **[確認済: `\$` は KaTeX の拡張を入れた marked で数式にならない]**。表のセルでは、コードスパンの中の `\|` も、前に `` \ `` を付けて逃がす (marked の表は、逃がした縦棒を `\|` に戻してからセルを解析する **[確認済]**。`inlineHtml` も同じ前処理をする)。(d) の逃がしは、ブロック編集欄で INV-69 が作るリンクの文字にも当てる (5.14.15)。 |
 
 ---
@@ -537,6 +557,8 @@ graph TB
             SMGR["ScrollMemento<br/>(Position Save and Restore)"]:::adapter
             MODAL["ModalController<br/>(Help + Prompt, Esc and keys while open)"]:::adapter
             HELPLANG["HelpLanguageSwitch<br/>(Help language, memory only)"]:::framework
+            INDEX["DocumentIndex<br/>(Index of headings, INV-77)"]:::framework
+            SEARCH["DocumentSearch<br/>(Search and replace, INV-80)"]:::framework
             ZOOM["DiagramZoomController<br/>(Ctrl+Scroll)"]:::framework
             PAN["DiagramPanController<br/>(Drag)"]:::framework
             COPY["DiagramCopyController<br/>(SVG and PNG)"]:::framework
@@ -570,6 +592,9 @@ graph TB
     UI -->|"reads and writes"| STATE
     UI -->|"scroll commands"| SCROLL
     UI -->|"modal commands"| MODAL
+    UI -->|"toggles, hides, view mode"| INDEX
+    UI -->|"opens, hides, view mode, edit mode"| SEARCH
+    SEARCH -->|"reads the model, replaces the body"| ORCH
     ORCH -->|"markdown pipeline"| MD
     ORCH -->|"diagram pipeline"| MERM
     ORCH -->|"diagram pipeline"| PUML
@@ -612,7 +637,7 @@ graph TB
     classDef framework fill:#87CEEB,stroke:#333,color:#000
 ```
 
-UIControllerがユーザーイベントを受け取り、RendererOrchestratorに処理を委譲する。OrchestratorはMarkdown、Mermaid、PlantUMLのパイプラインを逐次実行し、スクロール位置を復元する。Diagram系コントローラ（Zoom/Pan/Copy）はRendererOrchestratorとの直接のコード依存はなく、`#preview` DOM要素を共有して監視・操作する（図中に矢印なし）。SourceFileRendererとSmoothScrollEngineはMarkdownパイプラインとは独立してコードビューパスを処理する。HelpLanguageSwitch も、main.js が作り、ヘルプのモーダルの DOM だけを扱う (他のクラスとのコードの依存は無く、図中に矢印なし。SC-16)。
+UIControllerがユーザーイベントを受け取り、RendererOrchestratorに処理を委譲する。OrchestratorはMarkdown、Mermaid、PlantUMLのパイプラインを逐次実行し、スクロール位置を復元する。Diagram系コントローラ（Zoom/Pan/Copy）はRendererOrchestratorとの直接のコード依存はなく、`#preview` DOM要素を共有して監視・操作する（図中に矢印なし）。SourceFileRendererとSmoothScrollEngineはMarkdownパイプラインとは独立してコードビューパスを処理する。HelpLanguageSwitch も、main.js が作り、ヘルプのモーダルの DOM だけを扱う (他のクラスとのコードの依存は無く、図中に矢印なし。SC-16)。DocumentIndex は main.js が作って UIController に渡し、UIController が `i`・Esc・ビューの切り替えで呼ぶ。DocumentIndex はプレビューの DOM を読むだけで、RendererOrchestrator とモデルを知らない (INV-77)。DocumentSearch は UIController が作り (host は UIController)、文書には main.js が渡す 3 つの関数 (`getModel`・`blockElement`・`replaceBody`) でだけ触る (INV-80)。
 
 編集モード (パレットの表示中) の間だけ、BlockEditController がプレビューのクリックを編集の開始として扱う。確定・挿入・Undo によるモデルの更新は同期的に行い、RendererOrchestrator が `ModelChangedPort` を通して知らせる (UIController がそのポートを実装する。ソースの依存は UI から UseCase への内向き)。DOM の描画だけを直列のキューで処理する (INV-47)。保存の手順 (権限、外部変更の確認、書き込み、基準の更新) は UseCase 層の SaveDocument / SaveDocumentAs が持ち、確認ダイアログは `OverwriteConfirmPort` (UIController が実装) を通して出す。現在の文書 (`DocumentSession`)、保存先 (`DocumentLocation`)、保存の状態 (11-e) は UseCase 層の DocumentLifecycle が持ち、保存先は DocumentLifecycle が持つ `DocumentLocation` だけを正とする (INV-55)。DocumentLifecycle は UI に触れず、保存の UI の手順 (INV-56 の確認、開いている編集欄の確定、結果のトースト) は `SaveSteps` で UIController を呼び返す。MarkdownFileAccess はローカルファイルの読み込み (Reload) と書き込み (保存) だけを行い、通信しない (CON-14)。
 
@@ -636,6 +661,11 @@ classDiagram
         -useDocumentScroll : boolean
         +save() : number
         +restore(pos) : void
+        +watchUserMoves() : object
+        +scrollTargetTo(target, offsetPx) : void
+        +shownTop() : number
+        +shownRight() : number
+        +isScrollbarPress(e) : boolean
         +reveal(element) : void
     }
 
@@ -765,6 +795,27 @@ classDiagram
         +initialLanguage(browserLanguage)$ : string
         +language : string
         +setLanguage(lang) : void
+    }
+
+    class DocumentIndex {
+        -entries : Map
+        -observer : MutationObserver
+        +isShown() : boolean
+        +setAvailable(isAvailable) : void
+        +toggle() : void
+        +show() : void
+        +hide() : void
+    }
+
+    class DocumentSearch {
+        -matches : RegExpExecArray[]
+        -current : number
+        +isShown() : boolean
+        +setMode(mode) : void
+        +setReplaceEnabled(canReplace) : void
+        +open() : void
+        +hide() : void
+        +refresh() : void
     }
 
     class DiagramZoomController {
@@ -1024,6 +1075,7 @@ classDiagram
         +writeFile(fileHandle, fileText) Promise~number~
         +startDownload(suggestedName, fileText) void
         +canWriteInPlace() boolean
+        +noteFile(fileHandle) void
     }
     class LoadedFile {
         +bytesHead : Uint8Array
@@ -1158,6 +1210,9 @@ classDiagram
     UIController --> ApplicationState : reads and writes
     UIController --> SmoothScrollEngine : scroll commands
     UIController ..> ModalController : static calls
+    UIController --> DocumentIndex : toggles, hides, view mode
+    UIController --> DocumentSearch : owns (opens, hides, modes)
+    DocumentSearch --> RendererOrchestrator : replaceBody (through main.js)
     RendererOrchestrator --> ApplicationState : owns
     RendererOrchestrator --> MarkdownRenderer : owns
     RendererOrchestrator --> MermaidRenderer : owns
@@ -1238,6 +1293,8 @@ classDiagram
     style SmoothScrollEngine fill:#90EE90,stroke:#333,color:#000
     style ModalController fill:#90EE90,stroke:#333,color:#000
     style HelpLanguageSwitch fill:#87CEEB,stroke:#333,color:#000
+    style DocumentIndex fill:#87CEEB,stroke:#333,color:#000
+    style DocumentSearch fill:#87CEEB,stroke:#333,color:#000
     style UIController fill:#87CEEB,stroke:#333,color:#000
     style DiagramZoomController fill:#87CEEB,stroke:#333,color:#000
     style DiagramPanController fill:#87CEEB,stroke:#333,color:#000
@@ -1288,7 +1345,7 @@ classDiagram
 | `MermaidRenderer` | `render(theme, root)` (描画範囲を引数で取る。省略時は preview 全体) |
 | `PlantUMLRenderer` | `render(theme, root, mode)` (`mode` は `"consent"` か `"placeholder"`。INV-23) / `+renderPending(placeholder, theme) Promise` |
 | `ExternalImageGate` | `apply(root)` (適用範囲を引数で取る。省略時は preview 全体。INV-43) |
-| `ScrollMemento` | `+captureAnchor(element) ScrollAnchor` (`@purity semi-pure-b`。要素の上端の画面上の位置を読む) / `+captureReadingAnchor()` / `+restoreReadingAnchor(saved)` / `+capturePlaceAt(top)` / `+movedBy(saved)` (読んでいる位置: 表示の上端に掛かる最初の子の中身の上端。表示の上端は、Markdown の表示の上端 (タッチ端末で document がスクロールするときは、上に貼り付く `#topbar` の下端)。子を半分ずつ探し、各子を読むのは高々 1 回。表示されていない子 (`display: none`。閲覧中の隠れたブロックなど) と、編集モードの間だけ見えるブロック (`.md-block-hidden` / `.md-block-empty`) は飛ばす。戻す時点で基準の要素が表示されていなければ、何もしない。`capturePlaceAt(top)` は、その位置がブロックの中なら、そこに掛かる流れの中の表示中の子 (表のつまみは流れの外なので選ばない。無ければブロック) を、ブロックの間 (編集モードだけの帯や余白) なら、その前のブロックの下端を返す。5.1 の表のつまみ、PRT-X08) / `+restoreAnchor(anchor, element) void` (基準の要素は呼び出し側が `anchorBlockId` で探して渡す。要素が無いか、箱を持たない (閲覧中の隠れたブロックなど) なら補正しない。タッチ端末で document がスクロールするとき、スクロールが刻みで止まるブラウザ (viewport の meta が無く縮めて表示する WebKit。刻みは、Playwright の WebKit の実測で画面の 1 px (縮尺の逆数。約 2.5 CSS px で、DPR によらない) で、切り捨てる。実機の刻みは PRT-X08 で記録する) でも、基準がいちばん近くに来る位置に止める (頼んだ位置から目標の側へ数 px の範囲を試す)。これにより、出るたびに元の位置へ戻り、何度出入りしても、ずれは溜まらない。編集モードの間のずれは、刻みの半分以内 (ブラウザが止められる、いちばん近い位置) に収まる。試す範囲は刻み (画面の 1 px) と 1 px (`1 / 縮尺` の切り上げ + 1。2〜32 px。`devicePixelRatio` は、Playwright の WebKit では縮尺を含んだ値になり、実機での出方も分からないので使わない)。最初の 1 回で動かず、範囲の先でも動かなければ、文書の端として止める。`restore(pos)` も同じく、`save()` が読んだ位置に戻るまで、範囲の中で試す) (INV-46。タッチ端末では document のスクロールを使う既存の切り替えに従う) / `+reveal(element) void` (INV-52。要素が表示の中 (表示の上端から、プレビューの下端、または document がスクロールするときは画面の下端まで) にあれば何もしない。外にあれば、近い方の端がその端に来るだけスクロールする (表示より高ければ上端をそろえる)。滑らかなスクロールはしない) |
+| `ScrollMemento` | `+captureAnchor(element) ScrollAnchor` (`@purity semi-pure-b`。要素の上端の画面上の位置を読む) / `+captureReadingAnchor()` / `+restoreReadingAnchor(saved)` / `+capturePlaceAt(top)` / `+movedBy(saved)` (読んでいる位置: 表示の上端に掛かる最初の子の中身の上端。表示の上端は、Markdown の表示の上端 (タッチ端末で document がスクロールするときは、上に貼り付く `#topbar` の下端)。子を半分ずつ探し、各子を読むのは高々 1 回。表示されていない子 (`display: none`。閲覧中の隠れたブロックなど) と、編集モードの間だけ見えるブロック (`.md-block-hidden` / `.md-block-empty`) は飛ばす。戻す時点で基準の要素が表示されていなければ、何もしない。`capturePlaceAt(top)` は、その位置がブロックの中なら、そこに掛かる流れの中の表示中の子 (表のつまみは流れの外なので選ばない。無ければブロック) を、ブロックの間 (編集モードだけの帯や余白) なら、その前のブロックの下端を返す。5.1 の表のつまみ、PRT-X08) / `+restoreAnchor(anchor, element) void` (基準の要素は呼び出し側が `anchorBlockId` で探して渡す。要素が無いか、箱を持たない (閲覧中の隠れたブロックなど) なら補正しない。タッチ端末で document がスクロールするとき、スクロールが刻みで止まるブラウザ (viewport の meta が無く縮めて表示する WebKit。刻みは、Playwright の WebKit の実測で画面の 1 px (縮尺の逆数。約 2.5 CSS px で、DPR によらない) で、切り捨てる。実機の刻みは PRT-X08 で記録する) でも、基準がいちばん近くに来る位置に止める (頼んだ位置から目標の側へ数 px の範囲を試す)。これにより、出るたびに元の位置へ戻り、何度出入りしても、ずれは溜まらない。編集モードの間のずれは、刻みの半分以内 (ブラウザが止められる、いちばん近い位置) に収まる。試す範囲は刻み (画面の 1 px) と 1 px (`1 / 縮尺` の切り上げ + 1。2〜32 px。`devicePixelRatio` は、Playwright の WebKit では縮尺を含んだ値になり、実機での出方も分からないので使わない)。最初の 1 回で動かず、範囲の先でも動かなければ、文書の端として止める。`restore(pos)` も同じく、`save()` が読んだ位置に戻るまで、範囲の中で試す) (INV-46。タッチ端末では document のスクロールを使う既存の切り替えに従う) / `+reveal(element) void` (INV-52。要素が表示の中 (表示の上端から、プレビューの下端、または document がスクロールするときは画面の下端まで) にあれば何もしない。外にあれば、近い方の端がその端に来るだけスクロールする (表示より高ければ上端をそろえる)。滑らかなスクロールはしない) / `+watchUserMoves()` / `+scrollTargetTo(target, offsetPx)` (INV-78。目次・検索で飛ぶ) / `+shownTop()` / `+shownRight()` (見えている範囲の上端と右端。右端はスクロールバーの左、タッチ端末では文書の幅。INV-77 (6)) / `+isScrollbarPress(e)` (コンテナかページのスクロールバーの押下。INV-30 の「外側」でなく、INV-78 の動かす操作) |
 | `ScrollAnchor` (新しい値の型) | `{ offsetTop : number }` (押下・確定の時点の、基準のブロックの上端の画面上の位置)。描画の時点の基準の要素は `ModelChange.anchorBlockId` で決める (INV-46) |
 | `UIController` | `+toggleEditPalette() void` / `+requestSave() Promise` / `+requestSaveAs() Promise` / `+confirmOverwrite(reason) Promise~boolean~` (`OverwriteConfirmPort` の実装。`reason` が `"changed"` なら `externalChangeConfirm`、`"unknown"` なら `overwriteUnknownConfirm` の文言で `window.confirm` を出す) / `+onModelChanged(change) void` (`ModelChangedPort` の実装。同期で `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろし、未保存の印を更新する) / `+onBlockSplitFailed() void` (`ModelChangedPort` の実装。本文をブロックに分けられず全体を 1 ブロックにしたことを `messages.edit.blockSplitFailed` のトーストで知らせる。5.14.2) / `-_confirmDiscardIfDirty() boolean` / `-_isDocumentDirty() boolean` / `-documents : DocumentLifecycle` / `-_editorChangedSinceRender : boolean` (INV-45) |
 | `DocumentLifecycle` | `+session : DocumentSession` / `+location : DocumentLocation` / `+saveOperationState : string` (読み取りだけ。値を変えるのは下のメソッドだけ) / `-_nextDocumentId : number` / `+openFile(fileText, hasBom, lastModified, fileName, fileHandle) void` / `+reloadTarget() object\|null` / `+readFile(target) Promise` / `+isStale(target) boolean` / `+reload(loaded) void` / `+startPasted(bodyText) void` / `+close() void` / `+save(event, steps) Promise` / `+finishSave(outcome) SaveResult\|null` |
@@ -1299,6 +1356,10 @@ classDiagram
 | --- | --- |
 | `textTransforms.js` | `splitMarkdownWrapper(text)` / `detectLineEnding(text)` / `normalizeLineEndings(text)` / `convertLineEndings(lfText, lineEnding)` / `hasUtf8Bom(bytes)` / `trailingRunLength(text, chars)` / `trimTrailingRun(text, chars)` / `trailingRun(text, chars)` (末尾の `chars` の文字の並びの長さ・それを除いた文字列・その並び。末尾から数え、並びの長さに比例する時間。`MarkdownTextOps`・`MarkdownBlockModel`・`MarkdownTable`・`InvisibleCharOverlay` の行末の空白と末尾の改行は、これで求める。正規表現の `/[ \t]+$/` などは長い並びで 2 乗の時間になり、後ろ読みは Safari 16.4 より前で使えないため。AT-RUN、AT-STA-19)。すべて `@purity pure` (5.13、5.14.1) |
 | `stateTable.js` | 状態遷移表 (11-c / 11-d / 11-e / 11-f) をデータとして作る補助 (すべて `@purity pure`。凍結した値だけを作る)。`cell(to, actions, guard)` (表の 1 つの交点 `{to, actions, guard?}`) / `row(states, cells)` (1 つの出来事の行。状態ごとの交点。`null` は変化なし) / `choice(...cells)` (ガード付きの選択肢を上から順に試す 1 つの交点。11-b。最後はガードなし (else) でよい) / `selectCell(entry, isGuardTrue)` (交点から、ガードが真の最初の選択肢を選ぶ。無ければ `null`) |
+| `sidePanels.js` | `placeSidePanels(column, scrollMemento)` (右端の列 `#sidePanels` の `top` / `right` / `max-height`。見えている範囲の上端と右端は `ScrollMemento.shownTop()` / `shownRight()` から読む)。INV-77 (6)、INV-80 (8) |
+| `DocumentIndex` (Framework 層) | コンストラクタ `({button, panel, column, preview}, scrollMemento, {emptyText})` (main.js が組み立てる。`emptyText` は `CONFIG.messages.index.empty`)。`isShown()` / `setAvailable(isAvailable)` / `toggle()` / `show()` / `hide()`。見出しは、ブロックの直下の子のうち h1〜h6 (子を順に見る。選択子は使わない)。作り直しは `utils.nextFrame` で 1 フレームに 1 回、`MutationObserver` の記録から変わったブロックの分だけ。飛ぶのは `scrollMemento.scrollTargetTo(見出し, 8)`。見出しに ID を付けず、要素を直接持つ (INV-77) |
+| `textSearch.js` | `searchPattern(query, {isRegex, matchCase})` (空の問いは null。不正な式は SyntaxError を投げる)、`findMatches(text, pattern, limit)`、`occurrences(hay, needle)` (重ならない出現の位置を順に返す generator。n 番目の数えと描画の文字の探しが同じ規則を使う)、`countOccurrences(hay, needle)`、`replaceOne(text, match, pattern, template, isRegex)`、`replaceAll(text, pattern, template, isRegex)` (`{text, count}`。正規表現の展開は `String.prototype.replace` に任せる)。すべて `@purity pure` (置換の数を数える内側の関数だけ non-pure)。INV-80 |
+| `DocumentSearch` (Framework 層) | コンストラクタ `(elements, scrollMemento, documents, host, messages)`。`documents` = `{getModel(), blockElement(id), replaceBody(body, offset)}` (main.js が orchestrator と renderer から作る)、`host` = `{beforeReplace(), toast(message)}` (UIController。`beforeReplace` は 11-c の `searchReplaceRequested` と `#editor` の取り込みを行い、INV-56 で取り消されたら偽)、`messages` = `CONFIG.messages.search`。`isShown()` / `setMode(mode)` / `setReplaceEnabled(canReplace)` / `open()` / `hide()` / `refresh()`。定数 `TYPING_PAUSE_MS` (150) と `REGEX_TYPING_PAUSE_MS` (300) を export する (試験が使う)。移動は `utils.nextFrame` で 1 フレームに 1 回、スクロールは `scrollMemento.scrollTargetTo` |
 | `textWidth.js` | `displayWidth(text)` / `codePointWidth(cp)` (`@purity pure`。INV-61、5.14.13。範囲表は Unicode 16.0.0 から作った定数) |
 | `MarkdownTable` | `+parse(raw)$` / `+format(table)$` / `+formatTablesIn(text, lexer)$` / `+trimCell(text)$` (セルの前後の空白とタブを除く。`parse` とセルの確定で同じ規則) / `+insertRow$` / `+deleteRow$` / `+insertColumn$` / `+deleteColumn$` / `+setAlignment$` (すべて `@purity pure`。5.14.13) |
 | `InlineRuns` | `+fromTokens(tokens, {colors, offset})$` (marked のインラインのトークンから並びを作る。各要素に原文の位置 `srcFrom` / `srcTo` と最上位のトークンの番号 `top`) / `+apply(runs, start, end, op, context)$` (表示の文字の位置で。セル用) / `+applyUnits(runs, from, to, op, context)$` (要素の番号で。原文の編集欄用) / `+expandRange(runs, from, to)$` (INV-67 (6) の切らないものを含むように範囲を広げる) / `+serialize(runs, options)$` / `+layout(runs, options)$` (書き出しと、各要素と強調の記号の位置) / `+signature(runs)$` (marked が示すものだけの列。書き直しの照合に使う) / `+unitRangeOfSource(runs, srcFrom, srcTo)$` / `+fromNodes(tree, linkInfo, {colors})$` (セルの DOM の写し (`snapshotNodes`) から並びを作る。INV-63。すべて原文なし (`src: null`) の新しい文字) / `+linksOf(tokens)$` (インラインのトークンのリンクを出現順に、その表記 (INV-72 (a)) と共に) / `+linkOf(token)$` (1 つのリンクのトークンの表記) / `+inlineLink(destination)$` (INV-69 で作る普通のリンク。`href` は行き先から `<>` を除いたもの) / `+hasLinkAt(runs, start, end)$` (選択がリンクに触れるか、カーソルがリンクの文字の上 (両端を含む) か。5.15.5) / `+insertLinkAt(runs, i, label, link, context)$` (要素の番号 `i` の前に新しいリンク。文字は `label`、他の書式は前の要素 (無ければ後の要素) のもの。リンクの中なら `null`。直前の `!` は `\!`。INV-69 (b)、オーナーの裁定 F-R1) / `+canInsertLinkAt(runs, i)$` / `+runIndexAt(runs, at, brWidth)$` (表示の位置の要素の番号。改行を `brWidth` と数える (セルのカーソルは 1)。コードスパンなどの途中なら -1) / `+textParts(raw)$` (text のトークンの原文を要素の片に分ける。1 つのコードポイントごと、実体参照は 1 つの片) / `+isBlank(run)$` (空白または改行の要素か。INV-67 (4)) / `+textAround(runs, from, to)$` (範囲を、その両隣のリンクでも空白でもない文字の要素まで広げる。marked の自動リンクが取りうる語。INV-69 のリンクを外すで、外した文字を自動リンクにしないために使う) / `+escapeCellPipes(text, options)$` (表のセルでは、逃がされていない `\|` の前に `\` を付ける。INV-72 (d)、5.14.14)。リンクの文字に `\[` / `\]` があるリンク (marked はそれを括弧として読んでから字句解析する) も、原文の位置に戻して読む (戻せなければ、そのまま書く 1 つの片)。`apply` / `applyUnits` の `op.kind` に `link` (`{link, url, strictEnds}`。範囲全体を `link` にし、範囲の中の裸の URL・`<URL>` は文字も `url` にする。`strictEnds` (Ctrl+V) では、端がコードスパンなど 1 つの要素の途中なら `null`) と `unlink` (範囲のリンクを外し、外した文字を自動リンクにしないよう逃がす。カーソルだけ (`start === end`) なら、その上のリンク) を加える。`layout` / `serialize` の `options.literalUrls` (WYSIWYG のセルで外した URL の文字。リンクの外にあるものは自動リンクにならないよう書く。INV-69)。すべて `@purity pure`、CONFIG を読まない (色の値は引数)。5.14.14 |
@@ -1316,10 +1377,10 @@ classDiagram
 | `BlockGapInsert` (UI 層) | コンストラクタ `(preview, blockLocator, host, {requestFrame})` (`requestFrame` はマウスの動きを 1 フレームに 1 回まとめるもの。既定は `utils.nextFrame`)。`blockLocator` は MarkdownRenderer (`getBlockElements()` / `findBlockIdAt(node)` / `isTableTab(node)`)、`host` は `{onGapChosen(target)}` (BlockEditController の `dispatch("gapInsertRequested", target)`)。BlockEditController がコンストラクタの第 7 引数 `createGaps(gapHost)` で作る (既定はこのクラス)。`enable()` / `disable()` (編集モードの出入りで。`pointermove` と `scroll` の受け手) / `gapAt(x, y)` (INV-73 (1) の当たり判定。ブロックの外枠を二分探索する。`{kind: "gap", afterBlockId, beforeBlockId, top, bottom, line, left, width}` か `null`) / `show(target)` / `hide()` / `isLineNode(node)` / `shownGap()`。点線は `body` の直下の `.grsmd-gap-insert` (最初に要るときに作る)。タッチの 1 回目のタップは BlockEditController の `pointerdown` / `pointerup` で `gapAt` を使って扱う |
 | `BlockRangeSelection` (Framework 層) | 責務: 編集モードの選択を、ブロックの範囲 (枠と帯) として示すことだけ。範囲への操作 (削除・カット・コピー) は host を通して 11-c が行う。コンストラクタ `(preview, blockLocator, host, {isApple, requestFrame})` (`isApple` は帯の tooltip の主の修飾キー、`requestFrame` は既定 `utils.nextFrame`)。`blockLocator` は MarkdownRenderer (`getBlockElements()` / `findBlockIdAt(node)` / `isTableTab(node)`)、`host` は `{canSelect(), isPaletteNode(node), onRangeChanged(range), onActionRequested(kind, range)}` (BlockEditController。`canSelect` は editModeIdle で編集欄もセルも開いていないこと、`onRangeChanged` は範囲ができたらすき間の点線を隠す、`onActionRequested` は帯の押下を 11-c の `blockRangeDeleteRequested` / `blockRangeCutRequested` / `blockRangeCopyRequested` にする)。BlockEditController がコンストラクタの第 8 引数 `createRanges(rangeHost)` で作る。クエリ (`semi-pure-b`): `readRange()` (選択を読み直した範囲か `null`。表示を変えない) / `hasRange()` (最後に表示した範囲があるか。すき間の判定が使う) / `isBarNode(node)`。コマンド (`non-pure`): `enable()` / `disable()` (編集モードの出入りで。`selectionchange`・スクロール・リサイズ・マウスの押下と離しの受け手。マウスの `mouseup` は、INV-74 (2) の条件 (プレビューで始まったドラッグが選択を残したとき) で既定の動作を止める。Edge のミニメニュー、S1) / `update()` (選択を読んで枠と帯を出す。1 フレームに 1 回) / `reset()` (枠と帯を消す。選択は残す) / `clearSelection()` (選択も解く) / `showCopied()` (コピーのボタンを一瞬 ✓ に)。メンバはクエリ → コマンドの順に並べる。枠は、範囲のうちビューポートとその上下 1 画面分のブロックにだけ付け、同じ外枠の並びの上では増減した分だけ付け外しする。帯の位置は純粋な `floatingPlacement.placementNearLine(line, size, view, gap, margin)` で決める。帯は `body` の直下の `.grsmd-block-range-bar` (最初に要るときに作る)。INV-74 |
 | `ClipboardLink` (UI 層) | `+isLinkableUrl(text, schemes, maxLength)$` (`@purity pure`。INV-69 の URL の条件。制御文字・空白類・見えない文字 (双方向の制御文字、廃止された書式の文字、幅 0 の文字、U+FEFF など) を含む文字列は通さない。INV-72 (a) の `<URL>`・裸の URL の文字の変更の判定にも使う) / `+urlOptions()$` (`@purity semi-pure-a`。`CONFIG.edit.linkSchemes` と `maxPastedUrlLength`) / `+linkOp(url, strictEnds)$` (リンクを付ける書式の操作。`toDestination(url)` を行き先とする普通のリンク) / `+urlFromPasteEvent(event, options)$` (Ctrl+V の方式。`clipboardData` の `text/plain` だけを同期に読む。権限は要らない) / `+readUrlAndText(clipboard, options)$` (ボタン。`clipboard` は `navigator.clipboard` (テストでは偽物)。`read()` があればそれを、無ければ `readText()` を使い、拒否・失敗で読み直さない。URL でなければ、または拒否・失敗なら `null`。`text/html` は `DOMParser` の inert な文書で解析し (スクリプトは動かず、画像も読まない。DOM には入れない)、`href` が同じ URL の `a` がちょうど 1 つならその文字を返す) / `+linkTextOf(html, url, parseHtml)$` / `+toDestination(url)$` (`@purity pure`。利用者の文字列のまま (`new URL().href` にしない)。`\` → `%5C`。`<`・`>`・括弧の不釣り合いがあれば `<…>` (`<` `>` は `%3C` `%3E`)。表のセルの縦棒の逃がし (前に `\` を付ける) は書き出し (`InlineRuns`) が行う)。外部へ通信しない (CON-12) |
-| `UIController` | コンストラクタの第 5 引数 `services` = `{documents, isApple, createPalette(host), createBlockEdit(host), clipboard}` (main.js が組み立てる。`documents` は DocumentLifecycle。`isApple` は `utils.isApplePlatform(navigator)`。`clipboard` は INV-69 のボタンが読むもので、省略すれば押した時点の `navigator.clipboard`。テストでは偽物を渡す)。`isSameLinkTarget(a, b)$` (`@purity pure`。INV-69 の待つ間の対象の比較)。`setupDoubleClickGestures()` (`setupEventListeners` から呼ぶ。プレビューのダブルクリック・ダブルタップを受け、空の初期状態では空の文書を始め (INV-31)、Markdown 表示中は 11-c の `previewDoubleClicked` を起こす (交点は `browsingPreview` の列だけなので、編集モードの中では何もしない。INV-57))。`utils.shortcutLetter(event, isApple)` (`@purity pure`。TableCellEditor の Redo の判定と共有する) は INV-14 の判定式で主の修飾キーの文字 (`a`〜`z`) か `null` を返す。`requestSave()` / `requestSaveAs()` は `documents.save(event, steps)` を呼ぶ。`steps` (`SaveSteps`) は `confirmStart()` (`#editor` に未描画の変更があれば INV-56 の確認。偽なら何も始めない) / `commitEdits(event)` (11-c の `saveRequested` / `saveAsRequested` を起こし、`#editor` に未描画の変更があれば取り込む) / `getBody()` / `confirmer` (UIController。`OverwriteConfirmPort`) / `onFinished(result)` (保存の結果を、use case が終わった直後に同期で示す: `applied` なら未保存の印を再計算し、`message` があればトーストを出す)。`_rejectWhileSaving()` は `documents.isSaving()` を見てトーストを出す (INV-54)。`_isDocumentDirty()` は `documents.hasSession()` が偽なら偽で、そうでなければ `documents.isBodyChanged(orchestrator.getBody())`・開いている編集欄の変更・`_editorChangedSinceRender` のいずれか。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8) |
+| `UIController` | コンストラクタの第 5 引数 `services` = `{documents, isApple, createPalette(host), createBlockEdit(host), clipboard, documentIndex, createSearch(host)}` (main.js が組み立てる。`documents` は DocumentLifecycle。`isApple` は `utils.isApplePlatform(navigator)`。`clipboard` は INV-69 のボタンが読むもので、省略すれば押した時点の `navigator.clipboard`。テストでは偽物を渡す)。`isSameLinkTarget(a, b)$` (`@purity pure`。INV-69 の待つ間の対象の比較)。`setupDoubleClickGestures()` (`setupEventListeners` から呼ぶ。プレビューのダブルクリック・ダブルタップを受け、空の初期状態では空の文書を始め (INV-31)、Markdown 表示中は 11-c の `previewDoubleClicked` を起こす (交点は `browsingPreview` の列だけなので、編集モードの中では何もしない。INV-57))。`utils.shortcutLetter(event, isApple)` (`@purity pure`。TableCellEditor の Redo の判定と共有する) は INV-14 の判定式で主の修飾キーの文字 (`a`〜`z`) か `null` を返す。`requestSave()` / `requestSaveAs()` は `documents.save(event, steps)` を呼ぶ。`steps` (`SaveSteps`) は `confirmStart()` (`#editor` に未描画の変更があれば INV-56 の確認。偽なら何も始めない) / `commitEdits(event)` (11-c の `saveRequested` / `saveAsRequested` を起こし、`#editor` に未描画の変更があれば取り込む) / `getBody()` / `confirmer` (UIController。`OverwriteConfirmPort`) / `onFinished(result)` (保存の結果を、use case が終わった直後に同期で示す: `applied` なら未保存の印を再計算し、`message` があればトーストを出す)。`_rejectWhileSaving()` は `documents.isSaving()` を見てトーストを出す (INV-54)。`_isDocumentDirty()` は `documents.hasSession()` が偽なら偽で、そうでなければ `documents.isBodyChanged(orchestrator.getBody())`・開いている編集欄の変更・`_editorChangedSinceRender` のいずれか。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8) |
 | `DocumentLifecycle` (UseCase 層) | コンストラクタ `(fileAccess, {saveDocument, saveDocumentAs, messages, defaultFileName})` (main.js が `MarkdownFileAccess` から SaveDocument / SaveDocumentAs を作り、`CONFIG.messages.edit` と `CONFIG.edit.defaultFileName` と共に渡す。config を import しない)。`window` / `document` を使わない (AT-STA-17)。5.14.11 の行: `.md` のドロップ → `openFile` (`fromFileText`、ファイル名とドロップで得た handle)、Reload → `reloadTarget()` (同期。保存先か handle が無ければ `null`、あれば `{location, documentId}` を読む前に記録する) → `readFile(target)` (`MarkdownFileAccess.readFile` の Promise をそのまま返す。間に `await` を挟まないので、呼び出し側の `await` は読み込みと同じマイクロタスクで settle する) → `isStale(target)` (同期。保存先の参照か文書 ID が変わったか。判定はここだけ。呼び出し側は読み込みが settle した直後の 1 回の同期の流れで、`isStale` → 保存中の拒否 → 未保存の確認 → 置き換えを行う。INV-21) → `reload(loaded)` (`fromFileText`。BOM は `loaded.bytesHead` から。保存先は変えない)、初期状態からのペースト・`#editor` からの描画・空の文書 → `startPasted(body)` (`fromPastedText`。保存先は無し)、Clear と非 `.md` のドロップ → `close()`。文書 ID は 1 本の数で、作り直すたびに増える。11-e の遷移表を `saveOperationStateMachine` (モジュールの export) として持ち、`SaveOutcome.status` を出来事に対応させる (`saved` → fileWritten、`downloadStarted` → downloadStarted、`failed` → writeFailed、`canceled` → saveCanceled)。`save(event, steps)` の順 (最初の `await` は use case の `execute` だけ。INV-33): 交点が無い (書き込み中) かセッションが無ければ何もしない → `steps.confirmStart()` → 権限の要求 (Save で保存先の handle があるとき) または保存ダイアログ (`startSavePicker(location.fileName)`。保存先が無ければ `defaultFileName`)。書き込み API が無ければどちらも始めない → `steps.commitEdits(event)` → `saveOperationState` を writingFile に → `execute` (例外は `console.error` と `saveFailed` の失敗の結果) → `finishSave(outcome)` → `steps.onFinished(result)`。`finishSave(outcome)` は交点が無ければ `null`。あれば状態を移し、fileWritten で同じ文書 ID のときだけセッションと保存先を置き換え、`{applied, message}` (`message` は saveCanceled では `null`) を返す。`isSaving()` は `replaceRequested` の交点が有るか (INV-54) |
 | `SaveDocument` / `SaveDocumentAs` | コンストラクタ `(fileAccess, messages, defaultFileName)`。SaveDocument は、保存先 (handle) か書き込み API が無いときは、内部の SaveDocumentAs に任せる。`outcome(request, status, message)` はセッションと保存先を変えない結果を作る。`failureMessage(error)` は `SecurityError` → `saveActivationLost`、`NotFoundError` → `saveNotFound`、それ以外 → `saveFailed`。`SaveOutcome.status` は `saved` / `downloadStarted` / `canceled` / `failed` の 4 つ |
-| `MarkdownFileAccess` | コンストラクタ `(win = window)`。書き込み API の有無 (`canWriteInPlace`) は `win.showSaveFilePicker` の有無で判定する。保存のダイアログのファイルの種類の名前は `CONFIG.messages.edit.saveFileType` |
+| `MarkdownFileAccess` | コンストラクタ `(win = window)`。書き込み API の有無 (`canWriteInPlace`) は `win.showSaveFilePicker` の有無で判定する。保存のダイアログのファイルの種類の名前は `CONFIG.messages.edit.saveFileType`。`noteFile(fileHandle)` (null は無視) で覚えたファイル、またはダイアログで選んだファイルのハンドルをメモリだけに持ち、次のダイアログの `startIn` に渡す。ダイアログの `id` は `CONFIG.edit.savePickerId` (INV-79) |
 
 ### 3.3 状態遷移図
 
@@ -1444,6 +1505,7 @@ stateDiagram-v2
     editingBlock --> editingBlock : gapInsertRequested
     editingBlock --> editModeIdle : saveRequested
     editingBlock --> editModeIdle : saveAsRequested
+    editingBlock --> editModeIdle : searchReplaceRequested
     editingBlock --> editModeIdle : documentReplaced
     editingBlock --> browsingPreview : documentCleared
     editingBlock --> browsingPreview : viewSwitchedToCode
@@ -1476,6 +1538,7 @@ stateDiagram-v2
     editingCell --> editingBlock : gapInsertRequested
     editingCell --> editModeIdle : saveRequested
     editingCell --> editModeIdle : saveAsRequested
+    editingCell --> editModeIdle : searchReplaceRequested
     editingCell --> editModeIdle : documentReplaced
     editingCell --> browsingPreview : documentCleared
     editingCell --> browsingPreview : viewSwitchedToCode
@@ -1503,6 +1566,7 @@ stateDiagram-v2
 | escapePressed | — | [hasBlockRange] → editModeIdle / clearBlockRange (ブロックの範囲の選択を先に解く。INV-74、オーナーの裁定 D14)・[else] → browsingPreview [`#editor` にフォーカスが無い] / hidePalette (5.11、INV-53。`#editor` にフォーカスがある場合は INV-14 のガードで届かない) | → editModeIdle [isImeIdle] / commitBlock (反映して閉じる。INV-28、オーナーの裁定 D1) | → editModeIdle [isImeIdle] / commitCell, endTableSession (反映して表の編集を終える。ID を引き継げなくても同じ。R5) |
 | saveRequested | — | — | → editModeIdle / commitBlock | → editModeIdle / commitCell, endTableSession |
 | saveAsRequested | — | — | → editModeIdle / commitBlock | → editModeIdle / commitCell, endTableSession |
+| searchReplaceRequested (検索と置換の [Replace] / [All]。INV-80) | — | — | → editModeIdle / commitBlock | → editModeIdle / commitCell, endTableSession |
 | documentReplaced (Reload、`.md` ドロップ) | — | — | → editModeIdle / discardBlockEditor | → editModeIdle / discardCell, endTableSession |
 | documentCleared | — | → browsingPreview / hidePalette | → browsingPreview / discardBlockEditor, hidePalette | → browsingPreview / discardCell, endTableSession, hidePalette |
 | viewSwitchedToCode | — | → browsingPreview / hidePalette | → browsingPreview / discardBlockEditor, hidePalette | → browsingPreview / discardCell, endTableSession, hidePalette |
@@ -1520,7 +1584,9 @@ stateDiagram-v2
 
 ガードは上から順に評価する (`・` で区切った順)。「A かつ B」は両方が真のとき (定義では `"A&&B"` と書き、図では `if A and B`)。ガードの無い交点の「ガードに外れた場合」は `—` (何もしない)。ガード (すべて `is` / `has` / `can` で始める): `isImeIdle` (IME の変換中でない。ブロック編集欄とセルの両方)、`hasUncommittedChange` (開いている編集欄・セルの内容が開いた時点と異なる。INV-62 の変更の判定)、`hasUnrenderedEditor` (`#editor` に未描画の変更がある。INV-45)、`isEmptyDocument` / `isBlockTarget` / `isCellTarget` (INV-57 の対象の分類。`BlockEditController.doubleClickTarget(event)` が `{kind: "empty"}` / `{kind: "block", id}` / `{kind: "cell", id, row, col, caret}` / `{kind: "none"}` を返し (表のブロックの余白とつまみは `{kind: "none"}`)、プレビューのスクロールバーでの押下 (`offsetX` / `offsetY` が `clientWidth` / `clientHeight` を超える。INV-30 の判定と同じ)、除外対象と図の内側では `null` を返して出来事を起こさない)、`isCellEditableTable` (押したセルの表が INV-62 の構造の確認の (1) を満たす。セルごとの描画の確認 (2) は `openCell` の中で行い、合わなければ原文のセルとして開く (遷移は変わらない))、`isInSessionTable` (押したセルが、今の表の編集の表のもの)、`canKeepTableId` (この交点で行うすべての確定 (開いているセルの確定と、INV-65 の操作の確定。確定が無い場合は真) の後で、表のブロック ID を引き継げる。`tableOperationRequested` では、セルの確定の後のモデルに操作を適用した最終の原文で `MarkdownBlockModel.planTableReplace` を求め、2 回の確定のどちらかで引き継げなければ偽。INV-42 / 62)、`hasNextCell` / `hasPreviousCell` / `hasCellBelow` (INV-64 の移動先がある)、`canApplyTableOperation` (INV-65 の制限 D2 を満たす)、`canInsertBlock` (開いている編集欄で、INV-52 の位置が決まる (断る場合に当たらない)。位置の計画は `MarkdownTextOps.planBlockInsert` で、押下ごとに 1 回求め、続く `insertBlock` が使う)、`hasBlockRange` (その時点の選択がブロックの範囲を作る。INV-74 (1)。`BlockRangeSelection.readRange()` で選択を読み直す。表示は変えない)。処理 `undoLastUnit` は、INV-45 の分岐を含む (`#editor` に未描画の変更があれば `renderFromEditor`、無ければ `RendererOrchestrator.undoLastCommit()`)。`undoJustCommitted` は、同じ交点の `commitBlock` / `commitCell` がモデルを変えた (変更の単位を作った) ときだけ `undoLastCommit()` を行う (確定が単位にならない場合 (例: 行末の空白だけを足し、INV-71 (6) で原文と同じになった) は、それより前の単位を戻さない。R1)。`redoLastUnit` は `undoLastUnit` と同じ INV-45 の分岐を持ち、無ければ `RendererOrchestrator.redoLastCommit()` (R3)。`gapInsertRequested` の `resolveBlockById` は、すき間を今のモデルの上で決め直す (INV-73: 文書の先頭と末尾のすき間はそのまま、ほかは上のブロックが残っていればその後ろ、無ければ下のブロックの前。どちらも無ければ `null` で何も開かない)。`openBlockEditor` は、すき間の対象 (`{kind: "gap", afterBlockId, beforeBlockId}`) なら、そのすき間に空のブロック編集欄を開く (INV-73)。`clearSelection` は、ダブルクリックでブラウザが作った選択を解除する。表の処理: `startTableSession` (表のブロックの保持を始める。INV-47) / `endTableSession` (保持を解く) / `openCell` (INV-62) / `commitCell` (変わっていれば確定、変わっていなければ退避した子要素を戻す) / `discardCell` (確定せずに捨て、退避した子要素を戻す) / `moveToCell` (INV-64 の移動先。開いているセルを閉じる前に求める) / `applyTableOperation` (INV-65) / `openTableSourceWithToast` (表の原文の編集欄を開き、トースト `messages.edit.tableNotCellEditable`) / `showTableEditEndedToast` (ID を引き継げずに表の編集を終えたことを知らせる。`messages.edit.tableEditEnded`)。ブロックの範囲の処理 (INV-74): `clearBlockRange` (選択を解き、枠と帯を消す)、`copyBlockRange` (INV-74 (4) のコピー)、`cutBlockRange` (INV-74 (4) のカット。書けたときだけ `deleteBlockRange` と同じく消す)、`deleteBlockRange` (INV-74 (3)。選択を解き、`RendererOrchestrator.deleteBlocks` で範囲を 1 つの変更の単位として消す)。どれも、出来事の対象 `{kind: "blockRange", firstId, lastId}` の ID が今のモデルに無ければ何もしない。コピーが `#editor` の未描画の変更で全体描画をしないことは INV-74 (6)。挿入の処理: `insertBlock` (INV-52。直前の `commitBlock` があれば、確定した文字列の中の計画の位置 (`MarkdownTextOps.insertOffset`) に、無ければ最後に開いたブロックの後ろに `RendererOrchestrator.insertBlock` で挿入する。割った上の部分の最後の行の、改行でなくなる行末の空白と `\` (`MarkdownTextOps.cutLineEndBreak`) は、同じ変更で除く (`removeBefore`)。挿入したブロックを最後に開いたブロックとする。描画の後に `insertedBlockRendered` を起こす) / `showInsertRefusedToast` (`messages.edit.insertNotPossible`)。`insertedBlockRendered` の対象は、表なら `{kind: "cell", id, row: 0, col: 0, selectAll: true}`、Mermaid なら `{kind: "block", id, caretLineEnd: 1}` (`openBlockEditor` がカーソルをその行の末尾に置く)。
 
-注: `documentReplaced` / `documentCleared` は、INV-21 の確認で OK が選ばれた後にだけ起きる。`fullRenderRequested` は未保存の確認を出さない (INV-45)。`#editor` が空で本文が空でない場合は、INV-56 の確認で OK が選ばれた後にだけ `fullRenderRequested` が起きる (Cancel なら出来事は起きない)。`renderFromEditor` も、INV-56 の確認で Cancel なら `#editor` を本文に戻すだけで、全体描画もトーストも行わない (editModeIdle のまま)。編集欄を開いたまま、Tab または Shift+Tab などでフォーカスを編集欄の外 (本体) へ移した場合も (Tab はパレットへ移らない。INV-53)、キーは document に届く。そのときの `l` / `d` / [Render] (キーボードでの押下を含む) は `fullRenderRequested`、`e` は `paletteHidden`、`r` / `c` / ドロップは INV-21 の確認を経て `documentReplaced` / `documentCleared` / `viewSwitchedToCode` になる (裁定 T1)。本体にフォーカスがある間の Esc は、5.11 の「ブロック編集中」の列のとおり `escapePressed` (反映して閉じる) になる。`#editor` にフォーカスが入ると `editorFocused` で確定する (裁定 T19)。`emptyDocumentStarted` は INV-31。`blockTapped` と `blockTappedWithUnrenderedEditor` は、開始ジェスチャ (INV-29) の時点で `_editorChangedSinceRender` が偽か真かで分かれる。`cellTapped` / `cellTappedWithUnrenderedEditor`、`tableSourceTapped` / `tableSourceTappedWithUnrenderedEditor`、`previewDoubleClicked` の [hasUnrenderedEditor] も同じ。`#editor` に入力するとフォーカスで `editorFocused` が起きて editModeIdle になるので、`…WithUnrenderedEditor` は editModeIdle の列でだけ起きる。INV-56 の確認は `renderFromEditor` に含まれる。表のブロックの余白の押下は、編集中 (editingBlock / editingCell) なら `pointerPressedOutside`、editModeIdle なら何も起こさない (W6 / M1)。`pointerPressedOutside` は、マウスでは `pointerdown`、タッチとペンでは移動の少ない `pointerup` で起きる (INV-30)。editingCell では、表の編集の対象の `table` 要素の内側の押下は外側としない (同じ表の別のセルは `pointerup` で `cellTapped`。開いているセルの中の押下は何も起こさない)。Undo (パレットの Undo、INV-59 の (c) の Ctrl+Z) は `undoRequested`、Redo (INV-59 の (c) の Redo のキー) は `redoRequested` としてこの表を通す。browsingPreview では起きない (パレットが無く、Ctrl+Z / Redo のキーは横取りしない。裁定 Q3)。editingBlock の [hasUncommittedChange] の交点は、パレットの Undo か、編集欄の外にフォーカスがあるときの Ctrl+Z / Redo のキーから起きる (編集欄の中の Ctrl+Z (変更あり) と Redo のキー (いつも) はブラウザの文字単位の Undo / Redo。INV-59 の (b)、裁定 M5)。editingBlock の `redoRequested` の [else] の交点は、変更の無い編集欄に対し、フォーカスが欄の外にあるときの Redo のキーから起きる。editingCell では、セルの中の Ctrl+Z も単位の Undo (INV-59 の (c))、セルの中の Redo のキーは TableCellEditor が止めて `redoRequested` を起こす。`gapInsertRequested` は、編集中なら先に開いている編集欄・セルを確定し (それ自体が 1 つの変更の単位)、すき間に空の編集欄を開く。すき間の編集欄の確定 (`commitBlock`) は、入れた文字があれば挿入 (`RendererOrchestrator.insertBlock`) を 1 つの変更の単位として行い、空 (空白だけ) なら何も変えない。`previewDoubleClicked` は browsingPreview の列にだけ交点がある (編集モードのダブルクリックは開始ジェスチャ 2 回)。`#editor` に未描画の変更があるときの Undo と挿入は、INV-45 により `fullRenderRequested` と同じ全体描画 (editModeIdle の自己遷移) になる。`commitBlock` と `commitCell` は同期でモデルを更新する (INV-47)。ID を引き継げるかは、確定の前にガード `canKeepTableId` で決める (`planTableReplace` の結果を `commitCell` / `applyTableOperation` が使い回す)。引き継げない枝の `commitCell` と `applyTableOperation` は、モデルの確定 (同期) だけを行い、INV-47 の例外の同期の描き直し (`writeHeldInterior`) をしない (ID が変わると保持の条件を外れるため)。DOM は、続く `endTableSession` で保持を解いた後の、キューの部分描画で更新される。引き継げない場合の行き先は表の交点 (editModeIdle、`showTableEditEndedToast`) で決まり、表の外で状態を変える経路は無い。editingCell から表の編集を終える他の交点 (外側の押下・保存など) は、引き継げるかによらず表の編集を終えるので、このガードを持たない。`openCell` でセルが開かなかった場合 (セルの要素が無い場合など) は、表の編集を終えて editModeIdle になる。ポップオーバーを開いている間の Esc は 11-f で処理し、この表の `escapePressed` は起きない (INV-53)。`blockInsertRequested` の editingBlock の交点は editModeIdle へ移り、描画の後の `insertedBlockRendered` で editingCell (表) または editingBlock (Mermaid) になる。`insertedBlockRendered` は、描画が終わった時点で、状態が editModeIdle のままで、ブロック編集欄もセルも開いておらず、モデルが挿入の時のままで、`#editor` に未描画の変更が無く、挿入したブロックがその種類のままのときだけ起こす (その間の操作を優先する。INV-52)。それまでの間、1 文字のショートカットは止める (INV-52)。`#editor` に未描画の変更があるときの挿入は、上のとおり INV-45 の全体描画になる (UIController が `blockInsertRequested` を起こさずに `renderFromEditor` を行う。ブロック編集中は `#editor` の変更が無いので当たらない)。
+注: `documentReplaced` / `documentCleared` は、INV-21 の確認で OK が選ばれた後にだけ起きる。`fullRenderRequested` は未保存の確認を出さない (INV-45)。`#editor` が空で本文が空でない場合は、INV-56 の確認で OK が選ばれた後にだけ `fullRenderRequested` が起きる (Cancel なら出来事は起きない)。`renderFromEditor` も、INV-56 の確認で Cancel なら `#editor` を本文に戻すだけで、全体描画もトーストも行わない (editModeIdle のまま)。編集欄を開いたまま、Tab または Shift+Tab などでフォーカスを編集欄の外 (本体) へ移した場合も (Tab はパレットへ移らない。INV-53)、キーは document に届く。そのときの `l` / `d` / [Render] (キーボードでの押下を含む) は `fullRenderRequested`、`e` は `paletteHidden`、`r` / `c` / ドロップは INV-21 の確認を経て `documentReplaced` / `documentCleared` / `viewSwitchedToCode` になる (裁定 T1)。本体にフォーカスがある間の Esc は、5.11 の「ブロック編集中」の列のとおり `escapePressed` (反映して閉じる) になる。`#editor` にフォーカスが入ると `editorFocused` で確定する (裁定 T19)。`emptyDocumentStarted` は INV-31。`blockTapped` と `blockTappedWithUnrenderedEditor` は、開始ジェスチャ (INV-29) の時点で `_editorChangedSinceRender` が偽か真かで分かれる。`cellTapped` / `cellTappedWithUnrenderedEditor`、`tableSourceTapped` / `tableSourceTappedWithUnrenderedEditor`、`previewDoubleClicked` の [hasUnrenderedEditor] も同じ。`#editor` に入力するとフォーカスで `editorFocused` が起きて editModeIdle になるので、`…WithUnrenderedEditor` は editModeIdle の列でだけ起きる。INV-56 の確認は `renderFromEditor` に含まれる。表のブロックの余白の押下は、編集中 (editingBlock / editingCell) なら `pointerPressedOutside`、editModeIdle なら何も起こさない (W6 / M1)。`pointerPressedOutside` は、マウスでは `pointerdown`、タッチとペンでは移動の少ない `pointerup` で起きる (INV-30)。editingCell では、表の編集の対象の `table` 要素の内側の押下は外側としない (同じ表の別のセルは `pointerup` で `cellTapped`。開いているセルの中の押下は何も起こさない)。Undo (パレットの Undo、INV-59 の (c) の Ctrl+Z) は `undoRequested`、Redo (INV-59 の (c) の Redo のキー) は `redoRequested` としてこの表を通す。browsingPreview では起きない (パレットが無く、Ctrl+Z / Redo のキーは横取りしない。裁定 Q3)。editingBlock の [hasUncommittedChange] の交点は、パレットの Undo か、編集欄の外にフォーカスがあるときの Ctrl+Z / Redo のキーから起きる (編集欄の中の Ctrl+Z (変更あり) と Redo のキー (いつも) はブラウザの文字単位の Undo / Redo。INV-59 の (b)、裁定 M5)。editingBlock の `redoRequested` の [else] の交点は、変更の無い編集欄に対し、フォーカスが欄の外にあるときの Redo のキーから起きる。editingCell では、セルの中の Ctrl+Z も単位の Undo (INV-59 の (c))、セルの中の Redo のキーは TableCellEditor が止めて `redoRequested` を起こす。`searchReplaceRequested` は、検索と置換の [Replace] / [All] の押下 (INV-80 (5)) で、置き換えの前に開いている編集欄・セルを確定する (`saveRequested` と同じ交点)。`gapInsertRequested` は、編集中なら先に開いている編集欄・セルを確定し (それ自体が 1 つの変更の単位)、すき間に空の編集欄を開く。すき間の編集欄の確定 (`commitBlock`) は、入れた文字があれば挿入 (`RendererOrchestrator.insertBlock`) を 1 つの変更の単位として行い、空 (空白だけ) なら何も変えない。`previewDoubleClicked` は browsingPreview の列にだけ交点がある (編集モードのダブルクリックは開始ジェスチャ 2 回)。`#editor` に未描画の変更があるときの Undo と挿入は、INV-45 により `fullRenderRequested` と同じ全体描画 (editModeIdle の自己遷移) になる。`commitBlock` と `commitCell` は同期でモデルを更新する (INV-47)。ID を引き継げるかは、確定の前にガード `canKeepTableId` で決める (`planTableReplace` の結果を `commitCell` / `applyTableOperation` が使い回す)。引き継げない枝の `commitCell` と `applyTableOperation` は、モデルの確定 (同期) だけを行い、INV-47 の例外の同期の描き直し (`writeHeldInterior`) をしない (ID が変わると保持の条件を外れるため)。DOM は、続く `endTableSession` で保持を解いた後の、キューの部分描画で更新される。引き継げない場合の行き先は表の交点 (editModeIdle、`showTableEditEndedToast`) で決まり、表の外で状態を変える経路は無い。editingCell から表の編集を終える他の交点 (外側の押下・保存など) は、引き継げるかによらず表の編集を終えるので、このガードを持たない。`openCell` でセルが開かなかった場合 (セルの要素が無い場合など) は、表の編集を終えて editModeIdle になる。ポップオーバーを開いている間の Esc は 11-f で処理し、この表の `escapePressed` は起きない (INV-53)。`blockInsertRequested` の editingBlock の交点は editModeIdle へ移り、描画の後の `insertedBlockRendered` で editingCell (表) または editingBlock (Mermaid) になる。`insertedBlockRendered` は、描画が終わった時点で、状態が editModeIdle のままで、ブロック編集欄もセルも開いておらず、モデルが挿入の時のままで、`#editor` に未描画の変更が無く、挿入したブロックがその種類のままのときだけ起こす (その間の操作を優先する。INV-52)。それまでの間、1 文字のショートカットは止める (INV-52)。`#editor` に未描画の変更があるときの挿入は、上のとおり INV-45 の全体描画になる (UIController が `blockInsertRequested` を起こさずに `renderFromEditor` を行う。ブロック編集中は `#editor` の変更が無いので当たらない)。
+
+注: 閲覧中 (`browsingPreview`。パレットが出ていない) の Esc は、`escapePressed` を送らない (表の `—`)。UIController がその前に、検索の箱が出ていれば検索を閉じ、出ていなければ目次を閉じる (INV-80 (6)、INV-77 (4)。5.11)。パレットが出ているときの Esc は `escapePressed` だけを送り、検索と目次は閉じない (調整役の裁定 2026-10-25、レビュー 1 回目の Q2)。
 
 通知の契約: 編集欄・セルを閉じる処理 (`commitBlock`、`discardBlockEditor`、`commitCell`、`discardCell`、`endTableSession`) は、`dispatch` の処理の途中で `BlockEditHost.onEditStateChanged()` と、確定でモデルが変わった場合の `onModelChanged` を呼ぶ。これらの通知は、`blockEditState` を表の次の状態に更新する **前** に出る。通知の受け手は `blockEditState` を読まず、編集欄・セルが開いているかどうか (`isEditing()`。編集欄・セルを閉じた時点で偽になる。セルはその確定のモデルの更新より前に閉じる) だけを読むこと。パレットのボタンの状態 (5.15.5) は、`dispatch` の途中 (`BlockEditController.isInTransition()` が真。`dispatch` の中の `dispatch` を含む) では更新せず、いちばん外側の `dispatch` の終わりに `BlockEditHost.onTransitionEnded()` で 1 回だけ更新する (未保存の印と状態の文字は途中でも更新する)。セルを閉じてから次のセルを開くまでの間の状態で開き手を無効と判定して、開いているポップオーバーを閉じないためである (11-f の `openerDisabled` は、遷移の後の状態で判定する)。
 
@@ -3129,6 +3195,99 @@ Feature: 未保存の保護
 
 ---
 
+### FS-21: 目次 (Index)
+
+```gherkin
+Feature: 目次 (Index)
+  文書を読む人として
+  見出しの一覧から読みたい所へすぐ飛びたい
+
+  Scenario: 目次を出して飛ぶ
+    Given Markdown ビューで見出しのある文書を表示している
+    When [Index] を押す
+    Then 画面の右端に見出し h1〜h6 の一覧が浮いて出る
+    And 一覧の地は 25% 透け、裏の本文が見える
+    When 一覧の項目を押す
+    Then その見出しが見えている範囲の上端に来る
+    And 一覧は出たまま
+
+  Scenario: 目次を消す
+    Given 目次が出ている
+    When [Index] をもう一度押す、または i を押す
+    Then 目次が消える
+
+  Scenario: Esc の順
+    Given 編集モードで目次が出ている
+    When Esc を押す
+    Then パレットが隠れ、目次は出たまま
+    When もう一度 Esc を押す
+    Then 目次が消える
+
+  Scenario: 書き換えると目次も変わる
+    Given 目次が出ている
+    When 見出しのブロックを書き換えて確定する
+    Then 目次の項目も新しい見出しになる
+
+  Scenario: 描画の途中で飛ぶ
+    Given 図の多い文書を描画している
+    When 図を描き終える前に目次の項目を押す
+    Then 描き終えた後も、その見出しが見えている
+
+  Scenario: 使えないとき
+    Given 初期画面またはコードビュー
+    Then [Index] は無効で、i は何もしない
+```
+
+### FS-22: 検索と置換
+
+```gherkin
+Feature: 検索と置換
+  文書を直す人として
+  文字や正規表現で探して、まとめて置き換えたい
+
+  Scenario: 探す
+    Given Markdown ビューで文書を表示している
+    When f を押して検索欄に文字を打つ
+    Then 件数が出て、打つのを止めると最初の一致へ行く
+    And 一致のブロックに枠が付き、今の一致は橙で見える
+    When 検索欄で ↓ を押す
+    Then 次の一致へ行く
+    And Enter を押しても何も起きない
+
+  Scenario: 大きい表
+    Given 同じ文字が多くの行にある大きい表
+    When ↓ で何度も進める
+    Then そのつど、原文で何番目かに当たる行の所へスクロールする
+
+  Scenario: 正規表現
+    Given 検索の箱で [.*] を入れている
+    When 式を打って手を止める
+    Then その式で探す
+    And 不正な式なら「Invalid pattern」と出る
+
+  Scenario: 置き換える (編集モード)
+    Given 編集モードで検索の箱を出している
+    When 置換欄に文字を打って [All] を押す
+    Then すべての一致が置き換わり、件数がトーストで出る
+    When Ctrl+Z を押す
+    Then 置き換える前に戻る
+
+  Scenario: 表示モードでは置き換えない
+    Given 編集モードでない
+    Then 置換欄と [Replace] と [All] は無効
+
+  Scenario: Esc の順
+    Given 編集モードで、検索の箱と目次を出し、フォーカスが箱の外にある
+    When Esc を 3 回押す
+    Then パレット、検索、目次の順に消える
+    When 検索欄の中で Esc を押す
+    Then すぐ検索の箱が消える
+
+  Scenario: コードビュー
+    Given コードビュー
+    Then 検索だけができ、置換の段は出ない
+```
+
 ## 5. 実装仕様
 
 ### 5.1 UI要素マップ
@@ -3151,7 +3310,7 @@ Feature: 未保存の保護
 | `clearBtn`      | button   | エディタをクリアしプレレンダー状態にリセット                                       |
 | `helpBtn`       | button   | ヘルプモーダルを開く (ラベル: "?")                                                 |
 | `preview`       | div      | メインコンテンツエリア: Markdownプレビュー / コードビュー / アフォーダンステキスト |
-| `helpModal`     | div      | ヘルプダイアログモーダル（英語・日本語。言語ごとの本文 `.help-body[lang="en"]` / `[lang="ja"]` を `HelpLanguageSwitch` が `hidden` で切り替える。HTML の既定は英語を表示し日本語を `hidden`。両方の本文は同じ節 (`data-help-section`: download, about, usage, details, privacy, samples, licenses) を同じ順に持つ）。ショートカットキーは大文字表記 (L, D, R, N, C, E) |
+| `helpModal`     | div      | ヘルプダイアログモーダル（英語・日本語。言語ごとの本文 `.help-body[lang="en"]` / `[lang="ja"]` を `HelpLanguageSwitch` が `hidden` で切り替える。HTML の既定は英語を表示し日本語を `hidden`。両方の本文は同じ節 (`data-help-section`: download, about, usage, details, privacy, samples, licenses) を同じ順に持つ）。ショートカットキーは大文字表記 (I, F, L, D, R, N, C, E) |
 | `promptModal`   | div      | MCBSMDプロンプトテンプレートオーバーレイ。著作権表示 (&copy; 2026 GoodRelax. MIT License.) を含む   |
 | `promptText`    | textarea | 読み取り専用MCBSMDテンプレートテキスト                                             |
 | `copyPromptBtn` | button   | プロンプトをクリップボードにコピー                                                 |
@@ -3186,9 +3345,15 @@ Feature: 未保存の保護
 | `.md-block-gap` | div (クラス) | すき間に開いた空のブロック編集欄の外枠 (`.md-block.md-block-gap`、ID を持たない)。BlockEditController が作り、MarkdownRenderer が順に置く (INV-73) |
 | `.grsmd-block-range-bar` | div (クラス、`role="toolbar"`) | ブロックの範囲の帯 (INV-74)。ボタン 3 つ (`.grsmd-block-range-btn`: 削除・カット・コピー。アイコンだけ (24 の viewBox、線幅 1.7。5.15.3 と同じ作りでボタンごとにインライン)、`title` / `aria-label` は `messages.blockRange`、`tabindex="-1"`)。`body` の直下に 1 つ、`position: fixed`、`z-index: 300` (すき間の点線の上、パレット・トースト・モーダルの下)。色はパレットと同じ (ライト `#f6f7f8` の地、ダーク `#151b23`)。コピーの ✓ の間はボタンに class `is-copied` (ライト `#0969da`、ダーク `#4493f8`)。BlockRangeSelection が作り、参照で持つ。編集モードの間だけ出し、印刷しない |
 | `.md-block-range` | div (クラス) | ブロックの範囲の対象のブロックの外枠の枠 (`outline: 2px solid`、ライト `#0969da`、ダーク `#4493f8`。ホバーの点線より優先)。BlockRangeSelection が要素の参照で付け外しする。印刷では出さない (INV-74) |
+| `indexBtn` | button | ラベル: "Index"。目次の表示 / 非表示 (`i` キーと同じ)。`#controls` の先頭 (`renderLight` の前)。Markdown ビュー以外では無効 (INV-77 (5))。`aria-controls="indexPanel"`、`aria-expanded` (2026-10-25 追加) |
+| `sidePanels` | div | 右端の列。`#preview` の直後 (兄弟)、`position: fixed`、`z-index: 350`、`pointer-events: none` (中のパネルだけが押下を受ける)。位置は `sidePanels.placeSidePanels` (INV-77 (6))。印刷では出さない |
+| `searchBtn` | button | ラベル: "Search"。`indexBtn` の右。初期状態では無効。`aria-controls="searchPanel"`、`aria-expanded` (INV-80。2026-10-25 追加) |
+| `searchPanel` | div | 検索の箱。`#sidePanels` の中の先頭 (目次の上)。`role="search"`、`aria-label="Search"`、初めは `hidden`。中に `searchInput` (`placeholder="Search"`)、`searchCase` ("Aa"、`aria-pressed`、`title="Match case"`)、`searchRegex` (".*"、`aria-pressed`、`title="Regular expression"`)、`searchCount` (`aria-live="polite"`)、`searchPrev` (↑。`title="Previous (Up)"`、`aria-label="Previous"`)、`searchNext` (↓。`title="Next (Down)"`、`aria-label="Next"`)、`searchClose` (×。`title="Close (Esc)"`、`aria-label="Close"`)、`replaceRow` (コードビューでは `hidden`。`replaceInput` (`placeholder="Replace (edit mode)"`、`aria-label="Replace"`)、`replaceOneBtn` ("Replace")、`replaceAllBtn` ("All")。編集モードでないときは無効) |
+| `.search-hit` | クラス | 今の一致のブロック (コードビューでは行) の枠 (INV-80 (4))。印刷では出さない |
+| `indexPanel` | nav | 目次。`#sidePanels` の中。`aria-label="Index"`、初めは `hidden`。中身は `button.index-entry.index-h1`〜`index-h6`、または `p.index-empty` (INV-77) |
 | `.plantuml-pending` | div (クラス) | 未送信の PlantUML ブロックのプレースホルダ。[Render] ボタン付き (INV-23) |
 
-**[要検証]** `#controls` のボタンが 6 個 (`helpBtn` を含めると上部バーで 7 個) になるので、iPhone (幅 375px) で折り返しや欠けが起きないかを PRT-V11 で確認する。
+**[要検証]** `#controls` のボタンが 8 個 (`indexBtn`・`searchBtn` を足して。`helpBtn` を含めると上部バーで 9 個) になるので、iPhone (幅 375px) で折り返しや欠けが起きないかを PRT-V11 で確認する。
 
 ### 5.2 CONFIG オブジェクト
 
@@ -3261,6 +3426,7 @@ const CONFIG = {
     doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
     doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",
+    savePickerId: "grsmd-markdown", // INV-79: the browser remembers the save dialog's last folder by this id
     commitBudgetMs: 300, // performance target for 1 MB (INV-51), used by tests
     editorSyncMaxChars: 100000, // longer bodies: #editor is written when it can be used (INV-47)
     diffMaxCells: 250000, // max LCS table cells for the middle range (INV-42)
@@ -3326,8 +3492,8 @@ const CONFIG = {
   },
   // Keyboard hint text per view mode (2-line for narrow browsers)
   keyHints: {
-    markdown: "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
-    code: "[L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
+    markdown: "[I] Index; [F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
+    code: "[F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
   },
   // Every text the user sees from JS (R15). Toasts and confirms use
   // contractions with the ASCII apostrophe (R13).
@@ -3355,6 +3521,16 @@ const CONFIG = {
       copyPng: "Copy PNG",
       copied: "Copied!",
       copyFailed: "Failed",
+    },
+    index: {
+      empty: "This document has no headings.", // DocumentIndex with no heading (INV-77)
+    },
+    search: { // DocumentSearch: the count beside the query, and a toast (INV-80)
+      count: (current, total) => (current > 0 ? `${current} / ${total}` : total),
+      none: "No results",
+      invalid: "Invalid pattern",
+      stale: "Down: search again", // a regular expression after the text changed (INV-80 (3))
+      replaced: (count) => `Replaced ${count}.`,
     },
     markdown: {
       parseError: (message) => `Couldn't read this Markdown: ${message}`, // marked threw
@@ -4198,6 +4374,10 @@ GitHub (Primer) の配色に合わせる。値は `@primer/primitives` 11.10.0 �
 | アフォーダンステキスト | `#9198a1` | |
 | `#fileInfo` (地 / 文字 / 枠) | `#151b23` / `#9198a1` / `#3d444d` (コードビューの寒色の地 `#1A1E2E` は `editorColors` のまま。枠はコードビューでも `#3d444d`) | |
 | キーのヒント・トースト | `#3d444d` / `#ffffff` | tooltip |
+| 目次 (地 / 文字 / 枠 / 項目のホバーとフォーカス) | `rgba(21, 27, 35, 0.75)` / `#f0f6fc` / `#3d444d` / `rgba(56, 139, 253, 0.25)` | bgColor-muted の不透明度 75% (INV-77) |
+| 検索の箱 (地 / 文字 / 枠) | 目次と同じ | (INV-80) |
+| 今の一致のブロックの枠 (`.search-hit`) | `#d29922` 2px | attention |
+| 一致の文字 / 今の一致の文字 (`::highlight(grsmd-search)` / `grsmd-search-current`) | 地 `#9e6a03` / `#bd561d`、文字 `#f0f6fc` | |
 | コードビューの地 / 文字 / 行番号 / 行のホバー | `#0d1117` / `#f0f6fc` / `#9198a1` / `#151b23` | |
 | 図のコピーボタン (地 / 枠 / 文字) | `#212830` / `#3d444d` / `#f0f6fc` | control-bgColor-rest |
 | ブロック編集欄・編集中のセル (地 / 文字 / 枠) | `#010409` / `#f0f6fc` / `#1f6feb` (フォーカスの輪も `#1f6feb`) | bgColor-inset / borderColor-accent-emphasis |
@@ -4218,6 +4398,10 @@ GitHub (Primer) の配色に合わせる。値は `@primer/primitives` 11.10.0 �
 | インラインのコードの地 | `#818b981f` | bgColor-neutral-muted |
 | 引用の文字 / 線 | `#59636e` / `#d1d9e0` | fgColor-muted / borderColor-default |
 | 表の枠 | `#d1d9e0` | borderColor-default |
+| 目次 (地 / 文字 / 枠 / 項目のホバーとフォーカス) | `rgba(255, 255, 255, 0.75)` / `#1f2328` / `#d1d9e0` / `rgba(9, 105, 218, 0.15)` | 地は白の不透明度 75% (INV-77) |
+| 検索の箱 (地 / 文字 / 枠)、[Aa] / [.*] が入っているとき | 目次と同じ。入っているボタンは地 `#0969da`、文字 `#fff` (ダークも同じ) | (INV-80) |
+| 今の一致のブロックの枠 (`.search-hit`) | `#bf8700` 2px | |
+| 一致の文字 / 今の一致の文字 (`::highlight(grsmd-search)` / `grsmd-search-current`) | 地 `#ffd33d` / `#ffa657`、文字 `#1f2328` | |
 | コードビューの文字 / 行番号 | `#1f2328` / `#59636e` (地 `#ffffff` と行のホバーは変えない) | fgColor-default / fgColor-muted |
 | ブロック編集欄・編集中のセルの枠とフォーカスの輪 | `#0969da` (地 `#fffdf5` は変えない) | |
 | 原文のセルの地、見えない文字の印 (INV-70) | `#fff8c5` | bgColor-attention-muted |
@@ -4266,10 +4450,12 @@ GitHub (Primer) の配色に合わせる。値は `@primer/primitives` 11.10.0 �
 |  [editor textarea (hidden in code view)]                         |
 |  [#fileInfo: hello.c | 1,234 lines | 48.20 KB                 ] |
 |  [          Updated: 2026-03-05 12:34:56                       ] |
-|  [Render Light] [Render Dark] [Re-load] [New Tab] [Clear] [?]   |
+|  [Index] [Search] [Render Light] [Render Dark] [Re-load]        |
+|  [New Tab] [Edit] [Clear] [?]   ([Index] [Edit]: disabled)      |
 +------------------------------------------------------------------+
 | #keyHint (position: fixed; top: topbar bottom edge; overlay)     |
-|  [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;       |
+|  [F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab;      |
+|  [C] Clear;                                                     |
 |  [Up][Down] Scroll Up/Down;                                      |
 +------------------------------------------------------------------+
 |                                                                  |
@@ -4429,6 +4615,8 @@ setupTouchPasteAssist() {
 | --------- | -------------------------- | ------------------------------ | --------------------------------------- |
 | ArrowUp   | 無動作                     | スムーススクロール↑            | スムーススクロール↑                     |
 | ArrowDown | 無動作                     | スムーススクロール↓            | スムーススクロール↓                     |
+| `i`       | 無動作                     | 目次の表示 / 非表示 (INV-77)   | 無動作 ([Index] は無効)                 |
+| `f`       | 無動作                     | 検索の箱を出す (INV-80)        | 検索の箱を出す (置換の段は無い)         |
 | `l`       | 無動作                     | Markdownをライトでレンダリング | ライトテーマに切替 (CSS切替のみ、即時)  |
 | `d`       | 無動作                     | Markdownをダークでレンダリング | ダークテーマに切替 (CSS切替のみ、即時)  |
 | `r`       | 無動作                     | fileHandleからファイル再読込   | fileHandleからファイル再読込            |
@@ -4446,7 +4634,7 @@ setupTouchPasteAssist() {
 | キー | プレレンダー | Markdownプレビュー | ブロック編集中 | セルの編集中 | コードビュー |
 | --- | --- | --- | --- | --- | --- |
 | `e` / [Edit] | `#editor` が空なら空の文書を開始、空でなければ `#editor` の内容を描画して編集モードにする (INV-31) | 編集パレットの表示 / 非表示 | (文字入力。[Edit] ボタンは有効) | (文字入力) | 無動作 (OS-06) |
-| `Esc` | 無動作 | ブロックの範囲があれば選択を解く (INV-74 (5))、無ければ編集パレットを閉じる | 反映して閉じる (IME の変換中を除く。INV-28。すき間の空の編集欄は何も変えない。INV-73) | セルを反映して表の編集を終える (INV-64。パレットは閉じない) | 無動作 |
+| `Esc` | 無動作 | ブロックの範囲があれば選択を解く (INV-74 (5))、無ければ編集パレットを閉じる。パレットが出ていなければ検索の箱、それも無ければ目次を閉じる (INV-80 (6)、INV-77 (4))。検索の箱の中ではすぐ検索を閉じる | 反映して閉じる (IME の変換中を除く。INV-28。すき間の空の編集欄は何も変えない。INV-73) | セルを反映して表の編集を終える (INV-64。パレットは閉じない) | 検索の箱を閉じる (INV-80 (6)) |
 | `Esc` (ポップオーバーを開いている) | — | ポップオーバーだけを閉じる (INV-53) | ポップオーバーだけを閉じる (INV-53) | ポップオーバーだけを閉じる (INV-53) | — |
 | `Tab` / `Shift+Tab` | — | — | ブラウザ既定 (INV-53) | 右 / 左のセル (INV-64) | — |
 | Delete / Backspace (Shift と一緒でも) | ブラウザ既定 | 編集モードでブロックの範囲があれば、そのブロックを消す (INV-74 (3)。Shift+Delete も同じ。押し続けても 1 回)。それ以外はブラウザ既定 | ブラウザ既定 (文字の削除) | セルの文字の削除 (INV-63) | ブラウザ既定 |
@@ -4457,6 +4645,8 @@ setupTouchPasteAssist() {
 | 主 + Z | ブラウザ既定 | 編集モードでなければブラウザ既定 (裁定 Q3)、編集モードなら Undo (INV-59 (c)) | 変更あり: フォーカスが編集欄の中ならブラウザ既定 (文字単位)、外なら反映してそれを戻す (INV-48 (1)) / 変更なし: Undo (INV-59) | 変更あり: セルを反映してそれを戻す / 変更なし: Undo (INV-59 (c)) | ブラウザ既定 |
 | 主 + Shift + Z / Ctrl+Y (Mac 以外) | ブラウザ既定 | 編集モードでなければブラウザ既定 (裁定 Q3)、編集モードなら Redo (INV-59 (c)) | フォーカスが編集欄の中なら、変更の有無によらずブラウザ既定 (文字単位。裁定 M5) / 外なら、変更ありは止めて何もしない (R2)、変更なしは閉じて Redo (INV-59) | 変更あり: 止めて何もしない / 変更なし: 表の編集を終えて Redo (INV-59、INV-64) | ブラウザ既定 |
 | 主 + B / I (Shift なし) | ブラウザ既定 | ブラウザ既定 | Bold / Italic (INV-60) | Bold / Italic (INV-60) | ブラウザ既定 |
+| 主 + F (Shift なし) | ブラウザ既定 | 編集モードでなければブラウザ既定、編集モードなら検索の箱を出す (INV-80 (7)。裁定 S6) | 検索の箱を出す | 検索の箱を出す | ブラウザ既定 |
+| 検索の箱の中 (INV-80 (4)(6)) | — | 検索欄の ↓ / ↑ で次 / 前、Esc で閉じる。検索欄と置換欄の Enter は何もしない (裁定 S7・S12)。主 + Z / Y はその欄のブラウザの Undo / Redo | 同じ | 同じ | 同じ (置換欄は無い) |
 | 主 + V (貼り付け。文脈メニューの貼り付けも) | ペースト＋自動レンダリング (現行) | ブラウザ既定 | INV-69 の (i)〜(iv) を満たせばリンク (権限は使わない)、それ以外はブラウザ既定 (コードの中・リンクの行き先・URL を選んだ置き換えなど) | INV-69 の (i)〜(iv) を満たせばリンク、それ以外は文字として貼る (INV-63) | ブラウザ既定 |
 
 「主」は INV-14 の判定式 (Mac は Cmd、それ以外は Ctrl)。横取りする場面でキーを押し続けた繰り返し (`event.repeat`) は、既定の動作だけを止め、機能は実行しない (INV-14)。Esc の繰り返しは、どの列でも何もしない (INV-14 の (3)。オーナーの裁定 Q-a)。`#editor` にフォーカスがあるときの主 + Z / Redo のキー / B / I は、どの列でもブラウザ既定。`#editor` にフォーカスがある間の Esc は、パレットを閉じない (INV-14 のガード)。
@@ -4489,6 +4679,13 @@ document.addEventListener("keydown", (e) => {
       if (!this.orchestrator.isPreRenderState())
         this.scrollEngine.startScroll(+1);
       break;
+    case "i":
+      this.documentIndex?.toggle(); // INV-77
+      break;
+    case "f":
+      e.preventDefault(); // INV-80: the f is not typed into the search box
+      this.documentSearch?.open();
+      break;
     case "l":
       this.handleRender("light");
       break;
@@ -4517,8 +4714,13 @@ document.addEventListener("keydown", (e) => {
       // (11-c escapePressed). A repeat of a held Esc does nothing (owner
       // ruling Q-a, 2026-10-22).
       if (e.repeat) break;
-      if (!this.orchestrator.isPreRenderState() && !this.orchestrator.isCodeViewActive())
-        this.blockEdit.dispatch("escapePressed");
+      if (this.orchestrator.isPreRenderState()) break;
+      // The order (owner rulings 2026-10-25): the block editor, the popover,
+      // the block range and the palette (11-c), then Search (INV-80 (6)),
+      // then the Index (INV-77 (4)). The code view has no palette.
+      if (this.palette.isShown()) this.blockEdit.dispatch("escapePressed");
+      else if (this.documentSearch?.isShown()) this.documentSearch.hide();
+      else if (this.documentIndex?.isShown()) this.documentIndex.hide();
       break;
   }
 });
@@ -4786,6 +4988,7 @@ CONFIG を読まず、必要な値は引数で受け取る。`formatRange(text, 
 - `SaveOutcome` は保存を始めたときの `documentId` を持ち、DocumentLifecycle は現在の文書 ID と一致するときだけ反映する (INV-54)。保存中 (`writingFile`) は、文書の置き換えを拒む (INV-54)。
 - 書き込みの可否は `FILE_SYSTEM_WRITE_SUPPORTED` (`typeof window.showSaveFilePicker === "function"` 等) で判定する **[要検証: 判定式]**。`FILE_SYSTEM_HANDLE_SUPPORTED` とは別にする。
 - 5 MB (CON-08) を超えた文書も保存できる (読み込みの上限は変えない)。
+- 保存のダイアログの始まりのフォルダ (INV-79): `startSavePicker` は `{id: CONFIG.edit.savePickerId, suggestedName, types}` に、このタブで覚えたファイルがあれば `startIn` (そのハンドル) を足して `showSaveFilePicker` を呼ぶ。`startIn` のハンドルは `id` の記憶より先に効く (ブラウザの決まり)。選んだファイルを `noteFile` で覚える。`DocumentLifecycle.openFile` はドロップした `.md` のハンドルを `noteFile` に渡す。**[要検証]** `startIn` に渡したファイルが動かされた・消されたときに、ブラウザが既定のフォルダに戻すか (例外にしないか) を Chrome / Edge で確かめる (PRT-AC01)。
 - 保存先は `DocumentLocation` だけを正とする (`RendererOrchestrator._mdFileHandle` は廃止。INV-55)。`DocumentSession` は fileHandle を持たない。
 
 - 保存先が無い Save は、仮の保存先 `DocumentLocation(defaultFileName, null)` で、保存ダイアログを使う Save as と同じに動く。書き込み API が無い場合は、権限の要求もダイアログも始めず (`permissionOrPicker` は無し)、ダウンロードにする。
@@ -4994,7 +5197,7 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | 原則         | 本設計での準拠状況                                                                                                                                                                                                                                                                                                  |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **KISS**     | SourceFileRendererのpublicメソッドは3個。SmoothScrollEngineは約60行。過度な抽象化なし。                                                                                                                                                                                                                             |
-| **YAGNI**    | 検索、差分、プラグインシステム、マルチファイルタブは実装しない。指定された機能のみ実装する。                                                                                                                                                                                                                        |
+| **YAGNI**    | 差分、プラグインシステム、マルチファイルタブは実装しない (検索と置換はオーナーの依頼で SC-26 として加えた。単語単位・選択範囲の中だけ・置換の確認は要望に無いので持たない)。指定された機能のみ実装する。                                                                                                                                                                                                                        |
 | **DRY**      | EXT_TO_HLJSは単一のルックアップテーブル。テーマ適用は `applyTheme()`。トーストは `showToast()`。`handleRender()` はキーとボタンで共用。                                                                                                                                                                             |
 | **SoC**      | SourceFileRenderer: コード本体レンダリングのみ（UI chrome は UIController に委譲）。SmoothScrollEngine: アニメーション物理のみ。UIController: イベント配線 + ビューモード管理（setViewMode, showKeyHint）。DocumentLifecycle: 文書のライフサイクル (セッション・保存先・保存の状態) だけで、UI に触れない。RendererOrchestrator: レンダリングパイプライン調整のみ（DOM classList 操作なし）。CONFIG: 全定数を集約。 |
 | **SRP**      | 各クラスは変更理由がちょうど1つ。SourceFileRendererはコード描画変更時のみ変更。UIControllerはUI表示変更時のみ変更。RendererOrchestratorはパイプライン変更時のみ変更。 **(その場編集。2026-xx-xx 追記)** MarkdownBlockModel: 本文とブロックの対応だけ。BlockDiff: ブロック列の対応付けだけ。MarkdownTextOps: 文字列の書式操作だけ。MarkdownTable: 表の解析と整形だけ (幅は textWidth.js)。InlineRuns: インラインの書式の並びと書き出しだけ。InvisibleCharOverlay: 編集欄の後ろの印の層だけ。DocumentSession: 保存に関わる値だけ。SaveDocument / SaveDocumentAs: 保存の手順だけ。DocumentLifecycle: 文書の作り直しと保存の状態だけ (5.14.11、11-e)。MarkdownFileAccess: ローカルファイルへの入出力だけ。BlockEditController: ブロック編集の UI イベントだけ。EditPalette: パレットの表示とジェスチャだけ (機能の実行はコールバックで UIController へ)。BlockRangeSelection: 編集モードの選択を、ブロックの範囲 (枠と帯) として示すことだけ (範囲への操作は host を通して 11-c が行う。帯の位置の計算は純粋な `floatingPlacement.placementNearLine`。2026-10-25) |
@@ -5022,6 +5225,8 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | 最小構成 (書式) | Bold / Italic を `**` で囲むだけ (前の `toggleWrap`) | 不採用 (裁定 10 / F1〜F4 / E1 / L3)。文字色とリンクの追加、入れ子にしない分割・結合、約物の前後の扱いのため、書式の並び (`InlineRuns`) を原文の編集欄にも使う |
 | 最小構成 (パレット) | 2 段のまま、ボタンを足す | 不採用 (裁定 D1 / M2)。7 × 2 の格子と、最小化・ポップオーバー 3 つを 11-f の状態機械で持つ |
 | 最小構成 (複数ブロック) | キー (Delete) だけで消し、帯も枠も無い | 不採用 (D1・D5・D10・D11)。タッチにはキーが無く、どのブロックが消えるかを枠で示す必要がある。増えた要素とその理由: `BlockRangeSelection` (選択をブロックの範囲に解決し、枠と帯を出す。枠は増減した分だけ、ビューポートの近くだけに付ける (1 MB の Ctrl+A の 1 フレームを 50 ms 以内にするため。INV-74 (性能))。ボタンを押している間は帯を出さない (帯がポインタの先に来て選択を止めないため))、`floatingPlacement.placementNearLine` (帯の位置の決まりを純粋に試すため)、書き込みの 2 つの口 `writeClipboardNow` / `writeClipboardLater` (読み取りの権限を使わずに書き、ブラウザが断ったときだけ予備を使う。裁定 2)、ブラウザの `copy` の事象を受ける口 (メニュー・吹き出しのコピーも原文にする。オーナーの裁定 2026-10-25) |
+| 最小構成 (検索) | ブラウザの検索 (Ctrl+F) に任せ、置換だけを原文の欄で行う | 不採用 (裁定 S1〜S3)。ブラウザの検索は図の原文・数式の原文・リンク先を探せず、正規表現も置換も無い。原文を探し、描画された文字の n 番目に色を付ける (DOM を変えない Custom Highlight)。行く所を数えるのを 10,000 件で止め、移動を 1 フレームに 1 回にまとめて、1 MB でも 1 キーを 4 ms 以下にする |
+| 最小構成 (目次) | 見出しに ID を付けて `<a href="#...">` の一覧にし、開いたら閉じない固定の欄にする | 不採用 (裁定 T1〜T8)。ID は利用者の ID とぶつかり、DOMPurify の clobbering の対策にもかかる。要素を直接持ち、押下でスクロールする。重ねて浮かせ (要望)、開いている間だけ `MutationObserver` で作り直す (閉じている間の費用は 0) |
 | 最小構成 (表記) | 手で書く NOTICE の 1 ファイル、またはビルドで node_modules の LICENSE だけを並べる | 不採用 (裁定 Q4 の (c)、レビューの H1・M1)。手で書くと依存の更新で古くなり、node_modules の LICENSE だけでは、ほかの道具が dist に束ねたコード (langium・pako・roughjs の中の 4 つなど) が漏れる。増やしたのは、印の検査・宣言した依存の検査・dist の確かめの記録 (`EMBEDDED`・`IGNORED_MARKS`・`IGNORED_DEPENDENCIES`・`DIST_RECORDS`)、`PACKAGE_OVERRIDES`、保存した文 (`tools/third-party-licenses/`)、版の検査、待ちの文、ヘルプの一覧。どれも「依存が変わったときに表記が黙って欠けない」ためで、ビルドの時だけ動き、ページの実行時のコードは増えない |
 
 #### 5.16.2 `@purity` の検査 (CON-15)

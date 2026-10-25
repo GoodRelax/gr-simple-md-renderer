@@ -681,3 +681,92 @@ describe("ScrollMemento.reveal (INV-52: the least scroll to an opened cell or ed
     expect(c.scrollTop).toBe(50);
   });
 });
+
+describe("ScrollMemento user moves (INV-78)", () => {
+  let c;
+  let memento;
+  let field;
+  const PLACE = { element: {}, anchor: { offsetTop: 7 } };
+
+  beforeEach(() => {
+    stubMatchMedia(false);
+    c = document.createElement("div");
+    Object.defineProperty(c, "clientWidth", { configurable: true, value: 100 });
+    Object.defineProperty(c, "clientHeight", { configurable: true, value: 100 });
+    field = document.createElement("input");
+    document.body.append(c, field);
+    memento = new ScrollMemento(c);
+    vi.spyOn(memento, "captureReadingAnchor").mockReturnValue(PLACE);
+  });
+
+  afterEach(() => {
+    c.remove();
+    field.remove();
+  });
+
+  const scroll = (target = c) => target.dispatchEvent(new Event("scroll"));
+  const press = (target, offsetX) => {
+    const e = new Event("pointerdown", { bubbles: true });
+    Object.defineProperty(e, "offsetX", { value: offsetX });
+    Object.defineProperty(e, "offsetY", { value: 10 });
+    target.dispatchEvent(e);
+  };
+  const keyDown = (key, target = document.body) => target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+
+  it.each([
+    ["a wheel turn", () => c.dispatchEvent(new Event("wheel", { bubbles: true }))],
+    ["a finger moving", () => document.body.dispatchEvent(new Event("touchmove", { bubbles: true }))],
+    ["a scroll key", () => keyDown("PageDown")],
+    ["Space", () => keyDown(" ")],
+    ["a press on the scroll bar", () => press(c, 105)],
+  ])("AT-SM-39 after %s, a scroll of the view notes the reader's place; the last one is kept", (_n, act) => {
+    const moves = memento.watchUserMoves();
+    scroll(); // the render's own scroll: no move yet
+    expect(moves.place()).toBeNull();
+    act();
+    expect(moves.place()).toBeNull(); // a move is noted at the scroll it makes
+    scroll();
+    expect(moves.place()).toBe(PLACE);
+    moves.stop();
+  });
+
+  it.each([
+    ["Shift (the review's case)", () => keyDown("Shift")],
+    ["a scroll key in a text field", () => keyDown("ArrowDown", field)],
+    ["a press outside the text (a key hint)", () => press(document.body, 5)],
+    ["a press in the text", () => press(c, 50)],
+    ["a pointer move", () => document.body.dispatchEvent(new Event("pointermove", { bubbles: true }))],
+  ])("AT-SM-40 %s does not move the view: the scrolls after it note nothing", (_n, act) => {
+    const moves = memento.watchUserMoves();
+    act();
+    scroll();
+    expect(moves.place()).toBeNull();
+    moves.stop();
+  });
+
+  it("AT-SM-41 only a scroll of the view counts (not of a panel); scrollTargetTo notes the place at once; stop() lets go", () => {
+    const panel = document.createElement("div");
+    document.body.append(panel);
+    const moves = memento.watchUserMoves();
+    keyDown("ArrowDown");
+    scroll(panel);
+    expect(moves.place()).toBeNull();
+    moves.stop();
+    panel.remove();
+
+    const jump = memento.watchUserMoves();
+    vi.spyOn(memento, "restoreAnchor").mockImplementation(() => {});
+    memento.scrollTargetTo({}, 8); // an Index entry or a Search match
+    expect(jump.place()).toBe(PLACE);
+    jump.stop();
+
+    const after = memento.watchUserMoves();
+    after.stop();
+    keyDown("ArrowDown");
+    scroll();
+    expect(after.place()).toBeNull();
+    memento.captureReadingAnchor.mockClear();
+    memento.scrollTargetTo({}, 8); // no watch: nothing is noted
+    expect(memento.captureReadingAnchor).not.toHaveBeenCalled();
+  });
+});

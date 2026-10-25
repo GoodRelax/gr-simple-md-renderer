@@ -34,6 +34,8 @@ This tool was built to provide a **transparent, minimal, and privacy-respecting 
 - Edit the preview block by block and save to a file (no autosave; Save as / download where writing files is not supported)
 - Edit table cells as they are shown, and double-click (double-tap) the preview to start editing what you clicked
 - Text color (red, blue, green), and links: paste a URL onto selected text, or remove a link
+- Index of the headings, floating at the right edge: press one to jump to it
+- Search the Markdown source (plain text or a regular expression), and replace one or all in edit mode
 - Dark / Light theme rendering
 - Keyboard shortcuts and smooth arrow-key scrolling
 - Diagram zoom (Ctrl+Scroll), pan (drag), and copy as SVG / PNG on PC
@@ -62,6 +64,8 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
 
    | Button | Key | Action |
    |---|---|---|
+   | Index | `I` | Show / hide the headings (h1 to h6) at the right edge; press one to bring it to the top of the view |
+   | Search | `F` | Find text in the Markdown source (`Aa` match case, `.*` regular expression; `Down` / `Up` in the box: next / previous). In edit mode `Ctrl+F` opens it too, and Replace / All replace (one Undo) |
    | Render Light | `L` | Render / switch to the light theme |
    | Render Dark | `D` | Render / switch to the dark theme |
    | Reload | `R` | Reload the current file from disk |
@@ -70,7 +74,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document is shown |
-   | | `Esc` | Apply the open block or cell and close it; with blocks selected, clear the selection; with nothing open, hide the edit palette |
+   | | `Esc` | Apply the open block or cell and close it; with blocks selected, clear the selection; with nothing open, hide the edit palette; then Search (in the search box: close it at once); then the Index |
    | | `Delete` / `Backspace` | In edit mode, delete the selected blocks, also with `Shift` (one Undo brings them back) |
    | | `Ctrl+X` / `Ctrl+C` | In edit mode with blocks selected, cut / copy their Markdown whole (a menu's Copy copies it too) |
    | | `Ctrl+Z` | Undo while the edit palette is shown, up to 30 changes (in a block you have changed, the browser undoes your typing) |
@@ -195,6 +199,8 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 - プレビュー上でのブロック単位の編集と、ファイルへの保存（自動保存はしない。ファイルを書き込めないブラウザではダウンロード）
 - 表のセルを見たままの形で編集。プレビューのダブルクリック（ダブルタップ）で、押した所の編集を始める
 - 文字色（赤・青・緑）と、リンク（選んだ文字に URL を貼る、リンクを外す）
+- 見出しの目次（右端に浮かせて出し、押すとその見出しへ飛ぶ）
+- Markdown の原文の検索（文字または正規表現）と、編集モードでの置換（1 件ずつ、またはすべて）
 - ダーク / ライトテーマ
 - キーボードショートカットと矢印キーのスムーズスクロール
 - PC: ダイアグラムの Zoom（Ctrl+Scroll）/ Pan（ドラッグ）/ SVG・PNG コピー
@@ -223,6 +229,8 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 
    | ボタン | キー | 動作 |
    |---|---|---|
+   | Index | `I` | 見出し（h1〜h6）の目次を右端に出す / 消す。押した見出しを見えている範囲の上端へ |
+   | Search | `F` | Markdown の原文から文字を探す（`Aa` で大文字と小文字を区別、`.*` で正規表現。検索欄の `↓` / `↑` で次 / 前）。編集モードでは `Ctrl+F` でも開け、Replace / All で置き換える（Undo 1 回で戻る） |
    | Render Light | `L` | レンダリング / ライトテーマに切替 |
    | Render Dark | `D` | レンダリング / ダークテーマに切替 |
    | Reload | `R` | 表示中のファイルをディスクからリロード |
@@ -231,7 +239,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書を表示している間、保存 / 名前を付けて保存 |
-   | | `Esc` | 開いているブロックやセルを反映して閉じる。ブロックを選んでいれば選択を解く。何も開いていなければ編集パレットを隠す |
+   | | `Esc` | 開いているブロックやセルを反映して閉じる。ブロックを選んでいれば選択を解く。何も開いていなければ編集パレットを隠し、その次は検索を閉じ（検索欄の中ではすぐ閉じる）、その次は目次を消す |
    | | `Delete` / `Backspace` | 編集モードで、選んだブロックを削除（`Shift` を押していても同じ。Undo 1 回で戻る） |
    | | `Ctrl+X` / `Ctrl+C` | 編集モードでブロックを選んでいる間、その Markdown を丸ごとカット / コピー（メニューのコピーも同じ） |
    | | `Ctrl+Z` | 編集パレットを表示している間、元に戻す（30 回まで。変更したブロックの中では、ブラウザが入力を元に戻す） |

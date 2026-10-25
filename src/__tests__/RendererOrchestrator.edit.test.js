@@ -58,6 +58,7 @@ function setup() {
   const scrollManager = {
     save: vi.fn().mockReturnValue(0),
     restore: vi.fn(),
+    watchUserMoves: vi.fn(() => ({ place: () => null, stop: vi.fn() })),
     captureAnchor: vi.fn((el) => {
       calls.push(`capture:${el?.name ?? "null"}`);
       return el ? { offsetTop: 100 + anchorSeq++ } : null;
