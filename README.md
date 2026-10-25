@@ -126,6 +126,12 @@ npm test
 npm run build
 ```
 
+A beta of the same build, written to `docs/grsmd-beta.html`. The only difference from `docs/index.html` is its robots meta, `noindex` for search engines (owner's ruling 2026-10-26: no BETA mark, the same help). `docs/index.html` is not touched:
+
+```bash
+npm run build:beta
+```
+
 Browser tests of the built file (Playwright, Chromium and WebKit). They need a one-time browser download; see [`e2e/README.md`](e2e/README.md).
 
 ```bash
@@ -289,6 +295,12 @@ npm test
 
 ```bash
 npm run build
+```
+
+同じビルドのベータ版を `docs/grsmd-beta.html` に書きます。`docs/index.html` との違いは、検索エンジンに載せない robots の meta（`noindex`）だけです（オーナーの裁定 2026-10-26: BETA の印は出さず、ヘルプも同じ）。`docs/index.html` は変えません。
+
+```bash
+npm run build:beta
 ```
 
 ビルドしたファイルのブラウザでの試験（Playwright、Chromium と WebKit）。初めにブラウザのダウンロードが 1 回要ります。[`e2e/README.md`](e2e/README.md) を見てください。

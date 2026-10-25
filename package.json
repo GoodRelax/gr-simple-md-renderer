@@ -6,10 +6,11 @@
     "dev": "vite",
     "build": "vite build",
     "build:release": "vite build --mode release",
+    "build:beta": "vite build --mode beta",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:e2e": "vite build --outDir ../output/e2e --emptyOutDir",
+    "build:e2e": "vite build --outDir ../output/e2e --emptyOutDir && vite build --mode beta --outDir ../output/e2e",
     "test:e2e": "npm run build:e2e && playwright test",
     "test:e2e:firefox": "npm run build:e2e && playwright test --config playwright.firefox.config.js"
   },
