@@ -87,7 +87,10 @@ function isAtEdge(wrapper, container, offset, after, isTab) {
  * held (a drag still making the selection) the frame follows but the bar
  * waits for the release. Only the blocks within a screen of the viewport
  * get the frame (it follows the scroll): Ctrl+A on 1 MB frames a screen,
- * not some 24,000 blocks.
+ * not some 24,000 blocks. The release of a mouse drag that started in the
+ * preview and left a selection there has its default stopped: Edge then
+ * shows no mini menu, which would take the next key (Delete) from the page
+ * (owner ruling S1, 2026-10-25). A plain click keeps its default.
  *
  * The bar is one element on the body (position: fixed), never in the
  * preview, whose children the renderer owns (as BlockGapInsert).
@@ -120,12 +123,21 @@ export default class BlockRangeSelection {
     this._press = null; // { button, kind, range } of a press on the bar
     this._copiedTimer = null;
     this._isPointerHeld = false; // a mouse drag is making the selection: no bar yet
+    this._isPreviewPress = false; // that drag started in the preview in editModeIdle
     this._onChange = () => this._schedule();
     /** @purity non-pure */
     this._onPointerDown = (e) => {
       if (e.pointerType !== "mouse" || e.button !== 0 || this.isBarNode(e.target)) return;
       this._isPointerHeld = true;
+      this._isPreviewPress = this.host.canSelect() && e.target instanceof Node && this.preview.contains(e.target);
       this._hideBar();
+    };
+    // INV-74 (2), owner ruling S1: no Edge mini menu after a drag that selected in the preview
+    /** @purity non-pure */
+    this._onMouseUp = (e) => {
+      const isPreviewPress = this._isPreviewPress;
+      this._isPreviewPress = false;
+      if (isPreviewPress && e.button === 0 && this._hasSelectionInPreview()) e.preventDefault();
     };
     /** @purity non-pure */
     this._onPointerUp = () => {
@@ -178,6 +190,21 @@ export default class BlockRangeSelection {
    */
   isBarNode(node) {
     return this._bar !== null && node instanceof Node && this._bar.contains(node);
+  }
+
+  /**
+   * Some text is selected in the preview (the selection is not empty and
+   * touches it).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  _hasSelectionInPreview() {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return false;
+    for (let i = 0; i < selection.rangeCount; i++) {
+      if (selection.getRangeAt(i).intersectsNode(this.preview)) return true;
+    }
+    return false;
   }
 
   /**
@@ -380,6 +407,7 @@ export default class BlockRangeSelection {
     document.addEventListener("pointerdown", this._onPointerDown, true);
     document.addEventListener("pointerup", this._onPointerUp, true);
     document.addEventListener("pointercancel", this._onPointerUp, true);
+    document.addEventListener("mouseup", this._onMouseUp, true);
     document.addEventListener("pointermove", this._onPointerMove, { capture: true, passive: true });
     this.preview.addEventListener("scroll", this._onChange, { passive: true });
     window.addEventListener("scroll", this._onChange, { passive: true });
@@ -399,8 +427,10 @@ export default class BlockRangeSelection {
     document.removeEventListener("pointerdown", this._onPointerDown, true);
     document.removeEventListener("pointerup", this._onPointerUp, true);
     document.removeEventListener("pointercancel", this._onPointerUp, true);
+    document.removeEventListener("mouseup", this._onMouseUp, true);
     document.removeEventListener("pointermove", this._onPointerMove, true);
     this._isPointerHeld = false;
+    this._isPreviewPress = false;
     this.preview.removeEventListener("scroll", this._onChange);
     window.removeEventListener("scroll", this._onChange);
     window.removeEventListener("resize", this._onChange);

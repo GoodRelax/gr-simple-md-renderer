@@ -24,6 +24,8 @@
 
 > v2.6 の変更 (続き、2026-10-25、Render が終わらない不具合 (ReDoS) の直し): PRT は変えていない。AT の目録に AT-RUN (新)、AT-WRAP-20〜22、AT-STA-18 / 19、AT-FR-65〜67、AT-HB-62〜64、AT-INS-20 / 21、AT-ICO-20、AT-BM-35 / 36、AT-MR-15〜19 を足し、時間の試験の例外 (時間の上限を常に確かめるもの) を書いた。e2e の load.e2e.js / fileDrop.e2e.js に、先頭に空行 41 行の文書の試験を足した (WebKit は直す前でも通る既知の制限)。
 
+> v2.6 の変更 (続き、2026-10-25、Edge のミニメニューの直し): PRT-Z01 に手順 6 (Edge でミニメニューが出ず、Delete 1 回で消えること) を足した。AT-RNG-52 を足した。
+
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
 ---
@@ -3526,16 +3528,18 @@
 |  | 3. Ctrl+Z (Mac は Cmd+Z) を押す。続けて Ctrl+Shift+Z を押す |
 |  | 4. 段落 C の中の数文字だけを選び、帯の [削除] を押してから、すぐ外へずらして離す。もう一度押して、その上で離す |
 |  | 5. Save で保存する |
+|  | 6. **Edge で (Windows。Mac の Edge があれば Mac も)**: 段落 A の途中から段落 B の途中まで、文字をドラッグで選んで離し、Delete を 1 回押す。Ctrl+Z で戻す。同じ範囲を、プレビューの外 (上部バーの上など) まで引いてから離し、Delete を 1 回押す。Ctrl+Z で戻す。Ctrl+A を押してから Delete を 1 回押し、Ctrl+Z で戻す。最後に、段落 C の上で右クリックする |
 | **期待結果** | - 1 で、A から B までのブロックに青い枠が付く。ボタンを押している間は帯が出ず、離すと、選択の最後の行のすぐ下に帯 [削除][カット][コピー] (アイコンだけ) が出る。ブロックの編集欄は開かない |
 |  | - 2 で、tooltip が `Delete blocks (Delete)`。押すと A から B までのブロックが消え、確認のダイアログもトーストも出ない。枠・帯・選択が消える。消えた所にあった次のブロックが、画面の同じ位置に来る |
 |  | - 3 で、Undo 1 回で A から B までがすべて戻り、Redo 1 回で再び消える |
 |  | - 4 で、ずらして離したときは何も起きず、上で離したときは段落 C が消える (ブロック 1 つでも効く。D4) |
 |  | - 5 で、保存したファイルに、消した結果が入っている。タブのタイトルの `* ` が消える |
+|  | - 6 で、ドラッグで選んだとき、Edge のミニメニュー (選択の横の、Copilot・コピー・検索などの小さなメニュー) が出ず、Delete 1 回で A から B までが消える。プレビューの外で離したときも同じ。Ctrl+A のときにミニメニューが出たか、Delete 1 回で消えたかを備考に書く (INV-74 の既知の制限 (c)。出ても Fail にしない)。右クリックのメニューはふだんどおり出る |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-74 (1)〜(3)、INV-46、INV-48、SC-22 (オーナーの裁定 D1、D2、D4、D5、D10)。自動では blockRange.e2e.js、AT-RNG-14 / 23 / 27、AT-RNG-31 |
+| 備考 | 要求: INV-74 (1)〜(3)、INV-46、INV-48、SC-22 (オーナーの裁定 D1、D2、D4、D5、D10、S1〜S3)。自動では blockRange.e2e.js、AT-RNG-14 / 23 / 27、AT-RNG-31、AT-RNG-52 (Playwright ではミニメニューは出ないので、`mouseup` の既定を止めることだけを見る)。手順 6 の Edge の版: ____ |
 
 ---
 ### PRT-Z02: キーとクリップボード (Delete / Backspace / カット / コピー)
@@ -3732,7 +3736,7 @@
 | AT-BEC | `BlockEditController` (ジェスチャ、外側、IME、キー、リンク) | INV-27〜30、INV-40、INV-69 | BlockEditController.test.js、BlockEditController.keys.test.js、BlockEditController.link.test.js、UIController.link.test.js (35) | 01〜35 |
 | AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致。30〜32: ブロックの範囲) | 11-c | BlockEditController.stateMachine.test.js、BlockEditController.gap.test.js (29)、UIController.editMode.test.js、UIController.save.test.js | 01〜32 |
 | AT-GAP | `BlockGapInsert` (すき間の当たり判定、表のつまみ・リンクなどを避けること、点線の表示と押下、マウスの移動を 1 フレームに 1 回にまとめること、押下と消去で残りの移動を捨てること、click にならない押下の後も追うこと) | INV-73 | BlockGapInsert.test.js | 01〜02 |
-| AT-RNG | ブロックの範囲: `MarkdownBlockModel.removeRange` / `rangeSource` (01〜08)、`RendererOrchestrator.deleteBlocks` / `readBlocksSource` (09〜13)、`BlockRangeSelection` (選択の解決、帯、押して離す、Esc、INV-45、14〜30、40、41。読むだけで表示を変えないこと 45、帯の押下で読み直すこと 46、ビューポートの近くだけの枠 47)、UIController のキーとクリップボード (31〜38)、すき間を出さないこと (39)、書き込みの失敗のトースト (25、42〜44)、ブラウザの `copy` の事象 (48、49)、Shift+Delete (50)、帯の位置の純粋な関数 `placementNearLine` (51) | INV-74、INV-14、INV-45、INV-46、INV-48、INV-73 | MarkdownBlockModel.removeRange.test.js、RendererOrchestrator.edit.test.js、BlockRangeSelection.test.js、UIController.blockRange.test.js、BlockGapInsert.test.js (39)、floatingPlacement.test.js (51) | 01〜51 |
+| AT-RNG | ブロックの範囲: `MarkdownBlockModel.removeRange` / `rangeSource` (01〜08)、`RendererOrchestrator.deleteBlocks` / `readBlocksSource` (09〜13)、`BlockRangeSelection` (選択の解決、帯、押して離す、Esc、INV-45、14〜30、40、41。読むだけで表示を変えないこと 45、帯の押下で読み直すこと 46、ビューポートの近くだけの枠 47)、UIController のキーとクリップボード (31〜38)、すき間を出さないこと (39)、書き込みの失敗のトースト (25、42〜44)、ブラウザの `copy` の事象 (48、49)、Shift+Delete (50)、帯の位置の純粋な関数 `placementNearLine` (51)、選択を残したドラッグの `mouseup` の既定を止めること (52。Edge のミニメニュー) | INV-74、INV-14、INV-45、INV-46、INV-48、INV-73 | MarkdownBlockModel.removeRange.test.js、RendererOrchestrator.edit.test.js、BlockRangeSelection.test.js、UIController.blockRange.test.js、BlockGapInsert.test.js (39)、floatingPlacement.test.js (51) | 01〜52 |
 | AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |

@@ -113,6 +113,12 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Fixed
 
+- In edit mode, Delete now deletes the selected blocks in Microsoft Edge
+  too. Edge shows its mini menu (Copilot, Copy, Search) beside a text
+  selection, and while it shows, the keys do not reach the page. A mouse
+  drag that selects text in the preview in edit mode no longer brings up
+  that menu; a plain click, the right-click menu and the selection itself
+  are as before.
 - A document with many leading blank lines no longer hangs on Render, paste
   or opening a `.md` file. The check for an AI ```` ```markdown ```` wrapper
   tried every way to split the blank lines, so each line doubled the time
@@ -132,6 +138,11 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Known issues
 
+- Edit mode: the text selection callout of a phone or tablet (iPhone,
+  iPad, Android) still shows over selected blocks; the bar shows below it.
+  If Edge's mini menu shows anyway (for example after Ctrl+A), press Esc
+  or click to close it before pressing Delete; Edge's settings can turn
+  the mini menu off.
 - Code View: a file whose content does not look like its language can take
   long to show (a `.js` file of only blank lines, 200 KB: 17.6 s), because
   some highlight.js language patterns are quadratic there. Real code is

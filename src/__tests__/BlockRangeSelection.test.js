@@ -177,6 +177,59 @@ describe("AT-RNG which blocks a selection stands for (INV-74 (1), U2, U4, U5)", 
   });
 });
 
+describe("AT-RNG-52 the release of a mouse drag that selected in the preview has its default stopped (INV-74 (2), owner ruling S1)", () => {
+  /** Dispatch a mouseup on el and return it (defaultPrevented tells if it was stopped). */
+  function mouseup(target, button = 0) {
+    const e = new MouseEvent("mouseup", { bubbles: true, cancelable: true, button });
+    target.dispatchEvent(e);
+    return e;
+  }
+  /** Press on downEl, select over two blocks, release on upEl. */
+  function drag(downEl, upEl, { button = 0, pointerType = "mouse" } = {}) {
+    pointer(downEl, "pointerdown", { button, pointerType });
+    select(textIn(el("Hello")), 0, textIn(el("Second")), 2);
+    pointer(upEl, "pointerup", { button, pointerType });
+    return mouseup(upEl, button);
+  }
+
+  it("a drag that selected in the preview: the release's default is stopped (no Edge mini menu), also released outside the preview", async () => {
+    s = await setupEdit(DOC);
+    expect(drag(textIn(el("Hello")).parentNode, textIn(el("Second")).parentNode).defaultPrevented).toBe(true);
+    expect(drag(textIn(el("Hello")).parentNode, document.body).defaultPrevented).toBe(true);
+    expect(s.bec.readBlockRange()).not.toBeNull(); // the selection stays
+  });
+
+  it("a plain click (nothing selected), a press outside the preview, another button or a touch keep the default", async () => {
+    s = await setupEdit(DOC);
+    const hello = textIn(el("Hello")).parentNode;
+    pointer(hello, "pointerdown");
+    pointer(hello, "pointerup");
+    expect(mouseup(hello).defaultPrevented).toBe(false);
+    expect(drag(document.body, hello).defaultPrevented).toBe(false);
+    expect(drag(hello, hello, { button: 2 }).defaultPrevented).toBe(false);
+    expect(drag(hello, hello, { pointerType: "touch" }).defaultPrevented).toBe(false);
+    // the release after one that was stopped is not stopped by it
+    expect(drag(hello, hello).defaultPrevented).toBe(true);
+    window.getSelection().removeAllRanges();
+    expect(mouseup(hello).defaultPrevented).toBe(false);
+  });
+
+  it("only in editModeIdle: not outside edit mode, not while a block editor is open", async () => {
+    s = await setupEdit(DOC, { editMode: false });
+    const hello = () => textIn(el("Hello")).parentNode;
+    expect(drag(hello(), hello()).defaultPrevented).toBe(false);
+    s.bec.dispatch("paletteShown");
+    expect(drag(hello(), hello()).defaultPrevented).toBe(true);
+    window.getSelection().removeAllRanges();
+    tap(el("Last").firstElementChild);
+    expect(s.bec.isEditing()).toBe(true);
+    expect(drag(hello(), hello()).defaultPrevented).toBe(false);
+    s.bec.dispatch("escapePressed");
+    s.bec.dispatch("paletteHidden");
+    expect(drag(hello(), hello()).defaultPrevented).toBe(false);
+  });
+});
+
 describe("AT-RNG the bar and the actions (INV-74 (2) to (5))", () => {
   it("AT-RNG-22 three icon buttons with their tooltips and aria-labels from config.js (U1)", async () => {
     s = await setupEdit(DOC);
