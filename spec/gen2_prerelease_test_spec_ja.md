@@ -24,7 +24,7 @@
 
 > v2.6 の変更 (続き、2026-10-25、Render が終わらない不具合 (ReDoS) の直し): PRT は変えていない。AT の目録に AT-RUN (新)、AT-WRAP-20〜22、AT-STA-18 / 19、AT-FR-65〜67、AT-HB-62〜64、AT-INS-20 / 21、AT-ICO-20、AT-BM-35 / 36、AT-MR-15〜19 を足し、時間の試験の例外 (時間の上限を常に確かめるもの) を書いた。e2e の load.e2e.js / fileDrop.e2e.js に、先頭に空行 41 行の文書の試験を足した (WebKit は直す前でも通る既知の制限)。
 
-> v2.7 の変更 (2026-10-24、同梱 OSS の表記): 仕様の付録 A.2 と INV-75 に合わせて、セクション AA (PRT-AA01 / AA02) を追加した。AT に AT-OSS、e2e に notices.e2e.js を足した。ヘルプの節の並びに「Licenses」/「ライセンス」を加えたので、PRT-L03 の期待結果の節の並び (自動では help.e2e.js と AT-HLP-05) も変わる。追加したケースの判定は空欄 (未実施)。
+> v2.7 の変更 (2026-10-24、同梱 OSS の表記): 仕様の付録 A.2 と INV-75・INV-76 に合わせて、セクション AA (PRT-AA01 / AA02) を追加した。AT に AT-OSS、e2e に notices.e2e.js を足した。ヘルプの節の並びに「Licenses」/「ライセンス」を加えたので、PRT-L01 の期待結果の節の並び (自動では help.e2e.js の「PRT-L03」の試験と AT-HLP-05) も変わる (2026-10-25、レビューの 1 回目の L2 で PRT-L01 を直した。判定は空欄)。レビューの 1 回目の直しで、AT-OSS に 07 (本物のビルドで、手で書く一覧の項目を外すと検査が落ちること) を足した。追加したケースの判定は空欄 (未実施)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -669,7 +669,7 @@
 |              | 2. 題名の行の "English" を押し、英語 (EN) の各セクションを確認                          |
 |              | 3. "Japanese" を押し、日本語 (JP) の各セクションを確認                                  |
 | **期待結果** | - モーダルが表示される。題名は "GR Simple Markdown"。題名の行に "English" / "Japanese" のトグルと × がある |
-|              | - 表示されるのは押した方の言語の本文だけ。節は EN / JP で同じ順 (ダウンロードの枠、概要、基本的な使い方、詳細、プライバシーとセキュリティ、サンプルデータ)。「Editing」/「編集」の章は無い (B5)。見出しに "(Japanese)" が無い |
+|              | - 表示されるのは押した方の言語の本文だけ。節は EN / JP で同じ順 (ダウンロードの枠、概要、基本的な使い方、詳細、プライバシーとセキュリティ、サンプルデータ、ライセンス)。「Editing」/「編集」の章は無い (B5)。見出しに "(Japanese)" が無い |
 |              | - EN "About GRSMD" / JP "概要" に新しい名前、"viewer and editor" / 「ビューワー兼エディター」、旧名の 1 文がある |
 |              | - EN "Basic Usage" セクションに hljs common バンドルの注記がある                        |
 |              | - EN "Details" セクションのショートカットキーが大文字バッククォート表記                 |
@@ -686,6 +686,7 @@
 |              | - EN "Privacy & Security" / JP "プライバシーとセキュリティ" に、ダウンロードのボタンが GitHub (github.com) を開き、押すまで何も送らない文がある |
 |              | - EN "Privacy & Security" / JP "プライバシーとセキュリティ" に、「リンクを貼る」(Paste copied link) がクリップボードを読み、goodrelax.github.io で開いているとき Chrome / Edge では許可が同じサイトの他のページにも及ぶこと、その取り消し方 (サイトの設定の「クリップボード」) の 1 項目がある (CON-12 の注、INV-69。「編集」の章から移した) |
 |              | - EN / JP の両方に Sample Data / サンプルデータのリンク (2 つ) があり、正常に動作する   |
+|              | - EN / JP の最後の節が Licenses / ライセンス (中身は PRT-AA02) |
 |              | - × ボタン (キーボードで Tab で移り、Enter で押せる)、背景のクリック、Esc のどれでもモーダルが閉じる |
 
 | 結果 | Pass / Fail / N/A |
@@ -3707,7 +3708,7 @@
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: 付録 A.2、INV-75。自動では notices.e2e.js、AT-OSS-01〜06。パッケージが node_modules に無いものの文は `tools/third-party-licenses/` (裁定 Q1、`npm pack` で取ったもの) から入る |
+| 備考 | 要求: 付録 A.2、INV-75、INV-76。自動では notices.e2e.js、AT-OSS-01〜07。待ちの文は 0 件 (裁定 Q1・Q-A・Q-C の文はすべて `tools/third-party-licenses/` にある)。パッケージが node_modules に無いものの文は `tools/third-party-licenses/` (裁定 Q1、`npm pack` で取ったもの) から入る |
 
 ---
 
@@ -3797,7 +3798,7 @@
 | AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ) | INV-42、INV-48、INV-51、INV-74 | performance.inplaceEdit.test.js | 01〜13 |
 | AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11) (`ModalController`) | SC-16、FS-10、CON-03、CON-12、5.1、5.11 | HelpLanguageSwitch.test.js、ModalController.test.js | 01〜11 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
-| AT-OSS | 同梱 OSS の表記: 数えるパッケージ、表記が漏れるときにビルドを失敗させること (許さないライセンス、文が無い、一覧に無い束ねられたコード、古くなった一覧、コメントを壊す文)、一覧のコード・上書き・待ちの文、文の取り出し、コメントとヘルプの一覧の形、CSP の hash が変わらないこと、プラグインの並び | 付録 A.2、INV-75 | notices.test.js | 01〜06 |
+| AT-OSS | 同梱 OSS の表記: 数えるパッケージ、表記が漏れるときにビルドを失敗させること (許さないライセンス、文が無い、一覧に無い束ねられたコード、古くなった一覧、宣言した依存、dist の確かめの記録、コメントを壊す文)、一覧のコード・上書き・待ちの文、読む段と処理の段、文の取り出し、コメントとヘルプの一覧の形、CSP の hash が変わらないこと、プラグインの並び、`@purity`、本物のビルドで一覧の項目を 1 つずつ外すと落ちること (07) | 付録 A.2、INV-75、INV-76 | notices.test.js | 01〜07 |
 
 ID を持たない試験ファイル (その場編集の前からあるクラスの試験、`stateTable.test.js` など) と、ID を持つファイルの中の ID の無い試験 (`staticChecks.test.js` の「style.css for in-place editing」の一部、`MarkdownRenderer.purifyConfig.test.js` の設定を 1 度だけ与えることの試験など) も `npm test` の全件に含まれる。
 

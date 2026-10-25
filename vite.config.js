@@ -99,10 +99,15 @@ export function buildVersion() {
 // the bundled packages go into a comment at the end of the HTML, and a short
 // list into the help. The packages come from the chunk's modules, so a new
 // dependency is picked up by itself; a license outside ALLOWED_LICENSES, a
-// missing text or bundled code missing from tools/third-party-extras.mjs fails
-// the build. A text still pending (owner ruling Q1) fails a release build and
-// warns in any other. The comment and the list are HTML text, not script, so
-// the CSP hash does not change.
+// missing text, or code bundled inside a dist that tools/third-party-extras.mjs
+// does not list (by its marks, the host's declared dependencies, or the record
+// of that prebuilt dist's version) fails the build. A text still pending fails
+// a release build and warns in any other. The comment and the list are HTML
+// text, not script, so the CSP hash does not change.
+/**
+ * @returns {object}  the Vite plugin
+ * @purity non-pure
+ */
 export function thirdPartyNotices() {
   let mode = "";
   let projectDir = "";
@@ -116,16 +121,38 @@ export function thirdPartyNotices() {
     name: "third-party-notices",
     apply: "build",
     enforce: "post",
+    /**
+     * @param {object} config
+     * @purity non-pure
+     */
     configResolved(config) {
       mode = config.mode;
       projectDir = dirname(config.root); // root is <project>/src
     },
+    /**
+     * A new build (watch mode, or a second build with this plugin) starts empty.
+     * @purity non-pure
+     */
+    buildStart() {
+      modules.length = 0;
+    },
+    /**
+     * @param {string} _code
+     * @param {object} chunk
+     * @returns {null}
+     * @purity non-pure
+     */
     renderChunk(_code, chunk) {
       for (const [id, info] of Object.entries(chunk.modules)) {
         modules.push({ id, renderedLength: info.renderedLength });
       }
       return null;
     },
+    /**
+     * @param {object} _options
+     * @param {object} bundle
+     * @purity non-pure
+     */
     generateBundle(_options, bundle) {
       const outcome = collectNotices({ modules, nodeModules: join(projectDir, "node_modules"), fs });
       const { error, warning } = verdictOf(outcome, mode);
