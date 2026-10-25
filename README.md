@@ -152,6 +152,12 @@ Version rule: `spec/grsmd_gen2_spec_ja.md` section 1.7.
 
 MIT License
 
+GRSMD bundles open source software. Their copyright and license notices are
+in a comment at the end of the built `docs/index.html` (and of each release's
+`GRSMD.html`); the help's **Licenses** section lists them. The build collects
+them from `node_modules` (`tools/notices.mjs`, `tools/third-party-extras.mjs`), and from
+`tools/third-party-licenses/` for code whose own package is not installed.
+
 
 ---
 ---
@@ -306,3 +312,8 @@ npm run test:e2e
 ## ライセンス
 
 MIT License
+
+GRSMD は、オープンソースのソフトウェアを同梱しています。その著作権とライセンスの表記は、ビルドした
+`docs/index.html`（とリリースの `GRSMD.html`）の最後のコメントにあり、ヘルプの「ライセンス」の章に一覧があります。
+ビルドが `node_modules` から集めます（`tools/notices.mjs`、`tools/third-party-extras.mjs`）。パッケージが入っていないコードの文は、
+`tools/third-party-licenses/` から取ります。

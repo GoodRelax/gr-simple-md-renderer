@@ -21,6 +21,13 @@
 - [ ] 回避：中身に合う拡張子のファイルを開く。Markdown のコードブロックの 20,480 文字（約 20 KB）の上限（仕様 5.14.4）は、コードビューには当てない（オーナーの裁定 2026-10-25）
 - [ ] 分けて色付けする案（20 KB ごと・行ごと）は、複数行のコメントや文字列の色がずれ、型によっては速くならないので見送った（測った値はレビューの記録 R2-12）
 
+### 性能の試験を流すとき（同梱 OSS の表記のレビューの参考 R2-1、2026-10-25）
+- [ ] 性能の試験（`GRSMD_PERF=1`）は、作業フォルダの同期（OneDrive など）や、ほかの重い処理と同時に流すと、AT-PERF-12 などが上限を超えることがある。静かなときに流し直して判断する（同期を止めて 3 回流すと、AT-PERF-12 の中央値は 157.2 / 153.4 / 154.4 ms で、3 回とも通った）
+
+### `@purity` の検査の範囲（同梱 OSS の表記のレビューの参考 R-4、2026-10-25）
+- [ ] AT-PUR-01 は `src/js` だけを見る。ビルドの道具には、タグの無い関数が残っている: `vite.config.js` の 9 つ（`katexWoff2Only` の Declaration、`noHljsThemeCss` の Once、`noExternalImports` の generateBundle、`buildVersionOf`、`buildVersion` とその configResolved・transformIndexHtml、`buildCsp`、`contentSecurityPolicy` の generateBundle）、`tools/version.mjs` 105 行と `tools/release.mjs` 85 行の無名の関数
+- [ ] タグを付けたうえで、AT-PUR の範囲を `tools/` と `vite.config.js` に広げるか決める（`tools/notices.mjs` と `thirdPartyNotices` は AT-OSS-06 で確かめている）
+
 ### 依存ライブラリ
 - [ ] mermaid 12：2026-10-10 に評価して見送り。ELK レイアウトエンジンの同梱で約 +0.5MB（gzip）、flowchart・state・class・requirement 図の配置が変わる。必要になったら再評価（`layout: "dagre"`、`look: "classic"` で旧配置に戻せる）
 - [ ] jsdom 30：Node 24.15 以上が必要（開発環境は 24.12.0）。Node を上げたら更新する（jsdom 30.1.2 でのテストは通過済み）
