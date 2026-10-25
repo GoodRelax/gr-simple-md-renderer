@@ -126,7 +126,7 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   @mermaid-js/parser, pako inside plantuml-encoder, the four packages
   inside roughjs, fmin inside @upsetjs/venn.js, gl-matrix inside cytoscape),
   the helpers that tools put into a dist (Babel, webpack, browserify,
-  esbuild, rollup), the KaTeX fonts (SIL Open Font License 1.1) and the
+  esbuild, @rollup/plugin-commonjs), the KaTeX fonts (SIL Open Font License 1.1) and the
   bundler's helpers (Vite, Rolldown). The
   texts come from node_modules, and from `tools/third-party-licenses/` for
   code whose own package is not installed (copied once from the npm

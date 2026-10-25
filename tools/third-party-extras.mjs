@@ -39,7 +39,7 @@ export const PACKAGE_OVERRIDES = {
   rolldown: {
     published: "MIT",
     // THIRD-PARTY-LICENSE holds rollup's and esbuild's MIT texts, in two
-    // parts so that the rollup and esbuild helper entries share them.
+    // parts so that the esbuild helper entry shares the second.
     texts: [
       { file: "LICENSE" },
       { file: "THIRD-PARTY-LICENSE", until: "---" },
@@ -233,11 +233,14 @@ export const EMBEDDED = [
     texts: [{ file: "rolldown/THIRD-PARTY-LICENSE", from: "Copyright (c) 2020 Evan Wallace" }],
   },
   {
-    name: "rollup commonjs helpers",
+    name: "@rollup/plugin-commonjs helpers",
     license: "MIT",
-    // In mermaid they come with its bundled js-yaml dist.
+    // In mermaid they come with its bundled js-yaml dist (built with
+    // @rollup/plugin-commonjs 29.0.3); cytoscape's devDependency is ^28.0.2,
+    // the exact version is not known (spec A.2). The two LICENSE files are
+    // the same bytes.
     in: ["cytoscape", "mermaid"].map((host) => ({ host, contains: ["getDefaultExportFromCjs"] })),
-    texts: [{ file: "rolldown/THIRD-PARTY-LICENSE", until: "---" }],
+    texts: [{ saved: "rollup-plugin-commonjs-28.0.9/LICENSE" }, { saved: "rollup-plugin-commonjs-29.0.3/LICENSE" }],
   },
   // layout-base 2.x (under cytoscape-fcose) adopts an SVD from JamaJS and
   // carries the Apache-2.0 text with it. That copy differs from the current
@@ -330,7 +333,7 @@ export const DIST_RECORDS = {
     "Runge-Kutta spring physics function generator",
     "gl-matrix",
     "Babel helpers",
-    "rollup commonjs helpers",
+    "@rollup/plugin-commonjs helpers",
   ],
   "cytoscape-cose-bilkent@4.1.0": ["webpack runtime"],
   "cytoscape-fcose@2.2.0": ["Babel helpers", "webpack runtime"],
@@ -347,7 +350,7 @@ export const DIST_RECORDS = {
   "marked@16.4.2": [],
   "marked@18.1.0": [],
   "marked-katex-extension@5.1.13": [],
-  "mermaid@11.17.2": ["js-yaml", "esbuild runtime helpers", "rollup commonjs helpers"],
+  "mermaid@11.17.2": ["js-yaml", "esbuild runtime helpers", "@rollup/plugin-commonjs helpers"],
   "plantuml-encoder@1.4.0": ["pako", "browserify prelude (browser-pack)"],
   "roughjs@4.6.6": ["path-data-parser", "points-on-curve", "points-on-path", "hachure-fill"],
   "ts-dedent@2.3.0": [],
