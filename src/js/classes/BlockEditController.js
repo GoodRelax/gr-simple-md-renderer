@@ -199,7 +199,7 @@ export const blockEditStateMachine = Object.freeze({
     null,
     null,
   ),
-  // INV-52: Insert table / Mermaid. While editing, the editor is committed
+  // INV-52: Insert table / Mermaid / math boxes. While editing, the editor is committed
   // first (a change of its own), then the block goes in where planned; a
   // place that refuses keeps the editor open and tells why.
   blockInsertRequested: transitions(
@@ -240,7 +240,8 @@ export const blockEditStateMachine = Object.freeze({
   ),
   blockRangeCopyRequested: transitions(null, cell(IDLE, ["copyBlockRange"]), null, null),
   // INV-52: the inserted block has been drawn and nothing else happened
-  // meanwhile: a table opens its first cell, a Mermaid block its source.
+  // meanwhile: a table opens its first cell, a Mermaid block its source
+  // (the math boxes open nothing: this event is not dispatched for them).
   insertedBlockRendered: transitions(
     null,
     choice(
@@ -645,6 +646,40 @@ export default class BlockEditController {
   }
 
   /**
+   * 5.15.5 Insert inline math: a block editor (not a cell: owner ruling
+   * 2026-10-25) whose caret (the selection end) is where inline math can go
+   * (only the place is checked, one inline lexing: INV-51). Off in a huge
+   * block (not lexed, as INV-71).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  canInsertInlineMath() {
+    if (this._cells.isOpen() || this._isHugeBlock()) return false;
+    const range = this.getSelectionRange();
+    if (!range) return false;
+    return MarkdownTextOps.canInsertInlineMath(range.text, range.selEnd, this._formatContext());
+  }
+
+  /**
+   * The palette's inline math (INV-52): math goes in at the caret (the
+   * selection end; the selected text stays), with a space before or after
+   * where marked needs one. An editor change (not a commit), one undoable
+   * step of the editor.
+   * @purity non-pure
+   * @param {string} math - the "$...$" template
+   * @returns {boolean} true when the text changed
+   */
+  insertInlineMath(math) {
+    if (this._cells.isOpen() || this._isHugeBlock()) return false;
+    const range = this.getSelectionRange();
+    if (!range) return false;
+    const edit = MarkdownTextOps.insertInlineMath(range.text, range.selEnd, math, this._formatContext());
+    if (!edit) return false;
+    this.applyTextEdit(edit);
+    return true;
+  }
+
+  /**
    * Put text and selection into the editor; focus stays, nothing is committed.
    * The change goes in as one undoable step of the editor (INV-52, OS-18).
    * @purity non-pure
@@ -997,8 +1032,9 @@ export default class BlockEditController {
    * two, and the line end spaces that no longer break a line go); the
    * block at the committed block's start keeps its place (its upper part,
    * or the inserted block when it went above. INV-46). Not editing: after
-   * the last opened block, or at the end. The inserted block becomes the
-   * last opened one. null without a model.
+   * the last opened block, or at the end. The inserted block (the last
+   * one, when raw has more blocks: the math boxes) becomes the last opened
+   * one. null without a model.
    * @purity non-pure
    * @param {{raw: string}} target
    * @param {{start: number, text: string, anchor: object|null}|null} committed
@@ -1016,9 +1052,9 @@ export default class BlockEditController {
         anchorOffset: committed.start,
       };
     }
-    const { rendering, blockId } = this.orchestrator.insertBlock(target.raw, at);
+    const { rendering, blockId, lastBlockId } = this.orchestrator.insertBlock(target.raw, at);
     if (blockId === null) return null;
-    this._lastOpenedBlockId = blockId; // the next insert goes after it (review L5)
+    this._lastOpenedBlockId = lastBlockId; // the next insert goes after it (review L5)
     return { rendering, blockId, model: this.orchestrator.getModel() };
   }
 
@@ -1029,15 +1065,21 @@ export default class BlockEditController {
    * the inserted kind (not a whole document that could not be split): a table's first
    * header cell opens with its text selected, a Mermaid block's source with
    * the caret at the end of the diagram's first line. Then the least scroll
-   * that shows it (none when it is in view).
+   * that shows it (none when it is in view). The math boxes (opens "none")
+   * open nothing, so that they are seen drawn: only the least scroll that
+   * shows the first inserted block.
    * @purity non-pure
    * @param {{blockId: number, model: MarkdownBlockModel}} inserting
-   * @param {{opens: "cell"|"source"}} target
+   * @param {{opens: "cell"|"source"|"none"}} target
    */
   _openInsertedAfterRender(inserting, target) {
     if (this._blockEditState !== IDLE || this.isEditing()) return;
     if (this.orchestrator.getModel() !== inserting.model || this.host.isEditorChangedSinceRender()) return;
     const id = inserting.blockId;
+    if (target.opens === "none") {
+      this.scrollMemento.reveal(this.blockLocator.getBlockElement(id));
+      return;
+    }
     const block = inserting.model.getBlocks()[inserting.model.findIndexById(id)];
     if (block?.type !== (target.opens === "cell" ? "table" : "code")) return;
     const opened =

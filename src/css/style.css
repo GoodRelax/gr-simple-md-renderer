@@ -1584,6 +1584,16 @@ body.dark.edit-mode #preview > .md-block-empty.md-block-editing {
   user-select: none;
 }
 
+/* Text format: its rows, one under the other (the formats, then the math) */
+.edit-palette-popover-rows {
+  flex-direction: column;
+}
+
+.edit-palette-popover-row {
+  display: flex;
+  gap: 4px;
+}
+
 .dark .edit-palette,
 .dark .edit-palette-popover {
   background: #151b23;

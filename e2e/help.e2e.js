@@ -166,7 +166,7 @@ test.describe("Japanese browser", () => {
     await expect(langButton(page, "ja")).toHaveAttribute("aria-pressed", "true");
     const sections = (lang) =>
       body(page, lang).locator(":scope > [data-help-section]").evaluateAll((els) => els.map((e) => e.dataset.helpSection));
-    expect(await sections("ja")).toEqual(["download", "about", "usage", "details", "privacy", "samples"]);
+    expect(await sections("ja")).toEqual(["download", "about", "usage", "details", "privacy", "samples", "licenses"]);
     expect(await sections("en")).toEqual(await sections("ja"));
   });
 });

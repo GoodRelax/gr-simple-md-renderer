@@ -76,6 +76,19 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Added
 
+- Math templates in the edit palette: the Text format popover has a second
+  row with two buttons. **Insert inline math** puts the formula for Euler's
+  number (Napier's constant) at the cursor of the open block; a space goes
+  before or after it only where Markdown needs one to read it as math, and
+  where it would not read as math (or not as before) nothing changes and a
+  toast says so. It is off in a table cell. **Insert math boxes** adds three
+  display equations at once, each under its name: Maxwell's Equations,
+  Einstein Field Equations and Christoffel Symbols, and Schroedinger
+  Equation, Wavefunction Normalization, and Pauli Matrices. They go in like
+  Insert table and the Mermaid samples (the open block is applied and cut at
+  the cursor line; refused inside code, math, HTML and a table's source),
+  nothing opens afterwards so they are seen drawn, and one Undo takes all
+  of them away. The help says so in both languages.
 - In edit mode, drag over the text of some blocks (on a phone, long press
   and move the handles) to select those blocks whole: they get a blue frame
   and a small bar [Delete] [Cut] [Copy] shows under the selection (above it
@@ -102,6 +115,30 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   HEAD commit. `tools/release.mjs` writes a release's version and prints the
   tag and GitHub release commands. A test keeps `package.json`,
   `package-lock.json`, this file and `README.md` on the same version.
+
+- Third-party notices: the built file now carries the copyright and license
+  texts of the open source software it bundles, in a comment at the end of
+  the file (a one-line pointer sits near the top), and the help gains a
+  short **Licenses** section that lists them (name, version, license). The
+  list covers every package whose code is in the bundle (direct and
+  indirect, nested copies included), code that other tools bundled into a
+  package's dist (for example langium and chevrotain inside
+  @mermaid-js/parser, pako inside plantuml-encoder, the four packages
+  inside roughjs, fmin inside @upsetjs/venn.js, gl-matrix inside cytoscape),
+  the helpers that tools put into a dist (Babel, webpack, browserify,
+  esbuild, @rollup/plugin-commonjs), the KaTeX fonts (SIL Open Font License 1.1) and the
+  bundler's helpers (Vite, Rolldown). The
+  texts come from node_modules, and from `tools/third-party-licenses/` for
+  code whose own package is not installed (copied once from the npm
+  tarballs); the build fetches nothing. DOMPurify is shown under
+  Apache-2.0, chosen from its (MPL-2.0 OR Apache-2.0). The build fails on a
+  license outside the allowed list (no GPL and the like), a missing text,
+  or bundled code that `tools/third-party-extras.mjs` does not list (found
+  by its marks, by a declared dependency that is not a module, or because a
+  prebuilt dist has no record for its version, which means reading that dist
+  again on each update), so a dependency update cannot drop a notice
+  silently. The CSP hash does
+  not change (comment and text only). About +15 KB gzip.
 
 - Review standard: `spec/grsmd_review_standards_ja.md` is the rule for code
   reviews before a feature goes into `develop`. It takes the review standard

@@ -459,7 +459,7 @@ export default class MarkdownBlockModel {
    * @param {string} raw
    * @param {(src: string) => object[]} lexer
    * @param {number} maxCells
-   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null, insertedBlockId: number|null}}
+   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null, insertedBlockId: number|null, lastInsertedBlockId: number|null}}
    */
   insertAfter(blockId, raw, lexer, maxCells) {
     const index = blockId === null ? -1 : this.findIndexById(blockId);
@@ -472,15 +472,17 @@ export default class MarkdownBlockModel {
    * that block in two), adding blank lines only where needed (INV-52).
    * removeBefore characters right before the offset go in the same change
    * (line end spaces that no longer break a line, INV-71 (6)).
-   * insertedBlockId: the inserted block. The anchor is the block at
-   * anchorOffset in the new model (the inserted block by default).
+   * insertedBlockId: the inserted block (the first one when raw has more
+   * blocks); lastInsertedBlockId: its last block (the same for one block).
+   * The anchor is the block at anchorOffset in the new model (the inserted
+   * block by default).
    * @purity pure
    * @param {number} offset
    * @param {string} raw
    * @param {(src: string) => object[]} lexer
    * @param {number} maxCells
    * @param {{anchorOffset?: number, removeBefore?: number}} [options]
-   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null, insertedBlockId: number|null}}
+   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null, insertedBlockId: number|null, lastInsertedBlockId: number|null}}
    */
   insertAt(offset, raw, lexer, maxCells, { anchorOffset = undefined, removeBefore = 0 } = {}) {
     const body = this.toBody();
@@ -488,8 +490,9 @@ export default class MarkdownBlockModel {
     const edit = MarkdownTextOps.insertBlockText(body.slice(0, at) + body.slice(offset), at, raw);
     const model = this._relex(edit.text, lexer, maxCells);
     const insertedBlockId = model._blockIdAt(edit.selEnd - raw.length);
+    const lastInsertedBlockId = raw === "" ? insertedBlockId : model._blockIdAt(edit.selEnd - 1);
     const anchorBlockId = anchorOffset === undefined ? insertedBlockId : model._blockIdAt(anchorOffset);
-    return { model, isChanged: true, anchorBlockId, insertedBlockId };
+    return { model, isChanged: true, anchorBlockId, insertedBlockId, lastInsertedBlockId };
   }
 
   /**

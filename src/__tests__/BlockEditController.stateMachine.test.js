@@ -779,7 +779,7 @@ describe("AT-BSM-26 / 27 inserts after the first review", () => {
   it("AT-BSM-27 the block to open is not of the inserted kind (a whole-document model): nothing opens (review L2)", async () => {
     s = await setupEdit(DOC, { editMode: true });
     const para = s.block((b) => b.raw.startsWith("Hello")).block;
-    vi.spyOn(s.orchestrator, "insertBlock").mockReturnValue({ rendering: Promise.resolve(), blockId: para.id });
+    vi.spyOn(s.orchestrator, "insertBlock").mockReturnValue({ rendering: Promise.resolve(), blockId: para.id, lastBlockId: para.id });
     const reveal = vi.spyOn(s.scrollMemento, "reveal");
     await s.bec.dispatch("blockInsertRequested", insertTable());
     expect(s.bec.isEditing()).toBe(false);

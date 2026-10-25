@@ -458,12 +458,13 @@ export default class RendererOrchestrator {
    * characters right before the offset that go in the same change.
    * @param {string} raw
    * @param {{afterBlockId: number|null}|{offset: number, scroll?: object|null, anchorOffset?: number, removeBefore?: number}} at
-   * @returns {{rendering: Promise<void>, blockId: number|null}} blockId: the new block
+   * @returns {{rendering: Promise<void>, blockId: number|null, lastBlockId: number|null}} blockId: the new
+   *   block (the first one when raw has more blocks); lastBlockId: its last block
    * @purity non-pure
    */
   insertBlock(raw, at) {
     const model = this._currentModel;
-    if (!model) return { rendering: Promise.resolve(), blockId: null };
+    if (!model) return { rendering: Promise.resolve(), blockId: null, lastBlockId: null };
     const maxCells = CONFIG.edit.diffMaxCells;
     let change;
     let scroll;
@@ -479,7 +480,8 @@ export default class RendererOrchestrator {
       anchorBlockId = change.anchorBlockId;
     }
     this._recordUnit(model);
-    return { rendering: this._applyChange(change, scroll, anchorBlockId), blockId: change.insertedBlockId };
+    const rendering = this._applyChange(change, scroll, anchorBlockId);
+    return { rendering, blockId: change.insertedBlockId, lastBlockId: change.lastInsertedBlockId };
   }
 
   /**
