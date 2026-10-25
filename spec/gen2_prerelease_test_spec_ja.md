@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.9
+**バージョン:** 2.10
 **日付:** 2026-xx-xx (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -27,6 +27,8 @@
 > v2.8 の変更 (2026-10-25、数式のテンプレ): パレットの Text format の 2 段目 (行内の数式・数式ボックス。仕様の改訂履歴 2026-10-25 の数式のテンプレ) に合わせて、PRT-V21 を追加した。AT に AT-MATH (新)、AT-BM-37、AT-PAL-36、AT-UI-68 / 69、AT-PERF-09 (b) を足し、AT-PAL-03 / 19 / 20 / 23 を 2 段目の 2 つのボタンに合わせて改めた。e2e に math.e2e.js を足した。
 
 > v2.9 の変更 (2026-10-24〜25、同梱 OSS の表記): 仕様の付録 A.2 と INV-75・INV-76 に合わせて、セクション AA (PRT-AA01 / AA02) を追加した。AT に AT-OSS、e2e に notices.e2e.js を足した。ヘルプの節の並びに「Licenses」/「ライセンス」を加えたので、PRT-L01 の期待結果の節の並び (自動では help.e2e.js の「PRT-L03」の試験と AT-HLP-05) も変わる (2026-10-25、レビューの 1 回目の L2 で PRT-L01 を直した。判定は空欄)。レビューの 1 回目の直しで、AT-OSS に 07 (本物のビルドで、手で書く一覧の項目を外すと検査が落ちること) を足した。追加したケースの判定は空欄 (未実施)。
+
+> v2.10 の変更 (2026-10-25、Edge のミニメニューの直し): PRT-Z01 に手順 6 (Edge でミニメニューが出ず、Delete 1 回で消えること) を足した。AT-RNG-52 を足した。閾値の判断を `utils.isPastActivation` の 1 か所にしたので、AT-PAN-04 (図のパンは 5px ちょうどでは始まらない) と utils.test.js の isPastActivation の試験を足した。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -3554,16 +3556,18 @@
 |  | 3. Ctrl+Z (Mac は Cmd+Z) を押す。続けて Ctrl+Shift+Z を押す |
 |  | 4. 段落 C の中の数文字だけを選び、帯の [削除] を押してから、すぐ外へずらして離す。もう一度押して、その上で離す |
 |  | 5. Save で保存する |
+|  | 6. **Edge で (Windows。Mac の Edge があれば Mac も)**: 段落 A の途中から段落 B の途中まで、文字をドラッグで選んで離し、Delete を 1 回押す。Ctrl+Z で戻す。同じ範囲を、プレビューの外 (上部バーの上など) まで引いてから離し、Delete を 1 回押す。Ctrl+Z で戻す。Ctrl+A を押してから Delete を 1 回押し、Ctrl+Z で戻す。段落 C をクリックして編集欄を開いたまま、段落 A から B までをドラッグで選び、Delete を 1 回押して Ctrl+Z で戻す。A から B までを選び、選んだ文字の上をクリックする。最後に、段落 C の上で右クリックする |
 | **期待結果** | - 1 で、A から B までのブロックに青い枠が付く。ボタンを押している間は帯が出ず、離すと、選択の最後の行のすぐ下に帯 [削除][カット][コピー] (アイコンだけ) が出る。ブロックの編集欄は開かない |
 |  | - 2 で、tooltip が `Delete blocks (Delete)`。押すと A から B までのブロックが消え、確認のダイアログもトーストも出ない。枠・帯・選択が消える。消えた所にあった次のブロックが、画面の同じ位置に来る |
 |  | - 3 で、Undo 1 回で A から B までがすべて戻り、Redo 1 回で再び消える |
 |  | - 4 で、ずらして離したときは何も起きず、上で離したときは段落 C が消える (ブロック 1 つでも効く。D4) |
 |  | - 5 で、保存したファイルに、消した結果が入っている。タブのタイトルの `* ` が消える |
+|  | - 6 で、ドラッグで選んだとき、Edge のミニメニュー (選択の横の、Copilot・コピー・検索などの小さなメニュー) が出ず、Delete 1 回で A から B までが消える。プレビューの外で離したときも、編集欄を開いたまま選んだときも同じ。選んだ文字の上のクリックで、選択・枠・帯が消える。Ctrl+A のときにミニメニューが出たか、Delete 1 回で消えたかを備考に書く (INV-74 の既知の制限 (c)。出ても Fail にしない)。右クリックのメニューはふだんどおり出る |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-74 (1)〜(3)、INV-46、INV-48、SC-22 (オーナーの裁定 D1、D2、D4、D5、D10)。自動では blockRange.e2e.js、AT-RNG-14 / 23 / 27、AT-RNG-31 |
+| 備考 | 要求: INV-74 (1)〜(3)、INV-46、INV-48、SC-22 (オーナーの裁定 D1、D2、D4、D5、D10、S1〜S3)。自動では blockRange.e2e.js、AT-RNG-14 / 23 / 27、AT-RNG-31、AT-RNG-52 (Playwright ではミニメニューは出ないので、`mouseup` の既定を止めることだけを見る)。手順 6 の Edge の版: ____ |
 
 ---
 ### PRT-Z02: キーとクリップボード (Delete / Backspace / カット / コピー)
@@ -3799,7 +3803,7 @@
 | AT-BEC | `BlockEditController` (ジェスチャ、外側、IME、キー、リンク) | INV-27〜30、INV-40、INV-69 | BlockEditController.test.js、BlockEditController.keys.test.js、BlockEditController.link.test.js、UIController.link.test.js (35) | 01〜35 |
 | AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致。30〜32: ブロックの範囲) | 11-c | BlockEditController.stateMachine.test.js、BlockEditController.gap.test.js (29)、UIController.editMode.test.js、UIController.save.test.js | 01〜32 |
 | AT-GAP | `BlockGapInsert` (すき間の当たり判定、表のつまみ・リンクなどを避けること、点線の表示と押下、マウスの移動を 1 フレームに 1 回にまとめること、押下と消去で残りの移動を捨てること、click にならない押下の後も追うこと) | INV-73 | BlockGapInsert.test.js | 01〜02 |
-| AT-RNG | ブロックの範囲: `MarkdownBlockModel.removeRange` / `rangeSource` (01〜08)、`RendererOrchestrator.deleteBlocks` / `readBlocksSource` (09〜13)、`BlockRangeSelection` (選択の解決、帯、押して離す、Esc、INV-45、14〜30、40、41。読むだけで表示を変えないこと 45、帯の押下で読み直すこと 46、ビューポートの近くだけの枠 47)、UIController のキーとクリップボード (31〜38)、すき間を出さないこと (39)、書き込みの失敗のトースト (25、42〜44)、ブラウザの `copy` の事象 (48、49)、Shift+Delete (50)、帯の位置の純粋な関数 `placementNearLine` (51) | INV-74、INV-14、INV-45、INV-46、INV-48、INV-73 | MarkdownBlockModel.removeRange.test.js、RendererOrchestrator.edit.test.js、BlockRangeSelection.test.js、UIController.blockRange.test.js、BlockGapInsert.test.js (39)、floatingPlacement.test.js (51) | 01〜51 |
+| AT-RNG | ブロックの範囲: `MarkdownBlockModel.removeRange` / `rangeSource` (01〜08)、`RendererOrchestrator.deleteBlocks` / `readBlocksSource` (09〜13)、`BlockRangeSelection` (選択の解決、帯、押して離す、Esc、INV-45、14〜30、40、41。読むだけで表示を変えないこと 45、帯の押下で読み直すこと 46、ビューポートの近くだけの枠 47)、UIController のキーとクリップボード (31〜38)、すき間を出さないこと (39)、書き込みの失敗のトースト (25、42〜44)、ブラウザの `copy` の事象 (48、49)、Shift+Delete (50)、帯の位置の純粋な関数 `placementNearLine` (51)、選択を残したドラッグの `mouseup` の既定を止めること (52。Edge のミニメニュー) | INV-74、INV-14、INV-45、INV-46、INV-48、INV-73 | MarkdownBlockModel.removeRange.test.js、RendererOrchestrator.edit.test.js、BlockRangeSelection.test.js、UIController.blockRange.test.js、BlockGapInsert.test.js (39)、floatingPlacement.test.js (51) | 01〜52 |
 | AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
@@ -3814,7 +3818,7 @@
 | AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js | 01〜69 (25 は欠番。41 は AT.1 の注。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)) |
 | AT-KEY | 主の修飾キーのショートカット (08: Redo のキー) | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜08 |
 | AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
-| AT-PAN | `DiagramPanController` (図のパンの終わり) | INV-16b、FS-09 | DiagramPanController.test.js | 01〜03 |
+| AT-PAN | `DiagramPanController` (図のパンの終わり 01〜03、始まりは閾値を超えたとき (5px ちょうどでは始まらない。`utils.isPastActivation`) 04)。04 の閾値の決まりそのもの (INV-29・INV-68・INV-74 (2)・3.5 の図のパンに共通) は utils.test.js の `isPastActivation` の試験 | INV-16b、FS-09、INV-29、INV-68、INV-74 | DiagramPanController.test.js、utils.test.js (`isPastActivation`) | 01〜04 |
 | AT-SFR | `SourceFileRenderer` (コードビューの Reload) | INV-15 | SourceFileRenderer.test.js | 01 |
 | AT-CFG | `CONFIG.edit` と文言 | 5.2、CON-06 | config.edit.test.js、UIController.editMode.test.js、config.test.js (09) | 01〜09 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |

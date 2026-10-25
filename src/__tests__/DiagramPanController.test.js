@@ -56,6 +56,15 @@ describe("AT-PAN DiagramPanController", () => {
     expect(document.body.style.cursor).toBe("");
   });
 
+  it("AT-PAN-04 the pan starts past activationThresholdPx (utils.isPastActivation): exactly 5 px does not pan, past it does", () => {
+    const { pan, svg } = setup();
+    mouse(svg, "mousedown", { x: 10, y: 100 });
+    mouse(document, "mousemove", { x: 13, y: 104 }); // 3-4-5: exactly the threshold
+    expect(pan.panState?.active).toBe(false);
+    mouse(document, "mousemove", { x: 13, y: 105 });
+    expect(pan.panState?.active).toBe(true);
+  });
+
   it("AT-PAN-03 a pointerup or pointercancel ends the pan too", () => {
     const { pan, svg } = setup();
     for (const end of ["pointerup", "pointercancel"]) {

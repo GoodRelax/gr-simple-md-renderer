@@ -211,6 +211,110 @@ test("INV-74 (2), INV-73: while blocks are selected the gaps' + does not show; i
   await expect(page.locator(".grsmd-gap-insert")).toBeVisible();
 });
 
+test("INV-74 (2), owner ruling S1: a drag that selected in the preview has the release's default stopped (no Edge mini menu), also from an open block; the click still comes; a plain click, a link, the gap's + and a diagram's pan are as before", async ({ page }) => {
+  // Playwright shows no Edge mini menu: what is checked is that the
+  // release's default is stopped, and only when text was selected.
+  const doc = "# Title\n\nFirst para with [a link](#title).\n\nSecond para.\n\n```mermaid\nflowchart TD\n  A --> B\n```\n\nLast para.\n";
+  await openEditMode(page, doc);
+  await page.evaluate(() => {
+    window.__ups = [];
+    window.__clicks = [];
+    window.addEventListener("mouseup", (e) => window.__ups.push(e.defaultPrevented));
+    window.addEventListener("click", (e) => {
+      window.__clicks.push(e.target.tagName);
+      if (e.target.closest("a")) e.preventDefault(); // the link is not followed here
+    });
+  });
+  // the releases since the last call (WebKit sends none when the pressed element leaves the DOM, as a click that opens a block)
+  const takeUps = () => page.evaluate(() => window.__ups.splice(0));
+  const clicks = () => page.evaluate(() => window.__clicks.length);
+  const editor = page.locator("#preview textarea.md-block-editor");
+
+  let before = await clicks();
+  await drag(page, para(page, "First para"), para(page, "Second para"));
+  expect(await takeUps()).toEqual([true]);
+  expect(await clicks()).toBe(before + 1); // the click after the drag still comes
+  await expect(bar(page)).toBeVisible();
+  await expect(editor).toHaveCount(0);
+  await page.keyboard.press("Delete");
+  await expectBody(page, doc.replace("First para with [a link](#title).\n\nSecond para.\n\n", ""));
+  await page.keyboard.press(`${MOD}+z`);
+  await expectBody(page, doc);
+  await takeUps();
+
+  // a plain click keeps the default and opens the block (SC-22)
+  await para(page, "Last para").click();
+  expect(await takeUps()).not.toContain(true);
+  await expect(editor).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(editor).toHaveCount(0);
+
+  // a link: its click comes as before
+  before = await clicks();
+  await page.locator("#preview a", { hasText: "a link" }).click();
+  expect(await takeUps()).not.toContain(true);
+  expect(await page.evaluate(() => window.__clicks.at(-1))).toBe("A");
+  expect(await clicks()).toBe(before + 1);
+  await expect(editor).toHaveCount(0);
+
+  // the gap's + still inserts
+  const gap = await page.evaluate(() => {
+    const blocks = [...document.querySelectorAll("#preview > .md-block")];
+    const i = blocks.findIndex((el) => el.textContent.includes("Second para."));
+    const a = blocks[i].getBoundingClientRect();
+    const b = blocks[i + 1].getBoundingClientRect();
+    return { x: document.querySelector("#preview").getBoundingClientRect().left + 60, y: (a.bottom + b.top) / 2 };
+  });
+  await page.mouse.move(gap.x, gap.y - 1);
+  await page.mouse.move(gap.x, gap.y);
+  await expect(page.locator(".grsmd-gap-insert")).toBeVisible();
+  await page.locator(".grsmd-gap-insert").click();
+  expect(await takeUps()).not.toContain(true);
+  await expect(editor).toHaveValue("");
+  await page.keyboard.press("Escape");
+  await expect(editor).toHaveCount(0);
+  await expectBody(page, doc);
+
+  // a drag on a diagram pans it: no selection, the default kept, no range
+  const svg = await page.locator("#preview .md-block svg").first().boundingBox();
+  await page.mouse.move(svg.x + svg.width / 2, svg.y + svg.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(svg.x + svg.width / 2 + 40, svg.y + svg.height / 2 + 10, { steps: 4 });
+  await page.mouse.up();
+  expect(await takeUps()).not.toContain(true);
+  expect(await page.evaluate(() => getSelection().isCollapsed)).toBe(true);
+  await expect(bar(page)).toBeHidden();
+  await expectBody(page, doc);
+
+  // H2: a drag started with a block open (the press applies and closes it, INV-30) is stopped too
+  await para(page, "Last para").click();
+  await expect(editor).toHaveCount(1);
+  await takeUps();
+  await drag(page, para(page, "First para"), para(page, "Second para"));
+  expect(await takeUps()).toEqual([true]);
+  await expect(editor).toHaveCount(0);
+  await expect(framed(page)).toHaveCount(2);
+  await expect(bar(page)).toBeVisible();
+});
+
+test("INV-74 (2), review H1: a click on the selected text keeps the release's default: the browser clears the selection, the frame and the bar go", async ({ page }) => {
+  await openEditMode(page);
+  await page.evaluate(() => {
+    window.__ups = [];
+    window.addEventListener("mouseup", (e) => window.__ups.push(e.defaultPrevented));
+  });
+  await drag(page, para(page, "First para"), para(page, "Second para"));
+  await expect(framed(page)).toHaveCount(2);
+  await expect(bar(page)).toBeVisible();
+  const first = await para(page, "First para").boundingBox();
+  await page.mouse.click(first.x + 40, first.y + first.height / 2);
+  expect(await page.evaluate(() => window.__ups)).toEqual([true, false]);
+  expect(await page.evaluate(() => getSelection().isCollapsed)).toBe(true);
+  await expect(framed(page)).toHaveCount(0);
+  await expect(bar(page)).toBeHidden();
+  await expectBody(page, DOC);
+});
+
 test("INV-74 (6): outside edit mode a selection is the browser's: no frame, no bar, Delete and Ctrl+C change nothing (D9)", async ({ page }) => {
   await page.goto("/");
   await renderMarkdown(page, DOC);
@@ -258,10 +362,19 @@ test("INV-74 (2): the bar goes above the selection when there is no room under i
   expect(Math.abs(before.y + before.height - (viewport.height - 10))).toBeLessThan(2);
   await drag(page, para(page, target), para(page, target), { fromX: 2, toX: 40 });
   await expect(bar(page)).toBeVisible();
-  const barBox = await bar(page).boundingBox();
-  const pBox = await para(page, target).boundingBox();
-  expect(barBox.y + barBox.height).toBeLessThanOrEqual(viewport.height);
-  expect(barBox.y + barBox.height).toBeLessThanOrEqual(pBox.y + 1); // above the line
+  // the bar is placed once a frame: wait for the place to settle above the line, then read it
+  const place = async () => {
+    const barBox = await bar(page).boundingBox();
+    const pBox = await para(page, target).boundingBox();
+    return { barBottom: barBox.y + barBox.height, lineTop: pBox.y };
+  };
+  await expect.poll(async () => {
+    const { barBottom, lineTop } = await place();
+    return barBottom <= lineTop + 1; // above the line
+  }).toBe(true);
+  const { barBottom, lineTop } = await place();
+  expect(barBottom).toBeLessThanOrEqual(viewport.height);
+  expect(barBottom).toBeLessThanOrEqual(lineTop + 1);
 });
 
 test("INV-74 (4): a copy the browser starts (menu, callout) writes the blocks' source while blocks are selected (owner ruling 2026-10-25)", async ({ page }) => {

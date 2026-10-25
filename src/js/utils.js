@@ -232,6 +232,22 @@ export function isTypingTarget(el) {
 }
 
 /**
+ * A press became a drag: the point is more than
+ * CONFIG.pan.activationThresholdPx (Euclidean) from where the press started;
+ * exactly the threshold is not past it. The one rule of a tap versus a drag
+ * (opening a block INV-29, the palette's grip INV-68, the release of a block
+ * range drag INV-74 (2), the diagram pan). Whether a move that went past and
+ * came back still counts is the caller's to decide.
+ * @purity pure
+ * @param {{x: number, y: number}} from - where the press started
+ * @param {{x: number, y: number}} to - where the pointer is now
+ * @returns {boolean}
+ */
+export function isPastActivation(from, to) {
+  return Math.hypot(to.x - from.x, to.y - from.y) > CONFIG.pan.activationThresholdPx;
+}
+
+/**
  * @purity non-pure
  * @param {number} id - from nextFrame
  */
