@@ -2,6 +2,17 @@ import DiagramRenderer from "./DiagramRenderer.js";
 import { CONFIG } from "../config.js";
 import { replaceCodeBlock, queryAllIn } from "../utils.js";
 
+/**
+ * One diagram as the full render's dialog answered for it: its source and theme.
+ * @purity pure
+ * @param {string} code
+ * @param {string} theme
+ * @returns {string}
+ */
+function diagramKey(code, theme) {
+  return `${theme}\u0000${code}`;
+}
+
 export default class PlantUMLRenderer extends DiagramRenderer {
   /**
    * @param {HTMLElement} preview
@@ -20,9 +31,11 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     // Boxes waiting for the encoder after the consent (INV-81 (3)) -> { code, theme }
     this._loading = new WeakMap();
     this._encoderWait = null; // the promise of the encoder being awaited
-    // The answer of the last full render's dialog (true / false), or null:
-    // it asked nothing (INV-81 (3), "repeat")
-    this._answer = null;
+    // The diagrams (diagramKey) the last full render's dialog was answered
+    // for: allowed and sent, or declined. "repeat" goes by them only; a
+    // diagram added or changed later is in neither (INV-23, INV-81 (3)).
+    this._allowed = new Set();
+    this._declined = new Set();
   }
 
   /**
@@ -30,9 +43,11 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * mode "consent" (full render): one confirm, then send (INV-02).
    * mode "placeholder" (partial render after an edit): send nothing and show
    * a pending box with a [Render] button instead (INV-23).
-   * mode "repeat" (blocks drawn again because KaTeX ran, no one acted): the
-   * answer of the last full render's dialog, without asking again; the
-   * placeholder when it asked nothing (INV-81 (3)).
+   * mode "repeat" (blocks drawn again because KaTeX ran, no one acted): a
+   * diagram the last full render's dialog allowed (the same source and
+   * theme) is sent again and one it declined shows so, without asking; any
+   * other (added or changed by a commit, INV-23) gets the placeholder
+   * (INV-81 (3)).
    * Before the encoder has run, the blocks sent show "Loading diagram..."
    * and are drawn when it comes; the render does not wait for it (INV-81 (3)).
    * @param {string} theme
@@ -42,11 +57,14 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    */
   async render(theme, root = this.preview, mode = "consent") {
     try {
-      if (mode === "consent") this._answer = null;
+      if (mode === "consent") {
+        this._allowed.clear();
+        this._declined.clear();
+      }
       const blocks = queryAllIn(root, "code.language-plantuml, code.language-puml");
       if (blocks.length === 0) return;
 
-      if (mode === "placeholder" || (mode === "repeat" && this._answer === null)) {
+      if (mode === "placeholder") {
         /** @purity non-pure */
         blocks.forEach((block) => {
           replaceCodeBlock(block, this.createPendingElement(block.textContent, theme));
@@ -54,36 +72,76 @@ export default class PlantUMLRenderer extends DiagramRenderer {
         return;
       }
 
-      const permitted = mode === "repeat" ? this._answer : this.askConsent();
-      this._answer = permitted;
+      if (mode === "repeat") {
+        await this._send(this._answeredAgain(blocks, theme), theme);
+        return;
+      }
+
+      const permitted = this.askConsent();
+      const answered = permitted ? this._allowed : this._declined;
+      for (const block of blocks) answered.add(diagramKey(block.textContent, theme));
 
       if (!permitted) {
         /** @purity non-pure */
-        blocks.forEach((block) => {
-          const errorDiv = this.createErrorElement(
-            CONFIG.messages.plantuml.canceled,
-          );
-          replaceCodeBlock(block, errorDiv);
-        });
+        blocks.forEach((block) => this._showCanceled(block));
         return;
       }
-
-      if (!this.encoder && this.loadEncoder) {
-        // not awaited: the render queue goes on (edits, Undo, other documents)
-        for (const block of blocks) replaceCodeBlock(block, this._loadingBox(block.textContent, theme));
-        this._drawWhenEncoded();
-        return;
-      }
-      const promises = [];
-      /** @purity non-pure */
-      blocks.forEach((block) => {
-        const promise = this.renderSingleBlock(block, theme);
-        if (promise) promises.push(promise);
-      });
-      await Promise.allSettled(promises);
+      await this._send(blocks, theme);
     } catch (error) {
       console.error("PlantUML rendering error:", error);
     }
+  }
+
+  /**
+   * "repeat": the blocks the full render's dialog declined show so, and
+   * those it did not answer get the placeholder (INV-23). The ones it
+   * allowed are returned, to be sent again.
+   * @param {HTMLElement[]} blocks
+   * @param {string} theme
+   * @returns {HTMLElement[]}
+   * @purity non-pure
+   */
+  _answeredAgain(blocks, theme) {
+    const allowed = [];
+    for (const block of blocks) {
+      const key = diagramKey(block.textContent, theme);
+      if (this._allowed.has(key)) allowed.push(block);
+      else if (this._declined.has(key)) this._showCanceled(block);
+      else replaceCodeBlock(block, this.createPendingElement(block.textContent, theme));
+    }
+    return allowed;
+  }
+
+  /**
+   * @param {HTMLElement} block
+   * @purity non-pure
+   */
+  _showCanceled(block) {
+    replaceCodeBlock(block, this.createErrorElement(CONFIG.messages.plantuml.canceled));
+  }
+
+  /**
+   * Send blocks whose consent was given. Before the encoder has run they
+   * show "Loading diagram..." and are drawn when it comes, not awaited: the
+   * render queue goes on (edits, Undo, other documents).
+   * @param {HTMLElement[]} blocks
+   * @param {string} theme
+   * @purity non-pure
+   */
+  async _send(blocks, theme) {
+    if (blocks.length === 0) return;
+    if (!this.encoder && this.loadEncoder) {
+      for (const block of blocks) replaceCodeBlock(block, this._loadingBox(block.textContent, theme));
+      this._drawWhenEncoded();
+      return;
+    }
+    const promises = [];
+    /** @purity non-pure */
+    blocks.forEach((block) => {
+      const promise = this.renderSingleBlock(block, theme);
+      if (promise) promises.push(promise);
+    });
+    await Promise.allSettled(promises);
   }
 
   /**

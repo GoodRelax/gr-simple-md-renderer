@@ -353,6 +353,49 @@ describe("what else waits (INV-81 (3), spec 5.17.3)", () => {
     expect(confirm).toHaveBeenCalledTimes(1); // not asked again
   });
 
+  it("AT-FAST-56 (N1) KaTeX arriving later never sends a PlantUML diagram a commit added: it stays [Render] (INV-23)", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { preview, libraries, orchestrator, plantumlRenderer } = stack();
+    libraries.arrive("plantuml");
+    vi.spyOn(plantumlRenderer, "waitForImageLoad").mockResolvedValue(true);
+    const sent = [];
+    const createImage = plantumlRenderer.createImage.bind(plantumlRenderer);
+    vi.spyOn(plantumlRenderer, "createImage").mockImplementation((code) => {
+      sent.push(code);
+      return createImage(code);
+    });
+    orchestrator.state.setMarkdownText("```plantuml\n@startuml\nA -> B\n@enduml\n```\n\n- $x$\n");
+    await orchestrator.renderAll();
+    await settle();
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent.map((c) => c.includes("A -> B"))).toEqual([true]);
+    const list = orchestrator.getModel().getBlocks()[1];
+    orchestrator.commitBlock(list.id, "- $x$\n\n  ```plantuml\n  @startuml\n  SECRET -> D\n  @enduml\n  ```\n");
+    await settle();
+    expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(1); // INV-23
+    libraries.arrive("katex");
+    await settle();
+    expect(preview.querySelector(".katex")).not.toBeNull();
+    expect(sent.some((c) => c.includes("SECRET"))).toBe(false);
+    expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(1);
+    expect(confirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("AT-FAST-57 (N1) a diagram the full render's dialog declined shows so again when KaTeX redraws its block", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const { preview, libraries, orchestrator, plantumlRenderer } = stack();
+    libraries.arrive("plantuml");
+    const createImage = vi.spyOn(plantumlRenderer, "createImage");
+    orchestrator.state.setMarkdownText("- $x$\n\n  ```plantuml\n  @startuml\n  A -> B\n  @enduml\n  ```\n");
+    await orchestrator.renderAll();
+    libraries.arrive("katex");
+    await settle();
+    expect(preview.querySelector(".katex")).not.toBeNull();
+    expect(preview.textContent).toContain(CONFIG.messages.plantuml.canceled);
+    expect(createImage).not.toHaveBeenCalled();
+    expect(confirm).toHaveBeenCalledTimes(1);
+  });
+
   it("AT-FAST-53 (L6) a block open in the editor stays as it was when KaTeX comes, and is drawn when released (Q-d1)", async () => {
     const { preview, libraries, orchestrator, markdownRenderer } = stack();
     orchestrator.state.setMarkdownText("# A\n\nInline $x$.\n");
