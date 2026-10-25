@@ -3,8 +3,12 @@
 // ========================================
 
 // Leading blank lines, an opening fence of 3+ backticks, the "markdown" tag,
-// optional whitespace, and a newline (spec 5.13 rule 1).
-const WRAPPER_OPEN_RE = /^(?:\s*\n)*(`{3,})markdown\s*\n/i;
+// optional whitespace, and a newline (spec 5.13 rule 1). Each blank line is
+// white space other than a newline, then the newline: the lines split one
+// way only, so the time is linear in their number. With \s (which holds the
+// newline) in its place, each line doubled the time on a text without the
+// wrapper (ReDoS).
+const WRAPPER_OPEN_RE = /^(?:[^\S\n]*\n)*(`{3,})markdown\s*\n/i;
 
 /**
  * Split an AI-style ```markdown wrapper off a document (spec 5.13).
@@ -69,6 +73,45 @@ export function normalizeLineEndings(text) {
  */
 export function convertLineEndings(lfText, lineEnding) {
   return lineEnding === "\r\n" ? lfText.replace(/\n/g, "\r\n") : lfText;
+}
+
+/**
+ * The length of the run of chars at the end of text, counted from the end:
+ * linear in the run. In place of a pattern like /[ \t]+$/ or /\n*$/, which
+ * reads a long run that is not at the end again from every start in it
+ * (quadratic, ReDoS), and of a lookbehind, which Safari before 16.4 cannot
+ * parse (P-05).
+ * @purity pure
+ * @param {string} text
+ * @param {string} chars - the characters of the run, e.g. " \t"
+ * @returns {number}
+ */
+export function trailingRunLength(text, chars) {
+  let i = text.length;
+  while (i > 0 && chars.includes(text[i - 1])) i--;
+  return text.length - i;
+}
+
+/**
+ * text without the run of chars at its end (trailingRunLength).
+ * @purity pure
+ * @param {string} text
+ * @param {string} chars
+ * @returns {string}
+ */
+export function trimTrailingRun(text, chars) {
+  return text.slice(0, text.length - trailingRunLength(text, chars));
+}
+
+/**
+ * The run of chars at the end of text (trailingRunLength); "" when none.
+ * @purity pure
+ * @param {string} text
+ * @param {string} chars
+ * @returns {string}
+ */
+export function trailingRun(text, chars) {
+  return text.slice(text.length - trailingRunLength(text, chars));
 }
 
 /**

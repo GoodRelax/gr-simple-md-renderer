@@ -26,3 +26,16 @@ test("dropping a non-.md text file shows the code view", async ({ page }) => {
   await expect(page.locator("#preview")).toContainText("function hello()");
   await expect(page.locator("#editBtn")).toBeDisabled();
 });
+
+// Without the fix only Chromium fails this (see the known limit in load.e2e.js).
+test("5.13 rule 1: dropping a .md file with 41 leading blank lines shows the Markdown preview", async ({ page }) => {
+  await page.goto("/");
+  await dropFile(page, {
+    name: "blank-lines.md",
+    text: "\n".repeat(41) + "# Dropped heading\n\nSome *text*.\n",
+    type: "text/markdown",
+  });
+
+  await expect(page.locator("body")).toHaveClass(/\bview-markdown\b/);
+  await expect(page.locator("#preview h1")).toHaveText("Dropped heading");
+});

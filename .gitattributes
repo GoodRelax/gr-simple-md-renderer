@@ -1,0 +1,4 @@
+# License texts copied unchanged from npm tarballs: keep their bytes (line
+# endings included) as published. The folder's README is our own text.
+tools/third-party-licenses/** -text
+tools/third-party-licenses/README.md text

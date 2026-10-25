@@ -4,7 +4,7 @@ import { parseAst } from "vite";
 //
 // Counted: methods (constructor, getter, setter included), function declarations
 // and expressions, and arrow functions whose body is a block. Not counted:
-// arrow functions whose body is a single expression (R7.6 exclusion).
+// arrow functions whose body is a single expression (exclusion in R7 `@purity` Tag).
 //
 // The tag must sit in the nearest /** ... */ comment before the function.
 // Between that comment and the function only "leading" code may appear

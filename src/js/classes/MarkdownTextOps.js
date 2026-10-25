@@ -1,4 +1,5 @@
 import InlineRuns from "./InlineRuns.js";
+import { trailingRunLength, trimTrailingRun } from "../textTransforms.js";
 
 // Leaf blocks whose text is inline Markdown (the inline ranges, INV-67 (6)).
 const INLINE_LEAVES = new Set(["paragraph", "text", "heading", "table"]);
@@ -8,10 +9,12 @@ const PARAGRAPH_LEAVES = new Set(["paragraph", "text"]);
 // code, HTML or math the spaces are content and are never tried.
 const STRIPPABLE_LEAVES = new Set(["paragraph", "text", "heading", "table"]);
 const QUOTE_MARKS = /^[ \t]*(?:>[ \t]*)+/;
+// Runs at the end of a text are counted from the end (trailingRunLength):
+// a pattern like /[ \t]+$/ is quadratic in a long run that is not at the end.
+const BLANKS = " \t";
 const COLOR_OPEN = /^<span style="color: (#[0-9A-Fa-f]{6})">$/;
 const SPAN_OPEN = /^<span(?:\s[^>]*)?>$/i;
 const SPAN_CLOSE = /^<\/span\s*>$/i;
-const LINE_BREAK_SPACES = / {2,}$/;
 // INV-52: Insert table / Mermaid refuses in an editor opened on these
 // blocks, or with the caret in such a block of the editor text at any depth
 // (top level, a list item, a quote; a table there too: owner ruling D7).
@@ -48,6 +51,23 @@ function countNewlines(s) {
  */
 function rawOf(tokens) {
   return tokens.map((t) => t.raw).join("");
+}
+
+/**
+ * An ATX heading's text without its closing sequence: the #s at the end
+ * with the spaces and tabs around them, when the #s start the text or
+ * follow a space or tab (as /(?:^|[ \t]+)#+[ \t]*$/, counted from the end).
+ * The text as it is when there is none.
+ * @purity pure
+ * @param {string} text
+ * @returns {string}
+ */
+function withoutClosingHashes(text) {
+  const body = trimTrailingRun(text, BLANKS);
+  const before = trimTrailingRun(body, "#");
+  if (before.length === body.length) return text;
+  const kept = trimTrailingRun(before, BLANKS);
+  return before === "" || kept.length < before.length ? kept : text;
 }
 
 // The leaf table of a text (_leafTable), kept by the identity of its block
@@ -232,7 +252,7 @@ export default class MarkdownTextOps {
    * @returns {number}
    */
   static insertOffset(text, plan) {
-    const editable = text.replace(/\n+$/, "");
+    const editable = trimTrailingRun(text, "\n");
     if (plan.kind === "above") return 0;
     if (plan.kind === "below") return editable.length;
     return Math.min(MarkdownTextOps._lineStart(text.split("\n"), plan.line) - 1, editable.length);
@@ -262,10 +282,9 @@ export default class MarkdownTextOps {
   static cutLineEndBreak(text, plan, lexBlocks) {
     if (plan.kind !== "split") return 0;
     const upper = text.slice(0, MarkdownTextOps.insertOffset(text, plan));
-    let count = 0;
+    let count = MarkdownTextOps.lineBreakSpaceCount(upper);
     let isBackslash = false;
-    if (LINE_BREAK_SPACES.test(upper)) count = / +$/.exec(upper)[0].length;
-    else if (/\\+$/.exec(upper)?.[0].length % 2 === 1) [count, isBackslash] = [1, true];
+    if (count === 0 && trailingRunLength(upper, "\\") % 2 === 1) [count, isBackslash] = [1, true];
     if (count === 0) return 0;
     const tokens = lexBlocks(text);
     if (MarkdownTextOps._blockAtLine(tokens, countNewlines(upper), SPACE_CONTENT_BLOCKS).refuse) return 0;
@@ -709,8 +728,8 @@ export default class MarkdownTextOps {
     if (isParagraph(n - 1)) {
       const prevEnd = lineStart - 1;
       const prevStart = text.lastIndexOf("\n", prevEnd - 1) + 1;
-      const mark = LINE_BREAK_SPACES.exec(text.slice(prevStart, prevEnd));
-      if (mark) head = text.slice(0, prevStart + mark.index) + text.slice(prevEnd, s);
+      const mark = MarkdownTextOps.lineBreakSpaceCount(text.slice(prevStart, prevEnd));
+      if (mark > 0) head = text.slice(0, prevEnd - mark) + text.slice(prevEnd, s);
     }
     const insert = `\n${inQuote && before.includes(">") ? before : ""}`;
     const caret = head.length + insert.length;
@@ -732,7 +751,7 @@ export default class MarkdownTextOps {
   static stripMeaninglessHardBreaks(raw, lexFull, walkTokens) {
     const candidates = [];
     const lines = raw.split("\n");
-    for (let n = 0; n < lines.length; n++) if (LINE_BREAK_SPACES.test(lines[n])) candidates.push(n);
+    for (let n = 0; n < lines.length; n++) if (MarkdownTextOps.lineBreakSpaceCount(lines[n]) > 0) candidates.push(n);
     if (candidates.length === 0) return raw;
     const tokens = lexFull(raw);
     const state = { text: raw, shape: MarkdownTextOps._tokenShape(tokens, walkTokens), lexes: 1 };
@@ -757,6 +776,19 @@ export default class MarkdownTextOps {
   }
 
   /**
+   * The spaces of a line break mark at the end of text (INV-71, INV-70):
+   * their number when there are two or more, else 0. Counted from the end
+   * (trailingRunLength), so linear in a long run of spaces.
+   * @purity pure
+   * @param {string} text - one line
+   * @returns {number}
+   */
+  static lineBreakSpaceCount(text) {
+    const n = trailingRunLength(text, " ");
+    return n >= 2 ? n : 0;
+  }
+
+  /**
    * Per line: whether it ends with a line break mark (two or more spaces)
    * in paragraph text (the marks of INV-70; not in code, HTML, math).
    * @purity pure
@@ -766,7 +798,7 @@ export default class MarkdownTextOps {
    */
   static hardBreakLines(text, lexBlocks) {
     const lines = text.split("\n");
-    const ends = lines.map((line) => LINE_BREAK_SPACES.test(line));
+    const ends = lines.map((line) => MarkdownTextOps.lineBreakSpaceCount(line) > 0);
     if (!ends.includes(true)) return ends; // nothing to mark: no lexing
     const info = MarkdownTextOps._leafLines(text, lexBlocks);
     return ends.map((end, n) => end && PARAGRAPH_LEAVES.has(info?.[n]?.leaf?.type));
@@ -807,7 +839,7 @@ export default class MarkdownTextOps {
   static _blockAtLine(tokens, line, types = REFUSING_BLOCKS) {
     let start = 0;
     for (const token of tokens) {
-      const last = start + countNewlines(token.raw.replace(/\n+$/, ""));
+      const last = start + countNewlines(trimTrailingRun(token.raw, "\n"));
       if (token.type !== "space" && line >= start && line <= last) {
         const refuse = types.has(token.type) || MarkdownTextOps._refusesInside(token, start, line, types);
         return { refuse, top: { token, first: start, last } };
@@ -830,7 +862,7 @@ export default class MarkdownTextOps {
   static _leafAcrossCut(tokens, start, cut) {
     let pos = start;
     for (const token of tokens) {
-      const last = pos + countNewlines(token.raw.replace(/\n+$/, ""));
+      const last = pos + countNewlines(trimTrailingRun(token.raw, "\n"));
       if (token.type !== "space" && pos < cut && last >= cut) {
         if (CUT_LEAVES.has(token.type)) return { token, first: pos, last };
         if (token.type === "blockquote") return MarkdownTextOps._leafAcrossCut(token.tokens || [], pos, cut);
@@ -889,7 +921,7 @@ export default class MarkdownTextOps {
     for (const item of list.items) {
       const next = first + countNewlines(item.raw);
       if (line >= first && (line < next || item === list.items[list.items.length - 1])) {
-        return { first, last: first + countNewlines(item.raw.replace(/\n+$/, "")) };
+        return { first, last: first + countNewlines(trimTrailingRun(item.raw, "\n")) };
       }
       first = next;
     }
@@ -913,7 +945,7 @@ export default class MarkdownTextOps {
     if (token.type === "list") {
       let itemStart = start;
       for (const item of token.items) {
-        const itemLast = itemStart + countNewlines(item.raw.replace(/\n+$/, ""));
+        const itemLast = itemStart + countNewlines(trimTrailingRun(item.raw, "\n"));
         if (line >= itemStart && line <= itemLast) return MarkdownTextOps._refusesIn(item.tokens || [], itemStart, line, types);
         itemStart += countNewlines(item.raw);
       }
@@ -935,7 +967,7 @@ export default class MarkdownTextOps {
   static _refusesIn(tokens, start, line, types) {
     let pos = start;
     for (const token of tokens) {
-      const last = pos + countNewlines(token.raw.replace(/\n+$/, ""));
+      const last = pos + countNewlines(trimTrailingRun(token.raw, "\n"));
       if (token.type !== "space" && line >= pos && line <= last) {
         return types.has(token.type) || MarkdownTextOps._refusesInside(token, pos, line, types);
       }
@@ -1083,14 +1115,14 @@ export default class MarkdownTextOps {
       } else if (token.type === "blockquote") {
         MarkdownTextOps._mapLeaves(token.tokens ?? [], line, lines, info, { ...where, quote: true });
       } else if (token.type !== "space") {
-        const own = token.raw.replace(/\n+$/, "").split("\n");
+        const own = trimTrailingRun(token.raw, "\n").split("\n");
         for (let k = 0; k < own.length && line + k < lines.length; k++) {
           const n = line + k;
           const part = own[k];
           // marked may leave the spaces at a line end to a space token, and
           // turns the tabs that indent a line into spaces
-          const original = lines[n].replace(/[ \t]+$/, "");
-          const shown = part.replace(/[ \t]+$/, "").replace(/^[ \t]+/, "");
+          const original = trimTrailingRun(lines[n], BLANKS);
+          const shown = trimTrailingRun(part, BLANKS).replace(/^[ \t]+/, "");
           info[n] = original.endsWith(shown)
             ? { leaf: token, index: k, count: own.length, prefix: original.length - shown.length, ...where }
             : { leaf: null, ...where };
@@ -1339,7 +1371,7 @@ export default class MarkdownTextOps {
     const open = /^ {0,3}#{1,6}(?=[ \t]|$)[ \t]*/.exec(line);
     if (!open) return null;
     const rest = line.slice(open[0].length);
-    const body = rest.replace(/(?:^|[ \t]+)#+[ \t]*$/, "").replace(/[ \t]+$/, "");
+    const body = trimTrailingRun(withoutClosingHashes(rest), BLANKS);
     const from = starts[first] + at.prefix + open[0].length;
     return [{ from, to: from + body.length }];
   }
@@ -1365,7 +1397,7 @@ export default class MarkdownTextOps {
     if (from !== from2 || to !== to2) return null;
     const cell = content.slice(from, to);
     const lead = cell.length - cell.replace(/^[ \t]+/, "").length;
-    const trail = cell.length - cell.replace(/[ \t]+$/, "").length;
+    const trail = trailingRunLength(cell, BLANKS);
     return [{ from: base + from + lead, to: base + to - trail }];
   }
 
@@ -1494,7 +1526,7 @@ export default class MarkdownTextOps {
     if (group.length === 0 || state.lexes >= STRIP_MAX_LEXES) return;
     state.lexes++;
     const lines = state.text.split("\n");
-    for (const n of group) lines[n] = lines[n].replace(/ +$/, "");
+    for (const n of group) lines[n] = trimTrailingRun(lines[n], " ");
     const next = lines.join("\n");
     const shape = MarkdownTextOps._tokenShape(lexFull(next), walkTokens);
     // the kind of each break counts too: a backslash before the spaces must not become a backslash break

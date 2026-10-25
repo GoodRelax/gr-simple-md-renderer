@@ -1,5 +1,6 @@
 import BlockDiff from "./BlockDiff.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
+import { trailingRun, trimTrailingRun } from "../textTransforms.js";
 
 // HTML elements that never have an end tag: they do not open a nesting level (INV-41).
 const VOID_ELEMENTS = new Set([
@@ -16,8 +17,14 @@ const COMMENT_RE = /<!--[\s\S]*?(?:-->|$)/g;
  * @returns {number}
  */
 function tagBalance(raw) {
+  const text = raw.replace(COMMENT_RE, "");
+  // A tag ends at a ">", so the text after the last ">" holds none. Leaving
+  // it out keeps TAG_RE linear: from each "<" there, [^>]*? read the rest
+  // of the text and then failed (quadratic in a long text of "<" without
+  // ">"). The tags found are the same.
+  const tags = text.slice(0, text.lastIndexOf(">") + 1);
   let depth = 0;
-  for (const m of raw.replace(COMMENT_RE, "").matchAll(TAG_RE)) {
+  for (const m of tags.matchAll(TAG_RE)) {
     const [, closing, name, selfClosing] = m;
     if (selfClosing || VOID_ELEMENTS.has(name.toLowerCase())) continue;
     depth += closing ? -1 : 1;
@@ -153,9 +160,9 @@ function alignPart(body, start, part, lexer) {
  * from a short window and becomes a token of its own (one per skipped
  * definition, as marked gives one token per definition); the tokens of the
  * whole-body lexing go on after it, so the body is lexed about once
- * (R5.1). Only where a gap cannot be filled that way is the rest of the body
- * lexed again. The first definition of a label wins in links, as in one
- * parse of the whole body.
+ * (R5 Algorithms and Data Structures). Only where a gap cannot be filled
+ * that way is the rest of the body lexed again. The first definition of a
+ * label wins in links, as in one parse of the whole body.
  * @purity pure
  * @param {string} body
  * @param {(src: string) => object[]} lexer
@@ -305,7 +312,7 @@ export default class MarkdownBlockModel {
    * @returns {string}
    */
   static toEditableText(raw) {
-    return raw.replace(/\n+$/, "");
+    return trimTrailingRun(raw, "\n");
   }
 
   /**
@@ -486,6 +493,49 @@ export default class MarkdownBlockModel {
   }
 
   /**
+   * Remove the blocks from firstId to lastId (in body order, both kept in
+   * the range) with their separators, as one change (INV-74). The body is
+   * lexed again as for replaceBlock() with an empty text; neighbours may
+   * join (two lists). The anchor is the block that now starts where the
+   * first removed block started. Unknown ids or lastId before firstId:
+   * isChanged false and this model.
+   * @purity pure
+   * @param {number} firstId
+   * @param {number} lastId
+   * @param {(src: string) => object[]} lexer
+   * @param {number} maxCells
+   * @returns {{model: MarkdownBlockModel, isChanged: boolean, anchorBlockId: number|null}}
+   */
+  removeRange(firstId, lastId, lexer, maxCells) {
+    const first = this.findIndexById(firstId);
+    const last = this.findIndexById(lastId);
+    if (first < 0 || last < first) return { model: this, isChanged: false, anchorBlockId: null };
+    const start = this._offsetOf(first);
+    const body = this.toBody();
+    const model = this._relex(body.slice(0, start) + body.slice(this._offsetOf(last + 1)), lexer, maxCells);
+    return { model, isChanged: true, anchorBlockId: model._blockIdAt(start) };
+  }
+
+  /**
+   * The source of the blocks from firstId to lastId (INV-74): the body from
+   * the start of the first to the end of the last one's raw, the blank
+   * lines between them as they are, without the trailing newlines of the
+   * last (as its editor shows it). null for unknown ids or lastId before
+   * firstId.
+   * @purity pure
+   * @param {number} firstId
+   * @param {number} lastId
+   * @returns {string|null}
+   */
+  rangeSource(firstId, lastId) {
+    const first = this.findIndexById(firstId);
+    const last = this.findIndexById(lastId);
+    if (first < 0 || last < first) return null;
+    const end = this._offsetOf(last) + MarkdownBlockModel.toEditableText(this._blocks[last].raw).length;
+    return this.toBody().slice(this._offsetOf(first), end);
+  }
+
+  /**
    * The body offset of the gap after a block (INV-73): where the next block
    * starts, the end of the body after the last one; null is the gap before
    * the first block (after the leading blank lines). An unknown id: the end.
@@ -527,7 +577,7 @@ export default class MarkdownBlockModel {
     if (text === "") {
       return { body: oldBody.slice(0, start) + oldBody.slice(start + block.raw.length + block.separatorAfter.length), start };
     }
-    const trailing = /\n*$/.exec(block.raw)[0];
+    const trailing = trailingRun(block.raw, "\n");
     return { body: oldBody.slice(0, start) + text + trailing + oldBody.slice(start + block.raw.length), start };
   }
 
@@ -552,7 +602,7 @@ export default class MarkdownBlockModel {
     if (block.type !== "table" || text === "") return null;
     const before = index === 0 ? this._leading : this._blocks[index - 1].raw + this._blocks[index - 1].separatorAfter;
     if (index > 0 && !/\n[ \t]*\n$/.test(before)) return null;
-    const raw = text + /\n*$/.exec(block.raw)[0];
+    const raw = text + trailingRun(block.raw, "\n");
     let split;
     try {
       split = splitBody(raw, lexer);

@@ -1,5 +1,5 @@
 import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
-import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame, shortcutLetter } from "../utils.js";
+import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame, shortcutLetter, isTypingTarget } from "../utils.js";
 import { splitMarkdownWrapper, normalizeLineEndings, hasUtf8Bom } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
 import BlockEditController from "./BlockEditController.js";
@@ -14,21 +14,6 @@ import ClipboardLink from "./ClipboardLink.js";
  */
 function isHistoryInput(e) {
   return e.inputType === "historyUndo" || e.inputType === "historyRedo";
-}
-
-/**
- * INV-14: a key typed into an input, a textarea (the block editor included),
- * a contenteditable element or a role="toolbar" (the edit palette) is not a
- * document shortcut. The role is checked as written (ruling T2).
- * @purity semi-pure-b
- * @param {Element|null} el - the focused element
- * @returns {boolean}
- */
-function isTypingTarget(el) {
-  if (!el) return false;
-  if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") return true;
-  if (el.isContentEditable) return true;
-  return typeof el.closest === "function" && el.closest('[role="toolbar"]') !== null;
 }
 
 /**
@@ -134,6 +119,8 @@ export default class UIController {
     this._buttonStatesDeferred = false; // asked for inside an 11-c crossing (K-1)
     this._isReadingClipboard = false; // Paste link waits for the clipboard (INV-69)
     this._clipboardRead = 0; // the latest read: only it ends the wait
+    this._clipboardTextWaiting = null; // a block range's source for the copy event execCommand fires (INV-74)
+    this._copyEvent = null; // a copy event the browser started while blocks are selected (INV-74)
     this._baseTitle = document.title;
     this._lastTap = null; // double tap on the empty preview (INV-31)
     this._isEditorHistoryStale = false; // #editor's undo history after a system write (5.7 (6))
@@ -160,6 +147,7 @@ export default class UIController {
     this.setupFileDrop();
     this.setupAutoRenderOnPaste();
     this.setupKeyboard();
+    this.setupBlockRangeCopy();
     this.setupTouchPasteAssist();
     this.setupEditorSync();
     this.setupDoubleClickGestures();
@@ -650,10 +638,15 @@ export default class UIController {
         case "e":
           this.toggleEditPalette();
           break;
+        case "Delete":
+        case "Backspace":
+          this._deleteBlockRange(e);
+          break;
         case "Escape":
-          // Markdown view: hide the palette, or apply and close the open block
-          // editor when the focus is outside it (5.11, 11-c escapePressed). A held
-          // Esc acts once: its repeats do nothing (owner ruling Q-a).
+          // Markdown view: take a block range away (INV-74), hide the palette,
+          // or apply and close the open block editor when the focus is outside
+          // it (5.11, 11-c escapePressed). A held Esc acts once: its repeats do
+          // nothing (owner ruling Q-a).
           if (e.repeat) break;
           if (!this.orchestrator.isPreRenderState() && !this.orchestrator.isCodeViewActive())
             this.blockEdit.dispatch("escapePressed");
@@ -723,6 +716,19 @@ export default class UIController {
         this._refreshDirtyMark();
       };
     }
+    if ((letter === "c" || letter === "x") && !e.shiftKey) {
+      // INV-74 (owner rulings D3, D7): in edit mode with a block range, the
+      // blocks' source; otherwise (and in a text entry) the browser's.
+      if (!this.palette.isShown() || isTypingTarget(document.activeElement) || isTypingTarget(e.target)) return null;
+      const range = this.blockEdit.readBlockRange();
+      if (!range) return null;
+      const event = letter === "c" ? "blockRangeCopyRequested" : "blockRangeCutRequested";
+      /** @purity non-pure */
+      return () => {
+        this.blockEdit.dispatch(event, range);
+        this._refreshDirtyMark();
+      };
+    }
     if ((letter === "b" || letter === "i") && !e.shiftKey) {
       // INV-60 (Shift not pressed): only while an editor is open.
       if (!this.blockEdit.isEditing() || document.activeElement === this.elements.editor) return null;
@@ -733,6 +739,103 @@ export default class UIController {
       };
     }
     return null;
+  }
+
+  /**
+   * Delete / Backspace (INV-74, owner ruling D8): in edit mode, with a
+   * block range, its blocks go as one unit. Otherwise the key is the
+   * browser's. The guards of setupKeyboard ran (no text entry, no Ctrl /
+   * Meta / Alt); Shift is not such a modifier, so Shift+Delete deletes
+   * too (owner ruling 2026-10-25). Not during IME composition. A held key
+   * acts once.
+   * @purity non-pure
+   * @param {KeyboardEvent} e
+   */
+  _deleteBlockRange(e) {
+    if (e.isComposing || e.keyCode === 229 || !this.palette.isShown()) return;
+    const range = this.blockEdit.readBlockRange();
+    if (!range) return;
+    e.preventDefault();
+    if (e.repeat) return;
+    this.blockEdit.dispatch("blockRangeDeleteRequested", range);
+    this._refreshDirtyMark();
+  }
+
+  /**
+   * INV-74 (4), owner ruling 2026-10-25: while blocks are selected in edit
+   * mode, every copy writes their source, also one that the browser starts
+   * (the context menu, the callout of a phone, the Edit menu of a Mac).
+   * Such a copy event goes through 11-c as the key's copy does, and its
+   * own clipboardData is written. The copy event that writeClipboardNow
+   * fires is given the text waiting for it. Nothing is read.
+   * @purity non-pure
+   */
+  setupBlockRangeCopy() {
+    /** @purity non-pure */
+    document.addEventListener(
+      "copy",
+      (e) => {
+        if (!e.clipboardData) return;
+        if (this._clipboardTextWaiting !== null) {
+          e.clipboardData.setData("text/plain", this._clipboardTextWaiting);
+          e.preventDefault();
+          this._clipboardTextWaiting = null; // written
+          return;
+        }
+        if (e.defaultPrevented || !this.palette.isShown() || isTypingTarget(document.activeElement)) return;
+        const range = this.blockEdit.readBlockRange();
+        if (!range) return;
+        this._copyEvent = e;
+        try {
+          this.blockEdit.dispatch("blockRangeCopyRequested", range);
+        } finally {
+          this._copyEvent = null;
+        }
+      },
+      true,
+    );
+  }
+
+  /**
+   * BlockEditHost.writeClipboardNow (INV-74 (4)): text to the clipboard as
+   * text/plain, inside the key, button or copy event handler. In a copy
+   * event, into its clipboardData; else execCommand("copy") fires one,
+   * which setupBlockRangeCopy gives the text (no permission, nothing read).
+   * @purity non-pure
+   * @param {string} text
+   * @returns {boolean} true when written
+   */
+  _writeClipboardNow(text) {
+    if (this._copyEvent) {
+      this._copyEvent.clipboardData.setData("text/plain", text);
+      this._copyEvent.preventDefault();
+      return true;
+    }
+    this._clipboardTextWaiting = text;
+    try {
+      if (typeof document.execCommand === "function") document.execCommand("copy");
+    } catch {
+      // refused: the text is still waiting, so it was not written
+    }
+    const isWritten = this._clipboardTextWaiting === null;
+    this._clipboardTextWaiting = null;
+    return isWritten;
+  }
+
+  /**
+   * BlockEditHost.writeClipboardLater (INV-74 (4)): text to the clipboard
+   * through navigator.clipboard.writeText (no read).
+   * @purity non-pure
+   * @param {string} text
+   * @returns {Promise<boolean>} whether it was written
+   */
+  _writeClipboardLater(text) {
+    const clipboard = this._clipboard();
+    if (typeof clipboard?.writeText !== "function") return Promise.resolve(false);
+    return clipboard.writeText(text).then(
+      () => true,
+      () => false,
+    );
   }
 
   // ---- In-place editing (SC-22 to SC-24) ----
@@ -1222,7 +1325,9 @@ export default class UIController {
       onEditStateChanged: () => this._refreshDirtyMark(),
       onTransitionEnded: () => this._onTransitionEnded(),
       showToast: (message) => this._toast(message),
-      isApple: this._isApple, // INV-14: the cell's Redo keys (TableCellEditor)
+      isApple: this._isApple, // INV-14: the cell's Redo keys (TableCellEditor), the bar's tooltips
+      writeClipboardNow: (text) => this._writeClipboardNow(text), // a block range's source (INV-74)
+      writeClipboardLater: (text) => this._writeClipboardLater(text),
     };
   }
 

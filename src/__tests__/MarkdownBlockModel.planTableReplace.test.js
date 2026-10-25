@@ -25,7 +25,7 @@ describe("MarkdownBlockModel.planTableReplace (pure)", () => {
     expect(plan.model.toBody()).toBe(DOC.replace("| 1 | 2 |", "| 1x | 2 |"));
   });
 
-  it("AT-PTR-02 the model itself does not change (R7.5)", () => {
+  it("AT-PTR-02 the model itself does not change (R7 Immutability of Pure-Side Classes)", () => {
     const m = model();
     const before = m.toBody();
     m.planTableReplace(tableOf(m).id, "| x |\n| --- |", lexer, MAX);

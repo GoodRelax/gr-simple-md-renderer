@@ -148,3 +148,43 @@ describe("splitMarkdownWrapper (change 00, spec 5.13)", () => {
     expectUnchanged(text);
   });
 });
+
+// Leading blank lines are read line by line, in time linear in their number
+// (5.13 rule 1). The old pattern tried every way to split them into lines,
+// doubling the time with each line: 30 lines took about 17 s. This check runs
+// always (not only with GRSMD_PERF=1): it now takes well under 1 ms, so the
+// budget leaves a margin of over 1,000 times on a loaded machine.
+const LEADING_BUDGET_MS = 1000;
+
+describe("splitMarkdownWrapper: many leading blank lines (5.13 rule 1, ReDoS)", () => {
+  const timed = (text) => {
+    const t0 = performance.now();
+    const r = expectRoundTrip(text);
+    return { r, ms: performance.now() - t0 };
+  };
+
+  it("AT-WRAP-20 30 leading blank lines before a heading: unchanged, within 1,000 ms", () => {
+    const text = "\n \n\t\n".repeat(10) + "## Section 0\n\nParagraph 0.\n";
+    const { r, ms } = timed(text);
+    expect(r).toEqual({ prefix: "", body: text, suffix: "" });
+    expect(ms).toBeLessThan(LEADING_BUDGET_MS);
+  });
+
+  it("AT-WRAP-21 10,000 leading blank and whitespace-only lines before a wrapper go into the prefix", () => {
+    const lead = "\n  \n\t \n".repeat(3333) + "\n";
+    const text = lead + "```markdown\n# Hello\n```\n";
+    const { r, ms } = timed(text);
+    expect(r).toEqual({ prefix: lead + "```markdown\n", body: "# Hello", suffix: "\n```\n" });
+    expect(ms).toBeLessThan(LEADING_BUDGET_MS);
+  });
+
+  // Fixes the range of rule 1's white space (review L2): any white space but
+  // the newline (as \s), not only spaces and tabs. The old pattern passes
+  // this too; a fix narrowed to [ \t] fails it.
+  it("AT-WRAP-22 blank lines of NBSP, U+3000, form feed and vertical tab go into the prefix; white space before the fence strips nothing", () => {
+    const lead = " \n\u3000\n\f\n\v\n\u00a0\t \n";
+    const r = expectRoundTrip(lead + "```markdown\n# Hello\n```");
+    expect(r).toEqual({ prefix: lead + "```markdown\n", body: "# Hello", suffix: "\n```" });
+    expectUnchanged("\n \u3000```markdown\n# Hello\n```");
+  });
+});

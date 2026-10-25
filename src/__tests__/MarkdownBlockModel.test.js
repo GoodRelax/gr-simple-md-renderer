@@ -195,7 +195,7 @@ describe("MarkdownBlockModel (Entity, pure; real marked lexer)", () => {
     expect(ids(out)[3]).toBe(3);
   });
 
-  it("AT-BM-23 operations never change the original model (R7.5)", () => {
+  it("AT-BM-23 operations never change the original model (R7 Immutability of Pure-Side Classes)", () => {
     const m = model("A\n\nB\n\nC\n");
     const before = JSON.stringify(m.getBlocks());
     m.replaceBlock(2, "Z", lexer, MAX);
@@ -338,5 +338,34 @@ describe("AT-BM-34 the undo record shares the blocks (INV-48, 30 units on 1 MB)"
     expect(copy.links).toBe(m1.links);
     expect(copy.getNextBlockId()).toBe(m1.getNextBlockId());
     expect(copy.toBody()).toBe(m1.toBody());
+  });
+});
+
+// The trailing newlines of a block are counted from its end (review of the
+// render hang): /\n+$/ read a long run of newlines inside the block (a code
+// block of blank lines) again from every start in it, quadratic in the run.
+// Runs always, as AT-WRAP-20: a few ms now, against a 1,000 ms budget.
+const LONG_RUN_BUDGET_MS = 1000;
+
+describe("AT-BM a long run of newlines inside a block (linear trailing-newline search)", () => {
+  it("AT-BM-35 toEditableText: a code block of 300,000 blank lines loses only its trailing newlines, within 1,000 ms", () => {
+    const inner = "```\n" + "\n".repeat(300000) + "x\n```";
+    const t0 = performance.now();
+    const text = MarkdownBlockModel.toEditableText(inner + "\n\n");
+    const ms = performance.now() - t0;
+    expect(text).toBe(inner);
+    expect(ms).toBeLessThan(LONG_RUN_BUDGET_MS);
+  });
+});
+
+describe("AT-BM a long HTML block of \"<\" without \">\" (linear tag count)", () => {
+  it("AT-BM-36 fromBody: an unclosed <div with 150,000 \"<b\" and no \">\" after them is one block, within 1,000 ms", () => {
+    const body = "<div\n" + "a<b ".repeat(150000);
+    const t0 = performance.now();
+    const m = model(body);
+    const ms = performance.now() - t0;
+    expect(types(m)).toEqual(["html"]);
+    expect(m.toBody()).toBe(body);
+    expect(ms).toBeLessThan(LONG_RUN_BUDGET_MS);
   });
 });

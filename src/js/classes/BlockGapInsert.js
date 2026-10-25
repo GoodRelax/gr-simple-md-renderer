@@ -33,8 +33,10 @@ const CONTROL_SELECTOR = [
  * has some 9,000 blocks, INV-51), once per frame at most for the mouse.
  *
  * blockLocator: getBlockElements(), findBlockIdAt(node), isTableTab(node).
- * host: { onGapChosen(target) } with target {kind: "gap", afterBlockId,
- * beforeBlockId} (null: the start or the end of the document).
+ * host: { onGapChosen(target), isSuppressed() } with target {kind: "gap",
+ * afterBlockId, beforeBlockId} (null: the start or the end of the
+ * document); while isSuppressed() is true (blocks are selected, INV-74) no
+ * gap is offered.
  */
 export default class BlockGapInsert {
   /**
@@ -109,14 +111,14 @@ export default class BlockGapInsert {
    * into an open editor; a gap next to an open gap editor has none (that
    * editor is the insert). Not over a table's tab, a link, a button or
    * another control of the preview, nor where something else is over the
-   * preview (the top bar of a touch layout).
+   * preview (the top bar of a touch layout), nor while blocks are selected.
    * @purity semi-pure-b
    * @param {number} x
    * @param {number} y
    * @returns {{kind: "gap", afterBlockId: number|null, beforeBlockId: number|null, top: number, bottom: number, line: number, left: number, width: number}|null}
    */
   gapAt(x, y) {
-    if (!this._enabled) return null;
+    if (!this._enabled || this.host.isSuppressed()) return null;
     const area = this.preview.getBoundingClientRect();
     const style = getComputedStyle(this.preview);
     const left = area.left + parseFloat(style.paddingLeft || "0");

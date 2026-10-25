@@ -388,3 +388,39 @@ describe("AT-HB the lexing kept per text (review P-4, INV-51)", () => {
     expect(lex).toHaveBeenCalledTimes(1);
   });
 });
+
+// The line break spaces of a line are found from the first of their run, in
+// time linear in the line (review of the render hang). / {2,}$/ and / +$/
+// read a long run of spaces again from every start in it when the run was
+// not at the end. This check runs always (as AT-WRAP-20 and AT-FR-65): it
+// now takes a few ms, so the budget leaves a wide margin.
+const LONG_RUN_BUDGET_MS = 1000;
+
+describe("AT-HB a long run of spaces inside a line (linear line-end-space search)", () => {
+  const run = " ".repeat(100000);
+
+  it("AT-HB-62 hardBreakLines: 100,000 spaces inside a line are no line break, within 1,000 ms", () => {
+    const { out, ms } = timed(() => MarkdownTextOps.hardBreakLines(`a${run}x\nb`, lexBlocks));
+    expect(out).toEqual([false, false]);
+    expect(ms).toBeLessThan(LONG_RUN_BUDGET_MS);
+  });
+
+  it("AT-HB-63 stripMeaninglessHardBreaks: the end spaces of a line with 100,000 spaces inside go, within 1,000 ms", () => {
+    const raw = `a${run}x${S}`;
+    const { out, ms } = timed(() => strip(raw));
+    expect(out).toBe(`a${run}x`);
+    expect(ms).toBeLessThan(LONG_RUN_BUDGET_MS);
+  });
+});
+
+describe("AT-HB lineBreakSpaceCount (one rule for the line break mark, INV-71 and INV-70)", () => {
+  it("AT-HB-64 the number of end spaces when two or more, else 0; a tab or NBSP ends the run", () => {
+    expect(MarkdownTextOps.lineBreakSpaceCount(`a${S}`)).toBe(2);
+    expect(MarkdownTextOps.lineBreakSpaceCount("a    ")).toBe(4);
+    expect(MarkdownTextOps.lineBreakSpaceCount("a ")).toBe(0);
+    expect(MarkdownTextOps.lineBreakSpaceCount("a")).toBe(0);
+    expect(MarkdownTextOps.lineBreakSpaceCount(`a${S}\t`)).toBe(0);
+    expect(MarkdownTextOps.lineBreakSpaceCount("a\t  ")).toBe(2);
+    expect(MarkdownTextOps.lineBreakSpaceCount(S)).toBe(2);
+  });
+});

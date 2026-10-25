@@ -11,9 +11,10 @@ import { setupEdit, flush } from "./helpers/editStack.js";
 import { diagramTransitions, tableTransitions } from "./helpers/specDiagram.js";
 import { pointer, tap, keydown } from "./helpers/editDom.js";
 
-// Spec 11-c: every cell of the 29 x 4 table (AT-BSM-01..18, AT-BSM-19..25
+// Spec 11-c: every cell of the 32 x 4 table (AT-BSM-01..18, AT-BSM-19..25
 // for the table cells, AT-BSM-26..27 for the inserts, AT-BSM-28 Redo,
-// AT-BSM-29 the gap insert; 15 is the definition check). The state is judged
+// AT-BSM-29 the gap insert, AT-BSM-30..32 the block range; 15 is the
+// definition check). The state is judged
 // from outside only:
 //   browsingPreview = a tap on a block opens nothing
 //   editModeIdle    = not editing, and a tap on a block opens it
@@ -77,8 +78,9 @@ function spyAll() {
     replaceBlocks: vi.spyOn(s.markdownRenderer, "replaceBlocks"),
     undoLastCommit: vi.spyOn(s.orchestrator, "undoLastCommit"),
     redoLastCommit: vi.spyOn(s.orchestrator, "redoLastCommit"),
+    deleteBlocks: vi.spyOn(s.orchestrator, "deleteBlocks"),
   };
-  for (const name of ["showPalette", "hidePalette", "renderFromEditor", "onEditorInput", "showToast"]) {
+  for (const name of ["showPalette", "hidePalette", "renderFromEditor", "onEditorInput", "showToast", "writeClipboardNow"]) {
     s.host[name].mockClear();
     spies[name] = s.host[name];
   }
@@ -148,7 +150,16 @@ const TARGETS = {
     afterBlockId: s.block((b) => b.raw.startsWith("Hello")).block.id,
     beforeBlockId: s.block((b) => b.raw.startsWith("Second")).block.id,
   }),
+  // the title and Hello (INV-74); Second stays for observedState()
+  blockRangeDeleteRequested: () => titleToHello(),
+  blockRangeCutRequested: () => titleToHello(),
+  blockRangeCopyRequested: () => titleToHello(),
 };
+
+function titleToHello() {
+  const ids = s.orchestrator.getModel().getBlocks().map((b) => b.id);
+  return { kind: "blockRange", firstId: ids[0], lastId: ids[1] };
+}
 
 // Expected cells: [next state or null for "-", side effects (sorted)].
 // editingCell has a change in cell x (row 1, column 0; the last row).
@@ -197,6 +208,10 @@ const TABLE = {
   insertedBlockRendered: { [B]: null, [I]: [C, []], [E]: null, [C]: null },
   // [else]: an empty editor opens in the gap (INV-73)
   gapInsertRequested: { [B]: null, [I]: [E, []], [E]: [E, ["commitBlock"]], [C]: [E, ["replaceTableBlock"]] },
+  // INV-74: editModeIdle only; [else] (no unrendered #editor change)
+  blockRangeDeleteRequested: { [B]: null, [I]: [I, ["deleteBlocks"]], [E]: null, [C]: null },
+  blockRangeCutRequested: { [B]: null, [I]: [I, ["deleteBlocks", "writeClipboardNow"]], [E]: null, [C]: null },
+  blockRangeCopyRequested: { [B]: null, [I]: [I, ["writeClipboardNow"]], [E]: null, [C]: null },
 };
 
 const IDS = {
@@ -229,15 +244,18 @@ const IDS = {
   insertedBlockRendered: "AT-BSM-27",
   redoRequested: "AT-BSM-28",
   gapInsertRequested: "AT-BSM-29",
+  blockRangeDeleteRequested: "AT-BSM-30",
+  blockRangeCutRequested: "AT-BSM-31",
+  blockRangeCopyRequested: "AT-BSM-32",
 };
 
 const CELLS = Object.entries(TABLE).flatMap(([event, row]) =>
   STATES.map((state) => [IDS[event], event, state, row[state]]),
 );
 
-describe("AT-BSM 11-c block edit state machine: all 116 cells", () => {
-  it("covers 29 events x 4 states", () => {
-    expect(CELLS).toHaveLength(116);
+describe("AT-BSM 11-c block edit state machine: all 128 cells", () => {
+  it("covers 32 events x 4 states", () => {
+    expect(CELLS).toHaveLength(128);
   });
 
   it.each(CELLS)("%s %s in %s", async (_id, event, state, cell) => {
@@ -612,8 +630,8 @@ describe("AT-BSM cell details", () => {
 });
 
 describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () => {
-  it("has the same 29 events, and the same next state in all 116 cells (the first alternative of a choice)", () => {
-    expect(Object.keys(TABLE)).toHaveLength(29);
+  it("has the same 32 events, and the same next state in all 128 cells (the first alternative of a choice)", () => {
+    expect(Object.keys(TABLE)).toHaveLength(32);
     expect(Object.keys(blockEditStateMachine).sort()).toEqual(Object.keys(TABLE).sort());
     for (const [event, row] of Object.entries(TABLE)) {
       for (const state of STATES) {
@@ -624,7 +642,8 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () 
           // the cell the TABLE above expects: the else of a double click without
           // a target, the [else] of Enter on the last row, else the first one
           let expected = cells[0];
-          if (event === "previewDoubleClicked" || event === "cellBelowRequested" || event === "gapInsertRequested") expected = cells[cells.length - 1];
+          const lastOnes = ["previewDoubleClicked", "cellBelowRequested", "gapInsertRequested", "escapePressed", "blockRangeDeleteRequested", "blockRangeCutRequested"];
+          if (lastOnes.includes(event)) expected = cells[cells.length - 1];
           if (event === "cellTapped" && state !== C) expected = cells[0];
           expect(expected.to, `${event} x ${state}`).toBe(row[state][0]);
         }
@@ -640,7 +659,21 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () 
     expect(act("blockTapped", I)).toEqual(["openBlockEditor"]);
     expect(act("blockTappedWithUnrenderedEditor", I)).toEqual(["renderFromEditor", "showToast"]);
     expect(act("otherBlockTapped", E)).toEqual(["commitBlock", "resolveBlockById", "openBlockEditor"]);
-    expect(act("escapePressed", I)).toEqual(["hidePalette"]);
+    // INV-74 (D14): a block range goes first, then the palette
+    expect(blockEditStateMachine.escapePressed[I].map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+      [I, "hasBlockRange", ["clearBlockRange"]],
+      [B, "else", ["hidePalette"]],
+    ]);
+    for (const [event, actions] of [
+      ["blockRangeDeleteRequested", ["deleteBlockRange"]],
+      ["blockRangeCutRequested", ["cutBlockRange"]],
+    ]) {
+      expect(blockEditStateMachine[event][I].map((c) => [c.to, c.guard ?? "else", c.actions])).toEqual([
+        [I, "hasUnrenderedEditor", ["renderFromEditor", "showToast"]],
+        [I, "else", actions],
+      ]);
+    }
+    expect(act("blockRangeCopyRequested", I)).toEqual(["copyBlockRange"]);
     expect(act("escapePressed", E)).toEqual(["commitBlock"]);
     expect(blockEditStateMachine.escapePressed[E].guard).toBe("isImeIdle");
     expect(act("escapePressed", C)).toEqual(["commitCell", "endTableSession"]);

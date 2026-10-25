@@ -17,6 +17,13 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- Code blocks in the Markdown view (paste, drop, Render or editing): a
+  block longer than 20,480 characters (about 20 KB) is shown without syntax
+  highlighting, and a block without a language has its language detected
+  from its first 3,072 characters (about 3 KB) only. highlight.js could take seconds on a long block (some
+  language patterns are quadratic, and detection runs every language over
+  the whole block): a block of 100,000 blank lines stopped the render.
+  The help says so in both languages.
 - Rename the tool to **GR Simple Markdown** (formerly "GR Simple MD Renderer &
   Viewer"): it now edits documents in place, not just renders them. The
   short name GRSMD, the repository name and the URL stay. The header logo,
@@ -69,6 +76,20 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Added
 
+- In edit mode, drag over the text of some blocks (on a phone, long press
+  and move the handles) to select those blocks whole: they get a blue frame
+  and a small bar [Delete] [Cut] [Copy] shows under the selection (above it
+  when there is no room). Even one block works. `Delete` / `Backspace`
+  delete them, `Ctrl+X` cuts and `Ctrl+C` copies their Markdown source
+  whole (Mac: `Cmd`), as do the context menu's Copy, a phone's callout and
+  a Mac's Edit menu; Shift+Delete deletes too. The Copy button shows a check
+  for a moment. No dialog
+  or toast; one Undo brings all deleted blocks back. `Esc` clears the
+  selection first. Outside edit mode a selection stays the browser's own.
+  The clipboard is only written, never read; if the browser refuses the
+  write, a toast says so and a cut deletes nothing. Paste with the existing ways
+  (a block's editor, or the "+" between blocks).
+
 - In edit mode, a dashed line with "+" shows in the gap between two blocks
   (and before the first and after the last one) under the mouse; click it
   to type a new block there, for example below a diagram or a table at the
@@ -99,6 +120,43 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   or bundled code that `tools/third-party-extras.mjs` does not list, so a
   dependency update cannot drop a notice silently. The CSP hash does not
   change (comment and text only). About +15 KB gzip.
+
+- Review standard: `spec/grsmd_review_standards_ja.md` is the rule for code
+  reviews before a feature goes into `develop`. It takes the review standard
+  of gr-sw-maker (a verbatim copy, pinned to commit `63e6fdc`, is
+  `spec/upstream_review_standards_ja.md`), maps its rows onto GRSMD, marks
+  the rows that do not apply, and adds GRSMD's own rows (privacy, single
+  file, documents in step, tests that fail before the fix). The spec now
+  names review rules by chapter and name instead of the old row numbers.
+
+### Fixed
+
+- A document with many leading blank lines no longer hangs on Render, paste
+  or opening a `.md` file. The check for an AI ```` ```markdown ```` wrapper
+  tried every way to split the blank lines, so each line doubled the time
+  (41 lines took hours in Chrome; about 1 s in Safari). It now reads them
+  line by line, with the same result. A static test flags nested
+  quantifiers in the source's regular expressions.
+- Long runs of spaces or newlines inside a line or a block no longer make
+  editing slow. The end spaces and trailing newlines were found with
+  patterns like `/[ \t]+$/`, which read a run that is not at the end again
+  from every start in it (100,000 spaces in a line: seconds for each
+  check). They are now counted from the end, with the same result. A
+  static test flags such patterns and lookbehinds (which Safari before
+  16.4 cannot parse).
+- A long HTML block with many `<` and no `>` after them no longer makes
+  opening or editing the document slow (600 KB took 16 s). The tags are
+  now looked for only up to the last `>`, with the same result.
+
+### Known issues
+
+- Code View: a file whose content does not look like its language can take
+  long to show (a `.js` file of only blank lines, 200 KB: 17.6 s), because
+  some highlight.js language patterns are quadratic there. Real code is
+  linear (5 MB in about 2 s; times of highlight.js alone, measured in
+  Node). Open such a file with an extension that fits its content. The
+  20,480-character limit of Markdown code blocks does not apply to Code
+  View.
 
 ## [Unreleased] - 2026-10-10
 

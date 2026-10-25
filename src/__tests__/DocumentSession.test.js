@@ -62,7 +62,7 @@ describe("DocumentSession (Entity, immutable value)", () => {
     expect(fromFile.baselineBodyText).toBe("b\n");
   });
 
-  it("AT-SES-06 withSaved returns a new value with the same document id; the old one is unchanged (R7.5)", () => {
+  it("AT-SES-06 withSaved returns a new value with the same document id; the old one is unchanged (R7 Immutability of Pure-Side Classes)", () => {
     const s = DocumentSession.fromPastedText("old", 5);
     const t = s.withSaved("new", 42);
     expect(t).not.toBe(s);
@@ -101,7 +101,7 @@ describe("DocumentSession (Entity, immutable value)", () => {
     expect(out.length).toBe(body.length + 600000);
   });
 
-  it("AT-SES-11 holds no fileHandle and takes lastModified only from the argument (INV-55, R7.3)", () => {
+  it("AT-SES-11 holds no fileHandle and takes lastModified only from the argument (INV-55, R7 Lifting External Reads)", () => {
     const s = DocumentSession.fromFileText("a", false, 123, 1);
     expect(Object.keys(s).some((k) => /handle/i.test(k))).toBe(false);
     expect(s.baselineLastModified).toBe(123);

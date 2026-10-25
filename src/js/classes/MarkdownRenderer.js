@@ -632,11 +632,49 @@ export default class MarkdownRenderer {
     this.imageGate.apply(root);
     try {
       /** @purity non-pure */
-      root.querySelectorAll(HIGHLIGHT_SELECTOR).forEach((block) => {
-        this.hljs.highlightElement(block);
-      });
+      root.querySelectorAll(HIGHLIGHT_SELECTOR).forEach((block) => this._highlight(block));
     } catch (hljsError) {
       console.error("Syntax highlighting error:", hljsError);
     }
+  }
+
+  /**
+   * Highlight one code block (5.8.1). A block longer than
+   * CONFIG.rendering.highlightMaxChars stays plain text: highlight.js has
+   * language patterns that are quadratic in a long block. A block without
+   * a language takes the one detected from its first highlightDetectChars
+   * characters (detection runs every language over the text), and the whole
+   * block is highlighted in it.
+   * @purity non-pure
+   * @param {HTMLElement} block - a code element
+   */
+  _highlight(block) {
+    const { highlightDetectChars, highlightMaxChars } = CONFIG.rendering;
+    const text = block.textContent;
+    if (text.length > highlightMaxChars) {
+      block.classList.add("hljs"); // the code color of a highlighted block, no tokens
+      return;
+    }
+    if (!this._hasLanguage(block)) {
+      const detected = this.hljs.highlightAuto(text.slice(0, highlightDetectChars)).language;
+      block.classList.add(`language-${detected || "plaintext"}`);
+    }
+    this.hljs.highlightElement(block);
+  }
+
+  /**
+   * Whether highlight.js takes the block's language (or no-highlight) from
+   * its classes or its pre's, as highlightElement reads them: language-* /
+   * lang-* (the same pattern as its languageDetectRe, so "language--" of a
+   * fence whose info string is "-" is no language), or a class that names
+   * a language.
+   * @purity semi-pure-b
+   * @param {HTMLElement} block
+   * @returns {boolean}
+   */
+  _hasLanguage(block) {
+    const classes = `${block.className} ${block.parentNode?.className ?? ""}`;
+    if (/\blang(?:uage)?-([\w-]+)\b/i.test(classes)) return true;
+    return classes.split(/\s+/).some((name) => /^no-?highlight$/i.test(name) || (name !== "" && Boolean(this.hljs.getLanguage(name))));
   }
 }
