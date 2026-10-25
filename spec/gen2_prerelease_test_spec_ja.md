@@ -32,6 +32,8 @@
 
 > v2.11 の変更 (2026-10-25、目次と描画の間のスクロール): 仕様の SC-25・INV-77・FS-21 (目次) と INV-78 (全体の描画の間に利用者が動かしたら戻さない) に合わせて、セクション AB (PRT-AB01〜AB07) を追加した。AT に AT-IDX (新。01〜10)、AT-SM-39、AT-ORC-28 を足した。e2e に index.e2e.js を足した。追加したケースの判定は空欄 (未実施)。
 
+> v2.12 の変更 (2026-10-25、保存のダイアログのフォルダ): 仕様の INV-79 に合わせて、セクション AC (PRT-AC01 / AC02) を追加した。AT に AT-FA-09、AT-DLC-23 を足した。e2e は足していない (本物の保存のダイアログは Playwright で開けず、偽の picker では `startIn` の受け渡ししか見られないので、それは AT-FA-09 で見る)。追加したケースの判定は空欄 (未実施)。
+
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
 ---
@@ -3890,6 +3892,47 @@
 
 ---
 
+## セクション AC: 保存のダイアログのフォルダ (2026-10-25)
+
+### PRT-AC01: 前回のフォルダから開く (Chrome / Edge)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Windows または Mac の Chrome / Edge。ビルドしたファイル (または GitHub Pages) を開く。デスクトップ以外のフォルダ A・B を用意する |
+| **手順** | 1. 文書を貼り付け、Save as (または主 + Shift + S) でフォルダ A に保存する |
+|  | 2. もう一度 Save as を押す |
+|  | 3. ページを再読み込みし、文書を貼り付けて Save as を押す |
+|  | 4. フォルダ B の `.md` をドロップし、Save as を押す |
+|  | 5. フォルダ B のファイルをエクスプローラー / Finder で別のフォルダへ動かしてから、Save as を押す |
+| **期待結果** | - 手順 2 で、ダイアログがフォルダ A で開く |
+|  | - 手順 3 (再読み込みの後) でも、ダイアログがフォルダ A で開く (ブラウザの `id` の記憶) |
+|  | - 手順 4 で、ダイアログがフォルダ B (ドロップしたファイルのフォルダ) で開く |
+|  | - 手順 5 で、例外のトーストが出ず、ダイアログが開く (開くフォルダを備考に書く) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-79、INV-33。自動では AT-FA-09、AT-DLC-23 |
+
+---
+
+### PRT-AC02: ダイアログの無いブラウザとアプリのストレージ
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Safari (Mac)、Firefox、iPhone / iPad の Safari。あわせて Chrome の開発者ツール |
+| **手順** | 1. Safari・Firefox・iPhone / iPad で文書を貼り付けて Save as |
+|  | 2. Chrome で PRT-AC01 の手順 1〜4 の後、開発者ツールの Application で、このページの Local Storage・Session Storage・IndexedDB・Cookies を見る |
+| **期待結果** | - 手順 1 は今どおりダウンロードになり、トーストも今どおり (INV-26) |
+|  | - 手順 2 で、どこにも何も書かれていない (CON-13) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-79 (2)(4)、CON-13、INV-26 |
+
+---
+
 ## 自動テスト (AT) の一覧
 
 この章は、PRT の備考と仕様が引く自動テストの ID (`AT-<族>-<番号>`) の行き先である。手で行う試験ではないので、判定の欄は持たない (前提条件 P-02 で全件の合格を確かめる)。
@@ -3944,10 +3987,10 @@
 | AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜36 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
-| AT-FA | `MarkdownFileAccess` | INV-24〜26、CON-14 | MarkdownFileAccess.test.js | 01〜08 |
+| AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル) | INV-24〜26、INV-79、CON-14 | MarkdownFileAccess.test.js | 01〜09 |
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
 | AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |
-| AT-DLC | `DocumentLifecycle` (UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`)、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56 | DocumentLifecycle.test.js | 01〜22 |
+| AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`)、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56 | DocumentLifecycle.test.js | 01〜23 |
 | AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js | 01〜69 (25 は欠番。41 は AT.1 の注。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)) |
 | AT-KEY | 主の修飾キーのショートカット (08: Redo のキー) | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜08 |
 | AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
@@ -4215,6 +4258,8 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-AB05      | 目次 | テーマ |      |
 | PRT-AB06      | 目次 | タッチ (iPhone / iPad) |      |
 | PRT-AB07      | 目次 | 描画の途中で動かしても戻されない |      |
+| PRT-AC01      | 保存のダイアログ | 前回のフォルダから開く (Chrome / Edge) |      |
+| PRT-AC02      | 保存のダイアログ | ダイアログの無いブラウザとアプリのストレージ |      |
 
 **テスター:** \_\_\_\_\_\_\_\_\_\_
 **日付:** \_\_\_\_\_\_\_\_\_\_

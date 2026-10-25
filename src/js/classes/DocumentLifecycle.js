@@ -133,7 +133,8 @@ export default class DocumentLifecycle {
   // ---- 5.14.11: the document is rebuilt ----
 
   /**
-   * A dropped .md file: a new session, and the file's name and handle as the target.
+   * A dropped .md file: a new session, and the file's name and handle as the
+   * target. The next save dialog starts in its folder (INV-79).
    * @purity non-pure
    * @param {string} fileText
    * @param {boolean} hasBom
@@ -144,6 +145,7 @@ export default class DocumentLifecycle {
   openFile(fileText, hasBom, lastModified, fileName, fileHandle) {
     this._session = DocumentSession.fromFileText(fileText, hasBom, lastModified, this._newDocumentId());
     this._location = new DocumentLocation(fileName, fileHandle);
+    this.fileAccess.noteFile(fileHandle);
   }
 
   /**

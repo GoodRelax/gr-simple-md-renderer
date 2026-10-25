@@ -84,6 +84,10 @@ export function fakeFileAccess(opts = {}) {
     calls,
     downloads: [],
     writes: [],
+    noted: [],
+    noteFile(handle) {
+      this.noted.push(handle);
+    },
     canWriteInPlace() {
       return opts.canWrite ?? true;
     },

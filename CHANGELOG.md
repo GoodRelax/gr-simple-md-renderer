@@ -17,6 +17,12 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- The save dialog (Save as, or Save of a document that has no file yet;
+  Chrome and Edge) now opens in the folder you last used instead of the
+  browser's default: the folder of the `.md` file you dropped or last chose
+  in this tab, otherwise the folder the browser remembers for this dialog
+  (that one survives a reload). GRSMD itself stores nothing. Browsers
+  without the save dialog (Safari, Firefox, iPhone, iPad) still download.
 - Code blocks in the Markdown view (paste, drop, Render or editing): a
   block longer than 20,480 characters (about 20 KB) is shown without syntax
   highlighting, and a block without a language has its language detected

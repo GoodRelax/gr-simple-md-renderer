@@ -52,6 +52,43 @@ describe("MarkdownFileAccess (Adapter: local file read/write, no network)", () =
     expect(CONFIG.messages.edit.saveFileType).toBe("Markdown");
   });
 
+  it("AT-FA-09 the save dialog starts in the folder of the last file noted or chosen in this tab, by the browser's id otherwise; nothing is stored (INV-79)", async () => {
+    let picked = 0;
+    const picker = vi.fn(() => Promise.resolve(fakeFileHandle({ name: `picked${++picked}.md` })));
+    const access = new MarkdownFileAccess({ showSaveFilePicker: picker });
+    const storedBefore = localStorage.length;
+
+    // no file yet: only the id, so the browser starts where it last saved with it
+    const first = await access.startSavePicker("a.md");
+    expect(picker.mock.calls[0][0].id).toBe(CONFIG.edit.savePickerId);
+    expect(CONFIG.edit.savePickerId).toMatch(/^[A-Za-z0-9_-]{1,32}$/);
+    expect("startIn" in picker.mock.calls[0][0]).toBe(false);
+
+    // the file chosen there is where the next dialog starts
+    await access.startSavePicker("b.md");
+    expect(picker.mock.calls[1][0].startIn).toBe(first);
+
+    // a dropped file is noted; null leaves the last one
+    const dropped = fakeFileHandle({ name: "dropped.md" });
+    access.noteFile(dropped);
+    access.noteFile(null);
+    await access.startSavePicker("c.md");
+    expect(picker.mock.calls[2][0].startIn).toBe(dropped);
+    expect(picker.mock.calls[2][0].id).toBe(CONFIG.edit.savePickerId);
+
+    // a canceled dialog changes nothing
+    picker.mockImplementationOnce(() => Promise.reject(domError("AbortError")));
+    await expect(access.startSavePicker("d.md")).rejects.toMatchObject({ name: "AbortError" });
+    await access.startSavePicker("e.md");
+    expect(picker.mock.calls[4][0].startIn.name).toBe("picked3.md");
+
+    // the dialog is still started synchronously (INV-33) and nothing is stored
+    const sync = vi.fn(() => Promise.resolve(fakeFileHandle()));
+    new MarkdownFileAccess({ showSaveFilePicker: sync }).startSavePicker("f.md");
+    expect(sync).toHaveBeenCalledTimes(1);
+    expect(localStorage.length).toBe(storedBefore);
+  });
+
   it("AT-FA-04 readFile returns the first bytes (with BOM), the decoded text and lastModified", async () => {
     const bytes = withBom(toCrlf("# A\nb\n"));
     const handle = fakeFileHandle({ content: [bytes], lastModified: 4242 });

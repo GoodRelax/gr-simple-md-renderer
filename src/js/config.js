@@ -265,6 +265,9 @@ export const CONFIG = {
     doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
     doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",
+    // INV-79: the save dialog's id; the browser remembers its last folder
+    // by this id (the app stores nothing)
+    savePickerId: "grsmd-markdown",
     commitBudgetMs: 300, // performance target for 1 MB (INV-51), used by tests
     // A longer body is not written into the visible #editor on every commit,
     // undo or insert (laying out 1 MB of textarea text takes ~0.5 s in Chrome).

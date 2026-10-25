@@ -17,6 +17,17 @@ export default class MarkdownFileAccess {
    */
   constructor(win = window) {
     this._win = win;
+    this._lastFile = null; // INV-79: the last file dropped or chosen in this tab (memory only)
+  }
+
+  /**
+   * INV-79: remember where the user's file is, so the next save dialog
+   * starts in its folder. Memory only: nothing is stored.
+   * @purity non-pure
+   * @param {object|null} fileHandle
+   */
+  noteFile(fileHandle) {
+    if (fileHandle) this._lastFile = fileHandle;
   }
 
   /**
@@ -46,15 +57,25 @@ export default class MarkdownFileAccess {
 
   /**
    * Open the save dialog. Call it synchronously inside the press handler (INV-33).
+   * INV-79: it starts in the folder of the last file noted in this tab
+   * (startIn); without one, where the browser last saved with this dialog's
+   * id (the browser remembers that by itself). The chosen file is noted.
    * @purity non-pure
    * @param {string} suggestedName
    * @returns {Promise<object>} the chosen FileSystemFileHandle
    */
   startSavePicker(suggestedName) {
     try {
-      return this._win.showSaveFilePicker({
+      const options = {
+        id: CONFIG.edit.savePickerId,
         suggestedName,
         types: [{ description: CONFIG.messages.edit.saveFileType, accept: { "text/markdown": [".md"] } }],
+      };
+      if (this._lastFile) options.startIn = this._lastFile;
+      /** @purity non-pure */
+      return Promise.resolve(this._win.showSaveFilePicker(options)).then((handle) => {
+        this.noteFile(handle);
+        return handle;
       });
     } catch (error) {
       return Promise.reject(error);
