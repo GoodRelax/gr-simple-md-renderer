@@ -3818,7 +3818,7 @@
 | AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js | 01〜69 (25 は欠番。41 は AT.1 の注。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)) |
 | AT-KEY | 主の修飾キーのショートカット (08: Redo のキー) | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜08 |
 | AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
-| AT-PAN | `DiagramPanController` (図のパンの終わり 01〜03、始まりは閾値を超えたとき (5px ちょうどでは始まらない。`utils.isPastActivation`) 04) | INV-16b、FS-09 | DiagramPanController.test.js | 01〜04 |
+| AT-PAN | `DiagramPanController` (図のパンの終わり 01〜03、始まりは閾値を超えたとき (5px ちょうどでは始まらない。`utils.isPastActivation`) 04)。04 の閾値の決まりそのもの (INV-29・INV-68・INV-74 (2)・3.5 の図のパンに共通) は utils.test.js の `isPastActivation` の試験 | INV-16b、FS-09、INV-29、INV-68、INV-74 | DiagramPanController.test.js、utils.test.js (`isPastActivation`) | 01〜04 |
 | AT-SFR | `SourceFileRenderer` (コードビューの Reload) | INV-15 | SourceFileRenderer.test.js | 01 |
 | AT-CFG | `CONFIG.edit` と文言 | 5.2、CON-06 | config.edit.test.js、UIController.editMode.test.js、config.test.js (09) | 01〜09 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform, isTypingTarget, isPastActivation } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
 
-describe("isPastActivation (the one rule of a tap versus a drag)", () => {
+describe("isPastActivation (INV-29, INV-68, INV-74 (2), 3.5 diagram pan: the one rule of a tap versus a drag; AT-PAN-04)", () => {
   it("is past only beyond activationThresholdPx (Euclidean); exactly the threshold is not", () => {
     expect(CONFIG.pan.activationThresholdPx).toBe(5);
     const from = { x: 10, y: 20 };
