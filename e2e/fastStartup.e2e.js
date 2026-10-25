@@ -1,5 +1,8 @@
 import { test, expect, renderMarkdown } from "./fixtures.js";
 import { pausedServer, BEFORE_CORE, BEFORE_LIBRARIES } from "./pausedServer.js";
+import { CONFIG } from "../src/js/config.js";
+
+const PLANTUML_ORIGIN = new URL(CONFIG.plantuml.serverUrl).origin;
 
 // Fast startup (INV-81, spec 5.17). The core runs right after the markup;
 // mermaid, highlight.js, KaTeX and the PlantUML encoder arrive later in the
@@ -195,10 +198,12 @@ test.describe("PlantUML and the late KaTeX (review N1)", () => {
       await expect(preview.locator(".plantuml-pending")).toHaveCount(1);
       server.resume();
       await expect(preview.locator(".katex")).toHaveCount(1, { timeout: 30000 });
-      const plantuml = () => [...new Set(externalRequests.filter((url) => url.startsWith("https://www.plantuml.com/")))];
+      const plantuml = () => [...new Set(externalRequests.filter((url) => new URL(url).origin === PLANTUML_ORIGIN))];
       await expect.poll(() => plantuml().length, { timeout: 30000 }).toBe(1);
       await page.waitForTimeout(500);
       expect(plantuml()).toHaveLength(1); // A -> B only
+      // every request stopped on its way out went to the PlantUML server: no other host
+      expect(externalRequests.filter((url) => new URL(url).origin !== PLANTUML_ORIGIN)).toEqual([]);
       await expect(preview.locator(".plantuml-pending")).toHaveCount(1);
       expect(pageProblems.filter((p) => p.startsWith("csp"))).toEqual([]);
     } finally {
