@@ -1,12 +1,13 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { defineConfig } from "vite";
 import { configDefaults } from "vitest/config";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { CONFIG } from "./src/js/config.js";
 import { separatedOf, separatedOfEpochSeconds, stampBuildVersion } from "./tools/version.mjs";
+import { collectNotices, formatHelpList, formatNotices, stampNotices, verdictOf } from "./tools/notices.mjs";
 
 // Keep only the woff2 source in each @font-face rule, dropping the woff/ttf
 // fallback copies. woff2 is supported by every browser that can run this app
@@ -89,6 +90,56 @@ export function buildVersion() {
         return stampBuildVersion(html, buildVersionOf(mode, { readPackage, headEpochSeconds }));
       } catch (error) {
         throw new Error(`build-version: ${error.message}`);
+      }
+    },
+  };
+}
+
+// Third-party notices (spec appendix A.2): the copyright and license texts of
+// the bundled packages go into a comment at the end of the HTML, and a short
+// list into the help. The packages come from the chunk's modules, so a new
+// dependency is picked up by itself; a license outside ALLOWED_LICENSES, a
+// missing text or bundled code missing from tools/third-party-extras.mjs fails
+// the build. A text still pending (owner ruling Q1) fails a release build and
+// warns in any other. The comment and the list are HTML text, not script, so
+// the CSP hash does not change.
+export function thirdPartyNotices() {
+  let mode = "";
+  let projectDir = "";
+  const modules = [];
+  const fs = {
+    readText: (path) => readFileSync(path, "utf8"),
+    readBytes: (path) => readFileSync(path),
+    list: (dir) => readdirSync(dir),
+  };
+  return {
+    name: "third-party-notices",
+    apply: "build",
+    enforce: "post",
+    configResolved(config) {
+      mode = config.mode;
+      projectDir = dirname(config.root); // root is <project>/src
+    },
+    renderChunk(_code, chunk) {
+      for (const [id, info] of Object.entries(chunk.modules)) {
+        modules.push({ id, renderedLength: info.renderedLength });
+      }
+      return null;
+    },
+    generateBundle(_options, bundle) {
+      const outcome = collectNotices({ modules, nodeModules: join(projectDir, "node_modules"), fs });
+      const { error, warning } = verdictOf(outcome, mode);
+      if (error) this.error(error);
+      if (warning) this.warn(warning);
+      const { entries } = outcome;
+      const parts = { notices: formatNotices(entries), list: formatHelpList(entries) };
+      for (const file of Object.values(bundle)) {
+        if (file.type !== "asset" || !file.fileName.endsWith(".html")) continue;
+        try {
+          file.source = stampNotices(String(file.source), parts);
+        } catch (error) {
+          this.error(`${file.fileName}: ${error.message}`);
+        }
       }
     },
   };
@@ -178,7 +229,7 @@ export default defineConfig({
       plugins: [katexWoff2Only, noHljsThemeCss],
     },
   },
-  plugins: [buildVersion(), viteSingleFile(), noExternalImports, contentSecurityPolicy],
+  plugins: [buildVersion(), viteSingleFile(), noExternalImports, thirdPartyNotices(), contentSecurityPolicy],
   test: {
     environment: "jsdom",
     root: ".",

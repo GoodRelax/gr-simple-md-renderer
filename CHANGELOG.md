@@ -82,6 +82,24 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   tag and GitHub release commands. A test keeps `package.json`,
   `package-lock.json`, this file and `README.md` on the same version.
 
+- Third-party notices: the built file now carries the copyright and license
+  texts of the open source software it bundles, in a comment at the end of
+  the file (a one-line pointer sits near the top), and the help gains a
+  short **Licenses** section that lists them (name, version, license). The
+  list covers every package whose code is in the bundle (direct and
+  indirect, nested copies included), code that other tools bundled into a
+  package's dist (for example langium and chevrotain inside
+  @mermaid-js/parser, pako inside plantuml-encoder), the KaTeX fonts (SIL
+  Open Font License 1.1) and the bundler's helpers (Vite, Rolldown). The
+  texts come from node_modules, and from `tools/third-party-licenses/` for
+  code whose own package is not installed (copied once from the npm
+  tarballs); the build fetches nothing. DOMPurify is shown under
+  Apache-2.0, chosen from its (MPL-2.0 OR Apache-2.0). The build fails on a
+  license outside the allowed list (no GPL and the like), a missing text,
+  or bundled code that `tools/third-party-extras.mjs` does not list, so a
+  dependency update cannot drop a notice silently. The CSP hash does not
+  change (comment and text only). About +15 KB gzip.
+
 ## [Unreleased] - 2026-10-10
 
 ### Security
