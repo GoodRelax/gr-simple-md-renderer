@@ -178,15 +178,18 @@ test("INV-77 (6)(7): placed again on a resize; opening keeps the focus on [Index
   await expect.poll(async () => Math.abs((await headingTop(page, "Section 5")) - 8)).toBeLessThanOrEqual(1);
 });
 
-test("INV-77 (2): a commit builds the entries of its block only, and the Index keeps its scroll", async ({ page }) => {
+test("INV-77 (2): a commit builds the entries of its block only; the entries shown stay where they are", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await renderMarkdown(page, sections(60));
   await settled(page);
   await page.locator("#indexBtn").click();
   const panel = page.locator("#indexPanel");
+  // the first entry shown, and how far below the top of the panel it is
   await panel.evaluate((el) => {
     el.scrollTop = 300;
-    window.__e2eEntry = [...el.querySelectorAll(".index-entry")].find((e) => e.textContent === "Section 50");
+    const top = el.getBoundingClientRect().top;
+    const entry = [...el.querySelectorAll(".index-entry")].find((e) => e.getBoundingClientRect().top >= top);
+    window.__e2eShown = { entry, offset: entry.getBoundingClientRect().top - top };
   });
   await page.locator("#editBtn").click();
   await page.locator("#preview p").first().click();
@@ -195,20 +198,37 @@ test("INV-77 (2): a commit builds the entries of its block only, and the Index k
   await page.keyboard.press("Escape"); // applies and closes (INV-28)
   await expect(editor).toHaveCount(0);
   await settled(page);
-  const after = await panel.evaluate((el) => ({
-    texts: [...el.querySelectorAll(".index-entry")].slice(0, 4).map((e) => e.textContent),
-    scrollTop: el.scrollTop,
-    kept: window.__e2eEntry.isConnected && window.__e2eEntry.parentNode === el,
-  }));
+  const after = await panel.evaluate((el) => {
+    const { entry, offset } = window.__e2eShown;
+    return {
+      texts: [...el.querySelectorAll(".index-entry")].slice(0, 4).map((e) => e.textContent),
+      kept: entry.isConnected && entry.parentNode === el,
+      moved: entry.getBoundingClientRect().top - el.getBoundingClientRect().top - offset,
+    };
+  });
   expect(after.texts).toEqual(["Index test", "Section 1", "New heading", "Sub 1.1"]);
-  expect(after.scrollTop).toBe(300);
+  // the same entry (not built again), at the same place: the entry put above it does not push it down
   expect(after.kept).toBe(true);
+  expect(Math.abs(after.moved)).toBeLessThanOrEqual(1);
 });
 
 // INV-78 (review round 1, M1): the three cases of the review, during a theme
 // switch. The diagrams are above the text: while they are drawn again they
-// are short code blocks, so what is below them moves up and back.
+// are short code blocks, so what is below them moves up and back. The view
+// starts inside the diagrams: there the browsers' scroll anchoring does not
+// hold the view (at the end of the document, or on plain text, it does, and
+// the old code passed there too).
 const MOVED_DOC = `${DIAGRAMS}\n${sections(60)}`;
+
+/** Bring diagram n (from 0) to the top of the preview; resolves with scrollTop. */
+function toDiagram(page, n) {
+  return page.evaluate((at) => {
+    const preview = document.querySelector("#preview");
+    const diagram = preview.querySelectorAll(".mermaid")[at];
+    preview.scrollTop += diagram.getBoundingClientRect().top - preview.getBoundingClientRect().top;
+    return preview.scrollTop;
+  }, n);
+}
 
 /**
  * Switch to dark and, the moment the blocks are in the preview (before any
@@ -235,6 +255,9 @@ function switchThemeWith(page, act) {
                 const block = [...preview.children].find((b) => b.getBoundingClientRect().bottom > top);
                 const el = block.firstElementChild;
                 window.__e2eMark = { el, top: el.getBoundingClientRect().top - top };
+                // something above grows after the move, before the render
+                // ends (as a late image would): the place must come back
+                preview.querySelector(".mermaid").style.minHeight = "3000px";
                 resolve(drawn);
               },
               { once: true },
@@ -259,20 +282,20 @@ test("INV-78 (M1): a wheel turn of 100 px during a theme switch is kept at the r
   await renderMarkdown(page, MOVED_DOC);
   await settled(page);
   await expect(page.locator("#preview .mermaid > svg")).toHaveCount(DIAGRAM_COUNT);
-  await page.evaluate(() => {
-    const preview = document.querySelector("#preview");
-    const heading = [...preview.querySelectorAll("h2")].find((h) => h.textContent === "Section 10");
-    preview.scrollTop += heading.getBoundingClientRect().top - preview.getBoundingClientRect().top;
-  });
+  // The browser's scroll anchoring off: the place must come back by INV-78
+  // itself (not every browser anchors, and anchoring gives up when its
+  // anchor node is replaced). With it on, the old code passed by luck.
+  await page.evaluate(() => (document.querySelector("#preview").style.overflowAnchor = "none"));
+  // while the diagrams are short, 100 px more lands among them
+  await toDiagram(page, 5);
   expect(await switchThemeWith(page, "wheel"), "the act came before the diagrams were drawn").toBe(0);
   await settled(page);
   await expect(page.locator("#preview .mermaid > svg")).toHaveCount(DIAGRAM_COUNT);
   const mark = await page.evaluate(() => {
     const { el, top } = window.__e2eMark;
     const now = el.getBoundingClientRect().top - document.querySelector("#preview").getBoundingClientRect().top;
-    return { inDiagram: !!el.closest(".mermaid"), connected: el.isConnected, top, now };
+    return { connected: el.isConnected, top, now };
   });
-  expect(mark.inDiagram).toBe(false);
   expect(mark.connected).toBe(true);
   expect(Math.abs(mark.now - mark.top)).toBeLessThanOrEqual(1);
 });
@@ -286,12 +309,7 @@ for (const [act, name] of [
     await renderMarkdown(page, MOVED_DOC);
     await settled(page);
     await expect(page.locator("#preview .mermaid > svg")).toHaveCount(DIAGRAM_COUNT);
-    // at the end: while the diagrams are short, the document is too short to stay there
-    const before = await page.evaluate(() => {
-      const preview = document.querySelector("#preview");
-      preview.scrollTop = preview.scrollHeight;
-      return preview.scrollTop;
-    });
+    const before = await toDiagram(page, 30);
     expect(await switchThemeWith(page, act), "the act came before the diagrams were drawn").toBe(0);
     await settled(page);
     await expect(page.locator("#preview .mermaid > svg")).toHaveCount(DIAGRAM_COUNT);
