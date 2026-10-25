@@ -129,6 +129,7 @@ export const CONFIG = {
       count: (current, total) => (current > 0 ? `${current} / ${total}` : total),
       none: "No results",
       invalid: "Invalid pattern",
+      stale: "Down: search again", // a regular expression after the text changed (INV-80 (3))
       replaced: (count) => `Replaced ${count}.`,
     },
     markdown: {

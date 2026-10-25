@@ -166,7 +166,7 @@ export const blockEditStateMachine = Object.freeze({
   saveRequested: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
   saveAsRequested: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
   // INV-80: a replace (Search) applies the open editor or cell first
-  replaceRequested: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
+  searchReplaceRequested: transitions(null, null, cell(IDLE, ["commitBlock"]), cell(IDLE, ["commitCell", "endTableSession"])),
   documentReplaced: transitions(null, null, cell(IDLE, ["discardBlockEditor"]), cell(IDLE, ["discardCell", "endTableSession"])),
   documentCleared: transitions(
     null,

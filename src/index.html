@@ -109,8 +109,8 @@
           <button type="button" id="searchCase" aria-pressed="false" title="Match case">Aa</button>
           <button type="button" id="searchRegex" aria-pressed="false" title="Regular expression">.*</button>
           <span id="searchCount" aria-live="polite"></span>
-          <button type="button" id="searchPrev" title="Previous (Shift+Enter)" aria-label="Previous">&uarr;</button>
-          <button type="button" id="searchNext" title="Next (Enter)" aria-label="Next">&darr;</button>
+          <button type="button" id="searchPrev" title="Previous (Up)" aria-label="Previous">&uarr;</button>
+          <button type="button" id="searchNext" title="Next (Down)" aria-label="Next">&darr;</button>
           <button type="button" id="searchClose" title="Close (Esc)" aria-label="Close">&times;</button>
         </div>
         <div class="search-row" id="replaceRow">
@@ -204,7 +204,8 @@
                 <code>Aa</code> matches case, <code>.*</code> takes a regular expression. <code>&darr;</code> /
                 <code>&uarr;</code> in the box go to the next / previous match. In edit mode, <code>Ctrl+F</code>
                 (Mac: <code>Cmd+F</code>) opens it too, and <code>Replace</code> / <code>All</code> replace (one
-                <code>Ctrl+Z</code> undoes). <code>Esc</code> in the box closes it.
+                <code>Ctrl+Z</code> undoes). <code>Esc</code> in the box closes it. A slow regular expression (such as
+                nested repeats on a long line) can freeze the page: save before you replace with one.
               </li>
               <li><code>[Render Light]</code> / <code>L</code> : Render / switch to light mode</li>
               <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
@@ -388,7 +389,7 @@
             <ul>
               <li><code>[Index]</code> / <code>I</code> : 見出しの一覧（目次）の表示・非表示。見出しを押すと、そこへ飛びます</li>
               <li>
-                <code>[Search]</code> / <code>F</code> : Markdown の原文（コードビューではファイル）から文字を探します。<code>Aa</code> で大文字と小文字を区別し、<code>.*</code> で正規表現にします。検索欄の <code>&darr;</code> / <code>&uarr;</code> で次 / 前へ移ります。編集モードでは <code>Ctrl+F</code>（Mac は <code>Cmd+F</code>）でも開け、<code>Replace</code> / <code>All</code> で置き換えます（<code>Ctrl+Z</code> 1 回で戻ります）。検索欄の <code>Esc</code> で閉じます。
+                <code>[Search]</code> / <code>F</code> : Markdown の原文（コードビューではファイル）から文字を探します。<code>Aa</code> で大文字と小文字を区別し、<code>.*</code> で正規表現にします。検索欄の <code>&darr;</code> / <code>&uarr;</code> で次 / 前へ移ります。編集モードでは <code>Ctrl+F</code>（Mac は <code>Cmd+F</code>）でも開け、<code>Replace</code> / <code>All</code> で置き換えます（<code>Ctrl+Z</code> 1 回で戻ります）。検索欄の <code>Esc</code> で閉じます。時間のかかる正規表現（長い行に当てる、繰り返しの入れ子など）では、ページが固まることがあります。正規表現で置き換える前に保存してください。
               </li>
               <li><code>[Render Light]</code> / <code>L</code> : レンダリング/ライトモード切替</li>
               <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { searchPattern, findMatches, expandReplacement, replaceOne, replaceAll } from "../js/textSearch.js";
+import { searchPattern, findMatches, occurrences, countOccurrences, replaceOne, replaceAll } from "../js/textSearch.js";
 
 // INV-80 (2)(5): the search and replace of Search, as pure functions.
 
@@ -37,28 +37,55 @@ describe("textSearch (INV-80)", () => {
     expect(pattern.lastIndex).toBe(3);
   });
 
-  it("AT-SRCH-04 expandReplacement reads $$, $&, $1 to $99 and $<name> as String.replace does; a missing group is empty, a number beyond the groups stays", () => {
-    const re = /(?<first>\w+) (\w+)?/;
-    const m = re.exec("John ");
-    for (const template of ["$$-$&-$1-$2-$<first>-$3-$<none>", "plain", "$", "$<first", "$0"]) {
-      expect(expandReplacement(template, m), template).toBe("John ".replace(re, template));
-    }
-    expect(expandReplacement("$$-$&-$1-$2-$<first>-$3-$<none>", m)).toBe("$-John -John--John-$3-");
-    const re2 = /(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)/;
-    expect(expandReplacement("$10/$1", re2.exec("abcdefghij"))).toBe("abcdefghij".replace(re2, "$10/$1"));
+  it.each([
+    ["(b)", "abc", "[$10]"], // the review's case (a): one group, $10 is $1 and a 0
+    ["(b)", "abc", "[$<x>]"], // (b): no named group, $<x> stays
+    ["(?<x>b)", "abc", "[$<x>|$<y>]"],
+    ["(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)", "abcdefghijk", "[$11|$10|$1x]"],
+    ["(b)", "abc", "[$01|$00|$0]"],
+    ["(b)", "abc", "[$`|$']"],
+    ["(?<first>\\w+) (\\w+)?", "John ", "$$-$&-$1-$2-$<first>-$3-$<none>"],
+    ["(\\w+)", "a b", "plain $ $<first $"],
+  ])("AT-SRCH-04 (INV-80 (5)) /%s/ in %j with %j: the template is expanded as String.replace does it, for one match and for all", (source, text, template) => {
+    const pattern = searchPattern(source, regex);
+    const [first] = findMatches(text, pattern, 100);
+    expect(replaceOne(text, first, pattern, template, true)).toBe(text.replace(new RegExp(source, "im"), template));
+    expect(replaceAll(text, pattern, template, true).text).toBe(text.replace(new RegExp(source, "gim"), template));
   });
 
-  it("AT-SRCH-05 replaceOne / replaceAll: a plain template is taken as it is ($ forms too), a regular expression's is expanded; replaceAll counts", () => {
+  it("AT-SRCH-04 (INV-80 (5)) one match is replaced where it is: ^ and a look-behind see the text around it", () => {
+    const lines = "x\nx";
+    const line = searchPattern("^x", regex);
+    expect(replaceOne(lines, findMatches(lines, line, 100)[1], line, "y", true)).toBe("x\ny");
+    const text = "ab cb ab";
+    const behind = searchPattern("(?<=a)b", regex);
+    expect(replaceOne(text, findMatches(text, behind, 100)[1], behind, "[$&]", true)).toBe("ab cb a[b]");
+  });
+
+  it("AT-SRCH-05 (INV-80 (5)) replaceOne / replaceAll: a plain template is taken as it is ($ forms too), a regular expression's is expanded; replaceAll counts", () => {
     const text = "cat cat dog";
     const [first, second] = all(text, "cat", plain);
-    expect(replaceOne(text, second, "$&s", false)).toBe("cat $&s dog");
-    expect(replaceOne(text, first, "x", false)).toBe("x cat dog");
-    const [rm] = all("v1.2", "(\\d)\\.(\\d)", regex);
-    expect(replaceOne("v1.2", rm, "$2.$1", true)).toBe("v2.1");
+    const cat = searchPattern("cat", plain);
+    expect(replaceOne(text, second, cat, "$&s", false)).toBe("cat $&s dog");
+    expect(replaceOne(text, first, cat, "x", false)).toBe("x cat dog");
+    const digits = searchPattern("(\\d)\\.(\\d)", regex);
+    const [rm] = findMatches("v1.2", digits, 100);
+    expect(replaceOne("v1.2", rm, digits, "$2.$1", true)).toBe("v2.1");
 
     expect(replaceAll(text, searchPattern("cat", plain), "$1", false)).toEqual({ text: "$1 $1 dog", count: 2 });
     expect(replaceAll("## A\n## B", searchPattern("^## (?<t>\\w)$", regex), "### $<t>!", true)).toEqual({ text: "### A!\n### B!", count: 2 });
     expect(replaceAll("a\nb", searchPattern("^", regex), "> ", true)).toEqual({ text: "> a\n> b", count: 2 });
     expect(replaceAll(text, searchPattern("zzz", plain), "x", false)).toEqual({ text, count: 0 });
+    const many = "x".repeat(10050);
+    expect(replaceAll(many, searchPattern("x", regex), "y", true).count).toBe(10050); // no limit
+  });
+
+  it("AT-SRCH-13 (INV-80 (4)) occurrences walks the places of a text in order, not overlapping; countOccurrences counts them (0 for an empty needle)", () => {
+    expect([...occurrences("aaaa", "aa")]).toEqual([0, 2]);
+    expect([...occurrences("a cat, a Cat", "cat")]).toEqual([2]);
+    expect([...occurrences("abc", "x")]).toEqual([]);
+    expect(countOccurrences("aaaa", "aa")).toBe(2);
+    expect(countOccurrences("line\nline\n", "\n")).toBe(2);
+    expect(countOccurrences("abc", "")).toBe(0);
   });
 });

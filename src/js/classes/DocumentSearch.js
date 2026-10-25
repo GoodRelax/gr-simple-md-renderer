@@ -5,7 +5,7 @@
 // one replace of all, is one change for Undo (INV-48).
 
 import { placeSidePanels } from "../sidePanels.js";
-import { searchPattern, findMatches, replaceOne, replaceAll } from "../textSearch.js";
+import { searchPattern, findMatches, occurrences, countOccurrences, replaceOne, replaceAll } from "../textSearch.js";
 import { nextFrame, cancelFrame } from "../utils.js";
 
 /** The most matches counted and visited; Replace all replaces every one. */
@@ -22,20 +22,6 @@ export const REGEX_TYPING_PAUSE_MS = 300;
 /** Where a match is scrolled to: a quarter of what is shown down, at least this far below its top. */
 const REVEAL_RATIO = 0.25;
 const REVEAL_MIN_PX = 8;
-
-/**
- * How many times needle occurs (not overlapping) in hay.
- * @purity pure
- * @param {string} hay
- * @param {string} needle
- * @returns {number}
- */
-function countOccurrences(hay, needle) {
-  if (needle === "") return 0;
-  let count = 0;
-  for (let at = hay.indexOf(needle); at >= 0; at = hay.indexOf(needle, at + needle.length)) count++;
-  return count;
-}
 
 /**
  * Ranges over the rendered text of element where it reads text, at least
@@ -67,7 +53,8 @@ function textRanges(element, text, matchCase, atLeast) {
     return [nodes[i].node, offset - nodes[i].start];
   };
   const most = Math.max(MAX_MARKS, atLeast);
-  for (let at = hay.indexOf(needle); at >= 0 && ranges.length < most; at = hay.indexOf(needle, at + needle.length)) {
+  for (const at of occurrences(hay, needle)) {
+    if (ranges.length >= most) break;
     const range = document.createRange();
     range.setStart(...point(at, false));
     range.setEnd(...point(at + needle.length, true));
@@ -96,8 +83,10 @@ export default class DocumentSearch {
     this.host = host;
     this.messages = messages;
     this._mode = "initial";
-    this._pattern = null; // the pattern of the matches, or null: an empty query or an invalid expression
-    this._searchedKey = null; // the query and options of the matches, or null: not searched yet
+    this._pattern = null; // the pattern of the matches, or null: none (an empty query, or an invalid one: _invalid)
+    this._invalid = false; // the query is not a valid regular expression
+    this._searched = null; // the conditions of the matches ({query, isRegex, matchCase}), or null: not searched for this text
+    this._stale = false; // the text changed after a regular expression search, which is not run again by itself (M2)
     this._text = ""; // the text the matches are in
     this._matches = [];
     this._current = -1; // the index of the match gone to, or -1: none yet
@@ -132,6 +121,7 @@ export default class DocumentSearch {
     /** @purity non-pure */
     el.input.addEventListener("input", () => {
       this._cancelPending();
+      this._stale = false;
       if (this._isOn(el.regex)) {
         this._showCount();
         this._typingTimer = setTimeout(() => this._search(), REGEX_TYPING_PAUSE_MS);
@@ -146,6 +136,7 @@ export default class DocumentSearch {
     // at once (S11).
     /** @purity non-pure */
     el.panel.addEventListener("keydown", (e) => {
+      if (e.isComposing || e.keyCode === 229) return; // the IME's own keys (choosing, canceling)
       if (e.key === "Escape") {
         e.preventDefault();
         this.hide();
@@ -211,15 +202,21 @@ export default class DocumentSearch {
   }
 
   /**
-   * The document changed (a commit, an Undo, a new document): search it
-   * again with the last query; nothing scrolls.
+   * The document changed (a commit, an Undo, a new document): a plain query
+   * is searched again (nothing scrolls). A regular expression is not run by
+   * itself (a slow one would block the page at each commit, M2): its
+   * matches are dropped and the count says Down searches again. An invalid
+   * one stays invalid, whatever the text.
    * @purity non-pure
    */
   refresh() {
-    if (!this.isShown() || this._searchedKey === null) return this._showCount();
-    const current = this._current;
-    this._run();
-    this._current = Math.min(current, this._matches.length - 1);
+    if (!this.isShown() || this._searched === null || this._invalid || this._documentText() === this._text) return this._showCount();
+    if (this._searched.isRegex) {
+      this._dropMatches();
+      this._stale = true;
+    } else {
+      this._searchAgain();
+    }
     this._showCount();
   }
 
@@ -230,9 +227,31 @@ export default class DocumentSearch {
     return toggle.getAttribute("aria-pressed") === "true";
   }
 
-  /** @purity semi-pure-a */
-  _key() {
-    return `${this._isOn(this.el.regex)}${this._isOn(this.el.matchCase)}${this.el.input.value}`;
+  /**
+   * The conditions of a search as the panel reads now.
+   * @purity semi-pure-a
+   * @returns {{query: string, isRegex: boolean, matchCase: boolean}}
+   */
+  _conditions() {
+    return { query: this.el.input.value, isRegex: this._isOn(this.el.regex), matchCase: this._isOn(this.el.matchCase) };
+  }
+
+  /**
+   * @purity pure
+   * @param {{query: string, isRegex: boolean, matchCase: boolean}} a
+   * @param {{query: string, isRegex: boolean, matchCase: boolean}} b
+   * @returns {boolean}
+   */
+  static _same(a, b) {
+    return a.query === b.query && a.isRegex === b.isRegex && a.matchCase === b.matchCase;
+  }
+
+  /**
+   * The matches are of the conditions as they are now.
+   * @purity semi-pure-a
+   */
+  _isSearched() {
+    return this._searched !== null && DocumentSearch._same(this._searched, this._conditions());
   }
 
   /**
@@ -255,34 +274,56 @@ export default class DocumentSearch {
    */
   _run() {
     this._clearHit();
-    this._searchedKey = this._key();
+    const conditions = this._conditions();
+    this._searched = conditions;
+    this._stale = false;
     this._text = this._documentText();
     this._current = -1;
+    this._invalid = false;
     try {
-      this._pattern = searchPattern(this.el.input.value, {
-        isRegex: this._isOn(this.el.regex),
-        matchCase: this._isOn(this.el.matchCase),
-      });
+      this._pattern = searchPattern(conditions.query, conditions);
     } catch {
       this._pattern = null;
-      this._matches = [];
-      this.el.count.textContent = this.messages.invalid;
-      return false;
+      this._invalid = true;
     }
     this._matches = this._pattern ? findMatches(this._text, this._pattern, MAX_MATCHES) : [];
-    return true;
+    return !this._invalid;
+  }
+
+  /**
+   * Search the changed text with the same conditions, keeping the place of
+   * the match gone to.
+   * @purity non-pure
+   */
+  _searchAgain() {
+    const current = this._current;
+    this._run();
+    this._current = Math.min(current, this._matches.length - 1);
+  }
+
+  /** @purity non-pure */
+  _dropMatches() {
+    this._clearHit();
+    this._searched = null;
+    this._pattern = null;
+    this._invalid = false;
+    this._matches = [];
+    this._current = -1;
   }
 
   /** A new query: search and go to the first match. @purity non-pure */
   _search() {
     if (this._run()) this._step(1);
+    else this._showCount();
   }
 
   /** @purity non-pure */
   _showCount() {
     const total = this._matches.length;
     const count = this.el.count;
-    if (this._searchedKey !== this._key() || !this._pattern) count.textContent = "";
+    if (!this._isSearched()) count.textContent = this._stale ? this.messages.stale : "";
+    else if (this._invalid) count.textContent = this.messages.invalid;
+    else if (!this._pattern) count.textContent = "";
     else if (total === 0) count.textContent = this.messages.none;
     else count.textContent = this.messages.count(this._current + 1, total >= MAX_MATCHES ? `${total}+` : `${total}`);
   }
@@ -321,7 +362,7 @@ export default class DocumentSearch {
    * @purity non-pure
    */
   _step(steps) {
-    if (this._searchedKey !== this._key() && !this._run()) return;
+    if (!this._isSearched() && !this._run()) return this._showCount();
     const total = this._matches.length;
     if (total > 0) {
       const from = this._current >= 0 ? this._current : steps > 0 ? -1 : 0;
@@ -426,11 +467,17 @@ export default class DocumentSearch {
   _replace(all) {
     if (this._mode !== "markdown" || this.el.replaceOne.disabled) return;
     this._cancelPending();
+    const pressed = this._conditions();
+    const current = this._isSearched() ? this._current : -1;
     if (!this.host.beforeReplace()) return;
-    if (this._searchedKey !== this._key()) this._run();
-    else this.refresh();
+    // the commit may have changed the text; a regular expression is then
+    // not searched again by itself (M2), the press searches it
+    if (!this._isSearched() || this._documentText() !== this._text) {
+      this._run();
+      this._current = Math.min(current, this._matches.length - 1);
+    }
     if (!this._pattern || this._matches.length === 0) return this._showCount();
-    const isRegex = this._isOn(this.el.regex);
+    const isRegex = pressed.isRegex;
     const template = this.el.replaceInput.value;
     if (all) {
       const at = this._matches[Math.max(this._current, 0)].index;
@@ -441,12 +488,15 @@ export default class DocumentSearch {
     }
     if (this._current < 0) return this._step(1);
     const match = this._matches[this._current];
-    const text = replaceOne(this._text, match, template, isRegex);
+    const text = replaceOne(this._text, match, this._pattern, template, isRegex);
     // the next match starts after the replacement (it may match again)
     const after = match.index + text.length - this._text.length + match[0].length;
     /** @purity non-pure */
     void this.documents.replaceBody(text, match.index).then(() => {
-      // refresh() (the model changed) has searched again by now
+      // closed, or another query since the press: nothing more (review L8)
+      if (!this.isShown() || !DocumentSearch._same(pressed, this._conditions())) return;
+      // refresh() (the model changed) searched a plain query again by now
+      if (!this._isSearched() || this._documentText() !== this._text) this._run();
       const next = this._matches.findIndex((m) => m.index >= after);
       this._current = (next < 0 ? 0 : next) - 1;
       this._step(1);

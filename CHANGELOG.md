@@ -91,7 +91,12 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   and its text a color (the current one orange), and a big table scrolls to
   the right row, sideways too. In edit mode, **Replace** and **All** replace
   the current match or all of them (`$1` and the like with a regular
-  expression), and one Undo takes it back. `Esc` in the box closes it;
+  expression, read as the browser's `String.replace` reads them), and one
+  Undo takes it back. A regular expression is run only when you search
+  (stop typing, `Down` / `Up`, Replace / All): after a commit or an Undo
+  the count says "Down: search again". A slow regular expression can still
+  freeze the page while it runs: save before you replace with one. `Esc` in
+  the box closes it;
   elsewhere `Esc` hides the edit palette first, then Search, then the Index.
   Nothing of it is stored or printed. The help says so in both languages.
 - Index: an **Index** button left of Render Light (or the `i` key) shows the

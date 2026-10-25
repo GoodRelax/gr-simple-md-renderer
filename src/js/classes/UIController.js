@@ -1337,7 +1337,7 @@ export default class UIController {
 
   /**
    * The port DocumentSearch calls back (INV-80). Before a replace, the open
-   * block editor or cell is committed (11-c replaceRequested) and #editor's
+   * block editor or cell is committed (11-c searchReplaceRequested) and #editor's
    * unrendered changes are taken in, as for a save (INV-56 asks first).
    * @purity non-pure
    */
@@ -1346,7 +1346,7 @@ export default class UIController {
       /** @purity non-pure */
       beforeReplace: () => {
         if (this._editorChangedSinceRender && !this._confirmEditorIntoDocument()) return false;
-        this.blockEdit.dispatch("replaceRequested");
+        this.blockEdit.dispatch("searchReplaceRequested");
         if (this._editorChangedSinceRender) this._takeEditorIntoModel(this.state.currentTheme);
         return true;
       },

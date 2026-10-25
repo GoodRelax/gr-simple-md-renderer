@@ -37,41 +37,58 @@ export function findMatches(text, pattern, limit) {
 }
 
 /**
- * A regular expression replacement for one match, as String.replace does
- * it: $$, $&, $1 to $99, $<name>.
+ * Where needle occurs in hay, in order, not overlapping: the one walk of
+ * both the count of the n-th place (countOccurrences) and the search of the
+ * rendered text (DocumentSearch), so the two agree.
  * @purity pure
- * @param {string} template
- * @param {RegExpExecArray} match
- * @returns {string}
+ * @param {string} hay
+ * @param {string} needle - not empty
+ * @returns {Generator<number>}
  */
-export function expandReplacement(template, match) {
-  /** @purity pure */
-  return template.replace(/\$(\$|&|<([^>]*)>|\d\d?)/g, (all, token, name) => {
-    if (token === "$") return "$";
-    if (token === "&") return match[0];
-    if (name !== undefined) return match.groups?.[name] ?? "";
-    const n = Number(token);
-    return n > 0 && n < match.length ? (match[n] ?? "") : all;
-  });
+export function* occurrences(hay, needle) {
+  for (let at = hay.indexOf(needle); at >= 0; at = hay.indexOf(needle, at + needle.length)) yield at;
+}
+
+/**
+ * How many times needle occurs (not overlapping) in hay; 0 for an empty
+ * needle.
+ * @purity pure
+ * @param {string} hay
+ * @param {string} needle
+ * @returns {number}
+ */
+export function countOccurrences(hay, needle) {
+  if (needle === "") return 0;
+  let count = 0;
+  for (const _at of occurrences(hay, needle)) count++;
+  return count;
 }
 
 /**
  * The text with one match replaced. A plain search takes the template as
- * it is (no $ forms).
+ * it is (no $ forms); a regular expression's template is expanded by the
+ * browser's String.prototype.replace ($$, $&, $`, $', $1 to $99, $<name>,
+ * each as it reads them), on the same expression at the match: sticky,
+ * from its index, so ^, $ and look-behinds see the text around it.
  * @purity pure
  * @param {string} text
  * @param {RegExpExecArray} match
+ * @param {RegExp} pattern - the pattern of the match
  * @param {string} template
  * @param {boolean} isRegex
  * @returns {string}
  */
-export function replaceOne(text, match, template, isRegex) {
-  const replacement = isRegex ? expandReplacement(template, match) : template;
-  return text.slice(0, match.index) + replacement + text.slice(match.index + match[0].length);
+export function replaceOne(text, match, pattern, template, isRegex) {
+  if (!isRegex) return text.slice(0, match.index) + template + text.slice(match.index + match[0].length);
+  const at = new RegExp(pattern.source, pattern.flags.replace("g", "") + "y");
+  at.lastIndex = match.index;
+  return text.replace(at, template);
 }
 
 /**
- * The text with every match replaced, and how many.
+ * The text with every match replaced, and how many (as findMatches counts
+ * them, with no limit). A regular expression's template is expanded by
+ * String.prototype.replace, a plain one is taken as it is.
  * @purity pure
  * @param {string} text
  * @param {RegExp} pattern - global
@@ -80,15 +97,13 @@ export function replaceOne(text, match, template, isRegex) {
  * @returns {{text: string, count: number}}
  */
 export function replaceAll(text, pattern, template, isRegex) {
+  const re = new RegExp(pattern.source, pattern.flags);
+  if (isRegex) return { text: text.replace(re, template), count: findMatches(text, pattern, Infinity).length };
   let count = 0;
   /** @purity non-pure */
-  const replaced = text.replace(new RegExp(pattern.source, pattern.flags), (...args) => {
+  const replaced = text.replace(re, () => {
     count++;
-    if (!isRegex) return template;
-    const groups = typeof args[args.length - 1] === "object" ? args.pop() : undefined;
-    const match = args.slice(0, -2);
-    match.groups = groups;
-    return expandReplacement(template, match);
+    return template;
   });
   return { text: replaced, count };
 }

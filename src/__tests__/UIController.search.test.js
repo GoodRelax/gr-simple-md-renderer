@@ -55,8 +55,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("AT-SRCH-12 UIController and Search", () => {
-  it("(a) f opens Search in the Markdown and the code view, also in edit mode (S8), not in an input or the initial state", async () => {
+describe("AT-SRCH-12 (INV-80 (5)(6)(7), 11-c, 5.11) UIController and Search", () => {
+  it("(a) INV-80, 5.11: f opens Search in the Markdown and the code view, also in edit mode (S8), not in an input or the initial state", async () => {
     expect(app.searchEl.button.disabled).toBe(true);
     keydown(document.body, "f");
     expect(app.search.isShown()).toBe(false);
@@ -82,7 +82,7 @@ describe("AT-SRCH-12 UIController and Search", () => {
     expect(app.searchEl.replaceRow.hidden).toBe(true);
   });
 
-  it("(b) Ctrl+F (Mac: Cmd+F) opens Search in edit mode only, also from a block editor; outside edit mode it is the browser's (S6)", async () => {
+  it("(b) INV-80 (7): Ctrl+F (Mac: Cmd+F) opens Search in edit mode only, also from a block editor; outside edit mode it is the browser's (S6)", async () => {
     await withFile("doc.md", "# A\n\nsome text\n");
     const outside = keydown(document.body, "f", { ctrlKey: true, code: "KeyF" });
     expect(outside.defaultPrevented).toBe(false);
@@ -102,7 +102,7 @@ describe("AT-SRCH-12 UIController and Search", () => {
     expect(app.search.isShown()).toBe(true);
   });
 
-  it("(c) Esc: in the box it closes Search at once (S11); outside, the palette, then Search, then the Index (S9)", async () => {
+  it("(c) INV-80 (6), INV-77 (4): Esc: in the box it closes Search at once (S11); outside, the palette, then Search, then the Index (S9)", async () => {
     await withFile("doc.md", "# A\n\nsome text\n");
     keydown(document.body, "e");
     keydown(document.body, "i");
@@ -122,7 +122,7 @@ describe("AT-SRCH-12 UIController and Search", () => {
     expect(app.index.isShown()).toBe(false);
   });
 
-  it("(d) a replace applies the open block first (11-c replaceRequested) and is one Undo; Ctrl+Z in the box is the box's own; replace follows edit mode (S4)", async () => {
+  it("(d) INV-80 (5)(7), 11-c: a replace applies the open block first (11-c searchReplaceRequested) and is one Undo; Ctrl+Z in the box is the box's own; replace follows edit mode (S4)", async () => {
     await withFile("doc.md", "# A\n\nsome text\n\nmore text\n");
     keydown(document.body, "f");
     expect(app.searchEl.replaceOne.disabled).toBe(true);
@@ -146,7 +146,7 @@ describe("AT-SRCH-12 UIController and Search", () => {
     app.searchEl.replaceInput.value = "words";
     app.searchEl.replaceAll.click();
     await settle();
-    expect(dispatch).toHaveBeenCalledWith("replaceRequested");
+    expect(dispatch).toHaveBeenCalledWith("searchReplaceRequested");
     expect(app.orchestrator.getBody()).toBe("# A\n\nsome edited words\n\nmore words\n");
     expect(showToast).toHaveBeenCalledWith(CONFIG.messages.search.replaced(2), expect.anything());
 

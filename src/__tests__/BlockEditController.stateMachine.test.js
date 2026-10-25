@@ -191,7 +191,7 @@ const TABLE = {
   escapePressed: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
   saveRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
   saveAsRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
-  replaceRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
+  searchReplaceRequested: { [B]: null, [I]: null, [E]: [I, ["commitBlock"]], [C]: [I, ["replaceTableBlock"]] },
   documentReplaced: { [B]: null, [I]: null, [E]: [I, []], [C]: [I, []] },
   documentCleared: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [B, ["hidePalette"]], [C]: [B, ["hidePalette"]] },
   viewSwitchedToCode: { [B]: null, [I]: [B, ["hidePalette"]], [E]: [B, ["hidePalette"]], [C]: [B, ["hidePalette"]] },
@@ -249,7 +249,7 @@ const IDS = {
   blockRangeDeleteRequested: "AT-BSM-30",
   blockRangeCutRequested: "AT-BSM-31",
   blockRangeCopyRequested: "AT-BSM-32",
-  replaceRequested: "AT-BSM-33",
+  searchReplaceRequested: "AT-BSM-33",
 };
 
 const CELLS = Object.entries(TABLE).flatMap(([event, row]) =>
@@ -690,7 +690,7 @@ describe("AT-BSM-15 the blockEditStateMachine definition matches the table", () 
     expect(act("pointerPressedOutside", E)).toEqual(["commitBlock"]);
     expect(act("saveRequested", E)).toEqual(["commitBlock"]);
     expect(act("saveAsRequested", E)).toEqual(["commitBlock"]);
-    expect(act("replaceRequested", E)).toEqual(["commitBlock"]);
+    expect(act("searchReplaceRequested", E)).toEqual(["commitBlock"]);
   });
 });
 

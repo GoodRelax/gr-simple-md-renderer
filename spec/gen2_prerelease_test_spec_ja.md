@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.14
+**バージョン:** 2.15
 **日付:** 2026-xx-xx (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -34,9 +34,11 @@
 
 > v2.12 の変更 (2026-10-25、保存のダイアログのフォルダ): 仕様の INV-79 に合わせて、セクション AC (PRT-AC01 / AC02) を追加した。AT に AT-FA-09、AT-DLC-23 を足した。e2e は足していない (本物の保存のダイアログは Playwright で開けず、偽の picker では `startIn` の受け渡ししか見られないので、それは AT-FA-09 で見る)。追加したケースの判定は空欄 (未実施)。
 
-> v2.13 の変更 (2026-10-25、検索と置換): 仕様の SC-26・INV-80・FS-22 に合わせて、セクション AD (PRT-AD01〜AD11) を追加した。AT に AT-SRCH (新。01〜12) と AT-BSM-33 (11-c の `replaceRequested`) を足した。e2e に search.e2e.js を足した。目次の Esc の順が変わったので (検索が目次より先)、PRT-AB02 の手順はそのまま (検索を出さなければ同じ)。追加したケースの判定は空欄 (未実施)。
+> v2.13 の変更 (2026-10-25、検索と置換): 仕様の SC-26・INV-80・FS-22 に合わせて、セクション AD (PRT-AD01〜AD11) を追加した。AT に AT-SRCH (新。01〜12) と AT-BSM-33 (11-c の `searchReplaceRequested`) を足した。e2e に search.e2e.js を足した。目次の Esc の順が変わったので (検索が目次より先)、PRT-AB02 の手順はそのまま (検索を出さなければ同じ)。追加したケースの判定は空欄 (未実施)。
 
 > v2.14 の変更 (2026-10-25、目次と保存のダイアログのレビュー 1 回目の直し): 仕様の INV-78 (利用者が最後に動かした所へ戻す。数えるのはビューを動かす操作だけ) と INV-77 (2) (変わったブロックの項目だけを作り直す。1 MB で 50 ms 以下) の改めに合わせて、PRT-AB07 を書き直し、PRT-AB02 にキーボードの手順を、PRT-AB03 に目次のスクロールと変わらない項目の確認を足した。AT-SM-39 を `watchUserMoves` に書き直し、AT-SM-40 / 41、AT-PERF-14 を足し、AT-ORC-28、AT-IDX-06 / 07 / 09、AT-SRCH-08 を改めた。index.e2e.js にリサイズとキーボード、確定と目次のスクロール、テーマの切り替えの間のホイール・Shift・本文の外の押下を足し、index.e2e.js と search.e2e.js の試験の名前に要求の ID を付けた。PRT-K01 の 1 行目を今のキーのヒントに、AT-DLC の要求の欄に INV-79 を足した。追加・改めたケースの判定は空欄 (未実施)。
+
+> v2.15 の変更 (2026-10-25、検索と置換のレビュー 1 回目の直し): 仕様の INV-80 (3)(4)(5)(6) と既知の制限 (時間のかかる正規表現) の改めに合わせて、PRT-AD02 に、確定の後の正規表現 ("Down: search again")、時間のかかる式、IME の変換中のキーの手順を足し、PRT-AD03 に `$10` と `$<名前>` の手順を足した。11-c の出来事の名前を `searchReplaceRequested` に改めた。AT-SRCH-04 を `String.prototype.replace` と比べる形に書き直し、AT-SRCH-13〜18 を足し、AT-SRCH-12 の名前に要求の ID を付けた。追加・改めたケースの判定は空欄 (未実施)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -3972,14 +3974,20 @@
 | --- | --- |
 | **前提条件** | 見出しのある文書 |
 | **手順** | 1. [.*] を入れ、`^## (.*)$` を打って手を止める |
-|  | 2. 不正な式 `(` を打つ |
+|  | 2. 不正な式 `(` を打つ。続けて、編集モードでブロックを 1 つ書き換えて確定する |
+|  | 3. 式を `^## (.*)$` に戻して探し、検索の箱を開いたまま、ブロックを 1 つ書き換えて確定する。次に ↓ を押す |
+|  | 4. 保存してから、1 行に `a` を 30 個ほど並べ、その後ろに `!` を付けた文書で、`(a+)+$` を打って手を止める |
+|  | 5. 日本語の IME で検索欄に打ち、変換の候補を ↓ / ↑ で選び、Esc で変換を取り消す |
 | **期待結果** | - 打つのを止めて約 0.3 秒で探す |
-|  | - 不正な式は「Invalid pattern」 |
+|  | - 不正な式は「Invalid pattern」。確定の後も「Invalid pattern」のまま |
+|  | - 手順 3 の確定の後、枠と色付けが消え、件数の所が「Down: search again」になる (正規表現は自分からは走らない)。↓ で今の文書を探し、最初の一致へ行く |
+|  | - 手順 4 では、ページがしばらく固まる (既知の制限)。固まっている間の時間を備考に書く。通常の文字の検索と確定では固まらない |
+|  | - 手順 5 で、↓ / ↑ は候補を選び、一致へ動かない。Esc は変換を取り消し、検索の箱は閉じない |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-80 (2)(3)、裁定 S13。自動では search.e2e.js、AT-SRCH-02 / 06 |
+| 備考 | 要求: INV-80 (2)(3)(4)(6) と既知の制限、裁定 S13 (調整役の裁定 2026-10-25、レビュー 1 回目の M2・L3・L5)。自動では search.e2e.js、AT-SRCH-02 / 06 / 14 / 15 / 16 |
 
 ---
 
@@ -3991,18 +3999,20 @@
 | **手順** | 1. [Replace] を数回押す |
 |  | 2. 置換欄で Enter を押す |
 |  | 3. [All] を押す |
-|  | 4. `$1` を使う正規表現の置換 |
+|  | 4. `$1` を使う正規表現の置換。続けて、群が 1 つの式 `(\d)` を `$10` で、名前付きの群の無い式を `$<x>` で置き換える |
 |  | 5. Ctrl+Z (Mac は Cmd+Z) と Redo |
+|  | 6. [Replace] を押した直後 (1 MB の文書で描き直しの終わる前) に Esc で閉じる |
 | **期待結果** | - 1 件ずつ置き換えて、置き換えた文字の後ろの一致へ行く |
 |  | - Enter は何もしない |
 |  | - All は件数をトーストで出す |
-|  | - `$1` が展開される |
+|  | - `$1` が展開される。`$10` は数字の後ろに 0 が付く。`$<x>` はそのまま残る (どちらもブラウザの `String.replace` のとおり) |
 |  | - Undo 1 回で置換の前に戻り、Redo で戻る |
+|  | - 手順 6 で、描き直しの後に、閉じた箱のまま一致へスクロールせず、枠も付かない |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-80 (5)、INV-48、裁定 S12。自動では search.e2e.js、AT-SRCH-05 / 09 / 11 |
+| 備考 | 要求: INV-80 (5)、INV-48、裁定 S12 (調整役の裁定 2026-10-25、レビュー 1 回目の M1・L8)。自動では search.e2e.js、AT-SRCH-04 / 05 / 09 / 11 / 17 |
 
 ---
 
@@ -4017,7 +4027,7 @@
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-80 (5)、11-c の replaceRequested。自動では AT-SRCH-12 (d)、AT-BSM-33 |
+| 備考 | 要求: INV-80 (5)、11-c の searchReplaceRequested。自動では AT-SRCH-12 (d)、AT-BSM-33 |
 
 ---
 
@@ -4190,7 +4200,7 @@
 | AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R5、Undo / Redo の記録 09〜09d。28: 全体の描画の間に利用者が動かしたら、最後に動かした所の読んでいる位置へ戻し (`restoreReadingAnchor`)、動かさなければ描画の前の位置へ戻す) | INV-42、INV-46〜48、INV-62、INV-78 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜28 (06b、09b〜09d を含む)、R1〜R5、T1〜T6 |
 | AT-IDX | `DocumentIndex` (01: h1〜h6 だけを文書の順に段の class 付きで並べ、引用・リスト・コード・利用者の `.md-block` の中は入れない。02: 数式は TeX、書式を落とし空白をまとめ、空の見出しは入れない。03: 見出しが無いときの文言。04: toggle と `aria-expanded`・`hidden`。05: `setAvailable`。06: 表示中のブロックの変化で 1 フレームに 1 回、変わったブロックの項目だけを作り直し (変わらない項目は同じ要素)、全体の描画ではまるごと作り、どちらもスクロールを保つ。隠している間は作らない。07: 押下で `ScrollMemento.scrollTargetTo(見出し, 8)`。08: 外れた見出しは作り直してから飛ぶ。09: 列の置き場所 (`ScrollMemento.shownTop` / `shownRight`) とリサイズ。10: UIController の結線 ((a) 初期・コードビューで無効、(b) `i` と修飾キー・入力欄・挿入の待ち、(c) Esc の順、(d) Clear)) | INV-77、5.11 | DocumentIndex.test.js、UIController.index.test.js | 01〜10 |
 | AT-BEC | `BlockEditController` (ジェスチャ、外側、IME、キー、リンク) | INV-27〜30、INV-40、INV-69 | BlockEditController.test.js、BlockEditController.keys.test.js、BlockEditController.link.test.js、UIController.link.test.js (35) | 01〜35 |
-| AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致。30〜32: ブロックの範囲、33: 検索の置換 (`replaceRequested`)) | 11-c | BlockEditController.stateMachine.test.js、BlockEditController.gap.test.js (29)、UIController.editMode.test.js、UIController.save.test.js | 01〜33 |
+| AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致。30〜32: ブロックの範囲、33: 検索の置換 (`searchReplaceRequested`)) | 11-c | BlockEditController.stateMachine.test.js、BlockEditController.gap.test.js (29)、UIController.editMode.test.js、UIController.save.test.js | 01〜33 |
 | AT-GAP | `BlockGapInsert` (すき間の当たり判定、表のつまみ・リンクなどを避けること、点線の表示と押下、マウスの移動を 1 フレームに 1 回にまとめること、押下と消去で残りの移動を捨てること、click にならない押下の後も追うこと) | INV-73 | BlockGapInsert.test.js | 01〜02 |
 | AT-RNG | ブロックの範囲: `MarkdownBlockModel.removeRange` / `rangeSource` (01〜08)、`RendererOrchestrator.deleteBlocks` / `readBlocksSource` (09〜13)、`BlockRangeSelection` (選択の解決、帯、押して離す、Esc、INV-45、14〜30、40、41。読むだけで表示を変えないこと 45、帯の押下で読み直すこと 46、ビューポートの近くだけの枠 47)、UIController のキーとクリップボード (31〜38)、すき間を出さないこと (39)、書き込みの失敗のトースト (25、42〜44)、ブラウザの `copy` の事象 (48、49)、Shift+Delete (50)、帯の位置の純粋な関数 `placementNearLine` (51)、選択を残したドラッグの `mouseup` の既定を止めること (52。Edge のミニメニュー) | INV-74、INV-14、INV-45、INV-46、INV-48、INV-73 | MarkdownBlockModel.removeRange.test.js、RendererOrchestrator.edit.test.js、BlockRangeSelection.test.js、UIController.blockRange.test.js、BlockGapInsert.test.js (39)、floatingPlacement.test.js (51) | 01〜52 |
 | AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
@@ -4200,7 +4210,7 @@
 | AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜36 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
-| AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: `expandReplacement` を `String.replace` と比べる。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数))。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(d) 置換の前の確定 (`replaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否) | INV-80、INV-48、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜12 |
+| AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。確定の後の正規表現の Replace は自分で探して置き換え、次へ行く。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)) | INV-80、INV-48、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜18 |
 | AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル) | INV-24〜26、INV-79、CON-14 | MarkdownFileAccess.test.js | 01〜09 |
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
 | AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |

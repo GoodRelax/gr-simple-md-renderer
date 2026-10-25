@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { Marked } from "marked";
 import markedKatex from "marked-katex-extension";
 import hljs from "highlight.js/lib/common";
@@ -297,5 +300,130 @@ describe("DocumentSearch (INV-80)", () => {
     search.open();
     expect(search.isShown()).toBe(false);
     expect(localStorage.length).toBe(stored);
+  });
+
+  it("AT-SRCH-14 (INV-80 (3), review M2) a regular expression is not run again by itself when the text changes: the count says Down searches again, and Down does; a plain query is searched again", async () => {
+    render(DOC);
+    search.open();
+    els.regex.click();
+    type("c.t");
+    await wait(REGEX_TYPING_PAUSE_MS + 50);
+    expect(els.count.textContent).toBe(M.count(1, "4"));
+    const run = vi.spyOn(search, "_run");
+
+    render(`${DOC}\nOne more cat.\n`); // a commit
+    search.refresh();
+    expect(run).not.toHaveBeenCalled();
+    expect(els.count.textContent).toBe(M.stale);
+    expect(M.stale).toBe("Down: search again");
+    expect(marked()).toBeNull();
+    search.refresh(); // the same text again: still waiting for Down
+    expect(els.count.textContent).toBe(M.stale);
+    key("ArrowDown");
+    await frame();
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(els.count.textContent).toBe(M.count(1, "5"));
+
+    els.regex.click(); // plain
+    type("cat");
+    run.mockClear();
+    render(`${DOC}\nTwo more cat cat.\n`);
+    search.refresh();
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(els.count.textContent).toBe(M.count(0, "6")); // none chosen yet: the total
+    run.mockClear();
+    search.refresh(); // the same text: nothing to search
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it("AT-SRCH-14 (INV-80 (5), review M2) a regular expression replace after a commit searches the new text itself and moves on", async () => {
+    render(DOC);
+    search.open();
+    els.regex.click();
+    type("c(a)t");
+    await wait(REGEX_TYPING_PAUSE_MS + 50);
+    els.replaceInput.value = "[$1]";
+    host.beforeReplace.mockImplementationOnce(() => {
+      render(DOC.replace("The cat sat.", "The cat sat. A cat ran.")); // the open block committed
+      search.refresh();
+      return true;
+    });
+    els.replaceOne.click();
+    await frame();
+    expect(replaced[0].body).toContain("The [a] sat. A cat ran.");
+    expect(els.count.textContent).toBe(M.count(1, "4")); // the next one: "A cat ran."
+    expect(marked().textContent).toContain("A cat ran.");
+  });
+
+  it("AT-SRCH-15 (INV-80 (2), review L5) an invalid expression stays invalid after the text changes and after a replace press", async () => {
+    render(DOC);
+    search.open();
+    els.regex.click();
+    type("(");
+    await wait(REGEX_TYPING_PAUSE_MS + 50);
+    expect(els.count.textContent).toBe(M.invalid);
+    render(`${DOC}\nMore.\n`);
+    search.refresh();
+    expect(els.count.textContent).toBe(M.invalid);
+    els.replaceAll.click();
+    expect(replaced).toEqual([]);
+    expect(els.count.textContent).toBe(M.invalid);
+    key("ArrowDown");
+    await frame();
+    expect(els.count.textContent).toBe(M.invalid);
+  });
+
+  it("AT-SRCH-16 (INV-80 (4)(6), review L3) while the IME composes, Down / Up and Esc are its own: nothing moves and the panel stays", async () => {
+    render(DOC);
+    search.open();
+    type("cat");
+    await wait(TYPING_PAUSE_MS + 50);
+    const go = vi.spyOn(search, "_go");
+    for (const name of ["ArrowDown", "ArrowUp", "Escape"]) {
+      const e = new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true, isComposing: true });
+      els.input.dispatchEvent(e);
+      expect(e.defaultPrevented, name).toBe(false);
+    }
+    await frame();
+    expect(go).not.toHaveBeenCalled();
+    expect(search.isShown()).toBe(true);
+  });
+
+  it("AT-SRCH-17 (INV-80 (5)(6), review L8) after Replace, closing the panel or another query before the render ends: no move, no mark", async () => {
+    render(DOC);
+    search.open();
+    type("cat");
+    await wait(TYPING_PAUSE_MS + 50);
+    els.replaceInput.value = "dog";
+    let settle;
+    search.documents.replaceBody = vi.fn((body) => {
+      render(body);
+      return new Promise((r) => (settle = r));
+    });
+    const go = vi.spyOn(search, "_go");
+    els.replaceOne.click();
+    search.hide();
+    settle();
+    await frame();
+    expect(go).not.toHaveBeenCalled();
+    expect(marked()).toBeNull();
+    expect(CSS.highlights.size).toBe(0);
+
+    search.open(); // searched again: the place of the current match is kept
+    els.replaceOne.click();
+    type("sat"); // another query before the render ends
+    settle();
+    await frame();
+    expect(go).not.toHaveBeenCalled();
+  });
+  it("AT-SRCH-18 (INV-80 (4), 5.1, review L2) the buttons of src/index.html: Up / Down in the titles (Enter does nothing), and their labels", () => {
+    const html = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../index.html"), "utf8");
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const look = (id) => [doc.getElementById(id).title, doc.getElementById(id).getAttribute("aria-label")];
+    expect(look("searchPrev")).toEqual(["Previous (Up)", "Previous"]);
+    expect(look("searchNext")).toEqual(["Next (Down)", "Next"]);
+    expect(look("searchClose")).toEqual(["Close (Esc)", "Close"]);
+    expect(doc.getElementById("replaceInput").getAttribute("aria-label")).toBe("Replace");
+    expect(html).not.toMatch(/title="[^"]*Enter/);
   });
 });
