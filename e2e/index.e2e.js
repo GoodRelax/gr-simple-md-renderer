@@ -159,8 +159,10 @@ test("INV-77 (6)(7): placed again on a resize; opening keeps the focus on [Index
       return { gap: right - column.right, below: window.innerHeight - column.bottom };
     });
   await page.setViewportSize({ width: 900, height: 500 });
-  await expect.poll(async () => Math.abs((await place()).gap - 8)).toBeLessThanOrEqual(1);
-  expect((await place()).below).toBeGreaterThanOrEqual(7);
+  // the gap at the right reads 8 even before the resize event (the column is
+  // placed from the window's right): wait for the height, which needs it
+  await expect.poll(async () => (await place()).below).toBeGreaterThanOrEqual(7);
+  expect(Math.abs((await place()).gap - 8)).toBeLessThanOrEqual(1);
 
   // WebKit moves the focus with Tab to text fields only (Safari's default)
   const first = panel.getByRole("button", { name: "Section 20", exact: true });
