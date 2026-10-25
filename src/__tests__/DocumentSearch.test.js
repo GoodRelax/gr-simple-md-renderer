@@ -336,7 +336,7 @@ describe("DocumentSearch (INV-80)", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("AT-SRCH-14 (INV-80 (5), review M2) a regular expression replace after a commit searches the new text itself and moves on", async () => {
+  it("AT-SRCH-19 (INV-80 (5), review M2) a regular expression replace after a commit searches the new text itself and moves on", async () => {
     render(DOC);
     search.open();
     els.regex.click();
