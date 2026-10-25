@@ -178,18 +178,25 @@ describe("AT-RNG which blocks a selection stands for (INV-74 (1), U2, U4, U5)", 
 });
 
 describe("AT-RNG-52 the release of a mouse drag that selected in the preview has its default stopped (INV-74 (2), owner ruling S1)", () => {
+  const t = CONFIG.pan.activationThresholdPx;
   /** Dispatch a mouseup on el and return it (defaultPrevented tells if it was stopped). */
-  function mouseup(target, button = 0) {
-    const e = new MouseEvent("mouseup", { bubbles: true, cancelable: true, button });
+  function mouseup(target, { button = 0, x = 10 } = {}) {
+    const e = new MouseEvent("mouseup", { bubbles: true, cancelable: true, button, clientX: x, clientY: 10 });
     target.dispatchEvent(e);
     return e;
   }
-  /** Press on downEl, select over two blocks, release on upEl. */
-  function drag(downEl, upEl, { button = 0, pointerType = "mouse" } = {}) {
+  /** A move with the main button held, x px right of the press (at 10, 10). */
+  function move(target, x, pointerType = "mouse") {
+    target.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType, buttons: 1, clientX: 10 + x, clientY: 10 }));
+  }
+  /** Press on downEl, select over two blocks while moving dx px, release on upEl. */
+  function drag(downEl, upEl, { button = 0, pointerType = "mouse", dx = 40 } = {}) {
     pointer(downEl, "pointerdown", { button, pointerType });
+    move(downEl, dx / 2, pointerType);
     select(textIn(el("Hello")), 0, textIn(el("Second")), 2);
-    pointer(upEl, "pointerup", { button, pointerType });
-    return mouseup(upEl, button);
+    move(upEl, dx, pointerType);
+    pointer(upEl, "pointerup", { button, pointerType, x: 10 + dx });
+    return mouseup(upEl, { button, x: 10 + dx });
   }
 
   it("a drag that selected in the preview: the release's default is stopped (no Edge mini menu), also released outside the preview", async () => {
@@ -199,31 +206,69 @@ describe("AT-RNG-52 the release of a mouse drag that selected in the preview has
     expect(s.bec.readBlockRange()).not.toBeNull(); // the selection stays
   });
 
-  it("a plain click (nothing selected), a press outside the preview, another button or a touch keep the default", async () => {
+  it("H1: a click (moved no more than activationThresholdPx) keeps the default, also on the selected text, so the browser clears the selection", async () => {
     s = await setupEdit(DOC);
     const hello = textIn(el("Hello")).parentNode;
+    expect(drag(hello, hello).defaultPrevented).toBe(true); // a range
+    // a press on the selected text and a release without a move
     pointer(hello, "pointerdown");
     pointer(hello, "pointerup");
     expect(mouseup(hello).defaultPrevented).toBe(false);
+    // a press that moved within the threshold, the selection still there
+    pointer(hello, "pointerdown");
+    move(hello, t);
+    pointer(hello, "pointerup", { x: 10 + t });
+    expect(mouseup(hello, { x: 10 + t }).defaultPrevented).toBe(false);
+    // a move past the threshold and back is a drag
+    pointer(hello, "pointerdown");
+    move(hello, t + 1);
+    expect(mouseup(hello).defaultPrevented).toBe(true);
+    // nothing selected
+    window.getSelection().removeAllRanges();
+    pointer(hello, "pointerdown");
+    move(hello, 40);
+    expect(mouseup(hello, { x: 50 }).defaultPrevented).toBe(false);
+  });
+
+  it("a press outside the preview, another button, a touch or a pen keep the default; a release is never stopped by an earlier press (L1)", async () => {
+    s = await setupEdit(DOC);
+    const hello = textIn(el("Hello")).parentNode;
     expect(drag(document.body, hello).defaultPrevented).toBe(false);
     expect(drag(hello, hello, { button: 2 }).defaultPrevented).toBe(false);
     expect(drag(hello, hello, { pointerType: "touch" }).defaultPrevented).toBe(false);
-    // the release after one that was stopped is not stopped by it
-    expect(drag(hello, hello).defaultPrevented).toBe(true);
-    window.getSelection().removeAllRanges();
-    expect(mouseup(hello).defaultPrevented).toBe(false);
+    expect(drag(hello, hello, { pointerType: "pen" }).defaultPrevented).toBe(false);
+    // a mouse drag whose mouseup never came (WebKit, when the pressed element left the DOM), then a pen press
+    pointer(hello, "pointerdown");
+    move(hello, 40);
+    select(textIn(el("Hello")), 0, textIn(el("Second")), 2);
+    pointer(hello, "pointerdown", { pointerType: "pen" });
+    expect(mouseup(hello, { x: 50 }).defaultPrevented).toBe(false);
+    // the same, then a press of the other button
+    pointer(hello, "pointerdown");
+    move(hello, 40);
+    pointer(hello, "pointerdown", { button: 2 });
+    expect(mouseup(hello, { button: 0, x: 50 }).defaultPrevented).toBe(false);
   });
 
-  it("only in editModeIdle: not outside edit mode, not while a block editor is open", async () => {
+  it("editModeIdle at the release (H2): not outside edit mode, not in an open block editor; a drag that closed an open editor is stopped", async () => {
     s = await setupEdit(DOC, { editMode: false });
     const hello = () => textIn(el("Hello")).parentNode;
     expect(drag(hello(), hello()).defaultPrevented).toBe(false);
     s.bec.dispatch("paletteShown");
     expect(drag(hello(), hello()).defaultPrevented).toBe(true);
     window.getSelection().removeAllRanges();
+    // a drag in the open editor stays the browser's
     tap(el("Last").firstElementChild);
     expect(s.bec.isEditing()).toBe(true);
-    expect(drag(hello(), hello()).defaultPrevented).toBe(false);
+    const editor = s.preview.querySelector("textarea.md-block-editor");
+    pointer(editor, "pointerdown");
+    move(editor, 40);
+    expect(mouseup(editor, { x: 50 }).defaultPrevented).toBe(false);
+    expect(s.bec.isEditing()).toBe(true);
+    // the press on another block applies and closes the editor (INV-30); the drag then selects: stopped
+    expect(drag(hello(), hello()).defaultPrevented).toBe(true);
+    expect(s.bec.isEditing()).toBe(false);
+    expect(s.bec.readBlockRange()).not.toBeNull();
     s.bec.dispatch("escapePressed");
     s.bec.dispatch("paletteHidden");
     expect(drag(hello(), hello()).defaultPrevented).toBe(false);

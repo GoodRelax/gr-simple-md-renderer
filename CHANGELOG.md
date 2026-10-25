@@ -117,8 +117,9 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   too. Edge shows its mini menu (Copilot, Copy, Search) beside a text
   selection, and while it shows, the keys do not reach the page. A mouse
   drag that selects text in the preview in edit mode no longer brings up
-  that menu; a plain click, the right-click menu and the selection itself
-  are as before.
+  that menu, also when the drag starts with a block open; a click
+  (also on the selected text, which still clears the selection), the
+  right-click menu and the selection itself are as before.
 - A document with many leading blank lines no longer hangs on Render, paste
   or opening a `.md` file. The check for an AI ```` ```markdown ```` wrapper
   tried every way to split the blank lines, so each line doubled the time

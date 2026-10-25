@@ -211,7 +211,7 @@ test("INV-74 (2), INV-73: while blocks are selected the gaps' + does not show; i
   await expect(page.locator(".grsmd-gap-insert")).toBeVisible();
 });
 
-test("INV-74 (2), owner ruling S1: a drag that selected in the preview has the release's default stopped (no Edge mini menu); the click still comes; a plain click, a link, the gap's + and a diagram's pan are as before", async ({ page }) => {
+test("INV-74 (2), owner ruling S1: a drag that selected in the preview has the release's default stopped (no Edge mini menu), also from an open block; the click still comes; a plain click, a link, the gap's + and a diagram's pan are as before", async ({ page }) => {
   // Playwright shows no Edge mini menu: what is checked is that the
   // release's default is stopped, and only when text was selected.
   const doc = "# Title\n\nFirst para with [a link](#title).\n\nSecond para.\n\n```mermaid\nflowchart TD\n  A --> B\n```\n\nLast para.\n";
@@ -285,6 +285,34 @@ test("INV-74 (2), owner ruling S1: a drag that selected in the preview has the r
   expect(await page.evaluate(() => getSelection().isCollapsed)).toBe(true);
   await expect(bar(page)).toBeHidden();
   await expectBody(page, doc);
+
+  // H2: a drag started with a block open (the press applies and closes it, INV-30) is stopped too
+  await para(page, "Last para").click();
+  await expect(editor).toHaveCount(1);
+  await takeUps();
+  await drag(page, para(page, "First para"), para(page, "Second para"));
+  expect(await takeUps()).toEqual([true]);
+  await expect(editor).toHaveCount(0);
+  await expect(framed(page)).toHaveCount(2);
+  await expect(bar(page)).toBeVisible();
+});
+
+test("INV-74 (2), review H1: a click on the selected text keeps the release's default: the browser clears the selection, the frame and the bar go", async ({ page }) => {
+  await openEditMode(page);
+  await page.evaluate(() => {
+    window.__ups = [];
+    window.addEventListener("mouseup", (e) => window.__ups.push(e.defaultPrevented));
+  });
+  await drag(page, para(page, "First para"), para(page, "Second para"));
+  await expect(framed(page)).toHaveCount(2);
+  await expect(bar(page)).toBeVisible();
+  const first = await para(page, "First para").boundingBox();
+  await page.mouse.click(first.x + 40, first.y + first.height / 2);
+  expect(await page.evaluate(() => window.__ups)).toEqual([true, false]);
+  expect(await page.evaluate(() => getSelection().isCollapsed)).toBe(true);
+  await expect(framed(page)).toHaveCount(0);
+  await expect(bar(page)).toBeHidden();
+  await expectBody(page, DOC);
 });
 
 test("INV-74 (6): outside edit mode a selection is the browser's: no frame, no bar, Delete and Ctrl+C change nothing (D9)", async ({ page }) => {

@@ -87,10 +87,12 @@ function isAtEdge(wrapper, container, offset, after, isTab) {
  * held (a drag still making the selection) the frame follows but the bar
  * waits for the release. Only the blocks within a screen of the viewport
  * get the frame (it follows the scroll): Ctrl+A on 1 MB frames a screen,
- * not some 24,000 blocks. The release of a mouse drag that started in the
- * preview and left a selection there has its default stopped: Edge then
- * shows no mini menu, which would take the next key (Delete) from the page
- * (owner ruling S1, 2026-10-25). A plain click keeps its default.
+ * not some 24,000 blocks. The release of a mouse drag (it moved past
+ * CONFIG.pan.activationThresholdPx) that started in the preview and left a
+ * selection there, in editModeIdle at the release, has its default stopped:
+ * Edge then shows no mini menu, which would take the next key (Delete) from
+ * the page (owner ruling S1, 2026-10-25). A click keeps its default, also
+ * on the selected text, where the browser clears the selection on release.
  *
  * The bar is one element on the body (position: fixed), never in the
  * preview, whose children the renderer owns (as BlockGapInsert).
@@ -123,21 +125,24 @@ export default class BlockRangeSelection {
     this._press = null; // { button, kind, range } of a press on the bar
     this._copiedTimer = null;
     this._isPointerHeld = false; // a mouse drag is making the selection: no bar yet
-    this._isPreviewPress = false; // that drag started in the preview in editModeIdle
+    this._mousePress = null; // {x, y, isDrag}: a main-button mouse press in the preview, until its mouseup
     this._onChange = () => this._schedule();
     /** @purity non-pure */
     this._onPointerDown = (e) => {
+      this._mousePress = null; // any press ends the last one, whose mouseup may never have come (L1)
       if (e.pointerType !== "mouse" || e.button !== 0 || this.isBarNode(e.target)) return;
       this._isPointerHeld = true;
-      this._isPreviewPress = this.host.canSelect() && e.target instanceof Node && this.preview.contains(e.target);
+      if (e.target instanceof Node && this.preview.contains(e.target)) this._mousePress = { x: e.clientX, y: e.clientY, isDrag: false };
       this._hideBar();
     };
-    // INV-74 (2), owner ruling S1: no Edge mini menu after a drag that selected in the preview
+    // INV-74 (2), owner ruling S1: no Edge mini menu after a drag that selected in the preview.
+    // editModeIdle is read at the release: the press may have closed an open editor (INV-30).
     /** @purity non-pure */
     this._onMouseUp = (e) => {
-      const isPreviewPress = this._isPreviewPress;
-      this._isPreviewPress = false;
-      if (isPreviewPress && e.button === 0 && this._hasSelectionInPreview()) e.preventDefault();
+      const press = this._mousePress;
+      this._mousePress = null;
+      if (!press || e.button !== 0 || !this.host.canSelect()) return;
+      if (this._isDragFrom(press, e) && this._previewSelection()) e.preventDefault();
     };
     /** @purity non-pure */
     this._onPointerUp = () => {
@@ -149,6 +154,7 @@ export default class BlockRangeSelection {
     /** @purity non-pure */
     this._onPointerMove = (e) => {
       if (this._isPointerHeld && e.pointerType === "mouse" && e.buttons === 0) this._onPointerUp();
+      if (this._mousePress && e.pointerType === "mouse" && this._isDragFrom(this._mousePress, e)) this._mousePress.isDrag = true;
     };
     this._onBarPress = (e) => this._handleBarPress(e);
     this._onBarRelease = (e) => this._handleBarRelease(e);
@@ -193,18 +199,34 @@ export default class BlockRangeSelection {
   }
 
   /**
-   * Some text is selected in the preview (the selection is not empty and
-   * touches it).
+   * The ends of the selection when it is not empty and touches the preview,
+   * or null. The one test of "some text is selected in the preview" (the
+   * range and the release of a drag use it).
    * @purity semi-pure-b
+   * @returns {{start: {node: Node, offset: number}, end: {node: Node, offset: number}}|null}
+   */
+  _previewSelection() {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+    const head = selection.getRangeAt(0);
+    const tail = selection.getRangeAt(selection.rangeCount - 1); // Firefox: one range per table cell
+    const whole = document.createRange();
+    whole.setStart(head.startContainer, head.startOffset);
+    whole.setEnd(tail.endContainer, tail.endOffset);
+    if (!whole.intersectsNode(this.preview)) return null;
+    return { start: { node: head.startContainer, offset: head.startOffset }, end: { node: tail.endContainer, offset: tail.endOffset } };
+  }
+
+  /**
+   * The press became a drag: it moved past activationThresholdPx by the
+   * point (as BlockEditController tells a tap from a drag), or did before.
+   * @purity pure
+   * @param {{x: number, y: number, isDrag: boolean}} press
+   * @param {{clientX: number, clientY: number}} point
    * @returns {boolean}
    */
-  _hasSelectionInPreview() {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return false;
-    for (let i = 0; i < selection.rangeCount; i++) {
-      if (selection.getRangeAt(i).intersectsNode(this.preview)) return true;
-    }
-    return false;
+  _isDragFrom(press, point) {
+    return press.isDrag || Math.hypot(point.clientX - press.x, point.clientY - press.y) > CONFIG.pan.activationThresholdPx;
   }
 
   /**
@@ -214,18 +236,11 @@ export default class BlockRangeSelection {
    */
   _findRange() {
     if (!this._enabled || !this.host.canSelect() || isTypingTarget(document.activeElement)) return null;
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
-    const head = selection.getRangeAt(0);
-    const tail = selection.getRangeAt(selection.rangeCount - 1); // Firefox: one range per table cell
-    let start = { node: head.startContainer, offset: head.startOffset };
-    let end = { node: tail.endContainer, offset: tail.endOffset };
+    const ends = this._previewSelection();
+    if (!ends) return null;
+    let { start, end } = ends;
     if (this._isExcludedEnd(start.node) || this._isExcludedEnd(end.node)) return null;
     const preview = this.preview;
-    const whole = document.createRange();
-    whole.setStart(start.node, start.offset);
-    whole.setEnd(end.node, end.offset);
-    if (!whole.intersectsNode(preview)) return null;
     // only the part in the preview counts (U4: Ctrl+A)
     if (!preview.contains(start.node)) start = { node: preview, offset: 0 };
     let isEndInBlock = true;
@@ -430,7 +445,7 @@ export default class BlockRangeSelection {
     document.removeEventListener("mouseup", this._onMouseUp, true);
     document.removeEventListener("pointermove", this._onPointerMove, true);
     this._isPointerHeld = false;
-    this._isPreviewPress = false;
+    this._mousePress = null;
     this.preview.removeEventListener("scroll", this._onChange);
     window.removeEventListener("scroll", this._onChange);
     window.removeEventListener("resize", this._onChange);
