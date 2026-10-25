@@ -39,8 +39,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("AT-IDX-10 UIController and the Index", () => {
-  it("(a) off in the initial state and in the code view; on in the Markdown view", async () => {
+describe("AT-IDX-10 (INV-77 (4)(5), 5.11) UIController and the Index", () => {
+  it("(a) INV-77 (5): off in the initial state and in the code view; on in the Markdown view", async () => {
     expect(app.indexBtn.disabled).toBe(true);
     keydown(document.body, "i");
     expect(app.index.isShown()).toBe(false);
@@ -56,7 +56,7 @@ describe("AT-IDX-10 UIController and the Index", () => {
     expect(app.index.isShown()).toBe(false);
   });
 
-  it("(b) i toggles; with a modifier, in an input and while an insert is pending it does nothing", async () => {
+  it("(b) INV-77 (5), INV-14, INV-52: i toggles; with a modifier, in an input and while an insert is pending it does nothing", async () => {
     await withFile("doc.md", "# Title\n");
     keydown(document.body, "i");
     keydown(document.body, "i");
@@ -70,7 +70,7 @@ describe("AT-IDX-10 UIController and the Index", () => {
     expect(app.index.isShown()).toBe(false);
   });
 
-  it("(c) Esc closes the palette first and the Index last (owner ruling T7)", async () => {
+  it("(c) INV-77 (4), 5.11: Esc closes the palette first and the Index last (owner ruling T7)", async () => {
     await withFile("doc.md", "# Title\n");
     keydown(document.body, "i");
     keydown(document.body, "e");
@@ -84,7 +84,7 @@ describe("AT-IDX-10 UIController and the Index", () => {
     expect(app.index.isShown()).toBe(false);
   });
 
-  it("(d) Clear hides the Index and turns it off", async () => {
+  it("(d) INV-77 (5): Clear hides the Index and turns it off", async () => {
     await withFile("doc.md", "# Title\n");
     keydown(document.body, "i");
     app.ui.doClear();
