@@ -122,12 +122,12 @@ the user's thinking free of noise.
 
 ## Where the sheet lives
 
-Put the sheet and its `old/` folder in a folder inside the project that the
-user can open and save to from the browser: `temp/grsmd-qa/` in the
-project's root (create it; make sure `temp/` or the folder is gitignored).
-Never put a sheet in the session's scratchpad or a system temp folder: the
-user cannot save over it from GRSMD there. If the project has no such
-folder, ask the user where to put the sheet.
+Put the sheet, and its `old/` folder beside it, in a folder the user can
+open and save over from the browser (GRSMD's Save writes back to the file
+the user dropped). Never use the session's scratchpad or a system temp
+folder: the user cannot save over a sheet there. If you are not sure which
+folder the user can use, ask before the first round. If the folder is inside
+a git repository, make sure `old/` (or the sheet's folder) is gitignored.
 
 ## One sheet, one path
 
@@ -140,7 +140,7 @@ folder, ask the user where to put the sheet.
 
 ## The first round
 
-1. Write the sheet in `temp/grsmd-qa/` (see "Where the sheet lives"):
+1. Write the sheet in a folder the user can save to (see "Where the sheet lives"):
    digest, questions, answer fields, options a, b, c. No MARK anywhere:
    `python <skill>/scripts/mark_changes.py --check --strip <sheet.md>` must
    report 0 findings.
@@ -260,7 +260,7 @@ When every question is decided:
   tab into the other copy and 329 lines were lost there. Keep one path and
   check the copies before reading.
 - A sheet written to the session scratchpad could not be saved over from
-  GRSMD. Keep sheets in the project's `temp/grsmd-qa/`.
+  GRSMD. Keep sheets in a folder the user can save to.
 - Numbered options (1, 2, 3) next to numbered questions made answers
   ambiguous. Options are letters.
 - Box-drawing characters misaligned every tree in a Japanese font. Use ASCII.
