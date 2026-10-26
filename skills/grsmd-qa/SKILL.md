@@ -87,7 +87,7 @@ file with the next number.
 
 ## Question 1. <title>
 <scene: where the user meets this, the current words with counts and where they occur>
-| Option | Content |    <- 2-4 options, the recommendation first, bold, marked recommended
+| Option | Content |    <- options a, b, c ...: 2-4 of them, the recommendation is a, bold, marked recommended
 <answer field>
 
 ### Question 1-2. <follow-up>   <- a follow-up goes right under its question
@@ -99,7 +99,7 @@ The digest, in Japanese (write it in the user's language):
 
 ```text
 > **/grsmd-qa の使い方**
-> - 「回答:」の後ろに答えを書き、保存してから、チャットで「更新した」と伝えてください。
+> - 「回答:」の後ろに、選択肢の文字（a, b …）か自由な文を書き、保存してから、チャットで「更新した」と伝えてください。
 > - 🔄 と*斜体*は、前回から変わった所です（`f` で 🔄 を検索すると順に飛べます）。初版には付きません。
 > - 強調したい所には ★ を付けてかまいません。
 ```
@@ -114,6 +114,21 @@ counts, 2 to 4 options with the recommendation first, and what each option
 changes. A count in a question is a claim: say how it was counted, or count
 again.
 
+**Option labels are always lower-case letters:** `a`, `b`, `c` ..., with the
+recommendation as `a`. Never number options (`1`, `2`, `3`); numbers are for
+questions. From the second round, a follow-up may refine an earlier option
+with a suffix (`a-1`, `a-2`, `b-1` ...). The same input form every time keeps
+the user's thinking free of noise.
+
+## Where the sheet lives
+
+Put the sheet and its `old/` folder in a folder inside the project that the
+user can open and save to from the browser: `temp/grsmd-qa/` in the
+project's root (create it; make sure `temp/` or the folder is gitignored).
+Never put a sheet in the session's scratchpad or a system temp folder: the
+user cannot save over it from GRSMD there. If the project has no such
+folder, ask the user where to put the sheet.
+
 ## One sheet, one path
 
 - Tell the user the exact path of the sheet (including the worktree, if any)
@@ -125,7 +140,8 @@ again.
 
 ## The first round
 
-1. Write the sheet (digest, questions, answer fields). No MARK anywhere:
+1. Write the sheet in `temp/grsmd-qa/` (see "Where the sheet lives"):
+   digest, questions, answer fields, options a, b, c. No MARK anywhere:
    `python <skill>/scripts/mark_changes.py --check --strip <sheet.md>` must
    report 0 findings.
 2. Back it up: `python <skill>/scripts/backup_sheet.py <sheet.md>`.
@@ -243,6 +259,10 @@ When every question is decided:
 - Two worktrees held a copy of the same sheet; the user saved an old GRSMD
   tab into the other copy and 329 lines were lost there. Keep one path and
   check the copies before reading.
+- A sheet written to the session scratchpad could not be saved over from
+  GRSMD. Keep sheets in the project's `temp/grsmd-qa/`.
+- Numbered options (1, 2, 3) next to numbered questions made answers
+  ambiguous. Options are letters.
 - Box-drawing characters misaligned every tree in a Japanese font. Use ASCII.
 - A wrong old name slipped into a tree (a property renamed earlier). Check
   every name in a tree against the latest decision before writing it.
