@@ -39,6 +39,7 @@ before the first round.
 | First version | No marks. The session creates the sheet without any MARK |
 | From the second round | When the user has updated the sheet and the session rewrites it, every change since the version the user saved gets a MARK |
 | Old marks | A part that did not change since the previous version loses its MARK |
+| Marking by script | Never by hand. The session writes the sheet without caring about marks; `scripts/mark_changes.py` strips every MARK, diffs against the user's saved version and marks each change. Its `--check` must report 0 findings before the sheet goes back |
 | User's emphasis | The user may put ★ on anything they want to stress |
 | Backups | Before the session creates or edits the sheet, and after the user has updated it (before the session reads it), the sheet is copied to `old/` beside it. `old/` is gitignored when git is used. The session finds the changes by diffing against `old/` |
 
@@ -124,18 +125,25 @@ again.
 
 ## The first round
 
-1. Write the sheet (digest, questions, answer fields). No MARK anywhere.
+1. Write the sheet (digest, questions, answer fields). No MARK anywhere:
+   `python <skill>/scripts/mark_changes.py --check --strip <sheet.md>` must
+   report 0 findings.
 2. Back it up: `python <skill>/scripts/backup_sheet.py <sheet.md>`.
-3. Tell the user the path in a few lines. Do not repeat the questions in chat.
+3. Tell the user the full path in a few lines. Do not repeat the questions in
+   chat.
 
 ## Every later round
 
 When the user says they updated the sheet:
 
+0. **Load this skill again** with the Skill tool, even when an earlier round
+   loaded it. The skill may have changed since; follow the text you load now,
+   not what you remember.
 1. **Back up the user's version first,** before reading or editing:
    `python <skill>/scripts/backup_sheet.py <sheet.md>`. It copies the sheet
    to `old/<stem>_yyyymmdd_hhmm.md` beside it and warns when `old/` is not
-   gitignored; add the folder to `.gitignore` if it warns.
+   gitignored; add the folder to `.gitignore` if it warns. This backup is the
+   user's saved version: the base for the marks in step 5.
 2. **Read the whole sheet** and diff it against the previous backup (the
    session's last version) to find every answer, counter-question, ★, note in
    a tree, and edit the user made to the wording.
@@ -150,18 +158,30 @@ When the user says they updated the sheet:
    - Take the user's own words into the tree or the table when they proposed
      a name, and say so.
    - Delete earlier explanations that a decision made obsolete.
-5. **Move the marks.** Remove every MARK, then mark each change against the
-   user's saved version (the backup from step 1), by diffing the two. A part
-   that did not change carries no MARK, whatever its earlier marks were.
-6. **Check.** Count the marks; diff once more and make sure every marked line
-   differs from the user's version and every changed line is marked; read the
-   decisions table against the new ruling rows; make sure no settled question
-   still has an answer field.
+   - Do not place or remove any MARK yourself: write the text as it should
+     read; old marks may stay or go, step 5 strips them all.
+   - Just before writing, run the backup script once more. If it makes a new
+     backup, the user saved while you worked: read that version, take its new
+     answers, and use that backup as the base in step 5.
+5. **Mark with the script:**
+   `python <skill>/scripts/mark_changes.py <base backup> <sheet.md>`. It
+   strips every MARK from both versions, diffs them, and marks each changed
+   line, each changed table cell and each changed Mermaid label (see "Change
+   marks"). A part that did not change carries no MARK, whatever its earlier
+   marks were. It warns about a changed Mermaid line with no changed label (a
+   node id only); that line stays unmarked.
+6. **Check.**
+   `python <skill>/scripts/mark_changes.py --check <base backup> <sheet.md>`
+   must print 0 findings (a stale mark or an unmarked change is a finding).
+   Then read the decisions table against the new ruling rows, make sure no
+   settled question still has an answer field, the digest is at the top and
+   the sheet says nothing about `old/`.
 7. **Back up the session's version:** run the backup script again, so the
    next round can diff against exactly what the user was given.
-8. **Tell the user in a few lines** in chat: the path, which answers were
-   taken, which ruling ids, how many new follow-ups. Do not repeat the
-   questions in chat.
+8. **Tell the user in a few lines** in chat: the full path, which answers were
+   taken, which ruling ids, how many new follow-ups, and a last line with the
+   base backup, the number of marked lines and the check result. Do not
+   repeat the questions in chat.
 
 ## Change marks
 
@@ -172,6 +192,13 @@ When the user says they updated the sheet:
 | A heading | `### MARK *Question 5-2. ...*` |
 | A code block or a tree | MARK at the start of each changed line (no italics); three spaces on unchanged lines keep the columns |
 | Mermaid | MARK before the changed label text (no italics) |
+
+`scripts/mark_changes.py` applies this table. A table row is compared cell by
+cell with the old row of the same first cell (else the most alike old row).
+In a code block, it pads the unchanged lines of a changed block with three
+spaces and strips them again in the next round. Blank lines, fences, table
+separator rows and empty answer fields are never marked; deleted text cannot
+be marked.
 
 ## Trees
 
@@ -205,6 +232,14 @@ When every question is decided:
   saved version only.
 - Marks on the first version (147 of them, on almost all new text) were
   noise. The first version has no marks.
+- Marks placed by hand, from memory of what the session meant to change,
+  missed two shortened table rows and kept one on an unchanged header. The
+  backups make the diff one command: mark with `mark_changes.py`, check with
+  `--check`, never by hand.
+- A session kept following the copy of this skill it had loaded in an earlier
+  round after the skill had changed. Load the skill again every round.
+- The user saved while the session was rewriting the sheet; only a tool
+  warning showed it. Back up once more just before writing.
 - Two worktrees held a copy of the same sheet; the user saved an old GRSMD
   tab into the other copy and 329 lines were lost there. Keep one path and
   check the copies before reading.
