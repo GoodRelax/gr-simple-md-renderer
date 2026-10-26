@@ -125,7 +125,9 @@ the user's thinking free of noise.
 Put the sheet, and its `old/` folder beside it, in a folder the user can
 open and save over from the browser (GRSMD's Save writes back to the file
 the user dropped). Never use the session's scratchpad or a system temp
-folder: the user cannot save over a sheet there. If you are not sure which
+folder: the user cannot save over a sheet there. A session that runs in a
+git worktree puts the sheet inside its own worktree (it may not be allowed to
+write elsewhere). If you are not sure which
 folder the user can use, ask before the first round. The folder may be one
 that git tracks. When git is used, add `old/` to `.gitignore`; the backups
 are working copies and must not be committed.
