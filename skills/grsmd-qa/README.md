@@ -31,7 +31,9 @@ and marks what changed since your last save.
 
 ## Install
 
-Copy this folder, `grsmd-qa`, into one of the skill folders:
+Download `grsmd-qa.zip` from this folder (on GitHub: open the file, then
+"Download raw file") and unzip it into one of the skill folders; it
+contains the folder `grsmd-qa`. Or copy this folder itself:
 
 | For | Folder |
 |---|---|
@@ -51,6 +53,7 @@ with answer fields". The session writes the sheet and tells you where it is.
 | `SKILL.md` | The method the session follows: the rules, sheet layout, rounds, change marks, trees |
 | `scripts/backup_sheet.py` | Copies a sheet to `old/<name>_yyyymmdd_hhmm.md` beside it (before and after each edit) |
 | `scripts/mark_changes.py` | Marks what changed since your last save: strips every mark, diffs against that version, marks each changed line, table cell and Mermaid label; `--check` reports stale marks and unmarked changes |
+| `grsmd-qa.zip` | This folder as one file, for download (without the zip itself) |
 | `scripts/tree_align.py` | Prints a two-language tree in columns aligned by display width |
 
 The session keeps earlier versions in `old/` beside the sheet and finds the
