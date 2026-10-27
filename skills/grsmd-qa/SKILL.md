@@ -70,20 +70,27 @@ GRSMD is a one-file, in-browser Markdown viewer and editor with no backend.
 
 ## Sheet layout
 
-One sheet per level of the question tree. Start at the top level, go down
-one level per sheet. When a sheet closes, the next part goes into the same
-file under a new heading if the user asks for that; otherwise start a new
-file with the next number.
+**One discussion, one file.** Keep the decisions and the open questions in
+the same file; never split them into separate files. A deeper level of the
+topic goes into the same file as new open questions. Start a new file only
+when the user starts a new discussion.
+
+The file keeps only what the discussion has decided and what is still open.
+Delete everything the discussion made useless (explanations, figures, dead
+options, superseded drafts); `old/` is the way back if it is ever needed.
+
+The order is fixed: the digest first, then the decisions, then the open
+questions, then the free notes.
 
 ```text
-# <subject> -- sheet N (<what this level covers>)
+# <subject>
 
 <the digest: 3-4 lines, in the user's language; example below>
 <one line: when made, when last rewritten>
 
-## Decided            <- the decisions table: question | decision | ruling id
-
-## Whole tree         <- the only copy of the tree (when the questions build one)
+## Decided            <- the decisions table: question | decision | ruling id,
+                         then the settled design as tables or figures
+                         (for example the only copy of the tree)
 
 ## Question 1. <title>
 <scene: where the user meets this, the current words with counts and where they occur>
@@ -153,11 +160,16 @@ are working copies and must not be committed.
 
 ## Every later round
 
-When the user says they updated the sheet:
+When the user says they updated the sheet, run exactly these steps and
+nothing else. A round must be quick: no project-wide checks, no commits and
+no long reports per round. Run the project's checks and commit once, when
+the sheet closes or when the user asks (see "Closing a sheet").
 
-0. **Load this skill again** with the Skill tool, even when an earlier round
-   loaded it. The skill may have changed since; follow the text you load now,
-   not what you remember.
+0. **Reload this skill only if it changed.** Print its hash:
+   `python -c "import hashlib,sys;print(hashlib.sha1(open(sys.argv[1],'rb').read()).hexdigest()[:12])" <skill>/SKILL.md`
+   and compare it with the hash you noted when you last loaded the skill. If
+   it differs (or you have no note), load the skill again with the Skill tool
+   and follow the text you load now, not what you remember.
 1. **Back up the user's version first,** before reading or editing:
    `python <skill>/scripts/backup_sheet.py <sheet.md>`. It copies the sheet
    to `old/<stem>_yyyymmdd_hhmm.md` beside it and warns when `old/` is not
@@ -167,8 +179,11 @@ When the user says they updated the sheet:
    session's last version) to find every answer, counter-question, ★, note in
    a tree, and edit the user made to the wording.
 3. **Record each settled answer at once.** One ruling row per decision, with
-   the user's words verbatim and an id, in the project's ledger. Never hold a
-   decision only in the sheet: a session can end or compact at any time.
+   the user's words verbatim and an id, in the project's ledger (write it to
+   the file; do not commit it yet). Never hold a decision only in the sheet: a
+   session can end or compact at any time.
+   If a question needs a fresh measurement or count, say so in chat before
+   you start, so the user knows this round takes longer.
 4. **Rewrite the sheet so it converges.**
    - Move each settled question to the decisions table (decision in one line,
      the ruling id) and delete its explanation and its dead options.
@@ -176,7 +191,8 @@ When the user says they updated the sheet:
      the question, with options again when a choice remains.
    - Take the user's own words into the tree or the table when they proposed
      a name, and say so.
-   - Delete earlier explanations that a decision made obsolete.
+   - Delete everything a decision made useless: explanations, figures,
+     options, drafts. Never keep them "for the record"; `old/` keeps them.
    - Do not place or remove any MARK yourself: write the text as it should
      read; old marks may stay or go, step 5 strips them all.
    - Just before writing, run the backup script once more. If it makes a new
@@ -239,10 +255,13 @@ When every question is decided:
 
 - Mark the sheet closed in its header, keep the decisions table and the final
   tree, and delete the answer fields.
-- Open the next part (the next level of the tree) as the user asked: in the
-  same file under a new heading, or in a new file.
+- Open the next part (the next level of the topic) in the same file, as new
+  open questions under the decisions. Use a new file only when the user
+  starts a new discussion.
 - Hand the decisions to whoever applies them, with the ruling ids and the
   counts of what must change.
+- Now, once: run the project's checks and commit the ledger and the closed
+  sheet as the project's rules require (with the user's OK where needed).
 
 ## Traps seen so far
 
@@ -266,6 +285,12 @@ When every question is decided:
   GRSMD. Keep sheets in a folder the user can save to.
 - Numbered options (1, 2, 3) next to numbered questions made answers
   ambiguous. Options are letters.
+- Each round once ran the whole project check, a privacy count, a commit and a
+  long report; the user found the rounds too slow. Rounds edit and mark only;
+  checks and commits wait for the sheet to close.
+- Throwaway edit scripts broke on headings decorated with MARK and italics.
+  Match text after stripping marks (mark_changes.py strips them anyway), or
+  edit with plain text replacement that does not depend on the decoration.
 - Box-drawing characters misaligned every tree in a Japanese font. Use ASCII.
 - A wrong old name slipped into a tree (a property renamed earlier). Check
   every name in a tree against the latest decision before writing it.
