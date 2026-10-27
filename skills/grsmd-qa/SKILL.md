@@ -70,20 +70,27 @@ GRSMD is a one-file, in-browser Markdown viewer and editor with no backend.
 
 ## Sheet layout
 
-One sheet per level of the question tree. Start at the top level, go down
-one level per sheet. When a sheet closes, the next part goes into the same
-file under a new heading if the user asks for that; otherwise start a new
-file with the next number.
+**One discussion, one file.** Keep the decisions and the open questions in
+the same file; never split them into separate files. A deeper level of the
+topic goes into the same file as new open questions. Start a new file only
+when the user starts a new discussion.
+
+The file keeps only what the discussion has decided and what is still open.
+Delete everything the discussion made useless (explanations, figures, dead
+options, superseded drafts); `old/` is the way back if it is ever needed.
+
+The order is fixed: the digest first, then the decisions, then the open
+questions, then the free notes.
 
 ```text
-# <subject> -- sheet N (<what this level covers>)
+# <subject>
 
 <the digest: 3-4 lines, in the user's language; example below>
 <one line: when made, when last rewritten>
 
-## Decided            <- the decisions table: question | decision | ruling id
-
-## Whole tree         <- the only copy of the tree (when the questions build one)
+## Decided            <- the decisions table: question | decision | ruling id,
+                         then the settled design as tables or figures
+                         (for example the only copy of the tree)
 
 ## Question 1. <title>
 <scene: where the user meets this, the current words with counts and where they occur>
@@ -184,7 +191,8 @@ the sheet closes or when the user asks (see "Closing a sheet").
      the question, with options again when a choice remains.
    - Take the user's own words into the tree or the table when they proposed
      a name, and say so.
-   - Delete earlier explanations that a decision made obsolete.
+   - Delete everything a decision made useless: explanations, figures,
+     options, drafts. Never keep them "for the record"; `old/` keeps them.
    - Do not place or remove any MARK yourself: write the text as it should
      read; old marks may stay or go, step 5 strips them all.
    - Just before writing, run the backup script once more. If it makes a new
@@ -247,8 +255,9 @@ When every question is decided:
 
 - Mark the sheet closed in its header, keep the decisions table and the final
   tree, and delete the answer fields.
-- Open the next part (the next level of the tree) as the user asked: in the
-  same file under a new heading, or in a new file.
+- Open the next part (the next level of the topic) in the same file, as new
+  open questions under the decisions. Use a new file only when the user
+  starts a new discussion.
 - Hand the decisions to whoever applies them, with the ruling ids and the
   counts of what must change.
 - Now, once: run the project's checks and commit the ledger and the closed
