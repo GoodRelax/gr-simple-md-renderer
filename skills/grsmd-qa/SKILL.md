@@ -153,11 +153,16 @@ are working copies and must not be committed.
 
 ## Every later round
 
-When the user says they updated the sheet:
+When the user says they updated the sheet, run exactly these steps and
+nothing else. A round must be quick: no project-wide checks, no commits and
+no long reports per round. Run the project's checks and commit once, when
+the sheet closes or when the user asks (see "Closing a sheet").
 
-0. **Load this skill again** with the Skill tool, even when an earlier round
-   loaded it. The skill may have changed since; follow the text you load now,
-   not what you remember.
+0. **Reload this skill only if it changed.** Print its hash:
+   `python -c "import hashlib,sys;print(hashlib.sha1(open(sys.argv[1],'rb').read()).hexdigest()[:12])" <skill>/SKILL.md`
+   and compare it with the hash you noted when you last loaded the skill. If
+   it differs (or you have no note), load the skill again with the Skill tool
+   and follow the text you load now, not what you remember.
 1. **Back up the user's version first,** before reading or editing:
    `python <skill>/scripts/backup_sheet.py <sheet.md>`. It copies the sheet
    to `old/<stem>_yyyymmdd_hhmm.md` beside it and warns when `old/` is not
@@ -167,8 +172,11 @@ When the user says they updated the sheet:
    session's last version) to find every answer, counter-question, ★, note in
    a tree, and edit the user made to the wording.
 3. **Record each settled answer at once.** One ruling row per decision, with
-   the user's words verbatim and an id, in the project's ledger. Never hold a
-   decision only in the sheet: a session can end or compact at any time.
+   the user's words verbatim and an id, in the project's ledger (write it to
+   the file; do not commit it yet). Never hold a decision only in the sheet: a
+   session can end or compact at any time.
+   If a question needs a fresh measurement or count, say so in chat before
+   you start, so the user knows this round takes longer.
 4. **Rewrite the sheet so it converges.**
    - Move each settled question to the decisions table (decision in one line,
      the ruling id) and delete its explanation and its dead options.
@@ -243,6 +251,8 @@ When every question is decided:
   same file under a new heading, or in a new file.
 - Hand the decisions to whoever applies them, with the ruling ids and the
   counts of what must change.
+- Now, once: run the project's checks and commit the ledger and the closed
+  sheet as the project's rules require (with the user's OK where needed).
 
 ## Traps seen so far
 
@@ -266,6 +276,12 @@ When every question is decided:
   GRSMD. Keep sheets in a folder the user can save to.
 - Numbered options (1, 2, 3) next to numbered questions made answers
   ambiguous. Options are letters.
+- Each round once ran the whole project check, a privacy count, a commit and a
+  long report; the user found the rounds too slow. Rounds edit and mark only;
+  checks and commits wait for the sheet to close.
+- Throwaway edit scripts broke on headings decorated with MARK and italics.
+  Match text after stripping marks (mark_changes.py strips them anyway), or
+  edit with plain text replacement that does not depend on the decoration.
 - Box-drawing characters misaligned every tree in a Japanese font. Use ASCII.
 - A wrong old name slipped into a tree (a property renamed earlier). Check
   every name in a tree against the latest decision before writing it.
