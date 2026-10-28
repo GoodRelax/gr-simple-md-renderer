@@ -159,6 +159,14 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   the cursor line; refused inside code, math, HTML and a table's source),
   nothing opens afterwards so they are seen drawn, and one Undo takes all
   of them away. The help says so in both languages.
+- The edit palette's grip (`::`) also shrinks the palette to the grip, and
+  brings it back, on a double click; a press and hold still works. On a
+  phone or tablet, and with a pen, two quick taps (within 0.5 s) do it; the
+  palette takes no browser zoom, so the double tap does not zoom the page.
+  Only two plain presses count: moving the palette or a press and hold
+  in between does not. The double click selects no text and leaves the open
+  block, its cursor and its selection as they were. The grip's tooltip and
+  the help say so (owner rulings PD1 to PD3).
 - In edit mode, drag over the text of some blocks (on a phone, long press
   and move the handles) to select those blocks whole: they get a blue frame
   and a small bar [Delete] [Cut] [Copy] shows under the selection (above it

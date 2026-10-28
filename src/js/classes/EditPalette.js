@@ -142,38 +142,65 @@ function paletteRows(mod) {
   ];
 }
 
+/**
+ * A touch or pen press on the grip that comes soon enough after the last
+ * grip tap of the same pointer type (PD1, PD2): the time between the two
+ * presses is at most CONFIG.edit.paletteDoubleTapMs. A mouse is left to the
+ * browser's dblclick (the OS double-click time).
+ * @purity semi-pure-a
+ * @param {{pointerType: string, time: number}|null} lastTap
+ * @param {{pointerType: string, time: number}} press
+ * @param {object} [limits] - CONFIG.edit
+ * @returns {boolean}
+ */
+export function isQuickSecondGripTap(lastTap, press, limits = CONFIG.edit) {
+  if (!lastTap || press.pointerType === "mouse" || lastTap.pointerType !== press.pointerType) return false;
+  const interval = press.time - lastTap.time;
+  return interval >= 0 && interval <= limits.paletteDoubleTapMs;
+}
+
 const GESTURE_STATES = [IDLE, PRESS, GRIP, DRAG, LONG];
 const gesture = (...cells) => row(GESTURE_STATES, cells);
 
 /** Spec 11-d: event -> current state -> cell. "[*]" ends the gesture handling (hidden). */
 export const paletteGestureStateMachine = Object.freeze({
-  enabledButtonPressed: gesture(cell(PRESS, ["capturePointer"])),
-  disabledButtonPressed: gesture(cell(DRAG, ["capturePointer", "rememberOffset"])),
+  enabledButtonPressed: gesture(cell(PRESS, ["forgetGripTap", "capturePointer"])),
+  disabledButtonPressed: gesture(cell(DRAG, ["forgetGripTap", "capturePointer", "rememberOffset"])),
   disabledPopoverButtonPressed: gesture(),
   gripPressed: gesture(cell(GRIP, ["capturePointer", "rememberOffset", "startLongPressTimer"])),
-  gapPressed: gesture(cell(DRAG, ["capturePointer", "rememberOffset"])),
+  gapPressed: gesture(cell(DRAG, ["forgetGripTap", "capturePointer", "rememberOffset"])),
   popoverGapPressed: gesture(),
   pointerMoved: gesture(
     null,
     null,
-    cell(DRAG, ["cancelLongPressTimer", "movePaletteClamped"], "hasMovedBeyondThreshold"),
+    cell(DRAG, ["cancelLongPressTimer", "forgetGripTap", "movePaletteClamped"], "hasMovedBeyondThreshold"),
     cell(DRAG, ["movePaletteClamped"]),
     null,
   ),
-  longPressElapsed: gesture(null, null, cell(LONG, ["requestMinimizeToggle"])),
+  longPressElapsed: gesture(null, null, cell(LONG, ["forgetGripTap", "requestMinimizeToggle"])),
+  gripDoubleClicked: gesture(cell(IDLE, ["forgetGripTap", "requestMinimizeToggle"], "isSecondMouseGripTap")),
   pointerLeftPressedButton: gesture(
     null,
     choice(cell(DRAG, ["rememberOffset"], "isPaletteButton"), cell(IDLE, ["releasePointer"])),
   ),
   pointerReleasedInsideButton: gesture(null, cell(IDLE, ["runButtonCommand"])),
-  pointerReleased: gesture(null, cell(IDLE, []), cell(IDLE, ["cancelLongPressTimer"]), cell(IDLE, []), cell(IDLE, [])),
-  pointerCanceled: gesture(null, cell(IDLE, []), cell(IDLE, ["cancelLongPressTimer"]), cell(IDLE, []), cell(IDLE, [])),
+  pointerReleased: gesture(
+    null,
+    cell(IDLE, []),
+    choice(
+      cell(IDLE, ["cancelLongPressTimer", "forgetGripTap", "requestMinimizeToggle"], "isQuickSecondGripTap"),
+      cell(IDLE, ["cancelLongPressTimer", "rememberGripTap"]),
+    ),
+    cell(IDLE, []),
+    cell(IDLE, []),
+  ),
+  pointerCanceled: gesture(null, cell(IDLE, []), cell(IDLE, ["cancelLongPressTimer", "forgetGripTap"]), cell(IDLE, []), cell(IDLE, [])),
   paletteHidden: gesture(
-    cell(END, ["releaseListeners"]),
-    cell(END, ["releasePointer", "releaseListeners"]),
-    cell(END, ["cancelLongPressTimer", "releasePointer", "releaseListeners"]),
-    cell(END, ["releasePointer", "releaseListeners"]),
-    cell(END, ["releasePointer", "releaseListeners"]),
+    cell(END, ["forgetGripTap", "releaseListeners"]),
+    cell(END, ["forgetGripTap", "releasePointer", "releaseListeners"]),
+    cell(END, ["cancelLongPressTimer", "forgetGripTap", "releasePointer", "releaseListeners"]),
+    cell(END, ["forgetGripTap", "releasePointer", "releaseListeners"]),
+    cell(END, ["forgetGripTap", "releasePointer", "releaseListeners"]),
   ),
 });
 
@@ -267,7 +294,8 @@ function createButton(id, label, iconHtml) {
  * The edit palette (spec 5.15, 11-d, 11-f): a movable toolbar fixed to the
  * viewport, directly under body, and its three popovers. Buttons run on
  * press-and-release inside the button (never on click); moving away from a
- * palette button drags the palette. A long press on the grip minimizes it.
+ * palette button drags the palette. A long press or a double click (a
+ * double tap on touch and pen) on the grip minimizes it.
  * The palette is pointer only (INV-53). The elements are known by reference
  * only, never looked up by id.
  *
@@ -291,8 +319,9 @@ export default class EditPalette {
     this.host = host;
     this._paletteGestureState = IDLE;
     this._paletteDisplayState = HIDDEN;
-    this._gesture = null; // { pointerId, button, el, start, offset }
+    this._gesture = null; // { pointerId, button, el, start, offset, pointerType, time }
     this._longPressTimer = 0;
+    this._gripTap = null; // the last grip press released as a tap: { pointerType, time, count }
     this._buttons = new Map(); // button element -> { command, arg, stateKey, popover }
     this._openers = {}; // popover key -> its opener button
     this._popovers = {}; // popover key -> element
@@ -318,6 +347,7 @@ export default class EditPalette {
     this._onPointerMove = (e) => this._handlePointerMove(e);
     this._onPointerUp = (e) => this._handlePointerUp(e);
     this._onPointerCancel = (e) => this._handlePointerCancel(e);
+    this._onPaletteDoubleClick = () => this.dispatch("gripDoubleClicked");
     this._onDocumentPointerDown = (e) => this._handleDocumentPointerDown(e);
     this._onDocumentKeyDown = (e) => this._handleDocumentKeyDown(e);
     this._onResize = () => this.dispatchDisplay("viewportResized");
@@ -326,6 +356,9 @@ export default class EditPalette {
       el.addEventListener("pointerdown", this._onPointerDown);
       el.addEventListener("contextmenu", this._onContextMenu);
     }
+    // On the palette, not the grip: the grip press captures the pointer on
+    // the palette, so the browser sends the dblclick there (INV-68).
+    this._root.addEventListener("dblclick", this._onPaletteDoubleClick);
 
     document.body.append(...this._containers());
     this.setButtonStates({});
@@ -496,6 +529,12 @@ export default class EditPalette {
         return isPastActivation(this._gesture.start, input);
       case "isPaletteButton":
         return this._root.contains(this._gesture.button);
+      case "isQuickSecondGripTap":
+        return isQuickSecondGripTap(this._gripTap, this._gesture);
+      case "isSecondMouseGripTap":
+        // The browser's dblclick keeps the OS double-click time; it counts
+        // only when both presses were mouse taps on the grip (PD2).
+        return this._gripTap?.pointerType === "mouse" && this._gripTap.count >= 2;
       default:
         throw new Error(`Unknown palette gesture guard: ${guard}`);
     }
@@ -513,6 +552,8 @@ export default class EditPalette {
           el: input.el,
           start: { x: input.x, y: input.y },
           offset: null,
+          pointerType: input.pointerType ?? "mouse",
+          time: input.time ?? 0,
         };
         try {
           input.el.setPointerCapture?.(input.pointerId);
@@ -541,6 +582,15 @@ export default class EditPalette {
         break;
       case "requestMinimizeToggle":
         this.dispatchDisplay("minimizeToggled");
+        break;
+      case "rememberGripTap": {
+        const { pointerType, time } = this._gesture;
+        const count = this._gripTap?.pointerType === pointerType ? this._gripTap.count + 1 : 1;
+        this._gripTap = { pointerType, time, count };
+        break;
+      }
+      case "forgetGripTap":
+        this._gripTap = null;
         break;
       case "runButtonCommand":
         this._runButton(this._gesture.button);
@@ -665,7 +715,15 @@ export default class EditPalette {
     if (!this.isShown() || e.button !== 0) return;
     const inPopover = e.currentTarget !== this._root;
     const button = this._buttonAt(e.target);
-    const input = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, button, el: button ?? e.currentTarget };
+    const input = {
+      pointerId: e.pointerId,
+      x: e.clientX,
+      y: e.clientY,
+      button,
+      el: button ?? e.currentTarget,
+      pointerType: e.pointerType || "mouse",
+      time: performance.now(),
+    };
     let event;
     if (button && !isPaletteButtonDisabled(button)) event = "enabledButtonPressed";
     else if (button) event = inPopover ? "disabledPopoverButtonPressed" : "disabledButtonPressed";

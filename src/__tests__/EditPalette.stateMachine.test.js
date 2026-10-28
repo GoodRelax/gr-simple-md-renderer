@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import EditPalette, { paletteGestureStateMachine } from "../js/classes/EditPalette.js";
+import EditPalette, { paletteGestureStateMachine, isQuickSecondGripTap } from "../js/classes/EditPalette.js";
 import { CONFIG } from "../js/config.js";
 import { pointer } from "./helpers/editDom.js";
 import { fakePaletteLayout, paletteElements, removePaletteElements, centerOf, positionOf } from "./helpers/paletteLayout.js";
 import { diagramTransitions, tableTransitions } from "./helpers/specDiagram.js";
 
-// Spec 11-d: every cell of the 13 x 5 table. Each cell is reached through the
+// Spec 11-d: every cell of the 14 x 5 table. Each cell is reached through the
 // DOM where the DOM can produce the event in that state, and through
 // dispatch() otherwise. The next state is read from paletteGestureState (the
 // variable the spec names); the effects are seen from outside:
@@ -34,6 +34,7 @@ const TABLE = {
   popoverGapPressed: {},
   pointerMoved: { [GRIP]: [DRAG, ["moved"]], [DRAG]: [DRAG, ["moved"]] },
   longPressElapsed: { [GRIP]: [LONG, ["minimized"]] },
+  gripDoubleClicked: { [IDLE]: [IDLE, ["minimized"]] },
   pointerLeftPressedButton: { [PRESS]: [DRAG, []] },
   pointerReleasedInsideButton: { [PRESS]: [IDLE, ["runCommand"]] },
   pointerReleased: { [PRESS]: [IDLE, []], [GRIP]: [IDLE, []], [DRAG]: [IDLE, []], [LONG]: [IDLE, []] },
@@ -105,6 +106,17 @@ function inState(state, { popoverButton = false } = {}) {
 
 const downAt = (target, x, y, pointerId) => () => pointer(target, "pointerdown", { x, y, pointerId });
 
+/** Press and release the grip without moving (a tap), as the given pointer type. */
+function tapGrip(pointerType = "mouse") {
+  const g = centerOf(el.grip());
+  pointer(el.grip(), "pointerdown", { x: g.x, y: g.y, pointerType });
+  pointer(el.grip(), "pointerup", { x: g.x, y: g.y, pointerType });
+}
+
+function dblclick(target) {
+  target.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, detail: 2 }));
+}
+
 /** The DOM stimulus for an event in a state, or null (then dispatch() is used). */
 function stimulus(event, state, { b, c, g }) {
   const id = state === IDLE ? 1 : 2; // a second pointer while a gesture runs
@@ -137,6 +149,16 @@ function stimulus(event, state, { b, c, g }) {
       return () => pointer(el.grip(), "pointermove", { x: g.x - 100, y: g.y - 50 });
     case "longPressElapsed":
       return state === GRIP ? () => vi.advanceTimersByTime(CONFIG.edit.paletteLongPressMs) : null;
+    case "gripDoubleClicked":
+      // In idle the guard is made true by two mouse taps on the grip first;
+      // in the other states the dblclick comes during a press (no change).
+      if (state !== IDLE) return () => dblclick(el.grip());
+      return () => {
+        tapGrip();
+        tapGrip();
+        layout.capture.mockClear();
+        dblclick(el.grip());
+      };
     case "pointerLeftPressedButton":
       return state === PRESS ? () => pointer(b, "pointermove", { x: c.x - 40, y: c.y }) : null;
     case "pointerReleasedInsideButton":
@@ -176,9 +198,9 @@ function observedState() {
 
 const CELLS = Object.entries(TABLE).flatMap(([event, row]) => STATES.map((state) => [event, state, row[state] ?? null]));
 
-describe("AT-PSM 11-d palette gesture state machine: 13 events x 5 states", () => {
-  it("covers 65 cells", () => {
-    expect(CELLS).toHaveLength(65);
+describe("AT-PSM 11-d palette gesture state machine: 14 events x 5 states", () => {
+  it("covers 70 cells", () => {
+    expect(CELLS).toHaveLength(70);
   });
 
   it.each(CELLS)("%s in %s", (event, state, cell) => {
@@ -245,6 +267,140 @@ describe("AT-PSM guards and the popover variant", () => {
   });
 });
 
+describe("AT-PSM-11 grip double click and double tap (INV-68, PD1-PD3)", () => {
+  const D = CONFIG.edit.paletteDoubleTapMs;
+
+  beforeEach(() => {
+    palette.show();
+    host.runCommand.mockClear();
+  });
+
+  it("a mouse: two taps and the browser's dblclick toggle; the second double click restores", () => {
+    tapGrip();
+    tapGrip();
+    expect(palette.isMinimized()).toBe(false); // a mouse waits for the dblclick
+    dblclick(el.grip());
+    expect(palette.isMinimized()).toBe(true);
+    expect(observedState()).toBe(IDLE);
+    tapGrip();
+    tapGrip();
+    dblclick(el.grip());
+    expect(palette.isMinimized()).toBe(false);
+    expect(host.runCommand).not.toHaveBeenCalled();
+  });
+
+  it("a mouse: a dblclick after one tap, after a drag, or after a long press does nothing", () => {
+    tapGrip();
+    dblclick(el.grip());
+    expect(palette.isMinimized()).toBe(false);
+
+    const g = centerOf(el.grip());
+    pointer(el.grip(), "pointerdown", { x: g.x, y: g.y });
+    pointer(el.grip(), "pointermove", { x: g.x - T - 10, y: g.y });
+    pointer(el.grip(), "pointerup", { x: g.x - T - 10, y: g.y });
+    tapGrip();
+    dblclick(el.grip());
+    expect(palette.isMinimized()).toBe(false);
+
+    const h = centerOf(el.grip());
+    pointer(el.grip(), "pointerdown", { x: h.x, y: h.y });
+    vi.advanceTimersByTime(CONFIG.edit.paletteLongPressMs);
+    expect(palette.isMinimized()).toBe(true); // the long press itself
+    pointer(el.grip(), "pointerup", { x: h.x, y: h.y });
+    tapGrip();
+    dblclick(el.grip());
+    expect(palette.isMinimized()).toBe(true); // no second toggle
+  });
+
+  it("a mouse: a press on a palette button or the gap between the taps cancels the pair", () => {
+    palette.setButtonStates({ insertTable: true });
+    tapGrip();
+    const b = el.enabled();
+    const c = centerOf(b);
+    pointer(b, "pointerdown", { x: c.x, y: c.y });
+    pointer(b, "pointerup", { x: c.x, y: c.y });
+    tapGrip();
+    dblclick(el.grip());
+    expect(palette.isMinimized()).toBe(false);
+
+    tapGrip();
+    const p = gapOf(root, 228, 76);
+    pointer(root, "pointerdown", { x: p.x, y: p.y });
+    pointer(root, "pointerup", { x: p.x, y: p.y });
+    tapGrip();
+    dblclick(el.grip());
+    expect(palette.isMinimized()).toBe(false);
+  });
+
+  it.each(["touch", "pen"])("%s: the second tap within paletteDoubleTapMs toggles on release", (type) => {
+    tapGrip(type);
+    expect(palette.isMinimized()).toBe(false);
+    vi.advanceTimersByTime(D);
+    tapGrip(type);
+    expect(palette.isMinimized()).toBe(true);
+    expect(vi.getTimerCount()).toBe(0); // the long press timer of the second press is gone
+    // the browser may also send a dblclick for the double tap: no second toggle
+    dblclick(el.grip());
+    expect(palette.isMinimized()).toBe(true);
+    // a third quick tap starts a new pair
+    tapGrip(type);
+    expect(palette.isMinimized()).toBe(true);
+    tapGrip(type);
+    expect(palette.isMinimized()).toBe(false);
+  });
+
+  it.each(["touch", "pen"])("%s: taps further apart than paletteDoubleTapMs do nothing", (type) => {
+    tapGrip(type);
+    vi.advanceTimersByTime(D + 1);
+    tapGrip(type);
+    expect(palette.isMinimized()).toBe(false);
+  });
+
+  it("touch: a long press, a drag, a cancel or another pointer type between the taps cancels the pair", () => {
+    const g = centerOf(el.grip());
+    tapGrip("touch");
+    pointer(el.grip(), "pointerdown", { x: g.x, y: g.y, pointerType: "touch" });
+    pointer(el.grip(), "pointercancel", { x: g.x, y: g.y, pointerType: "touch" });
+    tapGrip("touch");
+    expect(palette.isMinimized()).toBe(false);
+
+    vi.advanceTimersByTime(D + 1);
+    tapGrip("touch");
+    tapGrip("mouse");
+    tapGrip("touch");
+    expect(palette.isMinimized()).toBe(false);
+
+    vi.advanceTimersByTime(D + 1);
+    tapGrip("touch");
+    pointer(el.grip(), "pointerdown", { x: g.x, y: g.y, pointerType: "touch" });
+    pointer(el.grip(), "pointermove", { x: g.x - T - 10, y: g.y, pointerType: "touch" });
+    pointer(el.grip(), "pointerup", { x: g.x - T - 10, y: g.y, pointerType: "touch" });
+    tapGrip("touch");
+    expect(palette.isMinimized()).toBe(false);
+  });
+
+  it("touch: hiding the palette between the taps cancels the pair", () => {
+    tapGrip("touch");
+    palette.hide();
+    palette.show();
+    tapGrip("touch");
+    expect(palette.isMinimized()).toBe(false);
+  });
+
+  it("isQuickSecondGripTap: same touch / pen type, 0..paletteDoubleTapMs between the presses; never a mouse", () => {
+    const tap = (pointerType, time) => ({ pointerType, time });
+    expect(isQuickSecondGripTap(null, tap("touch", 0))).toBe(false);
+    expect(isQuickSecondGripTap(tap("touch", 100), tap("touch", 100))).toBe(true);
+    expect(isQuickSecondGripTap(tap("touch", 100), tap("touch", 100 + D))).toBe(true);
+    expect(isQuickSecondGripTap(tap("touch", 100), tap("touch", 101 + D))).toBe(false);
+    expect(isQuickSecondGripTap(tap("touch", 100), tap("touch", 99))).toBe(false);
+    expect(isQuickSecondGripTap(tap("pen", 0), tap("pen", 10))).toBe(true);
+    expect(isQuickSecondGripTap(tap("pen", 0), tap("touch", 10))).toBe(false);
+    expect(isQuickSecondGripTap(tap("mouse", 0), tap("mouse", 10))).toBe(false);
+    expect(isQuickSecondGripTap(tap("touch", 0), tap("touch", 50), { paletteDoubleTapMs: 40 })).toBe(false);
+  });
+});
+
 describe("AT-PSM-10 the paletteGestureStateMachine definition matches the spec", () => {
   it("has the same events and the same next state in all cells", () => {
     expect(Object.keys(paletteGestureStateMachine).sort()).toEqual(Object.keys(TABLE).sort());
@@ -262,13 +418,21 @@ describe("AT-PSM-10 the paletteGestureStateMachine definition matches the spec",
 
   it("lists the actions and guards of the spec table", () => {
     const act = (event, state) => paletteGestureStateMachine[event][state];
-    expect(act("enabledButtonPressed", IDLE).actions).toEqual(["capturePointer"]);
-    expect(act("disabledButtonPressed", IDLE).actions).toEqual(["capturePointer", "rememberOffset"]);
+    expect(act("enabledButtonPressed", IDLE).actions).toEqual(["forgetGripTap", "capturePointer"]);
+    expect(act("disabledButtonPressed", IDLE).actions).toEqual(["forgetGripTap", "capturePointer", "rememberOffset"]);
     expect(act("gripPressed", IDLE).actions).toEqual(["capturePointer", "rememberOffset", "startLongPressTimer"]);
-    expect(act("gapPressed", IDLE).actions).toEqual(["capturePointer", "rememberOffset"]);
-    expect(act("pointerMoved", GRIP)).toMatchObject({ guard: "hasMovedBeyondThreshold", actions: ["cancelLongPressTimer", "movePaletteClamped"] });
+    expect(act("gapPressed", IDLE).actions).toEqual(["forgetGripTap", "capturePointer", "rememberOffset"]);
+    expect(act("pointerMoved", GRIP)).toMatchObject({
+      guard: "hasMovedBeyondThreshold",
+      actions: ["cancelLongPressTimer", "forgetGripTap", "movePaletteClamped"],
+    });
     expect(act("pointerMoved", DRAG).actions).toEqual(["movePaletteClamped"]);
-    expect(act("longPressElapsed", GRIP).actions).toEqual(["requestMinimizeToggle"]);
+    expect(act("longPressElapsed", GRIP).actions).toEqual(["forgetGripTap", "requestMinimizeToggle"]);
+    expect(act("gripDoubleClicked", IDLE)).toMatchObject({
+      to: IDLE,
+      guard: "isSecondMouseGripTap",
+      actions: ["forgetGripTap", "requestMinimizeToggle"],
+    });
     const left = act("pointerLeftPressedButton", PRESS);
     expect(left).toHaveLength(2);
     expect(left[0]).toMatchObject({ to: DRAG, guard: "isPaletteButton", actions: ["rememberOffset"] });
@@ -277,15 +441,24 @@ describe("AT-PSM-10 the paletteGestureStateMachine definition matches the spec",
     expect(act("pointerReleasedInsideButton", PRESS).actions).toEqual(["runButtonCommand"]);
     for (const event of ["pointerReleased", "pointerCanceled"]) {
       expect(act(event, PRESS).actions).toEqual([]);
-      expect(act(event, GRIP).actions).toEqual(["cancelLongPressTimer"]);
       expect(act(event, DRAG).actions).toEqual([]);
       expect(act(event, LONG).actions).toEqual([]);
     }
-    expect(act("paletteHidden", IDLE).actions).toEqual(["releaseListeners"]);
-    expect(act("paletteHidden", PRESS).actions).toEqual(["releasePointer", "releaseListeners"]);
-    expect(act("paletteHidden", GRIP).actions).toEqual(["cancelLongPressTimer", "releasePointer", "releaseListeners"]);
-    expect(act("paletteHidden", DRAG).actions).toEqual(["releasePointer", "releaseListeners"]);
-    expect(act("paletteHidden", LONG).actions).toEqual(["releasePointer", "releaseListeners"]);
+    const released = act("pointerReleased", GRIP);
+    expect(released).toHaveLength(2);
+    expect(released[0]).toMatchObject({
+      to: IDLE,
+      guard: "isQuickSecondGripTap",
+      actions: ["cancelLongPressTimer", "forgetGripTap", "requestMinimizeToggle"],
+    });
+    expect(released[1]).toMatchObject({ to: IDLE, actions: ["cancelLongPressTimer", "rememberGripTap"] });
+    expect(released[1].guard).toBeUndefined();
+    expect(act("pointerCanceled", GRIP).actions).toEqual(["cancelLongPressTimer", "forgetGripTap"]);
+    expect(act("paletteHidden", IDLE).actions).toEqual(["forgetGripTap", "releaseListeners"]);
+    expect(act("paletteHidden", PRESS).actions).toEqual(["forgetGripTap", "releasePointer", "releaseListeners"]);
+    expect(act("paletteHidden", GRIP).actions).toEqual(["cancelLongPressTimer", "forgetGripTap", "releasePointer", "releaseListeners"]);
+    expect(act("paletteHidden", DRAG).actions).toEqual(["forgetGripTap", "releasePointer", "releaseListeners"]);
+    expect(act("paletteHidden", LONG).actions).toEqual(["forgetGripTap", "releasePointer", "releaseListeners"]);
   });
 
   it("11-b: the spec diagram shows exactly the transitions of the table", () => {
