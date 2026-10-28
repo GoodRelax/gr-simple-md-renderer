@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fakeEditServices, withEditMethods, trackGlobalListeners } from "./helpers/uiMocks.js";
 
-describe("UIController.setupKeyboard (modifier guard)", () => {
+describe("AT-KEY-09 UIController.setupKeyboard (modifier guard, INV-14)", () => {
   let UIController;
   let mockOrchestrator;
   let mockScrollEngine;
@@ -101,7 +101,7 @@ describe("UIController.setupKeyboard (modifier guard)", () => {
     document.dispatchEvent(event);
   }
 
-  it("bare 'c' key triggers doClear", () => {
+  it("bare 'c' key triggers doClear (INV-13)", () => {
     const ctrl = createController();
     const clearSpy = vi.spyOn(ctrl, "doClear");
     clearSpy.mockClear();

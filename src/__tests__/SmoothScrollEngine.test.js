@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import SmoothScrollEngine from "../js/classes/SmoothScrollEngine.js";
 
-describe("SmoothScrollEngine", () => {
+describe("AT-SSE SmoothScrollEngine (FS-05)", () => {
   const mockConfig = {
     maxSpeed: 0.5,
     acceleration: 0.001,
@@ -31,7 +31,7 @@ describe("SmoothScrollEngine", () => {
     vi.restoreAllMocks();
   });
 
-  describe("constructor", () => {
+  describe("AT-SSE-01 constructor", () => {
     it("stores config reference", () => {
       const engine = new SmoothScrollEngine(mockConfig);
       expect(engine._cfg).toBe(mockConfig);
@@ -63,7 +63,7 @@ describe("SmoothScrollEngine", () => {
     });
   });
 
-  describe("startScroll(direction)", () => {
+  describe("AT-SSE-02 startScroll(direction)", () => {
     it("sets direction to +1 for scrolling down", () => {
       const engine = new SmoothScrollEngine(mockConfig);
       engine.startScroll(+1);
@@ -107,7 +107,7 @@ describe("SmoothScrollEngine", () => {
     });
   });
 
-  describe("stopScroll()", () => {
+  describe("AT-SSE-03 stopScroll()", () => {
     it("sets _keyHeld to false", () => {
       const engine = new SmoothScrollEngine(mockConfig);
       engine.startScroll(1);
@@ -117,7 +117,7 @@ describe("SmoothScrollEngine", () => {
     });
   });
 
-  describe("destroy()", () => {
+  describe("AT-SSE-04 destroy()", () => {
     it("calls cancelAnimationFrame when RAF is active", () => {
       const engine = new SmoothScrollEngine(mockConfig);
       engine.startScroll(1);
@@ -154,7 +154,7 @@ describe("SmoothScrollEngine", () => {
     });
   });
 
-  describe("scrolling class (INV-18b)", () => {
+  describe("AT-SSE-05 scrolling class (INV-18b)", () => {
     it("adds .scrolling class to scrollTarget on startScroll", () => {
       const target = document.createElement("div");
       const engine = new SmoothScrollEngine(mockConfig, target);
@@ -200,7 +200,7 @@ describe("SmoothScrollEngine", () => {
     });
   });
 
-  describe("_loop(ts)", () => {
+  describe("AT-SSE-06 _loop(ts)", () => {
     it("on first call stores ts and schedules next frame", () => {
       const engine = new SmoothScrollEngine(mockConfig);
       engine.startScroll(1);

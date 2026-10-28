@@ -137,13 +137,14 @@ export const CONFIG = {
     markdown: {
       parseError: (message) => `Couldn't read this Markdown: ${message}`, // marked threw
     },
-    // Initial state hint in #preview (FS-16). The three steps are padded to
+    // Initial state hint in #preview (FS-16). The four steps are padded to
     // the same length (spec 5.10).
     startScreen:
       "Get started:\n\n" +
       "  1. Paste Markdown (Ctrl+V)  ->  Markdown Preview                     \n" +
       "  2. Drop a .md file          ->  Markdown Preview                     \n" +
-      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)",
+      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)\n" +
+      "  4. Double-click a block     ->  Edit  (phone: press [Edit], tap)     ",
     fileInfo: { // #fileInfo of the code view
       lines: (count) => `${count} lines`,
       size: (kb) => `${kb} KB`,
@@ -274,8 +275,6 @@ export const CONFIG = {
     caretLineMaxChars: 20000, // INV-84: a wrapping text longer than this before the caret keeps the block's top
     linkSchemes: ["http:", "https:", "mailto:"], // a text that is a link URL (INV-69, INV-72 (a))
     maxPastedUrlLength: 2048, // INV-69
-    doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
-    doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",
     // INV-79: the save dialog's id; the browser remembers its last folder
     // by this id (the app stores nothing)

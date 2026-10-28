@@ -213,7 +213,7 @@ describe("AT-UI-68 Insert inline math (owner ruling 2026-10-25, INV-52)", () => 
   });
 });
 
-describe("AT-UI-69 Insert math boxes: the three equations under their names, in one press (owner ruling 2026-10-25)", () => {
+describe("AT-UI-69 Insert math boxes: the three math boxes under their names, in one press (owner ruling 2026-10-25)", () => {
   it("(a) while editing: the editor is committed, the six blocks go in at the caret line, nothing opens", async () => {
     await withDocument();
     const ta = open(isPara("Second"));

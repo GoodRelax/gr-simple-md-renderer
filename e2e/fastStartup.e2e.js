@@ -173,19 +173,25 @@ test("INV-81 (4): a file dropped before the core runs does not leave the page, a
   }
 });
 
-test.describe("PlantUML and the late KaTeX (review N1)", () => {
+test.describe("PlantUML and the late KaTeX (review N1, owner ruling AQ7)", () => {
   // The PlantUML server is never reached: the fixtures abort and record
   // every request to it. A blocked image shows its error (a console line).
   test.use({ allowExternalRequests: true, allowPageProblems: true });
 
-  test("INV-81 (3), INV-23: KaTeX arriving later never sends a diagram a commit added; the consented one is sent", async ({ page, extraOrigins, externalRequests, pageProblems }) => {
+  const plantumlRequests = (externalRequests) => [...new Set(externalRequests.filter((url) => new URL(url).origin === PLANTUML_ORIGIN))];
+
+  test("INV-81 (3), INV-23, INV-02: KaTeX arriving later never sends a diagram a commit added; the full render's one is sent after one dialog once the libraries are settled (answering)", async ({ page, extraOrigins, externalRequests, pageProblems }) => {
     test.setTimeout(60000);
-    page.on("dialog", (dialog) => dialog.accept());
+    const dialogs = [];
+    page.on("dialog", (dialog) => {
+      dialogs.push(dialog.message());
+      dialog.accept();
+    });
     const server = await openPaused(page, extraOrigins, BEFORE_LIBRARIES);
     try {
       await renderMarkdown(page, "```plantuml\n@startuml\nA -> B\n@enduml\n```\n\n- $x$\n");
       const preview = page.locator("#preview");
-      await expect(preview.locator(".plantuml-loading")).toHaveCount(1); // allowed, the encoder on its way
+      await expect(preview.locator(".plantuml-loading")).toHaveCount(1); // held: the libraries are not settled (loading)
       await page.locator("#editBtn").click();
       await page.locator("#preview > .md-block", { hasText: "$x$" }).click();
       const editor = page.locator("textarea.md-block-editor");
@@ -194,18 +200,52 @@ test.describe("PlantUML and the late KaTeX (review N1)", () => {
         el.value = "- $x$\n\n  ```plantuml\n  @startuml\n  SECRET -> D\n  @enduml\n  ```";
         el.dispatchEvent(new Event("input", { bubbles: true }));
       });
-      await page.keyboard.press("Escape"); // commits (INV-23: the new diagram waits for [Render])
-      await expect(preview.locator(".plantuml-pending")).toHaveCount(1);
+      await page.keyboard.press("Escape"); // commits (INV-23: the new diagram will wait for [Render])
+      await expect(preview.locator(".plantuml-loading")).toHaveCount(2);
+      expect(dialogs).toEqual([]);
       server.resume();
       await expect(preview.locator(".katex")).toHaveCount(1, { timeout: 30000 });
-      const plantuml = () => [...new Set(externalRequests.filter((url) => new URL(url).origin === PLANTUML_ORIGIN))];
-      await expect.poll(() => plantuml().length, { timeout: 30000 }).toBe(1);
+      await expect.poll(() => plantumlRequests(externalRequests).length, { timeout: 30000 }).toBe(1);
+      await expect(preview.locator(".plantuml-pending")).toHaveCount(1);
       await page.waitForTimeout(500);
-      expect(plantuml()).toHaveLength(1); // A -> B only
+      expect(plantumlRequests(externalRequests)).toHaveLength(1); // A -> B only
+      expect(dialogs).toHaveLength(1);
       // every request stopped on its way out went to the PlantUML server: no other host
       expect(externalRequests.filter((url) => new URL(url).origin !== PLANTUML_ORIGIN)).toEqual([]);
-      await expect(preview.locator(".plantuml-pending")).toHaveCount(1);
       expect(pageProblems.filter((p) => p.startsWith("csp"))).toEqual([]);
+    } finally {
+      await server.close();
+    }
+  });
+
+  test("AT-LSM-17 INV-02, INV-81 (3): no PlantUML dialog and no request before the libraries are settled; one dialog after (answering), then the diagram is sent", async ({ page, extraOrigins, externalRequests }) => {
+    test.setTimeout(60000);
+    const dialogs = [];
+    page.on("dialog", (dialog) => {
+      dialogs.push(dialog.message());
+      dialog.accept();
+    });
+    const server = await openPaused(page, extraOrigins, BEFORE_LIBRARIES);
+    try {
+      await renderMarkdown(page, "# Diagrams\n\n```plantuml\n@startuml\nA -> B\n@enduml\n```\n\n```plantuml\n@startuml\nC -> D\n@enduml\n```\n");
+      const preview = page.locator("#preview");
+      await expect(preview.locator(".plantuml-loading")).toHaveCount(2);
+      await expect(preview.locator(".plantuml-loading").first()).toHaveText(CONFIG.messages.diagram.loading);
+      // a theme switch while loading: still no dialog (the render queue does not wait)
+      await page.locator("#renderDark").click();
+      await expect(page.locator("body")).toHaveClass(/\bdark\b/);
+      await expect(preview.locator(".plantuml-loading")).toHaveCount(2);
+      await page.waitForTimeout(500);
+      expect(dialogs).toEqual([]);
+      expect(plantumlRequests(externalRequests)).toEqual([]);
+      server.resume();
+      await expect.poll(() => dialogs.length, { timeout: 30000 }).toBe(1);
+      expect(dialogs[0]).toBe(CONFIG.messages.plantuml.consent);
+      await expect.poll(() => plantumlRequests(externalRequests).length, { timeout: 30000 }).toBe(2);
+      await expect(preview.locator(".plantuml-loading")).toHaveCount(0);
+      await page.waitForTimeout(500);
+      expect(dialogs).toHaveLength(1);
+      expect(await page.evaluate(() => performance.getEntriesByName("grsmd-ran-plantuml").length)).toBe(1);
     } finally {
       await server.close();
     }

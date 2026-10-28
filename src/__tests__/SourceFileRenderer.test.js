@@ -58,7 +58,7 @@ describe("SourceFileRenderer", () => {
     };
   }
 
-  describe("constructor", () => {
+  describe("AT-SFR-02 FS-03, spec 5.5: constructor", () => {
     it("stores config reference", () => {
       const { renderer, config } = createRenderer();
       expect(renderer._cfg).toBe(config);
@@ -90,7 +90,7 @@ describe("SourceFileRenderer", () => {
     });
   });
 
-  describe("destroy()", () => {
+  describe("AT-SFR-03 FS-07, INV-13: destroy()", () => {
     it("clears previewEl innerHTML", () => {
       const { renderer, previewEl } = createRenderer();
       previewEl.innerHTML = "<p>content</p>";
@@ -120,7 +120,7 @@ describe("SourceFileRenderer", () => {
     });
   });
 
-  describe("_buildCodeBody()", () => {
+  describe("AT-SFR-04 FS-03, INV-05, spec 5.3: _buildCodeBody()", () => {
     it("highlights a bundled language", () => {
       const { renderer } = createRenderer();
       const result = renderer._buildCodeBody("x = 1", { name: "a.py" });
@@ -152,7 +152,7 @@ describe("SourceFileRenderer", () => {
     });
   });
 
-  describe("source guard", () => {
+  describe("AT-SFR-05 INV-07: source guard", () => {
     it("has no external https:// import", () => {
       // Vitest root is the project root (vite.config.js test.root)
       const src = readFileSync(
@@ -164,7 +164,7 @@ describe("SourceFileRenderer", () => {
     });
   });
 
-  describe("_splitHighlightedLines()", () => {
+  describe("AT-SFR-06 FS-03, spec 5.5: _splitHighlightedLines()", () => {
     it("splits plain text by newlines", () => {
       const { renderer } = createRenderer();
       const result = renderer._splitHighlightedLines("line1\nline2\nline3");
@@ -225,7 +225,7 @@ describe("SourceFileRenderer", () => {
   });
 
   describe("reload()", () => {
-    it("shows toast when fileHandle is null", async () => {
+    it("AT-SFR-07 (a) FS-04, INV-15: shows toast when fileHandle is null", async () => {
       const { renderer, config } = createRenderer();
       renderer._fileHandle = null;
 
@@ -245,7 +245,7 @@ describe("SourceFileRenderer", () => {
       expect(showToastMock).not.toHaveBeenCalledWith(config.codeView.reloadUnavailableMsg, expect.anything());
     });
 
-    it("does not modify previewEl when fileHandle is null", async () => {
+    it("AT-SFR-07 (b) FS-04, INV-15: does not modify previewEl when fileHandle is null", async () => {
       const { renderer, previewEl } = createRenderer();
       renderer._fileHandle = null;
       previewEl.innerHTML = "<p>original</p>";

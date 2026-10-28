@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform, isTypingTarget, isPastActivation } from "../js/utils.js";
+import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform, isTypingTarget, isPastActivation, diagramControllersFor } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
 
-describe("isPastActivation (INV-29, INV-68, INV-74 (2), 3.5 diagram pan: the one rule of a tap versus a drag; AT-PAN-04)", () => {
+describe("AT-PAN-04 isPastActivation (INV-29, INV-68, INV-74 (2), 3.5 diagram pan: the one rule of a tap versus a drag)", () => {
   it("is past only beyond activationThresholdPx (Euclidean); exactly the threshold is not", () => {
     expect(CONFIG.pan.activationThresholdPx).toBe(5);
     const from = { x: 10, y: 20 };
@@ -16,7 +16,18 @@ describe("isPastActivation (INV-29, INV-68, INV-74 (2), 3.5 diagram pan: the one
   });
 });
 
-describe("escapeHtml", () => {
+describe("AT-PAN-05 INV-16, INV-16b: which diagram controllers main.js makes for the pointers", () => {
+  it.each([
+    [{ fine: true, anyCoarse: false }, { zoomAndCopy: true, pan: true }], // a PC: mouse or trackpad only
+    [{ fine: true, anyCoarse: true }, { zoomAndCopy: true, pan: false }], // a PC with a touch screen
+    [{ fine: false, anyCoarse: true }, { zoomAndCopy: false, pan: false }], // a phone or a tablet
+    [{ fine: false, anyCoarse: false }, { zoomAndCopy: false, pan: false }], // no pointer
+  ])("%j -> %j", (pointers, expected) => {
+    expect(diagramControllersFor(pointers)).toEqual(expected);
+  });
+});
+
+describe("AT-UTL-01 FS-01, FS-03: escapeHtml", () => {
   it("escapes < and >", () => {
     expect(escapeHtml("<div>")).toBe("&lt;div&gt;");
   });
@@ -48,7 +59,7 @@ describe("escapeHtml", () => {
   });
 });
 
-describe("formatDateTime", () => {
+describe("AT-UTL-02 FS-03, spec 5.9: formatDateTime", () => {
   it("formats epoch 0 as 1970-01-01 in local time", () => {
     const result = formatDateTime(0);
     // Should match YYYY-MM-DD HH:MM:SS pattern
@@ -63,7 +74,7 @@ describe("formatDateTime", () => {
   });
 });
 
-describe("formatTime", () => {
+describe("AT-UTL-03 spec 5.12: formatTime", () => {
   it("formats a Date object as HH:MM:SS", () => {
     const date = new Date(2024, 0, 1, 9, 5, 3);
     expect(formatTime(date)).toBe("09:05:03");
@@ -80,7 +91,7 @@ describe("formatTime", () => {
   });
 });
 
-describe("applyTheme", () => {
+describe("AT-UTL-04 FS-06: applyTheme", () => {
   beforeEach(() => {
     document.body.className = "";
   });
@@ -102,7 +113,7 @@ describe("applyTheme", () => {
   });
 });
 
-describe("systemTheme", () => {
+describe("AT-UTL-05 INV-12, FS-06: systemTheme", () => {
   it("returns 'light' or 'dark'", () => {
     // jsdom does not implement matchMedia; provide a stub
     window.matchMedia = (query) => ({
@@ -116,7 +127,7 @@ describe("systemTheme", () => {
   });
 });
 
-describe("isApplePlatform (INV-14: Cmd is the primary modifier)", () => {
+describe("AT-UTL-06 isApplePlatform (INV-14: Cmd is the primary modifier)", () => {
   it.each([
     [{ userAgentData: { platform: "macOS" } }, true],
     [{ userAgentData: { platform: "Windows" }, platform: "MacIntel" }, false], // userAgentData wins
@@ -133,7 +144,7 @@ describe("isApplePlatform (INV-14: Cmd is the primary modifier)", () => {
   });
 });
 
-describe("isTypingTarget (INV-14; also INV-74 (1): one check for both, review L5)", () => {
+describe("AT-UTL-07 isTypingTarget (INV-14; also INV-74 (1): one check for both, review L5)", () => {
   it("an input, a textarea, a contenteditable element and the inside of a toolbar take the keys; the rest do not", () => {
     const make = (html) => {
       const box = document.createElement("div");

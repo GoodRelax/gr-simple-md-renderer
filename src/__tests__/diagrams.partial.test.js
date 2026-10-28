@@ -94,7 +94,7 @@ describe("partial diagram rendering (INV-23, INV-42)", () => {
     expect(img.title).toBe(CONFIG.messages.diagram.tooltip);
   });
 
-  it("AT-DG-03 Cancel shows the canceled text in place of each diagram", async () => {
+  it("AT-DG-03 Cancel shows the canceled text in place of each diagram (INV-03)", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(false);
     blocks(PUML("A -> B"));
     await new PlantUMLRenderer(preview, encoder).render("light");
@@ -138,7 +138,7 @@ describe("partial diagram rendering (INV-23, INV-42)", () => {
     expect(mermaid.initialize.mock.calls[0][0].theme).toBe("dark");
   });
 
-  it("AT-DG-07 the placeholder flow sends nothing: no fetch, no server URL in the DOM", async () => {
+  it("AT-DG-07 the placeholder flow sends nothing: no fetch, no server URL in the DOM (INV-01)", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
     const confirm = vi.spyOn(window, "confirm");
@@ -149,6 +149,24 @@ describe("partial diagram rendering (INV-23, INV-42)", () => {
     expect(preview.innerHTML).not.toContain(SERVER);
     expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(2);
     expect(w).toBeTruthy();
+  });
+
+  it("AT-DG-08 an image the server does not answer within CONFIG.plantuml.imageLoadTimeout (5,000 ms) shows the timeout text (INV-10, FS-02)", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    expect(CONFIG.plantuml.imageLoadTimeout).toBe(5000);
+    const [w] = blocks(PUML("A -> B"));
+    let done = false;
+    const rendering = new PlantUMLRenderer(preview, encoder).render("light", w).then(() => (done = true));
+    await vi.advanceTimersByTimeAsync(4999);
+    expect(w.querySelector("img.plantuml-diagram")).not.toBeNull();
+    expect(w.querySelector(".plantuml-error")).toBeNull();
+    expect(done).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await rendering;
+    expect(w.querySelector("img.plantuml-diagram")).toBeNull();
+    const error = w.querySelector(".plantuml-wrapper > .plantuml-error");
+    expect(error.textContent).toBe(CONFIG.messages.plantuml.timeout(5));
+    expect(error.textContent).toBe("The PlantUML server didn't answer in 5 seconds.");
   });
 
   it("AT-MR-11 ExternalImageGate.apply(root) only touches the root; no argument means the whole preview", () => {

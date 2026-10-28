@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 import { deferred } from "./helpers/fakeFs.js";
 
-describe("UIController.handleReload", () => {
+describe("AT-RLD-01 UIController.handleReload (FS-04, FS-20)", () => {
   let UIController;
   let mockOrchestrator;
   let mockState;

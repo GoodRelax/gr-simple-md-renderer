@@ -25,6 +25,9 @@ import RendererOrchestrator from "../js/classes/RendererOrchestrator.js";
 import ApplicationState from "../js/classes/ApplicationState.js";
 import { CONFIG } from "../js/config.js";
 import { deferred } from "./helpers/fakeFs.js";
+import LibraryLoader from "../js/classes/LibraryLoader.js";
+import { LIBRARY_NAMES } from "../js/libraryNames.js";
+import { fakeBoot, arriveData } from "./helpers/fakeBoot.js";
 
 const settle = async () => {
   for (let i = 0; i < 12; i++) await new Promise((r) => setTimeout(r, 0));
@@ -66,38 +69,21 @@ function fakeMermaid() {
 }
 
 /**
- * LibraryLoader stand-in: data arrives when the test says, a library runs on
- * first use; a library given as an Error cannot run (hasFailed, throws).
+ * The real LibraryLoader (11-g) on a stand-in receiver: data arrives when
+ * the test says (arrive), a library given as an Error cannot run. Idle
+ * turns run on setTimeout 0 (settle() lets them run). ran: the libraries
+ * that are ready.
  */
-function fakeLibraries(libs) {
-  const arrived = new Set();
-  const ran = [];
-  const waits = new Map();
-  const loader = {
-    ran,
-    arrive(name) {
-      arrived.add(name);
-      waits.get(name)?.resolve();
-    },
-    hasFailed(name) {
-      return arrived.has(name) && libs[name] instanceof Error;
-    },
-    loadIfArrived(name) {
-      if (!arrived.has(name)) return null;
-      if (libs[name] instanceof Error) throw libs[name];
-      if (!ran.includes(name)) ran.push(name);
-      return libs[name];
-    },
-    get(name) {
-      if (!waits.has(name)) waits.set(name, deferred());
-      if (arrived.has(name)) waits.get(name).resolve();
-      return waits.get(name).promise.then(() => loader.loadIfArrived(name));
-    },
-  };
+function realLibraries(libs) {
+  const boot = fakeBoot();
+  const doc = document.implementation.createHTMLDocument("");
+  const loader = new LibraryLoader(boot, doc, { idle: (task) => setTimeout(task, 0) });
+  Object.assign(loader, { boot, doc, arrive: (name) => arriveData(boot, name, libs[name]) });
+  Object.defineProperty(loader, "ran", { get: () => LIBRARY_NAMES.filter((name) => loader.libraryState(name) === "ready") });
   return loader;
 }
 
-/** The render side as main.js composes it, with on-demand libraries. */
+/** The render side as main.js composes it, with on-demand libraries; the core has started (page loading). */
 function stack(libs = {}) {
   vi.stubGlobal("matchMedia", () => ({ matches: false }));
   const preview = document.createElement("div");
@@ -105,17 +91,19 @@ function stack(libs = {}) {
   document.body.replaceChildren(preview);
   const mermaidLib = fakeMermaid();
   const all = { katex, hljs, mermaid: mermaidLib, plantuml: { encode: (c) => `enc(${c.length})` }, ...libs };
-  const libraries = fakeLibraries(all);
+  const libraries = realLibraries(all);
   const marked = new Marked();
   const math = lazyMath(markedKatex, { throwOnError: false });
   marked.use(math.extension);
   const markdownRenderer = new MarkdownRenderer(preview, marked, null, DOMPurify, undefined, math);
   const mermaidRenderer = new MermaidRenderer(preview, null);
-  const plantumlRenderer = new PlantUMLRenderer(preview, null, () => libraries.get("plantuml"));
+  const plantumlRenderer = new PlantUMLRenderer(preview, null);
   const sourceFileRenderer = new SourceFileRenderer(CONFIG, preview, null, false, () => libraries.get("hljs"));
   const scrollManager = new ScrollMemento(preview);
   const state = new ApplicationState();
   const orchestrator = new RendererOrchestrator(state, markdownRenderer, mermaidRenderer, plantumlRenderer, scrollManager, preview, sourceFileRenderer, libraries);
+  libraries.connect(orchestrator);
+  libraries.dispatchPage("coreStarted", {});
   return { preview, libraries, orchestrator, markdownRenderer, mermaidRenderer, plantumlRenderer, sourceFileRenderer, mermaidLib, scrollManager };
 }
 
@@ -193,7 +181,7 @@ describe("rendering with libraries that run on demand (INV-81 (3), spec 5.17.3)"
     expect(mermaidLib.drawn).toEqual(["flowchart LR\n  A --> B\n"]);
     expect(count(preview, ".mermaid svg")).toBe(1);
     expect(count(preview, ".mermaid-loading")).toBe(0);
-    expect(libraries.ran).toEqual(["katex", "hljs", "mermaid"]);
+    expect(libraries.ran.sort()).toEqual(["hljs", "katex", "mermaid"]);
   });
 
   it("AT-FAST-18 data already in the page: the render runs what it needs and draws it at once (no pending frame)", async () => {
@@ -230,20 +218,27 @@ describe("rendering with libraries that run on demand (INV-81 (3), spec 5.17.3)"
     expect(libraries.ran).toEqual(["katex"]);
   });
 
-  it("AT-FAST-21 a library that ran when idle (preload) redraws only what waited for it", async () => {
-    const { preview, orchestrator, markdownRenderer } = stack();
+  it("AT-FAST-21 a library that ran on an idle turn redraws only what waited for it (11-g idleTurn, redrawShownWithout)", async () => {
+    const { preview, libraries, orchestrator, markdownRenderer } = stack();
     orchestrator.state.setMarkdownText("# A\n\nInline $x$.\n");
     await orchestrator.renderAll();
     const heading = preview.querySelector("h1");
     const replace = vi.spyOn(markdownRenderer, "replaceBlocks");
-    await orchestrator.libraryLoaded("hljs", hljs); // nothing waited for it
+    libraries.arrive("hljs"); // nothing on screen waits for it: an idle turn runs it
+    expect(libraries.ran).toEqual([]);
+    await settle();
+    expect(libraries.ran).toEqual(["hljs"]);
     expect(replace).not.toHaveBeenCalled();
-    await orchestrator.libraryLoaded("katex", katex);
+    libraries.arrive("katex"); // the math waits for it: run at once, drawn in the queue
+    expect(libraries.ran).toEqual(["hljs", "katex"]);
+    await settle();
     expect(replace).toHaveBeenCalledTimes(1);
     expect(count(preview, ".katex")).toBe(1);
     expect(preview.querySelector("h1")).toBe(heading); // a block with no math is kept
-    await orchestrator.libraryLoaded("katex", katex); // twice: nothing more
-    expect(replace).toHaveBeenCalledTimes(1);
+    libraries.dispatch("katex", "needed"); // ready: nothing more is drawn
+    await settle();
+    expect(replace.mock.results.slice(1).every((r) => r.value.length === 0)).toBe(true);
+    expect(count(preview, ".katex")).toBe(1);
   });
 
   it("AT-FAST-22 mermaid that cannot run: the Loading boxes say so", async () => {
@@ -335,28 +330,32 @@ describe("what else waits (INV-81 (3), spec 5.17.3)", () => {
     index.hide();
   });
 
-  it("AT-FAST-52 (L2) KaTeX arriving later redraws a block with math and PlantUML with the answer already given (no [Render] again)", async () => {
+  it("AT-FAST-52 (L2, AQ7) KaTeX arriving later redraws a block with math; its PlantUML is held, and sent once, after the one dialog of answering (the libraries are settled)", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const { preview, libraries, orchestrator, plantumlRenderer } = stack();
-    libraries.arrive("plantuml");
     vi.spyOn(plantumlRenderer, "waitForImageLoad").mockResolvedValue(true);
+    const createImage = vi.spyOn(plantumlRenderer, "createImage");
     orchestrator.state.setMarkdownText("- $x$\n\n  ```plantuml\n  @startuml\n  A -> B\n  @enduml\n  ```\n");
     await orchestrator.renderAll();
-    await settle(); // the encoder runs (its data is in)
-    expect(confirm).toHaveBeenCalledTimes(1);
-    expect(preview.querySelector("img.plantuml-diagram")).not.toBeNull();
+    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(1);
     libraries.arrive("katex");
     await settle();
     expect(preview.querySelector(".katex")).not.toBeNull();
-    expect(preview.querySelector(".plantuml-pending")).toBeNull();
+    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(1); // held again, not sent
+    expect(confirm).not.toHaveBeenCalled();
+    expect(createImage).not.toHaveBeenCalled();
+    for (const name of ["mermaid", "hljs", "plantuml"]) libraries.arrive(name);
+    await settle();
+    expect(libraries.isSettled()).toBe(true);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(createImage).toHaveBeenCalledTimes(1);
     expect(preview.querySelector("img.plantuml-diagram")).not.toBeNull();
-    expect(confirm).toHaveBeenCalledTimes(1); // not asked again
+    expect(preview.querySelector(".plantuml-pending, .plantuml-loading")).toBeNull();
   });
 
-  it("AT-FAST-56 (N1) KaTeX arriving later never sends a PlantUML diagram a commit added: it stays [Render] (INV-23)", async () => {
+  it("AT-FAST-56 (N1, AQ7) KaTeX arriving later never sends a PlantUML diagram a commit added: it stays [Render] (INV-23, INV-02)", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const { preview, libraries, orchestrator, plantumlRenderer } = stack();
-    libraries.arrive("plantuml");
     vi.spyOn(plantumlRenderer, "waitForImageLoad").mockResolvedValue(true);
     const sent = [];
     const createImage = plantumlRenderer.createImage.bind(plantumlRenderer);
@@ -366,29 +365,30 @@ describe("what else waits (INV-81 (3), spec 5.17.3)", () => {
     });
     orchestrator.state.setMarkdownText("```plantuml\n@startuml\nA -> B\n@enduml\n```\n\n- $x$\n");
     await orchestrator.renderAll();
-    await settle();
-    expect(confirm).toHaveBeenCalledTimes(1);
-    expect(sent.map((c) => c.includes("A -> B"))).toEqual([true]);
     const list = orchestrator.getModel().getBlocks()[1];
     orchestrator.commitBlock(list.id, "- $x$\n\n  ```plantuml\n  @startuml\n  SECRET -> D\n  @enduml\n  ```\n");
     await settle();
-    expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(1); // INV-23
-    libraries.arrive("katex");
+    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(2); // both held (no dialog yet)
+    libraries.arrive("katex"); // its redraw replaces the committed block
     await settle();
     expect(preview.querySelector(".katex")).not.toBeNull();
-    expect(sent.some((c) => c.includes("SECRET"))).toBe(false);
-    expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(1);
+    for (const name of ["mermaid", "hljs", "plantuml"]) libraries.arrive(name);
+    await settle();
     expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent.map((c) => c.includes("A -> B"))).toEqual([true]);
+    expect(sent.some((c) => c.includes("SECRET"))).toBe(false);
+    expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(1); // INV-23
   });
 
-  it("AT-FAST-57 (N1) a diagram the full render's dialog declined shows so again when KaTeX redraws its block", async () => {
+  it("AT-FAST-57 (N1, AQ7) Cancel in the dialog of answering (the libraries are settled): the held diagram shows 'not sent', nothing is sent (INV-03)", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { preview, libraries, orchestrator, plantumlRenderer } = stack();
-    libraries.arrive("plantuml");
     const createImage = vi.spyOn(plantumlRenderer, "createImage");
     orchestrator.state.setMarkdownText("- $x$\n\n  ```plantuml\n  @startuml\n  A -> B\n  @enduml\n  ```\n");
     await orchestrator.renderAll();
     libraries.arrive("katex");
+    await settle();
+    for (const name of ["mermaid", "hljs", "plantuml"]) libraries.arrive(name);
     await settle();
     expect(preview.querySelector(".katex")).not.toBeNull();
     expect(preview.textContent).toContain(CONFIG.messages.plantuml.canceled);
@@ -414,26 +414,29 @@ describe("what else waits (INV-81 (3), spec 5.17.3)", () => {
 });
 
 describe("renderers that wait for their library (INV-81 (3))", () => {
-  it("AT-FAST-25 (M2) PlantUML: after the consent the render does not wait for the encoder; a Loading box is drawn when it comes", async () => {
+  it("AT-FAST-25 (M2, AQ7) PlantUML before the libraries are settled (loading): a Loading box, no dialog, nothing sent; runWaiting asks once and draws it", async () => {
     const preview = document.createElement("div");
     document.body.replaceChildren(preview);
     preview.innerHTML = '<pre><code class="language-plantuml">@startuml\nA -> B\n@enduml</code></pre>';
-    const load = deferred();
-    const r = new PlantUMLRenderer(preview, null, () => load.promise);
-    vi.spyOn(r, "askConsent").mockReturnValue(true);
+    const r = new PlantUMLRenderer(preview, null);
+    const ask = vi.spyOn(r, "askConsent").mockReturnValue(true);
     vi.spyOn(r, "waitForImageLoad").mockResolvedValue(true);
-    await r.render("light"); // ends while the encoder is still on its way
+    r.hold("light", preview, "consent");
     expect(preview.querySelector(".plantuml-loading").textContent).toBe("Loading diagram...");
     expect(preview.querySelector("img")).toBeNull();
-    load.resolve({ encode: () => "ENC" });
-    await settle();
+    expect(ask).not.toHaveBeenCalled();
+    r.useLibrary("plantuml", { encode: () => "ENC" });
+    await expect(r.runWaiting()).resolves.toBe(true);
+    expect(ask).toHaveBeenCalledTimes(1);
     expect(preview.querySelector(".plantuml-loading")).toBeNull();
     expect(preview.querySelector("img").src).toBe(`${CONFIG.plantuml.serverUrl}ENC`);
+    await expect(r.runWaiting()).resolves.toBe(false); // once
+    expect(ask).toHaveBeenCalledTimes(1);
   });
 
-  it("AT-FAST-47 (M2) a full render with PlantUML does not hold the render queue while the encoder is on its way", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    const { preview, libraries, orchestrator } = stack();
+  it("AT-FAST-47 (M2, AQ7) a full render with PlantUML before the libraries are settled (loading) does not hold the render queue, and asks nothing", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { preview, orchestrator } = stack();
     orchestrator.state.setMarkdownText("# A\n\n```plantuml\n@startuml\nA -> B\n@enduml\n```\n");
     await orchestrator.renderAll(); // settles though the encoder has not arrived
     expect(preview.querySelector(".plantuml-loading")).not.toBeNull();
@@ -441,35 +444,37 @@ describe("renderers that wait for their library (INV-81 (3))", () => {
     orchestrator.commitBlock(heading.id, "# B\n");
     await settle();
     expect(preview.querySelector("h1").textContent).toBe("B");
-    void libraries;
+    expect(confirm).not.toHaveBeenCalled();
   });
 
-  it("AT-FAST-48 (L6) PlantUML [Render] with the encoder on its way: Loading, then the image when it comes", async () => {
+  it("AT-FAST-48 (L6, AQ7) PlantUML [Render] with the encoder: the dialog and the image request start inside the click", () => {
     const preview = document.createElement("div");
     document.body.replaceChildren(preview);
-    const load = deferred();
-    const r = new PlantUMLRenderer(preview, null, () => load.promise);
-    vi.spyOn(r, "askConsent").mockReturnValue(true);
+    const r = new PlantUMLRenderer(preview, { encode: () => "ENC" });
+    const ask = vi.spyOn(r, "askConsent").mockReturnValue(true);
     vi.spyOn(r, "waitForImageLoad").mockResolvedValue(true);
     const box = r.createPendingElement("@startuml\nA -> B\n@enduml", "light");
     preview.append(box);
-    const sent = r.renderPending(box);
-    expect(preview.querySelector(".plantuml-loading")).not.toBeNull();
-    load.resolve({ encode: () => "ENC" });
-    await expect(sent).resolves.toBe(true);
+    box.querySelector("button").click();
+    expect(ask).toHaveBeenCalledTimes(1);
     expect(preview.querySelector("img").src).toBe(`${CONFIG.plantuml.serverUrl}ENC`);
   });
 
-  it("AT-FAST-26 PlantUML [Render] waits for the encoder; an encoder that cannot load ends as an encoding error", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+  it("AT-FAST-26 (AQ7) PlantUML without the encoder (it could not run): [Render] and runWaiting show the encoding error, with no dialog", async () => {
     const preview = document.createElement("div");
     document.body.replaceChildren(preview);
-    const r = new PlantUMLRenderer(preview, null, () => Promise.reject(new Error("no")));
-    vi.spyOn(r, "askConsent").mockReturnValue(true);
+    const r = new PlantUMLRenderer(preview, null);
+    const ask = vi.spyOn(r, "askConsent").mockReturnValue(true);
     const box = r.createPendingElement("@startuml\nA -> B\n@enduml", "light");
     preview.append(box);
     await expect(r.renderPending(box)).resolves.toBe(false);
     expect(preview.textContent).toContain(CONFIG.messages.plantuml.encodingFailed);
+    preview.innerHTML = '<pre><code class="language-plantuml">@startuml\nC -> D\n@enduml</code></pre>';
+    r.hold("light");
+    await r.runWaiting();
+    expect(preview.querySelectorAll(".plantuml-error")).toHaveLength(1);
+    expect(preview.textContent).toBe(CONFIG.messages.plantuml.encodingFailed);
+    expect(ask).not.toHaveBeenCalled();
   });
 
   it("AT-FAST-27 the code view waits for highlight.js and is drawn once, colored, with its language (owner ruling 2026-10-25)", async () => {
@@ -522,6 +527,53 @@ describe("renderers that wait for their library (INV-81 (3))", () => {
     expect(orchestrator.isCodeViewActive()).toBe(false);
   });
 
+  it("AT-FAST-58 (INV-81 (2), 11-g isShownWithout, review L13) the renderers' queries are true while something is drawn without the library, false after it ran", async () => {
+    const { preview, libraries, orchestrator, markdownRenderer, mermaidRenderer } = stack();
+    orchestrator.state.setMarkdownText(DOC);
+    await orchestrator.renderAll();
+    expect(markdownRenderer.hasPendingMath()).toBe(true);
+    expect(markdownRenderer.hasPendingHighlight()).toBe(true);
+    expect(mermaidRenderer.hasLoadingBoxes()).toBe(true);
+    for (const name of ["katex", "hljs", "mermaid"]) expect(orchestrator.isShownWithout(name)).toBe(true);
+    expect(orchestrator.isShownWithout("plantuml")).toBe(false);
+    for (const name of LIBRARY_NAMES) libraries.arrive(name);
+    await settle();
+    expect(markdownRenderer.hasPendingMath()).toBe(false);
+    expect(markdownRenderer.hasPendingHighlight()).toBe(false);
+    expect(mermaidRenderer.hasLoadingBoxes()).toBe(false);
+    for (const name of ["katex", "hljs", "mermaid"]) expect(orchestrator.isShownWithout(name)).toBe(false);
+    // a box the document wrote itself is not one the renderer made
+    const own = document.createElement("div");
+    own.className = "mermaid-loading";
+    preview.append(own);
+    expect(mermaidRenderer.hasLoadingBoxes()).toBe(false);
+  });
+
+  it("AT-FAST-59 (INV-81 (3), 11-g isShownWithout, review L12) the code view: isWaitingForHljs is true while any of two overlapping waits goes on, and while the code is shown plain", async () => {
+    vi.useFakeTimers();
+    try {
+      const preview = document.createElement("div");
+      const load = deferred();
+      const r = new SourceFileRenderer(CONFIG, preview, null, false, () => load.promise);
+      const file = new File(["const a = 1;\n"], "a.js", { lastModified: 0 });
+      expect(r.isWaitingForHljs()).toBe(false);
+      const first = r.render(file, null, "dark", () => false); // another document was opened meanwhile
+      await vi.advanceTimersByTimeAsync(1000);
+      const second = r.render(file, null, "dark");
+      expect(r.isWaitingForHljs()).toBe(true);
+      await vi.advanceTimersByTimeAsync(CONFIG.codeView.highlightWaitMs - 1000);
+      await expect(first).resolves.toBeNull(); // the first wait is over, nothing shown
+      expect(r.isWaitingForHljs()).toBe(true); // the second still waits
+      await vi.advanceTimersByTimeAsync(1000);
+      await expect(second).resolves.toMatchObject({ language: "plaintext" });
+      expect(r.isWaitingForHljs()).toBe(true); // shown plain
+      r.useLibrary("hljs", hljs);
+      expect(r.isWaitingForHljs()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("AT-FAST-28 the code view without highlight.js (it could not load) is plain text", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const preview = document.createElement("div");
@@ -529,5 +581,262 @@ describe("renderers that wait for their library (INV-81 (3))", () => {
     await r.render(new File(["const a = 1;\n"], "a.js", { lastModified: 0 }), null, "dark");
     expect(preview.textContent).toContain("const a = 1;");
     expect(preview.querySelector(".hljs-keyword")).toBeNull();
+  });
+});
+
+describe("AT-LSM PlantUML waits for the four libraries to be settled (answering, then settled) (11-g, INV-81 (3), INV-02, INV-23, owner ruling AQ7)", () => {
+  const PUML = (name) => `\`\`\`plantuml\n@startuml\n${name} -> B\n@enduml\n\`\`\`\n`;
+  const allArrive = (libraries) => {
+    for (const name of LIBRARY_NAMES) if (libraries.libraryState(name) === "notArrived") libraries.arrive(name);
+  };
+  const sentCodes = (plantumlRenderer) => {
+    const sent = [];
+    const createImage = plantumlRenderer.createImage.bind(plantumlRenderer);
+    vi.spyOn(plantumlRenderer, "createImage").mockImplementation((code) => {
+      sent.push(code);
+      return createImage(code);
+    });
+    vi.spyOn(plantumlRenderer, "waitForImageLoad").mockResolvedValue(true);
+    return sent;
+  };
+
+  it("AT-LSM-12 (INV-02, INV-23) before the libraries are settled no dialog and nothing sent; in answering one dialog in the render queue, the full render's diagrams sent, a commit's diagram [Render], the reading place kept", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { preview, libraries, orchestrator, plantumlRenderer, scrollManager } = stack();
+    const sent = sentCodes(plantumlRenderer);
+    orchestrator.state.setMarkdownText(`# T\n\n${PUML("FULL1")}\n${PUML("FULL2")}\nText.\n`);
+    await orchestrator.renderAll();
+    const text = orchestrator.getModel().getBlocks()[3];
+    orchestrator.commitBlock(text.id, PUML("COMMIT"));
+    await settle();
+    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(3);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(sent).toEqual([]);
+    const restore = vi.spyOn(scrollManager, "restoreReadingAnchor");
+    const place = { blockId: 1, offset: 3 };
+    vi.spyOn(scrollManager, "captureReadingAnchor").mockReturnValue(place);
+    allArrive(libraries);
+    expect(confirm).not.toHaveBeenCalled(); // answering now: runWaiting waits for its turn in the queue
+    await settle();
+    expect(libraries.isSettled()).toBe(true);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent.map((c) => c.match(/(\w+) -> B/)[1]).sort()).toEqual(["FULL1", "FULL2"]);
+    expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(1);
+    expect(preview.querySelector(".plantuml-pending").previousElementSibling).toBeNull();
+    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(0);
+    expect(restore).toHaveBeenCalledWith(place);
+    // after settled: each full render asks again (INV-02), no hold
+    await orchestrator.reRender("dark");
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(0);
+  });
+
+  it("AT-LSM-13 (INV-03) Cancel in answering (the libraries are settled): the held diagrams show 'not sent'; nothing is sent; a commit's diagram is still [Render]", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const { preview, libraries, orchestrator, plantumlRenderer } = stack();
+    const sent = sentCodes(plantumlRenderer);
+    orchestrator.state.setMarkdownText(`${PUML("FULL")}\nText.\n`);
+    await orchestrator.renderAll();
+    orchestrator.commitBlock(orchestrator.getModel().getBlocks()[1].id, PUML("COMMIT"));
+    await settle();
+    allArrive(libraries);
+    await settle();
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent).toEqual([]);
+    expect(preview.textContent).toContain(CONFIG.messages.plantuml.canceled);
+    expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(1);
+  });
+
+  it("AT-LSM-14 (INV-81 (3)) the encoder could not run: in answering no dialog, every held diagram shows the encoding error; later renders too", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { preview, libraries, orchestrator, plantumlRenderer } = stack({ plantuml: new Error("blocked") });
+    const sent = sentCodes(plantumlRenderer);
+    orchestrator.state.setMarkdownText(`${PUML("FULL")}\nText.\n`);
+    await orchestrator.renderAll();
+    orchestrator.commitBlock(orchestrator.getModel().getBlocks()[1].id, PUML("COMMIT"));
+    await settle();
+    allArrive(libraries);
+    await settle();
+    expect(libraries.hasFailed("plantuml")).toBe(true);
+    expect(libraries.isSettled()).toBe(true);
+    expect(preview.querySelectorAll(".plantuml-error")).toHaveLength(2);
+    await orchestrator.reRender("dark");
+    expect(preview.querySelectorAll(".plantuml-error")).toHaveLength(2);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(sent).toEqual([]);
+  });
+
+  it("AT-LSM-15 (INV-81 (3), review N5) Clear before the libraries are settled, or another document before then: the held boxes are gone, no dialog comes, and the page is settled", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const cleared = stack();
+    cleared.orchestrator.state.setMarkdownText(PUML("CLEARED"));
+    await cleared.orchestrator.renderAll();
+    expect(cleared.preview.querySelectorAll(".plantuml-loading")).toHaveLength(1);
+    cleared.orchestrator.clear(); // the page is still loading
+    expect(cleared.libraries.pageStartupState).toBe("loading");
+    expect(cleared.preview.querySelectorAll(".plantuml-loading")).toHaveLength(0);
+    allArrive(cleared.libraries);
+    await settle();
+    expect(cleared.libraries.pageStartupState).toBe("settled");
+    expect(confirm).not.toHaveBeenCalled();
+
+    const replaced = stack();
+    replaced.orchestrator.state.setMarkdownText(PUML("OLD"));
+    await replaced.orchestrator.renderAll();
+    expect(replaced.preview.querySelectorAll(".plantuml-loading")).toHaveLength(1);
+    await replaced.orchestrator.loadMarkdown("# New\n\nNo diagram.\n", "light");
+    expect(replaced.libraries.pageStartupState).toBe("loading");
+    expect(replaced.preview.querySelectorAll(".plantuml-loading")).toHaveLength(0);
+    allArrive(replaced.libraries);
+    await settle();
+    expect(replaced.libraries.pageStartupState).toBe("settled");
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("AT-LSM-25 (INV-81 (3), INV-02, review N4) no held box when the libraries settle (a document without PlantUML): the page goes from answering to settled, and a later full render asks once and sends", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { preview, libraries, orchestrator, plantumlRenderer } = stack();
+    const sent = sentCodes(plantumlRenderer);
+    orchestrator.state.setMarkdownText("# Title\n\nNo diagram.\n");
+    await orchestrator.renderAll();
+    allArrive(libraries);
+    await settle();
+    expect(libraries.pageStartupState).toBe("settled");
+    expect(confirm).not.toHaveBeenCalled();
+    await orchestrator.loadMarkdown(PUML("LATER"), "light");
+    await settle();
+    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(0);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent.map((c) => c.match(/(\w+) -> B/)[1])).toEqual(["LATER"]);
+  });
+
+  it("AT-LSM-18 (INV-02, INV-81 (3), G6) KaTeX is the last library: its queued redraw runs in answering, before runWaiting, and the full render still gets one dialog for all its diagrams", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { preview, libraries, orchestrator, plantumlRenderer } = stack();
+    const sent = sentCodes(plantumlRenderer);
+    orchestrator.state.setMarkdownText(`- $x$\n\n  \`\`\`plantuml\n  @startuml\n  MATH -> B\n  @enduml\n  \`\`\`\n\n${PUML("OTHER")}`);
+    await orchestrator.renderAll();
+    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(2);
+    for (const name of ["mermaid", "hljs", "plantuml"]) libraries.arrive(name);
+    await settle();
+    expect(libraries.isSettled()).toBe(false);
+    expect(confirm).not.toHaveBeenCalled();
+    libraries.arrive("katex"); // ready: the redraw is queued, then answering queues runWaiting
+    await settle();
+    expect(libraries.isSettled()).toBe(true);
+    expect(preview.querySelector(".katex")).not.toBeNull();
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent.map((c) => c.match(/(\w+) -> B/)[1]).sort()).toEqual(["MATH", "OTHER"]);
+    expect(preview.querySelectorAll(".plantuml-loading, .plantuml-pending")).toHaveLength(0);
+  });
+
+  it("AT-LSM-19 (INV-03, G6) the same, Cancel: one dialog, both diagrams 'not sent', nothing sent", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const { preview, libraries, orchestrator, plantumlRenderer } = stack();
+    const sent = sentCodes(plantumlRenderer);
+    orchestrator.state.setMarkdownText(`- $x$\n\n  \`\`\`plantuml\n  @startuml\n  MATH -> B\n  @enduml\n  \`\`\`\n\n${PUML("OTHER")}`);
+    await orchestrator.renderAll();
+    for (const name of ["mermaid", "hljs", "plantuml"]) libraries.arrive(name);
+    await settle();
+    libraries.arrive("katex");
+    await settle();
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent).toEqual([]);
+    expect(preview.querySelectorAll(".plantuml-error")).toHaveLength(2);
+    expect(preview.textContent).toContain(CONFIG.messages.plantuml.canceled);
+  });
+
+  it("AT-LSM-23 (INV-02, INV-81 (3), G6, review L1) the libraries settle while a full render draws its diagrams: its PlantUML step and the queued KaTeX redraw join one dialog", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const mermaid = fakeMermaid();
+    const draw = mermaid.run;
+    let libraries = null;
+    // the full render yields inside mermaid's step; KaTeX and the encoder arrive and run meanwhile
+    mermaid.run = vi.fn(async (options) => {
+      if (libraries.libraryState("plantuml") === "notArrived") {
+        libraries.arrive("katex");
+        libraries.arrive("plantuml");
+        await settle();
+      }
+      return draw(options);
+    });
+    const parts = stack({ mermaid });
+    libraries = parts.libraries;
+    const { preview, orchestrator, plantumlRenderer } = parts;
+    const sent = sentCodes(plantumlRenderer);
+    libraries.arrive("mermaid");
+    libraries.arrive("hljs");
+    await settle();
+    orchestrator.state.setMarkdownText(`- $x$\n\n  \`\`\`plantuml\n  @startuml\n  MATH -> B\n  @enduml\n  \`\`\`\n\n${PUML("OTHER")}\n\`\`\`mermaid\nflowchart LR\n  A --> B\n\`\`\`\n`);
+    await orchestrator.renderAll();
+    await settle();
+    expect(mermaid.run).toHaveBeenCalled();
+    expect(libraries.isSettled()).toBe(true);
+    expect(preview.querySelector(".katex")).not.toBeNull();
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent.map((c) => c.match(/(\w+) -> B/)[1]).sort()).toEqual(["MATH", "OTHER"]);
+    expect(preview.querySelectorAll(".plantuml-loading, .plantuml-pending")).toHaveLength(0);
+  });
+
+  it("AT-LSM-24 (INV-23, INV-81 (3), review M2) a block open in the editor when the libraries settle: its held diagram becomes [Render] when the editor closes; one dialog for the others, nothing of it sent", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { preview, libraries, orchestrator, plantumlRenderer, markdownRenderer } = stack();
+    const sent = sentCodes(plantumlRenderer);
+    orchestrator.state.setMarkdownText(`${PUML("OPEN")}\n${PUML("OTHER")}`);
+    await orchestrator.renderAll();
+    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(2);
+    const block = orchestrator.getModel().getBlocks()[0];
+    const wrapper = markdownRenderer.getBlockElement(block.id);
+    // the editor opens (BlockEditController, 5.14.6): the block is held and its children kept aside
+    orchestrator.holdBlock(block.id);
+    const saved = [...wrapper.childNodes];
+    wrapper.replaceChildren(document.createElement("textarea"));
+    allArrive(libraries);
+    await settle();
+    expect(libraries.isSettled()).toBe(true);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent.map((c) => c.match(/(\w+) -> B/)[1])).toEqual(["OTHER"]);
+    // Esc with nothing changed: the children come back, the hold is released
+    wrapper.replaceChildren(...saved);
+    orchestrator.releaseBlock();
+    await settle();
+    expect(wrapper.querySelector(".plantuml-loading")).toBeNull();
+    expect(wrapper.querySelector(".plantuml-pending button").textContent).toBe(CONFIG.messages.edit.plantumlRenderButton);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent).toHaveLength(1);
+  });
+
+  it("AT-LSM-16 (INV-02, INV-81 (3), AQ7, no resend) settled from the start (dev server): KaTeX is handed in the full render's step; one dialog, each diagram sent once, never again by the math redraw", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    const preview = document.createElement("div");
+    preview.id = "preview";
+    document.body.replaceChildren(preview);
+    const provided = { katex, hljs, mermaid: fakeMermaid(), plantuml: { encode: (c) => `enc(${c.length})` } };
+    const libraries = new LibraryLoader(fakeBoot({ provided }), document.implementation.createHTMLDocument(""), { idle: (t) => setTimeout(t, 0) });
+    const marked = new Marked();
+    const math = lazyMath(markedKatex, { throwOnError: false });
+    marked.use(math.extension);
+    const markdownRenderer = new MarkdownRenderer(preview, marked, null, DOMPurify, undefined, math);
+    const plantumlRenderer = new PlantUMLRenderer(preview, libraries.peek("plantuml"));
+    const sent = sentCodes(plantumlRenderer);
+    const orchestrator = new RendererOrchestrator(new ApplicationState(), markdownRenderer, new MermaidRenderer(preview, null), plantumlRenderer, new ScrollMemento(preview), preview, new SourceFileRenderer(CONFIG, preview, null, false, () => libraries.get("hljs")), libraries);
+    libraries.connect(orchestrator);
+    libraries.dispatchPage("coreStarted", {});
+    expect(libraries.isSettled()).toBe(true);
+    orchestrator.state.setMarkdownText(`- $x$\n\n  \`\`\`plantuml\n  @startuml\n  A -> B\n  @enduml\n  \`\`\`\n\n${PUML("C")}`);
+    await orchestrator.renderAll();
+    await settle();
+    expect(preview.querySelectorAll(".katex")).toHaveLength(1);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent).toHaveLength(2);
+    // a commit in the math block: drawn again, its diagram is [Render], nothing sent
+    const list = orchestrator.getModel().getBlocks()[0];
+    orchestrator.commitBlock(list.id, "- $y$\n\n  ```plantuml\n  @startuml\n  A -> B\n  @enduml\n  ```\n");
+    await settle();
+    expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(1);
+    expect(sent).toHaveLength(2);
+    expect(confirm).toHaveBeenCalledTimes(1);
   });
 });

@@ -31,7 +31,7 @@ test("page loads with its CSP and no errors", async ({ page }) => {
   expect(csp).toContain("default-src 'none'");
 });
 
-test("rendering Markdown, math, code and Mermaid raises no errors", async ({ page }) => {
+test("INV-05: rendering Markdown, math, code and Mermaid raises no errors", async ({ page }) => {
   await page.goto("/");
   await renderMarkdown(page, RICH_MARKDOWN);
 

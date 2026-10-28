@@ -26,13 +26,13 @@ This tool was built to provide a **transparent, minimal, and privacy-respecting 
 - 100% client-side Markdown rendering (tables, task lists, fenced code)
 - Math (LaTeX) rendering with KaTeX
 - Mermaid diagrams
-- PlantUML diagrams, with a consent prompt every time before data is sent
+- PlantUML diagrams, with a consent prompt before data is sent (only the diagrams you allow are sent)
 - Syntax highlighting for code blocks
 - Code View: drop any text file (.py, .js, .c, ...) to view it with syntax highlighting and line numbers
-- Auto-render on paste (Ctrl+V / Cmd+V anywhere on the page) or file drop
+- Auto-render on paste (Ctrl+V / Cmd+V anywhere on the start screen) or file drop
 - Reload the current file from disk (browsers with the File System Access API)
 - Edit the preview block by block and save to a file (no autosave; Save as / download where writing files is not supported)
-- Edit table cells as they are shown, and double-click (double-tap) the preview to start editing what you clicked
+- Edit table cells as they are shown, and double-click the preview to start editing what you clicked (on a touch screen, press [Edit], then tap a block)
 - Text color (red, blue, green), and links: paste a URL onto selected text, or remove a link
 - Index of the headings, floating at the right edge: press one to jump to it
 - Search the Markdown source (plain text or a regular expression), and replace one or all in edit mode
@@ -59,18 +59,21 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    - Paste text anywhere on the page (Ctrl+V / Cmd+V)
    - Drop a `.md` file anywhere on the page (Markdown preview)
    - Drop any other text file (Code View)
-   - Type or paste directly into the `[Paste Markdown...]` box at the top
+   - Paste directly into the `[Paste Markdown...]` box at the top
+
+   Pasting starts a preview only on the start screen, with the top box empty. While a document is shown, press `[Clear]` first. A dropped file can be up to 5 MB.
+
 3. Buttons and keys:
 
    | Button | Key | Action |
    |---|---|---|
    | Index | `I` | Show / hide the headings (h1 to h6) at the right edge; press one to bring it to the top of the view |
-   | Search | `F` | Find text in the Markdown source (`Aa` match case, `.*` regular expression; `Down` / `Up` in the box: next / previous). In edit mode `Ctrl+F` opens it too, and Replace / All replace (one Undo) |
+   | Search | `F` | Find text in the Markdown source (code view: the file) (`Aa` match case, `.*` regular expression; `Down` / `Up` in the box: next / previous). In edit mode `Ctrl+F` opens it too, and Replace / All replace (one Undo) |
    | Render Light | `L` | Render / switch to the light theme |
    | Render Dark | `D` | Render / switch to the dark theme |
    | Reload | `R` | Reload the current file from disk |
    | New Tab | `N` | Open GRSMD in a new tab |
-   | Edit | `E` | Show / hide the edit palette; click a block to edit its Markdown in place |
+   | Edit | `E` | Show / hide the edit palette; click (tap) a block to edit its Markdown in place |
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document is shown |
@@ -83,9 +86,9 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
 
    On a Mac, use `Cmd` instead of `Ctrl` (Redo is `Cmd+Shift+Z`).
 
-   In edit mode, a dashed line with `+` shows between two blocks, above the first one and below the last one; click it (on a phone, tap the gap, then the line) to add a new block there.
+   In edit mode, point between two blocks, above the first one or below the last one (on a phone, tap there) to show a dashed line with `+`; click it to add a new block there.
 
-   In an open block, the second row of the edit palette's Text format adds math: Insert inline math puts a formula at the cursor, and Insert math boxes adds three equations (Maxwell, Einstein, Schroedinger), each with its name.
+   In an open block, the second row of the edit palette's Text format adds math: Insert inline math puts a formula at the cursor, and Insert math boxes adds three math boxes (Maxwell, Einstein, Schroedinger), each under its name.
 
    Double-click the edit palette's grip (`::`; on a phone or tablet, double tap it) or press and hold it to shrink the palette to the grip; do it again to bring it back.
 
@@ -98,13 +101,13 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
 ## Privacy & Security
 
 - **Nothing is sent without consent.** The only external requests are:
-  - PlantUML: the diagram source is sent to the official PlantUML server, after a confirmation dialog, every time it renders.
+  - PlantUML: the diagram source is sent to the official PlantUML server, only after a confirmation dialog when the document renders (a diagram you changed while editing: when you press its [Render] button). Only the diagrams you allowed in the dialog are sent; Copy SVG / PNG of such a diagram fetches it again without asking. While the page is still loading, a diagram shows "Loading diagram..." and the dialog comes when loading is done.
   - External images (`![](https://...)`): shown as placeholders until you click one and confirm. The consent lasts until `[Clear]` or a new file drop.
 - **Nothing is stored.** Your content is never written to localStorage, sessionStorage, or cookies.
 - **Edits are not stored in the browser either.** They live only in the open page until you save them to a file.
-- **Clipboard.** The "Paste copied link" button reads the clipboard only when you press it, so the browser may ask you to allow it. In Chrome and Edge, once you allow it, other pages on goodrelax.github.io can also read your clipboard without asking. To withdraw it, open the site settings for goodrelax.github.io (the icon at the left of the address bar) and set Clipboard to Ask or Block. Pasting a URL onto selected text with Ctrl+V / Cmd+V makes a link without any permission. Nothing read from the clipboard is sent anywhere.
+- **Clipboard.** The "Paste copied link" button reads the clipboard only when you press it, so the browser may ask you to allow it. When GRSMD is opened from goodrelax.github.io, in Chrome and Edge, once you allow it, other pages on goodrelax.github.io can also read your clipboard without asking. To withdraw it, open the site settings for goodrelax.github.io (the icon at the left of the address bar) and set Clipboard to Ask or Block. Pasting a URL onto selected text with Ctrl+V / Cmd+V makes a link without any permission. Nothing read from the clipboard is sent anywhere.
 - **HTML in Markdown is sanitized** with DOMPurify. Scripts and event handlers are removed. Other remote references (video, audio, CSS `url()`, `<style>`) are removed.
-- **Content-Security-Policy:** the built file only runs its own scripts (each allowed by its hash, the libraries that run on demand included), and network access is limited to the PlantUML server.
+- **Content-Security-Policy:** the built file only runs its own scripts (each allowed by its hash, the libraries that run on demand included), and it can fetch data only from the PlantUML server. Images from other sites are allowed by the policy, but GRSMD loads them only after your consent (above).
 
 ---
 
@@ -128,7 +131,7 @@ npm test
 npm run build
 ```
 
-A beta of the same build, written to `docs/grsmd-beta.html`. The only difference from `docs/index.html` is its robots meta, `noindex` for search engines (owner's ruling 2026-10-26: no BETA mark, the same help). `docs/index.html` is not touched:
+A beta of the same build, written to `docs/grsmd-beta.html`. The only difference from `docs/index.html` is its robots meta, `noindex` for search engines (no BETA mark, the same help). `docs/index.html` is not touched:
 
 ```bash
 npm run build:beta
@@ -199,13 +202,13 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 - 100% クライアントサイド Markdown レンダリング（表、タスクリスト、コードブロック）
 - KaTeX による数式（LaTeX）表示
 - Mermaid 図のサポート
-- PlantUML 図のサポート（送信前に毎回、許可を確認）
+- PlantUML 図のサポート（送信前に許可を確認。許した図だけを送る）
 - コードブロックのシンタックスハイライト
 - コードビュー: テキスト系ファイル（.py、.js、.c など）をドロップすると、ハイライトと行番号付きで表示
-- ページ上どこでも貼り付け（Ctrl+V / Cmd+V）またはファイルのドロップで自動プレビュー
+- 最初の画面ではページ上どこでも貼り付け（Ctrl+V / Cmd+V）、またはファイルのドロップで自動プレビュー
 - 表示中のファイルをディスクからリロード（File System Access API 対応ブラウザ）
 - プレビュー上でのブロック単位の編集と、ファイルへの保存（自動保存はしない。ファイルを書き込めないブラウザではダウンロード）
-- 表のセルを見たままの形で編集。プレビューのダブルクリック（ダブルタップ）で、押した所の編集を始める
+- 表のセルを見たままの形で編集。プレビューのダブルクリックで、押した所の編集を始める（タッチ画面では [Edit] を押してからブロックをタップ）
 - 文字色（赤・青・緑）と、リンク（選んだ文字に URL を貼る、リンクを外す）
 - 見出しの目次（右端に浮かせて出し、押すとその見出しへ飛ぶ）
 - Markdown の原文の検索（文字または正規表現）と、編集モードでの置換（1 件ずつ、またはすべて）
@@ -233,17 +236,20 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    - `.md` ファイルをページ上にドロップ（Markdown プレビュー）
    - その他のテキスト系ファイルをドロップ（コードビュー）
    - 画面上部の `[Paste Markdown...]` に直接ペースト
+
+   ペーストでプレビューが始まるのは、最初の画面で、上部のボックスが空のときだけです。文書を表示しているときは、先に `[Clear]` を押します。ドロップできるファイルは 5 MB までです。
+
 3. ボタンとキー:
 
    | ボタン | キー | 動作 |
    |---|---|---|
    | Index | `I` | 見出し（h1〜h6）の目次を右端に出す / 消す。押した見出しを見えている範囲の上端へ |
-   | Search | `F` | Markdown の原文から文字を探す（`Aa` で大文字と小文字を区別、`.*` で正規表現。検索欄の `↓` / `↑` で次 / 前）。編集モードでは `Ctrl+F` でも開け、Replace / All で置き換える（Undo 1 回で戻る） |
+   | Search | `F` | Markdown の原文（コードビューではファイル）から文字を探す（`Aa` で大文字と小文字を区別、`.*` で正規表現。検索欄の `↓` / `↑` で次 / 前）。編集モードでは `Ctrl+F` でも開け、Replace / All で置き換える（Undo 1 回で戻る） |
    | Render Light | `L` | レンダリング / ライトテーマに切替 |
    | Render Dark | `D` | レンダリング / ダークテーマに切替 |
    | Reload | `R` | 表示中のファイルをディスクからリロード |
    | New Tab | `N` | 新しいタブで GRSMD を開く |
-   | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリックすると、その場で Markdown を編集 |
+   | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリック（タップ）すると、その場で Markdown を編集 |
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書を表示している間、保存 / 名前を付けて保存 |
@@ -256,9 +262,9 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 
    Mac では `Ctrl` の代わりに `Cmd` を使います（やり直しは `Cmd+Shift+Z`）。
 
-   編集モードでは、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下に、点線と `+` が出ます。押すと（スマートフォンでは、すき間をタップしてから点線をタップ）、そこに新しいブロックを入れます。
+   編集モードで、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下にマウスを置く（スマートフォンではタップする）と、点線と `+` が出ます。押すと、そこに新しいブロックを入れます。
 
-   ブロックを開いているとき、編集パレットの Text format の 2 段目で数式を入れられます。Insert inline math は、カーソルの位置に式を入れます。Insert math boxes は、3 つの方程式（Maxwell、Einstein、Schroedinger）を、それぞれの名前と一緒に入れます。
+   ブロックを開いているとき、編集パレットの Text format の 2 段目で数式を入れられます。Insert inline math は、カーソルの位置に式を入れます。Insert math boxes は、3 つの数式の箱（Maxwell、Einstein、Schroedinger）を、それぞれの名前の下に入れます。
 
    編集パレットのグリップ（`::`）をダブルクリック（スマートフォンやタブレットではダブルタップ）するか長押しすると、パレットはグリップだけになります。もう一度で元に戻ります。
 
@@ -271,13 +277,13 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 ## プライバシーとセキュリティ
 
 - **同意なしには何も送信しません。** 外部への通信は次の 2 つだけです。
-  - PlantUML: 確認ダイアログの後に、図のソースを公式 PlantUML サーバーへ送信します（描画のたびに確認）。
+  - PlantUML: 文書を描くときに (編集で変えた図は、その [Render] を押したときに) 確認ダイアログを出し、その後にだけ、図のソースを公式 PlantUML サーバーへ送信します。送るのは、ダイアログで許した図だけです。許した図の Copy SVG / PNG は、確認なしにその図をもう一度取りに行きます。ページの読み込みの途中は、図の所に「Loading diagram...」と出し、読み込みが終わってから確認します。
   - 外部画像（`![](https://...)`）: クリックして確認するまでプレースホルダーを表示します。同意は `[Clear]` または新しいファイルのドロップまで有効です。
 - **何も保存しません。** 入力内容を localStorage・sessionStorage・Cookie に書き込みません。
 - **編集内容もブラウザに保存しません。** ファイルに保存するまでは、開いているページの中にだけあります。
-- **クリップボード。** 「リンクを貼る」（Paste copied link）のボタンは、押したときだけクリップボードを読むので、ブラウザが許可を求めることがあります。Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。選んだ文字に URL を Ctrl+V / Cmd+V で貼ってリンクにする方法には、許可が要りません。クリップボードから読んだものは、どこにも送りません。
+- **クリップボード。** 「リンクを貼る」（Paste copied link）のボタンは、押したときだけクリップボードを読むので、ブラウザが許可を求めることがあります。goodrelax.github.io で開いているとき、Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。選んだ文字に URL を Ctrl+V / Cmd+V で貼ってリンクにする方法には、許可が要りません。クリップボードから読んだものは、どこにも送りません。
 - **Markdown 内の HTML は DOMPurify でサニタイズ**します。スクリプトとイベント属性を除去し、その他の外部参照（動画・音声・CSS の `url()`・`<style>`）も除去します。
-- **Content-Security-Policy:** ビルド成果物は自身のスクリプト (要るときに動かすライブラリも含め、それぞれハッシュで許したもの) しか実行せず、通信先も PlantUML サーバーだけに制限しています。
+- **Content-Security-Policy:** ビルド成果物は自身のスクリプト (要るときに動かすライブラリも含め、それぞれハッシュで許したもの) しか実行せず、データを取りに行ける先は PlantUML サーバーだけです。ほかのサイトの画像はポリシーでは許していますが、GRSMD は同意（上記）の後にだけ読み込みます。
 
 ---
 
@@ -301,7 +307,7 @@ npm test
 npm run build
 ```
 
-同じビルドのベータ版を `docs/grsmd-beta.html` に書きます。`docs/index.html` との違いは、検索エンジンに載せない robots の meta（`noindex`）だけです（オーナーの裁定 2026-10-26: BETA の印は出さず、ヘルプも同じ）。`docs/index.html` は変えません。
+同じビルドのベータ版を `docs/grsmd-beta.html` に書きます。`docs/index.html` との違いは、検索エンジンに載せない robots の meta（`noindex`）だけです（BETA の印は出さず、ヘルプも同じ）。`docs/index.html` は変えません。
 
 ```bash
 npm run build:beta

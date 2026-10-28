@@ -154,4 +154,34 @@ test.describe("touch", () => {
     expect(types).toHaveLength(6);
     expect(new Set(types)).toEqual(new Set(["touch"]));
   });
+
+  test("the grip's double tap (PD1) and the preview's double tap (AQ3) do not meet", async ({ page }) => {
+    await page.goto("/");
+    await renderMarkdown(page, DOC);
+    const para = page.locator("#preview > .md-block", { hasText: "Para one." }).first();
+    const p = await para.boundingBox();
+    const at = { x: p.x + 10, y: p.y + p.height / 2 };
+    // AQ3: a touch double tap on the preview starts no editing
+    await page.touchscreen.tap(at.x, at.y);
+    await page.touchscreen.tap(at.x, at.y);
+    await page.waitForTimeout(LONG_PRESS_MS + 100);
+    await expect(palette(page)).toBeHidden();
+    await expect(blockEditor(page)).toHaveCount(0);
+    // PD1: in edit mode a double tap on the grip minimizes and opens no block
+    await page.locator("#editBtn").tap();
+    await expect(page.locator("#paletteSave")).toBeVisible();
+    const body = await page.locator("#editor").inputValue();
+    const c = await gripCenter(page);
+    await page.touchscreen.tap(c.x, c.y);
+    await page.touchscreen.tap(c.x, c.y);
+    await expectMinimized(page, true);
+    await page.waitForTimeout(LONG_PRESS_MS + 100);
+    await expectMinimized(page, true);
+    await expect(blockEditor(page)).toHaveCount(0);
+    await expect(page.locator("#editor")).toHaveValue(body);
+    // taps on the preview neither restore the palette nor count toward the grip
+    await page.touchscreen.tap(at.x, at.y);
+    await expect(blockEditor(page)).toHaveCount(1); // INV-29: a tap opens the block in edit mode
+    await expectMinimized(page, true);
+  });
 });

@@ -283,3 +283,63 @@ test("print: an invisible character mark loses its ground but keeps the characte
   expect(await look()).toEqual({ ground: TRANSPARENT, shadow: "none", display: "inline" });
   await page.emulateMedia({ media: null });
 });
+
+// INV-08 and INV-12: the OS color scheme (prefers-color-scheme), emulated.
+const pasteText = (page, text) =>
+  page.evaluate((value) => {
+    const data = new DataTransfer();
+    data.setData("text/plain", value);
+    document.body.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: data }));
+  }, text);
+
+test.describe("the OS color scheme is dark", () => {
+  test.use({ colorScheme: "dark" });
+
+  test("INV-12: the first load shows the dark colors; Clear after a light render brings them back", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("body")).toHaveClass(/\bdark\b/);
+    await renderMarkdown(page, "# Light\n");
+    await expect(page.locator("body")).not.toHaveClass(/\bdark\b/);
+    await page.locator("#clearBtn").click();
+    await expect(page.locator("body")).toHaveClass(/\bview-initial\b/);
+    await expect(page.locator("body")).toHaveClass(/\bdark\b/);
+  });
+
+  test("INV-08: a .md file dropped in the initial state is rendered dark", async ({ page }) => {
+    await page.goto("/");
+    await dropFile(page, { name: "os-dark.md", text: "# Dropped\n", type: "text/markdown" });
+    await expect(page.locator("body")).toHaveClass(/\bview-markdown\b/);
+    await expect(page.locator("#preview h1")).toHaveText("Dropped");
+    await expect(page.locator("body")).toHaveClass(/\bdark\b/);
+  });
+
+  test("INV-08: Markdown pasted in the initial state is rendered dark", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("body")).toHaveClass(/\bview-initial\b/);
+    await pasteText(page, "# Pasted\n");
+    await expect(page.locator("body")).toHaveClass(/\bview-markdown\b/);
+    await expect(page.locator("#preview h1")).toHaveText("Pasted");
+    await expect(page.locator("body")).toHaveClass(/\bdark\b/);
+  });
+});
+
+test.describe("the OS color scheme is light", () => {
+  test.use({ colorScheme: "light" });
+
+  test("INV-08, INV-12: the first load, a .md drop and a paste after Clear are light", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("body")).toHaveClass(/\bview-initial\b/);
+    await expect(page.locator("body")).not.toHaveClass(/\bdark\b/);
+    await dropFile(page, { name: "os-light.md", text: "# Dropped\n", type: "text/markdown" });
+    await expect(page.locator("#preview h1")).toHaveText("Dropped");
+    await expect(page.locator("body")).not.toHaveClass(/\bdark\b/);
+    await page.keyboard.press("d");
+    await expect(page.locator("body")).toHaveClass(/\bdark\b/);
+    await page.locator("#clearBtn").click();
+    await expect(page.locator("body")).toHaveClass(/\bview-initial\b/);
+    await expect(page.locator("body")).not.toHaveClass(/\bdark\b/);
+    await pasteText(page, "# Pasted\n");
+    await expect(page.locator("#preview h1")).toHaveText("Pasted");
+    await expect(page.locator("body")).not.toHaveClass(/\bdark\b/);
+  });
+});
