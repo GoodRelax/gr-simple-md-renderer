@@ -99,6 +99,16 @@ describe("CONFIG UI texts in plain English", () => {
     expect(M.diagram.tooltip).toBe("Ctrl+wheel: zoom | Double-click: reset | Drag: move");
   });
 
+  it("AT-CFG-10 the start screen: four steps of one length; the 4th says how to start editing (FS-16, INV-57, AQ4)", () => {
+    const lines = M.startScreen.split("\n");
+    expect(lines.slice(0, 2)).toEqual(["Get started:", ""]);
+    const steps = lines.slice(2);
+    expect(steps).toHaveLength(4);
+    steps.forEach((line, i) => expect(line.startsWith(`  ${i + 1}. `), line).toBe(true));
+    for (const line of steps) expect(line.length, line).toBe(71);
+    expect(steps[3].trimEnd()).toBe("  4. Double-click a block     ->  Edit  (phone: press [Edit], tap)");
+  });
+
   it("AT-CFG-09 palette names (P01-P03, R5, R6)", () => {
     expect(M.palette.linkPaste).toBe("Paste copied link");
     expect(M.palette.tableOptions).toBe("Align column");

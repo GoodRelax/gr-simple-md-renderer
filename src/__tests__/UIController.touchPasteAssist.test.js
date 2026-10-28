@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
-describe("FS-16: Touch paste assist via editor.focus()", () => {
+describe("AT-TPA-01 FS-16: Touch paste assist via editor.focus()", () => {
   let UIController;
   let mockOrchestrator;
   let mockScrollEngine;

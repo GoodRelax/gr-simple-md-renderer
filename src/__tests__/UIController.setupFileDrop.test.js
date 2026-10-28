@@ -128,7 +128,7 @@ describe("UIController.setupFileDrop", () => {
     return { event, file };
   }
 
-  it("routes .md files to loadMarkdown", async () => {
+  it("routes .md files to loadMarkdown (INV-17, INV-18 (1))", async () => {
     createController();
 
     const file = new File(["# Hello"], "test.md", { type: "text/markdown" });
@@ -173,7 +173,7 @@ describe("UIController.setupFileDrop", () => {
     expect(calledWith).toBeDefined();
   });
 
-  it("routes .py files to renderCodeView", async () => {
+  it("routes .py files to renderCodeView (INV-18 (2))", async () => {
     createController();
 
     const { event } = createDropEvent("script.py");
@@ -189,7 +189,7 @@ describe("UIController.setupFileDrop", () => {
     });
   });
 
-  it("rejects known binary extension (.png) with alert", async () => {
+  it("rejects known binary extension (.png) with alert (INV-18 (3))", async () => {
     createController();
 
     const file = new File(["fakecontent"], "image.png", { type: "image/png" });
@@ -212,7 +212,7 @@ describe("UIController.setupFileDrop", () => {
     expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
   });
 
-  it("accepts unknown text extension (.xyz) via null byte check", async () => {
+  it("accepts unknown text extension (.xyz) via null byte check (INV-18)", async () => {
     createController();
 
     // File with only ASCII content (no null bytes)
@@ -228,7 +228,7 @@ describe("UIController.setupFileDrop", () => {
     });
   });
 
-  it("rejects unknown extension with null bytes as binary", async () => {
+  it("rejects unknown extension with null bytes as binary (INV-18)", async () => {
     createController();
 
     // File containing a null byte
@@ -253,7 +253,7 @@ describe("UIController.setupFileDrop", () => {
     expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
   });
 
-  it("rejects files exceeding 5 MB with alert", async () => {
+  it("rejects files exceeding 5 MB with alert (INV-11)", async () => {
     createController();
 
     const bigSize = 6 * 1024 * 1024;
@@ -282,7 +282,7 @@ describe("UIController.setupFileDrop", () => {
     expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
   });
 
-  it("accepts Dockerfile (extensionless file matched by name)", async () => {
+  it("accepts Dockerfile (extensionless file matched by name) (INV-18)", async () => {
     createController();
 
     const { event } = createDropEvent("Dockerfile");

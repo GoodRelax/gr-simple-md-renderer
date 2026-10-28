@@ -11,8 +11,9 @@ describe("CONFIG.edit (spec 5.2)", () => {
     const e = CONFIG.edit;
     expect(e.paletteMarginPx).toBe(16);
     expect(e.paletteLongPressMs).toBe(500); // INV-68
-    expect(e.doubleTapMaxIntervalMs).toBe(300);
-    expect(e.doubleTapMaxDistancePx).toBe(24);
+    // no double-tap detection: a double tap does not start editing (owner ruling AQ3)
+    expect(e).not.toHaveProperty("doubleTapMaxIntervalMs");
+    expect(e).not.toHaveProperty("doubleTapMaxDistancePx");
     expect(e.defaultFileName).toBe("untitled.md");
     expect(e.commitBudgetMs).toBe(300);
     expect(e.diffMaxCells).toBe(250000);

@@ -359,21 +359,6 @@ export default class BlockEditController {
     });
   }
 
-  /**
-   * Two taps close enough in time and place (INV-31, CONFIG.edit).
-   * @purity semi-pure-a
-   * @param {{time: number, x: number, y: number}|null} first
-   * @param {{time: number, x: number, y: number}|null} second
-   * @param {object} [limits] - CONFIG.edit
-   * @returns {boolean}
-   */
-  static isDoubleTap(first, second, limits = CONFIG.edit) {
-    if (!first || !second) return false;
-    const interval = second.time - first.time;
-    const distance = Math.hypot(second.x - first.x, second.y - first.y);
-    return interval >= 0 && interval <= limits.doubleTapMaxIntervalMs && distance <= limits.doubleTapMaxDistancePx;
-  }
-
   // ---- state machine (11-c) ----
 
   /**

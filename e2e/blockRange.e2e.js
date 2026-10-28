@@ -349,19 +349,26 @@ test("INV-74 (6), INV-45: with an unrendered change in the top box, Delete rende
 test("INV-74 (2): the bar goes above the selection when there is no room under it, and stays in the viewport (D10, U4)", async ({ page }) => {
   const paras = Array.from({ length: 80 }, (_, i) => `Paragraph ${i} of a long page.`).join("\n\n");
   await openEditMode(page, `# Long\n\n${paras}\n`);
-  // a paragraph scrolled to end 10 px above the bottom of the viewport: no room for the bar under it
+  // a paragraph scrolled to end 30 px above the bottom of the viewport: no room for the bar under it
+  // (gap 6 + bar 38 + margin 8). Not nearer: a drag held within 20 px of a scroller's edge makes
+  // Chromium scroll it and grow the selection (its autoscroll belt). At 10 px the mouse was 19 px
+  // from the edge, and a drag slowed by a loaded machine selected the next paragraphs too.
+  const above = 30;
   const target = "Paragraph 40 of a long page.";
-  await page.evaluate((text) => {
+  await page.evaluate(({ text, above }) => {
     const p = [...document.querySelectorAll("#preview p")].find((el) => el.textContent === text);
     const scroller = document.querySelector("#preview").scrollHeight > document.querySelector("#preview").clientHeight ? document.querySelector("#preview") : document.scrollingElement;
-    scroller.scrollTop += p.getBoundingClientRect().bottom - (window.innerHeight - 10);
-  }, target);
+    scroller.scrollTop += p.getBoundingClientRect().bottom - (window.innerHeight - above);
+  }, { text: target, above });
   await settled(page);
   const viewport = page.viewportSize();
   const before = await para(page, target).boundingBox();
-  expect(Math.abs(before.y + before.height - (viewport.height - 10))).toBeLessThan(2);
+  expect(Math.abs(before.y + before.height - (viewport.height - above))).toBeLessThan(2);
   await drag(page, para(page, target), para(page, target), { fromX: 2, toX: 40 });
   await expect(bar(page)).toBeVisible();
+  // the drag selected inside the one paragraph and scrolled nothing: its line still has no room under it
+  await expect(framed(page)).toHaveCount(1);
+  expect((await para(page, target).boundingBox()).y).toBeCloseTo(before.y, 0);
   // the bar is placed once a frame: wait for the place to settle above the line, then read it
   const place = async () => {
     const barBox = await bar(page).boundingBox();
@@ -407,6 +414,26 @@ test("INV-74 (3): Shift+Delete deletes the selected blocks as Delete does (owner
   await expectBody(page, DOC.replace("First para with **bold**.\n\nSecond para.\n\n", ""));
   await page.keyboard.press(`${MOD}+z`);
   await expectBody(page, DOC);
+});
+
+test("AT-RNG-53 INV-74 (2): the mouse wheel over the bar scrolls the preview; the frame and the bar follow the scroll (as AQ8)", async ({ page }) => {
+  const paras = Array.from({ length: 80 }, (_, i) => `Paragraph ${i} of a long page.`).join("\n\n");
+  await openEditMode(page, `# Long\n\n${paras}\n`);
+  await drag(page, para(page, "Paragraph 2 of"), para(page, "Paragraph 3 of"));
+  await expect(framed(page)).toHaveCount(2);
+  await expect(bar(page)).toBeVisible();
+  const top = () => page.locator("#preview").evaluate((el) => el.scrollTop);
+  expect(await top()).toBe(0);
+  const barBefore = await bar(page).boundingBox();
+  const frameBefore = await framed(page).last().boundingBox();
+  await page.mouse.move(barBefore.x + barBefore.width / 2, barBefore.y + barBefore.height / 2);
+  await page.mouse.wheel(0, 300);
+  await expect.poll(top).toBeGreaterThan(100);
+  // the frame moved with the text, and the bar (placed again once a frame) with it
+  await expect.poll(async () => (await framed(page).last().boundingBox()).y).toBeLessThan(frameBefore.y - 100);
+  await expect.poll(async () => (await bar(page).boundingBox()).y).toBeLessThan(barBefore.y - 50);
+  await expect(framed(page)).toHaveCount(2);
+  await expect(bar(page)).toBeVisible();
 });
 
 test.describe("touch", () => {
@@ -471,4 +498,50 @@ test("INV-74 (performance), INV-51: 1 MB in Chromium, the frame after Ctrl+A wit
   console.log(`INV-74 1 MB: the frame after Ctrl+A ${selectFrame.toFixed(1)} ms; Delete: handler ${del.inHandler.toFixed(1)} ms, to the DOM swap ${del.toSwap.toFixed(1)} ms`);
   expect(selectFrame).toBeLessThanOrEqual(SELECT_ALL_FRAME_BUDGET_MS);
   expect(del.toSwap).toBeLessThanOrEqual(300);
+});
+
+// INV-74 (performance) (a), its second sentence: while a mouse drag grows
+// the selection a little each frame, each such frame (its script, and the
+// style and layout it leaves) within GROW_FRAME_BUDGET_MS, as INV-73. 1 MB,
+// Chromium, GRSMD_PERF=1 only, as the test above.
+const GROW_FRAME_BUDGET_MS = 4;
+test("INV-74 (performance) (a), INV-73: 1 MB in Chromium, a mouse drag growing the selection: each frame within 4 ms", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "INV-51 is measured in Chrome");
+  test.skip(process.env.GRSMD_PERF !== "1", "timing: GRSMD_PERF=1 only");
+  test.setTimeout(180000);
+  let doc = "";
+  for (let i = 0; doc.length < 1024 * 1024; i++) doc += `\n## Section ${i}\n\nParagraph ${i} with some words to make it longer, and **bold** text.\n`;
+  await openEditMode(page, doc);
+  // each frame callback while the drag runs, with the style and layout it leaves (read at once)
+  await page.evaluate(() => {
+    const raf = window.requestAnimationFrame.bind(window);
+    window.__frameTimes = [];
+    window.__recording = false;
+    window.requestAnimationFrame = (cb) =>
+      raf((t) => {
+        const t0 = performance.now();
+        cb(t);
+        document.querySelector("#preview").getBoundingClientRect();
+        if (window.__recording) window.__frameTimes.push(performance.now() - t0);
+      });
+  });
+  const from = await para(page, "Paragraph 0 ").first().boundingBox();
+  const to = await para(page, "Paragraph 4 ").first().boundingBox();
+  await page.mouse.move(from.x + 8, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.evaluate(() => (window.__recording = true));
+  await page.mouse.move(to.x + 30, to.y + to.height / 2, { steps: 60 });
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.evaluate(() => (window.__recording = false));
+  const framedWhileHeld = await framed(page).count();
+  await page.mouse.up();
+  await expect(bar(page)).toBeVisible();
+  const times = await page.evaluate(() => window.__frameTimes);
+  const sorted = [...times].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  const max = sorted.at(-1);
+  console.log(`INV-74 1 MB drag: ${times.length} frames, median ${median.toFixed(2)} ms, max ${max.toFixed(2)} ms`);
+  expect(framedWhileHeld).toBe(9); // Paragraph 0 to 4 and the four headings between them // the frame grew over the blocks while the button was held
+  expect(times.length).toBeGreaterThanOrEqual(10);
+  expect(max).toBeLessThanOrEqual(GROW_FRAME_BUDGET_MS);
 });

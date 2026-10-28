@@ -87,11 +87,9 @@ const markdownRenderer = new MarkdownRenderer(
   math,
 );
 const mermaidRenderer = new MermaidRenderer(elements.preview, null);
-const plantumlRenderer = new PlantUMLRenderer(
-  elements.preview,
-  null,
-  () => libraries.get("plantuml"),
-);
+// The encoder is handed over when it runs (11-g handToRenderers); the dev
+// server provides it from the start (ready), and nothing else asks for it.
+const plantumlRenderer = new PlantUMLRenderer(elements.preview, libraries.peek("plantuml"));
 
 // SourceFileRenderer is owned by RendererOrchestrator
 const sourceFileRenderer = new SourceFileRenderer(
@@ -186,9 +184,10 @@ if (window.matchMedia("(pointer: fine)").matches) {
   }
 }
 
-// The core runs (INV-81): a drop or paste made before it is taken now, and
-// the libraries run one by one when the page is idle (owner ruling 2026-10-25).
-const early = boot.takeEarlyInput();
-if (early) ui.receiveEarlyInput(early);
-libraries.preloadWhenIdle((name, library) => orchestrator.libraryLoaded(name, library));
+// The core runs (INV-81, spec 11-g coreStarted): a drop or paste made before
+// it is taken now, and the libraries run one by one when the page is idle
+// (owner ruling 2026-10-25). The page is loading until the four libraries are
+// ready or failed (settled); PlantUML asks and sends only then (AQ7).
+libraries.connect(orchestrator);
+libraries.dispatchPage("coreStarted", { receiveEarlyInput: (early) => ui.receiveEarlyInput(early) });
 performance.mark("grsmd-core-ready");

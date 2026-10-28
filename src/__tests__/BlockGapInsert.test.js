@@ -268,6 +268,66 @@ describe("AT-GAP-02 the line", () => {
   });
 });
 
+describe("AT-GAP-03 a wheel turn over the line scrolls the preview (INV-73, AQ8)", () => {
+  /** The preview scrolls itself (the desktop layout): overflow auto, taller content. */
+  function scrollable(preview, { overflow = "auto", scrollHeight = 2000 } = {}) {
+    preview.style.overflowY = overflow;
+    Object.defineProperty(preview, "clientHeight", { configurable: true, value: 400 });
+    Object.defineProperty(preview, "scrollHeight", { configurable: true, value: scrollHeight });
+    preview.scrollBy = vi.fn();
+  }
+  function wheel(init) {
+    const e = new WheelEvent("wheel", { bubbles: true, cancelable: true, ...init });
+    document.querySelector(".grsmd-gap-insert").dispatchEvent(e);
+    return e;
+  }
+
+  it("(a) pixels: the preview scrolls by the turn, the browser's default is taken, the line hides", () => {
+    t = setup([[20, 60], [80, 120]]);
+    scrollable(t.preview);
+    t.gaps.show(t.gaps.gapAt(100, 70));
+    const e = wheel({ deltaY: 120 });
+    expect(e.defaultPrevented).toBe(true);
+    expect(t.preview.scrollBy).toHaveBeenCalledWith({ left: 0, top: 120 });
+    expect(t.gaps.shownGap()).toBeNull();
+    expect(document.querySelector(".grsmd-gap-insert").hidden).toBe(true);
+  });
+
+  it("(b) lines and pages are turned into pixels; Shift turns a vertical turn sideways", () => {
+    t = setup([[20, 60], [80, 120]]);
+    scrollable(t.preview);
+    t.gaps.show(t.gaps.gapAt(100, 70));
+    wheel({ deltaY: 3, deltaMode: WheelEvent.DOM_DELTA_LINE });
+    expect(t.preview.scrollBy).toHaveBeenLastCalledWith({ left: 0, top: 120 });
+    t.gaps.show(t.gaps.gapAt(100, 70));
+    wheel({ deltaY: -1, deltaMode: WheelEvent.DOM_DELTA_PAGE });
+    expect(t.preview.scrollBy).toHaveBeenLastCalledWith({ left: 0, top: -400 });
+    t.gaps.show(t.gaps.gapAt(100, 70));
+    wheel({ deltaY: 50, shiftKey: true });
+    expect(t.preview.scrollBy).toHaveBeenLastCalledWith({ left: 50, top: 0 });
+  });
+
+  it("(c) Ctrl+wheel is left to the browser (as over the preview); the line hides", () => {
+    t = setup([[20, 60], [80, 120]]);
+    scrollable(t.preview);
+    t.gaps.show(t.gaps.gapAt(100, 70));
+    const e = wheel({ deltaY: -100, ctrlKey: true });
+    expect(e.defaultPrevented).toBe(false);
+    expect(t.preview.scrollBy).not.toHaveBeenCalled();
+    expect(t.gaps.shownGap()).toBeNull();
+  });
+
+  it("(d) the document scrolls (touch layout: the preview does not scroll itself): left to the browser", () => {
+    t = setup([[20, 60], [80, 120]]);
+    scrollable(t.preview, { overflow: "visible" });
+    t.gaps.show(t.gaps.gapAt(100, 70));
+    const e = wheel({ deltaY: 120 });
+    expect(e.defaultPrevented).toBe(false);
+    expect(t.preview.scrollBy).not.toHaveBeenCalled();
+    expect(t.gaps.shownGap()).toBeNull();
+  });
+});
+
 describe("AT-RNG-39 no gap while blocks are selected (INV-74 (2))", () => {
   it("gapAt is null while host.isSuppressed() is true, and back after", () => {
     t = setup([[20, 60], [80, 120]]);

@@ -490,3 +490,48 @@ describe("AT-RNG the bar and the actions (INV-74 (2) to (5))", () => {
     expect(s.orchestrator.getBody()).toBe(DOC.replace("Hello world.", "Hello changed."));
   });
 });
+
+describe("AT-RNG-53 a wheel turn over the bar scrolls the preview (INV-74 (2), as AQ8 for the gap line)", () => {
+  /** The preview scrolls itself (the desktop layout); its scrollBy fires a scroll as the browser's. */
+  function scrollable(preview) {
+    preview.style.overflowY = "auto";
+    Object.defineProperty(preview, "clientHeight", { configurable: true, value: 400 });
+    Object.defineProperty(preview, "scrollHeight", { configurable: true, value: 2000 });
+    preview.scrollBy = vi.fn(() => preview.dispatchEvent(new Event("scroll")));
+  }
+  function wheel(init) {
+    const e = new WheelEvent("wheel", { bubbles: true, cancelable: true, ...init });
+    bar().dispatchEvent(e);
+    return e;
+  }
+  async function shownRange() {
+    s = await setupEdit(DOC);
+    select(textIn(el("Hello")), 2, textIn(el("Second")), 3);
+    s.frame();
+    expect(bar().hidden).toBe(false);
+  }
+
+  it("the preview scrolls by the turn (pixels, lines, pages, Shift sideways); the default is taken; the bar and the frame stay; Ctrl+wheel and the touch layout are the browser's", async () => {
+    await shownRange();
+    scrollable(s.preview);
+    const e = wheel({ deltaY: 120 });
+    expect(e.defaultPrevented).toBe(true);
+    expect(s.preview.scrollBy).toHaveBeenLastCalledWith({ left: 0, top: 120 });
+    wheel({ deltaY: 3, deltaMode: WheelEvent.DOM_DELTA_LINE });
+    expect(s.preview.scrollBy).toHaveBeenLastCalledWith({ left: 0, top: 120 });
+    wheel({ deltaY: -1, deltaMode: WheelEvent.DOM_DELTA_PAGE });
+    expect(s.preview.scrollBy).toHaveBeenLastCalledWith({ left: 0, top: -400 });
+    wheel({ deltaY: 50, shiftKey: true });
+    expect(s.preview.scrollBy).toHaveBeenLastCalledWith({ left: 50, top: 0 });
+    s.frame(); // the scroll places them again
+    expect(bar().hidden).toBe(false);
+    expect(framed()).toEqual([el("Hello"), el("Second")]);
+    // Ctrl+wheel (the browser's zoom), or a preview that does not scroll itself (the touch layout): the browser's
+    expect(s.preview.scrollBy).toHaveBeenCalledTimes(4);
+    expect(wheel({ deltaY: -100, ctrlKey: true }).defaultPrevented).toBe(false);
+    s.preview.style.overflowY = "visible";
+    expect(wheel({ deltaY: 120 }).defaultPrevented).toBe(false);
+    expect(s.preview.scrollBy).toHaveBeenCalledTimes(4);
+    expect(bar().hidden).toBe(false);
+  });
+});

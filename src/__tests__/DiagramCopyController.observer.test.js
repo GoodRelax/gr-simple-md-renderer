@@ -26,7 +26,7 @@ function setup(paragraphs = 200) {
 
 const hasBar = (container) => container.previousElementSibling?.classList.contains("diagram-copy-bar") === true;
 
-describe("DiagramCopyController attaches bars to added diagram containers only", () => {
+describe("AT-DCC-01 DiagramCopyController attaches bars to added diagram containers only (FS-09)", () => {
   it("a container added directly gets a bar", async () => {
     setup();
     await tick();

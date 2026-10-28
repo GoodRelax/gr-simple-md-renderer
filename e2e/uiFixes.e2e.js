@@ -218,6 +218,40 @@ test.describe("a new block from a gap between blocks (B1, INV-73)", () => {
     await expect(page.locator("#editor")).toHaveValue(/First para\.\n\nBetween\.\n\nSecond para\.!/);
   });
 
+  test("AT-GAP-03 INV-73 (AQ8): the mouse wheel over the shown line scrolls the preview", async ({ page }) => {
+    const paras = Array.from({ length: 60 }, (_, i) => `Para ${i}.`).join("\n\n");
+    await openEditMode(page, `# Long\n\n${paras}\n`);
+    const p = await gapPoint(page, "Para 2.");
+    await page.mouse.move(p.x, p.y - 1);
+    await page.mouse.move(p.x, p.y);
+    await expect(line(page)).toBeVisible();
+    const top = () => page.locator("#preview").evaluate((el) => el.scrollTop);
+    expect(await top()).toBe(0);
+    await page.mouse.wheel(0, 300);
+    await expect.poll(top).toBeGreaterThan(100);
+    await page.mouse.wheel(0, -300);
+    await expect.poll(top).toBeLessThan(100);
+  });
+
+  test("AT-GAP-04 INV-73 (AQ8), FS-09: Ctrl+wheel over a diagram in edit mode still zooms it, and the line does not take it", async ({ page }) => {
+    await openEditMode(page, DOC);
+    const svg = page.locator("#preview .mermaid svg");
+    await expect(svg).toBeVisible();
+    const width = () => svg.evaluate((el) => el.getBoundingClientRect().width);
+    const before = await width();
+    const p = await gapPoint(page, "Second para.");
+    await page.mouse.move(p.x, p.y - 1);
+    await page.mouse.move(p.x, p.y);
+    await expect(line(page)).toBeVisible();
+    const box = await svg.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(line(page)).toBeHidden();
+    await page.keyboard.down("Control");
+    await page.mouse.wheel(0, -100);
+    await page.keyboard.up("Control");
+    await expect.poll(width).toBeGreaterThan(before);
+  });
+
   test.describe("touch", () => {
     test.use({ hasTouch: true });
 

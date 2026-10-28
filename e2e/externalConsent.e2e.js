@@ -36,7 +36,7 @@ function answerDialogs(page, accept) {
 }
 
 test.describe("external images", () => {
-  test("nothing is requested before consent, or after it is refused", async ({ page, externalRequests }) => {
+  test("INV-01, INV-19: nothing is requested before consent, or after it is refused", async ({ page, externalRequests }) => {
     const dialogs = answerDialogs(page, false);
     await page.goto("/");
     await renderMarkdown(page, IMAGE_MARKDOWN);
@@ -69,7 +69,7 @@ test.describe("external images", () => {
 });
 
 test.describe("PlantUML", () => {
-  test("nothing is sent when consent is refused", async ({ page }) => {
+  test("INV-01, INV-03: nothing is sent when consent is refused", async ({ page }) => {
     const dialogs = answerDialogs(page, false);
     await page.goto("/");
     await renderMarkdown(page, PLANTUML_MARKDOWN);

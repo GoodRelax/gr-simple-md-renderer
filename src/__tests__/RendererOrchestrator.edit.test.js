@@ -461,7 +461,7 @@ describe("RendererOrchestrator edit API (INV-47, INV-48, spec 5.14.3)", () => {
     expect(t.markdownRenderer.renderBlocks).toHaveBeenCalledTimes(1);
     expect(t.markdownRenderer.renderBlocks.mock.calls[0][0].toBody()).toBe("# H\n\nP\n");
     expect(t.mermaidRenderer.render).toHaveBeenCalledWith("dark");
-    expect(t.plantumlRenderer.render).toHaveBeenCalledWith("dark", t.preview, "consent");
+    expect(t.plantumlRenderer.render).toHaveBeenCalledWith("dark", t.preview, "consent", null); // no loader: the page counts as settled (11-g)
     expect(t.scrollManager.save).toHaveBeenCalled();
     expect(t.scrollManager.restore).toHaveBeenCalled();
     expect(t.orchestrator.canUndo()).toBe(false);
@@ -472,7 +472,7 @@ describe("RendererOrchestrator edit API (INV-47, INV-48, spec 5.14.3)", () => {
     await t.orchestrator.commitBlock(t.idOf("B"), "B2");
     const replaced = t.markdownRenderer.replaceBlocks.mock.results[0].value;
     expect(t.mermaidRenderer.render).toHaveBeenCalledWith("light", replaced);
-    expect(t.plantumlRenderer.render).toHaveBeenCalledWith("light", replaced, "placeholder");
+    expect(t.plantumlRenderer.render).toHaveBeenCalledWith("light", replaced, "placeholder", null);
     expect(t.plantumlRenderer.render).toHaveBeenCalledTimes(1);
   });
 

@@ -2,8 +2,10 @@ import DiagramRenderer from "./DiagramRenderer.js";
 import { CONFIG } from "../config.js";
 import { replaceCodeBlock, queryAllIn } from "../utils.js";
 
+const PLANTUML_SELECTOR = "code.language-plantuml, code.language-puml";
+
 /**
- * One diagram as the full render's dialog answered for it: its source and theme.
+ * One diagram: its source and theme (keepRender, heldForRender).
  * @purity pure
  * @param {string} code
  * @param {string} theme
@@ -15,133 +17,186 @@ function diagramKey(code, theme) {
 
 export default class PlantUMLRenderer extends DiagramRenderer {
   /**
+   * PlantUML is drawn only when the page is settled (spec 11-g, INV-81 (3),
+   * owner ruling AQ7): the encoder is then ready or failed, never awaited.
+   * Before that, hold() shows "Loading diagram..." and runWaiting() deals
+   * with those boxes once, when the page is settled.
    * @param {HTMLElement} preview
-   * @param {object|null} plantumlEncoder - null: loadEncoder gives it when first needed (INV-81)
-   * @param {Function|null} [loadEncoder] - () => Promise of the encoder
+   * @param {object|null} plantumlEncoder - null until the encoder has run (useLibrary)
    * @purity non-pure
    */
-  constructor(preview, plantumlEncoder, loadEncoder = null) {
+  constructor(preview, plantumlEncoder) {
     super();
     this.preview = preview;
     this.encoder = plantumlEncoder;
-    this.loadEncoder = loadEncoder;
     // Placeholders created here -> { code, theme }. A user-written
     // .plantuml-pending element is not in this map and never sends (INV-23).
     this._pending = new WeakMap();
-    // Boxes waiting for the encoder after the consent (INV-81 (3)) -> { code, theme }
-    this._loading = new WeakMap();
-    this._encoderWait = null; // the promise of the encoder being awaited
-    // The diagrams (diagramKey) the last full render's dialog was answered
-    // for: allowed and sent, or declined. "repeat" goes by them only; a
-    // diagram added or changed later is in neither (INV-23, INV-81 (3)).
-    this._allowed = new Set();
-    this._declined = new Set();
+    // Loading boxes made by hold() -> { code, theme, later: "consent" | "render" }.
+    // A user-written .plantuml-loading element is not in this map.
+    this._waiting = new WeakMap();
+    // runWaiting() runs once, when the page is settled: after it no box waits.
+    this._waitingAnswered = false;
   }
 
   /**
-   * Render the PlantUML blocks under root (the whole preview by default).
+   * Render the PlantUML blocks under root (the whole preview by default);
+   * called when the page is settled (11-g runPlantUmlStep).
    * mode "consent" (full render): one confirm, then send (INV-02).
    * mode "placeholder" (partial render after an edit): send nothing and show
    * a pending box with a [Render] button instead (INV-23).
-   * mode "repeat" (blocks drawn again because KaTeX ran, no one acted): a
-   * diagram the last full render's dialog allowed (the same source and
-   * theme) is sent again and one it declined shows so, without asking; any
-   * other (added or changed by a commit, INV-23) gets the placeholder
-   * (INV-81 (3)).
-   * Before the encoder has run, the blocks sent show "Loading diagram..."
-   * and are drawn when it comes; the render does not wait for it (INV-81 (3)).
+   * keepRender: diagrams (heldForRender keys) that wait for [Render] keep
+   * waiting for it in any mode (a KaTeX redraw of a committed block, INV-02).
+   * Without the encoder (it could not run) every block shows the encoding
+   * error, and no dialog is shown.
+   * While held boxes of the same full render still wait for runWaiting()
+   * (a KaTeX redraw queued before the page was settled runs before it), a
+   * "consent" render holds its blocks too: they join that batch, and the
+   * full render gets one dialog (INV-81 (3), G6).
    * @param {string} theme
    * @param {ParentNode|ParentNode[]} [root]
-   * @param {"consent"|"placeholder"|"repeat"} [mode]
+   * @param {"consent"|"placeholder"} [mode]
+   * @param {Set<string>|null} [keepRender]
    * @purity non-pure
    */
-  async render(theme, root = this.preview, mode = "consent") {
+  async render(theme, root = this.preview, mode = "consent", keepRender = null) {
     try {
-      if (mode === "consent") {
-        this._allowed.clear();
-        this._declined.clear();
-      }
-      const blocks = queryAllIn(root, "code.language-plantuml, code.language-puml");
+      const blocks = queryAllIn(root, PLANTUML_SELECTOR);
       if (blocks.length === 0) return;
+      if (mode === "consent" && this._hasWaitingBoxes()) {
+        this.hold(theme, root, mode, keepRender);
+        return;
+      }
 
-      if (mode === "placeholder") {
-        /** @purity non-pure */
-        blocks.forEach((block) => {
+      if (!this.encoder) {
+        for (const block of blocks) replaceCodeBlock(block, this._encodingFailedElement());
+        return;
+      }
+
+      const asked = [];
+      for (const block of blocks) {
+        if (mode === "placeholder" || keepRender?.has(diagramKey(block.textContent, theme))) {
           replaceCodeBlock(block, this.createPendingElement(block.textContent, theme));
-        });
-        return;
+        } else {
+          asked.push(block);
+        }
       }
+      if (asked.length === 0) return;
 
-      if (mode === "repeat") {
-        await this._send(this._answeredAgain(blocks, theme), theme);
-        return;
-      }
-
-      const permitted = this.askConsent();
-      const answered = permitted ? this._allowed : this._declined;
-      for (const block of blocks) answered.add(diagramKey(block.textContent, theme));
-
-      if (!permitted) {
+      if (!this.askConsent()) {
         /** @purity non-pure */
-        blocks.forEach((block) => this._showCanceled(block));
+        asked.forEach((block) => replaceCodeBlock(block, this._canceledElement()));
         return;
       }
-      await this._send(blocks, theme);
+      const promises = [];
+      /** @purity non-pure */
+      asked.forEach((block) => {
+        const promise = this.renderSingleBlock(block, theme);
+        if (promise) promises.push(promise);
+      });
+      await Promise.allSettled(promises);
     } catch (error) {
       console.error("PlantUML rendering error:", error);
     }
   }
 
   /**
-   * "repeat": the blocks the full render's dialog declined show so, and
-   * those it did not answer get the placeholder (INV-23). The ones it
-   * allowed are returned, to be sent again.
-   * @param {HTMLElement[]} blocks
+   * Before the page is settled (11-g holdPlantUml): each PlantUML block
+   * under root shows "Loading diagram..." (no dialog, nothing sent, not
+   * awaited). The box remembers its source, theme and what comes later: the
+   * dialog ("consent": a full render, or the redraw after KaTeX ran) or a
+   * [Render] box ("placeholder": a partial render, INV-23). A diagram in
+   * keepRender stays a [Render] one (INV-02: the redraw after KaTeX never
+   * turns a committed diagram into one the dialog sends).
    * @param {string} theme
-   * @returns {HTMLElement[]}
+   * @param {ParentNode|ParentNode[]} [root]
+   * @param {"consent"|"placeholder"} [mode]
+   * @param {Set<string>|null} [keepRender]
    * @purity non-pure
    */
-  _answeredAgain(blocks, theme) {
-    const allowed = [];
-    for (const block of blocks) {
-      const key = diagramKey(block.textContent, theme);
-      if (this._allowed.has(key)) allowed.push(block);
-      else if (this._declined.has(key)) this._showCanceled(block);
-      else replaceCodeBlock(block, this.createPendingElement(block.textContent, theme));
+  hold(theme, root = this.preview, mode = "consent", keepRender = null) {
+    for (const block of queryAllIn(root, PLANTUML_SELECTOR)) {
+      const code = block.textContent;
+      const later = mode === "placeholder" || keepRender?.has(diagramKey(code, theme)) ? "render" : "consent";
+      const box = document.createElement("div");
+      box.className = "plantuml-loading";
+      box.textContent = CONFIG.messages.diagram.loading;
+      this._waiting.set(box, { code, theme, later });
+      replaceCodeBlock(block, box);
     }
-    return allowed;
   }
 
   /**
-   * @param {HTMLElement} block
-   * @purity non-pure
+   * The diagrams (source and theme) the held boxes in the preview keep for
+   * [Render]: read before a KaTeX redraw replaces their blocks.
+   * @returns {Set<string>}
+   * @purity semi-pure-b
    */
-  _showCanceled(block) {
-    replaceCodeBlock(block, this.createErrorElement(CONFIG.messages.plantuml.canceled));
-  }
-
-  /**
-   * Send blocks whose consent was given. Before the encoder has run they
-   * show "Loading diagram..." and are drawn when it comes, not awaited: the
-   * render queue goes on (edits, Undo, other documents).
-   * @param {HTMLElement[]} blocks
-   * @param {string} theme
-   * @purity non-pure
-   */
-  async _send(blocks, theme) {
-    if (blocks.length === 0) return;
-    if (!this.encoder && this.loadEncoder) {
-      for (const block of blocks) replaceCodeBlock(block, this._loadingBox(block.textContent, theme));
-      this._drawWhenEncoded();
-      return;
+  heldForRender() {
+    const keys = new Set();
+    for (const box of this.preview.querySelectorAll(".plantuml-loading")) {
+      const entry = this._waiting.get(box);
+      if (entry?.later === "render") keys.add(diagramKey(entry.code, entry.theme));
     }
-    const promises = [];
+    for (const box of this.preview.querySelectorAll(".plantuml-pending")) {
+      const entry = this._pending.get(box);
+      if (entry) keys.add(diagramKey(entry.code, entry.theme));
+    }
+    return keys;
+  }
+  /**
+   * The page is settled (11-g runWaitingPlantUml): the held boxes still in
+   * the preview are dealt with once. The "consent" ones get one dialog: OK
+   * sends them, Cancel shows "not sent" (INV-03). The "render" ones become
+   * [Render] boxes (INV-23). Without the encoder, every box shows the
+   * encoding error and no dialog is shown.
+   * @returns {Promise<boolean>} false when no held box was there
+   * @purity non-pure
+   */
+  async runWaiting() {
+    this._waitingAnswered = true;
+    const boxes = this._waitingBoxes();
+    if (boxes.length === 0) return false;
     /** @purity non-pure */
-    blocks.forEach((block) => {
-      const promise = this.renderSingleBlock(block, theme);
-      if (promise) promises.push(promise);
+    const entries = boxes.map((box) => {
+      const entry = this._waiting.get(box);
+      this._waiting.delete(box);
+      return { box, ...entry };
     });
-    await Promise.allSettled(promises);
+    if (!this.encoder) {
+      for (const { box } of entries) box.replaceWith(this._encodingFailedElement());
+      return true;
+    }
+    for (const { box, code, theme, later } of entries) {
+      if (later === "render") box.replaceWith(this.createPendingElement(code, theme));
+    }
+    const asked = entries.filter((e) => e.later === "consent");
+    if (asked.length === 0) return true;
+    if (!this.askConsent()) {
+      for (const { box } of asked) box.replaceWith(this._canceledElement());
+      return true;
+    }
+    await Promise.allSettled(asked.map(({ box, code, theme }) => this._send(box, code, theme)));
+    return true;
+  }
+
+  /**
+   * The held boxes in the preview (user-written .plantuml-loading elements
+   * are not among them).
+   * @returns {HTMLElement[]}
+   * @purity semi-pure-b
+   */
+  _waitingBoxes() {
+    return [...this.preview.querySelectorAll(".plantuml-loading")].filter((box) => this._waiting.has(box));
+  }
+
+  /**
+   * Whether held boxes still wait for runWaiting() (it has not run yet).
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
+  _hasWaitingBoxes() {
+    return !this._waitingAnswered && this._waitingBoxes().length > 0;
   }
 
   /**
@@ -154,83 +209,40 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   }
 
   /**
-   * The encoder, once it has run; a failure to load is logged, and the
-   * encoding then fails as an encoding error. One wait at a time.
-   * @returns {Promise<void>}
-   * @purity non-pure
-   */
-  _encoderReady() {
-    if (this.encoder || !this.loadEncoder) return Promise.resolve();
-    if (!this._encoderWait) {
-      /** @purity non-pure */
-      this._encoderWait = this.loadEncoder().then(
-        /** @purity non-pure */
-        (encoder) => {
-          this.encoder = encoder;
-        },
-        /** @purity non-pure */
-        (error) => {
-          console.error("PlantUML encoder could not be loaded:", error);
-        },
-      ).finally(
-        /** @purity non-pure */
-        () => {
-          this._encoderWait = null;
-        },
-      );
-    }
-    return this._encoderWait;
-  }
-
-  /**
-   * A box for a block that was allowed to be sent and waits for the
-   * encoder: "Loading diagram..." as a Mermaid box says.
+   * Send one diagram whose consent was given, in place of target.
+   * @param {Element} target
    * @param {string} code
    * @param {string} theme
-   * @returns {HTMLDivElement}
-   * @purity non-pure
-   */
-  _loadingBox(code, theme) {
-    const box = document.createElement("div");
-    box.className = "plantuml-loading";
-    box.textContent = CONFIG.messages.diagram.loading;
-    this._loading.set(box, { code, theme });
-    return box;
-  }
-
-  /**
-   * When the encoder has come, the loading boxes still shown are drawn.
-   * @purity non-pure
-   */
-  _drawWhenEncoded() {
-    /** @purity non-pure */
-    this._encoderReady().then(() => {
-      for (const box of this.preview.querySelectorAll(".plantuml-loading")) {
-        if (this._loading.has(box)) this._drawLoading(box);
-      }
-    });
-  }
-
-  /**
-   * Send one loading box's diagram (its consent was given).
-   * @param {HTMLElement} box
    * @returns {Promise<boolean>}
    * @purity non-pure
    */
-  _drawLoading(box) {
-    const entry = this._loading.get(box);
-    this._loading.delete(box);
-    if (!entry || !box.isConnected) return Promise.resolve(false);
+  _send(target, code, theme) {
     let img;
     try {
-      img = this.createImage(this.applyTheme(entry.code, entry.theme));
+      img = this.createImage(this.applyTheme(code, theme));
     } catch (error) {
       console.error("PlantUML encoding error:", error);
-      box.replaceWith(this.createErrorElement(CONFIG.messages.plantuml.encodingFailed));
+      target.replaceWith(this._encodingFailedElement());
       return Promise.resolve(false);
     }
-    box.replaceWith(this.createWrapper(img));
+    target.replaceWith(this.createWrapper(img));
     return this.waitForImageLoad(img, CONFIG.plantuml.imageLoadTimeout);
+  }
+
+  /**
+   * @returns {HTMLDivElement}
+   * @purity non-pure
+   */
+  _canceledElement() {
+    return this.createErrorElement(CONFIG.messages.plantuml.canceled);
+  }
+
+  /**
+   * @returns {HTMLDivElement}
+   * @purity non-pure
+   */
+  _encodingFailedElement() {
+    return this.createErrorElement(CONFIG.messages.plantuml.encodingFailed);
   }
 
   /**
@@ -266,8 +278,8 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   /**
    * [Render] on a pending box: ask with the usual dialog, and send only on OK
    * (INV-23, INV-02). Cancel keeps the box. The dialog and the image request
-   * start synchronously, inside the click (once the encoder has run; it runs
-   * when the page is idle, INV-81).
+   * start synchronously, inside the click. Without the encoder (it could not
+   * run) the box shows the encoding error, with no dialog.
    * @param {HTMLElement} placeholder
    * @param {string} [theme]
    * @returns {Promise<boolean>}
@@ -276,12 +288,14 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   renderPending(placeholder, theme) {
     const entry = this._pending.get(placeholder);
     if (!entry || !placeholder.isConnected) return Promise.resolve(false);
+    if (!this.encoder) {
+      this._pending.delete(placeholder);
+      placeholder.replaceWith(this._encodingFailedElement());
+      return Promise.resolve(false);
+    }
     if (!this.askConsent()) return Promise.resolve(false);
     this._pending.delete(placeholder);
-    const box = this._loadingBox(entry.code, theme ?? entry.theme);
-    placeholder.replaceWith(box);
-    if (this.encoder || !this.loadEncoder) return this._drawLoading(box);
-    return this._encoderReady().then(() => this._drawLoading(box));
+    return this._send(placeholder, entry.code, theme ?? entry.theme);
   }
 
   /**

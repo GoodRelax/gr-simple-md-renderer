@@ -103,29 +103,133 @@ export default class RendererOrchestrator {
     this._heldBlockId = null; // block with an open editor: its wrapper is kept (Q-d1)
     this._lexer = (src) => this.markdownRenderer.lex(src);
     this.libraries = libraries;
-    this._missingLibraries = new Set(); // what the screen shows without (drawn again when it runs)
-    this._awaitedLibraries = new Set(); // asked for: drawn again when they arrive
   }
 
-  // ---- Libraries that run on demand (INV-81, spec 5.17) ----
+  // ---- LibraryHost (spec 11-g, INV-81): the drawing side of the library ----
+  // ---- and page startup state machines (LibraryLoader holds the states) ----
 
   /**
-   * A library has run outside a render (the idle preload): the renderers
-   * use it, and what was drawn without it is drawn again, in the queue.
+   * Whether the screen shows something drawn without the library (11-g
+   * guard isShownWithout), from the marks the renderers made themselves.
+   * @param {string} name
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
+  isShownWithout(name) {
+    switch (name) {
+      case "katex":
+        return this.markdownRenderer.hasPendingMath();
+      case "mermaid":
+        return this.mermaidRenderer.hasLoadingBoxes();
+      case "hljs":
+        return this.markdownRenderer.hasPendingHighlight() || Boolean(this.sourceFileRenderer.isWaitingForHljs?.());
+      default:
+        return false; // plantuml waits for the page to be settled, not for the encoder
+    }
+  }
+
+  /**
+   * 11-g handToRenderers: the four renderers use the library from now on.
    * @param {string} name
    * @param {object} library
+   * @purity non-pure
+   */
+  handToRenderers(name, library) {
+    for (const renderer of [this.markdownRenderer, this.mermaidRenderer, this.plantumlRenderer, this.sourceFileRenderer]) {
+      renderer.useLibrary?.(name, library);
+    }
+  }
+
+  /**
+   * 11-g redrawShownWithout: draw again what was drawn without the library.
+   * Inside a render step ("full" / "partial") it is done in that step (no
+   * frame shows it without); otherwise it goes into the render queue and the
+   * place being read stays where it is.
+   * @param {string} name
+   * @param {"full"|"partial"|null} step
+   * @returns {Promise<boolean>|undefined} in a step: true when blocks were replaced (the math)
+   * @purity non-pure
+   */
+  redrawShownWithout(name, step) {
+    if (step) return this._redrawShownWithout(name, step);
+    this._enqueue(() => this._redrawShownWithout(name, "loaded"));
+    return undefined;
+  }
+
+  /**
+   * 11-g showFailure: a library that cannot run says so where it can.
+   * mermaid's boxes say so; the math stays TeX and the code plain; PlantUML
+   * shows the encoding error at its step when the page is settled.
+   * @param {string} name
+   * @purity non-pure
+   */
+  showFailure(name) {
+    if (name === "mermaid") this.mermaidRenderer.showLoadFailed();
+  }
+
+  /**
+   * 11-g holdPlantUml: before the page is settled, the PlantUML step only
+   * shows "Loading diagram..." (no dialog, nothing sent, not awaited).
+   * @param {{theme: string, root: ParentNode|ParentNode[], mode: "consent"|"placeholder", keepRender?: Set<string>|null}} step
+   * @purity non-pure
+   */
+  holdPlantUml({ theme, root, mode, keepRender = null }) {
+    this.plantumlRenderer.hold(theme, root, mode, keepRender);
+  }
+
+  /**
+   * 11-g runPlantUmlStep: the PlantUML step as it is when the page is settled.
+   * @param {{theme: string, root: ParentNode|ParentNode[], mode: "consent"|"placeholder", keepRender?: Set<string>|null}} step
    * @returns {Promise<void>}
    * @purity non-pure
    */
-  libraryLoaded(name, library) {
-    return this._enqueue(() => this._useLibrary(name, library, "loaded"));
+  runPlantUmlStep({ theme, root, mode, keepRender = null }) {
+    return this.plantumlRenderer.render(theme, root, mode, keepRender);
   }
 
   /**
-   * After a render step: a library it needed runs now when its data is in
-   * the page, and the blocks are drawn again before the next frame (no
-   * frame shows them without it); a library still on its way draws them
-   * again when it arrives. step: "full" (the full render draws the
+   * 11-g runWaitingPlantUml: the page is settled; the held PlantUML boxes are
+   * dealt with once, in the render queue, and the place being read stays.
+   * @purity non-pure
+   */
+  runWaitingPlantUml() {
+    this._enqueue(() => this._runWaitingPlantUml());
+  }
+
+  /**
+   * Clear, another document or the code view took the boxes away: nothing
+   * is done (runWaiting finds none).
+   * @purity non-pure
+   */
+  async _runWaitingPlantUml() {
+    const place = this.scrollManager.captureReadingAnchor();
+    if (!(await this.plantumlRenderer.runWaiting())) return;
+    await waitForDOMStability(this.preview);
+    this.scrollManager.restoreReadingAnchor(place);
+  }
+
+  /**
+   * The PlantUML step of a render (11-g plantUmlStepReached): held while
+   * the page is loading, run when it is settled. Without a loader the
+   * renderers have their libraries and the page counts as settled.
+   * keepRender: diagrams that wait for [Render] and keep waiting for it.
+   * @param {string} theme
+   * @param {ParentNode|ParentNode[]} root
+   * @param {"consent"|"placeholder"} mode
+   * @param {Set<string>|null} [keepRender]
+   * @returns {Promise<unknown>}
+   * @purity non-pure
+   */
+  _plantUmlStep(theme, root, mode, keepRender = null) {
+    if (!this.libraries) return this.plantumlRenderer.render(theme, root, mode, keepRender);
+    return this.libraries.dispatchPage("plantUmlStepReached", { theme, root, mode, keepRender });
+  }
+
+  /**
+   * After a render step: each library it lacked gets needed (11-g). An
+   * arrived one runs now and is drawn again inside this step (no frame
+   * shows it without); a notArrived one is drawn again when it is ready; a
+   * failed one says so at once. step: "full" (the full render draws the
    * diagrams of the whole preview next) or "partial". Resolves true when
    * blocks were drawn again (a block passed to it may have left the page).
    * @param {"full"|"partial"} step
@@ -136,70 +240,20 @@ export default class RendererOrchestrator {
     if (!this.libraries) return false;
     let redrawn = false;
     const names = new Set([...this.markdownRenderer.takeMissingLibraries(), ...this.mermaidRenderer.takeMissingLibraries()]);
-    for (const name of names) {
-      this._missingLibraries.add(name);
-      let library;
-      try {
-        library = this.libraries.loadIfArrived(name);
-      } catch {
-        this._libraryFailed(name); // it never will: say so now (M3)
-        continue;
-      }
-      if (library) redrawn = (await this._useLibrary(name, library, step)) || redrawn;
-      else this._useWhenArrived(name);
-    }
+    for (const name of names) redrawn = (await this.libraries.dispatch(name, "needed", { step })) || redrawn;
     return redrawn;
   }
 
   /**
-   * Draw again when the library arrives (one wait per library at a time).
+   * Draw again what was drawn without the library. step: "full" or
+   * "partial" inside a render (which puts the view back by itself),
+   * "loaded" from the render queue.
    * @param {string} name
-   * @purity non-pure
-   */
-  _useWhenArrived(name) {
-    if (this._awaitedLibraries.has(name)) return;
-    this._awaitedLibraries.add(name);
-    this.libraries.get(name).then(
-      /** @purity non-pure */
-      (library) => {
-        this._awaitedLibraries.delete(name);
-        this.libraryLoaded(name, library);
-      },
-      /** @purity non-pure */
-      () => {
-        this._awaitedLibraries.delete(name);
-        this._libraryFailed(name);
-      },
-    );
-  }
-
-  /**
-   * A library could not run (LibraryLoader logged why): what waits for it
-   * says so where it can. mermaid's boxes say so; the math stays TeX and
-   * the code plain.
-   * @param {string} name
-   * @purity non-pure
-   */
-  _libraryFailed(name) {
-    this._missingLibraries.delete(name);
-    if (name === "mermaid") this.mermaidRenderer.showLoadFailed();
-  }
-
-  /**
-   * Give a library to the renderers; draw again what was drawn without it.
-   * step: "full" or "partial" inside a render (which puts the view back by
-   * itself), "loaded" outside one.
-   * @param {string} name
-   * @param {object} library
    * @param {"full"|"partial"|"loaded"} step
    * @returns {Promise<boolean>} true when blocks were replaced (the math)
    * @purity non-pure
    */
-  async _useLibrary(name, library, step) {
-    for (const renderer of [this.markdownRenderer, this.mermaidRenderer, this.plantumlRenderer, this.sourceFileRenderer]) {
-      renderer.useLibrary?.(name, library);
-    }
-    if (!this._missingLibraries.delete(name)) return false;
+  async _redrawShownWithout(name, step) {
     if (name === "hljs" && this._viewState === "code") {
       // the code view was shown plain after its wait (spec 5.17.3): colored now
       const metadata = this.sourceFileRenderer.recolor();
@@ -210,30 +264,39 @@ export default class RendererOrchestrator {
     if (name === "hljs") this.markdownRenderer.highlightPending();
     if (name === "mermaid") await this.mermaidRenderer.renderLoading(this.state.currentTheme);
     if (name !== "katex") return false;
-    await this._redrawMath(step);
-    return true;
+    return this._redrawMath(step);
   }
 
   /**
    * The blocks that show a formula as TeX are drawn again (KaTeX has run).
    * Their diagrams are drawn here unless the full render draws them next.
-   * Outside a render (no one acted) their PlantUML gets the answer the full
-   * render got (no new dialog), and the place being read stays where it is.
+   * PlantUML is never sent again without a dialog (owner ruling AQ7): from
+   * the render queue (no one acted) its step asks as a full render does
+   * (held before the page is settled; after it, held too while the full
+   * render's held boxes still wait for runWaiting, so one dialog answers
+   * them all), in a partial render it is [Render]
+   * (INV-23). A diagram that waited for [Render] (a commit put it there)
+   * still waits for it after the redraw (INV-02, review N1). The place
+   * being read stays where it is.
    * @param {"full"|"partial"|"loaded"} step
+   * @returns {Promise<boolean>} true when blocks were replaced
    * @purity non-pure
    */
   async _redrawMath(step) {
     const model = this._renderedModel;
     const place = step === "loaded" ? this.scrollManager.captureReadingAnchor() : null;
+    const keepRender = step === "loaded" ? this.plantumlRenderer.heldForRender() : null;
     const replaced = this.markdownRenderer.replaceBlocks(model, model, this._heldBlockId);
-    if (replaced.length === 0 || step === "full") return;
+    if (replaced.length === 0) return false;
+    if (step === "full") return true;
     const theme = this.state.currentTheme;
     await this.mermaidRenderer.render(theme, replaced);
     await this._settleLibraries("partial");
-    await this.plantumlRenderer.render(theme, replaced, step === "loaded" ? "repeat" : "placeholder");
-    if (!place) return;
+    await this._plantUmlStep(theme, replaced, step === "loaded" ? "consent" : "placeholder", keepRender);
+    if (!place) return true;
     await waitForDOMStability(this.preview);
     this.scrollManager.restoreReadingAnchor(place);
+    return true;
   }
 
   // ---- State queries (CQS: pure queries, no side effects) ----
@@ -369,15 +432,13 @@ export default class RendererOrchestrator {
 
   /**
    * The code view was shown plain (highlight.js did not come within its
-   * wait): it is colored when highlight.js arrives.
+   * wait): needed is sent (11-g); it is colored when highlight.js is ready
+   * (redrawShownWithout, in the render queue).
    * @purity non-pure
    */
   _settleCodeView() {
     if (!this.libraries) return;
-    for (const name of this.sourceFileRenderer.takeMissingLibraries?.() ?? []) {
-      this._missingLibraries.add(name);
-      this._useWhenArrived(name);
-    }
+    for (const name of this.sourceFileRenderer.takeMissingLibraries?.() ?? []) this.libraries.dispatch(name, "needed");
   }
 
   /**
@@ -894,7 +955,8 @@ export default class RendererOrchestrator {
   }
 
   /**
-   * Full render by block, PlantUML with consent (spec 5.14.4, INV-02).
+   * Full render by block, PlantUML with consent (spec 5.14.4, INV-02) when
+   * the page is settled, held before (11-g, INV-81 (3)).
    * A full render queued for an older generation is skipped: the newer one
    * draws the same model, and PlantUML asks once.
    * @purity non-pure
@@ -915,7 +977,7 @@ export default class RendererOrchestrator {
       await this._settleLibraries("full");
       await this.mermaidRenderer.render(this.state.currentTheme);
       await this._settleLibraries("full");
-      await this.plantumlRenderer.render(this.state.currentTheme, this.preview, "consent");
+      await this._plantUmlStep(this.state.currentTheme, this.preview, "consent");
       await waitForDOMStability(this.preview);
       const place = userMoves.place();
       if (place) this.scrollManager.restoreReadingAnchor(place);
@@ -927,7 +989,8 @@ export default class RendererOrchestrator {
 
   /**
    * Partial render from the last rendered model to the current one (spec
-   * 5.14.3 steps 6-8). PlantUML is never sent here: placeholder mode (INV-23).
+   * 5.14.3 steps 6-8). PlantUML is never sent here: placeholder mode (INV-23),
+   * held as Loading boxes before the page is settled (11-g).
    * force: run even when the model did not change (a held block was released).
    * @purity non-pure
    */
@@ -956,7 +1019,7 @@ export default class RendererOrchestrator {
         const theme = this.state.currentTheme;
         await this.mermaidRenderer.render(theme, shown);
         await this._settleLibraries("partial");
-        await this.plantumlRenderer.render(theme, shown, "placeholder");
+        await this._plantUmlStep(theme, shown, "placeholder");
       }
       await waitForDOMStability(this.preview);
       // Read again: an editor opened meanwhile may have retargeted it.

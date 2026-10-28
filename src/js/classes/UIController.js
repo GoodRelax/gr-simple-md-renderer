@@ -2,7 +2,6 @@ import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } 
 import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame, shortcutLetter, isTypingTarget } from "../utils.js";
 import { splitMarkdownWrapper, normalizeLineEndings, hasUtf8Bom } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
-import BlockEditController from "./BlockEditController.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
 import ClipboardLink from "./ClipboardLink.js";
 import { dropHandlePromise, isOtherField, pasteStartsDocument } from "../earlyInput.js";
@@ -79,7 +78,7 @@ export function renderRouteFor(isCodeView, isPreRender) {
   return isPreRender ? "newDocument" : "editorIntoDocument";
 }
 
-// The one-key shortcuts of setupKeyboard (3.12) that wait until an inserted
+// The one-key shortcuts of setupKeyboard (5.11) that wait until an inserted
 // block's cell or source has opened (INV-52, owner ruling D5).
 const ONE_KEY_SHORTCUTS = new Set(["i", "f", "l", "d", "r", "n", "c", "e"]);
 
@@ -126,7 +125,7 @@ export default class UIController {
     this._clipboardTextWaiting = null; // a block range's source for the copy event execCommand fires (INV-74)
     this._copyEvent = null; // a copy event the browser started while blocks are selected (INV-74)
     this._baseTitle = document.title;
-    this._lastTap = null; // double tap on the empty preview (INV-31)
+    this._lastPressPointerType = null; // the last press on the preview: a dblclick from it counts only for the mouse (AQ3)
     this._isEditorHistoryStale = false; // #editor's undo history after a system write (5.7 (6))
     this._isEditorTextStale = false; // #editor not yet given the body after a large commit (INV-47)
     this.palette = services.createPalette(this._paletteHost());
@@ -584,7 +583,8 @@ export default class UIController {
 
   /**
    * ModelChangedPort: the code view shown plain was colored when
-   * highlight.js came (INV-81 (3)); its language is shown now.
+   * highlight.js came (INV-81 (3)); the file info (name, size, lines,
+   * date: no language) is written again.
    * @param {CodeViewMeta} metadata
    * @purity non-pure
    */
@@ -610,7 +610,7 @@ export default class UIController {
   }
 
   /**
-   * Keyboard shortcuts (Sect 3.12).
+   * Keyboard shortcuts (Sect 5.11).
    * Up/Down: smooth scroll (disabled in initial state).
    * l / d: render or reload with theme.
    * n: new tab.
@@ -771,8 +771,12 @@ export default class UIController {
       };
     }
     if ((letter === "b" || letter === "i") && !e.shiftKey) {
-      // INV-60 (Shift not pressed): only while an editor is open.
-      if (!this.blockEdit.isEditing() || document.activeElement === this.elements.editor) return null;
+      // INV-60 (Shift not pressed): only while an editor is open. Not taken
+      // from #editor or another text entry (the search box), as INV-59 (a).
+      if (!this.blockEdit.isEditing()) return null;
+      const active = document.activeElement;
+      if (active === this.elements.editor) return null;
+      if (isTextEntry(active) && !this.blockEdit.isEditorElement(active) && !this.blockEdit.isCellElement(active)) return null;
       const command = letter === "b" ? "bold" : "italic";
       /** @purity non-pure */
       return () => {
@@ -980,49 +984,49 @@ export default class UIController {
   }
 
   /**
-   * A double click or a double tap on the preview: on the empty initial
-   * preview it starts an empty document (INV-31); in the Markdown view
-   * outside edit mode it enters edit mode and opens what was double-clicked
-   * (INV-57, 11-c previewDoubleClicked).
+   * A mouse double click on the preview: on the empty initial preview it
+   * starts an empty document (INV-31); in the Markdown view outside edit
+   * mode it enters edit mode and opens what was double-clicked (INV-57,
+   * 11-c previewDoubleClicked). A double tap (touch, pen: every pointer but
+   * the mouse) does neither (owner ruling AQ3): the browser's double-tap
+   * zoom stays, and a phone enters edit mode with [Edit], then a tap opens
+   * a block (INV-29). The browser's dblclick carries no pointer type, so
+   * the last press on the preview decides.
    * @purity non-pure
    */
   setupDoubleClickGestures() {
     const preview = this.elements.preview;
     /** @purity non-pure */
-    preview.addEventListener("dblclick", (e) => this._handlePreviewDoubleClick(e));
+    preview.addEventListener(
+      "pointerdown",
+      (e) => {
+        this._lastPressPointerType = e.pointerType;
+      },
+      true,
+    );
     /** @purity non-pure */
-    preview.addEventListener("pointerup", (e) => {
-      if (e.pointerType !== "touch" || !this._acceptsDoubleClick()) {
-        this._lastTap = null;
-        return;
-      }
-      const tap = { time: performance.now(), x: e.clientX, y: e.clientY };
-      if (BlockEditController.isDoubleTap(this._lastTap, tap)) {
-        this._lastTap = null;
-        this._handlePreviewDoubleClick(e);
-      } else {
-        this._lastTap = tap;
-      }
+    preview.addEventListener("dblclick", (e) => {
+      if (!this._isMouseDoubleClick()) return;
+      this._handlePreviewDoubleClick(e);
     });
   }
 
   /**
-   * The preview takes a double click: the empty initial state (INV-31) or
-   * the Markdown view (INV-57). Not the code view.
+   * The double click came from the mouse: the last press on the preview was
+   * the mouse's, or there was none (a dblclick without Pointer Events).
    * @purity semi-pure-b
    * @returns {boolean}
    */
-  _acceptsDoubleClick() {
-    if (this._canStartEmptyDocument()) return true;
-    return !this.orchestrator.isPreRenderState() && !this.orchestrator.isCodeViewActive();
+  _isMouseDoubleClick() {
+    return this._lastPressPointerType === null || this._lastPressPointerType === "mouse";
   }
 
   /**
-   * A double click (or double tap) on the preview: start an empty document
-   * (INV-31), or 11-c previewDoubleClicked in the Markdown view (INV-57;
-   * only browsingPreview has a cell for it).
+   * A mouse double click on the preview: start an empty document (INV-31),
+   * or 11-c previewDoubleClicked in the Markdown view (INV-57; only
+   * browsingPreview has a cell for it).
    * @purity non-pure
-   * @param {MouseEvent|PointerEvent} e - the dblclick, or the pointerup of a double tap
+   * @param {MouseEvent} e - the dblclick
    */
   _handlePreviewDoubleClick(e) {
     if (this._canStartEmptyDocument()) {

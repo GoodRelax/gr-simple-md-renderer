@@ -23,7 +23,7 @@ const CASES = [
   ["duplicate inside other blocks", "# H\n\n[x]: /1\n\n> quote\n\n[X]: /2\n\n```\ncode\n```\n\n[x]: /3\n", 3],
 ];
 
-describe("INV-41 duplicate reference definitions keep the round trip (INV-41)", () => {
+describe("AT-BM-38 INV-41 duplicate reference definitions keep the round trip (INV-41)", () => {
   it.each(CASES)("%s", (_name, body, defs) => {
     const m = model(body);
     expect(m.toBody()).toBe(body);
@@ -53,7 +53,7 @@ describe("INV-41 duplicate reference definitions keep the round trip (INV-41)", 
   });
 });
 
-describe("duplicate definitions cost about one lexing of the body (R5 Algorithms and Data Structures, INV-51)", () => {
+describe("AT-BM-39 duplicate definitions cost about one lexing of the body (R5 Algorithms and Data Structures, INV-51)", () => {
   /** A lexer that counts the characters it is given. */
   function countingLexer() {
     const counter = { chars: 0 };
@@ -103,7 +103,7 @@ describe("duplicate definitions cost about one lexing of the body (R5 Algorithms
   });
 });
 
-describe("links are deeply immutable copies", () => {
+describe("AT-BM-40 links are deeply immutable copies", () => {
   it("each entry is a frozen {href, title}, not the lexer's own object", () => {
     const tokensLinks = {};
     const spyLexer = (src) => {
@@ -118,7 +118,7 @@ describe("links are deeply immutable copies", () => {
   });
 });
 
-describe("INV-41 fallback: a body the blocks cannot reproduce is kept whole", () => {
+describe("AT-BM-41 INV-41 fallback: a body the blocks cannot reproduce is kept whole", () => {
   // A lexer whose raws do not cover the input (stands in for any future marked behaviour).
   const badLexer = (src) => Object.assign([{ type: "paragraph", raw: "zzz" }], { links: {} });
 
@@ -186,7 +186,7 @@ function randomDoc(r) {
   return doc;
 }
 
-describe("INV-41 property: join(raw) === source for random documents (seed fixed)", () => {
+describe("AT-BM-42 INV-41 property: join(raw) === source for random documents (seed fixed)", () => {
   const SEED = 20261010;
   const COUNT = 600;
 

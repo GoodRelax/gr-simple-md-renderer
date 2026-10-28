@@ -11,18 +11,21 @@ const here = dirname(fileURLToPath(import.meta.url));
 const SPEC = resolve(here, "../../../spec/grsmd_gen2_spec_ja.md");
 
 /**
- * Transitions of the first Mermaid diagram after the line that starts with
- * the bold section title (e.g. "**11-d "). Lines from [*] (the start) are
- * left out: they are not cells of the table. Any other line that is not a
- * transition throws, so a malformed line cannot slip through.
+ * Transitions of the first Mermaid diagram (or the one at index, counted
+ * from 0) after the line that starts with the bold section title (e.g.
+ * "**11-d "). Lines from [*] (the start) are left out: they are not cells
+ * of the table. Any other line that is not a transition throws, so a
+ * malformed line cannot slip through.
  * @param {string} title - e.g. "11-d"
+ * @param {number} [index] - which diagram of the section (11-g has two)
  * @returns {string[]} "from --> to : event [if guard]" sorted
  */
-export function diagramTransitions(title) {
+export function diagramTransitions(title, index = 0) {
   const text = readFileSync(SPEC, "utf8").replace(/\r\n/g, "\n");
   const start = text.indexOf(`\n**${title} `);
   if (start < 0) throw new Error(`No section ${title} in the spec`);
-  const open = text.indexOf("```mermaid\n", start);
+  let open = text.indexOf("```mermaid\n", start);
+  for (let i = 0; i < index; i++) open = text.indexOf("```mermaid\n", open + 1);
   const close = text.indexOf("\n```", open + 1);
   const lines = text.slice(open, close).split("\n").slice(1);
   if (lines.shift()?.trim() !== "stateDiagram-v2") throw new Error(`The ${title} diagram is not a stateDiagram-v2`);
