@@ -12,18 +12,20 @@ export const WHEEL_LINE_PX = 40;
 
 /**
  * How far a wheel turn scrolls, in pixels: lines and pages turned into
- * pixels; Shift turns a vertical turn sideways.
+ * pixels (a page across is the scroller's width, a page down its height);
+ * Shift turns a vertical turn sideways.
  * @purity pure
  * @param {{deltaX: number, deltaY: number, deltaMode: number, shiftKey: boolean}} wheel
- * @param {number} pageHeight - the pixels of a page (the scroller's clientHeight)
+ * @param {{width: number, height: number}} page - the pixels of a page (the scroller's clientWidth and clientHeight)
  * @returns {{left: number, top: number}}
  */
-export function wheelScrollDelta(wheel, pageHeight) {
-  const unit = wheel.deltaMode === 1 ? WHEEL_LINE_PX : wheel.deltaMode === 2 ? pageHeight : 1;
-  let left = wheel.deltaX * unit;
-  let top = wheel.deltaY * unit;
-  if (wheel.shiftKey && left === 0) [left, top] = [top, 0];
-  return { left, top };
+export function wheelScrollDelta(wheel, page) {
+  let across = wheel.deltaX;
+  let down = wheel.deltaY;
+  if (wheel.shiftKey && across === 0) [across, down] = [down, 0];
+  if (wheel.deltaMode === 1) return { left: across * WHEEL_LINE_PX, top: down * WHEEL_LINE_PX };
+  if (wheel.deltaMode === 2) return { left: across * page.width, top: down * page.height };
+  return { left: across, top: down };
 }
 
 /**
@@ -54,6 +56,6 @@ export function isScrollingElement(el) {
 export function forwardWheel(e, scroller) {
   if (e.ctrlKey || !isScrollingElement(scroller)) return false;
   e.preventDefault();
-  scroller.scrollBy(wheelScrollDelta(e, scroller.clientHeight));
+  scroller.scrollBy(wheelScrollDelta(e, { width: scroller.clientWidth, height: scroller.clientHeight }));
   return true;
 }

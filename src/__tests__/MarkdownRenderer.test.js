@@ -46,7 +46,7 @@ describe.each(PATHS)("MarkdownRenderer via %s", (path) => {
     renderer.replaceBlocks(before, before.withBody(markdown, lexer, 250000).model);
   }
 
-  describe("sanitization", () => {
+  describe("AT-MR-21 OS-14, FS-01: sanitization", () => {
     it("strips inline event handlers from raw HTML", async () => {
       await show("before\n\n<img src=x onerror=alert(1)>\n\nafter");
       expect(preview.querySelector("[onerror]")).toBeNull();
@@ -92,7 +92,7 @@ describe.each(PATHS)("MarkdownRenderer via %s", (path) => {
     });
   });
 
-  describe("legitimate content survives sanitization", () => {
+  describe("AT-MR-22 FS-01, INV-05: legitimate content survives sanitization", () => {
     it("keeps class language-mermaid on mermaid fenced blocks", async () => {
       await show("```mermaid\ngraph TD\n  A-->B\n```");
       const code = preview.querySelector("pre code.language-mermaid");
@@ -152,7 +152,7 @@ describe.each(PATHS)("MarkdownRenderer via %s", (path) => {
     });
   });
 
-  describe("parse error path", () => {
+  describe("AT-MR-23 FS-01, OS-14: parse error path", () => {
     it.runIf(path === "render")("escapes the error message instead of injecting it as HTML", async () => {
       vi.spyOn(console, "error").mockImplementation(() => {});
       const throwingMarked = {

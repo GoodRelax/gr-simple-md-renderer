@@ -416,7 +416,7 @@ export default class BlockEditController {
    * {kind: "block", id}; {kind: "cell", id, row, col, caret}; or
    * {kind: "none"} (a margin, also a table's: edit mode only).
    * @purity semi-pure-b
-   * @param {MouseEvent|PointerEvent} e - the dblclick, or the pointerup of a double tap
+   * @param {MouseEvent} e - the dblclick (of the mouse or a pen, 5.14.6)
    * @returns {{kind: string, id?: number}|null}
    */
   doubleClickTarget(e) {

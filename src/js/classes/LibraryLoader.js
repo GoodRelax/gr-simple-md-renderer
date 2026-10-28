@@ -15,7 +15,9 @@
 // (pageStartupStateMachine). They are joined by an event: the library
 // action checkSettled sends librariesSettled to the page. The state is only
 // _libraryStates (one value per library) and _pageStartupState; the
-// drawing side is the LibraryHost port (RendererOrchestrator).
+// drawing side is the LibraryHost port (RendererOrchestrator). The actions
+// run inside dispatch() / dispatchPage(); the events they raise are handled
+// after them in the same call, not nested.
 
 import { LIBRARY_NAMES } from "../libraryNames.js";
 import { cell, row, choice, selectCell } from "../stateTable.js";
@@ -46,19 +48,34 @@ export const libraryStateMachine = Object.freeze({
 
 const RECEIVING = "receiving";
 const LOADING = "loading";
+const ANSWERING = "answering";
 const SETTLED = "settled";
 
 /** The states of the page (spec 11-g (2)), in the order of the table's columns. */
-export const PAGE_STARTUP_STATES = Object.freeze([RECEIVING, LOADING, SETTLED]);
+export const PAGE_STARTUP_STATES = Object.freeze([RECEIVING, LOADING, ANSWERING, SETTLED]);
 const page = (...cells) => row(PAGE_STARTUP_STATES, cells);
 const CORE_STARTED_ACTIONS = ["takeEarlyInput", "receiveEarlyInput", "requestIdleTurn"];
 
+/**
+ * The events whose cells the receiver (boot.js) handles before the core
+ * runs: they are in the table to match the spec; the core never gets them
+ * (spec 11-g (2)).
+ */
+const RECEIVER_EVENTS = Object.freeze(new Set(["earlyInputArrived"]));
+
 /** Spec 11-g (2): event -> current state -> cell (null = no change). */
 export const pageStartupStateMachine = Object.freeze({
-  earlyInputArrived: page(cell(RECEIVING, ["keepLastInput"])),
+  earlyInputArrived: page(cell(RECEIVING, ["keepLastInput"])), // done by the receiver (RECEIVER_EVENTS)
   coreStarted: page(choice(cell(SETTLED, CORE_STARTED_ACTIONS, "areLibrariesSettled"), cell(LOADING, CORE_STARTED_ACTIONS))),
-  librariesSettled: page(null, cell(SETTLED, ["runWaitingPlantUml"])),
-  plantUmlStepReached: page(null, cell(LOADING, ["holdPlantUml"]), cell(SETTLED, ["runPlantUmlStep"])),
+  librariesSettled: page(null, cell(ANSWERING, ["runWaitingPlantUml"])),
+  plantUmlStepReached: page(
+    null,
+    cell(LOADING, ["holdPlantUml"]),
+    choice(cell(ANSWERING, ["holdPlantUml"], "isConsentStep"), cell(ANSWERING, ["runPlantUmlStep"])),
+    cell(SETTLED, ["runPlantUmlStep"]),
+  ),
+  waitingPlantUmlAnswered: page(null, null, cell(SETTLED, [])),
+  blockReleased: page(null, null, null, cell(SETTLED, ["turnHeldPlantUmlToRender"])),
 });
 
 /**
@@ -103,9 +120,15 @@ function isFinal(state) {
  *                                     step, returns Promise<boolean> (blocks drawn
  *                                     again); null: queued, returns nothing
  *   showFailure(name)
- *   holdPlantUml({theme, root, mode})
- *   runPlantUmlStep({theme, root, mode}) -> Promise
- *   runWaitingPlantUml()              queued once, returns nothing
+ *   holdPlantUml({theme, root, mode, keepRender})
+ *   runPlantUmlStep({theme, root, mode, keepRender}) -> Promise
+ *   runWaitingPlantUml()              queued once, returns nothing; when it has
+ *                                     dealt with the held boxes it sends
+ *                                     waitingPlantUmlAnswered
+ *   turnHeldPlantUmlToRender()        held boxes an open editor kept aside
+ *                                     become [Render] boxes
+ * keepRender: Map<theme, Set<source>> of the diagrams that wait for [Render], or null.
+ * A host action that throws is logged; the loader's own actions still run.
  */
 export default class LibraryLoader {
   /**
@@ -128,9 +151,12 @@ export default class LibraryLoader {
     /** @purity non-pure */
     boot.onArrive = (name) => this.dispatch(name, "dataArrived");
     /** @purity non-pure */
-    doc.addEventListener("DOMContentLoaded", () => {
+    const parsingEnded = () => {
       for (const name of LIBRARY_NAMES) this.dispatch(name, "parsingEnded");
-    });
+    };
+    // made after the file was parsed: DOMContentLoaded has gone already
+    if (doc.readyState === "loading") doc.addEventListener("DOMContentLoaded", parsingEnded);
+    else parsingEnded();
   }
 
   /**
@@ -143,7 +169,7 @@ export default class LibraryLoader {
   }
 
   /**
-   * @returns {string} receiving | loading | settled (spec 11-g (2))
+   * @returns {string} receiving | loading | answering | settled (spec 11-g (2))
    * @purity semi-pure-b
    */
   get pageStartupState() {
@@ -151,7 +177,8 @@ export default class LibraryLoader {
   }
 
   /**
-   * @returns {boolean} the page is settled: the four libraries are ready or failed
+   * @returns {boolean} the page is settled: the four libraries are ready or
+   *   failed, and the held PlantUML boxes have been dealt with
    * @purity semi-pure-b
    */
   isSettled() {
@@ -228,8 +255,9 @@ export default class LibraryLoader {
   /**
    * Handle one event of the page's table (11-g (2)).
    * @param {string} event
-   * @param {{theme?: string, root?: ParentNode|ParentNode[], mode?: string, early?: object, receiveEarlyInput?: Function}} [input]
+   * @param {{theme?: string, root?: ParentNode|ParentNode[], mode?: "consent"|"placeholder", keepRender?: Map<string, Set<string>>|null, receiveEarlyInput?: Function}} [input]
    * @returns {Promise<boolean>}
+   * @throws {Error} for an event the receiver handles (earlyInputArrived)
    * @purity non-pure
    */
   dispatchPage(event, input = {}) {
@@ -274,7 +302,8 @@ export default class LibraryLoader {
   _pageStep(event, input, results) {
     const cells = pageStartupStateMachine[event];
     if (!cells) throw new Error(`Unknown page startup event: ${event}`);
-    const next = selectCell(cells[this._pageStartupState], (guard) => this._isPageGuardTrue(guard));
+    if (RECEIVER_EVENTS.has(event)) throw new Error(`${event} is handled by the receiver (boot.js), not by the core`);
+    const next = selectCell(cells[this._pageStartupState], (guard) => this._isPageGuardTrue(guard, input));
     if (!next) return;
     this._pageStartupState = next.to;
     const context = { early: null };
@@ -292,8 +321,9 @@ export default class LibraryLoader {
   /**
    * @purity semi-pure-b
    */
-  _isPageGuardTrue(guard) {
+  _isPageGuardTrue(guard, input) {
     if (guard === "areLibrariesSettled") return this._areLibrariesSettled();
+    if (guard === "isConsentStep") return input.mode === "consent";
     throw new Error(`Unknown page startup guard: ${guard}`);
   }
 
@@ -322,13 +352,13 @@ export default class LibraryLoader {
         this._requestIdleTurn();
         return;
       case "handToRenderers":
-        host?.handToRenderers(name, this.peek(name));
+        this._callHost(action, () => host?.handToRenderers(name, this.peek(name)));
         return;
       case "redrawShownWithout":
-        if (host) results.push(host.redrawShownWithout(name, input.step ?? null));
+        if (host) results.push(this._callHost(action, () => host.redrawShownWithout(name, input.step ?? null)));
         return;
       case "showFailure":
-        host?.showFailure(name);
+        this._callHost(action, () => host?.showFailure(name));
         return;
       case "settleWaiters":
         this._settleWaiter(name);
@@ -353,9 +383,6 @@ export default class LibraryLoader {
   _runPageAction(action, input, context, results) {
     const host = this._host;
     switch (action) {
-      case "keepLastInput":
-        this.boot.early = input.early ?? null;
-        return;
       case "takeEarlyInput":
         context.early = this.boot.takeEarlyInput();
         return;
@@ -366,16 +393,41 @@ export default class LibraryLoader {
         this._requestIdleTurn();
         return;
       case "runWaitingPlantUml":
-        host?.runWaitingPlantUml(); // queued: never awaited here (the caller may be a render step)
+        this._callHost(action, () => host?.runWaitingPlantUml()); // queued: never awaited here (the caller may be a render step)
         return;
       case "holdPlantUml":
-        host?.holdPlantUml(input);
+        this._callHost(action, () => host?.holdPlantUml(input));
         return;
       case "runPlantUmlStep":
-        if (host) results.push(host.runPlantUmlStep(input));
+        if (host) results.push(this._callHost(action, () => host.runPlantUmlStep(input)));
+        return;
+      case "turnHeldPlantUmlToRender":
+        this._callHost(action, () => host?.turnHeldPlantUmlToRender());
         return;
       default:
         throw new Error(`Unknown page startup action: ${action}`);
+    }
+  }
+
+  /**
+   * A host action (LibraryHost): a throw or a rejection is logged, and the
+   * loader goes on with its own actions and the events after them, so the
+   * page still reaches settled.
+   * @param {string} action
+   * @param {Function} call
+   * @returns {Promise<unknown>} what the host returned (false when it failed)
+   * @purity non-pure
+   */
+  _callHost(action, call) {
+    /** @purity non-pure */
+    const failed = (error) => {
+      console.error(`LibraryHost ${action} failed:`, error);
+      return false;
+    };
+    try {
+      return Promise.resolve(call()).catch(failed);
+    } catch (error) {
+      return Promise.resolve(failed(error));
     }
   }
 

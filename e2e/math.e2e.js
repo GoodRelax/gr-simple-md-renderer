@@ -91,7 +91,7 @@ test("inline math that would not read as itself: a toast, nothing changes", asyn
   await expect(ta).toHaveValue("costs $5 and");
 });
 
-test("Insert math boxes: three math boxes under their names in one press, drawn, nothing opened; Undo and Redo", async ({ page }) => {
+test("INV-52 Insert math boxes: three math boxes under their names in one press, drawn, nothing opened; Undo and Redo", async ({ page }) => {
   await openEditMode(page, DOC);
   await editBlock(page, "Para one.", "Line one\nLine two", 4);
   await pressInFormat(page, "paletteMathBox");

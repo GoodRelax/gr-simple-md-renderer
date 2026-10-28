@@ -5,14 +5,16 @@ import { replaceCodeBlock, queryAllIn } from "../utils.js";
 const PLANTUML_SELECTOR = "code.language-plantuml, code.language-puml";
 
 /**
- * One diagram: its source and theme (keepRender, heldForRender).
+ * Whether a diagram (its source in a theme) is among those that wait for
+ * [Render] (keepRender, made by heldForRender()).
  * @purity pure
+ * @param {Map<string, Set<string>>|null} keepRender - theme -> sources
  * @param {string} code
  * @param {string} theme
- * @returns {string}
+ * @returns {boolean}
  */
-function diagramKey(code, theme) {
-  return `${theme}\u0000${code}`;
+function isKeptForRender(keepRender, code, theme) {
+  return keepRender?.get(theme)?.has(code) ?? false;
 }
 
 export default class PlantUMLRenderer extends DiagramRenderer {
@@ -35,13 +37,12 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     // Loading boxes made by hold() -> { code, theme, later: "consent" | "render" }.
     // A user-written .plantuml-loading element is not in this map.
     this._waiting = new WeakMap();
-    // runWaiting() runs once, when the page is settled: after it no box waits.
-    this._waitingAnswered = false;
   }
 
   /**
    * Render the PlantUML blocks under root (the whole preview by default);
-   * called when the page is settled (11-g runPlantUmlStep).
+   * called after the libraries are settled (11-g runPlantUmlStep: in
+   * answering for a partial render, in settled for any).
    * mode "consent" (full render): one confirm, then send (INV-02).
    * mode "placeholder" (partial render after an edit): send nothing and show
    * a pending box with a [Render] button instead (INV-23).
@@ -49,24 +50,16 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * waiting for it in any mode (a KaTeX redraw of a committed block, INV-02).
    * Without the encoder (it could not run) every block shows the encoding
    * error, and no dialog is shown.
-   * While held boxes of the same full render still wait for runWaiting()
-   * (a KaTeX redraw queued before the page was settled runs before it), a
-   * "consent" render holds its blocks too: they join that batch, and the
-   * full render gets one dialog (INV-81 (3), G6).
    * @param {string} theme
    * @param {ParentNode|ParentNode[]} [root]
    * @param {"consent"|"placeholder"} [mode]
-   * @param {Set<string>|null} [keepRender]
+   * @param {Map<string, Set<string>>|null} [keepRender]
    * @purity non-pure
    */
   async render(theme, root = this.preview, mode = "consent", keepRender = null) {
     try {
       const blocks = queryAllIn(root, PLANTUML_SELECTOR);
       if (blocks.length === 0) return;
-      if (mode === "consent" && this._hasWaitingBoxes()) {
-        this.hold(theme, root, mode, keepRender);
-        return;
-      }
 
       if (!this.encoder) {
         for (const block of blocks) replaceCodeBlock(block, this._encodingFailedElement());
@@ -75,7 +68,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
 
       const asked = [];
       for (const block of blocks) {
-        if (mode === "placeholder" || keepRender?.has(diagramKey(block.textContent, theme))) {
+        if (mode === "placeholder" || isKeptForRender(keepRender, block.textContent, theme)) {
           replaceCodeBlock(block, this.createPendingElement(block.textContent, theme));
         } else {
           asked.push(block);
@@ -88,22 +81,17 @@ export default class PlantUMLRenderer extends DiagramRenderer {
         asked.forEach((block) => replaceCodeBlock(block, this._canceledElement()));
         return;
       }
-      const promises = [];
-      /** @purity non-pure */
-      asked.forEach((block) => {
-        const promise = this.renderSingleBlock(block, theme);
-        if (promise) promises.push(promise);
-      });
-      await Promise.allSettled(promises);
+      await Promise.allSettled(asked.map((block) => this._send(block, block.textContent, theme)));
     } catch (error) {
       console.error("PlantUML rendering error:", error);
     }
   }
 
   /**
-   * Before the page is settled (11-g holdPlantUml): each PlantUML block
-   * under root shows "Loading diagram..." (no dialog, nothing sent, not
-   * awaited). The box remembers its source, theme and what comes later: the
+   * Before the held boxes are dealt with (11-g holdPlantUml: loading, and a
+   * "consent" step in answering): each PlantUML block under root shows
+   * "Loading diagram..." (no dialog, nothing sent, not awaited). The box
+   * remembers its source, theme and what comes later: the
    * dialog ("consent": a full render, or the redraw after KaTeX ran) or a
    * [Render] box ("placeholder": a partial render, INV-23). A diagram in
    * keepRender stays a [Render] one (INV-02: the redraw after KaTeX never
@@ -111,13 +99,13 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * @param {string} theme
    * @param {ParentNode|ParentNode[]} [root]
    * @param {"consent"|"placeholder"} [mode]
-   * @param {Set<string>|null} [keepRender]
+   * @param {Map<string, Set<string>>|null} [keepRender]
    * @purity non-pure
    */
   hold(theme, root = this.preview, mode = "consent", keepRender = null) {
     for (const block of queryAllIn(root, PLANTUML_SELECTOR)) {
       const code = block.textContent;
-      const later = mode === "placeholder" || keepRender?.has(diagramKey(code, theme)) ? "render" : "consent";
+      const later = mode === "placeholder" || isKeptForRender(keepRender, code, theme) ? "render" : "consent";
       const box = document.createElement("div");
       box.className = "plantuml-loading";
       box.textContent = CONFIG.messages.diagram.loading;
@@ -127,34 +115,40 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   }
 
   /**
-   * The diagrams (source and theme) the held boxes in the preview keep for
-   * [Render]: read before a KaTeX redraw replaces their blocks.
-   * @returns {Set<string>}
+   * The diagrams the held boxes and the [Render] boxes in the preview keep
+   * for [Render]: read before a KaTeX redraw replaces their blocks.
+   * @returns {Map<string, Set<string>>} theme -> sources
    * @purity semi-pure-b
    */
   heldForRender() {
-    const keys = new Set();
+    const kept = new Map();
+    /** @purity non-pure */
+    const keep = ({ code, theme }) => {
+      if (!kept.has(theme)) kept.set(theme, new Set());
+      kept.get(theme).add(code);
+    };
     for (const box of this.preview.querySelectorAll(".plantuml-loading")) {
       const entry = this._waiting.get(box);
-      if (entry?.later === "render") keys.add(diagramKey(entry.code, entry.theme));
+      if (entry?.later === "render") keep(entry);
     }
     for (const box of this.preview.querySelectorAll(".plantuml-pending")) {
       const entry = this._pending.get(box);
-      if (entry) keys.add(diagramKey(entry.code, entry.theme));
+      if (entry) keep(entry);
     }
-    return keys;
+    return kept;
   }
+
   /**
-   * The page is settled (11-g runWaitingPlantUml): the held boxes still in
-   * the preview are dealt with once. The "consent" ones get one dialog: OK
-   * sends them, Cancel shows "not sent" (INV-03). The "render" ones become
-   * [Render] boxes (INV-23). Without the encoder, every box shows the
-   * encoding error and no dialog is shown.
+   * The libraries are settled (11-g runWaitingPlantUml, in answering): the
+   * held boxes still in the preview are dealt with once. The "consent" ones
+   * get one dialog: OK sends them, Cancel shows "not sent" (INV-03). The
+   * "render" ones become [Render] boxes (INV-23). Without the encoder, every
+   * box shows the encoding error and no dialog is shown. The boxes are taken,
+   * the dialog asked and the requests started before the first await.
    * @returns {Promise<boolean>} false when no held box was there
    * @purity non-pure
    */
   async runWaiting() {
-    this._waitingAnswered = true;
     const boxes = this._waitingBoxes();
     if (boxes.length === 0) return false;
     /** @purity non-pure */
@@ -191,12 +185,18 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   }
 
   /**
-   * Whether held boxes still wait for runWaiting() (it has not run yet).
-   * @returns {boolean}
-   * @purity semi-pure-b
+   * The page is settled and an editor gave its block back (11-g
+   * turnHeldPlantUmlToRender): a held box it had kept aside missed
+   * runWaiting(), so it becomes a [Render] box without a dialog (INV-23).
+   * Without the encoder it shows the encoding error.
+   * @purity non-pure
    */
-  _hasWaitingBoxes() {
-    return !this._waitingAnswered && this._waitingBoxes().length > 0;
+  turnHeldToRender() {
+    for (const box of this._waitingBoxes()) {
+      const { code, theme } = this._waiting.get(box);
+      this._waiting.delete(box);
+      box.replaceWith(this.encoder ? this.createPendingElement(code, theme) : this._encodingFailedElement());
+    }
   }
 
   /**
@@ -209,7 +209,9 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   }
 
   /**
-   * Send one diagram whose consent was given, in place of target.
+   * Send one diagram whose consent was given, in place of target (a code
+   * block, its <pre> goes too, or a box). The only place that makes the
+   * server's image.
    * @param {Element} target
    * @param {string} code
    * @param {string} theme
@@ -222,10 +224,10 @@ export default class PlantUMLRenderer extends DiagramRenderer {
       img = this.createImage(this.applyTheme(code, theme));
     } catch (error) {
       console.error("PlantUML encoding error:", error);
-      target.replaceWith(this._encodingFailedElement());
+      replaceCodeBlock(target, this._encodingFailedElement());
       return Promise.resolve(false);
     }
-    target.replaceWith(this.createWrapper(img));
+    replaceCodeBlock(target, this.createWrapper(img));
     return this.waitForImageLoad(img, CONFIG.plantuml.imageLoadTimeout);
   }
 
@@ -296,29 +298,6 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     if (!this.askConsent()) return Promise.resolve(false);
     this._pending.delete(placeholder);
     return this._send(placeholder, entry.code, theme ?? entry.theme);
-  }
-
-  /**
-   * @param {HTMLElement} block
-   * @param {string} theme
-   * @returns {Promise<boolean>|null}
-   * @purity non-pure
-   */
-  renderSingleBlock(block, theme) {
-    try {
-      const code = this.applyTheme(block.textContent, theme);
-      const img = this.createImage(code);
-      const wrapper = this.createWrapper(img);
-      replaceCodeBlock(block, wrapper);
-      return this.waitForImageLoad(img, CONFIG.plantuml.imageLoadTimeout);
-    } catch (error) {
-      console.error("PlantUML encoding error:", error);
-      const errorDiv = this.createErrorElement(
-        CONFIG.messages.plantuml.encodingFailed,
-      );
-      replaceCodeBlock(block, errorDiv);
-      return null;
-    }
   }
 
   /**

@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { JSDOM } from "jsdom";
+import { installBoot } from "../js/boot.js";
 import LibraryLoader, {
   libraryStateMachine,
   pageStartupStateMachine,
@@ -11,8 +13,9 @@ import { diagramTransitions, tableTransitions } from "./helpers/specDiagram.js";
 
 // Spec 3.3 11-g (owner rulings AQ2, AQ7): every cell of the library table
 // (6 events x 4 states, with the guard's two branches) and of the page
-// table (4 events x 3 states, with the guard's two branches), reached
-// through dispatch() / dispatchPage(). Each cell is checked twice: the
+// table (6 events x 4 states, with the two guards' branches), reached
+// through dispatch() / dispatchPage() (the earlyInputArrived row through
+// the receiver, installBoot, which does it). Each cell is checked twice: the
 // transition taken (from, to, the actions run in order) and what each
 // action does (the host's calls, the idle turn, get()'s promise, the log,
 // the data block, the page's next event). The first states (3 branches)
@@ -57,16 +60,33 @@ const LIBRARY_TABLE = {
 };
 
 const CORE = ["takeEarlyInput", "receiveEarlyInput", "requestIdleTurn"];
-/** The spec table 11-g (2), written out again. */
+/**
+ * The spec table 11-g (2), written out again: [to, actions], null ("-"), or
+ * the branches of a guard: {label: [[to, actions], test options]}.
+ */
 const PAGE_TABLE = {
-  earlyInputArrived: { receiving: ["receiving", ["keepLastInput"]], loading: null, settled: null },
+  earlyInputArrived: { receiving: ["receiving", ["keepLastInput"]], loading: null, answering: null, settled: null },
   coreStarted: {
-    receiving: { settledLibs: ["settled", CORE], notSettledLibs: ["loading", CORE] },
+    receiving: {
+      areLibrariesSettled: [["settled", CORE], { libsFinal: true }],
+      else: [["loading", CORE], { libsFinal: false }],
+    },
     loading: null,
+    answering: null,
     settled: null,
   },
-  librariesSettled: { receiving: null, loading: ["settled", ["runWaitingPlantUml"]], settled: null },
-  plantUmlStepReached: { receiving: null, loading: ["loading", ["holdPlantUml"]], settled: ["settled", ["runPlantUmlStep"]] },
+  librariesSettled: { receiving: null, loading: ["answering", ["runWaitingPlantUml"]], answering: null, settled: null },
+  plantUmlStepReached: {
+    receiving: null,
+    loading: ["loading", ["holdPlantUml"]],
+    answering: {
+      isConsentStep: [["answering", ["holdPlantUml"]], { mode: "consent" }],
+      else: [["answering", ["runPlantUmlStep"]], { mode: "placeholder" }],
+    },
+    settled: ["settled", ["runPlantUmlStep"]],
+  },
+  waitingPlantUmlAnswered: { receiving: null, loading: null, answering: ["settled", []], settled: null },
+  blockReleased: { receiving: null, loading: null, answering: null, settled: ["settled", ["turnHeldPlantUmlToRender"]] },
 };
 
 const LIB_OBJECT = { name: LIB };
@@ -89,6 +109,7 @@ function loaderIn(state, { shown = false, othersFinal = true, page = "loading", 
     holdPlantUml: vi.fn(),
     runPlantUmlStep: vi.fn(),
     runWaitingPlantUml: vi.fn(),
+    turnHeldPlantUmlToRender: vi.fn(),
   };
   loader.connect(host);
   for (const name of LIBRARY_NAMES) {
@@ -155,9 +176,9 @@ async function checkLibraryAction(action, { loader, boot, host, idle, trace, err
       else await expect(waiter).rejects.toThrow(/katex could not run/);
       break;
     case "checkSettled":
-      // the other three are ready: the page goes on to settled
+      // the other three are ready: the page goes on to answering (the held PlantUML boxes)
       expect(trace.some((t) => t.machine === "page" && t.event === "librariesSettled")).toBe(true);
-      expect(loader.pageStartupState).toBe("settled");
+      expect(loader.pageStartupState).toBe("answering");
       expect(host.runWaitingPlantUml).toHaveBeenCalledTimes(1);
       break;
     case "logRunError":
@@ -222,14 +243,14 @@ describe("AT-LSM library state machine (spec 11-g (1), INV-81 (2), owner ruling 
     for (const action of actions) await checkLibraryAction(action, { ...ctx, errors, waiter });
   });
 
-  it("AT-LSM-03 (INV-81) checkSettled does not settle the page while another library is still on its way; the page's settled is entered once", () => {
+  it("AT-LSM-03 (INV-81) checkSettled does not settle the page while another library is still on its way; the page's answering is entered once", () => {
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     const { loader, host, trace } = loaderIn("notArrived", { othersFinal: false });
     loader.dispatch(LIB, "parsingEnded");
     expect(trace.map((t) => t.event)).toEqual(["parsingEnded"]);
     expect(loader.pageStartupState).toBe("loading");
     for (const name of LIBRARY_NAMES.filter((n) => n !== LIB)) loader.dispatch(name, "parsingEnded");
-    expect(loader.pageStartupState).toBe("settled");
+    expect(loader.pageStartupState).toBe("answering");
     expect(host.runWaitingPlantUml).toHaveBeenCalledTimes(1);
     expect(errors).toHaveBeenCalledTimes(4);
   });
@@ -258,9 +279,6 @@ describe("AT-LSM library state machine (spec 11-g (1), INV-81 (2), owner ruling 
 /** What each page action does, seen from outside the table. */
 function checkPageAction(action, { loader, boot, host, idle, input, early }) {
   switch (action) {
-    case "keepLastInput":
-      expect(boot.early).toBe(input.early);
-      break;
     case "takeEarlyInput":
       expect(boot.takeEarlyInput).toHaveBeenCalledTimes(1);
       expect(boot.early).toBeNull();
@@ -282,6 +300,9 @@ function checkPageAction(action, { loader, boot, host, idle, input, early }) {
       expect(host.runPlantUmlStep).toHaveBeenCalledWith(input);
       expect(host.holdPlantUml).not.toHaveBeenCalled();
       break;
+    case "turnHeldPlantUmlToRender":
+      expect(host.turnHeldPlantUmlToRender).toHaveBeenCalledTimes(1);
+      break;
     default:
       throw new Error(`no check for ${action}`);
   }
@@ -290,36 +311,34 @@ function checkPageAction(action, { loader, boot, host, idle, input, early }) {
 
 const pageCells = [];
 for (const [event, byState] of Object.entries(PAGE_TABLE)) {
+  if (event === "earlyInputArrived") continue; // the receiver's row: AT-LSM-07 (receiver) below
   for (const state of PAGE_STARTUP_STATES) {
     const entry = byState[state];
     if (entry && !Array.isArray(entry)) {
-      pageCells.push([event, state, "areLibrariesSettled", entry.settledLibs, true]);
-      pageCells.push([event, state, "else", entry.notSettledLibs, false]);
+      for (const [guard, [expected, options]] of Object.entries(entry)) pageCells.push([event, state, guard, expected, options]);
     } else {
-      pageCells.push([event, state, "", entry, false]);
+      pageCells.push([event, state, "", entry, {}]);
     }
   }
 }
 
 describe("AT-LSM page startup state machine (spec 11-g (2), INV-81 (3) (4), INV-02, owner rulings AQ2, AQ7)", () => {
-  it("AT-LSM-06 (INV-81) the table has 4 events x 3 states: 12 cells, 13 with the guard's two branches", () => {
+  it("AT-LSM-06 (INV-81) the table has 6 events x 4 states: 24 cells, 26 with the two guards' branches", () => {
     expect(Object.keys(pageStartupStateMachine)).toEqual(Object.keys(PAGE_TABLE));
     for (const byState of Object.values(pageStartupStateMachine)) expect(Object.keys(byState)).toEqual(PAGE_STARTUP_STATES);
-    expect(pageCells).toHaveLength(13);
+    expect(pageCells.length + PAGE_STARTUP_STATES.length).toBe(26); // + the receiver's row
   });
 
-  it.each(pageCells)("AT-LSM-07 (INV-81) %s in %s %s: the cell of the spec table and what its actions do (INV-02: no PlantUML step before settled)", (event, state, _guard, expected, libsFinal) => {
-    const ctx = loaderIn("notArrived", { page: state, libsFinal });
+  it.each(pageCells)("AT-LSM-07 (INV-81) %s in %s %s: the cell of the spec table and what its actions do (INV-02: no PlantUML step before the libraries are settled; one batch while answering)", (event, state, _guard, expected, options) => {
+    const ctx = loaderIn("notArrived", { page: state, libsFinal: options.libsFinal ?? false });
     const early = { kind: "paste", text: "# Early" };
-    ctx.boot.early = event === "earlyInputArrived" ? null : early;
+    ctx.boot.early = early;
     const input =
-      event === "earlyInputArrived"
-        ? { early }
-        : event === "coreStarted"
-          ? { receiveEarlyInput: vi.fn() }
-          : event === "plantUmlStepReached"
-            ? { theme: "light", root: document.createElement("div"), mode: "consent" }
-            : {};
+      event === "coreStarted"
+        ? { receiveEarlyInput: vi.fn() }
+        : event === "plantUmlStepReached"
+          ? { theme: "light", root: document.createElement("div"), mode: options.mode ?? "consent", keepRender: null }
+          : {};
     ctx.loader.dispatchPage(event, input);
     const first = ctx.trace[0];
     if (!expected) {
@@ -334,6 +353,43 @@ describe("AT-LSM page startup state machine (spec 11-g (2), INV-81 (3) (4), INV-
     for (const action of actions) checkPageAction(action, { ...ctx, input, early });
   });
 
+  // the receiver's row (11-g (2)): boot.js keeps the last early input
+  // until the core takes it at coreStarted; after that it keeps nothing
+  it.each(PAGE_STARTUP_STATES)("AT-LSM-07 (INV-81 (4)) earlyInputArrived in %s: the receiver (installBoot) does the cell of the spec table", (state) => {
+    const { window } = new JSDOM('<!doctype html><html><body><textarea id="editor"></textarea></body></html>');
+    installBoot(window);
+    const boot = window.__grsmdBoot;
+    const paste = (text) => {
+      const event = new window.Event("paste", { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "clipboardData", { value: { getData: () => text } });
+      window.document.body.dispatchEvent(event);
+    };
+    const loader = new LibraryLoader(boot, document.implementation.createHTMLDocument(""), { idle: () => {} });
+    loader.connect({ runWaitingPlantUml: vi.fn() });
+    if (state !== "receiving") {
+      loader.dispatchPage("coreStarted", {});
+      loader._pageStartupState = state;
+    }
+    paste("# First");
+    paste("# Last");
+    if (state === "receiving") {
+      expect(PAGE_TABLE.earlyInputArrived.receiving).toEqual(["receiving", ["keepLastInput"]]);
+      expect(boot.early).toEqual({ kind: "paste", text: "# Last" }); // keepLastInput: the last one only
+    } else {
+      expect(PAGE_TABLE.earlyInputArrived[state]).toBeNull();
+      expect(boot.early).toBeNull(); // the receiver's listeners went at coreStarted
+    }
+    expect(loader.pageStartupState).toBe(state);
+  });
+
+  it("AT-LSM-22 (INV-81 (4), review L5) the core never handles earlyInputArrived: dispatchPage refuses it and changes nothing", () => {
+    const { loader, boot, trace } = loaderIn("notArrived", { page: "receiving" });
+    expect(() => loader.dispatchPage("earlyInputArrived", { early: { kind: "paste", text: "x" } })).toThrow(/receiver/);
+    expect(boot.early).toBeNull();
+    expect(trace[0].actions).toEqual([]);
+    expect(loader.pageStartupState).toBe("receiving");
+  });
+
   it("AT-LSM-08 (INV-81) the spec's page diagram shows every transition of the code's table (11-b)", () => {
     expect(diagramTransitions("11-g", 1)).toEqual(tableTransitions(pageStartupStateMachine));
   });
@@ -343,7 +399,7 @@ describe("AT-LSM page startup state machine (spec 11-g (2), INV-81 (3) (4), INV-
     const boot = fakeBoot();
     const idle = [];
     const loader = new LibraryLoader(boot, doc, { idle: (task) => idle.push(task) });
-    const host = { isShownWithout: () => false, handToRenderers: vi.fn(), redrawShownWithout: vi.fn(), showFailure: vi.fn(), holdPlantUml: vi.fn(), runPlantUmlStep: vi.fn(), runWaitingPlantUml: vi.fn() };
+    const host = { isShownWithout: () => false, handToRenderers: vi.fn(), redrawShownWithout: vi.fn(), showFailure: vi.fn(), holdPlantUml: vi.fn(), runPlantUmlStep: vi.fn(), runWaitingPlantUml: vi.fn(), turnHeldPlantUmlToRender: vi.fn() };
     loader.connect(host);
     loader.dispatchPage("coreStarted", {});
     expect(loader.pageStartupState).toBe("loading");
@@ -358,8 +414,10 @@ describe("AT-LSM page startup state machine (spec 11-g (2), INV-81 (3) (4), INV-
     }
     expect(ran).toEqual([1, 2, 3, 4, 4]); // the last turn finds no arrived library and sends nothing
     expect(host.handToRenderers.mock.calls.map((c) => c[0])).toEqual(LIBRARY_NAMES);
-    expect(loader.isSettled()).toBe(true);
+    expect(loader.pageStartupState).toBe("answering");
     expect(host.runWaitingPlantUml).toHaveBeenCalledTimes(1);
+    loader.dispatchPage("waitingPlantUmlAnswered"); // the host dealt with the held boxes
+    expect(loader.isSettled()).toBe(true);
     // a DOMContentLoaded after that changes nothing (failed / ready are final)
     doc.dispatchEvent(new Event("DOMContentLoaded"));
     expect(LIBRARY_NAMES.map((n) => loader.libraryState(n))).toEqual(["ready", "ready", "ready", "ready"]);
@@ -388,7 +446,37 @@ describe("AT-LSM page startup state machine (spec 11-g (2), INV-81 (3) (4), INV-
     doc.dispatchEvent(new Event("DOMContentLoaded"));
     expect(loader.hasFailed("plantuml")).toBe(true);
     await expect(got).rejects.toThrow(/plantuml could not run/);
-    expect(loader.isSettled()).toBe(true);
+    expect(loader.pageStartupState).toBe("answering"); // no host here answers the held boxes
     expect(errors).toHaveBeenCalledTimes(1);
+  });
+
+  it("AT-LSM-20 (INV-81 (3), review L3) a host action that throws is logged; the loader's own actions and the events after them still run, and the page still settles", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { loader, host, idle } = loaderIn("arrived");
+    host.handToRenderers.mockImplementation(() => {
+      throw new Error("host broke");
+    });
+    host.redrawShownWithout.mockImplementation(() => Promise.reject(new Error("redraw broke")));
+    const got = loader.get(LIB); // needed -> runLibrary -> libraryRan
+    await expect(got).resolves.toBe(LIB_OBJECT); // settleWaiters ran
+    expect(loader.libraryState(LIB)).toBe("ready");
+    expect(idle).toHaveLength(1); // requestIdleTurn ran
+    expect(loader.pageStartupState).toBe("answering"); // checkSettled ran
+    expect(host.runWaitingPlantUml).toHaveBeenCalledTimes(1);
+    await expect(loader.dispatch(LIB, "needed", STEP)).resolves.toBe(false); // a rejected redraw resolves as false
+    expect(errors.mock.calls.map((c) => c[0])).toEqual(["LibraryHost handToRenderers failed:", "LibraryHost redrawShownWithout failed:", "LibraryHost handToRenderers failed:", "LibraryHost redrawShownWithout failed:"]);
+  });
+
+  it("AT-LSM-21 (INV-81 (2), review L4) a loader made after the file was parsed sends parsingEnded at once: a library that never arrived fails, and the page settles at coreStarted", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const doc = document.implementation.createHTMLDocument("");
+    Object.defineProperty(doc, "readyState", { value: "complete" });
+    const boot = fakeBoot({ provided: { mermaid: {}, hljs: {}, katex: {} } });
+    const loader = new LibraryLoader(boot, doc, { idle: () => {} });
+    expect(loader.hasFailed("plantuml")).toBe(true);
+    expect(loader.libraryState("mermaid")).toBe("ready");
+    expect(errors).toHaveBeenCalledTimes(1);
+    loader.dispatchPage("coreStarted", {});
+    expect(loader.isSettled()).toBe(true);
   });
 });

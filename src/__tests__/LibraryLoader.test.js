@@ -28,8 +28,11 @@ async function page(body = "", { provided = {} } = {}) {
   const { window } = dom;
   withMarks(window);
   installBoot(window);
-  // the file is parsed before the loader is made here: parsingEnded is sent by hand when a test needs it
+  // the file is parsed before the loader is made here; the loader is told
+  // the file is still being parsed (as in the built page), so parsingEnded
+  // is sent by hand when a test needs it
   if (window.document.readyState === "loading") await new Promise((r) => window.document.addEventListener("DOMContentLoaded", r));
+  Object.defineProperty(window.document, "readyState", { value: "loading", configurable: true });
   for (const [name, lib] of Object.entries(provided)) window.__grsmdBoot.provide(name, lib);
   const idleTasks = [];
   const loader = new LibraryLoader(window.__grsmdBoot, window.document, { idle: (task) => idleTasks.push(task) });
@@ -164,7 +167,7 @@ describe("LibraryLoader (INV-81 (2), spec 5.17.2)", () => {
     while (runIdle()) await flush();
     expect(loaded.map((l) => l[0])).toEqual(["mermaid", "hljs", "katex", "plantuml"]);
     expect(window.runs).toBe(4);
-    expect(loader.isSettled()).toBe(true);
+    expect(loader.pageStartupState).toBe("answering"); // libraries settled; this host answers no held box
   });
 
   it("AT-FAST-08 idle turns skip a library that failed and go on", async () => {

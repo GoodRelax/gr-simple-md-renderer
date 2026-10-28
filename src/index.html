@@ -283,9 +283,12 @@
               <li>
                 PlantUML is an exception to client-side-only operation. This
                 tool shows a confirmation dialog before sending any PlantUML data
-                to the official server, every time it renders. Only the diagrams
-                you allowed in the dialog are sent; Copy SVG / PNG of such a diagram
-                fetches it again without asking.
+                to the official server, every time it renders the document (a
+                diagram you changed while editing: when you press its [Render]
+                button). Only the diagrams you allowed in the dialog are sent;
+                Copy SVG / PNG of such a diagram fetches it again without asking.
+                While the page is still loading, a diagram shows "Loading
+                diagram..." and the dialog comes when loading is done.
               </li>
               <li>
                 External images (<code>![](https://...)</code>,
@@ -457,7 +460,7 @@
             <ul>
               <li>
                 PlantUML:
-                クライアントサイド動作の例外。公式サーバーにPlantUMLデータを送信する前に、描画のたびに確認ダイアログを表示します。送るのは、ダイアログで許した図だけです。許した図の Copy SVG / PNG は、確認なしにその図をもう一度取りに行きます。
+                クライアントサイド動作の例外。公式サーバーにPlantUMLデータを送信する前に、文書を描くたびに確認ダイアログを表示します (編集で変えた図は、その [Render] を押したとき)。送るのは、ダイアログで許した図だけです。許した図の Copy SVG / PNG は、確認なしにその図をもう一度取りに行きます。ページの読み込みの途中は、図の所に「Loading diagram...」と出し、読み込みが終わってから確認します。
               </li>
               <li>
                 外部画像 (<code>![](https://...)</code>、<code>&lt;img src="https://..."&gt;</code>):

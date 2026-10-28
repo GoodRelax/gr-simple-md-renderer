@@ -103,7 +103,7 @@ describe("AT-BM-39 duplicate definitions cost about one lexing of the body (R5 A
   });
 });
 
-describe("AT-BM-40 links are deeply immutable copies", () => {
+describe("AT-BM-40 INV-41 links are deeply immutable copies", () => {
   it("each entry is a frozen {href, title}, not the lexer's own object", () => {
     const tokensLinks = {};
     const spyLexer = (src) => {

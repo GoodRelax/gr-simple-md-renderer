@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../js/config.js";
 
-describe("CONFIG", () => {
+describe("AT-CFG-11 INV-11, INV-18, CON-08: CONFIG file drop settings", () => {
   it("CONFIG.fileDrop.messages has no unused unsupportedType key", () => {
     expect(CONFIG.fileDrop.messages).not.toHaveProperty("unsupportedType");
   });
@@ -129,7 +129,7 @@ describe("CONFIG UI texts in plain English", () => {
   });
 });
 
-describe("EXT_TO_HLJS", () => {
+describe("AT-CFG-12 INV-18, spec 5.3: EXT_TO_HLJS", () => {
   it("contains .py mapping to python", () => {
     expect(EXT_TO_HLJS[".py"]).toBe("python");
   });
@@ -160,7 +160,7 @@ describe("EXT_TO_HLJS", () => {
   });
 });
 
-describe("BINARY_EXTENSIONS", () => {
+describe("AT-CFG-13 INV-18, spec 5.4: BINARY_EXTENSIONS", () => {
   it("is a Set", () => {
     expect(BINARY_EXTENSIONS).toBeInstanceOf(Set);
   });
@@ -180,7 +180,7 @@ describe("BINARY_EXTENSIONS", () => {
   });
 });
 
-describe("FILE_SYSTEM_HANDLE_SUPPORTED", () => {
+describe("AT-CFG-14 INV-15: FILE_SYSTEM_HANDLE_SUPPORTED", () => {
   it("is a boolean", () => {
     expect(typeof FILE_SYSTEM_HANDLE_SUPPORTED).toBe("boolean");
   });

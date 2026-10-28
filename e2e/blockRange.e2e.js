@@ -541,7 +541,8 @@ test("INV-74 (performance) (a), INV-73: 1 MB in Chromium, a mouse drag growing t
   const median = sorted[Math.floor(sorted.length / 2)];
   const max = sorted.at(-1);
   console.log(`INV-74 1 MB drag: ${times.length} frames, median ${median.toFixed(2)} ms, max ${max.toFixed(2)} ms`);
-  expect(framedWhileHeld).toBe(9); // Paragraph 0 to 4 and the four headings between them // the frame grew over the blocks while the button was held
+  // The frame grew over the blocks while the button was held.
+  expect(framedWhileHeld).toBe(9); // Paragraph 0 to 4 and the four headings between them
   expect(times.length).toBeGreaterThanOrEqual(10);
   expect(max).toBeLessThanOrEqual(GROW_FRAME_BUDGET_MS);
 });

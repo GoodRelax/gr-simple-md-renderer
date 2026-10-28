@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 describe("CONFIG.edit (spec 5.2)", () => {
-  it("AT-CFG-01 holds the agreed values", () => {
+  it("AT-CFG-01 (5.2, INV-68, INV-57) holds the agreed values; no double-tap values (owner ruling AQ3)", () => {
     const e = CONFIG.edit;
     expect(e.paletteMarginPx).toBe(16);
     expect(e.paletteLongPressMs).toBe(500); // INV-68

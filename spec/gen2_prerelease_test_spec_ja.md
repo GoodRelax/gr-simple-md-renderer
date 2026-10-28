@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.22
+**バージョン:** 2.23
 **日付:** 2026-10-29 (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -53,6 +53,10 @@
 > v2.21 の変更 (2026-10-29、起動とライブラリの状態機械): オーナーの裁定 AQ2 (仕様 11-g の 2 つの表) と AQ7 (PlantUML の確認と送信はページが settled になってから) に合わせて、PRT-AE12 (settled の前は確認も送信も無い) と PRT-AE09 (確認は settled の後に 1 回) を改め、PRT-AE03 の備考に AT-LSM-09 を足した。AT.2 に AT-LSM (新。01〜17) を足し、AT-FAST の 25・26・47・48・52・56・57 を新しい動きに改め、AT-HLP の範囲を 01〜12 にした。AT.3 と AT.4 も合わせた。改めたケースの判定は空欄 (未実施)。
 
 > v2.22 の変更 (2026-10-29、監査の直しのまとめ): AT.2 の AT-RNG に 53 (帯の上のホイールでプレビューがスクロールする。e2e と単体) と 54 (`wheelForwarding.js`) を足して範囲を 01〜54 にし、AT-LSM に 18・19 (KaTeX の描き直しが settled の後で待ちの枠の段より先に動いても、確認は 1 回) を足して範囲を 01〜19 にした。AT.4 の blockRange.e2e.js の行と PRT-AE09 の備考も合わせた。手で行うケースは変えていない。
+
+> v2.23 の変更 (2026-10-29、監査の直しのレビュー (1 回目) の直し、その 1): 仕様 11-g のページの状態に answering を足した (レビューの M1) のに合わせて、AT-LSM を 01〜24 にした (ページの表は 6 × 4。20: 描画の側が投げても決まる、21: 解析の後に作った LibraryLoader、22: 中核は earlyInputArrived を受けない、23: 全体の描画の途中で決まっても確認は 1 回、24: 決まった時に開いていた編集欄の図は閉じた時に [Render])。PRT-AE12 に手順 4・5 (M2) を足し、題を「4 つのライブラリが決まる前」にした。ペンのダブルタップは、オーナーに問う間マウスと同じ (M3): PRT-Q07 の手順 5 と期待結果、AT-DBL を 01〜19 (08 はタッチと空の pointerType、18・19 はペン)。PRT-M05 に PlantUML の Copy PNG (手順 4。確認が出ない) を足し、AT-DCC-02 (L9)。AT-FAST-58・59 (L13・L12)、AT-RNG-54 (ページ単位の横は幅。横だけスクロールする要素。L18・L19)、AT-SRCH-12 (e) (L17)、AT-GAP-04 の中身 (L15)、AT-UI-74 (setupFileDrop の試験の名。L16)、AT-APS の FS-01・FS-06 を書いた。
+
+> v2.23 の変更 (2026-10-29、監査の直しのレビュー (1 回目) の直し、その 2): PRT-AE09 の期待結果は上の欄 (`#fileInfo`) にファイルの情報が出ることで、言語名を求めない (M4)。PRT-M02 の前提に Disable cache (手順 4・5 がキャッシュに当たらない。M5)。AT.1 の e2e の行をレビュー基準 R6 に合わせた: e2e の名前は INV / FS の ID を持ち、AT の ID は AT の族の一部を e2e で確かめるときに持つ (AT-GAP-03 / 04、AT-RNG-53、AT-LSM-17、AT-HLP-12。AT-HLP-12 の名前に FS-10・INV-29・INV-57 を足した。L26)。AT.4 の help.e2e.js の行に AT-HLP-12 と PRT-A01 (L27)。AT.2 の前書きを v2.23 に (L28)。AT-UI-73 の主な要求を FS-03・5.7 に (L25)。AT-PAN-05 (図の部品を作る条件。INV-16・INV-16b。L31)。番号を足した: AT-SFR-02〜07、AT-MR-21〜23、AT-CFG-11〜14、AT-UTL (新。01〜07)。AT.2 の終わりに、AT の ID の無い試験の残りのファイルを全部挙げた (L32)。v2.20〜v2.22 で書き漏らした変更 (L29): AT-GAP-03 / 04 (点線の上のホイール。AQ8) と AT.4 の uiFixes.e2e.js の行、AT-DBL-13・15〜17 と AT-UI-22 (タッチのダブルタップ。AQ3)、AT-BEC-TS-15 を消したこと (AQ3)、AT-CFG-01 (ダブルタップの値が無い) と AT-CFG-10 (初期画面の 4 行目。AQ4)、AT-KEY-04 (G49。検索の箱などの主 + B / I)、AT-STA-03 (b) (`src/index.html` は日本語のヘルプの外で ASCII)。改めたケースの判定は空欄 (未実施)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -898,7 +902,7 @@
 
 | 項目         | 詳細                                                        |
 | ------------ | ----------------------------------------------------------- |
-| **前提条件** | PlantUML コードブロックを含む Markdown を用意。DevTools の Network タブを開いた状態 |
+| **前提条件** | PlantUML コードブロックを含む Markdown を用意。DevTools の Network タブを開き、Disable cache を入れた状態 (手順 4・5 で、手順 1〜3 で取った図をブラウザのキャッシュが返さないように) |
 | **手順**     | 1. `sample-data-2.md` を D&D (PlantUML ブロックを含む)      |
 |              | 2. 確認ダイアログが表示されることを確認し、メッセージを読む |
 |              | 3. OK とキャンセルのそれぞれで行う (キャンセルは `c` で Clear してからもう一度 D&D) |
@@ -968,16 +972,18 @@
 | **手順** | 1. Mermaid の図の上の "Copy SVG" を押し、テキストエディターに貼る |
 | | 2. 同じ図の "Copy PNG" を押し、画像を貼れるアプリに貼る |
 | | 3. PlantUML の図の "Copy SVG" を押し、テキストエディターに貼る |
-| | 4. iPhone / iPad (`pointer: fine` を持たない端末) で同じ文書を表示し、図の上を見る |
+| | 4. 同じ PlantUML の図の "Copy PNG" を押し、画像を貼れるアプリに貼る |
+| | 5. iPhone / iPad (`pointer: fine` を持たない端末) で同じ文書を表示し、図の上を見る |
 | **期待結果** | - 1 で、貼った文字は `<svg` で始まる SVG で、ラベルの文字が `text` 要素として入っている (`foreignObject` は残らない)。押したボタンが約 250 ms "Copied!" になる |
 | | - 2 で、貼った画像は図の 2 倍の大きさ (縦横とも) で、ぼやけない。ボタンが約 250 ms "Copied!" になる |
-| | - 3 で、Network に PlantUML サーバーの `/svg/` への要求が 1 件出て、貼った文字はその SVG。ボタンが "Copied!" になる |
-| | - 4 で、コピーのボタンは出ない (ズームとパンも無い) |
+| | - 3 で、確認のダイアログは出ない (INV-02 の唯一の例外)。Network に PlantUML サーバーの `/svg/` への要求が 1 件出て、貼った文字はその SVG。ボタンが "Copied!" になる |
+| | - 4 で、確認のダイアログは出ない。Network に同じ図の PlantUML サーバーの `/png/` への要求が 1 件出て、貼った画像はその図。ボタンが "Copied!" になる |
+| | - 5 で、コピーのボタンは出ない (ズームとパンも無い) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: FS-09 (図のコピーの 3 つのシナリオと、Fine Pointer を持たない端末)、SC-11〜13、INV-16。3 は同意した図の SVG をサーバーへ取りに行く (FS-09)。自動では AT-DCC-01 (バーは足された図だけに付く)。コピーの中身はクリップボードの許可が要るので手で確かめる |
+| 備考 | 要求: FS-09 (図のコピーの 3 つのシナリオと、Fine Pointer を持たない端末)、SC-11〜13、INV-16、INV-02 (確認で許した図の Copy SVG / PNG は確認なしに取り直す。オーナーの裁定 AQ7)。3・4 は同意した図をサーバーへ取りに行く (FS-09)。自動では AT-DCC-01 (バーは足された図だけに付く)、AT-DCC-02 (PlantUML の Copy SVG / PNG の取りに行く先と、確認が出ないこと)。コピーの中身はクリップボードの許可が要るので手で確かめる |
 
 ---
 
@@ -1195,17 +1201,17 @@
 | | 2. 表のセル、見出し、ブロックの間の余白を、それぞれダブルタップする |
 | | 3. [Edit] を押してパレットを出してから、段落を 1 回タップする |
 | | 4. 外側をタップして確定し、[Edit] でパレットを閉じてから、別の段落をダブルタップする |
-| | 5. (iPad で Apple Pencil があれば) パレットを閉じたまま、ペンで段落をダブルタップする |
+| | 5. (ペンのある端末があれば: Windows のペン付きの PC (Surface など) か、iPad の Apple Pencil) パレットを閉じたまま、ペンで段落をダブルタップする |
 | **期待結果** | - 1・2 で、編集モードに入らない (パレットも編集欄もセルも開かない)。画面はブラウザのダブルタップの動きで拡大し、2 回目で戻る |
 | | - 3 で、その段落の編集欄が開く (タッチの編集の開始は [Edit] の後のタップ) |
 | | - 4 で、1 と同じ (編集モードの外のダブルタップは編集を始めない) |
-| | - 5 で、1 と同じ (ペンのダブルタップも編集を始めない) |
+| | - 5 で、マウスのダブルクリックと同じく、編集モードに入り、その段落の編集欄が開く (ペンはオーナーに問うている間、裁定の前のとおり。レビューの M3。ブラウザがペンのダブルタップで `dblclick` を出すかは **[要検証: 実機]**) |
 | | - PC のマウスのダブルクリックは今のまま編集を始める (PRT-X14 の 1〜6) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-57 (マウスのダブルクリックだけが編集を始める。タッチとペンは拡大のまま)、INV-29、INV-31、5.14.6 (オーナーの裁定 AQ3、2026-10-29)。自動では AT-DBL-13 / 15 / 16 / 17、AT-UI-22。本物の拡大はブラウザの動きなので、実機で見る |
+| 備考 | 要求: INV-57 (マウスのダブルクリックとペンのダブルタップが編集を始める。タッチは拡大のまま)、INV-29、INV-31、5.14.6 (オーナーの裁定 AQ3、2026-10-29。ペンはオーナーに問うている)。自動では AT-DBL-08 / 13 / 15 / 16 / 17 / 18 / 19、AT-UI-22。本物の拡大はブラウザの動きなので、実機で見る |
 
 ---
 
@@ -4382,8 +4388,8 @@ INV-81 (仕様 5.17)。届く前の表示と、手が空いた時に先に動か
 |  | 2. .js をドロップする |
 |  | 3. ページを開き直し、UI が出たらすぐに .js をドロップし、続けて PlantUML の文書をドロップする。確認が出たら OK を押す |
 | **期待結果** | - PlantUML の確認と、外部の画像の枠が、今までどおり出る。OK の後に図が出る |
-|  | - コードビューは、色付きで 1 回で出て、上の欄に言語名が出る |
-|  | - 手順 3: コードビューは 3 秒以内に出る (色なしなら、届いた後に色と言語名が付く)。PlantUML は、確認を出さずに「Loading diagram...」の枠で待ち、その間も確定や Undo が描かれる。4 つのライブラリが届くと (settled) 確認が 1 回出て、OK の後に図が出る |
+|  | - コードビューは、色付きで 1 回で出て、上の欄 (`#fileInfo`) にファイルの情報が出る |
+|  | - 手順 3: コードビューは 3 秒以内に出る (色なしなら、届いた後に色が付き、上の欄 (`#fileInfo`) が書き直される)。PlantUML は、確認を出さずに「Loading diagram...」の枠で待ち、その間も確定や Undo が描かれる。4 つのライブラリが届くと (settled) 確認が 1 回出て、OK の後に図が出る |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -4424,7 +4430,7 @@ INV-81 (仕様 5.17)。届く前の表示と、手が空いた時に先に動か
 
 ---
 
-### PRT-AE12: settled の前は PlantUML の確認も送信も無く、確定した図は送られない
+### PRT-AE12: 4 つのライブラリが決まる前は PlantUML の確認も送信も無く、確定した図は送られない
 
 | 項目 | 詳細 |
 | --- | --- |
@@ -4432,14 +4438,17 @@ INV-81 (仕様 5.17)。届く前の表示と、手が空いた時に先に動か
 | **手順** | 1. ページを開き直し、UI が出たらすぐに、PlantUML の図 (`A -> B`) とリスト `- $x$` の文書をペーストする |
 |  | 2. 編集モードでリストのブロックを開き、その下に PlantUML の図 (`C -> D`) を書いて Esc で確定する |
 |  | 3. 回線を No throttling に戻して待つ。確認が出たら OK を押す |
+|  | 4. もう一度、回線を Slow 3G にしてページを開き直し、手順 1 と同じ文書をペーストする。編集モードで `A -> B` の図のブロックを開いたまま、回線を No throttling に戻して待つ |
+|  | 5. 4 つのライブラリが届くまで待ち (Network で KaTeX などの読み込みが終わる)、何も変えずに Esc で編集欄を閉じる |
 | **期待結果** | - 手順 1・2 の間、確認は出ない。PlantUML のサーバーへの要求も無い。2 つの図は「Loading diagram...」の枠 |
-|  | - 4 つのライブラリが届いた後 (ページが settled)、確認が 1 回だけ出る。OK の後、要求は `A -> B` の図だけ |
+|  | - 4 つのライブラリが届いた後、確認が 1 回だけ出る。OK の後、要求は `A -> B` の図だけ |
 |  | - 確定した図は [Render] の枠になり、KaTeX が数式を描き直した後も [Render] のまま |
+|  | - 手順 4・5: 開いていた図には確認が出ない (この文書にほかの PlantUML の図は無いので、確認は出ない)。Esc の後、その図は [Render] の枠になる (「Loading diagram...」のままにならない)。要求は無い (レビューの M2) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-81 (3)、INV-02、INV-23、仕様 11-g、レビューの N1、調整役の裁定 Q4、オーナーの裁定 AQ7。自動では fastStartup.e2e.js (3 つのブラウザ。サーバーへの要求は試験の中で止める。AT-LSM-17 は確認の数)、AT-FAST-52・56・57、AT-LSM-12〜16 |
+| 備考 | 要求: INV-81 (3)、INV-02、INV-23、仕様 11-g、レビューの N1、調整役の裁定 Q4、オーナーの裁定 AQ7。自動では fastStartup.e2e.js (3 つのブラウザ。サーバーへの要求は試験の中で止める。AT-LSM-17 は確認の数)、AT-FAST-52・56・57、AT-LSM-12〜16・18・19・23・24 |
 
 ---
 
@@ -4647,11 +4656,11 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | 番号の無い族 | AT-MT・AT-TW は `describe` の名前を族の名前だけで書く (関数ごとのまとまり)。AT-PSM・AT-PDS・AT-HB は、番号の付いた試験のほかに、族の名前だけの `describe` (表の交点、ガード、関数ごとのまとまり) も持つ。AT-APS・AT-EIG・AT-SSE は、族の名前だけの外側の `describe` の中に、番号の付いた `describe` を置く |
 | 時間の試験 | AT-PERF のうち時間を測るもの (02〜07、09、10、12、14) とメモリを測るもの (11、13) は、環境変数 `GRSMD_PERF=1` のときだけ動く (`describe.runIf`。ふだんはスキップと数える)。計算量の上限を数えるもの (01、08) は常に動く。AT-HB の大きなブロックの試験 (`MarkdownTextOps.insertHardBreak.test.js` の AT-HB-14〜19 と、字句解析の上限の AT-HB-26〜28) は、常に字句解析の回数を確かめ、時間は `GRSMD_PERF=1` のときだけ確かめる。**例外 (正規表現の計算量、ReDoS):** AT-WRAP-20 / 21、AT-FR-65〜67、AT-HB-62 / 63、AT-INS-20 / 21、AT-ICO-20、AT-BM-35 / 36、AT-RUN-03、AT-MR-15 / 16 は、時間の上限 (1,000 ms) を常に確かめる。直した後は数 ms で、上限まで 60 倍以上あり、負荷の高い機械でも揺れない (調整役の裁定 2026-10-25)。直す前は 4.4 s〜数時間で、上限との差は小さいもので約 4 倍 (AT-HB-62・AT-ICO-20 の 4.4 s)。4 倍より速い機械では、この 2 つは直す前でも通りうる (直す前に落ちることは、記録した機械で確かめた。調整役の裁定 Q5) |
 | スキップ | vitest のスキップは次に限る: 上の時間の試験 (`GRSMD_PERF=1` でないとき)、`MarkdownRenderer.test.js` の「parse error path」の試験 (`it.runIf(path === "render")`。描画の経路ごとに繰り返す試験のうち、`render` 以外の経路の分は常にスキップ)、`textWidth.test.js` の幅 0 の範囲表と Unicode の照合 (`it.skipIf`。Node の Unicode の版が 16.0 でないとき)。e2e のスキップは次に限る: (1) 時間の試験 (`GRSMD_PERF=1` でないとき、および Chromium 以外のブラウザ): `tableCell.e2e.js`、`blockRange.e2e.js` (Ctrl+A の後のフレームと Delete の時間、ドラッグで選択を広げる 1 フレームの 4 ms (INV-74 (性能) (a)) の 2 つ)、`search.e2e.js`、`fastStartup.e2e.js` (PRT-AE04 / AE07 の起動の時間)、`uiFixes.e2e.js` (1 MB のマウスの移動。M3)、`editScrollFont.e2e.js` (大きなブロックを開く時間と 1 キーの時間の 2 つ)。(2) Chromium だけで動くもの (Chromium 以外): `crossUnit.e2e.js` の N1 (本物のタッチの列は Chromium の CDP だけで作れる)、`uiFixes.e2e.js` の IME の変換中の Esc (CDP で IME を動かす) と Pixel 7 の上部バーの試験 (Chromium の端末の設定) |
-| e2e | Playwright (`npm run test:e2e` = `build:e2e` で `output/e2e/` にビルドし、`playwright test`。`playwright.config.js` の projects は Chromium と WebKit。Firefox は `npm run test:e2e:firefox` で選んだときだけ動く)。初めて動かす前に、ブラウザを `npx playwright install chromium webkit` で取得する (外部からのダウンロード。`e2e/README.md`)。置き場は `e2e/`。AT の ID は持たない。PRT との対応は AT.4 の表で引く (PRT の本文に e2e のファイル名を書いていないものもある) |
+| e2e | Playwright (`npm run test:e2e` = `build:e2e` で `output/e2e/` にビルドし、`playwright test`。`playwright.config.js` の projects は Chromium と WebKit。Firefox は `npm run test:e2e:firefox` で選んだときだけ動く)。初めて動かす前に、ブラウザを `npx playwright install chromium webkit` で取得する (外部からのダウンロード。`e2e/README.md`)。置き場は `e2e/`。e2e の試験の名前は、確かめる要求の ID (INV / FS) を持つ (レビュー基準 R6「テストの名前」)。AT の ID は、AT の族の一部を e2e で確かめるときに持つ: AT-GAP-03 / 04 (`uiFixes.e2e.js`)、AT-RNG-53 (`blockRange.e2e.js`)、AT-LSM-17 (`fastStartup.e2e.js`)、AT-HLP-12 (`help.e2e.js`)。前からの e2e には、名前に INV / FS の ID の無いものが残る (2026-10-29 の時点で 179 件のうち 93 件。PRT の ID や監査の項目を書くものを含む)。それらと PRT との対応は AT.4 の表で引く (PRT の本文に e2e のファイル名を書いていないものもある) |
 
 ### AT.2 族の一覧
 
-番号の範囲は、仕様と試験の一致の監査の直しと起動の状態機械 (2026-10-29。v2.21) を入れた時点のもの (高速起動の AT-FAST、起動とライブラリの状態機械の AT-LSM、ベータ版の AT-BETA、ブロック編集欄の字の AT-BEC-TS・AT-BCM、監査で ID を付けた AT-APS・AT-DCC・AT-EIG・AT-MMD・AT-SSE・AT-RLD・AT-TPA・AT-CSP を含む)。
+番号の範囲は、仕様と試験の一致の監査の直し、起動の状態機械と、その直しのレビュー (1 回目) の直しを入れた時点 (2026-10-29。v2.23) のもの (高速起動の AT-FAST、起動とライブラリの状態機械の AT-LSM、ベータ版の AT-BETA、ブロック編集欄の字の AT-BEC-TS・AT-BCM、監査で ID を付けた AT-APS・AT-DCC・AT-EIG・AT-MMD・AT-SSE・AT-RLD・AT-TPA・AT-CSP、レビューで番号を足した AT-SFR・AT-MR・AT-CFG と新しい AT-UTL を含む)。
 
 | 族 | 対象 | 主な要求 | ファイル (`src/__tests__/`) | 番号 |
 | --- | --- | --- | --- | --- |
@@ -4672,7 +4681,7 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | AT-MT | `MarkdownTable` (解析、整形、行・列の操作) | INV-61、INV-65 | MarkdownTable.test.js | (番号なし) |
 | AT-TW | `textWidth.displayWidth` | INV-61、5.14.13 | textWidth.test.js | (番号なし) |
 | AT-CL | `ClipboardLink` | INV-69 | ClipboardLink.test.js | 01〜04 |
-| AT-MR | `MarkdownRenderer` のブロックの描画 (15〜19: コードブロックの色付けの上限。言語の無い長いブロックと上限を超えるブロックの時間、20,480 / 20,481 文字の境目、先頭の 3,072 文字での言語の判定、CONFIG の値。5.14.4。20: `MarkdownRenderer.lex` はブロックの字句だけを返し、描画と同じブロックとリンクになる) | INV-41〜43、INV-47 | MarkdownRenderer.blocks.test.js、MarkdownRenderer.test.js、diagrams.partial.test.js、MarkdownRenderer.highlightLimit.test.js、MarkdownRenderer.blockLex.test.js (20) | 01〜20 (09 は `MarkdownRenderer.test.js` のコメントにだけある。AT.1 の注) |
+| AT-MR | `MarkdownRenderer` のブロックの描画 (15〜19: コードブロックの色付けの上限。言語の無い長いブロックと上限を超えるブロックの時間、20,480 / 20,481 文字の境目、先頭の 3,072 文字での言語の判定、CONFIG の値。5.14.4。20: `MarkdownRenderer.lex` はブロックの字句だけを返し、描画と同じブロックとリンクになる。21〜23 は描画の 3 つの経路 (09) のそれぞれで、21: サニタイズ (事象の属性・`<script>`・`javascript:`・MathML の注釈)、22: 正しい中身 (mermaid と PlantUML の class、KaTeX、タスクの箱、表、コードの色) が残る、23: 字句解析の失敗の文をエスケープして出す) | INV-41〜43、INV-47、OS-14・FS-01 (21〜23)、INV-05 (22) | MarkdownRenderer.blocks.test.js、MarkdownRenderer.test.js (09、21〜23)、diagrams.partial.test.js、MarkdownRenderer.highlightLimit.test.js、MarkdownRenderer.blockLex.test.js (20) | 01〜23 (09 は `MarkdownRenderer.test.js` のコメントにだけある。AT.1 の注) |
 | AT-DG | 図と PlantUML の部分描画 (03: 同意のキャンセル、07: 同意の前に送らない、08: PlantUML の画像が `CONFIG.plantuml.imageLoadTimeout` (5,000 ms) の間に答えなければ、時間切れの文を出す。偽のタイマー) | INV-01 (07)、INV-02、INV-03 (03)、INV-10 (08)、INV-23、FS-02 | diagrams.partial.test.js | 01〜08 |
 | AT-SM | `ScrollMemento` (アンカー、読んでいる位置、挿入の後の最小のスクロール。39〜41: 利用者がビューを動かす操作の見張り `watchUserMoves` (39: ホイール・指の移動・スクロールのキー・Space・スクロールバーの押下の後のスクロールで読んでいる位置を覚える。40: Shift、入力欄の中のスクロールのキー、本文の外と中の押下、ポインタの移動は数えない。41: パネルのスクロールは数えない、`scrollTargetTo` はその場で覚える、`stop()`)。42: 最後に見た位置 `noteScrolls` (読むときに配置しない)。43: 終わりへ詰められたか `isPulledBackFrom`) | INV-40、INV-46、INV-52、INV-78、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜43 |
 | AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R6 (R6: 確定のカーソルの行 (INV-84) は、編集モードを出て基準が動いても保つ)、Undo / Redo の記録 09〜09d。28: 全体の描画の間に利用者が動かしたら、最後に動かした所の読んでいる位置へ戻し (`restoreReadingAnchor`)、動かさなければ描画の前の位置へ戻す。22: 1 つだけのブロックを空にして確定しても Markdown 表示のまま) | INV-09 (28)、INV-42、INV-46〜48、INV-49 (22)、INV-84、INV-62、INV-78 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜28 (06b、09b〜09d を含む)、R1〜R6、T1〜T6 |
@@ -4681,8 +4690,8 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | AT-BEC-TS | ブロック編集欄の字とスクロール: 表示の字を写す種類と等幅のままの種類 (01〜04。10: リスト、11: 引用)、新しいブロックは本文の字 (12: すき間、13: 空の文書。ESF-7)、押した字にカーソル (05・06。14: 表示モードのダブルクリック)、高さを合わせてもスクロールを保つ (07: 終わりへ詰められたら戻す、08: 動かなければ触らず、位置の読みは 1 キーに 1 回、09: ブラウザがカーソルを見せる動きは保つ) | INV-83、INV-84、INV-40 | BlockEditController.textStyle.test.js、UIController.doubleClick.test.js (14) | 01〜14 (15 (ダブルタップで開いた字にカーソル) は裁定 AQ3 でダブルタップが編集を始めなくなったので消した) |
 | AT-BCM | 描画された字と原文の対応 (`caretMatching.js`。pure): 書式・リンクの行き先・見出し・リスト・引用・コードの囲い・HTML のタグ・実体参照、逆向き、速い道が同じ答えを出すこと (05: 空白の判定・コードの行頭の印・途中で止める、06: コードの位置の直接の対応)。DOM の側 (`BlockCaretMap`): 数えない字 (04)、行の基準の取り消しと、渡したものに書かないこと (03)、長い折り返す字は測らないこと (07)、点のカーソル `caretAt` (08。表のセルも同じ関数)、編集欄の行を測る字が描画の側と同じこと (09) | INV-84、INV-62 | BlockCaretMap.test.js | 01〜09 |
 | AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致。30〜32: ブロックの範囲、33: 検索の置換 (`searchReplaceRequested`)) | 11-c | BlockEditController.stateMachine.test.js、BlockEditController.gap.test.js (29)、UIController.editMode.test.js、UIController.save.test.js | 01〜33 |
-| AT-GAP | `BlockGapInsert` (すき間の当たり判定、表のつまみ・リンクなどを避けること、点線の表示と押下、マウスの移動を 1 フレームに 1 回にまとめること、押下と消去で残りの移動を捨てること、click にならない押下の後も追うこと。03: 点線の上のホイールでプレビューがスクロールする (裁定 AQ8)。04: 編集モードでも図の上の Ctrl+ホイールは図のズームで、点線が取らない (e2e だけ)) | INV-73、FS-09 (04) | BlockGapInsert.test.js、e2e の uiFixes.e2e.js (03・04。e2e で AT の ID を持つ例外) | 01〜04 |
-| AT-RNG | ブロックの範囲: `MarkdownBlockModel.removeRange` / `rangeSource` (01〜08)、`RendererOrchestrator.deleteBlocks` / `readBlocksSource` (09〜13)、`BlockRangeSelection` (選択の解決、帯、押して離す、Esc、INV-45、14〜30、40、41。読むだけで表示を変えないこと 45、帯の押下で読み直すこと 46、ビューポートの近くだけの枠 47)、UIController のキーとクリップボード (31〜38)、すき間を出さないこと (39)、書き込みの失敗のトースト (25、42〜44)、ブラウザの `copy` の事象 (48、49)、Shift+Delete (50)、帯の位置の純粋な関数 `placementNearLine` (51)、選択を残したドラッグの `mouseup` の既定を止めること (52。Edge のミニメニュー)、帯の上のホイールでプレビューがスクロールし、帯と枠は残ってスクロールに付いていくこと (画素・行・ページ・Shift。Ctrl+ホイールとタッチの配置はブラウザのまま。53。AQ8 と同じ直し)、ホイールを渡す関数 `wheelScrollDelta` (純粋) と `forwardWheel` (自分でスクロールする要素にだけ、Ctrl では渡さない) (54) | INV-74、INV-14、INV-45、INV-46、INV-48、INV-49 (03)、INV-73 (39・54)、INV-74 (2) (53・54) | MarkdownBlockModel.removeRange.test.js、RendererOrchestrator.edit.test.js、BlockRangeSelection.test.js、UIController.blockRange.test.js、BlockGapInsert.test.js (39)、floatingPlacement.test.js (51)、wheelForwarding.test.js (54)、e2e の blockRange.e2e.js (53。e2e で AT の ID を持つ例外) | 01〜54 |
+| AT-GAP | `BlockGapInsert` (すき間の当たり判定、表のつまみ・リンクなどを避けること、点線の表示と押下、マウスの移動を 1 フレームに 1 回にまとめること、押下と消去で残りの移動を捨てること、click にならない押下の後も追うこと。03: 点線の上のホイールでプレビューがスクロールする (裁定 AQ8)。04: 点線の上の Ctrl+ホイールを点線が取らない (既定を止めず、プレビューも動かない)。編集モードでも図の上の Ctrl+ホイールは図のズーム (e2e だけ)) | INV-73、FS-09 (04) | BlockGapInsert.test.js、e2e の uiFixes.e2e.js (03・04。AT.1 の e2e の行) | 01〜04 |
+| AT-RNG | ブロックの範囲: `MarkdownBlockModel.removeRange` / `rangeSource` (01〜08)、`RendererOrchestrator.deleteBlocks` / `readBlocksSource` (09〜13)、`BlockRangeSelection` (選択の解決、帯、押して離す、Esc、INV-45、14〜30、40、41。読むだけで表示を変えないこと 45、帯の押下で読み直すこと 46、ビューポートの近くだけの枠 47)、UIController のキーとクリップボード (31〜38)、すき間を出さないこと (39)、書き込みの失敗のトースト (25、42〜44)、ブラウザの `copy` の事象 (48、49)、Shift+Delete (50)、帯の位置の純粋な関数 `placementNearLine` (51)、選択を残したドラッグの `mouseup` の既定を止めること (52。Edge のミニメニュー)、帯の上のホイールでプレビューがスクロールし、帯と枠は残ってスクロールに付いていくこと (画素・行・ページ・Shift。Ctrl+ホイールとタッチの配置はブラウザのまま。53。AQ8 と同じ直し)、ホイールを渡す関数 `wheelScrollDelta` (純粋。ページ単位は横が要素の幅、縦が高さ) と `forwardWheel` (自分でスクロールする要素にだけ。横だけスクロールする要素も。Ctrl では渡さない) (54) | INV-74、INV-14、INV-45、INV-46、INV-48、INV-49 (03)、INV-73 (39・54)、INV-74 (2) (53・54) | MarkdownBlockModel.removeRange.test.js、RendererOrchestrator.edit.test.js、BlockRangeSelection.test.js、UIController.blockRange.test.js、BlockGapInsert.test.js (39)、floatingPlacement.test.js (51)、wheelForwarding.test.js (54)、e2e の blockRange.e2e.js (53。AT.1 の e2e の行) | 01〜54 |
 | AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
@@ -4690,25 +4699,26 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜36 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
-| AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く) | INV-80、INV-48、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜19 |
+| AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(e) ポップオーバーが開いていれば、検索の箱の中の最初の Esc はポップオーバーだけを閉じる、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く) | INV-80、INV-48、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜19 |
 | AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル) | INV-24〜26、INV-79、CON-14 | MarkdownFileAccess.test.js | 01〜09 |
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
 | AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |
 | AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`)、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56、INV-79 | DocumentLifecycle.test.js | 01〜23 |
-| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン。14: Clear (確認、初期状態、OS の配色の `applySystemTheme`)、38: 何も保存しない。70: 大きな本文は確定のたびに `#editor` へ書かず、フォーカス・ドラッグ・保存・描画のときに書く、71: 空の `#editor` を空でない文書へ取り込む前の確認、72: コードビューの #fileInfo の文字、73: キーヒントをスクロール・指の移動・クリック・キーで消し、見張りを外す) | INV-04 (38)、INV-12・INV-13 (14)、INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69、FS-03 (72)、FS-16 (73) | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js、UIController.editorDeferredSync.test.js (70)、UIController.emptyEditorConfirm.test.js (71)、UIController.formatFileInfo.test.js (72)、UIController.showKeyHint.test.js (73) | 01〜73 (25 は欠番。41 は AT.1 の注。36a〜36j・37a は AT.1 の枝番。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)) |
+| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン。14: Clear (確認、初期状態、OS の配色の `applySystemTheme`)、38: 何も保存しない。70: 大きな本文は確定のたびに `#editor` へ書かず、フォーカス・ドラッグ・保存・描画のときに書く、71: 空の `#editor` を空でない文書へ取り込む前の確認、72: コードビューの #fileInfo の文字、73: キーヒントをスクロール・指の移動・クリック・キーで消し、見張りを外す、74: ドロップしたファイルの振り分け (.md、コードビュー、断るファイル、5 MB)) | INV-04 (38)、INV-12・INV-13 (14)、INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69、FS-03 (72)、FS-03・5.7 (73)、INV-11・INV-17・INV-18 (74) | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js、UIController.editorDeferredSync.test.js (70)、UIController.emptyEditorConfirm.test.js (71)、UIController.formatFileInfo.test.js (72)、UIController.showKeyHint.test.js (73)、UIController.setupFileDrop.test.js (74) | 01〜74 (25 は欠番。41 は AT.1 の注。36a〜36j・37a は AT.1 の枝番。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)) |
 | AT-KEY | 主の修飾キーのショートカット (04 (G49): 検索の箱などの入力要素では、ブロック編集欄を開いたままでも主 + B / I を横取りせず、書式を付けない。08: Redo のキー。09: 1 文字のショートカットと修飾キーのガード (`c`・`l`・`d`・`r`・ArrowDown に Ctrl / Meta / Alt)) | INV-13 (09)、INV-14、INV-58〜60、INV-59 (a)、INV-80 (7) | UIController.shortcuts.test.js、UIController.keyboard.test.js (09) | 01〜09 |
-| AT-DBL | 編集モードでないときのダブルクリック (裁定 AQ3: 13: タッチのダブルタップの後のブラウザの dblclick では何も開かない、15: タッチの押下の後でもマウスのダブルクリックは開く (最後の押下で決める)、16: タッチで [Edit] の後のブロックのタップで開く、17: 初期状態で `#editor` が空のとき、タッチ・ペンのダブルタップで空の文書を始めない) | INV-29 (16)、INV-31、INV-57 | UIController.doubleClick.test.js | 01〜17 |
-| AT-PAN | `DiagramPanController` (図のパンの終わり 01〜03、始まりは閾値を超えたとき (5px ちょうどでは始まらない。`utils.isPastActivation`) 04)。04 の閾値の決まりそのもの (INV-29・INV-68・INV-74 (2)・3.5 の図のパンに共通) は utils.test.js の `isPastActivation` の試験 | INV-16b、FS-09、INV-29、INV-68、INV-74 | DiagramPanController.test.js、utils.test.js (`isPastActivation`) | 01〜04 |
-| AT-SFR | `SourceFileRenderer` (コードビューの Reload) | INV-15 | SourceFileRenderer.test.js | 01 |
+| AT-DBL | 編集モードでないときのダブルクリック (裁定 AQ3: 08: タッチと空の pointerType のダブルタップでは編集を始めない、13: タッチのダブルタップの後のブラウザの dblclick では何も開かない、15: タッチの押下の後でもマウスのダブルクリックは開く (最後の押下で決める)、16: タッチで [Edit] の後のブロックのタップで開く、17: 初期状態で `#editor` が空のとき、タッチのダブルタップで空の文書を始めない。ペンはオーナーに問うている間マウスと同じ (レビューの M3): 18: ペンのダブルタップで編集を始める、19: 初期状態でペンのダブルタップで空の文書を始める) | INV-29 (16)、INV-31、INV-57 | UIController.doubleClick.test.js | 01〜19 |
+| AT-PAN | `DiagramPanController` (図のパンの終わり 01〜03、始まりは閾値を超えたとき (5px ちょうどでは始まらない。`utils.isPastActivation`) 04)。04 の閾値の決まりそのもの (INV-29・INV-68・INV-74 (2)・3.5 の図のパンに共通) は utils.test.js の `isPastActivation` の試験。05: パンを作るのは `pointer: fine` かつ `any-pointer: coarse` でないときだけ、ズームとコピーは `pointer: fine` のとき (`utils.diagramControllersFor`。`main.js` が使う) | INV-16 (05)、INV-16b (05)、FS-09、INV-29、INV-68、INV-74 | DiagramPanController.test.js、utils.test.js (`isPastActivation`、05) | 01〜05 |
+| AT-SFR | `SourceFileRenderer` (01・07: コードビューの Reload。02: コンストラクタ、03: `destroy` (Clear)、04: 色付け (束に無い言語と表に無い拡張子は plaintext)、05: 外からの import が無い、06: 色付けの HTML を行に分ける) | INV-15 (01・07)、FS-04 (07)、FS-03・5.5 (02・06)、FS-07・INV-13 (03)、FS-03・INV-05・5.3 (04)、INV-07 (05) | SourceFileRenderer.test.js | 01〜07 |
+| AT-UTL | `utils.js` の関数 (01: `escapeHtml`、02: `formatDateTime`、03: `formatTime`、04: `applyTheme`、05: `systemTheme`、06: `isApplePlatform`、07: `isTypingTarget`)。`isPastActivation` は AT-PAN-04 | FS-01・FS-03 (01)、FS-03・5.9 (02)、5.12 (03)、FS-06 (04・05)、INV-12 (05)、INV-14 (06・07)、INV-74 (1) (07) | utils.test.js | 01〜07 |
 | AT-RLD | `UIController.handleReload` (各ビューの Reload、保存先が無いときのトースト、読み込みの失敗) | FS-04、FS-20、INV-55 | UIController.handleReload.test.js | 01 |
 | AT-TPA | タッチのペーストの助け: 初期状態で `#editor` が空のときだけ、プレビューの押下で `#editor` にフォーカスを移す | FS-16 | UIController.touchPasteAssist.test.js | 01 |
 | AT-SSE | `SmoothScrollEngine` (01: コンストラクタ、02: `startScroll`、03: `stopScroll`、04: `destroy`、05: スクロール中の class (ホバーを止める)、06: `_loop`) | FS-05、INV-18b (05) | SmoothScrollEngine.test.js | 01〜06 |
-| AT-APS | `ApplicationState` (01: 初めの値、02: `setTheme`、03: `setMarkdownText`) | 3.2 | ApplicationState.test.js | 01〜03 |
+| AT-APS | `ApplicationState` (01: 初めの値、02: `setTheme`、03: `setMarkdownText`) | 3.2、FS-01 (01・03)、FS-06 (01・02) | ApplicationState.test.js | 01〜03 |
 | AT-EIG | `ExternalImageGate` (01: 同意の前は外部画像を読まない、02: 同意は 1 回、取り消し、何も保存しない) | CON-12、INV-19、INV-01、INV-04 (02) | ExternalImageGate.test.js | 01〜02 |
 | AT-MMD | `MermaidRenderer.initializeMermaid` (ラベルの画像を落とす、init の指示で設定を変えられない、テーマの対応) | CON-12 | MermaidRenderer.test.js | 01 |
-| AT-DCC | `DiagramCopyController` (コピーのバーは足された図の入れ物だけに付ける。プレビュー全体を探し直さず、2 つ目のバーを付けない) | FS-09 | DiagramCopyController.observer.test.js | 01 |
+| AT-DCC | `DiagramCopyController` (01: コピーのバーは足された図の入れ物だけに付ける。プレビュー全体を探し直さず、2 つ目のバーを付けない。02: 許した PlantUML の図の Copy SVG / PNG は、その図の `/svg/` と `/png/` を取りに行き、確認を出さない (INV-02 の唯一の例外)) | FS-09、INV-02 (02) | DiagramCopyController.observer.test.js | 01〜02 |
 | AT-CSP | CSP のビルドのプラグイン (script の hash、meta の置き場所、`<script src>` があればビルドを失敗させる、指示の値) | INV-20、INV-06、INV-07 | cspPlugin.test.js | 01 |
-| AT-CFG | `CONFIG.edit` と文言 (10: 初期画面の 4 行が同じ長さで、4 行目が編集の始め方。裁定 AQ4) | 5.2、CON-06、FS-16 (10) | config.edit.test.js、UIController.editMode.test.js、config.test.js (09・10) | 01〜10 |
+| AT-CFG | `CONFIG.edit` と文言 (10: 初期画面の 4 行が同じ長さで、4 行目が編集の始め方。裁定 AQ4。11: ファイルのドロップの設定 (5 MB と文言)、12: `EXT_TO_HLJS`、13: `BINARY_EXTENSIONS`、14: `FILE_SYSTEM_HANDLE_SUPPORTED`) | 5.2、CON-06、FS-16 (10)、INV-11・INV-18・CON-08 (11)、INV-18・5.3 (12)、INV-18・5.4 (13)、INV-15 (14) | config.edit.test.js、UIController.editMode.test.js、config.test.js (09〜14) | 01〜14 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと | 5.8.1、5.15.2 | themeColors.test.js、hljsThemePlugin.test.js | 01〜20 |
 | AT-STA | `src/js` と `src/css` の静的な検査 (01: ストレージの API を使わない。03 (b): `src/index.html` の日本語のヘルプの外は ASCII) | CON-06、CON-13、CON-14、CON-15、INV-04 (01)、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜19 |
@@ -4716,12 +4726,12 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ、14: 目次を出したままの確定・Undo の後の作り直しの時間。jsdom に大きな文書が残ると遅くなるので別のファイル) | INV-42、INV-48、INV-51、INV-74、INV-77 | performance.inplaceEdit.test.js、performance.index.test.js | 01〜14 |
 | AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11) (`ModalController`)、「Details」/「詳細」の [Edit] の行の次の編集の始め方の行と初期画面の 4 行目 (AT-HLP-12。e2e の help.e2e.js。オーナーの裁定 AQ4) | SC-16、FS-10、CON-03、CON-12、5.1、5.11、INV-57 (12)、INV-29 (12) | HelpLanguageSwitch.test.js、ModalController.test.js、`e2e/help.e2e.js` (12) | 01〜12 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
-| AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド (30: 単一ファイルの並びでないものは失敗、38: 外部の import の検査はライブラリのコードも見る)、早い入力の受け継ぎ。25・26・47・48・52・56・57 はオーナーの裁定 AQ7 で改めた (PlantUML は settled を待つ。前の送り直し `"repeat"` は無い) | INV-81、INV-20、INV-06 (30)、INV-07 (38)、INV-02 (52・56・57) | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜57 |
-| AT-LSM | 起動とライブラリの状態機械 (仕様 11-g): ライブラリの表のすべての交点 (6 × 4 = 24、ガードの枝で 25。02)、ページの表のすべての交点 (4 × 3 = 12、ガードの枝で 13。07)、表の大きさ (01・06)、はじめの状態の 3 つの枝 (04)、仕様の 2 つの図と表の一致 (05・08)、settled に入るのが 1 回だけ (03・09)、開発サーバー (10)、解析の終わり (11)。PlantUML: settled の前は確認も送信も無く、settled で描画の列の中で 1 回だけ確認し、確定の図は [Render]、読んでいる位置を保つ (12)、Cancel (13)、エンコーダーが動かない (14)、Clear・別の文書 (15)、始めから settled で送り直しが無い (16)、e2e で settled の前に確認が無く後に 1 回 (17)、KaTeX が最後に動き、その描き直しが settled の後で待ちの枠の段より先に動いても、確認は 1 回で全部の図に答える (18。OK で全部を送る。19: Cancel で全部が「not sent」) | INV-81 (2)(3)(4)、INV-02、INV-03 (13・19)、INV-23 (12・13)、オーナーの裁定 AQ2・AQ7、G6 (18・19) | LibraryLoader.stateMachine.test.js (01〜11)、fastStartup.render.test.js (12〜16、18、19)、`e2e/fastStartup.e2e.js` (17) | 01〜19 |
+| AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド (30: 単一ファイルの並びでないものは失敗、38: 外部の import の検査はライブラリのコードも見る)、早い入力の受け継ぎ。25・26・47・48・52・56・57 はオーナーの裁定 AQ7 で改めた (PlantUML は 4 つのライブラリが決まるのを待つ。前の送り直し `"repeat"` は無い)。58: 11-g のガード `isShownWithout` の問い合わせ (数式・コードの色・Mermaid の枠) が、届く前の表示がある間は真で、ライブラリが動いた後は偽。文書が自分で書いた枠は数えない。59: コードビューの highlight.js の待ちが 2 つ重なっても、先に終わった方が待ちを消さない | INV-81、INV-20、INV-06 (30)、INV-07 (38)、INV-02 (52・56・57) | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜59 |
+| AT-LSM | 起動とライブラリの状態機械 (仕様 11-g): ライブラリの表のすべての交点 (6 × 4 = 24、ガードの枝で 25。02)、ページの表のすべての交点 (6 × 4 = 24、2 つのガードの枝で 26。07。`earlyInputArrived` の行は受け口 `installBoot` で確かめる)、表の大きさ (01・06)、はじめの状態の 3 つの枝 (04)、仕様の 2 つの図と表の一致 (05・08)、answering に入るのが 1 回だけ (03・09)、開発サーバー (10)、解析の終わり (11)。描画の側の処理が投げても、ライブラリの表の処理は続き、ページは決まる (20。レビューの L3)、解析の後に作った LibraryLoader はすぐ `parsingEnded` を送る (21。L4)、中核は `earlyInputArrived` を受けない (22。L5)。PlantUML: 4 つのライブラリが決まる前は確認も送信も無く、決まったら描画の列の中で 1 回だけ確認し、確定の図は [Render]、読んでいる位置を保つ (12)、Cancel (13)、エンコーダーが動かない (14)、Clear・別の文書 (15)、始めから settled で送り直しが無い (16)、e2e で決まる前に確認が無く後に 1 回 (17)、KaTeX が最後に動き、その描き直しが answering の間に待ちの枠の段より先に動いても、確認は 1 回で全部の図に答える (18。OK で全部を送る。19: Cancel で全部が「not sent」)、全体の描画の途中で 4 つが決まっても、その描画と KaTeX の描き直しで確認は 1 回 (23。L1)、決まった時に編集欄が開いていた図は、閉じた時に [Render] (24。M2) | INV-81 (2)(3)(4)、INV-02、INV-03 (13・19)、INV-23 (12・13・24)、オーナーの裁定 AQ2・AQ7、G6 (18・19・23) | LibraryLoader.stateMachine.test.js (01〜11、20〜22)、fastStartup.render.test.js (12〜16、18、19、23、24)、`e2e/fastStartup.e2e.js` (17) | 01〜24 |
 | AT-OSS | 同梱 OSS の表記: 数えるパッケージ、表記が漏れるときにビルドを失敗させること (許さないライセンス、文が無い、一覧に無い束ねられたコード、古くなった一覧、宣言した依存、dist の確かめの記録、コメントを壊す文)、一覧のコード・上書き・待ちの文、読む段と処理の段、文の取り出し、コメントとヘルプの一覧の形、CSP の hash が変わらないこと、プラグインの並び、`@purity`、本物のビルドで一覧の項目を 1 つずつ外すと落ちること (07) | 付録 A.2、INV-75、INV-76 | notices.test.js | 01〜07 |
 | AT-BETA | ベータ版のビルド: robots の meta だけを変えること (違う行が 1 行だけ、script が同じ)、robots の meta を属性の順・大文字小文字にかかわらず数えて 1 つでなければ失敗すること (レビューの L1)、ベータ版だけの mode とプラグインが無いこと (scripts)、`writeBeta` と CLI (書く先の名前、失敗の終了コード)、`build` と `build:beta` を流した実際のビルドの比べ (`docs/index.html` 役のファイルが残る)、コードが mode を読んでも script と CSP が本番と同じこと (レビューの M1 の再現) | INV-82、INV-20 | betaBuild.test.js | 01〜08 |
 
-ID を持たない試験ファイル (2026-10-29 の時点で `stateTable.test.js` だけ) と、ID を持つファイルの中の ID の無い試験 (`staticChecks.test.js` の「style.css for in-place editing」の一部、`MarkdownRenderer.purifyConfig.test.js` の設定を 1 度だけ与えることの試験、`UIController.setupFileDrop.test.js` のドロップの分類の試験 (名前に INV-11・INV-17・INV-18 を書く) など) も `npm test` の全件に含まれる。
+AT の ID の無い試験も `npm test` の全件に含まれる。2026-10-29 の時点で、それは次の 18 ファイルの 97 件 (`it.each` などは 1 件と数える。多くは名前か外側の `describe` に INV や仕様の節を書く): `BlockEditController.gap.test.js` (4)、`BlockEditController.test.js` (8)、`DocumentSession.test.js` (1)、`MarkdownBlockModel.planTableReplace.test.js` (3)、`MarkdownFileAccess.test.js` (4)、`MarkdownRenderer.blocks.test.js` (1)、`MarkdownRenderer.purifyConfig.test.js` (5。設定を 1 度だけ与えることの試験)、`MarkdownTextOps.test.js` (1)、`RendererOrchestrator.edit.test.js` (1)、`RendererOrchestrator.test.js` (14)、`SaveDocument.test.js` (4)、`UIController.editMode.test.js` (9)、`UIController.handleRender.test.js` (6)、`UIController.palette.test.js` (14)、`UIController.save.test.js` (1)、`preprocessInput.test.js` (12)、`stateTable.test.js` (4。ファイルの全部)、`staticChecks.test.js` (5。「style.css for in-place editing」の一部)。族に番号を足すまでは、ここに挙げて残す (監査の Medium 46、監査の直しのレビュー (1 回目) の L32。`SourceFileRenderer.test.js`・`utils.test.js`・`MarkdownRenderer.test.js`・`config.test.js` には番号を足した)。
 
 ### AT.3 個別に定める試験
 
@@ -4752,7 +4762,7 @@ ID を持たない試験ファイル (2026-10-29 の時点で `stateTable.test.j
 | AT-HB / AT-HBK | INV-71 の文脈 (リスト・引用・入れ子のコード、(i)〜(xi) の位置) と確定のときの後始末 |
 | AT-BSM / AT-PSM / AT-PDS | 状態機械 11-c / 11-d / 11-f の表のすべての交点と、仕様の図と表の一致 (`src/__tests__/helpers/specDiagram.js` で仕様の本文の図を読む) |
 | AT-SSM | 状態機械 11-e の表の 14 の交点 (試験の中に書いた表と `saveOperationStateMachine` の定義の一致。仕様の図は読まない) |
-| AT-LSM-01〜08 | 状態機械 11-g の 2 つの表のすべての交点。試験の中に書いた仕様の表と、`dispatch` / `dispatchPage` で実際に通った遷移 (前の状態・次の状態・行った処理の並び) を比べ、処理ごとに外から見える結果 (受け口の口・手が空いた時の予約・`get` の Promise・ログ・データの塊・ページの次の出来事) も確かめる。仕様の図は `specDiagram.js` で読む (11-g は図が 2 つあるので、何番目の図かを渡す) |
+| AT-LSM-01〜08 | 状態機械 11-g の 2 つの表のすべての交点。試験の中に書いた仕様の表と、`dispatch` / `dispatchPage` で実際に通った遷移 (前の状態・次の状態・行った処理の並び) を比べ (ページの `earlyInputArrived` の行は、受け口 `installBoot` が行うことを、中核の前と後のペーストで確かめる)、処理ごとに外から見える結果 (受け口の口・手が空いた時の予約・`get` の Promise・ログ・データの塊・ページの次の出来事) も確かめる。仕様の図は `specDiagram.js` で読む (11-g は図が 2 つあるので、何番目の図かを渡す) |
 
 ### AT.4 e2e (Playwright)
 
@@ -4774,7 +4784,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | insertBlock.e2e.js | Insert table / Mermaid の挿入: 空の文書、行の境目で割る位置 (上・下・中・リスト・引用・下線の見出し)、断る場所とトースト (リストの中の表、字下げのコード、引用の中のコード、同意を Cancel にした PlantUML を含む)、行内の書式をまたぐ境目、`\` の改行、割った行の行末の空白、押した直後の打鍵がショートカットにならない、Undo で表だけが消える、挿入の後の最小のスクロール | PRT-V15〜V19 |
 | math.e2e.js | パレットの数式: Text format の 2 段の並び、行内の数式がカーソルに入り Esc で KaTeX が描く、読めないときのトースト、数式ボックスの 3 つの式 (エラー無く描け、何も開かない)・Undo 1 回と Redo、数式のブロックの中で断る | PRT-V21 |
 | toast.e2e.js | 幅 375 px で、トーストが画面の中で折り返す (長いファイル名も折る) | (5.12、オーナーの裁定 R11) |
-| help.e2e.js | ヘルプ: ブラウザの言語 (`en-US` / `ja-JP`) で最初の言語が決まる、トグルで片方だけになり閉じて開いても保つ、ダウンロードのリンクの属性、版が "Development build" と UTC の時刻、開いている間の 1 キーが裏に効かず Esc で閉じる (パレットを出しておき、Esc の後も出たままであること。プロンプトのモーダルも)、開くとフォーカスが中へ移り、Tab / Shift+Tab が中を回り、閉じると [?] へ戻る、トグルと × をキーボードだけで押せる、外への要求が無い、題名の行がスクロールしても上に残る、ヘルプの文字が 12px、クリップボードの許可の開示が日英のプライバシーの章にあり編集の章が無い、何も保存しない (INV-04) | PRT-L01、PRT-L03、PRT-L05、PRT-L07、PRT-L08 |
+| help.e2e.js | ヘルプ: ブラウザの言語 (`en-US` / `ja-JP`) で最初の言語が決まる、トグルで片方だけになり閉じて開いても保つ、ダウンロードのリンクの属性、版が "Development build" と UTC の時刻、開いている間の 1 キーが裏に効かず Esc で閉じる (パレットを出しておき、Esc の後も出たままであること。プロンプトのモーダルも)、開くとフォーカスが中へ移り、Tab / Shift+Tab が中を回り、閉じると [?] へ戻る、トグルと × をキーボードだけで押せる、外への要求が無い、題名の行がスクロールしても上に残る、ヘルプの文字が 12px、クリップボードの許可の開示が日英のプライバシーの章にあり編集の章が無い、何も保存しない (INV-04)、「詳細」の [Edit] の行の次に編集の始め方の行が日英にあり、初期画面に 4 行目がある (AT-HLP-12。オーナーの裁定 AQ4) | PRT-A01、PRT-L01、PRT-L03、PRT-L05、PRT-L07、PRT-L08 |
 | crossUnit.e2e.js | 単位をまたぐ動き: 変更のあるセルの移動でポップオーバーが開いたまま (K-1)、外部画像の入った HTML の貼り付けと画像のあるセルの編集で通信しない (S-2)、色のセルを残したままの Render Dark、図のコードを開いた後のボタンなしの移動でスクロールしない (U20)、文書の class にアプリの CSS が当たらない・帯のカーソル・数式の大きさ (N2 / N3 / M04)、[?] の長押し (N1。Chromium だけ)、スマートフォンの配置 (N6)、編集モードの出入りでブロックが動かず、つまみが表の真上にある (P1) | PRT-X04、PRT-X08、PRT-X11、PRT-U10、PRT-U20、PRT-Q01、PRT-M04、PRT-V11 (N6) |
 | index.e2e.js | 目次: 右端に浮き 15% 透け、目次自体がスクロールし、押した見出しが上端の 8 px 下、開いたまま、`i`。図を描き終える前の押下が描き終えた後も保たれる (INV-78)。テーマの切り替えの間のホイール 100 px は読んでいる位置に留まり、Shift と本文の外の押下では元の位置に戻る (INV-78)。リサイズで置き直し、開いてもフォーカスは [Index]、Tab / Enter / Space (INV-77 (6)(7))。確定で、目次の見えている項目を同じ所に保ち、変わらない項目を作り直さない (INV-77 (2))。編集欄の確定と Esc の順。ダークの地、印刷に出ない、Clear で無効。試験の名前に要求の ID | PRT-AB01〜AB05、PRT-AB07 |
 | search.e2e.js | 検索と置換: `f` と入力ごとの検索、↓ / ↑、Enter は何もしない、箱の中の Esc、正規表現と不正な式、大きい表の正しい行と右端の列、置換 (編集モードだけ、Replace / All、トースト、Ctrl+Z 1 回、置換欄の Enter)、Esc の順 (パレット → 検索 → 目次)、コードビュー、印刷。時間の試験 (GRSMD_PERF=1。1 MB の 1 キーと ↓ が 4 ms 以下、All が 300 ms 以内)。試験の名前に要求の ID | PRT-AD01〜AD03、AD05、AD08、AD10、AD11 |
@@ -5005,7 +5015,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-AE09      | 高速起動 | 同意とコードビュー |      |
 | PRT-AE10      | 高速起動 | iPad (Safari) |      |
 | PRT-AE11      | 高速起動 | 文書の id |      |
-| PRT-AE12      | 高速起動 | settled の前は確認も送信も無い・確定した PlantUML を送らない |      |
+| PRT-AE12      | 高速起動 | 4 つのライブラリが決まる前は確認も送信も無い・確定した PlantUML を送らない |      |
 | PRT-AF01      | ベータ版 | 本番のファイルを変えない |      |
 | PRT-AF02      | ベータ版 | 本番と同じに動く |      |
 | PRT-AF03      | ベータ版 | iPad (Safari) |      |

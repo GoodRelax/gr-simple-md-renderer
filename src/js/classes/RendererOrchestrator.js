@@ -168,9 +168,10 @@ export default class RendererOrchestrator {
   }
 
   /**
-   * 11-g holdPlantUml: before the page is settled, the PlantUML step only
-   * shows "Loading diagram..." (no dialog, nothing sent, not awaited).
-   * @param {{theme: string, root: ParentNode|ParentNode[], mode: "consent"|"placeholder", keepRender?: Set<string>|null}} step
+   * 11-g holdPlantUml: before the held boxes are dealt with (loading, and a
+   * "consent" step in answering), the PlantUML step only shows "Loading
+   * diagram..." (no dialog, nothing sent, not awaited).
+   * @param {{theme: string, root: ParentNode|ParentNode[], mode: "consent"|"placeholder", keepRender?: Map<string, Set<string>>|null}} step
    * @purity non-pure
    */
   holdPlantUml({ theme, root, mode, keepRender = null }) {
@@ -178,8 +179,9 @@ export default class RendererOrchestrator {
   }
 
   /**
-   * 11-g runPlantUmlStep: the PlantUML step as it is when the page is settled.
-   * @param {{theme: string, root: ParentNode|ParentNode[], mode: "consent"|"placeholder", keepRender?: Set<string>|null}} step
+   * 11-g runPlantUmlStep: the PlantUML step as it is when the page is settled
+   * (and a partial render's step in answering).
+   * @param {{theme: string, root: ParentNode|ParentNode[], mode: "consent"|"placeholder", keepRender?: Map<string, Set<string>>|null}} step
    * @returns {Promise<void>}
    * @purity non-pure
    */
@@ -188,8 +190,9 @@ export default class RendererOrchestrator {
   }
 
   /**
-   * 11-g runWaitingPlantUml: the page is settled; the held PlantUML boxes are
-   * dealt with once, in the render queue, and the place being read stays.
+   * 11-g runWaitingPlantUml: the libraries are settled (answering); the held
+   * PlantUML boxes are dealt with once, in the render queue, and the place
+   * being read stays.
    * @purity non-pure
    */
   runWaitingPlantUml() {
@@ -197,26 +200,40 @@ export default class RendererOrchestrator {
   }
 
   /**
-   * Clear, another document or the code view took the boxes away: nothing
-   * is done (runWaiting finds none).
+   * runWaiting takes every held box and asks before its first await; then
+   * the page leaves answering (11-g waitingPlantUmlAnswered). Clear, another
+   * document or the code view took the boxes away: nothing else is done
+   * (runWaiting finds none).
    * @purity non-pure
    */
   async _runWaitingPlantUml() {
     const place = this.scrollManager.captureReadingAnchor();
-    if (!(await this.plantumlRenderer.runWaiting())) return;
+    const answering = this.plantumlRenderer.runWaiting();
+    this.libraries?.dispatchPage("waitingPlantUmlAnswered");
+    if (!(await answering)) return;
     await waitForDOMStability(this.preview);
     this.scrollManager.restoreReadingAnchor(place);
   }
 
   /**
+   * 11-g turnHeldPlantUmlToRender: the page is settled and an editor gave its
+   * block back; a held box it kept aside becomes a [Render] box (INV-23).
+   * @purity non-pure
+   */
+  turnHeldPlantUmlToRender() {
+    this.plantumlRenderer.turnHeldToRender();
+  }
+
+  /**
    * The PlantUML step of a render (11-g plantUmlStepReached): held while
-   * the page is loading, run when it is settled. Without a loader the
-   * renderers have their libraries and the page counts as settled.
+   * the page is loading (in answering a "consent" step too), run when it is
+   * settled. Without a loader the renderers have their libraries and the
+   * page counts as settled.
    * keepRender: diagrams that wait for [Render] and keep waiting for it.
    * @param {string} theme
    * @param {ParentNode|ParentNode[]} root
    * @param {"consent"|"placeholder"} mode
-   * @param {Set<string>|null} [keepRender]
+   * @param {Map<string, Set<string>>|null} [keepRender]
    * @returns {Promise<unknown>}
    * @purity non-pure
    */
@@ -272,9 +289,8 @@ export default class RendererOrchestrator {
    * Their diagrams are drawn here unless the full render draws them next.
    * PlantUML is never sent again without a dialog (owner ruling AQ7): from
    * the render queue (no one acted) its step asks as a full render does
-   * (held before the page is settled; after it, held too while the full
-   * render's held boxes still wait for runWaiting, so one dialog answers
-   * them all), in a partial render it is [Render]
+   * (held while loading or answering, so the one dialog of runWaiting
+   * answers them all), in a partial render it is [Render]
    * (INV-23). A diagram that waited for [Render] (a commit put it there)
    * still waits for it after the redraw (INV-02, review N1). The place
    * being read stays where it is.
@@ -776,12 +792,15 @@ export default class RendererOrchestrator {
   }
 
   /**
-   * The editor closed: redraw the held block if a render skipped it.
+   * The editor closed and gave its block back: a PlantUML box it kept aside
+   * while the page answered the held boxes becomes [Render] (11-g
+   * blockReleased); the held block is redrawn if a render skipped it.
    * @purity non-pure
    */
   releaseBlock() {
     const id = this._heldBlockId;
     this._heldBlockId = null;
+    this.libraries?.dispatchPage("blockReleased");
     if (id === null || !this.markdownRenderer.isStale(id)) return;
     const generation = this._generation;
     this._enqueue(() => this._renderPartial(generation, true));

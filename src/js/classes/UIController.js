@@ -125,7 +125,7 @@ export default class UIController {
     this._clipboardTextWaiting = null; // a block range's source for the copy event execCommand fires (INV-74)
     this._copyEvent = null; // a copy event the browser started while blocks are selected (INV-74)
     this._baseTitle = document.title;
-    this._lastPressPointerType = null; // the last press on the preview: a dblclick from it counts only for the mouse (AQ3)
+    this._lastPressPointerType = null; // the last press on the preview: a dblclick from it counts for the mouse and the pen, not touch (AQ3)
     this._isEditorHistoryStale = false; // #editor's undo history after a system write (5.7 (6))
     this._isEditorTextStale = false; // #editor not yet given the body after a large commit (INV-47)
     this.palette = services.createPalette(this._paletteHost());
@@ -984,14 +984,15 @@ export default class UIController {
   }
 
   /**
-   * A mouse double click on the preview: on the empty initial preview it
-   * starts an empty document (INV-31); in the Markdown view outside edit
-   * mode it enters edit mode and opens what was double-clicked (INV-57,
-   * 11-c previewDoubleClicked). A double tap (touch, pen: every pointer but
-   * the mouse) does neither (owner ruling AQ3): the browser's double-tap
-   * zoom stays, and a phone enters edit mode with [Edit], then a tap opens
-   * a block (INV-29). The browser's dblclick carries no pointer type, so
-   * the last press on the preview decides.
+   * A mouse (or pen) double click on the preview: on the empty initial
+   * preview it starts an empty document (INV-31); in the Markdown view
+   * outside edit mode it enters edit mode and opens what was double-clicked
+   * (INV-57, 11-c previewDoubleClicked). A touch double tap does neither
+   * (owner ruling AQ3): the browser's double-tap zoom stays, and a phone
+   * enters edit mode with [Edit], then a tap opens a block (INV-29). A pen
+   * double tap acts as a mouse double click, as before the ruling (the pen
+   * is asked of the owner). The browser's dblclick carries no pointer type,
+   * so the last press on the preview decides.
    * @purity non-pure
    */
   setupDoubleClickGestures() {
@@ -1006,23 +1007,25 @@ export default class UIController {
     );
     /** @purity non-pure */
     preview.addEventListener("dblclick", (e) => {
-      if (!this._isMouseDoubleClick()) return;
+      if (!this._isMouseOrPenDoubleClick()) return;
       this._handlePreviewDoubleClick(e);
     });
   }
 
   /**
-   * The double click came from the mouse: the last press on the preview was
-   * the mouse's, or there was none (a dblclick without Pointer Events).
+   * The double click came from the mouse or a pen: the last press on the
+   * preview was theirs, or there was none (a dblclick without Pointer
+   * Events counts as the mouse's). Touch and an empty pointer type do not.
    * @purity semi-pure-b
    * @returns {boolean}
    */
-  _isMouseDoubleClick() {
-    return this._lastPressPointerType === null || this._lastPressPointerType === "mouse";
+  _isMouseOrPenDoubleClick() {
+    const type = this._lastPressPointerType;
+    return type === null || type === "mouse" || type === "pen";
   }
 
   /**
-   * A mouse double click on the preview: start an empty document (INV-31),
+   * A mouse (or pen) double click on the preview: start an empty document (INV-31),
    * or 11-c previewDoubleClicked in the Markdown view (INV-57; only
    * browsingPreview has a cell for it).
    * @purity non-pure

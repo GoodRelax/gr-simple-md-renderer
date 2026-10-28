@@ -99,7 +99,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
 ## Privacy & Security
 
 - **Nothing is sent without consent.** The only external requests are:
-  - PlantUML: the diagram source is sent to the official PlantUML server, only after a confirmation dialog when it renders. Only the diagrams you allowed in the dialog are sent; Copy SVG / PNG of such a diagram fetches it again without asking. While the page is still loading, a diagram shows "Loading diagram..." and the dialog comes when loading is done.
+  - PlantUML: the diagram source is sent to the official PlantUML server, only after a confirmation dialog when the document renders (a diagram you changed while editing: when you press its [Render] button). Only the diagrams you allowed in the dialog are sent; Copy SVG / PNG of such a diagram fetches it again without asking. While the page is still loading, a diagram shows "Loading diagram..." and the dialog comes when loading is done.
   - External images (`![](https://...)`): shown as placeholders until you click one and confirm. The consent lasts until `[Clear]` or a new file drop.
 - **Nothing is stored.** Your content is never written to localStorage, sessionStorage, or cookies.
 - **Edits are not stored in the browser either.** They live only in the open page until you save them to a file.
@@ -273,7 +273,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 ## プライバシーとセキュリティ
 
 - **同意なしには何も送信しません。** 外部への通信は次の 2 つだけです。
-  - PlantUML: 描画のときに確認ダイアログを出し、その後にだけ、図のソースを公式 PlantUML サーバーへ送信します。送るのは、ダイアログで許した図だけです。許した図の Copy SVG / PNG は、確認なしにその図をもう一度取りに行きます。ページの読み込みの途中は、図の所に「Loading diagram...」と出し、読み込みが終わってから確認します。
+  - PlantUML: 文書を描くときに (編集で変えた図は、その [Render] を押したときに) 確認ダイアログを出し、その後にだけ、図のソースを公式 PlantUML サーバーへ送信します。送るのは、ダイアログで許した図だけです。許した図の Copy SVG / PNG は、確認なしにその図をもう一度取りに行きます。ページの読み込みの途中は、図の所に「Loading diagram...」と出し、読み込みが終わってから確認します。
   - 外部画像（`![](https://...)`）: クリックして確認するまでプレースホルダーを表示します。同意は `[Clear]` または新しいファイルのドロップまで有効です。
 - **何も保存しません。** 入力内容を localStorage・sessionStorage・Cookie に書き込みません。
 - **編集内容もブラウザに保存しません。** ファイルに保存するまでは、開いているページの中にだけあります。

@@ -233,8 +233,9 @@ test.describe("a new block from a gap between blocks (B1, INV-73)", () => {
     await expect.poll(top).toBeLessThan(100);
   });
 
-  test("AT-GAP-04 INV-73 (AQ8), FS-09: Ctrl+wheel over a diagram in edit mode still zooms it, and the line does not take it", async ({ page }) => {
-    await openEditMode(page, DOC);
+  test("AT-GAP-04 INV-73 (AQ8), FS-09: the line leaves Ctrl+wheel to the browser (not taken, the preview does not scroll); over a diagram in edit mode Ctrl+wheel still zooms it", async ({ page }) => {
+    const paras = Array.from({ length: 40 }, (_, i) => `Para ${i}.`).join("\n\n");
+    await openEditMode(page, `${DOC}\n${paras}\n`);
     const svg = page.locator("#preview .mermaid svg");
     await expect(svg).toBeVisible();
     const width = () => svg.evaluate((el) => el.getBoundingClientRect().width);
@@ -243,6 +244,15 @@ test.describe("a new block from a gap between blocks (B1, INV-73)", () => {
     await page.mouse.move(p.x, p.y - 1);
     await page.mouse.move(p.x, p.y);
     await expect(line(page)).toBeVisible();
+    // Ctrl+wheel over the line: its wheel listener does not take the turn (the browser's zoom)
+    const overLine = await line(page).evaluate((el) => {
+      const preview = document.querySelector("#preview");
+      const top = preview.scrollTop;
+      const turn = new WheelEvent("wheel", { deltaY: 100, ctrlKey: true, bubbles: true, cancelable: true });
+      el.dispatchEvent(turn);
+      return { taken: turn.defaultPrevented, scrolled: preview.scrollTop !== top, scrolls: preview.scrollHeight > preview.clientHeight };
+    });
+    expect(overLine).toEqual({ taken: false, scrolled: false, scrolls: true });
     const box = await svg.boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await expect(line(page)).toBeHidden();

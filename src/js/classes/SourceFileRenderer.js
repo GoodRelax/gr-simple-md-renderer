@@ -24,7 +24,7 @@ export default class SourceFileRenderer {
     this._loadHljs = loadHljs;
     this._shown = null; // { text, file } of the code shown plain while highlight.js is awaited
     this._missing = false; // shown plain since the last takeMissingLibraries
-    this._awaitingHljs = false; // a render or reload waits for highlight.js now
+    this._hljsWaits = 0; // how many renders and reloads wait for highlight.js now (they can overlap)
     this._fileHandle = null;
     this._fileName = "";
     this._lastScrollTop = 0;
@@ -113,7 +113,7 @@ export default class SourceFileRenderer {
    * @purity semi-pure-b
    */
   isWaitingForHljs() {
-    return !this._hljs && (this._awaitingHljs || this._shown !== null);
+    return !this._hljs && (this._hljsWaits > 0 || this._shown !== null);
   }
 
   /**
@@ -174,14 +174,14 @@ export default class SourceFileRenderer {
     let timer = 0;
     /** @purity non-pure */
     const limit = new Promise((resolve) => (timer = setTimeout(() => resolve(null), this._cfg.codeView.highlightWaitMs)));
-    this._awaitingHljs = true;
+    this._hljsWaits++;
     try {
       const hljs = await Promise.race([this._loadHljs(), limit]);
       if (hljs) this._hljs = hljs;
     } catch (error) {
       console.error("highlight.js could not be loaded:", error);
     } finally {
-      this._awaitingHljs = false;
+      this._hljsWaits--;
       clearTimeout(timer);
     }
   }

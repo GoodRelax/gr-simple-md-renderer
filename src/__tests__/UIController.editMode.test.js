@@ -187,7 +187,7 @@ describe("AT-UI e / [Edit], double click, double tap (INV-31, OS-06)", () => {
     expect(app.orchestrator.isPreRenderState()).toBe(false);
   });
 
-  it.each(["touch", "pen"])("AT-UI-22 INV-31 (AQ3): initial, empty #editor: a %s double tap (0 ms, 0 px apart, then the browser's dblclick) starts no empty document", async (pointerType) => {
+  it.each(["touch"])("AT-UI-22 INV-31 (AQ3): initial, empty #editor: a %s double tap (0 ms, 0 px apart, then the browser's dblclick) starts no empty document", async (pointerType) => {
     app = await setupApp();
     for (let i = 0; i < 2; i++) {
       pointer(app.preview, "pointerdown", { x: 100, y: 100, pointerType });

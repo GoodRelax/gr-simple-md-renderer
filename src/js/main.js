@@ -16,7 +16,7 @@ import "katex/dist/katex.min.css";
 // Local Imports
 // ========================================
 import { CONFIG } from "./config.js";
-import { isApplePlatform } from "./utils.js";
+import { isApplePlatform, diagramControllersFor } from "./utils.js";
 import { lazyMath } from "./lazyMath.js";
 import LibraryLoader from "./classes/LibraryLoader.js";
 import ApplicationState from "./classes/ApplicationState.js";
@@ -174,14 +174,18 @@ const ui = new UIController(orchestrator, state, elements, scrollEngine, {
 // choice is kept in memory only (SC-16).
 new HelpLanguageSwitch(elements.helpModal, navigator.language);
 
-// Diagram controllers: fine-pointer (mouse/trackpad) devices only
-const isTouchCapable = window.matchMedia("(any-pointer: coarse)").matches;
-if (window.matchMedia("(pointer: fine)").matches) {
+// Diagram controllers: fine-pointer (mouse/trackpad) devices only; the pan
+// also needs no coarse pointer (INV-16, INV-16b)
+const diagramControllers = diagramControllersFor({
+  fine: window.matchMedia("(pointer: fine)").matches,
+  anyCoarse: window.matchMedia("(any-pointer: coarse)").matches,
+});
+if (diagramControllers.zoomAndCopy) {
   new DiagramZoomController(elements.preview);
   new DiagramCopyController(elements.preview);
-  if (!isTouchCapable) {
-    new DiagramPanController(elements.preview);
-  }
+}
+if (diagramControllers.pan) {
+  new DiagramPanController(elements.preview);
 }
 
 // The core runs (INV-81, spec 11-g coreStarted): a drop or paste made before

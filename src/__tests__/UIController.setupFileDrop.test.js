@@ -128,7 +128,7 @@ describe("UIController.setupFileDrop", () => {
     return { event, file };
   }
 
-  it("routes .md files to loadMarkdown (INV-17, INV-18 (1))", async () => {
+  it("AT-UI-74 routes .md files to loadMarkdown (INV-17, INV-18 (1))", async () => {
     createController();
 
     const file = new File(["# Hello"], "test.md", { type: "text/markdown" });
@@ -148,7 +148,7 @@ describe("UIController.setupFileDrop", () => {
     });
   });
 
-  it("applies preprocessInput to .md file content on D&D (INV-17)", async () => {
+  it("AT-UI-74 applies preprocessInput to .md file content on D&D (INV-17)", async () => {
     createController();
 
     const mdContent = "```markdown\n# Hello\n```";
@@ -173,7 +173,7 @@ describe("UIController.setupFileDrop", () => {
     expect(calledWith).toBeDefined();
   });
 
-  it("routes .py files to renderCodeView (INV-18 (2))", async () => {
+  it("AT-UI-74 routes .py files to renderCodeView (INV-18 (2))", async () => {
     createController();
 
     const { event } = createDropEvent("script.py");
@@ -189,7 +189,7 @@ describe("UIController.setupFileDrop", () => {
     });
   });
 
-  it("rejects known binary extension (.png) with alert (INV-18 (3))", async () => {
+  it("AT-UI-74 rejects known binary extension (.png) with alert (INV-18 (3))", async () => {
     createController();
 
     const file = new File(["fakecontent"], "image.png", { type: "image/png" });
@@ -212,7 +212,7 @@ describe("UIController.setupFileDrop", () => {
     expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
   });
 
-  it("accepts unknown text extension (.xyz) via null byte check (INV-18)", async () => {
+  it("AT-UI-74 accepts unknown text extension (.xyz) via null byte check (INV-18)", async () => {
     createController();
 
     // File with only ASCII content (no null bytes)
@@ -228,7 +228,7 @@ describe("UIController.setupFileDrop", () => {
     });
   });
 
-  it("rejects unknown extension with null bytes as binary (INV-18)", async () => {
+  it("AT-UI-74 rejects unknown extension with null bytes as binary (INV-18)", async () => {
     createController();
 
     // File containing a null byte
@@ -253,7 +253,7 @@ describe("UIController.setupFileDrop", () => {
     expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
   });
 
-  it("rejects files exceeding 5 MB with alert (INV-11)", async () => {
+  it("AT-UI-74 rejects files exceeding 5 MB with alert (INV-11)", async () => {
     createController();
 
     const bigSize = 6 * 1024 * 1024;
@@ -282,7 +282,7 @@ describe("UIController.setupFileDrop", () => {
     expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
   });
 
-  it("accepts Dockerfile (extensionless file matched by name) (INV-18)", async () => {
+  it("AT-UI-74 accepts Dockerfile (extensionless file matched by name) (INV-18)", async () => {
     createController();
 
     const { event } = createDropEvent("Dockerfile");
