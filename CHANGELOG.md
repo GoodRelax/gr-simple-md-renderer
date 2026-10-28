@@ -133,7 +133,7 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   mark follow, so a key does no work on the whole file (GRSMD's own work
   per key stays under 4 ms in the median). Tab, Shift+Tab, Undo, Redo, a
   replace and a fold rewrite only the lines they change. A file over
-  100 KB has no colors while you edit it. Files up to the 5 MB load limit
+  48 KB has no colors while you edit it. Files up to the 5 MB load limit
   can be edited; starting to edit a file of 200 KB or more shows a toast
   once that showing and editing it may take time (owner ruling NE-32).
   The edit palette then shows only

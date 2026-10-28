@@ -300,10 +300,10 @@ export const CONFIG = {
   // Editing non-.md files in the code view (SC-27)
   codeEdit: {
     highlightPauseMs: 200, // INV-86: the editor is colored again this long after typing stops
-    // INV-86: a longer text is plain while editing. Measured (M1, 2026-10-29): the recolor
-    // when typing stops takes about 0.5 ms/KB (Chromium) and 0.9 ms/KB (WebKit); at 100 KB
-    // it stays under 100 ms in both, so a key typed right after it is answered in time
-    highlightMaxChars: 100 * 1024,
+    // INV-86: a longer text is plain while editing. Measured (2026-10-29, spec 5.19.12): the
+    // recolor when typing stops, measured back to back in WebKit, takes about 43 ms (JS) and
+    // 90 ms to the next frame at 48 KB; at 96 KB it took 83 to 186 ms (JS), over 100 ms
+    highlightMaxChars: 48 * 1024,
     undoPauseMs: 1000, // INV-88: a typing step ends after this long without typing
     defaultIndent: "    ", // INV-87: the indent unit when the file shows none
     sampleLines: 5, // INV-89: lines shown in the open dialog's preview

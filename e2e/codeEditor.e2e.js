@@ -267,10 +267,10 @@ test("INV-87 (1), INV-88 (N1): Tab, Shift+Tab, Undo and Redo in a 300 KB file wr
   expect(result).toEqual({ same: true, valueWrites: 0, parts: [[d, l], [l, d], [d, l], [l, d], [d, l]], inputs: 0 });
 });
 
-test("INV-86 (M1): typing in a 60 KB file (colored) writes neither the layer nor the gutter on a key; when typing stops both follow and the textarea is unscrolled and as large as its text", async ({ page }) => {
+test("INV-86 (M1): typing in a 40 KB file (colored) writes neither the layer nor the gutter on a key; when typing stops both follow and the textarea is unscrolled and as large as its text", async ({ page }) => {
   await page.goto("/");
   const line = "const value = 1234567890; // a line of a big file\n";
-  await drop(page, "big.js", line.repeat(Math.ceil((60 * 1024) / line.length)));
+  await drop(page, "big.js", line.repeat(Math.ceil((40 * 1024) / line.length)));
   await page.keyboard.press("e");
   await expect(editor(page)).toBeFocused();
   // count the DOM writes of the layer and the gutter; a write seen while the

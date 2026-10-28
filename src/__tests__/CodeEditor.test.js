@@ -142,6 +142,14 @@ describe("CodeEditor: the surface (INV-85, INV-86)", () => {
     expect(editor.rangeOf(0, 1)).toBeNull();
   });
 
+  it("AT-CED-37 (INV-86 (2)) the plain limit is 48 KB (49,152 characters; WebKit's recolor measured back to back stays about 100 ms, spec 5.19.12): one more character is plain", () => {
+    expect(CONFIG.codeEdit.highlightMaxChars).toBe(48 * 1024);
+    vi.useFakeTimers();
+    start("x".repeat(48 * 1024) + "\n");
+    expect(body().classList.contains("code-edit-plain")).toBe(true);
+    expect(host.highlight).not.toHaveBeenCalled();
+  });
+
   it("AT-CED-05 a text shrinking under the limit is colored again when typing stops", () => {
     vi.useFakeTimers();
     const big = "x".repeat(CONFIG.codeEdit.highlightMaxChars + 1);
