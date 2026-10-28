@@ -330,7 +330,7 @@ describe("what else waits (INV-81 (3), spec 5.17.3)", () => {
     index.hide();
   });
 
-  it("AT-FAST-52 (L2, AQ7) KaTeX arriving later redraws a block with math; its PlantUML is held, and sent once after one dialog when the page is settled", async () => {
+  it("AT-FAST-52 (L2, AQ7) KaTeX arriving later redraws a block with math; its PlantUML is held, and sent once, after the one dialog of answering (the libraries are settled)", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const { preview, libraries, orchestrator, plantumlRenderer } = stack();
     vi.spyOn(plantumlRenderer, "waitForImageLoad").mockResolvedValue(true);
@@ -380,7 +380,7 @@ describe("what else waits (INV-81 (3), spec 5.17.3)", () => {
     expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(1); // INV-23
   });
 
-  it("AT-FAST-57 (N1, AQ7) Cancel in the dialog at settled: the held diagram shows 'not sent', nothing is sent (INV-03)", async () => {
+  it("AT-FAST-57 (N1, AQ7) Cancel in the dialog of answering (the libraries are settled): the held diagram shows 'not sent', nothing is sent (INV-03)", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { preview, libraries, orchestrator, plantumlRenderer } = stack();
     const createImage = vi.spyOn(plantumlRenderer, "createImage");
@@ -414,7 +414,7 @@ describe("what else waits (INV-81 (3), spec 5.17.3)", () => {
 });
 
 describe("renderers that wait for their library (INV-81 (3))", () => {
-  it("AT-FAST-25 (M2, AQ7) PlantUML before the page is settled: a Loading box, no dialog, nothing sent; runWaiting asks once and draws it", async () => {
+  it("AT-FAST-25 (M2, AQ7) PlantUML before the libraries are settled (loading): a Loading box, no dialog, nothing sent; runWaiting asks once and draws it", async () => {
     const preview = document.createElement("div");
     document.body.replaceChildren(preview);
     preview.innerHTML = '<pre><code class="language-plantuml">@startuml\nA -> B\n@enduml</code></pre>';
@@ -434,7 +434,7 @@ describe("renderers that wait for their library (INV-81 (3))", () => {
     expect(ask).toHaveBeenCalledTimes(1);
   });
 
-  it("AT-FAST-47 (M2, AQ7) a full render with PlantUML before the page is settled does not hold the render queue, and asks nothing", async () => {
+  it("AT-FAST-47 (M2, AQ7) a full render with PlantUML before the libraries are settled (loading) does not hold the render queue, and asks nothing", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const { preview, orchestrator } = stack();
     orchestrator.state.setMarkdownText("# A\n\n```plantuml\n@startuml\nA -> B\n@enduml\n```\n");
@@ -584,7 +584,7 @@ describe("renderers that wait for their library (INV-81 (3))", () => {
   });
 });
 
-describe("AT-LSM PlantUML waits for the page to be settled (11-g, INV-81 (3), INV-02, INV-23, owner ruling AQ7)", () => {
+describe("AT-LSM PlantUML waits for the four libraries to be settled (answering, then settled) (11-g, INV-81 (3), INV-02, INV-23, owner ruling AQ7)", () => {
   const PUML = (name) => `\`\`\`plantuml\n@startuml\n${name} -> B\n@enduml\n\`\`\`\n`;
   const allArrive = (libraries) => {
     for (const name of LIBRARY_NAMES) if (libraries.libraryState(name) === "notArrived") libraries.arrive(name);
@@ -600,7 +600,7 @@ describe("AT-LSM PlantUML waits for the page to be settled (11-g, INV-81 (3), IN
     return sent;
   };
 
-  it("AT-LSM-12 (INV-02, INV-23) before settled no dialog and nothing sent; at settled one dialog in the render queue, the full render's diagrams sent, a commit's diagram [Render], the reading place kept", async () => {
+  it("AT-LSM-12 (INV-02, INV-23) before the libraries are settled no dialog and nothing sent; in answering one dialog in the render queue, the full render's diagrams sent, a commit's diagram [Render], the reading place kept", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const { preview, libraries, orchestrator, plantumlRenderer, scrollManager } = stack();
     const sent = sentCodes(plantumlRenderer);
@@ -616,7 +616,7 @@ describe("AT-LSM PlantUML waits for the page to be settled (11-g, INV-81 (3), IN
     const place = { blockId: 1, offset: 3 };
     vi.spyOn(scrollManager, "captureReadingAnchor").mockReturnValue(place);
     allArrive(libraries);
-    expect(confirm).not.toHaveBeenCalled(); // settled now, the step waits for its turn in the queue
+    expect(confirm).not.toHaveBeenCalled(); // answering now: runWaiting waits for its turn in the queue
     await settle();
     expect(libraries.isSettled()).toBe(true);
     expect(confirm).toHaveBeenCalledTimes(1);
@@ -631,7 +631,7 @@ describe("AT-LSM PlantUML waits for the page to be settled (11-g, INV-81 (3), IN
     expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(0);
   });
 
-  it("AT-LSM-13 (INV-03) Cancel at settled: the held diagrams show 'not sent'; nothing is sent; a commit's diagram is still [Render]", async () => {
+  it("AT-LSM-13 (INV-03) Cancel in answering (the libraries are settled): the held diagrams show 'not sent'; nothing is sent; a commit's diagram is still [Render]", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { preview, libraries, orchestrator, plantumlRenderer } = stack();
     const sent = sentCodes(plantumlRenderer);
@@ -647,7 +647,7 @@ describe("AT-LSM PlantUML waits for the page to be settled (11-g, INV-81 (3), IN
     expect(preview.querySelectorAll(".plantuml-pending")).toHaveLength(1);
   });
 
-  it("AT-LSM-14 (INV-81 (3)) the encoder could not run: at settled no dialog, every held diagram shows the encoding error; later renders too", async () => {
+  it("AT-LSM-14 (INV-81 (3)) the encoder could not run: in answering no dialog, every held diagram shows the encoding error; later renders too", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const { preview, libraries, orchestrator, plantumlRenderer } = stack({ plantuml: new Error("blocked") });
@@ -667,22 +667,51 @@ describe("AT-LSM PlantUML waits for the page to be settled (11-g, INV-81 (3), IN
     expect(sent).toEqual([]);
   });
 
-  it("AT-LSM-15 (INV-81 (3)) Clear, or another document, before settled: the boxes are gone and no dialog comes", async () => {
+  it("AT-LSM-15 (INV-81 (3), review N5) Clear before the libraries are settled, or another document before then: the held boxes are gone, no dialog comes, and the page is settled", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
-    const { preview, libraries, orchestrator } = stack();
-    orchestrator.state.setMarkdownText(PUML("OLD"));
-    await orchestrator.renderAll();
-    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(1);
-    await orchestrator.loadMarkdown("# New\n\nNo diagram.\n", "light");
-    allArrive(libraries);
+    const cleared = stack();
+    cleared.orchestrator.state.setMarkdownText(PUML("CLEARED"));
+    await cleared.orchestrator.renderAll();
+    expect(cleared.preview.querySelectorAll(".plantuml-loading")).toHaveLength(1);
+    cleared.orchestrator.clear(); // the page is still loading
+    expect(cleared.libraries.pageStartupState).toBe("loading");
+    expect(cleared.preview.querySelectorAll(".plantuml-loading")).toHaveLength(0);
+    allArrive(cleared.libraries);
     await settle();
+    expect(cleared.libraries.pageStartupState).toBe("settled");
     expect(confirm).not.toHaveBeenCalled();
-    orchestrator.clear();
+
+    const replaced = stack();
+    replaced.orchestrator.state.setMarkdownText(PUML("OLD"));
+    await replaced.orchestrator.renderAll();
+    expect(replaced.preview.querySelectorAll(".plantuml-loading")).toHaveLength(1);
+    await replaced.orchestrator.loadMarkdown("# New\n\nNo diagram.\n", "light");
+    expect(replaced.libraries.pageStartupState).toBe("loading");
+    expect(replaced.preview.querySelectorAll(".plantuml-loading")).toHaveLength(0);
+    allArrive(replaced.libraries);
     await settle();
+    expect(replaced.libraries.pageStartupState).toBe("settled");
     expect(confirm).not.toHaveBeenCalled();
   });
 
-  it("AT-LSM-18 (INV-02, INV-81 (3), G6) KaTeX is the last library: its queued redraw runs after settled, and the full render still gets one dialog for all its diagrams", async () => {
+  it("AT-LSM-25 (INV-81 (3), INV-02, review N4) no held box when the libraries settle (a document without PlantUML): the page goes from answering to settled, and a later full render asks once and sends", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const { preview, libraries, orchestrator, plantumlRenderer } = stack();
+    const sent = sentCodes(plantumlRenderer);
+    orchestrator.state.setMarkdownText("# Title\n\nNo diagram.\n");
+    await orchestrator.renderAll();
+    allArrive(libraries);
+    await settle();
+    expect(libraries.pageStartupState).toBe("settled");
+    expect(confirm).not.toHaveBeenCalled();
+    await orchestrator.loadMarkdown(PUML("LATER"), "light");
+    await settle();
+    expect(preview.querySelectorAll(".plantuml-loading")).toHaveLength(0);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(sent.map((c) => c.match(/(\w+) -> B/)[1])).toEqual(["LATER"]);
+  });
+
+  it("AT-LSM-18 (INV-02, INV-81 (3), G6) KaTeX is the last library: its queued redraw runs in answering, before runWaiting, and the full render still gets one dialog for all its diagrams", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const { preview, libraries, orchestrator, plantumlRenderer } = stack();
     const sent = sentCodes(plantumlRenderer);
@@ -693,7 +722,7 @@ describe("AT-LSM PlantUML waits for the page to be settled (11-g, INV-81 (3), IN
     await settle();
     expect(libraries.isSettled()).toBe(false);
     expect(confirm).not.toHaveBeenCalled();
-    libraries.arrive("katex"); // ready: the redraw is queued, then settled queues runWaiting
+    libraries.arrive("katex"); // ready: the redraw is queued, then answering queues runWaiting
     await settle();
     expect(libraries.isSettled()).toBe(true);
     expect(preview.querySelector(".katex")).not.toBeNull();

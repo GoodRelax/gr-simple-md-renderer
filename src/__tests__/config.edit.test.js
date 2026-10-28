@@ -11,7 +11,8 @@ describe("CONFIG.edit (spec 5.2)", () => {
     const e = CONFIG.edit;
     expect(e.paletteMarginPx).toBe(16);
     expect(e.paletteLongPressMs).toBe(500); // INV-68
-    // no double-tap detection: a double tap does not start editing (owner ruling AQ3)
+    // no double-tap timing: a touch double tap does not start editing (owner ruling AQ3);
+    // a pen double tap comes as a dblclick and acts like a mouse double click (5.14.6)
     expect(e).not.toHaveProperty("doubleTapMaxIntervalMs");
     expect(e).not.toHaveProperty("doubleTapMaxDistancePx");
     expect(e.defaultFileName).toBe("untitled.md");

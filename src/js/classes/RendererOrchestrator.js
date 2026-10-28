@@ -124,7 +124,7 @@ export default class RendererOrchestrator {
       case "hljs":
         return this.markdownRenderer.hasPendingHighlight() || Boolean(this.sourceFileRenderer.isWaitingForHljs?.());
       default:
-        return false; // plantuml waits for the page to be settled, not for the encoder
+        return false; // plantuml waits for the four libraries (answering), not for the encoder
     }
   }
 
@@ -159,7 +159,8 @@ export default class RendererOrchestrator {
   /**
    * 11-g showFailure: a library that cannot run says so where it can.
    * mermaid's boxes say so; the math stays TeX and the code plain; PlantUML
-   * shows the encoding error at its step when the page is settled.
+   * shows the encoding error at its step once the four libraries are settled
+   * (answering or settled).
    * @param {string} name
    * @purity non-pure
    */
@@ -975,7 +976,8 @@ export default class RendererOrchestrator {
 
   /**
    * Full render by block, PlantUML with consent (spec 5.14.4, INV-02) when
-   * the page is settled, held before (11-g, INV-81 (3)).
+   * the page is settled; held while it is loading or answering, so that
+   * runWaiting's one dialog answers it (11-g, INV-81 (3)).
    * A full render queued for an older generation is skipped: the newer one
    * draws the same model, and PlantUML asks once.
    * @purity non-pure
@@ -1009,7 +1011,8 @@ export default class RendererOrchestrator {
   /**
    * Partial render from the last rendered model to the current one (spec
    * 5.14.3 steps 6-8). PlantUML is never sent here: placeholder mode (INV-23),
-   * held as Loading boxes before the page is settled (11-g).
+   * held as Loading boxes while the page is loading, [Render] boxes from
+   * answering on (11-g).
    * force: run even when the model did not change (a held block was released).
    * @purity non-pure
    */

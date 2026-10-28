@@ -394,7 +394,7 @@ describe("AT-LSM page startup state machine (spec 11-g (2), INV-81 (3) (4), INV-
     expect(diagramTransitions("11-g", 1)).toEqual(tableTransitions(pageStartupStateMachine));
   });
 
-  it("AT-LSM-09 (INV-81) a whole start: loading until the last library is ready, then settled once; idle turns one at a time in O2 order (INV-81 (2))", async () => {
+  it("AT-LSM-09 (INV-81) a whole start: loading until the last library is ready, then answering (runWaitingPlantUml once) and settled; idle turns one at a time in O2 order (INV-81 (2))", async () => {
     const doc = document.implementation.createHTMLDocument("");
     const boot = fakeBoot();
     const idle = [];

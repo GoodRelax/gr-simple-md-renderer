@@ -22,9 +22,10 @@ import { setupApp, dropEvent, settle } from "./helpers/appStack.js";
 import { pointer, keydown } from "./helpers/editDom.js";
 
 // INV-57: a double click on the preview outside edit mode enters edit mode
-// and opens what was double-clicked (11-c previewDoubleClicked). A double
-// tap (touch, pen: any pointer but the mouse) does not (owner ruling AQ3):
-// the browser's double-tap zoom stays; [Edit] and then a tap opens a block.
+// and opens what was double-clicked (11-c previewDoubleClicked). A pen
+// double tap does the same (like the mouse, while the owner is asked:
+// question 2-8). A touch double tap does not (owner ruling AQ3): the
+// browser's double-tap zoom stays; [Edit] and then a tap opens a block.
 
 const DOC = "# Title\n\nHello [link](https://example.com/) word.\n\n| A | B |\n|---|---|\n| x | y |\n\n```mermaid\nflowchart TD\n  A --> B\n```\n";
 const isPara = (b) => b.type === "paragraph";
@@ -223,7 +224,7 @@ describe("AT-DBL INV-57 double click outside edit mode", () => {
     expect(app.blockEditor()).toBeNull();
   });
 
-  it("AT-DBL-18 INV-57 (AQ3, review M3): a pen double tap (and the browser's dblclick) enters edit mode and opens the block, as a mouse double click (the pen is asked of the owner)", async () => {
+  it("AT-DBL-18 INV-57 (review M3; AQ3 names touch only, the pen is asked of the owner: question 2-8): a pen double tap (and the browser's dblclick) enters edit mode and opens the block, as a mouse double click", async () => {
     await withDocument();
     const p = app.block(isPara).el.firstElementChild;
     for (let i = 0; i < 2; i++) {
@@ -294,7 +295,7 @@ describe("AT-DBL INV-57 double click outside edit mode", () => {
     expect(app.blockEditor()).not.toBeNull();
   });
 
-  it("AT-DBL-19 INV-31 (AQ3, review M3): initial state, empty #editor: a pen double tap starts an empty document, as a mouse double click", async () => {
+  it("AT-DBL-19 INV-31 (review M3; AQ3 names touch only, the pen is asked of the owner: question 2-8): initial state, empty #editor: a pen double tap starts an empty document, as a mouse double click", async () => {
     app = await setupApp();
     for (let i = 0; i < 2; i++) {
       pointer(app.preview, "pointerdown", { pointerType: "pen" });

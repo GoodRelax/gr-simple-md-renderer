@@ -118,8 +118,8 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   to withdraw it) moves to Privacy & Security.
 - Touch editing, PlantUML and small fixes: on a phone or tablet, a double
   tap on the preview zooms as the browser does and no longer starts
-  editing; press `[Edit]`, then tap a block (a mouse double-click still
-  opens the block). The help's Details and the fourth line of the start
+  editing; press `[Edit]`, then tap a block (a mouse double-click, or a
+  pen double tap, still opens the block). The help's Details and the fourth line of the start
   screen now say how to start editing. A PlantUML diagram shows
   "Loading diagram..." until the page has fully loaded; then one dialog
   asks for all the diagrams that waited, and only the allowed ones are

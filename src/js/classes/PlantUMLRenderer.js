@@ -19,10 +19,11 @@ function isKeptForRender(keepRender, code, theme) {
 
 export default class PlantUMLRenderer extends DiagramRenderer {
   /**
-   * PlantUML is drawn only when the page is settled (spec 11-g, INV-81 (3),
-   * owner ruling AQ7): the encoder is then ready or failed, never awaited.
-   * Before that, hold() shows "Loading diagram..." and runWaiting() deals
-   * with those boxes once, when the page is settled.
+   * PlantUML is drawn only after the four libraries are settled (spec 11-g
+   * answering and settled, INV-81 (3), owner ruling AQ7): the encoder is then
+   * ready or failed, never awaited. Before that (loading), hold() shows
+   * "Loading diagram..." and runWaiting() deals with those boxes once, in
+   * answering (its one dialog comes before the page is settled).
    * @param {HTMLElement} preview
    * @param {object|null} plantumlEncoder - null until the encoder has run (useLibrary)
    * @purity non-pure
@@ -151,20 +152,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   async runWaiting() {
     const boxes = this._waitingBoxes();
     if (boxes.length === 0) return false;
-    /** @purity non-pure */
-    const entries = boxes.map((box) => {
-      const entry = this._waiting.get(box);
-      this._waiting.delete(box);
-      return { box, ...entry };
-    });
-    if (!this.encoder) {
-      for (const { box } of entries) box.replaceWith(this._encodingFailedElement());
-      return true;
-    }
-    for (const { box, code, theme, later } of entries) {
-      if (later === "render") box.replaceWith(this.createPendingElement(code, theme));
-    }
-    const asked = entries.filter((e) => e.later === "consent");
+    const asked = this._releaseHeld(boxes, "consent");
     if (asked.length === 0) return true;
     if (!this.askConsent()) {
       for (const { box } of asked) box.replaceWith(this._canceledElement());
@@ -172,6 +160,29 @@ export default class PlantUMLRenderer extends DiagramRenderer {
     }
     await Promise.allSettled(asked.map(({ box, code, theme }) => this._send(box, code, theme)));
     return true;
+  }
+
+  /**
+   * Take held boxes out of the wait (the one place for runWaiting() and
+   * turnHeldToRender()). Without the encoder each box shows the encoding
+   * error. Otherwise a "render" box becomes a [Render] box (INV-23), and so
+   * does a "consent" box when consentBoxes is "render"; when it is
+   * "consent", those boxes are left in place and returned, to be asked about.
+   * @param {HTMLElement[]} boxes - from _waitingBoxes()
+   * @param {"consent"|"render"} consentBoxes - what the "consent" boxes wait for now
+   * @returns {{box: HTMLElement, code: string, theme: string}[]} the boxes still to be asked about
+   * @purity non-pure
+   */
+  _releaseHeld(boxes, consentBoxes) {
+    const asked = [];
+    for (const box of boxes) {
+      const { code, theme, later } = this._waiting.get(box);
+      this._waiting.delete(box);
+      if (!this.encoder) box.replaceWith(this._encodingFailedElement());
+      else if (later === "consent" && consentBoxes === "consent") asked.push({ box, code, theme });
+      else box.replaceWith(this.createPendingElement(code, theme));
+    }
+    return asked;
   }
 
   /**
@@ -192,11 +203,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * @purity non-pure
    */
   turnHeldToRender() {
-    for (const box of this._waitingBoxes()) {
-      const { code, theme } = this._waiting.get(box);
-      this._waiting.delete(box);
-      box.replaceWith(this.encoder ? this.createPendingElement(code, theme) : this._encodingFailedElement());
-    }
+    this._releaseHeld(this._waitingBoxes(), "render");
   }
 
   /**

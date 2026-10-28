@@ -180,7 +180,7 @@ test.describe("PlantUML and the late KaTeX (review N1, owner ruling AQ7)", () =>
 
   const plantumlRequests = (externalRequests) => [...new Set(externalRequests.filter((url) => new URL(url).origin === PLANTUML_ORIGIN))];
 
-  test("INV-81 (3), INV-23, INV-02: KaTeX arriving later never sends a diagram a commit added; the full render's one is sent after one dialog at settled", async ({ page, extraOrigins, externalRequests, pageProblems }) => {
+  test("INV-81 (3), INV-23, INV-02: KaTeX arriving later never sends a diagram a commit added; the full render's one is sent after one dialog once the libraries are settled (answering)", async ({ page, extraOrigins, externalRequests, pageProblems }) => {
     test.setTimeout(60000);
     const dialogs = [];
     page.on("dialog", (dialog) => {
@@ -191,7 +191,7 @@ test.describe("PlantUML and the late KaTeX (review N1, owner ruling AQ7)", () =>
     try {
       await renderMarkdown(page, "```plantuml\n@startuml\nA -> B\n@enduml\n```\n\n- $x$\n");
       const preview = page.locator("#preview");
-      await expect(preview.locator(".plantuml-loading")).toHaveCount(1); // held: the page is not settled
+      await expect(preview.locator(".plantuml-loading")).toHaveCount(1); // held: the libraries are not settled (loading)
       await page.locator("#editBtn").click();
       await page.locator("#preview > .md-block", { hasText: "$x$" }).click();
       const editor = page.locator("textarea.md-block-editor");
@@ -218,7 +218,7 @@ test.describe("PlantUML and the late KaTeX (review N1, owner ruling AQ7)", () =>
     }
   });
 
-  test("AT-LSM-17 INV-02, INV-81 (3): no PlantUML dialog and no request before the page is settled; one dialog after it, then the diagram is sent", async ({ page, extraOrigins, externalRequests }) => {
+  test("AT-LSM-17 INV-02, INV-81 (3): no PlantUML dialog and no request before the libraries are settled; one dialog after (answering), then the diagram is sent", async ({ page, extraOrigins, externalRequests }) => {
     test.setTimeout(60000);
     const dialogs = [];
     page.on("dialog", (dialog) => {

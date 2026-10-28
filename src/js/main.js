@@ -191,7 +191,8 @@ if (diagramControllers.pan) {
 // The core runs (INV-81, spec 11-g coreStarted): a drop or paste made before
 // it is taken now, and the libraries run one by one when the page is idle
 // (owner ruling 2026-10-25). The page is loading until the four libraries are
-// ready or failed (settled); PlantUML asks and sends only then (AQ7).
+// ready or failed; then it answers the held PlantUML boxes (answering, one
+// dialog) and is settled. PlantUML asks and sends only from answering on (AQ7).
 libraries.connect(orchestrator);
 libraries.dispatchPage("coreStarted", { receiveEarlyInput: (early) => ui.receiveEarlyInput(early) });
 performance.mark("grsmd-core-ready");
