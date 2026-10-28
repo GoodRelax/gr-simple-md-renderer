@@ -222,6 +222,42 @@ for (const touch of [false, true]) {
   });
 }
 
+// The owner's case (2026-10-29, Edge): the last block is a tall code block,
+// mostly blank lines, typed into in its middle. Fitting the height shrank the
+// editor for a moment, so Chromium too clamped the scroll: before the fix the
+// view moved 351 px at the first key and 21 px more at each Enter.
+const TALL_CODE_DOC = [
+  ...Array.from({ length: 20 }, (_, i) => `Paragraph ${i} ` + "lorem ipsum dolor sit amet ".repeat(8)),
+  ["```text", "first", ...Array(22).fill(""), "marker", "edit1", ...Array(20).fill(""), "edit2", ...Array(40).fill(""), "last", "```"].join("\n"),
+].join("\n\n");
+
+test("typing in the middle of a tall code block at the end of the document does not move the view (INV-40)", async ({ page, browserName }) => {
+  await page.goto("/");
+  await renderMarkdown(page, TALL_CODE_DOC);
+  await settled(page);
+  await scrollTextTo(page, "edit1", 380);
+  const before = await renderedChar(page, "edit1");
+  await page.mouse.dblclick(before.x, before.y);
+  const editor = page.locator("#preview textarea.md-block-editor");
+  await expect(editor).toBeFocused();
+  const scrollPos = () => page.evaluate(() => document.querySelector("#preview").scrollTop);
+  const start = await scrollPos();
+  const moves = [];
+  for (const key of ["End", "a", "b", "c", "Enter", "d", "Enter", "e"]) {
+    await page.keyboard.press(key);
+    moves.push((await scrollPos()) - start);
+  }
+  const typed = await editorState(page, "edit1");
+  await page.keyboard.press("Escape");
+  await expect(editor).toHaveCount(0);
+  await settled(page);
+  const committed = await renderedChar(page, "edit1");
+  console.log(`${browserName} tall code block: ${moves.join(", ")}; edit1 before ${before.top}, typed ${typed.top}, committed ${committed.top}`);
+  for (const move of moves) expect(Math.abs(move)).toBeLessThanOrEqual(1);
+  expect(Math.abs(typed.top - before.top)).toBeLessThanOrEqual(1);
+  expect(Math.abs(committed.top - before.top)).toBeLessThanOrEqual(1);
+});
+
 test("the Index and Search panels let 15% of what is behind show through (INV-77, INV-80)", async ({ page }) => {
   await open(page);
   await page.locator("#indexBtn").click();
