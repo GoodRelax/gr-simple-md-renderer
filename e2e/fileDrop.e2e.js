@@ -13,7 +13,7 @@ test("dropping a .md file shows the Markdown preview", async ({ page }) => {
   await expect(page.locator("#preview em")).toHaveText("text");
 });
 
-test("dropping a non-.md text file shows the code view", async ({ page }) => {
+test("SC-27, INV-85: dropping a non-.md text file shows the code view; [Edit] is on", async ({ page }) => {
   await page.goto("/");
   await dropFile(page, {
     name: "script.js",

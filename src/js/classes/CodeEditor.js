@@ -1,21 +1,26 @@
 import { CONFIG } from "../config.js";
 import { shortcutLetter } from "../utils.js";
 import { inferIndentUnit, indentLines, outdentLines, leadingIndentAt } from "../indentText.js";
+import { releaseCodeView } from "./SourceFileRenderer.js";
 
 // Keys that move the caret without typing: the next typing starts a new
 // undo step (INV-88, NE-18).
 const CARET_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown"]);
 
 const PLAIN_CLASS = "code-edit-plain";
+// typed since the layer was written: the textarea's text shows (INV-86)
+const TYPING_CLASS = "code-edit-typing";
+// room added past the text when the textarea had to scroll itself (px)
+const GROW_PX = 64;
 
 /**
- * The number of lines of a text (one more than its line feeds).
+ * The number of line feeds in a text.
  * @purity pure
  * @param {string} text
  * @returns {number}
  */
-function lineCountOf(text) {
-  let count = 1;
+function lineFeedsIn(text) {
+  let count = 0;
   for (let at = text.indexOf("\n"); at >= 0; at = text.indexOf("\n", at + 1)) count++;
   return count;
 }
@@ -66,13 +71,18 @@ function gutterText(count) {
  * numbers, no wrapping and no scroll of its own (the page scrolls as in the
  * view).
  *
- * Typing writes the plain text into the layer at once (textContent, so the
- * colors never lag behind the caret's place), and the layer is colored again
- * when typing stops for CONFIG.codeEdit.highlightPauseMs (INV-86). A text
- * longer than CONFIG.codeEdit.highlightMaxChars is plain: the textarea's own
- * text shows and the layer is written only when typing stops (it keeps the
- * size and is what print shows). The gutter is written only when the number
- * of lines changes.
+ * A key does no work on the whole text (G10): no write of the layer or the
+ * gutter, no count of lines, no comparison and no read of the layout.
+ * While typing, the textarea's own text shows and the layer behind it is
+ * hidden; the lines typed (known from the input event) make room under the
+ * text at once. When typing stops for CONFIG.codeEdit.highlightPauseMs (the
+ * pause), the layer is written again (colored), the gutter follows the
+ * number of lines, and the textarea's text is transparent again (INV-86).
+ * A text longer than CONFIG.codeEdit.highlightMaxChars is plain: the
+ * textarea's text always shows, the layer stays empty (print fills it) and
+ * the number of lines gives the height. Should the textarea scroll itself
+ * (a line longer, or more lines, than the room made), it is made larger at
+ * once and the page scrolls instead.
  *
  * Undo and Redo are its own (INV-88): a CodeEditHistory given by the caller
  * (it lives as long as the document). Tab / Shift+Tab, a fold and a replace
@@ -83,7 +93,7 @@ function gutterText(count) {
  *   canFold() -> boolean - the fold keys are taken (JSON, INV-92)
  *   onFold(direction) - "fold" / "unfold" pressed in the editor (INV-92)
  *   onTextChanged(text) - the text changed (typing, Undo, an operation)
- *   onTextSettled() - typing stopped for highlightPauseMs
+ *   onTextSettled() - typing stopped for highlightPauseMs (the pause)
  */
 export default class CodeEditor {
   /**
@@ -104,9 +114,14 @@ export default class CodeEditor {
     this._input = null; // the textarea
     this._history = null;
     this._unit = CONFIG.codeEdit.defaultIndent;
-    this._lineCount = 0;
+    this._lineCount = 0; // the lines the gutter shows; 0: not written yet
     this._plain = false;
-    this._highlightTimer = 0;
+    this._typing = false; // typed since the layer was written (TYPING_CLASS)
+    this._extraLines = 0; // lines added since the layer was written
+    this._before = null; // the selection at the last beforeinput: where a typing step begins
+    this._settleTimer = 0;
+    this._onBeforePrint = () => this._fillLayerForPrint();
+    this._onAfterPrint = () => this._emptyPlainLayer();
   }
 
   /**
@@ -115,6 +130,15 @@ export default class CodeEditor {
    */
   isActive() {
     return this._root !== null;
+  }
+
+  /**
+   * The indent unit inferred from the text when editing started (INV-87).
+   * @purity semi-pure-b
+   * @returns {string}
+   */
+  get indentUnit() {
+    return this._unit;
   }
 
   /**
@@ -133,13 +157,17 @@ export default class CodeEditor {
     input.value = text;
     this._lineCount = 0;
     const scrollY = window.scrollY;
+    releaseCodeView(this._previewEl);
     this._previewEl.replaceChildren(this._root);
-    this._refresh(text, true);
-    if (!this._plain) this._highlightNow();
+    this._writeLayer(text);
     if (window.scrollY !== scrollY) window.scrollTo(0, scrollY);
     const caret = lineStartOffset(text, this._firstShownLine());
     input.setSelectionRange(caret, caret);
+    history.noteSelection(caret, caret);
+    history.readSelectionWith(() => [input.selectionStart, input.selectionEnd]);
     input.focus({ preventScroll: true });
+    window.addEventListener("beforeprint", this._onBeforePrint);
+    window.addEventListener("afterprint", this._onAfterPrint);
   }
 
   /**
@@ -150,14 +178,22 @@ export default class CodeEditor {
   stop() {
     if (!this._root) return "";
     const text = this._input.value;
-    clearTimeout(this._highlightTimer);
-    this._highlightTimer = 0;
+    clearTimeout(this._settleTimer);
+    this._settleTimer = 0;
+    this._history.noteCaretMove(); // the typing step ends with the selection now
+    this._history.readSelectionWith(null);
+    this._history.settle();
+    window.removeEventListener("beforeprint", this._onBeforePrint);
+    window.removeEventListener("afterprint", this._onAfterPrint);
     this._root.remove();
     this._root = null;
     this._gutter = null;
     this._stack = null;
     this._code = null;
     this._input = null;
+    this._typing = false;
+    this._extraLines = 0;
+    this._before = null;
     return text;
   }
 
@@ -194,7 +230,8 @@ export default class CodeEditor {
   }
 
   /**
-   * Undo one step (INV-88).
+   * Undo one step (INV-88): the text and the selection of the moment the
+   * step began.
    * @purity non-pure
    * @returns {boolean} true when a step was undone
    */
@@ -229,21 +266,34 @@ export default class CodeEditor {
    */
   setText(text, selStart, selEnd) {
     if (!this._root) return;
-    this._history.recordOperation(text, selStart, selEnd);
+    const input = this._input;
+    this._history.recordOperation(text, selStart, selEnd, [input.selectionStart, input.selectionEnd]);
     this._show(text, selStart, selEnd);
   }
 
   /**
+   * The layer follows the text now (Save as gave a name of another
+   * language, INV-90 (7)): the pause's work at once.
+   * @purity non-pure
+   */
+  recolor() {
+    if (!this._root) return;
+    clearTimeout(this._settleTimer);
+    this._settleTimer = 0;
+    this._settleNow();
+  }
+
+  /**
    * Select a range (a Search match) without moving the focus; the next
-   * typing starts a new undo step.
+   * typing starts a new undo step from it.
    * @purity non-pure
    * @param {number} start
    * @param {number} end
    */
   select(start, end) {
     if (!this._root) return;
+    this._history.noteSelection(start, end); // first: a typing step ends where its caret is
     this._input.setSelectionRange(start, end);
-    this._history.noteCaretMove();
   }
 
   /**
@@ -284,14 +334,15 @@ export default class CodeEditor {
 
   /**
    * A DOM range over the layer's text from start to end (a Search match is
-   * marked on it), or null: the layer does not hold the text now (plain).
+   * marked on it), or null: the layer does not hold the text now (plain,
+   * or typed since it was written).
    * @purity semi-pure-b
    * @param {number} start
    * @param {number} end
    * @returns {Range|null}
    */
   rangeOf(start, end) {
-    if (!this._root || this._plain) return null;
+    if (!this._root || this._plain || this._typing) return null;
     const walker = document.createTreeWalker(this._code, NodeFilter.SHOW_TEXT);
     let from = null;
     let at = 0;
@@ -339,11 +390,11 @@ export default class CodeEditor {
     input.setAttribute("aria-label", CONFIG.messages.codeEdit.editorLabel);
     stack.append(layer, input);
     root.append(gutter, stack);
-    input.addEventListener("input", () => this._onInput());
+    input.addEventListener("input", (e) => this._onInput(e));
     input.addEventListener("keydown", (e) => this._onKeyDown(e));
     input.addEventListener("beforeinput", (e) => this._onBeforeInput(e));
     input.addEventListener("pointerdown", () => this._history.noteCaretMove());
-    input.addEventListener("scroll", () => this._keepUnscrolled());
+    input.addEventListener("scroll", () => this._onScroll());
     this._root = root;
     this._gutter = gutter;
     this._stack = stack;
@@ -352,36 +403,93 @@ export default class CodeEditor {
   }
 
   /**
-   * Typing (or the browser's own edit): one typing step, the layer and the
-   * gutter now, the colors when typing stops.
+   * Typing (or the browser's own edit): the text and the selection go to
+   * the undo history (no comparison), the lines typed make room, the
+   * textarea's text shows, and the pause is waited for. Nothing reads or
+   * writes the whole text but the textarea's value itself (G10).
    * @purity non-pure
+   * @param {InputEvent|{data: string}|undefined} e
    */
-  _onInput() {
+  _onInput(e) {
     const input = this._input;
     const text = input.value;
-    this._history.recordTyping(text, input.selectionStart, input.selectionEnd);
-    this._refresh(text, false);
-    this._scheduleHighlight();
+    const before = this._before;
+    this._before = null;
+    this._history.recordTyping(text, null, null, before); // the selection after: read when needed
+    this._addLines(lineFeedsIn(this._insertedText(e, text, before)));
+    this._setTyping(true);
+    this._scheduleSettle();
     this._host.onTextChanged(text);
   }
 
   /**
+   * The text an input inserted, from the event (not from the whole text):
+   * its data, a line break, or the piece between the selection before it
+   * and the caret after it (a paste or a drop without data). "" when not known.
+   * @purity semi-pure-b
+   * @param {InputEvent|{data: string}|undefined} e
+   * @param {string} text - the text after the input
+   * @param {number[]|null} before - the selection before the input
+   * @returns {string}
+   */
+  _insertedText(e, text, before) {
+    if (!e) return "";
+    if (e.inputType === "insertLineBreak" || e.inputType === "insertParagraph") return "\n";
+    if (typeof e.data === "string") return e.data;
+    if (before && typeof e.inputType === "string" && e.inputType.startsWith("insert")) {
+      return text.slice(before[0], Math.max(before[0], this._input.selectionEnd));
+    }
+    return "";
+  }
+
+  /**
+   * Room for lines added since the layer was written (the layer gives the
+   * height of the lines it holds).
+   * @purity non-pure
+   * @param {number} count
+   */
+  _addLines(count) {
+    if (count <= 0) return;
+    this._extraLines += count;
+    this._stack.style.setProperty("--code-extra-lines", String(this._extraLines));
+  }
+
+  /**
+   * The textarea's text shows (typed since the layer was written), or the
+   * layer's colors do.
+   * @purity non-pure
+   * @param {boolean} isTyping
+   */
+  _setTyping(isTyping) {
+    if (isTyping === this._typing) return;
+    this._typing = isTyping;
+    this._root.classList.toggle(TYPING_CLASS, isTyping);
+  }
+
+  /**
    * The browser's Undo / Redo (the Edit menu, a context menu): this
-   * editor's own instead (NE-7).
+   * editor's own instead (NE-7). Any other input that begins a typing step,
+   * or pastes or drops: the selection before it (where the step begins,
+   * INV-88 (3)); read only then (WebKit: its cost grows with the text).
    * @purity non-pure
    * @param {InputEvent} e
    */
   _onBeforeInput(e) {
-    if (e.inputType !== "historyUndo" && e.inputType !== "historyRedo") return;
-    e.preventDefault();
-    if (e.inputType === "historyUndo") this.undo();
-    else this.redo();
+    if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
+      e.preventDefault();
+      if (e.inputType === "historyUndo") this.undo();
+      else this.redo();
+      return;
+    }
+    const pasted = typeof e.inputType === "string" && e.inputType.startsWith("insertFrom");
+    this._before = pasted || this._history.startsStep() ? [this._input.selectionStart, this._input.selectionEnd] : null;
   }
 
   /**
    * The keys of INV-87 / INV-88 / INV-92. A key taken here is
    * preventDefault-ed, so the document's shortcuts see it handled. Nothing
-   * during IME composition.
+   * during IME composition. A held fold, Undo or Redo key acts once, as the
+   * shortcuts outside it (INV-14 (2)).
    * @purity non-pure
    * @param {KeyboardEvent} e
    */
@@ -402,6 +510,7 @@ export default class CodeEditor {
     const isRedo = (letter === "z" && e.shiftKey) || (letter === "y" && !e.shiftKey && !this._isApple);
     if ((letter === "z" && !e.shiftKey) || isRedo) {
       e.preventDefault();
+      if (e.repeat) return;
       if (isRedo) this.redo();
       else this.undo();
       return;
@@ -422,13 +531,15 @@ export default class CodeEditor {
 
   /**
    * The fold key pressed, by its place (event.code, NE-27): Ctrl+Shift+[ / ]
-   * (Mac: Cmd+Option+[ / ]); null for any other key.
+   * (Mac: Cmd+Option+[ / ], without Shift); null for any other key.
    * @purity semi-pure-a
    * @param {KeyboardEvent} e
    * @returns {"fold"|"unfold"|null}
    */
   _foldDirection(e) {
-    const held = this._isApple ? e.metaKey && e.altKey && !e.ctrlKey : e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey;
+    const held = this._isApple
+      ? e.metaKey && e.altKey && !e.ctrlKey && !e.shiftKey
+      : e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey;
     if (!held) return null;
     if (e.code === "BracketLeft") return "fold";
     if (e.code === "BracketRight") return "unfold";
@@ -463,12 +574,16 @@ export default class CodeEditor {
       inserted = false;
     }
     if (inserted) return;
-    this._input.setRangeText(text, this._input.selectionStart, this._input.selectionEnd, "end");
-    this._onInput();
+    const input = this._input;
+    this._before = [input.selectionStart, input.selectionEnd];
+    input.setRangeText(text, input.selectionStart, input.selectionEnd, "end");
+    this._onInput({ data: text });
   }
 
   /**
-   * Show a text set by the editor itself (Undo, Redo, an operation).
+   * Show a text set by the editor itself (Undo, Redo, an operation): as
+   * typing, with room for every line added (an operation writes the whole
+   * text anyway).
    * @purity non-pure
    * @param {string} text
    * @param {number} selStart
@@ -478,88 +593,119 @@ export default class CodeEditor {
     const input = this._input;
     input.value = text;
     input.setSelectionRange(selStart, selEnd);
-    this._refresh(text, false);
-    this._scheduleHighlight();
+    this._addLines(lineFeedsIn(text) + 1 - this._lineCount - this._extraLines);
+    this._setTyping(true);
+    this._scheduleSettle();
     this._host.onTextChanged(text);
   }
 
   /**
-   * The parts that follow the text at once: plain or colored by its length,
-   * the layer's plain text (colored mode; plain mode writes it when typing
-   * stops), the gutter when the number of lines changed, and no scroll of
-   * the textarea's own.
-   * @purity non-pure
-   * @param {string} text
-   * @param {boolean} isStart
-   */
-  _refresh(text, isStart) {
-    const plain = text.length > CONFIG.codeEdit.highlightMaxChars;
-    if (plain !== this._plain || isStart) {
-      this._plain = plain;
-      this._root.classList.toggle(PLAIN_CLASS, plain);
-    }
-    if (!plain || isStart) this._code.textContent = text + "\n";
-    const count = lineCountOf(text);
-    if (count !== this._lineCount) {
-      this._lineCount = count;
-      this._gutter.textContent = gutterText(count);
-    }
-    if (plain) this._fitWidth();
-    this._keepUnscrolled();
-  }
-
-  /**
-   * Plain mode: the layer may hold an older text until typing stops; the
-   * stack is made as wide as the textarea's longest line meanwhile.
+   * The textarea scrolled itself (more lines, or a longer line, than the
+   * room made while typing): it is made as large as its text plus some
+   * room and put back unscrolled, and the page scrolls by as much where
+   * the caret would otherwise be past the window's edge.
    * @purity non-pure
    */
-  _fitWidth() {
-    const input = this._input;
-    if (input.scrollWidth > input.clientWidth) this._stack.style.minWidth = `${input.scrollWidth}px`;
-  }
-
-  /**
-   * The textarea is as large as its text: it never scrolls itself (the
-   * layer under it would no longer match).
-   * @purity non-pure
-   */
-  _keepUnscrolled() {
+  _onScroll() {
     const input = this._input;
     if (!input) return;
-    if (input.scrollTop !== 0) input.scrollTop = 0;
-    if (input.scrollLeft !== 0) input.scrollLeft = 0;
+    const dx = input.scrollLeft;
+    const dy = input.scrollTop;
+    if (dx === 0 && dy === 0) return;
+    const rect = input.getBoundingClientRect();
+    if (dy !== 0) this._stack.style.minHeight = `${input.scrollHeight + GROW_PX}px`;
+    if (dx !== 0) this._stack.style.minWidth = `${input.scrollWidth + GROW_PX}px`;
+    input.scrollTop = 0;
+    input.scrollLeft = 0;
+    const right = rect.right + dx - window.innerWidth;
+    const down = rect.bottom + dy - window.innerHeight;
+    if (right > 0 || down > 0) window.scrollBy(Math.max(0, right), Math.max(0, down));
   }
 
   /**
    * @purity non-pure
    */
-  _scheduleHighlight() {
-    clearTimeout(this._highlightTimer);
+  _scheduleSettle() {
+    clearTimeout(this._settleTimer);
     /** @purity non-pure */
-    this._highlightTimer = setTimeout(() => {
-      this._highlightTimer = 0;
-      this._highlightNow();
+    this._settleTimer = setTimeout(() => {
+      this._settleTimer = 0;
+      this._settleNow();
       this._host.onTextSettled();
     }, CONFIG.codeEdit.highlightPauseMs);
   }
 
   /**
-   * Color the layer (INV-86): highlight.js HTML (its output only), or the
-   * plain text when there are no colors or the text is plain.
+   * The pause's work on the text now: the undo history settles, the layer
+   * and the gutter follow.
    * @purity non-pure
    */
-  _highlightNow() {
+  _settleNow() {
     if (!this._root) return;
-    const text = this._input.value;
-    if (this._plain) {
-      this._code.textContent = text + "\n";
-      this._stack.style.minWidth = "";
-      this._fitWidth();
-      return;
+    this._history.settle();
+    this._writeLayer(this._input.value);
+  }
+
+  /**
+   * The work kept off the keys (the pause, and the start): plain or colored
+   * by the text's length, the gutter when the number of lines changed, and
+   * the room made while typing taken back. Colored: the layer is written
+   * (colored, or plain text when there are no colors) and the textarea's
+   * text is transparent again. Plain: the layer is empty, the number of
+   * lines gives the height (CSS) and the width is read here once.
+   * @purity non-pure
+   * @param {string} text
+   */
+  _writeLayer(text) {
+    const plain = text.length > CONFIG.codeEdit.highlightMaxChars;
+    const style = this._stack.style;
+    if (plain !== this._plain || this._lineCount === 0) {
+      this._plain = plain;
+      this._root.classList.toggle(PLAIN_CLASS, plain);
     }
-    const html = this._host.highlight(text);
-    if (html === null) this._code.textContent = text + "\n";
-    else this._code.innerHTML = html + "\n"; // highlight.js output only (INV-19)
+    const count = lineFeedsIn(text) + 1;
+    if (count !== this._lineCount) {
+      this._lineCount = count;
+      this._gutter.textContent = gutterText(count);
+      style.setProperty("--code-lines", String(count));
+    }
+    style.removeProperty("--code-extra-lines");
+    style.minHeight = "";
+    this._extraLines = 0;
+    if (plain) {
+      this._code.textContent = "";
+      if (style.minWidth === "") style.minWidth = `${this._input.scrollWidth}px`;
+    } else {
+      const html = this._host.highlight(text);
+      if (html === null) this._code.textContent = text + "\n";
+      else this._code.innerHTML = html + "\n"; // highlight.js output only (INV-19)
+      style.minWidth = "";
+    }
+    this._setTyping(false);
+  }
+
+  /**
+   * Print shows the layer (INV-85 (7)): the pause's work now if it waits,
+   * and the text in the layer of a plain text.
+   * @purity non-pure
+   */
+  _fillLayerForPrint() {
+    if (!this._root) return;
+    if (this._settleTimer) {
+      clearTimeout(this._settleTimer);
+      this._settleTimer = 0;
+      this._settleNow();
+      this._host.onTextSettled();
+    }
+    if (this._plain) this._code.textContent = this._input.value + "\n";
+  }
+
+  /**
+   * After print: the layer of a plain text is empty again.
+   * @purity non-pure
+   */
+  _emptyPlainLayer() {
+    if (this._root && this._plain) this._code.textContent = "";
   }
 
   /**

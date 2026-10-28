@@ -218,6 +218,7 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
   };
   app.teardown = () => {
     dispose();
+    ui.codeEdit?.close(); // the code editor's typing pause must not fire into the next test
     ui.blockEdit.dispatch("documentCleared");
     ui.palette.hide();
     app.paletteRoot()?.remove();

@@ -501,8 +501,10 @@ function yamlOutline(lines) {
 
 /**
  * How an import-like line counts: 1 (an import line), 0 (neutral: does not
- * break a run, e.g. other preprocessor lines or a Go import block's
- * parens), or -1 (not an import).
+ * break a run and is not counted, e.g. other preprocessor lines, C#
+ * directives such as #region / #if / #pragma, Java / Go "package" (not
+ * an import, NE-20) or a Go import block's parens), or -1 (not an
+ * import).
  * @purity pure
  * @param {string} code - trimmed, without comments
  * @param {string} language
@@ -515,12 +517,14 @@ function importWeight(code, language) {
   }
   let w = wordAt(code, 0);
   if (language === "csharp") {
+    if (code[0] === "#") return 0;
     if (w.word === "global") w = wordAt(code, w.end);
     if (w.word !== "using") return -1;
     const next = skipBlanks(code, w.end);
     return code[next] === "(" || nameAt(code, next) === "var" ? -1 : 1;
   }
-  return w.word === "import" || w.word === "package" ? 1 : -1;
+  if (w.word === "package") return 0;
+  return w.word === "import" ? 1 : -1;
 }
 
 /**

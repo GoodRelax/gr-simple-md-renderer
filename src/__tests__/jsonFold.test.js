@@ -4,6 +4,10 @@ import { foldJsonOnce, unfoldJsonOnce } from "../js/jsonFold.js";
 // NE-10, NE-21, NE-22: JSON fold puts a { } / [ ] spread over lines on one
 // line; unfold spreads one level out again.
 
+// Timing (AT-JFO-13) only with GRSMD_PERF=1 (test spec AT.1; review L7): a
+// loaded machine must not fail it. The result is checked always.
+const PERF = process.env.GRSMD_PERF === "1";
+
 const OWNER_BEFORE = [
   "{",
   '  "x": {',
@@ -18,7 +22,7 @@ const OWNER_BEFORE = [
 
 const OWNER_AFTER = ["{", '  "x": { "aaa":"111", "bbb":"222" },', '  "y": { "ccc":"333" }', "}"].join("\n");
 
-describe("jsonFold (NE-10, NE-22)", () => {
+describe("jsonFold (INV-92; NE-10, NE-22)", () => {
   it("AT-JFO-01 the owner's example: one fold puts each depth-1 object on one line", () => {
     expect(foldJsonOnce(OWNER_BEFORE)).toEqual({ text: OWNER_AFTER, changed: true });
   });
@@ -86,7 +90,25 @@ describe("jsonFold (NE-10, NE-22)", () => {
     expect(foldJsonOnce(text)).toEqual({ text: '[\n  { "a": 1 }, { "b": 2 }\n]', changed: true });
   });
 
-  it("AT-JFO-13 a 1 MB JSON folds and unfolds in reasonable time", () => {
+  it("AT-JFO-14 (INV-92, NE-22, G8) fold changes only the folded pairs: blanks at the end of other lines stay", () => {
+    const text = '{\n  "a": {\n    "x": 1,\n    "y": 2\n  },   \n  "b": 3   \n}\n';
+    expect(foldJsonOnce(text)).toEqual({ text: '{\n  "a": { "x": 1, "y": 2 },   \n  "b": 3   \n}\n', changed: true });
+    // blanks after the open bracket are inside the pair; text before it stays
+    const open = '{  \n  "k" :  {   \n    "v": 1\n  } \t\n}';
+    expect(foldJsonOnce(open)).toEqual({ text: '{  \n  "k" :  { "v": 1 } \t\n}', changed: true });
+  });
+
+  it("AT-JFO-15 (INV-92, NE-22) fold joins the members with \", \" wherever the commas were written", () => {
+    // commas at the line start, on a line of their own, after blanks
+    const commaFirst = '{\n  "a": {\n      "x": 1\n    , "y": 2\n    ,\n    "z" :  3 ,\n    "w": [1,2]\n  }\n}';
+    expect(foldJsonOnce(commaFirst)).toEqual({ text: '{\n  "a": { "x": 1, "y": 2, "z" :  3, "w": [1,2] }\n}', changed: true });
+    // a member over lines: its lines are trimmed and joined with one space
+    expect(foldJsonOnce('[\n  {\n    "k":\n\n      [1, 2]\n  }\n]')).toEqual({ text: '[\n  { "k": [1, 2] }\n]', changed: true });
+    // a pair with no member over lines
+    expect(foldJsonOnce('{\n  "e": [\n\n  ]\n}')).toEqual({ text: '{\n  "e": [ ]\n}', changed: true });
+  });
+
+  it("AT-JFO-13 (INV-92) a 1 MB JSON folds twice and unfolds back to the same text (within 5,000 ms with GRSMD_PERF=1)", () => {
     const item = (i) => `  {\n    "id": ${i},\n    "name": "item ${i}",\n    "tags": [\n      "a",\n      "b"\n    ]\n  }`;
     const items = [];
     for (let i = 0; i < 12000; i++) items.push(item(i));
@@ -97,7 +119,7 @@ describe("jsonFold (NE-10, NE-22)", () => {
     const f2 = foldJsonOnce(f1.text);
     const u1 = unfoldJsonOnce(f2.text, "  ");
     const u2 = unfoldJsonOnce(u1.text, "  ");
-    expect(performance.now() - t0).toBeLessThan(5000);
+    if (PERF) expect(performance.now() - t0).toBeLessThan(5000);
     expect(f2.text.split("\n")).toHaveLength(12002);
     expect(u2.text).toBe(text);
   });

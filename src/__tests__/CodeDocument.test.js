@@ -3,8 +3,8 @@ import CodeDocument, { singleLineEnding } from "../js/classes/CodeDocument.js";
 
 // AT-CDOC: the code document (Entity; SC-27, INV-89, INV-90).
 
-const A = "あ"; // Shift_JIS 0x82 0xA0
-const KAN = "漢"; // Shift_JIS 0x8A 0xBF
+const A = "\u3042"; // Shift_JIS 0x82 0xA0
+const KAN = "\u6F22"; // Shift_JIS 0x8A 0xBF
 const EMOJI = "\u{1F600}"; // not in Shift_JIS
 
 function doc(over = {}) {
@@ -21,7 +21,7 @@ function doc(over = {}) {
 
 const bytesOf = (r) => [...r.bytes];
 
-describe("CodeDocument", () => {
+describe("CodeDocument (INV-89, INV-90; spec 5.19.1)", () => {
   it("AT-CDOC-01 fromDecoded keeps the text with LF endings as the text and the saved text; clean, nothing remembered", () => {
     const d = doc({ text: "a\r\nb\rc\n" });
     expect(d.text).toBe("a\nb\nc\n");

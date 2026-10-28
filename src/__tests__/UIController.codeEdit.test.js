@@ -27,7 +27,7 @@ import { fakeFileAccess, fakeFileHandle, deferred } from "./helpers/fakeFs.js";
 // AT-UI-70..: UIController routes the code view to the code document
 // (SC-27): opening (INV-89), file info, unsaved, Reload, Save (INV-90, NE-19).
 
-const A = "あ";
+const A = "\u3042"; // hiragana a
 const sjis = (text) => encodeText(text, "shift_jis", false).bytes;
 
 let app;
@@ -59,7 +59,7 @@ async function drop(content, name, handle = null) {
 
 const bodyView = () => [...document.body.classList].find((c) => c.startsWith("view-"));
 
-describe("UIController and the code document (SC-27)", () => {
+describe("UIController and the code document (SC-27; INV-85 (5), INV-89, INV-90, INV-54)", () => {
   it("AT-UI-70 a Shift_JIS file: the open dialog, the decoded text in the view, and the encoding and line endings in the file info", async () => {
     await start();
     dialog.askOpen.mockResolvedValue({ encoding: "shift_jis", lineEndingMode: "\r\n" });

@@ -14,6 +14,21 @@ export function languageOfFileName(fileName) {
 }
 
 /**
+ * Take the code view's body out of the preview, its lines from the last
+ * up. WebKit takes time growing with the square of the number of lines to
+ * remove CSS-counter lines from the first down (a 1 MB file: about 40 s);
+ * from the last up it is linear (M1). Nothing else in the preview changes.
+ * @purity non-pure
+ * @param {HTMLElement} previewEl
+ */
+export function releaseCodeView(previewEl) {
+  const body = previewEl.querySelector("#codeViewBody");
+  if (!body) return;
+  while (body.lastChild) body.lastChild.remove();
+  body.remove();
+}
+
+/**
  * Renders non-.md files with syntax highlighting and line numbers.
  * Owns: code body only. UI chrome (fileInfo, keyHint) is managed by UIController.
  * Returns CodeViewMeta for UIController to display.
@@ -179,6 +194,7 @@ export default class SourceFileRenderer {
    * @purity non-pure
    */
   destroy() {
+    releaseCodeView(this._previewEl);
     this._previewEl.innerHTML = "";
     this._fileHandle = null;
     this._fileName = "";
@@ -209,6 +225,7 @@ export default class SourceFileRenderer {
    */
   _show(text, file, theme) {
     const { html, lineCount, language } = this._buildCodeBody(text, file);
+    releaseCodeView(this._previewEl);
     this._previewEl.innerHTML = html;
     if (theme) this._applyCodeTheme(theme);
     const plain = !this._hljs && this._loadHljs !== null;

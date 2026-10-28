@@ -63,12 +63,31 @@ function isValidJson(text) {
 }
 
 /**
+ * One member of a pair on one line: its lines trimmed, the empty ones
+ * dropped, the rest joined with one space. Text within a line stays.
+ * @purity pure
+ * @param {string} member - trimmed
+ * @returns {string}
+ */
+function oneLineMember(member) {
+  if (!member.includes("\n")) return member;
+  return member
+    .split("\n")
+    .map((piece) => piece.trim())
+    .filter((piece) => piece !== "")
+    .join(" ");
+}
+
+/**
  * Fold one level (NE-22): of the pairs whose brackets are on different
  * lines, those of the greatest depth >= 1 (never the root) are each put on
- * one line. The text before the open bracket on its line stays; each
- * following line up to the close bracket's line is trimmed, empty ones are
- * dropped, and the pieces are joined with one space. The text after the
- * close bracket on its line stays.
+ * one line. Only the text from each such pair's open bracket to its close
+ * bracket changes: it becomes the open bracket, a space, the members
+ * joined with ", ", a space and the close bracket (no member: the open
+ * bracket, a space and the close bracket). Each member keeps its text; a
+ * member over several lines has its lines trimmed, empty ones dropped,
+ * and joined with one space. Everything outside those pairs stays as it
+ * is, white space at line ends included.
  * @purity pure
  * @param {string} text - LF text
  * @returns {{text: string, changed: boolean}|{error: "invalid"}}
@@ -79,26 +98,21 @@ export function foldJsonOnce(text) {
   if (spread.length === 0) return { text, changed: false };
   let deepest = 0;
   for (const p of spread) if (p.depth > deepest) deepest = p.depth;
+  // pairs of one depth never nest, so they do not overlap
+  const chosen = spread.filter((p) => p.depth === deepest).sort((a, b) => a.open - b.open);
 
-  const lines = text.split("\n");
-  // joined[k]: the break after line k goes away
-  const joined = new Uint8Array(lines.length);
-  for (const p of spread) {
-    if (p.depth === deepest) joined.fill(1, p.openLine, p.closeLine);
-  }
-  const out = [];
-  let k = 0;
-  while (k < lines.length) {
-    const pieces = [lines[k].trimEnd()];
-    while (joined[k] === 1 && k + 1 < lines.length) {
-      k++;
-      const piece = lines[k].trim();
-      if (piece !== "") pieces.push(piece);
+  const parts = [];
+  let from = 0;
+  for (const p of chosen) {
+    parts.push(text.slice(from, p.open + 1), " ");
+    if (!isEmptyPair(text, p.open, p.close)) {
+      parts.push(pairMembers(text, p.open, p.close).map(oneLineMember).join(", "), " ");
     }
-    out.push(pieces.join(" "));
-    k++;
+    parts.push(text[p.close]);
+    from = p.close + 1;
   }
-  return { text: out.join("\n"), changed: true };
+  parts.push(text.slice(from));
+  return { text: parts.join(""), changed: true };
 }
 
 /**

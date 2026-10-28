@@ -12,7 +12,7 @@ import { decodeFileBytes, encodeText } from "../js/textEncoding.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const INDEX_HTML = readFileSync(resolve(here, "../index.html"), "utf8");
 
-const A = "あ";
+const A = "\u3042"; // hiragana a
 
 function realModal(id) {
   const doc = new DOMParser().parseFromString(INDEX_HTML, "text/html");
@@ -101,7 +101,7 @@ describe("CodeFileDialog: open (INV-89)", () => {
     select.value = "utf-16be";
     select.dispatchEvent(new Event("change"));
     expect(t.o("codeOpenBom").textContent).toBe("BOM: no");
-    expect(t.o("codeOpenPreview").textContent).toBe("￾愀ഀ਀戀਀");
+    expect(t.o("codeOpenPreview").textContent).toBe("\uFFFE\u6100\u0D00\u0A00\u6200\u0A00");
     expect(t.o("codeOpenLineCounts").textContent).toBe("CRLF 0, LF 0, CR 0");
     expect(shown(t.o("codeOpenBtn"))).toBe(true);
     t.o("codeOpenBtn").click();

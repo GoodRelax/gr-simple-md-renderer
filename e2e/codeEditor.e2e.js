@@ -10,7 +10,7 @@ const JSON_FOLDED = '{\n  "a": { "b": 1 },\n  "c": 2\n}\n';
 const ASCII = (s) => [...s].map((c) => c.charCodeAt(0));
 // "# " + three hiragana (Shift_JIS 82A0 82A2 82A4), CRLF, "text", CRLF
 const SJIS_BYTES = [...ASCII("# "), 0x82, 0xa0, 0x82, 0xa2, 0x82, 0xa4, 0x0d, 0x0a, ...ASCII("text"), 0x0d, 0x0a];
-const KANA = "あいう";
+const KANA = "\u3042\u3044\u3046"; // hiragana a, i, u
 
 /**
  * Drop a file built from bytes (or a text) in the page.
@@ -52,7 +52,7 @@ async function keys(page) {
 
 const editor = (page) => page.locator("#codeEditBody textarea.code-edit-input");
 
-test("edit a .json: e, type, Tab indents, primary+Z undoes it, Ctrl+Shift+[ folds in the editor", async ({ page }) => {
+test("INV-85, INV-87 (1)(5), INV-88: edit a .json: e, type, Tab indents, primary+Z undoes it, Ctrl+Shift+[ folds in the editor", async ({ page }) => {
   await page.goto("/");
   await drop(page, "data.json", JSON_TEXT);
   const k = await keys(page);
@@ -93,7 +93,7 @@ test("edit a .json: e, type, Tab indents, primary+Z undoes it, Ctrl+Shift+[ fold
   await expect(page.locator("#codeViewBody .code-line").nth(4)).toHaveText('  "c":  2');
 });
 
-test("view mode: Ctrl+Left folds the display without the unsaved mark; Ctrl+Right unfolds it", async ({ page }) => {
+test("INV-92 (2)(4): view mode: Ctrl+Left folds the display without the unsaved mark; Ctrl+Right unfolds it", async ({ page }) => {
   await page.goto("/");
   await drop(page, "data.json", JSON_TEXT);
   const k = await keys(page);
@@ -107,7 +107,7 @@ test("view mode: Ctrl+Left folds the display without the unsaved mark; Ctrl+Righ
   await expect(lines).toHaveCount(7);
 });
 
-test("p opens the command palette; its buttons fold and unfold, it stays open; Esc closes it", async ({ page }) => {
+test("INV-92 (5): p opens the command palette; its buttons fold and unfold, it stays open; Esc closes it", async ({ page }) => {
   await page.goto("/");
   await drop(page, "data.json", JSON_TEXT);
   await expect(page.locator("#commandsBtn")).toBeEnabled();
@@ -126,7 +126,7 @@ test("p opens the command palette; its buttons fold and unfold, it stays open; E
   await expect(box).toBeHidden();
 });
 
-test("the Index lists the JSON keys and a pick scrolls to its line", async ({ page }) => {
+test("INV-91 (1)(3): the Index lists the JSON keys and a pick scrolls to its line", async ({ page }) => {
   const members = Array.from({ length: 150 }, (_, i) => `  "key${i}": ${i}`).join(",\n");
   await page.goto("/");
   await drop(page, "big.json", `{\n${members}\n}\n`);
@@ -140,7 +140,7 @@ test("the Index lists the JSON keys and a pick scrolls to its line", async ({ pa
   await expect(last).toBeInViewport();
 });
 
-test("Search in edit mode: Replace all changes the editor's text; primary+Z outside the editor undoes it", async ({ page }) => {
+test("INV-80 (5), INV-88 (1)(4): Search in edit mode: Replace all changes the editor's text; primary+Z outside the editor undoes it", async ({ page }) => {
   await page.goto("/");
   await drop(page, "pets.txt", "cat dog cat\n");
   const k = await keys(page);
@@ -164,7 +164,7 @@ test("Search in edit mode: Replace all changes the editor's text; primary+Z outs
   await expect(editor(page)).toHaveValue("cat dog cat\n");
 });
 
-test("Save as a Shift_JIS file to x.md (fake save dialog): written in UTF-8 with a toast, reopened in the Markdown view", async ({ page }) => {
+test("INV-90 (6)(8), NE-30: Save as a Shift_JIS file to x.md (fake save dialog): written in UTF-8 with a toast, reopened in the Markdown view", async ({ page }) => {
   await page.addInitScript(() => {
     window.__e2eSaves = [];
     window.showSaveFilePicker = async (options) => {
@@ -207,4 +207,55 @@ test("Save as a Shift_JIS file to x.md (fake save dialog): written in UTF-8 with
   const saves = await page.evaluate(() => window.__e2eSaves);
   expect(saves[0].suggestedName).toBe("notes.txt");
   expect(saves[0].bytes).toEqual([...new TextEncoder().encode(`# ${KANA}\r\ntext\r\n`)]);
+});
+
+test("INV-86 (M1): typing in a 60 KB file (colored) writes neither the layer nor the gutter on a key; when typing stops both follow and the textarea is unscrolled and as large as its text", async ({ page }) => {
+  await page.goto("/");
+  const line = "const value = 1234567890; // a line of a big file\n";
+  await drop(page, "big.js", line.repeat(Math.ceil((60 * 1024) / line.length)));
+  await page.keyboard.press("e");
+  await expect(editor(page)).toBeFocused();
+  // count the DOM writes of the layer and the gutter; a write seen while the
+  // typing class is still on came from a key (the pause writes and takes the
+  // class off in one task), so a pause that fires between two keys of a
+  // loaded machine does not count (no timing in the check)
+  await page.evaluate(() => {
+    window.__writes = 0;
+    window.__keyWrites = 0;
+    window.__inputs = [];
+    const root = document.querySelector("#codeEditBody");
+    const observer = new MutationObserver((records) => {
+      window.__writes += records.length;
+      if (root.classList.contains("code-edit-typing")) window.__keyWrites += records.length;
+    });
+    for (const el of document.querySelectorAll("#codeEditBody .code-edit-gutter, #codeEditBody .code-edit-layer")) {
+      observer.observe(el, { childList: true, characterData: true, subtree: true });
+    }
+    window.__observer = observer;
+    const ta = document.querySelector("#codeEditBody textarea");
+    // after the app's own input handler: the typing look is on at each key
+    ta.addEventListener("input", () => window.__inputs.push(root.classList.contains("code-edit-typing")));
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+  });
+  // within one pause: every key comes before highlightPauseMs (0.2 s) after the last
+  await page.keyboard.type("x = 1;", { delay: 0 });
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("y = 2;", { delay: 0 });
+  const during = await page.evaluate(() => ({ keyWrites: window.__keyWrites, inputs: window.__inputs }));
+  expect(during).toEqual({ keyWrites: 0, inputs: Array(14).fill(true) });
+  // after the pause: the gutter has the two new lines
+  await expect(page.locator("#codeEditBody")).not.toHaveClass(/code-edit-typing/);
+  const after = await page.evaluate(() => {
+    const ta = document.querySelector("#codeEditBody textarea");
+    const gutter = document.querySelector("#codeEditBody .code-edit-gutter").textContent;
+    return {
+      writes: window.__writes > 0,
+      lastNumber: Number(gutter.slice(gutter.lastIndexOf("\n") + 1)),
+      lines: ta.value.split("\n").length,
+      unscrolled: ta.scrollTop === 0 && ta.scrollLeft === 0,
+      fits: ta.scrollHeight <= ta.clientHeight + 1,
+    };
+  });
+  expect(after).toEqual({ writes: true, lastNumber: after.lines, lines: after.lines, unscrolled: true, fits: true });
 });

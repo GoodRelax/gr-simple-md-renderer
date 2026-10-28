@@ -72,7 +72,7 @@ function type(value) {
   ta.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-describe("UIController: the code view's edit mode (SC-27)", () => {
+describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90)", () => {
   it("AT-UI-80 e / [Edit] in the code view: the editor, the palette with Save, Save as, Undo, Redo and Search; Esc leaves the editor, e the edit mode, the view shows the edited text", async () => {
     await start();
     await drop("a\nb\n", "a.py");
@@ -142,17 +142,68 @@ describe("UIController: the code view's edit mode (SC-27)", () => {
     expect([app.codeEdit.isEditing(), app.codeEdit.isDirty(), document.title]).toEqual([true, false, BASE_TITLE]);
   });
 
-  it("AT-UI-83 Reload and a dropped Markdown file end edit mode first; the palette is the Markdown one again", async () => {
+  it("AT-UI-83 Reload and a dropped Markdown file end edit mode first; the palette is the Markdown one again; Reload does not draw the edited text first (L5)", async () => {
     await start();
     await drop("a\n", "a.py", fakeFileHandle({ name: "a.py", content: ["a\n"] }));
     keydown(document.body, "e");
     await app.ui.handleReload();
-    expect([app.codeEdit.isEditing(), app.ui.palette.isShown(), app.sourceFileRenderer.showText.mock.calls.length]).toEqual([false, false, 1]);
+    expect([app.codeEdit.isEditing(), app.ui.palette.isShown(), app.sourceFileRenderer.showText.mock.calls.length]).toEqual([false, false, 0]);
+    expect(app.sourceFileRenderer.reload).toHaveBeenCalledTimes(1);
     keydown(document.body, "e");
     await drop("# Doc\n", "doc.md");
     expect([app.codeEdit.isEditing(), app.ui.palette.isShown(), document.body.classList.contains("code-edit")]).toEqual([false, false, false]);
     keydown(document.body, "e");
     expect(shownButtons()).toContain("paletteBold");
+  });
+
+  it("AT-UI-94 (INV-85 (3); review L5) a Reload that cannot read the file after edit mode ended: the view shows the document's text again", async () => {
+    await start();
+    await drop("a\n", "a.py", fakeFileHandle({ name: "a.py", content: ["a\n"] }));
+    keydown(document.body, "e");
+    type("typed\n");
+    app.sourceFileRenderer.reload.mockRejectedValue(new Error("gone"));
+    await app.ui.handleReload();
+    expect(app.codeEdit.isEditing()).toBe(false);
+    expect(app.sourceFileRenderer.showText.mock.calls.map((c) => c[0])).toEqual(["typed\n"]);
+    expect(toasts()).toContain(CONFIG.messages.edit.reloadFailed);
+  });
+
+  it("AT-UI-95 (INV-85 (5), INV-86; review M1) the unsaved mark while typing is not compared on a key; when typing stops it is exact (typed back: no mark)", async () => {
+    await start();
+    await drop("same\n", "a.py");
+    keydown(document.body, "e");
+    const compare = vi.spyOn(Object.getPrototypeOf(app.codeEdit.document), "isDirty");
+    type("samX\n");
+    type("same\n");
+    expect(document.title).toBe("* " + BASE_TITLE);
+    expect(compare).not.toHaveBeenCalled();
+    await new Promise((r) => setTimeout(r, CONFIG.codeEdit.highlightPauseMs + 20));
+    expect(compare).toHaveBeenCalled();
+    expect([document.title, app.ui._paletteStates().undo]).toEqual([BASE_TITLE, false]);
+  });
+
+  it("AT-UI-96 (INV-92 (4), NE-23; review L12) the key hint of the code view on a Mac names Option for the fold keys", async () => {
+    await start({ isApple: true });
+    await drop("{}\n", "a.json");
+    expect(app.elements.keyHint.textContent).toBe(CONFIG.keyHints.codeApple);
+    expect(app.elements.keyHint.textContent).toContain("[Option+Left][Option+Right]");
+    expect(app.elements.keyHint.textContent).not.toContain("Ctrl");
+    app.teardown();
+    await start();
+    await drop("{}\n", "a.json");
+    expect(app.elements.keyHint.textContent).toBe(CONFIG.keyHints.code);
+  });
+
+  it("AT-UI-97 (INV-89; review L19) a UTF-16 file with a BOM and an unknown extension opens (its NUL bytes do not make it binary); without a BOM it is refused", async () => {
+    await start();
+    const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
+    const le = Uint8Array.from([0xff, 0xfe, 0x61, 0x00, 0x0a, 0x00]);
+    dialog.askOpen.mockResolvedValue({ encoding: "utf-16le", lineEndingMode: "\n" }); // not UTF-8: the open dialog (NE-15)
+    await drop(le, "x.utf16data");
+    expect(alert).not.toHaveBeenCalled();
+    expect([app.codeEdit.currentText(), app.codeEdit.fileInfo().encoding]).toEqual(["a\n", "utf-16le"]);
+    await drop(Uint8Array.from([0x61, 0x00, 0x62]), "y.utf16data");
+    expect(alert).toHaveBeenCalledWith(CONFIG.fileDrop.messages.binaryFile);
   });
 
   it("AT-UI-84 Esc outside the editor in edit mode: the command palette, then Search, then the Index close; edit mode stays", async () => {
@@ -238,6 +289,47 @@ describe("UIController: JSON fold keys and the command palette (INV-92)", () => 
     expect(app.ui.codeCommands.isShown()).toBe(true);
     await drop("# Doc\n", "doc.md");
     expect([app.commandsBtn.disabled, app.ui.codeCommands.isShown()]).toEqual([true, false]);
+  });
+});
+
+describe("UIController: code edit behaviour of the spec without a test before (INV-14, INV-58, INV-91, INV-92; review L22)", () => {
+  it("AT-UI-98 INV-92 (4): a held Ctrl+Left on the page is taken and folds once; during IME composition it is not taken", async () => {
+    await start();
+    await drop(JSON_TEXT, "a.json");
+    expect(keydown(document.body, "ArrowLeft", { ctrlKey: true, isComposing: true }).defaultPrevented).toBe(false);
+    expect(lines().join("\n")).toBe(JSON_TEXT);
+    keydown(document.body, "ArrowLeft", { ctrlKey: true });
+    expect(keydown(document.body, "ArrowRight", { ctrlKey: true, repeat: true }).defaultPrevented).toBe(true);
+    expect(lines().join("\n")).toBe(JSON_FOLDED);
+  });
+
+  it("AT-UI-99 5.19.7 / INV-14: e and p typed in the editor are characters (edit mode and the command palette stay as they are)", async () => {
+    await start();
+    await drop(JSON_TEXT, "a.json");
+    keydown(document.body, "e");
+    expect(keydown(textarea(), "e").defaultPrevented).toBe(false);
+    expect(keydown(textarea(), "p").defaultPrevented).toBe(false);
+    expect([app.codeEdit.isEditing(), app.ui.codeCommands.isShown()]).toEqual([true, false]);
+  });
+
+  it("AT-UI-100 INV-58: primary+Shift+S in the code view is Save as (the save dialog with the file's name)", async () => {
+    await start();
+    await drop("a\n", "a.py");
+    expect(keydown(document.body, "s", { ctrlKey: true, shiftKey: true }).defaultPrevented).toBe(true);
+    await settle();
+    expect(access.calls[0]).toBe("startSavePicker:a.py");
+  });
+
+  it("AT-UI-101 INV-91 (2): the Index follows the editor's text when typing stops", async () => {
+    await start();
+    await drop("def one():\n    pass\n", "a.py");
+    keydown(document.body, "i");
+    keydown(document.body, "e");
+    type("def one():\n    pass\ndef two():\n    pass\n");
+    const names = () => [...app.indexPanel.querySelectorAll(".index-entry")].map((e) => e.textContent);
+    expect(names().some((n) => n.includes("two"))).toBe(false);
+    await new Promise((r) => setTimeout(r, CONFIG.codeEdit.highlightPauseMs + 20));
+    expect(names().some((n) => n.includes("two"))).toBe(true);
   });
 });
 

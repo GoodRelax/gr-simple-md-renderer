@@ -3,10 +3,14 @@ import { hasCodeOutline, buildCodeOutline } from "../js/codeOutline.js";
 
 // NE-9, NE-20: the index entries of a source file, per language.
 
+// Timing (AT-COL-18) only with GRSMD_PERF=1 (test spec AT.1; review L7): a
+// loaded machine must not fail it. The entries are checked always.
+const PERF = process.env.GRSMD_PERF === "1";
+
 const lines = (...rows) => rows.join("\n");
 const e = (line, level, label) => ({ line, level, label });
 
-describe("codeOutline (NE-9, NE-20)", () => {
+describe("codeOutline (INV-91; NE-9, NE-20)", () => {
   it("AT-COL-01 hasCodeOutline: the ten languages only", () => {
     for (const lang of ["python", "javascript", "typescript", "json", "yaml", "c", "cpp", "csharp", "java", "go"]) {
       expect(hasCodeOutline(lang), lang).toBe(true);
@@ -211,7 +215,7 @@ describe("codeOutline (NE-9, NE-20)", () => {
     ]);
   });
 
-  it("AT-COL-11 java: package and imports as one entry, types, constructors and methods, not statements", () => {
+  it("AT-COL-11 (NE-20) java: imports as one entry (package not counted), types, constructors and methods, not statements", () => {
     const text = lines(
       "package com.example;",
       "",
@@ -244,7 +248,7 @@ describe("codeOutline (NE-9, NE-20)", () => {
       "}",
     );
     expect(buildCodeOutline(text, "java")).toEqual([
-      e(0, 1, "import (4)"),
+      e(2, 1, "import (3)"),
       e(8, 1, "class Foo"),
       e(12, 1, "Foo()"),
       e(19, 1, "map()"),
@@ -363,7 +367,7 @@ describe("codeOutline (NE-9, NE-20)", () => {
     ]);
   });
 
-  it("AT-COL-15 go: package and import block as one entry, struct / interface types, func and methods; not func literals", () => {
+  it("AT-COL-15 (NE-20) go: the import block as one entry (package not counted), struct / interface types, func and methods; not func literals", () => {
     const text = lines(
       "package main",
       "",
@@ -393,7 +397,7 @@ describe("codeOutline (NE-9, NE-20)", () => {
       "}",
     );
     expect(buildCodeOutline(text, "go")).toEqual([
-      e(0, 1, "import (3)"),
+      e(2, 1, "import (2)"),
       e(8, 1, "type Server"),
       e(12, 1, "type Handler"),
       e(18, 1, "Start()"),
@@ -409,6 +413,45 @@ describe("codeOutline (NE-9, NE-20)", () => {
     expect(buildCodeOutline(text, "java")).toEqual([e(0, 1, "import (12)"), e(15, 1, "class A"), e(16, 1, "import (1)")]);
   });
 
+  it("AT-COL-19 (NE-20) csharp: # directives (#nullable, #region, #if, #pragma) neither break nor join the using run", () => {
+    const text = lines(
+      "#nullable enable",
+      "using A;",
+      "#region Imports",
+      "using B;",
+      "#if DEBUG",
+      "using C.Debug;",
+      "#endif",
+      "#pragma warning disable CS0105",
+      "global using D;",
+      "#endregion",
+      "",
+      "class X",
+      "{",
+      "    #region Members",
+      "    void Run() {}",
+      "    #endregion",
+      "}",
+      "#if DEBUG",
+      "class Y {}",
+      "#endif",
+    );
+    expect(buildCodeOutline(text, "csharp")).toEqual([e(1, 1, "import (4)"), e(11, 1, "class X"), e(14, 1, "Run()"), e(18, 1, "class Y")]);
+  });
+
+  it("AT-COL-20 (NE-20) java / go: package is not an import: not counted, does not start or break a run", () => {
+    expect(buildCodeOutline(lines("package a.b;", "", "class A {}"), "java")).toEqual([e(2, 1, "class A")]);
+    expect(buildCodeOutline(lines("import x.One;", "package a.b;", "import x.Two;"), "java")).toEqual([e(0, 1, "import (2)")]);
+    const twelve = ["package a.b;", ""];
+    for (let i = 0; i < 12; i++) twelve.push(`import pkg.Class${i};`);
+    expect(buildCodeOutline(lines(...twelve), "java")).toEqual([e(2, 1, "import (12)")]);
+    expect(buildCodeOutline(lines("package main", "", 'import "fmt"', 'import "os"', "", "func main() {}"), "go")).toEqual([
+      e(2, 1, "import (2)"),
+      e(5, 1, "main()"),
+    ]);
+    expect(buildCodeOutline(lines("package main", "", "func main() {}"), "go")).toEqual([e(2, 1, "main()")]);
+  });
+
   it("AT-COL-17 never throws, for odd input in every language", () => {
     const odd = ['"""', "/*", "{[{[", "- : :", "class", "func (", "#include", "\"\\", "type =", "}}}}"].join("\n");
     for (const lang of ["python", "javascript", "typescript", "json", "yaml", "c", "cpp", "csharp", "java", "go"]) {
@@ -417,7 +460,7 @@ describe("codeOutline (NE-9, NE-20)", () => {
     }
   });
 
-  it("AT-COL-18 a 1 MB source in each language is outlined in reasonable time", () => {
+  it("AT-COL-18 (INV-91) a 1 MB source in each language is outlined, an entry per unit (within 5,000 ms with GRSMD_PERF=1)", () => {
     const samples = {
       python: "class C:\n    def m(self):\n        return 1\n\ndef f():\n    pass\n",
       javascript: "export class C {\n  m() {\n    return 1;\n  }\n}\nfunction f() {}\n",
@@ -431,7 +474,7 @@ describe("codeOutline (NE-9, NE-20)", () => {
       const text = lang === "json" ? "{\n" + unit.repeat(reps) + '  "z": 0\n}' : unit.repeat(reps);
       const t0 = performance.now();
       const outline = buildCodeOutline(text, lang);
-      expect(performance.now() - t0, lang).toBeLessThan(5000);
+      if (PERF) expect(performance.now() - t0, lang).toBeLessThan(5000);
       expect(outline.length, lang).toBeGreaterThanOrEqual(reps);
     }
   });

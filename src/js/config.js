@@ -295,7 +295,10 @@ export const CONFIG = {
   // Editing non-.md files in the code view (SC-27)
   codeEdit: {
     highlightPauseMs: 200, // INV-86: the editor is colored again this long after typing stops
-    highlightMaxChars: 200 * 1024, // INV-86: a longer text is plain while editing (provisional)
+    // INV-86: a longer text is plain while editing. Measured (M1, 2026-10-29): the recolor
+    // when typing stops takes about 0.5 ms/KB (Chromium) and 0.9 ms/KB (WebKit); at 100 KB
+    // it stays under 100 ms in both, so a key typed right after it is answered in time
+    highlightMaxChars: 100 * 1024,
     undoPauseMs: 1000, // INV-88: a typing step ends after this long without typing
     defaultIndent: "    ", // INV-87: the indent unit when the file shows none
     sampleLines: 5, // INV-89: lines shown in the open dialog's preview
@@ -392,6 +395,8 @@ export const CONFIG = {
   keyHints: {
     markdown: "[I] Index; [F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
     code:     "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
+    // a Mac: the fold keys are Option+Left / Right (INV-92, NE-23)
+    codeApple: "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Option+Left][Option+Right] Fold (JSON);",
   },
 };
 

@@ -65,8 +65,8 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
 
    | Button | Key | Action |
    |---|---|---|
-   | Index | `I` | Show / hide the headings (h1 to h6) at the right edge; press one to bring it to the top of the view |
-   | Search | `F` | Find text in the Markdown source (`Aa` match case, `.*` regular expression; `Down` / `Up` in the box: next / previous). In edit mode `Ctrl+F` opens it too, and Replace / All replace (one Undo) |
+   | Index | `I` | Show / hide the headings (h1 to h6) at the right edge; press one to bring it to the top of the view. In Code View: the classes and functions of a file in a language listed above |
+   | Search | `F` | Find text in the Markdown source (in Code View: the file) (`Aa` match case, `.*` regular expression; `Down` / `Up` in the box: next / previous). In edit mode `Ctrl+F` opens it too, and Replace / All replace (one Undo) |
    | Commands | `P` | In Code View of a JSON file: buttons to fold / unfold one level |
    | Render Light | `L` | Render / switch to the light theme |
    | Render Dark | `D` | Render / switch to the dark theme |
@@ -75,14 +75,14 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Edit | `E` | Show / hide the edit palette; click a block to edit its Markdown in place. In Code View: edit the whole file |
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
-   | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document or a Code View file is shown (a file that is not UTF-8 asks for the encoding to save in) |
+   | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document or a Code View file is shown (a file that is not UTF-8 asks for the encoding to save in; characters that encoding cannot hold stop the save, with their line numbers) |
    | | `Tab` / `Shift+Tab` | In the Code View editor: indent / outdent the selected lines (`Esc` leaves the editor) |
    | | `Ctrl+Left` / `Ctrl+Right` | In Code View of a JSON file: fold / unfold one level (in the editor: `Ctrl+Shift+[` / `Ctrl+Shift+]`) |
-   | | `Esc` | Apply the open block or cell and close it; with blocks selected, clear the selection; with nothing open, hide the edit palette; then Search (in the search box: close it at once); then the Index |
+   | | `Esc` | Apply the open block or cell and close it; with blocks selected, clear the selection; with nothing open, hide the edit palette; then Search (in the search box: close it at once); then the Index. In the Code View editor: leave the editor; outside it: the Commands box, then Search, then the Index (edit mode stays) |
    | | `Delete` / `Backspace` | In edit mode, delete the selected blocks, also with `Shift` (one Undo brings them back) |
    | | `Ctrl+X` / `Ctrl+C` | In edit mode with blocks selected, cut / copy their Markdown whole (a menu's Copy copies it too) |
-   | | `Ctrl+Z` | Undo while the edit palette is shown, up to 30 changes (in a block you have changed, the browser undoes your typing) |
-   | | `Ctrl+Y` / `Ctrl+Shift+Z` | Redo while the edit palette is shown, up to 30 changes (in an open block, the browser redoes your typing) |
+   | | `Ctrl+Z` | Undo while the edit palette is shown, up to 30 changes (in a block you have changed, the browser undoes your typing). Editing in Code View: GRSMD's own Undo, also in the editor (a step ends when you stop typing for 1 s or move the caret) |
+   | | `Ctrl+Y` / `Ctrl+Shift+Z` | Redo while the edit palette is shown, up to 30 changes (in an open block, the browser redoes your typing). Editing in Code View: GRSMD's own Redo |
    | | `Ctrl+B` / `Ctrl+I` | Bold / Italic while editing |
 
    On a Mac, use `Cmd` instead of `Ctrl` (Redo is `Cmd+Shift+Z`); the fold keys are `Option+Left` / `Option+Right` and, in the editor, `Cmd+Option+[` / `Cmd+Option+]`.
@@ -240,8 +240,8 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 
    | ボタン | キー | 動作 |
    |---|---|---|
-   | Index | `I` | 見出し（h1〜h6）の目次を右端に出す / 消す。押した見出しを見えている範囲の上端へ |
-   | Search | `F` | Markdown の原文から文字を探す（`Aa` で大文字と小文字を区別、`.*` で正規表現。検索欄の `↓` / `↑` で次 / 前）。編集モードでは `Ctrl+F` でも開け、Replace / All で置き換える（Undo 1 回で戻る） |
+   | Index | `I` | 見出し（h1〜h6）の目次を右端に出す / 消す。押した見出しを見えている範囲の上端へ。コードビューでは、上に挙げた言語のファイルのクラスや関数 |
+   | Search | `F` | Markdown の原文（コードビューではファイル）から文字を探す（`Aa` で大文字と小文字を区別、`.*` で正規表現。検索欄の `↓` / `↑` で次 / 前）。編集モードでは `Ctrl+F` でも開け、Replace / All で置き換える（Undo 1 回で戻る） |
    | Commands | `P` | コードビューの JSON のファイルで、1 段畳む / 開くボタンを出す |
    | Render Light | `L` | レンダリング / ライトテーマに切替 |
    | Render Dark | `D` | レンダリング / ダークテーマに切替 |
@@ -250,14 +250,14 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリックすると、その場で Markdown を編集。コードビューでは、ファイル全体を編集 |
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
-   | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書かコードビューのファイルを表示している間、保存 / 名前を付けて保存（UTF-8 以外のファイルは、保存する文字コードを聞く） |
+   | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書かコードビューのファイルを表示している間、保存 / 名前を付けて保存（UTF-8 以外のファイルは、保存する文字コードを聞く。その文字コードで書けない字があれば、その行を示して保存しない） |
    | | `Tab` / `Shift+Tab` | コードビューの編集欄で、選んだ行の字下げを深く / 浅く（`Esc` で編集欄から抜ける） |
    | | `Ctrl+←` / `Ctrl+→` | コードビューの JSON のファイルで、1 段畳む / 開く（編集欄の中では `Ctrl+Shift+[` / `Ctrl+Shift+]`） |
-   | | `Esc` | 開いているブロックやセルを反映して閉じる。ブロックを選んでいれば選択を解く。何も開いていなければ編集パレットを隠し、その次は検索を閉じ（検索欄の中ではすぐ閉じる）、その次は目次を消す |
+   | | `Esc` | 開いているブロックやセルを反映して閉じる。ブロックを選んでいれば選択を解く。何も開いていなければ編集パレットを隠し、その次は検索を閉じ（検索欄の中ではすぐ閉じる）、その次は目次を消す。コードビューの編集欄の中では編集欄から抜け、外では Commands の箱、検索、目次の順に閉じる（編集は続く） |
    | | `Delete` / `Backspace` | 編集モードで、選んだブロックを削除（`Shift` を押していても同じ。Undo 1 回で戻る） |
    | | `Ctrl+X` / `Ctrl+C` | 編集モードでブロックを選んでいる間、その Markdown を丸ごとカット / コピー（メニューのコピーも同じ） |
-   | | `Ctrl+Z` | 編集パレットを表示している間、元に戻す（30 回まで。変更したブロックの中では、ブラウザが入力を元に戻す） |
-   | | `Ctrl+Y` / `Ctrl+Shift+Z` | 編集パレットを表示している間、やり直す（30 回まで。開いているブロックの中では、ブラウザが入力をやり直す） |
+   | | `Ctrl+Z` | 編集パレットを表示している間、元に戻す（30 回まで。変更したブロックの中では、ブラウザが入力を元に戻す）。コードビューの編集では、編集欄の中も GRSMD の Undo（打つのを 1 秒止めるか、カーソルを動かすと区切る） |
+   | | `Ctrl+Y` / `Ctrl+Shift+Z` | 編集パレットを表示している間、やり直す（30 回まで。開いているブロックの中では、ブラウザが入力をやり直す）。コードビューの編集では、GRSMD のやり直し |
    | | `Ctrl+B` / `Ctrl+I` | 編集中に太字 / 斜体 |
 
    Mac では `Ctrl` の代わりに `Cmd` を使います（やり直しは `Cmd+Shift+Z`）。折りたたみのキーは `Option+←` / `Option+→`、編集欄の中では `Cmd+Option+[` / `Cmd+Option+]` です。

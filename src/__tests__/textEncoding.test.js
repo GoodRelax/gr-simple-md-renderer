@@ -16,14 +16,14 @@ import {
 // of non-.md files, and their line endings. Non-ASCII text is written with
 // \u escapes.
 
-const KONNICHIWA = "こんにちは"; // hiragana "konnichiwa"
-const KANJI = "漢"; // "kan"
+const KONNICHIWA = "\u3053\u3093\u306B\u3061\u306F"; // hiragana "konnichiwa"
+const KANJI = "\u6F22"; // "kan"
 const SJIS_KONNICHIWA = [0x82, 0xb1, 0x82, 0xf1, 0x82, 0xc9, 0x82, 0xbf, 0x82, 0xcd];
 const EUC_KONNICHIWA = [0xa4, 0xb3, 0xa4, 0xf3, 0xa4, 0xcb, 0xa4, 0xc1, 0xa4, 0xcf];
 const bytes = (list) => Uint8Array.from(list);
 const list = (u8) => Array.from(u8);
 
-describe("textEncoding (NE-6, NE-15, NE-24, NE-25)", () => {
+describe("textEncoding (INV-89, INV-90; NE-6, NE-15, NE-24, NE-25)", () => {
   it("AT-ENC-01 lists the five encodings with WHATWG labels", () => {
     expect(TEXT_ENCODINGS).toEqual(["utf-8", "shift_jis", "euc-jp", "utf-16le", "utf-16be"]);
   });
@@ -47,7 +47,7 @@ describe("textEncoding (NE-6, NE-15, NE-24, NE-25)", () => {
   });
 
   it("AT-ENC-05 a BOM with broken UTF-8 after it is decoded with replacement chars and is not valid", () => {
-    expect(decodeFileBytes(bytes([0xef, 0xbb, 0xbf, 0x61, 0xff]))).toEqual({ text: "a�", encoding: "utf-8", bom: true, valid: false });
+    expect(decodeFileBytes(bytes([0xef, 0xbb, 0xbf, 0x61, 0xff]))).toEqual({ text: "a\uFFFD", encoding: "utf-8", bom: true, valid: false });
   });
 
   it("AT-ENC-06 Shift_JIS bytes are guessed as shift_jis, not valid", () => {
@@ -61,7 +61,7 @@ describe("textEncoding (NE-6, NE-15, NE-24, NE-25)", () => {
   it("AT-ENC-08 Shift_JIS half-width katakana stays shift_jis when it is not valid EUC-JP", () => {
     // 0xB1 0xB2 0xB3 = half-width "a i u"; 0x82 0xA0 = hiragana "a" (0x82 is no EUC-JP lead)
     expect(decodeFileBytes(bytes([0xb1, 0xb2, 0xb3, 0x82, 0xa0]))).toEqual({
-      text: "ｱｲｳあ",
+      text: "\uFF71\uFF72\uFF73\u3042",
       encoding: "shift_jis",
       bom: false,
       valid: false,
@@ -74,7 +74,7 @@ describe("textEncoding (NE-6, NE-15, NE-24, NE-25)", () => {
     expect(r.valid).toBe(false);
     expect(r.bom).toBe(false);
     expect(r.text).toBe(decodeAs(bytes([0x61, 0x81, 0x20, 0xff, 0xfd]), "shift_jis"));
-    expect(r.text).toContain("�");
+    expect(r.text).toContain("\uFFFD");
   });
 
   it("AT-ENC-10 UTF-16LE and UTF-16BE with a BOM are decoded, BOM stripped, not valid (not UTF-8)", () => {
@@ -86,7 +86,7 @@ describe("textEncoding (NE-6, NE-15, NE-24, NE-25)", () => {
     expect(decodeAs(bytes([0xef, 0xbb, 0xbf, 0x61]), "utf-8")).toBe("a");
     expect(decodeAs(bytes([0xff, 0xfe, 0x61, 0x00]), "utf-16le")).toBe("a");
     expect(decodeAs(bytes(SJIS_KONNICHIWA), "shift_jis")).toBe(KONNICHIWA);
-    expect(decodeAs(bytes([0x61, 0xff]), "utf-8")).toBe("a�");
+    expect(decodeAs(bytes([0x61, 0xff]), "utf-8")).toBe("a\uFFFD");
   });
 
   it("AT-ENC-12 round trip: decodeFileBytes then encodeText gives the same bytes (shift_jis, euc-jp, utf-16le, utf-16be, utf-8 + BOM)", () => {
@@ -108,27 +108,27 @@ describe("textEncoding (NE-6, NE-15, NE-24, NE-25)", () => {
   });
 
   it("AT-ENC-13 encodeText lists the 1-based lines with characters Shift_JIS cannot write and returns no bytes", () => {
-    const r = encodeText("abc\n" + KANJI + "\n😀", "shift_jis", false);
+    const r = encodeText("abc\n" + KANJI + "\n\uD83D\uDE00", "shift_jis", false);
     expect(r.unencodableLines).toEqual([3]);
     expect(r.bytes.length).toBe(0);
-    const many = encodeText("é\n\nok\n€é", "euc-jp", false); // e-acute and the euro sign: not in JIS X 0208
+    const many = encodeText("\u00E9\n\nok\n\u20AC\u00E9", "euc-jp", false); // e-acute and the euro sign: not in JIS X 0208
     expect(many.unencodableLines).toEqual([1, 4]);
   });
 
   it("AT-ENC-14 the WHATWG encoder rules: U+00A5 -> 0x5C, U+203E -> 0x7E, U+2212 written as U+FF0D", () => {
-    expect(list(encodeText("¥‾\\~", "shift_jis", false).bytes)).toEqual([0x5c, 0x7e, 0x5c, 0x7e]);
-    expect(list(encodeText("−－", "shift_jis", false).bytes)).toEqual([0x81, 0x7c, 0x81, 0x7c]);
-    expect(list(encodeText("¥−", "euc-jp", false).bytes)).toEqual([0x5c, 0xa1, 0xdd]);
+    expect(list(encodeText("\u00A5\u203E\\~", "shift_jis", false).bytes)).toEqual([0x5c, 0x7e, 0x5c, 0x7e]);
+    expect(list(encodeText("\u2212\uFF0D", "shift_jis", false).bytes)).toEqual([0x81, 0x7c, 0x81, 0x7c]);
+    expect(list(encodeText("\u00A5\u2212", "euc-jp", false).bytes)).toEqual([0x5c, 0xa1, 0xdd]);
   });
 
   it("AT-ENC-15 half-width katakana: one byte in Shift_JIS, 0x8E + byte in EUC-JP", () => {
-    expect(list(encodeText("ｱﾟ", "shift_jis", false).bytes)).toEqual([0xb1, 0xdf]);
-    expect(list(encodeText("ｱﾟ", "euc-jp", false).bytes)).toEqual([0x8e, 0xb1, 0x8e, 0xdf]);
+    expect(list(encodeText("\uFF71\uFF9F", "shift_jis", false).bytes)).toEqual([0xb1, 0xdf]);
+    expect(list(encodeText("\uFF71\uFF9F", "euc-jp", false).bytes)).toEqual([0x8e, 0xb1, 0x8e, 0xdf]);
   });
 
   it("AT-ENC-16 Shift_JIS writes the first sequence of a character: NEC row 13 and IBM extensions, never leads 0xED-0xEF", () => {
     // Roman numeral one: 0x8754 (NEC row 13), also at 0xFA4A (IBM)
-    expect(list(encodeText("Ⅰ", "shift_jis", false).bytes)).toEqual([0x87, 0x54]);
+    expect(list(encodeText("\u2160", "shift_jis", false).bytes)).toEqual([0x87, 0x54]);
     // a kanji of the IBM extensions: 0xFA5C (IBM), also 0xED40 (NEC-selected), which is skipped
     expect(decodeAs(bytes([0xed, 0x40]), "shift_jis")).toBe(decodeAs(bytes([0xfa, 0x5c]), "shift_jis"));
     const ch = decodeAs(bytes([0xfa, 0x5c]), "shift_jis");
@@ -160,7 +160,7 @@ describe("textEncoding (NE-6, NE-15, NE-24, NE-25)", () => {
   it("AT-ENC-19 a lone surrogate cannot be written in UTF-8 or UTF-16: its line is listed", () => {
     expect(encodeText("a\nb\ud800c", "utf-8", false)).toEqual({ bytes: new Uint8Array(0), unencodableLines: [2] });
     expect(encodeText("\udc00", "utf-16le", false).unencodableLines).toEqual([1]);
-    expect(encodeText("😀", "utf-8", false).unencodableLines).toEqual([]);
+    expect(encodeText("\uD83D\uDE00", "utf-8", false).unencodableLines).toEqual([]);
   });
 
   it("AT-ENC-20 counts line endings: CRLF once as crlf, lone CR and LF", () => {
@@ -211,6 +211,22 @@ describe("textEncoding (NE-6, NE-15, NE-24, NE-25)", () => {
   it("AT-ENC-26 keep: a line appended at the end gets the majority, the old last line keeps its ending", () => {
     const original = { lines: ["a", "b", ""], endings: ["\r", "\r\n"] };
     expect(applyLineEndings("a\nb\nc\n", "keep", original)).toBe("a\rb\r\nc\r\n");
+  });
+
+  it("AT-ENC-28 (INV-90) the unencodable lines are counted on any line ending: CR, CRLF, LF and a mix give the LF text's numbers", () => {
+    const lf = "a\n\uD83D\uDE00\nb\nc\uD83D\uDE00"; // an emoji on lines 2 and 4
+    expect(encodeText(lf, "shift_jis", false).unencodableLines).toEqual([2, 4]);
+    for (const mode of ["\r", "\r\n"]) {
+      expect(encodeText(applyLineEndings(lf, mode), "shift_jis", false).unencodableLines, JSON.stringify(mode)).toEqual([2, 4]);
+      expect(encodeText(applyLineEndings(lf, mode), "euc-jp", false).unencodableLines, JSON.stringify(mode)).toEqual([2, 4]);
+    }
+    expect(encodeText("a\r\n\uD83D\uDE00\rb\nc\uD83D\uDE00\r", "shift_jis", false).unencodableLines).toEqual([2, 4]);
+    // "keep" (NE-25) with CR lines: the lines of the LF text
+    const original = { lines: ["a", "x", "b", "c"], endings: ["\r", "\r", "\r"] };
+    expect(encodeText(applyLineEndings(lf, "keep", original), "shift_jis", false).unencodableLines).toEqual([2, 4]);
+    // a lone surrogate in UTF-8 and UTF-16
+    expect(encodeText("a\rb\rc\ud800", "utf-8", false).unencodableLines).toEqual([3]);
+    expect(encodeText("a\r\n\udc00\rb", "utf-16be", false).unencodableLines).toEqual([2]);
   });
 
   it("AT-ENC-27 encodeText on a 5 MB text runs in linear time", () => {

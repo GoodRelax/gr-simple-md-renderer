@@ -118,6 +118,26 @@ describe("SourceFileRenderer", () => {
       renderer.destroy();
       expect(renderer._lastScrollTop).toBe(0);
     });
+
+    it("AT-SFR-08 (INV-86, G10; review M1) the code view's lines are taken away from the last up (WebKit: linear, not quadratic), also when the view is drawn again", () => {
+      const { renderer, previewEl } = createRenderer();
+      const lines = '<div id="codeViewBody"><span class="code-line">1</span><span class="code-line">2</span><span class="code-line">3</span></div>';
+      const removed = [];
+      const original = Element.prototype.remove;
+      vi.spyOn(Element.prototype, "remove").mockImplementation(function () {
+        if (this.classList.contains("code-line")) removed.push(this.textContent);
+        return original.call(this);
+      });
+      previewEl.innerHTML = lines;
+      renderer.destroy();
+      expect([removed, previewEl.innerHTML]).toEqual([["3", "2", "1"], ""]);
+      removed.length = 0;
+      previewEl.innerHTML = lines;
+      renderer._show("x\n", new File(["x\n"], "a.txt"), null);
+      expect(removed).toEqual(["3", "2", "1"]);
+      expect(previewEl.querySelectorAll(".code-line")).toHaveLength(2);
+      vi.restoreAllMocks();
+    });
   });
 
   describe("_buildCodeBody()", () => {
@@ -270,9 +290,9 @@ describe("SourceFileRenderer", () => {
       const { renderer, previewEl } = createRenderer();
       const file = sjisFile();
       const text = vi.spyOn(file, "text");
-      const meta = await renderer.render(file, null, "dark", () => true, "あ\nsecond");
+      const meta = await renderer.render(file, null, "dark", () => true, "\u3042\nsecond");
       expect(text).not.toHaveBeenCalled();
-      expect(lines(previewEl)).toEqual(["あ", "second"]);
+      expect(lines(previewEl)).toEqual(["\u3042", "second"]);
       expect([meta.fileName, meta.fileSize, meta.lineCount]).toEqual(["a.txt", 4, 2]);
     });
 

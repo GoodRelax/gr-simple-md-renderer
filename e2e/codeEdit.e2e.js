@@ -7,7 +7,7 @@ import { test, expect } from "./fixtures.js";
 const ASCII = (s) => [...s].map((c) => c.charCodeAt(0));
 // "# " + three hiragana (Shift_JIS 82A0 82A2 82A4), CRLF, "print(1)", CRLF
 const SJIS_BYTES = [...ASCII("# "), 0x82, 0xa0, 0x82, 0xa2, 0x82, 0xa4, 0x0d, 0x0a, ...ASCII("print(1)"), 0x0d, 0x0a];
-const KANA = "あいう";
+const KANA = "\u3042\u3044\u3046"; // hiragana a, i, u
 
 /**
  * Drop a file built from bytes in the page (the File is made there, so no
@@ -38,7 +38,7 @@ async function primaryKey(page) {
   return apple ? "Meta" : "Control";
 }
 
-test("a Shift_JIS file: the open dialog shows the encoding and the first lines; Open shows the file with Shift_JIS in the file info", async ({ page }) => {
+test("INV-89 (1)(2)(5): a Shift_JIS file: the open dialog shows the encoding and the first lines; Open shows the file with Shift_JIS in the file info", async ({ page }) => {
   await page.goto("/");
   await dropBytes(page, "old.py", SJIS_BYTES);
   const modal = page.locator("#codeOpenModal");
@@ -54,7 +54,7 @@ test("a Shift_JIS file: the open dialog shows the encoding and the first lines; 
   await expect(page.locator("#fileInfo")).toHaveText(/Shift_JIS\s+\|\s+CRLF/);
 });
 
-test("mixed CRLF and LF: the three buttons; Keep as is opens it with the endings kept", async ({ page }) => {
+test("INV-89 (2)(5): mixed CRLF and LF: the three buttons; Keep as is opens it with the endings kept", async ({ page }) => {
   await page.goto("/");
   await dropBytes(page, "mixed.txt", ASCII("a\r\nb\nc"));
   await expect(page.locator("#codeOpenModal")).toBeVisible();
@@ -67,7 +67,7 @@ test("mixed CRLF and LF: the three buttons; Keep as is opens it with the endings
   await expect(page.locator("#fileInfo")).toHaveText(/UTF-8\s+\|\s+Mixed \(kept\)/);
 });
 
-test("a UTF-8 .txt opens without the dialog", async ({ page }) => {
+test("INV-89 (4): a UTF-8 .txt opens without the dialog", async ({ page }) => {
   await page.goto("/");
   await dropBytes(page, "plain.txt", ASCII("hello\nworld\n"));
   await expect(page.locator("body")).toHaveClass(/\bview-code\b/);
@@ -76,7 +76,7 @@ test("a UTF-8 .txt opens without the dialog", async ({ page }) => {
   await expect(page.locator("#fileInfo")).toHaveText(/UTF-8\s+\|\s+LF/);
 });
 
-test("Save as of the Shift_JIS file in its original encoding writes the same bytes (fake save dialog)", async ({ page }) => {
+test("INV-90 (2)(4)(5): Save as of the Shift_JIS file in its original encoding writes the same bytes (fake save dialog)", async ({ page }) => {
   // The native save dialog cannot be automated: a fake one records the call
   // and keeps the written bytes.
   await page.addInitScript(() => {

@@ -8,8 +8,8 @@ import { fakeFileAccess, fakeFileHandle, domError, deferred } from "./helpers/fa
 // AT-CEC: the code document while the code view is shown (SC-27): opening
 // with the dialog (INV-89), Reload, Save / Save as (INV-90, NE-24, NE-19).
 
-const A = "あ";
-const KAN = "漢";
+const A = "\u3042"; // hiragana a
+const KAN = "\u6F22"; // kanji kan
 const EMOJI = "\u{1F600}";
 const m = CONFIG.messages;
 
@@ -295,14 +295,14 @@ describe("CodeEditController: Save (INV-90)", () => {
     expect(dialog.askSaveEncoding).toHaveBeenCalledTimes(2);
   });
 
-  it("AT-CEC-22 a second press while saving is refused with a toast (INV-54)", async () => {
+  it("AT-CEC-22 a second press while saving is ignored, as in the Markdown view (INV-54, INV-58 / 11-e; L16)", async () => {
     const permission = deferred();
     access = fakeFileAccess({ permission: permission.promise });
     ctrl = new CodeEditController(access, dialog, host);
     await open(utf8("a\n"));
     const first = ctrl.save();
     await ctrl.saveAs();
-    expect(host.toast.mock.calls).toEqual([[m.edit.savingInProgress]]);
+    expect(host.toast).not.toHaveBeenCalled();
     permission.resolve("granted");
     await first;
     expect(access.calls.filter((c) => c.startsWith("startPermission") || c.startsWith("startSavePicker"))).toEqual(["startPermissionRequest"]);
@@ -338,6 +338,50 @@ describe("CodeEditController: Save (INV-90)", () => {
     await saving;
     expect([ctrl.fileName(), ctrl.currentText(), ctrl.document.lastModified]).toEqual(["b.py", "other\n", 1000]);
     expect(host.codeFileSaved).not.toHaveBeenCalled();
+  });
+
+  it("AT-CEC-39 L20: no write API: Save's answer to the encoding question is remembered when the download starts (still unsaved)", async () => {
+    access = fakeFileAccess({ canWrite: false });
+    ctrl = new CodeEditController(access, dialog, host);
+    dialog.askOpen.mockResolvedValue({ encoding: "shift_jis", lineEndingMode: "\r\n" });
+    await open(sjis(`${A}\r\n`), { name: "a.txt" });
+    dialog.askSaveEncoding.mockResolvedValue("original");
+    await ctrl.save();
+    await ctrl.save();
+    expect(dialog.askSaveEncoding).toHaveBeenCalledTimes(1);
+    expect(access.downloads.map((d) => bytesOf(d.text))).toEqual([[0x82, 0xa0, 0x0d, 0x0a], [0x82, 0xa0, 0x0d, 0x0a]]);
+    expect([ctrl.document.saveEncoding, ctrl.document.encoding]).toEqual(["original", "shift_jis"]);
+    // UTF-8 chosen: remembered too (the file is not replaced, so the document stays Shift_JIS)
+    await open(sjis(`${A}\r\n`), { name: "b.txt" });
+    dialog.askSaveEncoding.mockResolvedValue("utf-8");
+    await ctrl.save();
+    await ctrl.save();
+    expect(dialog.askSaveEncoding).toHaveBeenCalledTimes(2);
+    expect(bytesOf(access.downloads[3].text)).toEqual(bytesOf(utf8(`${A}\r\n`)));
+    // Save as asks each time and is not remembered
+    await ctrl.saveAs();
+    expect(dialog.askSaveEncoding).toHaveBeenCalledTimes(3);
+  });
+
+  it("AT-CEC-40 L25 / NE-8: after a Save as to another extension, Save as offers the name with the extension the file was opened with", async () => {
+    const picked = fakeFileHandle({ name: "notes.py", calls: access.calls });
+    access = fakeFileAccess({ picker: Promise.resolve(picked), calls: access.calls });
+    ctrl = new CodeEditController(access, dialog, host);
+    await open(utf8("a\n"), { name: "notes.txt" });
+    await ctrl.saveAs();
+    expect(ctrl.fileName()).toBe("notes.py");
+    await ctrl.saveAs();
+    expect(access.calls.filter((c) => c.startsWith("startSavePicker"))).toEqual(["startSavePicker:notes.txt", "startSavePicker:notes.txt"]);
+    expect(access.pickerTypes[1]).toEqual([{ description: "TXT file", accept: { "text/plain": [".txt"] } }]);
+  });
+
+  it("AT-CEC-45 INV-90 (4): the save dialog's file type: 1 to 15 letters, digits or +; a name starting with its only dot has none", async () => {
+    const types = (name) => ctrl._pickerTypes(name).map((t) => t.accept["text/plain"][0]);
+    expect(types("a.c++")).toEqual([".c++"]);
+    expect(types("a." + "x".repeat(15))).toEqual(["." + "x".repeat(15)]);
+    expect(types("a." + "x".repeat(16))).toEqual([]);
+    expect(types(".bashrc")).toEqual([]);
+    expect(types("a.tar-gz")).toEqual([]);
   });
 
   it("AT-CEC-25 without a document, Save does nothing", async () => {
@@ -479,6 +523,65 @@ describe("CodeEditController: edit mode (INV-85, INV-88) and the JSON fold (INV-
     expect(ctrl.shownText()).toBe(text);
   });
 
+  it("AT-CEC-41 L24: unfold uses the indent unit of the file (inferred once), not one inferred from the folded text shown", async () => {
+    withEditor();
+    // 4-space steps under a 2-space first level: the file's unit is 4
+    const text = '{\n  "a": {\n      "b": {\n          "x": 1\n      },\n      "c": {\n          "y": 2\n      }\n  }\n}\n';
+    await open(utf8(text), { name: "x.json" });
+    ctrl.fold("fold");
+    ctrl.fold("fold"); // the text shown has only the 2-space first level now
+    ctrl.fold("unfold");
+    expect(ctrl.shownText()).toBe('{\n  "a": {\n      "b": { "x": 1 },\n      "c": { "y": 2 }\n  }\n}\n');
+    // in the editor: the unit the editor inferred when editing started
+    ctrl.toggleEdit();
+    expect(ctrl.editor.indentUnit).toBe("    ");
+    ctrl.fold("fold");
+    ctrl.fold("fold");
+    ctrl.fold("unfold");
+    expect(textarea().value).toBe('{\n  "a": {\n      "b": { "x": 1 },\n      "c": { "y": 2 }\n  }\n}\n');
+  });
+
+  it("AT-CEC-42 M1: typing compares no texts for the unsaved mark (count-based); asked otherwise, it is exact", async () => {
+    withEditor();
+    await open(utf8("same\n"));
+    ctrl.toggleEdit();
+    const compare = vi.spyOn(Object.getPrototypeOf(ctrl.document), "isDirty");
+    type("samX\n"); // the same length as the saved text
+    type("same\n"); // typed back
+    expect(ctrl.isDirty(true)).toBe(true); // the mark while typing: not compared yet
+    expect(compare).not.toHaveBeenCalled();
+    expect(ctrl.isDirty()).toBe(false); // INV-21 asks: compared now
+    expect(compare).toHaveBeenCalledTimes(1);
+    type("same!\n"); // another length: unsaved without a comparison
+    expect([ctrl.isDirty(true), ctrl.isDirty(), compare.mock.calls.length]).toEqual([true, true, 1]);
+  });
+
+  it("AT-CEC-43 L6 / INV-90 (7): a Save as to a name of another language while editing colors the editor in it at once", async () => {
+    const picked = fakeFileHandle({ name: "notes.py", calls: access.calls });
+    access = fakeFileAccess({ picker: Promise.resolve(picked), calls: access.calls });
+    preview = document.createElement("div");
+    document.body.append(preview);
+    Object.assign(host, { codeEditModeChanged: vi.fn(), showCodeText: vi.fn(), codeTextChanged: vi.fn(), codeTextSettled: vi.fn() });
+    const highlight = vi.fn((text, language) => (language === "python" ? `<span class="py">${text}</span>` : null));
+    ctrl = new CodeEditController(access, dialog, host, { createEditor: (h) => new CodeEditor(preview, h), highlight, now: () => 0 });
+    await open(utf8("x = 1\n"), { name: "notes.txt" });
+    ctrl.toggleEdit();
+    expect(preview.querySelector(".code-edit-layer code").innerHTML).toBe("x = 1\n\n");
+    await ctrl.saveAs();
+    expect(highlight).toHaveBeenLastCalledWith("x = 1\n", "python");
+    expect(preview.querySelector(".code-edit-layer code").innerHTML).toBe('<span class="py">x = 1\n</span>\n');
+  });
+
+  it("AT-CEC-46 INV-88 (5): the Undo history stays after a Save; an Undo then makes the document unsaved again", async () => {
+    withEditor();
+    await open(utf8("a\n"));
+    ctrl.toggleEdit();
+    type("ab\n");
+    await ctrl.save();
+    expect(ctrl.isDirty()).toBe(false);
+    expect([ctrl.canUndo(), ctrl.undo(), textarea().value, ctrl.isDirty()]).toEqual([true, true, "a\n", true]);
+  });
+
   it("AT-CEC-34 the language follows the file name (EXT_TO_HLJS); none: plaintext", async () => {
     withEditor();
     expect(ctrl.language()).toBe("plaintext");
@@ -491,7 +594,17 @@ describe("CodeEditController: edit mode (INV-85, INV-88) and the JSON fold (INV-
   });
 });
 
-describe("CodeEditController: a .md name is written in UTF-8 (NE-30)", () => {
+describe("CodeEditController: a .md name is written in UTF-8 (INV-90 (6); NE-30)", () => {
+  it("AT-CEC-44 L4: a UTF-8 file saved as .md: no savedMarkdownUtf8 toast (it was UTF-8 already)", async () => {
+    const picked = fakeFileHandle({ name: "notes.md", calls: access.calls });
+    access = fakeFileAccess({ picker: Promise.resolve(picked), calls: access.calls });
+    ctrl = new CodeEditController(access, dialog, host);
+    await open(utf8("# a\n"), { name: "notes.txt" });
+    await ctrl.saveAs();
+    expect(host.toast.mock.calls).toEqual([[m.edit.saved("notes.md")]]);
+    expect(host.reopenAsMarkdown).toHaveBeenCalledTimes(1);
+  });
+
   async function sjisDoc(text, name = "old.txt") {
     dialog.askOpen.mockResolvedValue({ encoding: "shift_jis", lineEndingMode: "\r\n" });
     await open(sjis(text.replace(/\n/g, "\r\n")), { name });

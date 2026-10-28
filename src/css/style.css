@@ -1171,6 +1171,8 @@ body.dark #keyHint {
    No wrapping; the textarea is as large as its text and never scrolls
    itself (#preview scrolls, as in the view). The first line is where
    the view's first line is (the same top padding and line height).
+   While typing (.code-edit-typing) the textarea's text shows and the
+   layer, written again when typing stops, is hidden (G10).
    ============================================================ */
 #codeEditBody {
   display: flex;
@@ -1202,6 +1204,14 @@ body.dark #keyHint {
 .code-edit-stack {
   position: relative;
   flex: 1 0 auto;
+  /* room for the lines typed since the layer was written (1.6em: the line height) */
+  padding-bottom: calc(var(--code-extra-lines, 0) * 1.6em);
+}
+
+/* Plain (over CONFIG.codeEdit.highlightMaxChars): the layer is empty, the
+   number of lines gives the height (the line height and the paddings) */
+.code-edit-plain .code-edit-stack {
+  min-height: calc(var(--code-lines, 0) * 1.6em + 44px);
 }
 
 /* #codeEditBody: over the pre rules of the Markdown view (light and dark) */
@@ -1244,15 +1254,17 @@ body.dark #keyHint {
   background: rgba(9, 105, 218, 0.3);
 }
 
-/* Over CONFIG.codeEdit.highlightMaxChars: plain while editing (INV-86).
-   The textarea's own text shows; the layer only keeps the size. */
-.code-edit-plain .code-edit-input {
+/* Plain, or typed since the layer was written (INV-86): the textarea's
+   own text shows; the layer is hidden on the screen. */
+.code-edit-plain .code-edit-input,
+.code-edit-typing .code-edit-input {
   color: inherit;
 }
 
 @media screen {
-  #codeEditBody.code-edit-plain .code-edit-layer {
-    color: transparent;
+  #codeEditBody.code-edit-plain .code-edit-layer,
+  #codeEditBody.code-edit-typing .code-edit-layer {
+    visibility: hidden;
   }
 
   body.dark #codeEditBody {

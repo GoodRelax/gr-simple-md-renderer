@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import CodeEditHistory from "../js/classes/CodeEditHistory.js";
 
 // NE-7, NE-18, NE-26: Undo / Redo of the code editor. The clock is injected.
@@ -11,7 +11,7 @@ function makeHistory(options = {}) {
 
 const state = (text, selStart, selEnd = selStart) => ({ text, selStart, selEnd });
 
-describe("CodeEditHistory (NE-7, NE-18, NE-26)", () => {
+describe("CodeEditHistory (INV-88; NE-7, NE-18, NE-26)", () => {
   it("AT-CEH-01 a fresh or reset history has nothing to undo or redo", () => {
     const { history } = makeHistory();
     expect(history.canUndo()).toBe(false);
@@ -48,13 +48,13 @@ describe("CodeEditHistory (NE-7, NE-18, NE-26)", () => {
     expect(history.undo()).toEqual(state("", 0));
   });
 
-  it("AT-CEH-04 moving the caret ends the typing step", () => {
+  it("AT-CEH-04 moving the caret ends the typing step; the next step begins at the selection before its first input (M2)", () => {
     const { history } = makeHistory();
     history.reset("abc", 3, 3);
     history.recordTyping("abcd", 4, 4);
     history.noteCaretMove();
-    history.recordTyping("Xabcd", 1, 1);
-    expect(history.undo()).toEqual(state("abcd", 4));
+    history.recordTyping("Xabcd", 1, 1, [0, 0]); // the caret was moved to 0
+    expect(history.undo()).toEqual(state("abcd", 0));
     expect(history.undo()).toEqual(state("abc", 3));
   });
 
@@ -123,17 +123,68 @@ describe("CodeEditHistory (NE-7, NE-18, NE-26)", () => {
     expect(last).toBe("5");
   });
 
-  it("AT-CEH-10 a record that does not change the text adds no step", () => {
+  it("AT-CEH-10 a record that does not change the text adds no step (known once settled)", () => {
     const { history } = makeHistory();
     history.reset("same", 0, 0);
     history.recordOperation("same", 1, 1);
+    expect(history.canUndo()).toBe(false);
     history.recordTyping("same", 2, 2);
+    history.settle();
     expect(history.canUndo()).toBe(false);
-    history.recordTyping("sameX", 5, 5);
-    history.recordTyping("same", 4, 4); // typed and deleted in one step
-    expect(history.canUndo()).toBe(true);
     expect(history.undo()).toBeNull();
+  });
+
+  it("AT-CEH-13 L17: typed and deleted back to the text before: Undo is off once settled (the pause), and undoes nothing", () => {
+    const { history } = makeHistory();
+    history.reset("same", 4, 4);
+    history.recordTyping("sameX", 5, 5);
+    history.recordTyping("same", 4, 4);
+    expect(history.canUndo()).toBe(true); // not compared on a key
+    history.settle();
     expect(history.canUndo()).toBe(false);
+    expect(history.undo()).toBeNull();
+    // a step closed by a caret move that changed nothing is dropped as well
+    history.recordTyping("sameY", 5, 5);
+    history.recordTyping("same", 4, 4);
+    history.noteCaretMove();
+    expect(history.canUndo()).toBe(true);
+    history.settle();
+    expect(history.canUndo()).toBe(false);
+  });
+
+  it("AT-CEH-14 M2: Undo of typing puts back the selection just before its first input, also after an operation and a reset", () => {
+    const { history } = makeHistory();
+    history.reset("hello world", 0, 0);
+    history.noteSelection(6, 6); // the caret placed (start), or a selection made
+    history.recordTyping("hello Xworld", 7, 7);
+    expect(history.undo()).toEqual(state("hello world", 6));
+    history.recordTyping("hello Yworld", 7, 7, [6, 11]); // typed over a selection
+    history.recordTyping("hello YZworld", 8, 8, [7, 7]); // the same step: its before is not used
+    expect(history.undo()).toEqual(state("hello world", 6, 11));
+    history.recordOperation("HELLO world", 0, 5, [0, 5]);
+    expect(history.undo()).toEqual(state("hello world", 0, 5));
+  });
+
+  it("AT-CEH-15 M1: a key costs no work on the whole text: no character is compared until settle() (count-based, G10)", () => {
+    const { history, clock } = makeHistory();
+    const big = "x".repeat(5 * 1024 * 1024);
+    history.reset(big, 0, 0);
+    const spy = vi.spyOn(String.prototype, "charCodeAt");
+    let text = big;
+    for (let i = 0; i < 20; i++) {
+      text += "a";
+      clock.t += 10;
+      history.recordTyping(text, text.length, text.length);
+    }
+    history.noteCaretMove(); // the step closes, still not compared
+    history.recordTyping(text + "b", text.length + 1, text.length + 1);
+    expect(history.canUndo()).toBe(true);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+    history.settle(); // the pause: now the changed parts
+    expect(history._undo[0].change).toEqual({ at: big.length, removed: "", inserted: "a".repeat(20) });
+    expect(history.undo().text).toBe(text);
+    expect(history.undo().text).toBe(big);
   });
 
   it("AT-CEH-11 changes in the middle of a long text are undone and redone exactly (stored as changed parts)", () => {
@@ -152,12 +203,15 @@ describe("CodeEditHistory (NE-7, NE-18, NE-26)", () => {
     expect(step).toEqual({ at: 2000, removed: "x".repeat(500), inserted: "INSERTED" });
   });
 
-  it("AT-CEH-12 the default pause is 1000 ms and the default clock is Date.now", () => {
-    const history = new CodeEditHistory();
-    history.reset("", 0, 0);
-    history.recordTyping("a", 1, 1);
-    history.recordTyping("ab", 2, 2);
-    expect(history.undo()).toEqual(state("", 0));
+  it("AT-CEH-12 the default pause is 1000 ms; the clock is given by the caller (L21: no clock of its own)", () => {
+    expect(() => new CodeEditHistory()).toThrow(TypeError);
+    expect(() => new CodeEditHistory({})).toThrow(TypeError);
+    const fixed = makeHistory();
+    fixed.history.reset("", 0, 0);
+    fixed.history.recordTyping("a", 1, 1);
+    fixed.clock.t = 999;
+    fixed.history.recordTyping("ab", 2, 2);
+    expect(fixed.history.undo()).toEqual(state("", 0));
     const { history: h2, clock } = makeHistory({ pauseMs: 200 });
     h2.reset("", 0, 0);
     h2.recordTyping("a", 1, 1);

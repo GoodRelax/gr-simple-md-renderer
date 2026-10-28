@@ -4,7 +4,7 @@ import { inferIndentUnit, indentLines, outdentLines, leadingIndentAt } from "../
 // NE-5: Tab / Shift+Tab over the selected lines, the indent unit read from
 // the file, and the indent Enter carries.
 
-describe("indentText (NE-5)", () => {
+describe("indentText (INV-87; NE-5)", () => {
   it("AT-IND-01 infers a tab when more indented lines start with a tab than with a space", () => {
     expect(inferIndentUnit("a:\n\tb\n\tc\n  d\n")).toBe("\t");
   });

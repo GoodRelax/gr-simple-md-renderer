@@ -5,10 +5,48 @@ import { foldJsonOnce, unfoldJsonOnce } from "../jsonFold.js";
 import CodeDocument, { singleLineEnding } from "./CodeDocument.js";
 import CodeEditHistory from "./CodeEditHistory.js";
 import { languageOfFileName } from "./SourceFileRenderer.js";
+import { cell, row, choice, selectCell } from "../stateTable.js";
 
 // An extension the save dialog accepts as a file type (NE-8); others are
 // offered as "all files" only.
 const PICKER_EXTENSION = /^\.[A-Za-z0-9+]{1,15}$/;
+
+const VIEWING = "viewing";
+const EDITING = "editing";
+const MODE_STATES = [VIEWING, EDITING];
+const mode = (...cells) => row(MODE_STATES, cells);
+
+/**
+ * Spec 11-h: the code edit mode (INV-85). Event -> current state -> cell
+ * (null = nothing happens). The state is not stored: it is "editing" while
+ * the CodeEditor is active (its DOM is in the preview), else "viewing".
+ * Guard canEdit: there is a document and an editor factory.
+ */
+export const codeEditModeStateMachine = Object.freeze({
+  // [Edit] / e (toggleEdit)
+  editToggled: mode(
+    choice(cell(EDITING, ["dropViewFolds", "startEditor", "showCodePalette"], "canEdit")),
+    cell(VIEWING, ["stopEditor", "keepEditedText", "drawView", "hideCodePalette"]),
+  ),
+  // Reload, after its questions (INV-21): the reload draws the view (L5)
+  reloadStarted: mode(null, cell(VIEWING, ["stopEditor", "keepEditedText", "hideCodePalette"])),
+  // opened, close, the commit of a Reload: a new document (or none)
+  documentReplaced: mode(
+    cell(VIEWING, ["replaceDocument"]),
+    cell(VIEWING, ["stopEditor", "hideCodePalette", "replaceDocument"]),
+  ),
+});
+
+/**
+ * The extension of a file name with its dot (".txt"), or "".
+ * @purity pure
+ * @param {string} name
+ * @returns {string}
+ */
+function extensionOf(name) {
+  const dot = name.lastIndexOf(".");
+  return dot > 0 ? name.slice(dot) : "";
+}
 
 /**
  * True for a name the Markdown view opens (NE-19).
@@ -63,6 +101,9 @@ export default class CodeEditController {
     this._createEditor = editing.createEditor ?? null;
     this._highlight = editing.highlight ?? (() => null);
     this._document = null; // CodeDocument
+    this._dirty = null; // unsaved: true / false, or null until compared (isDirty)
+    this._openedExtension = ""; // the extension of the file opened, e.g. ".txt" (NE-8)
+    this._viewUnit = null; // the indent unit of an unfold in the view, inferred once a document (L24)
     this._fileHandle = null; // the file to write in place, or null
     this._generation = 0; // a new document (open, close, reload) since a save started
     this._saving = false; // a save runs, from its encoding question to its end (INV-54)
@@ -71,7 +112,7 @@ export default class CodeEditController {
     this._history = new CodeEditHistory({
       limit: CONFIG.edit.undoMaxSteps,
       pauseMs: CONFIG.codeEdit.undoPauseMs,
-      ...(editing.now ? { now: editing.now } : {}),
+      now: editing.now ?? (() => Date.now()),
     });
   }
 
@@ -110,21 +151,44 @@ export default class CodeEditController {
   }
 
   /**
-   * The document's text changed (the editor).
+   * The document's text changed (the editor). No comparison of the texts
+   * here (a key, G10): another length is unsaved for sure; the same length
+   * is compared when asked (isDirty).
    * @purity non-pure
    * @param {string} text - LF text
    */
   updateText(text) {
-    if (this._document) this._document = this._document.withText(text);
+    if (!this._document) return;
+    this._setDocument(this._document.withText(text));
+    if (text.length !== this._document.savedText.length) this._dirty = true;
   }
 
   /**
    * Unsaved: the text differs from the text at the last load or save.
+   * Asked for the mark while typing (once a key), a text not compared yet
+   * counts as unsaved; it is compared when typing stops or when asked
+   * otherwise (INV-21).
    * @purity semi-pure-b
+   * @param {boolean} [isTyping] - asked for the mark while typing
    * @returns {boolean}
    */
-  isDirty() {
-    return this._document !== null && this._document.isDirty();
+  isDirty(isTyping = false) {
+    if (this._document === null) return false;
+    if (this._dirty === null) {
+      if (isTyping) return true;
+      this._dirty = this._document.isDirty();
+    }
+    return this._dirty;
+  }
+
+  /**
+   * The document now; whether it is unsaved is compared when next asked.
+   * @purity non-pure
+   * @param {CodeDocument|null} codeDocument
+   */
+  _setDocument(codeDocument) {
+    this._document = codeDocument;
+    this._dirty = null;
   }
 
   /**
@@ -199,45 +263,95 @@ export default class CodeEditController {
    * @purity non-pure
    */
   toggleEdit() {
-    if (this.isEditing()) this.leaveEdit();
-    else this._enterEdit();
+    this._dispatch("editToggled");
   }
 
   /**
-   * Edit mode starts on the document's text (the view's folds are dropped,
-   * INV-92).
+   * Edit mode ends without drawing the view (Reload, after its questions:
+   * the reload draws the view; L5). Nothing when not editing.
    * @purity non-pure
+   * @returns {boolean} true when edit mode ended
    */
-  _enterEdit() {
-    if (!this._document || !this._createEditor) return;
-    this._editor ??= this._createEditor(this._editorHost());
-    this._displayText = null;
-    this._editor.start(this._document.text, this._history);
-    this._host.codeEditModeChanged(true);
+  stopEditing() {
+    return this._dispatch("reloadStarted");
   }
 
   /**
-   * Back to the view, which shows the edited text; the document keeps it
-   * (unsaved stays as it is).
+   * The view shows the document's text again (a Reload that could not
+   * read the file after stopEditing).
    * @purity non-pure
    */
-  leaveEdit() {
-    if (!this.isEditing()) return;
-    const text = this._editor.stop();
-    this.updateText(text);
-    this._host.showCodeText(text, true);
-    this._host.codeEditModeChanged(false);
+  showDocumentText() {
+    if (this._document) this._host.showCodeText(this.shownText(), true);
   }
 
   /**
-   * Edit mode ends without drawing the view (the code view is left, or
-   * drawn anew by the caller).
+   * Run an event of 11-h (codeEditModeStateMachine).
    * @purity non-pure
+   * @param {"editToggled"|"reloadStarted"|"documentReplaced"} event
+   * @param {{document?: CodeDocument|null}} [input] - documentReplaced: the new document
+   * @returns {boolean} true when a cell was taken
    */
-  _stopEditing() {
-    if (!this.isEditing()) return;
-    this.updateText(this._editor.stop());
-    this._host.codeEditModeChanged(false);
+  _dispatch(event, input = {}) {
+    const state = this.isEditing() ? EDITING : VIEWING;
+    const next = selectCell(codeEditModeStateMachine[event][state], (guard) => this._isGuardTrue(guard));
+    if (!next) return false;
+    const run = { text: "" };
+    for (const action of next.actions) this._runAction(action, input, run);
+    return true;
+  }
+
+  /**
+   * @purity semi-pure-b
+   * @param {string} guard
+   * @returns {boolean}
+   */
+  _isGuardTrue(guard) {
+    if (guard === "canEdit") return this._document !== null && this._createEditor !== null;
+    throw new Error("Unknown guard: " + guard);
+  }
+
+  /**
+   * One action of an 11-h cell.
+   * @purity non-pure
+   * @param {string} action
+   * @param {{document?: CodeDocument|null}} input
+   * @param {{text: string}} run - the text the editor stopped with, for the later actions
+   */
+  _runAction(action, input, run) {
+    switch (action) {
+      case "dropViewFolds": // INV-92: edit mode starts on the document's text
+        this._displayText = null;
+        break;
+      case "startEditor":
+        this._editor ??= this._createEditor(this._editorHost());
+        this._editor.start(this._document.text, this._history);
+        break;
+      case "showCodePalette":
+        this._host.codeEditModeChanged(true);
+        break;
+      case "stopEditor":
+        run.text = this._editor.stop();
+        break;
+      case "keepEditedText": // the document keeps it; unsaved stays as it is
+        this.updateText(run.text);
+        break;
+      case "drawView":
+        this._host.showCodeText(run.text, true);
+        break;
+      case "hideCodePalette":
+        this._host.codeEditModeChanged(false);
+        break;
+      case "replaceDocument":
+        this._generation++;
+        this._displayText = null;
+        this._viewUnit = null;
+        this._history.reset(input.document?.text ?? "", 0, 0);
+        this._setDocument(input.document ?? null);
+        break;
+      default:
+        throw new Error("Unknown action: " + action);
+    }
   }
 
   /**
@@ -289,8 +403,7 @@ export default class CodeEditController {
       return;
     }
     const source = this.shownText();
-    const result =
-      direction === "fold" ? foldJsonOnce(source) : unfoldJsonOnce(source, inferIndentUnit(source, CONFIG.codeEdit.defaultIndent));
+    const result = direction === "fold" ? foldJsonOnce(source) : unfoldJsonOnce(source, this._indentUnit());
     if (result.error) {
       this._host.toast(m.foldInvalid);
       return;
@@ -307,6 +420,19 @@ export default class CodeEditController {
     }
     this._displayText = result.text;
     this._host.showCodeText(result.text, false);
+  }
+
+  /**
+   * The indent unit an unfold uses (L24): the editor's while editing (it
+   * inferred it when editing started), else one inferred once from the
+   * document's text (not from the folded text shown).
+   * @purity non-pure
+   * @returns {string}
+   */
+  _indentUnit() {
+    if (this.isEditing()) return this._editor.indentUnit;
+    this._viewUnit ??= inferIndentUnit(this._document.text, CONFIG.codeEdit.defaultIndent);
+    return this._viewUnit;
   }
 
   /**
@@ -371,11 +497,8 @@ export default class CodeEditController {
    * @param {object|null} fileHandle
    */
   opened(codeDocument, fileHandle) {
-    this._stopEditing();
-    this._generation++;
-    this._displayText = null;
-    this._history.reset(codeDocument.text, 0, 0);
-    this._document = codeDocument;
+    this._dispatch("documentReplaced", { document: codeDocument });
+    this._openedExtension = extensionOf(codeDocument.fileName);
     this._fileHandle = fileHandle ?? null;
     this._fileAccess.noteFile(fileHandle ?? null);
   }
@@ -385,11 +508,8 @@ export default class CodeEditController {
    * @purity non-pure
    */
   close() {
-    this._stopEditing();
-    this._generation++;
-    this._displayText = null;
-    this._history.reset("", 0, 0);
-    this._document = null;
+    this._dispatch("documentReplaced", { document: null });
+    this._openedExtension = "";
     this._fileHandle = null;
   }
 
@@ -416,11 +536,7 @@ export default class CodeEditController {
       /** @purity non-pure */
       commit: () => {
         if (!next || generation !== this._generation) return;
-        this._stopEditing();
-        this._generation++;
-        this._displayText = null;
-        this._history.reset(next.text, 0, 0);
-        this._document = next;
+        this._dispatch("documentReplaced", { document: next });
       },
     };
   }
@@ -456,21 +572,18 @@ export default class CodeEditController {
   async _save(isSaveAs) {
     const doc = this._document;
     if (!doc) return;
-    if (this._saving) {
-      this._host.toast(CONFIG.messages.edit.savingInProgress);
-      return;
-    }
+    if (this._saving) return; // ignored, as a Markdown save in progress (11-e, INV-58)
     this._saving = true;
     const generation = this._generation;
     let reopen = null;
     try {
       let encoding = this._knownEncoding(doc, isSaveAs);
-      let remember = false;
+      let remember = null;
       if (encoding === null) {
         const answer = await this._dialog.askSaveEncoding(doc.encoding);
         if (!answer || generation !== this._generation) return;
         encoding = answer === "original" ? doc.encoding : "utf-8";
-        remember = !isSaveAs;
+        if (!isSaveAs) remember = answer;
       }
       reopen = await this._write({ isSaveAs, encoding, generation, remember });
     } catch (error) {
@@ -502,13 +615,14 @@ export default class CodeEditController {
    * cannot write stop the save before any of them; a .md name is written in
    * UTF-8 (NE-30), known after the save dialog for Save as.
    * Save's answer to the encoding question is remembered once the file is
-   * written in it (NE-24): a save stopped or canceled asks again.
+   * written in it, or its download started (NE-24, L20): a save stopped or
+   * canceled asks again.
    * @purity non-pure
    * @param {object} w
    * @param {boolean} w.isSaveAs
    * @param {string} w.encoding
    * @param {number} w.generation - of the document the save started from
-   * @param {boolean} w.remember - Save asked: remember the answer
+   * @param {"original"|"utf-8"|null} w.remember - Save asked: the answer to remember
    * @returns {Promise<{file: File, fileHandle: object}|null>} a file saved as .md to reopen (NE-19)
    */
   async _write({ isSaveAs, encoding: chosen, generation, remember }) {
@@ -520,6 +634,8 @@ export default class CodeEditController {
       const encoded = this._encode(doc, text, chosen, name);
       if (!encoded) return null;
       access.startDownload(name, encoded.bytes, CONFIG.codeEdit.downloadMimeType);
+      // the base (unsaved) stays (INV-26); the answer is kept for the next Save
+      if (remember && generation === this._generation) this._document = this._document.withSaveEncoding(remember);
       this._host.toast(CONFIG.messages.edit.downloadStarted(name));
       this._toastIfMadeUtf8(chosen, encoded.encoding);
       return null;
@@ -533,7 +649,8 @@ export default class CodeEditController {
     // again in UTF-8.
     let encoded = this._encode(doc, text, chosen, inPlace ? name : "");
     if (!encoded) return null;
-    const started = inPlace ? access.startPermissionRequest(fileHandle) : access.startSavePicker(name, this._pickerTypes(name));
+    const offered = this._offeredName(name);
+    const started = inPlace ? access.startPermissionRequest(fileHandle) : access.startSavePicker(offered, this._pickerTypes(offered));
     let lastModified;
     try {
       if (inPlace) {
@@ -555,7 +672,7 @@ export default class CodeEditController {
     if (generation === this._generation) {
       const saved = this._document.withSaved(text, savedName, lastModified, encoding);
       // UTF-8 chosen: the document is UTF-8 now, nothing left to remember
-      this._document = remember && encoding === doc.encoding ? saved.withSaveEncoding("original") : saved;
+      this._setDocument(remember === "original" && encoding === doc.encoding ? saved.withSaveEncoding("original") : saved);
       this._fileHandle = fileHandle;
     }
     this._host.toast(CONFIG.messages.edit.saved(savedName));
@@ -563,7 +680,9 @@ export default class CodeEditController {
     const file = new File([bytes], savedName, lastModified === null ? {} : { lastModified });
     if (isMarkdownName(savedName) && generation === this._generation) return { file, fileHandle };
     const languageChanged = languageOfFileName(doc.fileName) !== languageOfFileName(savedName);
-    if (generation === this._generation) this._host.codeFileSaved(file, fileHandle, languageChanged);
+    if (generation !== this._generation) return null;
+    if (languageChanged) this.editor?.recolor(); // INV-90 (7): the editor's colors follow the new name
+    this._host.codeFileSaved(file, fileHandle, languageChanged);
     return null;
   }
 
@@ -591,13 +710,27 @@ export default class CodeEditController {
 
   /**
    * NE-30: a .md file was written in UTF-8 although another encoding was
-   * chosen: a toast says so.
+   * chosen: a toast says so (not when UTF-8 was chosen, L4).
    * @purity non-pure
    * @param {string} chosen
    * @param {string} written
    */
   _toastIfMadeUtf8(chosen, written) {
-    if (chosen !== written) this._host.toast(CONFIG.messages.codeEdit.savedMarkdownUtf8);
+    if (chosen !== "utf-8" && written === "utf-8") this._host.toast(CONFIG.messages.codeEdit.savedMarkdownUtf8);
+  }
+
+  /**
+   * The name the save dialog offers (NE-8): the file's name with the
+   * extension it was opened with (after a Save as to another extension,
+   * the opened one again). A name without one stays as it is.
+   * @purity semi-pure-b
+   * @param {string} name - the file's name now
+   * @returns {string}
+   */
+  _offeredName(name) {
+    const ext = extensionOf(name);
+    if (!this._openedExtension || ext === this._openedExtension) return name;
+    return name.slice(0, name.length - ext.length) + this._openedExtension;
   }
 
   /**

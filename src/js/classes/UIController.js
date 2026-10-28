@@ -7,6 +7,7 @@ import MarkdownTextOps from "./MarkdownTextOps.js";
 import ClipboardLink from "./ClipboardLink.js";
 import { dropHandlePromise, isOtherField, pasteStartsDocument } from "../earlyInput.js";
 import { hasCodeOutline, buildCodeOutline } from "../codeOutline.js";
+import { detectBom } from "../textEncoding.js";
 
 /**
  * An Undo or Redo of the browser's editing history.
@@ -63,6 +64,20 @@ export function classifyDroppedFile(fileName, fileSize) {
  */
 export function hasNullByte(bytes) {
   return bytes.some((b) => b === 0);
+}
+
+/**
+ * The first bytes of a file of an unknown extension mark it binary: a NUL
+ * byte, unless the bytes start with a UTF-16 BOM (UTF-16 text holds NUL
+ * bytes; INV-89, L19).
+ * @purity pure
+ * @param {Uint8Array} bytes
+ * @returns {boolean}
+ */
+export function looksBinary(bytes) {
+  const bom = detectBom(bytes);
+  if (bom === "utf-16le" || bom === "utf-16be") return false;
+  return hasNullByte(bytes);
 }
 
 /**
@@ -266,7 +281,8 @@ export default class UIController {
   showKeyHint(mode) {
     const hint = this.elements.keyHint;
     if (!hint) return;
-    const text = CONFIG.keyHints[mode];
+    // the fold keys of a Mac are Option+Left / Right (INV-92, NE-23)
+    const text = mode === "code" && this._isApple ? CONFIG.keyHints.codeApple : CONFIG.keyHints[mode];
     if (!text) {
       hint.style.display = "none";
       return;
@@ -501,7 +517,8 @@ export default class UIController {
    */
   async _reloadCodeView(theme) {
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
-    this.codeEdit?.leaveEdit(); // edit mode ends first (SC-27)
+    // edit mode ends first, without drawing the view: the reload draws it (SC-27, L5)
+    const wasEditing = this.codeEdit?.stopEditing() ?? false;
     const reader = this.codeEdit?.reloadReader() ?? null;
     let metadata;
     try {
@@ -509,6 +526,7 @@ export default class UIController {
         ? await this.orchestrator.reloadCodeView(theme, reader.readText)
         : await this.orchestrator.reloadCodeView(theme);
     } catch {
+      if (wasEditing) this.codeEdit.showDocumentText(); // the editor left the view empty
       this._toast(CONFIG.messages.edit.reloadFailed); // the file could not be read (N4)
       return;
     }
@@ -599,7 +617,7 @@ export default class UIController {
     try {
       if (kind === "sniff") {
         const bytes = new Uint8Array(await file.slice(0, 8192).arrayBuffer());
-        if (hasNullByte(bytes)) {
+        if (looksBinary(bytes)) {
           alert(CONFIG.fileDrop.messages.binaryFile);
           return;
         }
@@ -1366,10 +1384,12 @@ export default class UIController {
   /**
    * Unsaved (glossary, 11-e): a derived value, never stored.
    * @purity semi-pure-b
+   * @param {boolean} [isCodeTyping] - the mark of a key typed in the code editor
    * @returns {boolean}
    */
-  _isDocumentDirty() {
-    if (this.codeEdit?.isDirty()) return true; // the code document (SC-27)
+  _isDocumentDirty(isCodeTyping = false) {
+    // the code document (SC-27); while typing in it, not compared on each key (G10)
+    if (this.codeEdit?.isDirty(isCodeTyping)) return true;
     if (!this.documents.hasSession()) return false;
     return (
       this.documents.isBodyChanged(this.orchestrator.getBody()) ||
@@ -1382,10 +1402,11 @@ export default class UIController {
    * Title prefix and palette status (INV-50). No file name in the title.
    * The button states follow now, or in the next frame (deferButtonStates).
    * @purity non-pure
-   * @param {{deferButtonStates?: boolean}} [options]
+   * @param {{deferButtonStates?: boolean, isCodeTyping?: boolean}} [options] -
+   *   isCodeTyping: a key typed in the code editor (exact when typing stops)
    */
   _refreshDirtyMark(options = {}) {
-    const dirty = this._isDocumentDirty();
+    const dirty = this._isDocumentDirty(options.isCodeTyping);
     document.title = dirty ? CONFIG.edit.titleUnsavedPrefix + this._baseTitle : this._baseTitle;
     const m = CONFIG.messages.edit;
     const name = this.documents.fileName();
@@ -1829,8 +1850,8 @@ export default class UIController {
         if (metadata && isEdited) this._showCodeFileInfo(metadata);
         this._codeTextSettled();
       },
-      // typing: the button states once per frame (INV-51)
-      codeTextChanged: () => this._refreshDirtyMark({ deferButtonStates: true }),
+      // typing: the button states once per frame (INV-51); nothing compared on a key (G10)
+      codeTextChanged: () => this._refreshDirtyMark({ deferButtonStates: true, isCodeTyping: true }),
       codeTextSettled: () => this._codeTextSettled(),
     };
   }
@@ -1859,12 +1880,13 @@ export default class UIController {
 
   /**
    * The code text shown changed for good (a fold, the view drawn again, a
-   * typing pause): Search and the Index follow it.
+   * typing pause): Search, the Index, the unsaved mark and the buttons follow it.
    * @purity non-pure
    */
   _codeTextSettled() {
     this.documentSearch?.refresh();
     this.documentIndex?.refresh();
+    this._refreshDirtyMark(); // exact now: the mark, Undo (L17)
   }
 
   /**

@@ -184,8 +184,22 @@ function reverseTableFor(encoding) {
 }
 
 /**
- * Encode with a reverse table. Lines (1-based, split on "\n") holding a
- * code point the table lacks are listed; the bytes are then not used.
+ * True when a line ends at index i of the text: an LF, or a CR not followed
+ * by an LF (a CRLF ends its line at the LF).
+ * @purity pure
+ * @param {string} text
+ * @param {number} i
+ * @returns {boolean}
+ */
+function endsLineAt(text, i) {
+  const c = text.charCodeAt(i);
+  return c === 10 || (c === 13 && text.charCodeAt(i + 1) !== 10);
+}
+
+/**
+ * Encode with a reverse table. Lines (1-based, split on any line ending:
+ * CRLF, LF or CR) holding a code point the table lacks are listed; the
+ * bytes are then not used.
  * @purity pure
  * @param {string} text
  * @param {Map<number, number>} table
@@ -199,7 +213,7 @@ function encodeWithTable(text, table) {
   for (let i = 0; i < text.length; i++) {
     const cp = text.codePointAt(i);
     if (cp > 0xffff) i++;
-    if (cp === 10) line++;
+    else if (endsLineAt(text, i)) line++;
     const code = table.get(cp);
     if (code === undefined) {
       if (unencodableLines[unencodableLines.length - 1] !== line) unencodableLines.push(line);
@@ -212,8 +226,9 @@ function encodeWithTable(text, table) {
 }
 
 /**
- * The lines (1-based, split on "\n") holding a lone surrogate, which
- * UTF-8 cannot write (TextEncoder would put U+FFFD in its place).
+ * The lines (1-based, split on any line ending: CRLF, LF or CR) holding a
+ * lone surrogate, which UTF-8 cannot write (TextEncoder would put U+FFFD
+ * in its place).
  * @purity pure
  * @param {string} text
  * @returns {number[]}
@@ -223,7 +238,7 @@ function loneSurrogateLines(text) {
   let line = 1;
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
-    if (c === 10) {
+    if (endsLineAt(text, i)) {
       line++;
       continue;
     }
@@ -263,8 +278,9 @@ function encodeUtf16(text, littleEndian, bom) {
  * Encode text for saving (NE-24). text is final (line endings applied).
  * bom adds the encoding's BOM (utf-8 / utf-16*; ignored for the others).
  * When a line holds a character the encoding cannot write, unencodableLines
- * lists those lines (1-based, split on "\n") and bytes is empty: the
- * caller does not save.
+ * lists those lines (1-based, split on any line ending: CRLF, LF or CR, so
+ * the numbers are those of the LF text the endings were applied to) and
+ * bytes is empty: the caller does not save.
  * The reverse table of Shift_JIS / EUC-JP is built once and kept in the
  * module; the result depends on the arguments only.
  * @purity semi-pure-a
