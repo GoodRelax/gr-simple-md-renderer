@@ -17,6 +17,7 @@ vi.mock("../js/classes/ModalController.js", () => ({
 import { showToast } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
 import DiagramZoomController from "../js/classes/DiagramZoomController.js";
+import BlockCaretMap from "../js/classes/BlockCaretMap.js";
 import { setupApp, dropEvent, settle } from "./helpers/appStack.js";
 import { pointer, keydown } from "./helpers/editDom.js";
 
@@ -218,6 +219,39 @@ describe("AT-DBL INV-57 double click outside edit mode", () => {
     }
     expect(app.ui.palette.isShown()).toBe(true);
     expect(app.blockEditor()).not.toBeNull();
+  });
+
+  /** The body text style for the paragraph (jsdom computes none), and the press's place: right after "Hello". */
+  function pressedAfterHello() {
+    const real = window.getComputedStyle.bind(window);
+    vi.spyOn(window, "getComputedStyle").mockImplementation((el) =>
+      el.tagName === "P" && app.preview.contains(el)
+        ? { fontFamily: "BodySans", fontSize: "16px", fontWeight: "400", fontStyle: "normal", lineHeight: "24px", letterSpacing: "normal", marginTop: "16px", marginBottom: "16px" }
+        : real(el),
+    );
+    return vi.spyOn(BlockCaretMap, "pointAt").mockReturnValue({ count: 5, afterSpace: false, lineOffset: 0, index: 5, text: "Hello link word." });
+  }
+
+  it("AT-BEC-TS-14 a double click outside edit mode puts the caret where it was pressed (INV-84)", async () => {
+    await withDocument();
+    const pointAt = pressedAfterHello();
+    dblclick(app.block(isPara).el.firstElementChild, { x: 31, y: 17 });
+    expect(pointAt).toHaveBeenCalledWith(expect.any(Element), 31, 17);
+    const ta = app.blockEditor();
+    expect(ta.selectionStart).toBe(5);
+    expect(ta.value.slice(0, 5)).toBe("Hello");
+  });
+
+  it("AT-BEC-TS-15 a double tap does the same, at its second tap (INV-84)", async () => {
+    await withDocument();
+    const pointAt = pressedAfterHello();
+    const p = app.block(isPara).el.firstElementChild;
+    for (let i = 0; i < 2; i++) {
+      pointer(p, "pointerdown", { pointerType: "touch", x: 31, y: 17 });
+      pointer(p, "pointerup", { pointerType: "touch", x: 31, y: 17 });
+    }
+    expect(pointAt).toHaveBeenCalledWith(expect.any(Element), 31, 17);
+    expect(app.blockEditor().selectionStart).toBe(5);
   });
 
   it("AT-DBL-09 initial state with an empty #editor still starts an empty document (INV-31)", async () => {

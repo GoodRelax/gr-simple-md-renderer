@@ -46,6 +46,8 @@
 
 > v2.18 の変更 (2026-10-28、ブロック編集欄の字とスクロール): 仕様の INV-83・INV-84 (新) と INV-40・INV-46・INV-77・INV-80 (8) の改めに合わせて、セクション AG (PRT-AG01〜AG05) を追加した。AT に AT-BCM (新。01〜07) と AT-BEC-TS (新。01〜08) を足し、AT-ICO に 21 を足した。AT-STA-08 (編集欄と印の層は枠の線を持たない) と AT-THM (編集欄の枠は `outline`、目次と検索の箱の地は 0.85) を改めた。e2e に editScrollFont.e2e.js を足し、index.e2e.js の地を 0.85 にした。
 
+> v2.19 の変更 (2026-10-29、ブロック編集欄の字とスクロールのレビュー (1 回目) の直し): 裁定 ESF-7 (すき間と空の文書の編集欄は本文の字)・ESF-8 (Edge で文書の最後の高いコードブロックがずれた件) を AG 節に書いた。PRT-AG01 にすき間の手順、PRT-AG02 にリスト・引用の 1 回押しを足した。AT-BEC-TS に 09〜15 を足し、07・08 を高さの合わせ方の改め (INV-40: 位置はスクロールのたびに覚え、詰められたときだけ戻す) に合わせた。AT-BCM を純粋な `caretMatching.js` と `BlockCaretMap` に分け、08・09 を足した。AT-SM に 42・43、AT-ORC に R6 を足した。e2e の editScrollFont.e2e.js に、編集モードの 1 回押し (リスト・引用・段落) と、1 MB の文書の 1 キーの時間 (記録だけ) を足した。
+
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
 ---
@@ -4432,7 +4434,7 @@ INV-82 (仕様 5.18)。ベータ版は、本番と同じビルドの robots の 
 
 ## セクション AG: ブロック編集欄の字とスクロール (2026-10-28)
 
-INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (2026-10-27): テキストブロックを編集するとスクロールの位置が変わる (打っている途中に少しずつ)、編集中と表示中とでフォントが変わるのが違和感。裁定 ESF-1〜ESF-6。
+INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (2026-10-27): テキストブロックを編集するとスクロールの位置が変わる (打っている途中に少しずつ)、編集中と表示中とでフォントが変わるのが違和感。裁定 ESF-1〜ESF-8 (ESF-7・ESF-8 は 2026-10-29)。
 
 ---
 
@@ -4444,16 +4446,18 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | **手順** | 1. 見出し・段落・リスト・引用・コードブロックを、順にダブルクリックして開き、Esc で閉じる |
 |  | 2. 表の [Markdown] のタブで原文を開く |
 |  | 3. ダークの配色で 1 を行う |
+|  | 4. 編集モードで、段落と段落のすき間の線を押して新しいブロックを開き、1 行打って Esc を押す |
 | **期待結果** | - 1 で、編集欄の字の形・大きさ・太さ・行の間隔が、表示のときと同じ (見出しは `#` が付いて同じ大きさの太字。コードはコードの字) |
 |  | - 1 で、開いても閉じても、字の始まりの位置が横にずれない (段落・見出し。コードブロックは表示の内側の余白のまま) |
 |  | - 1 で、編集欄の枠は青い線 (場所を取らない) で、内側に余白が無い |
 |  | - 2 で、表の原文は今までどおり等幅で、縦棒がそろう (PRT-X07) |
 |  | - 3 で、枠はダークの青 (`#1f6feb`) |
+|  | - 4 で、すき間の編集欄の字は本文の字 (段落と同じ) で、確定の前後で字が変わらない (ESF-7) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-83。自動では AT-BEC-TS-01〜04、AT-ICO-21、AT-STA-08、AT-THM、editScrollFont.e2e.js |
+| 備考 | 要求: INV-83 (ESF-2〜ESF-4、ESF-7)。自動では AT-BEC-TS-01〜04・10〜13、AT-ICO-21、AT-STA-08、AT-THM、editScrollFont.e2e.js |
 
 ---
 
@@ -4466,15 +4470,17 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 |  | 2. 字を 2 つ打ち、Esc を押す |
 |  | 3. 段落の 4 つ目のリンクの後ろの語をダブルクリックし、何も変えずに Esc を押す |
 |  | 4. 編集モードで、別の段落の途中を 1 回押して開き、外を押して閉じる |
+|  | 5. 編集モードで、折り返す長いリストの項目と引用の途中の語を、それぞれ 1 回押して開き、Esc を押す |
 | **期待結果** | - 1 で、カーソルは押した字の所にあり、30 行目は画面の同じ高さにある (前は、行が下へずれ、カーソルはブロックの末尾にあった) |
 |  | - 2 で、打った字は 30 行目に入り、確定の後も 30 行目は同じ高さにある |
 |  | - 3 で、カーソルは押した語の前 (リンクの行き先の中ではない) にあり、閉じた後も行が動かない |
 |  | - 4 で、押した行が開いても閉じても同じ高さにある |
+|  | - 5 で、カーソルは押した語の前にあり、その行は開いても閉じても同じ高さにある |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-84、INV-46。自動では AT-BCM-01〜04、AT-BEC-TS-05・06、editScrollFont.e2e.js |
+| 備考 | 要求: INV-84 (ESF-5)、INV-46。自動では AT-BCM-01〜09、AT-BEC-TS-05・06・14・15、AT-ORC-R6、editScrollFont.e2e.js |
 
 ---
 
@@ -4492,7 +4498,7 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-40 (ESF-1)。実測: 直す前は、WebKit で文書の末尾の段落で打つとずれた (2026-10-28。126 px・163 px)。Chromium (Edge) でも、文書の最後の高いコードブロックの中ほどで打つとずれた (2026-10-29。オーナーの指摘の形。1 字目で 351 px、改行ごとに 21 px)。直した後はどちらも 0 px。自動では AT-BEC-TS-07・08、editScrollFont.e2e.js (マウスとタッチ、Chromium と WebKit) |
+| 備考 | 要求: INV-40 (ESF-1・ESF-8)。実測: 直す前は、WebKit で文書の末尾の段落で打つとずれた (2026-10-28。126 px・163 px)。Chromium (Edge) でも、文書の最後の高いコードブロックの中ほどで打つとずれた (2026-10-29。オーナーの指摘の形。1 字目で 351 px、改行ごとに 21 px)。直した後はどちらも 0 px。自動では AT-BEC-TS-07〜09、AT-SM-42・43、editScrollFont.e2e.js (マウスとタッチ、Chromium と WebKit) |
 
 ---
 
@@ -4574,12 +4580,12 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | AT-CL | `ClipboardLink` | INV-69 | ClipboardLink.test.js | 01〜04 |
 | AT-MR | `MarkdownRenderer` のブロックの描画 (15〜19: コードブロックの色付けの上限。言語の無い長いブロックと上限を超えるブロックの時間、20,480 / 20,481 文字の境目、先頭の 3,072 文字での言語の判定、CONFIG の値。5.14.4) | INV-41〜43、INV-47 | MarkdownRenderer.blocks.test.js、MarkdownRenderer.test.js、diagrams.partial.test.js、MarkdownRenderer.highlightLimit.test.js | 01〜19 (09 は `MarkdownRenderer.test.js` のコメントにだけある。AT.1 の注) |
 | AT-DG | 図と PlantUML の部分描画 | INV-02、INV-23 | diagrams.partial.test.js | 01〜07 |
-| AT-SM | `ScrollMemento` (アンカー、読んでいる位置、挿入の後の最小のスクロール。39〜41: 利用者がビューを動かす操作の見張り `watchUserMoves` (39: ホイール・指の移動・スクロールのキー・Space・スクロールバーの押下の後のスクロールで読んでいる位置を覚える。40: Shift、入力欄の中のスクロールのキー、本文の外と中の押下、ポインタの移動は数えない。41: パネルのスクロールは数えない、`scrollTargetTo` はその場で覚える、`stop()`)) | INV-46、INV-52、INV-78、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜41 |
-| AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R5、Undo / Redo の記録 09〜09d。28: 全体の描画の間に利用者が動かしたら、最後に動かした所の読んでいる位置へ戻し (`restoreReadingAnchor`)、動かさなければ描画の前の位置へ戻す) | INV-42、INV-46〜48、INV-62、INV-78 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜28 (06b、09b〜09d を含む)、R1〜R5、T1〜T6 |
+| AT-SM | `ScrollMemento` (アンカー、読んでいる位置、挿入の後の最小のスクロール。39〜41: 利用者がビューを動かす操作の見張り `watchUserMoves` (39: ホイール・指の移動・スクロールのキー・Space・スクロールバーの押下の後のスクロールで読んでいる位置を覚える。40: Shift、入力欄の中のスクロールのキー、本文の外と中の押下、ポインタの移動は数えない。41: パネルのスクロールは数えない、`scrollTargetTo` はその場で覚える、`stop()`)。42: 最後に見た位置 `noteScrolls` (読むときに配置しない)。43: 終わりへ詰められたか `isPulledBackFrom`) | INV-40、INV-46、INV-52、INV-78、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜43 |
+| AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R6 (R6: 確定のカーソルの行 (INV-84) は、編集モードを出て基準が動いても保つ)、Undo / Redo の記録 09〜09d。28: 全体の描画の間に利用者が動かしたら、最後に動かした所の読んでいる位置へ戻し (`restoreReadingAnchor`)、動かさなければ描画の前の位置へ戻す) | INV-42、INV-46〜48、INV-84、INV-62、INV-78 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜28 (06b、09b〜09d を含む)、R1〜R6、T1〜T6 |
 | AT-IDX | `DocumentIndex` (01: h1〜h6 だけを文書の順に段の class 付きで並べ、引用・リスト・コード・利用者の `.md-block` の中は入れない。02: 数式は TeX、書式を落とし空白をまとめ、空の見出しは入れない。03: 見出しが無いときの文言。04: toggle と `aria-expanded`・`hidden`。05: `setAvailable`。06: 表示中のブロックの変化で 1 フレームに 1 回、変わったブロックの項目だけを作り直し (変わらない項目は同じ要素)、全体の描画ではまるごと作り、どちらもスクロールを保つ。隠している間は作らない。07: 押下で `ScrollMemento.scrollTargetTo(見出し, 8)`。08: 外れた見出しは作り直してから飛ぶ。09: 列の置き場所 (`ScrollMemento.shownTop` / `shownRight`) とリサイズ。10: UIController の結線 ((a) 初期・コードビューで無効、(b) `i` と修飾キー・入力欄・挿入の待ち、(c) Esc の順、(d) Clear)) | INV-77、5.11 | DocumentIndex.test.js、UIController.index.test.js | 01〜10 |
 | AT-BEC | `BlockEditController` (ジェスチャ、外側、IME、キー、リンク) | INV-27〜30、INV-40、INV-69 | BlockEditController.test.js、BlockEditController.keys.test.js、BlockEditController.link.test.js、UIController.link.test.js (35) | 01〜35 |
-| AT-BEC-TS | ブロック編集欄の字とスクロール: 表示の字を写す種類と等幅のままの種類 (01〜04)、押した字にカーソル (05・06)、高さを合わせてもスクロールを保つ (07・08) | INV-83、INV-84、INV-40 | BlockEditController.textStyle.test.js | 01〜08 |
-| AT-BCM | `BlockCaretMap`: 描画された字と原文の対応 (書式・リンクの行き先・見出し・リスト・引用・コードの囲い・HTML のタグ・実体参照)、逆向き、行の基準の取り消し、数えない字、速い道が同じ答えを出すこと (05: 空白の判定・コードの行頭の印・途中で止める、06: コードの位置の直接の対応)、長い折り返す字は測らないこと (07) | INV-84 | BlockCaretMap.test.js | 01〜07 |
+| AT-BEC-TS | ブロック編集欄の字とスクロール: 表示の字を写す種類と等幅のままの種類 (01〜04。10: リスト、11: 引用)、新しいブロックは本文の字 (12: すき間、13: 空の文書。ESF-7)、押した字にカーソル (05・06。14: 表示モードのダブルクリック、15: ダブルタップ)、高さを合わせてもスクロールを保つ (07: 終わりへ詰められたら戻す、08: 動かなければ触らず、位置の読みは 1 キーに 1 回、09: ブラウザがカーソルを見せる動きは保つ) | INV-83、INV-84、INV-40 | BlockEditController.textStyle.test.js、UIController.doubleClick.test.js (14・15) | 01〜15 |
+| AT-BCM | 描画された字と原文の対応 (`caretMatching.js`。pure): 書式・リンクの行き先・見出し・リスト・引用・コードの囲い・HTML のタグ・実体参照、逆向き、速い道が同じ答えを出すこと (05: 空白の判定・コードの行頭の印・途中で止める、06: コードの位置の直接の対応)。DOM の側 (`BlockCaretMap`): 数えない字 (04)、行の基準の取り消しと、渡したものに書かないこと (03)、長い折り返す字は測らないこと (07)、点のカーソル `caretAt` (08。表のセルも同じ関数)、編集欄の行を測る字が描画の側と同じこと (09) | INV-84、INV-62 | BlockCaretMap.test.js | 01〜09 |
 | AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致。30〜32: ブロックの範囲、33: 検索の置換 (`searchReplaceRequested`)) | 11-c | BlockEditController.stateMachine.test.js、BlockEditController.gap.test.js (29)、UIController.editMode.test.js、UIController.save.test.js | 01〜33 |
 | AT-GAP | `BlockGapInsert` (すき間の当たり判定、表のつまみ・リンクなどを避けること、点線の表示と押下、マウスの移動を 1 フレームに 1 回にまとめること、押下と消去で残りの移動を捨てること、click にならない押下の後も追うこと) | INV-73 | BlockGapInsert.test.js | 01〜02 |
 | AT-RNG | ブロックの範囲: `MarkdownBlockModel.removeRange` / `rangeSource` (01〜08)、`RendererOrchestrator.deleteBlocks` / `readBlocksSource` (09〜13)、`BlockRangeSelection` (選択の解決、帯、押して離す、Esc、INV-45、14〜30、40、41。読むだけで表示を変えないこと 45、帯の押下で読み直すこと 46、ビューポートの近くだけの枠 47)、UIController のキーとクリップボード (31〜38)、すき間を出さないこと (39)、書き込みの失敗のトースト (25、42〜44)、ブラウザの `copy` の事象 (48、49)、Shift+Delete (50)、帯の位置の純粋な関数 `placementNearLine` (51)、選択を残したドラッグの `mouseup` の既定を止めること (52。Edge のミニメニュー) | INV-74、INV-14、INV-45、INV-46、INV-48、INV-73 | MarkdownBlockModel.removeRange.test.js、RendererOrchestrator.edit.test.js、BlockRangeSelection.test.js、UIController.blockRange.test.js、BlockGapInsert.test.js (39)、floatingPlacement.test.js (51) | 01〜52 |
@@ -4670,7 +4676,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | search.e2e.js | 検索と置換: `f` と入力ごとの検索、↓ / ↑、Enter は何もしない、箱の中の Esc、正規表現と不正な式、大きい表の正しい行と右端の列、置換 (編集モードだけ、Replace / All、トースト、Ctrl+Z 1 回、置換欄の Enter)、Esc の順 (パレット → 検索 → 目次)、コードビュー、印刷。時間の試験 (GRSMD_PERF=1。1 MB の 1 キーと ↓ が 4 ms 以下、All が 300 ms 以内)。試験の名前に要求の ID | PRT-AD01〜AD03、AD05、AD08、AD10、AD11 |
 | notices.e2e.js | 同梱 OSS の表記: ビルドしたファイルの最後のコメントに、直接の依存 7 件 (入れた版)・ほかの dist の中のコード・KaTeX のフォントの表記があること、先頭の案内のコメントが CSP の後にあること、ヘルプの「Licenses」/「ライセンス」の一覧 (日英) | PRT-AA01、PRT-AA02 |
 | beta.e2e.js | ベータ版: ファイルが本番の robots の meta だけを `noindex` にしたものであること、CSP とヘルプの版が本番と同じで BETA の印が無いこと、4 つのライブラリが CSP の下で動くこと、同じ文書 (数式・表・コード) の描画が本番と同じ HTML になり、Mermaid も描けること | PRT-AF01、PRT-AF02 |
-| editScrollFont.e2e.js | ブロック編集欄の字とスクロール: 押した字にカーソルが来てその行が開く・打つ・Esc の前後で ±1 px (コードブロック・リンクのある段落)、段落・見出し・コードの編集欄の字が表示と同じで枠の線が無い、文書の終わりで打ってもビューが動かない (マウスとタッチ。文書の最後の高いコードブロックの中ほどで打つ形も)、目次と検索の箱の地が 0.85。GRSMD_PERF=1 のとき、大きなブロック (5,000 行のコード・色付けの上限の手前のコード・100 KB の段落) をダブルクリックで開く時間 (INV-84 (7)) | PRT-AG01〜AG03、PRT-AG05 |
+| editScrollFont.e2e.js | ブロック編集欄の字とスクロール: 押した字にカーソルが来てその行が開く・打つ・Esc の前後で ±1 px (コードブロック・リンクのある段落。編集モードの 1 回押しでリスト・引用・段落)、段落・見出し・コードの編集欄の字が表示と同じで枠の線が無い、文書の終わりで打ってもビューが動かない (マウスとタッチ。文書の最後の高いコードブロックの中ほどで打つ形も)、目次と検索の箱の地が 0.85。GRSMD_PERF=1 のとき、大きなブロック (5,000 行のコード・色付けの上限の手前のコード・100 KB の段落) をダブルクリックで開く時間 (INV-84 (7))、1 MB の文書の中ほどと終わりの近くの段落で 1 キーの時間 (INV-40。記録だけ) | PRT-AG01〜AG03、PRT-AG05 |
 
 ---
 

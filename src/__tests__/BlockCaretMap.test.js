@@ -1,14 +1,18 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import BlockCaretMap from "../js/classes/BlockCaretMap.js";
+import * as M from "../js/caretMatching.js";
 
-// INV-84: a place in a rendered block, matched to the block's source.
+// INV-84: a place in a rendered block, matched to the block's source
+// (caretMatching.js, pure), and read from the DOM (BlockCaretMap).
+
+afterEach(() => vi.restoreAllMocks());
 
 /** The source offset for the caret right before the first `at` in rendered. */
 function offsetBefore(source, rendered, type, at) {
   const before = rendered.slice(0, rendered.indexOf(at));
   const count = before.replace(/\s/g, "").length;
   const afterSpace = before.length === 0 || /\s$/.test(before);
-  return BlockCaretMap.sourceOffsetFor(source, rendered, type, count, afterSpace);
+  return M.sourceOffsetFor(source, rendered, type, count, afterSpace);
 }
 
 describe("AT-BCM-01 sourceOffsetFor: the caret lands at the same text in the source", () => {
@@ -29,16 +33,16 @@ describe("AT-BCM-01 sourceOffsetFor: the caret lands at the same text in the sou
   });
 
   it("the start of the text (after the prefix) for a caret before everything", () => {
-    expect(BlockCaretMap.sourceOffsetFor("## Title", "Title", "heading", 0, true)).toBe(3);
-    expect(BlockCaretMap.sourceOffsetFor("```\ncode\n```", "code\n", "code", 0, true)).toBe(4);
+    expect(M.sourceOffsetFor("## Title", "Title", "heading", 0, true)).toBe(3);
+    expect(M.sourceOffsetFor("```\ncode\n```", "code\n", "code", 0, true)).toBe(4);
   });
 
   it("the end of the text for a caret after everything", () => {
-    expect(BlockCaretMap.sourceOffsetFor("Hello **you**", "Hello you", "paragraph", 8, false)).toBe("Hello **you".length);
+    expect(M.sourceOffsetFor("Hello **you**", "Hello you", "paragraph", 8, false)).toBe("Hello **you".length);
   });
 
   it("a rendered character with no match (an entity) is passed over", () => {
-    const matches = BlockCaretMap.align("a &copy; b", "a \u00a9 b", "paragraph");
+    const matches = M.align("a &copy; b", "a \u00a9 b", "paragraph");
     expect(matches).toEqual([0, -1, 9]);
     expect(offsetBefore("a &copy; b", "a \u00a9 b", "paragraph", "b")).toBe(9);
   });
@@ -57,16 +61,16 @@ describe("AT-BCM-02 renderedPlaceFor: the inverse of sourceOffsetFor", () => {
       const before = rendered.slice(0, i);
       count = before.replace(/\s/g, "").length;
       const afterSpace = before.length === 0 || /\s$/.test(before);
-      const offset = BlockCaretMap.sourceOffsetFor(source, rendered, type, count, afterSpace);
-      const place = BlockCaretMap.renderedPlaceFor(source, rendered, type, offset);
+      const offset = M.sourceOffsetFor(source, rendered, type, count, afterSpace);
+      const place = M.renderedPlaceFor(source, rendered, type, offset);
       expect(place.count, `caret at ${i}`).toBe(count);
     }
   });
 
   it("an offset inside markup counts the text before it", () => {
     // "Some **|bold**": after "Some", before "bold"
-    expect(BlockCaretMap.renderedPlaceFor("Some **bold**", "Some bold", "paragraph", 6)).toEqual({ count: 4, afterSpace: true });
-    expect(BlockCaretMap.renderedPlaceFor("Some **bold**", "Some bold", "paragraph", 4)).toEqual({ count: 4, afterSpace: false });
+    expect(M.renderedPlaceFor("Some **bold**", "Some bold", "paragraph", 6)).toEqual({ count: 4, afterSpace: true });
+    expect(M.renderedPlaceFor("Some **bold**", "Some bold", "paragraph", 4)).toEqual({ count: 4, afterSpace: false });
   });
 });
 
@@ -75,15 +79,28 @@ describe("AT-BCM-03 lineAnchor falls back to the block's top", () => {
 
   it("no line: the anchor as it was", () => {
     const anchor = { offsetTop: 40 };
-    expect(BlockCaretMap.lineAnchor(anchor, element, "text", "paragraph")).toBe(anchor);
-    expect(BlockCaretMap.lineAnchor(null, element, "text", "paragraph")).toBe(null);
+    expect(BlockCaretMap.lineAnchor(anchor, element, { count: 0, afterSpace: true })).toBe(anchor);
+    expect(BlockCaretMap.lineAnchor(null, element, null)).toBe(null);
   });
 
   it("a caret past the block's source (a commit that split the block), or no layout: the block's top", () => {
     const line = { offset: 30, sourceOffset: 99 };
-    expect(BlockCaretMap.lineAnchor({ offsetTop: 40, line }, element, "short", "paragraph")).toEqual({ offsetTop: 40 });
+    expect(BlockCaretMap.placeOfLine(line, element, "short", "paragraph")).toBe(null);
+    expect(BlockCaretMap.lineAnchor({ offsetTop: 40, line }, element, null)).toEqual({ offsetTop: 40 });
     element.textContent = "some text";
-    expect(BlockCaretMap.lineAnchor({ offsetTop: 40, line: { offset: 30, sourceOffset: 4 } }, element, "some text", "paragraph")).toEqual({ offsetTop: 40 });
+    const near = { offset: 30, sourceOffset: 4 };
+    const place = BlockCaretMap.placeOfLine(near, element, "some text", "paragraph");
+    expect(place).toEqual({ count: 4, afterSpace: false });
+    expect(BlockCaretMap.lineAnchor({ offsetTop: 40, line: near }, element, place)).toEqual({ offsetTop: 40 });
+  });
+
+  it("neither writes to what it is given (the caller keeps what was found)", () => {
+    element.textContent = "some text";
+    const line = Object.freeze({ offset: 30, sourceOffset: 4 });
+    const anchor = Object.freeze({ offsetTop: 40, line });
+    const place = BlockCaretMap.placeOfLine(line, element, "some text", "paragraph");
+    expect(() => BlockCaretMap.lineAnchor(anchor, element, Object.freeze(place))).not.toThrow();
+    expect(Object.keys(line)).toEqual(["offset", "sourceOffset"]);
   });
 });
 
@@ -98,9 +115,9 @@ describe("AT-BCM-04 textOf leaves out what is not the block's own text", () => {
 });
 
 describe("AT-BCM-05 the fast paths give the same answers", () => {
-  it("_isSpace is /\s/ for every UTF-16 code", () => {
+  it("isSpace is /\s/ for every UTF-16 code", () => {
     const wrong = [];
-    for (let code = 0; code <= 0xffff; code++) if (BlockCaretMap._isSpace(code) !== /\s/.test(String.fromCharCode(code))) wrong.push(code.toString(16));
+    for (let code = 0; code <= 0xffff; code++) if (M.isSpace(code) !== /\s/.test(String.fromCharCode(code))) wrong.push(code.toString(16));
     expect(wrong).toEqual([]);
   });
 
@@ -115,10 +132,10 @@ describe("AT-BCM-05 the fast paths give the same answers", () => {
   it("stopping early (at the caret, or at a source offset) changes nothing before the stop", () => {
     const source = "Some **bold** text and [a link](https://example.com/x) here, then more words.";
     const rendered = "Some bold text and a link here, then more words.";
-    const all = BlockCaretMap.align(source, rendered, "paragraph");
-    expect(BlockCaretMap.align(source, rendered, "paragraph", 10)).toEqual(all.slice(0, 10));
+    const all = M.align(source, rendered, "paragraph");
+    expect(M.align(source, rendered, "paragraph", 10)).toEqual(all.slice(0, 10));
     const stop = source.indexOf("here");
-    const upTo = BlockCaretMap.align(source, rendered, "paragraph", Infinity, stop);
+    const upTo = M.align(source, rendered, "paragraph", Infinity, stop);
     expect(upTo).toEqual(all.slice(0, upTo.length));
     expect(upTo[upTo.length - 1]).toBe(stop);
   });
@@ -133,14 +150,14 @@ describe("AT-BCM-06 a code block shows its source as it is: the offset is found 
       const before = rendered.slice(0, index);
       const count = before.replace(/\s/g, "").length;
       const afterSpace = index === 0 || /\s$/.test(before);
-      expect(BlockCaretMap.sourceOffsetFor(source, rendered, "code", count, afterSpace, index), `index ${index}`).toBe(6 + index);
+      expect(M.sourceOffsetFor(source, rendered, "code", count, afterSpace, index), `index ${index}`).toBe(6 + index);
     }
   });
 
   it("back: the place of each source offset in the code", () => {
-    expect(BlockCaretMap.renderedPlaceFor(source, rendered, "code", 6)).toEqual({ count: 0, afterSpace: true });
-    expect(BlockCaretMap.renderedPlaceFor(source, rendered, "code", source.indexOf("// two"))).toEqual({ count: 9, afterSpace: true });
-    expect(BlockCaretMap.renderedPlaceFor(source, rendered, "code", source.indexOf(" = 2"))).toEqual({ count: 24, afterSpace: false });
+    expect(M.renderedPlaceFor(source, rendered, "code", 6)).toEqual({ count: 0, afterSpace: true });
+    expect(M.renderedPlaceFor(source, rendered, "code", source.indexOf("// two"))).toEqual({ count: 9, afterSpace: true });
+    expect(M.renderedPlaceFor(source, rendered, "code", source.indexOf(" = 2"))).toEqual({ count: 24, afterSpace: false });
   });
 });
 
@@ -153,5 +170,32 @@ describe("AT-BCM-07 a long wrapping text is not measured (INV-84, CONFIG.edit.ca
     expect(BlockCaretMap.caretOffsetIn(textarea, 300, 200)).toBe(null);
     expect(typeof BlockCaretMap.caretOffsetIn(textarea, 100, 200)).toBe("number");
     textarea.remove();
+  });
+});
+
+describe("AT-BCM-08 caretAt: the caret at a point, for blocks and table cells alike", () => {
+  it("caretPositionFromPoint first, then WebKit's caretRangeFromPoint, else null", () => {
+    const node = document.createTextNode("abc");
+    document.caretPositionFromPoint = vi.fn(() => ({ offsetNode: node, offset: 2 }));
+    expect(BlockCaretMap.caretAt(5, 6)).toEqual({ node, offset: 2 });
+    expect(document.caretPositionFromPoint).toHaveBeenCalledWith(5, 6);
+    delete document.caretPositionFromPoint;
+    document.caretRangeFromPoint = vi.fn(() => ({ startContainer: node, startOffset: 1 }));
+    expect(BlockCaretMap.caretAt(5, 6)).toEqual({ node, offset: 1 });
+    document.caretRangeFromPoint = vi.fn(() => null);
+    expect(BlockCaretMap.caretAt(5, 6)).toBe(null);
+    delete document.caretRangeFromPoint;
+    expect(BlockCaretMap.caretAt(5, 6)).toBe(null);
+  });
+});
+
+describe("AT-BCM-09 the editor measures the caret's line by the same character as the rendered block", () => {
+  it("the one before the caret, else the next one, else the last one (whitespace left out)", () => {
+    const v = "gamma listword\n\n  next";
+    expect(BlockCaretMap._lineCharIn(v, 3)).toBe(2); // inside a word: the one before
+    expect(BlockCaretMap._lineCharIn(v, 6)).toBe(6); // after a space (a wrap may be there): the next
+    expect(BlockCaretMap._lineCharIn(v, 15)).toBe(18); // a blank line: the next text, as in the rendered block
+    expect(BlockCaretMap._lineCharIn("end  ", 5)).toBe(2); // nothing after: the last
+    expect(BlockCaretMap._lineCharIn(" \n", 1)).toBe(-1);
   });
 });

@@ -22,7 +22,13 @@ const STYLES = {
   H1: { fontFamily: "BodySans", fontSize: "32px", fontWeight: "700", fontStyle: "normal", lineHeight: "normal", letterSpacing: "normal", marginTop: "21.44px", marginBottom: "21.44px" },
   CODE: { fontFamily: "CodeMono", fontSize: "13px", fontWeight: "400", fontStyle: "normal", lineHeight: "normal", letterSpacing: "normal" },
   PRE: { marginTop: "16px", marginBottom: "16px", paddingTop: "16px", paddingRight: "16px", paddingBottom: "16px", paddingLeft: "16px" },
+  LI: { fontFamily: "BodySans", fontSize: "15px", fontWeight: "400", fontStyle: "normal", lineHeight: "24px", letterSpacing: "normal" },
+  UL: { marginTop: "12px", marginBottom: "12px" },
+  BLOCKQUOTE: { fontFamily: "BodySans", fontSize: "16px", fontWeight: "400", fontStyle: "normal", lineHeight: "normal", letterSpacing: "normal", marginTop: "8px", marginBottom: "8px" },
+  // #preview itself: the body text, for a block that has no rendering yet
+  DIV: { fontFamily: "BodySans", fontSize: "16px", fontWeight: "400", fontStyle: "normal", lineHeight: "24px", letterSpacing: "normal" },
 };
+const LIST_DOC = "- one item\n- two items\n\n> quoted words\n";
 
 let s;
 afterEach(() => {
@@ -79,6 +85,47 @@ describe("AT-BEC-TS INV-83 the editor takes the rendered block's text style", ()
     expect(ta.style.fontFamily).toBe("");
     expect(ta.style.fontSize).toBe("");
   });
+
+  it("AT-BEC-TS-10 a list: the item's text style and the list's margins", async () => {
+    s = await setupEdit(LIST_DOC);
+    fakeComputedStyles();
+    const { ta } = open(isType("list"));
+    expect(ta.style.fontFamily).toBe("BodySans");
+    expect(ta.style.fontSize).toBe("15px");
+    expect(ta.style.lineHeight).toBe("24px");
+    expect(ta.style.marginTop).toBe("12px");
+    expect(ta.style.paddingTop).toBe("");
+  });
+
+  it("AT-BEC-TS-11 a quote: its paragraph's text style and the quote's margins", async () => {
+    s = await setupEdit(LIST_DOC);
+    fakeComputedStyles();
+    const { ta } = open(isType("blockquote"));
+    expect(ta.value).toMatch(/^> quoted/);
+    expect(ta.style.fontFamily).toBe("BodySans");
+    expect(ta.style.marginTop).toBe("8px");
+  });
+
+  it("AT-BEC-TS-12 a new block from a gap: the body text (ESF-7)", async () => {
+    s = await setupEdit(DOC);
+    fakeComputedStyles();
+    const blocks = s.orchestrator.getModel().getBlocks();
+    s.bec.dispatch("gapInsertRequested", { kind: "gap", afterBlockId: blocks[0].id, beforeBlockId: blocks[1].id });
+    const ta = s.editor();
+    expect(ta.value).toBe("");
+    expect(ta.style.fontFamily).toBe("BodySans");
+    expect(ta.style.lineHeight).toBe("24px");
+  });
+
+  it("AT-BEC-TS-13 the first block of an empty document: the body text (ESF-7)", async () => {
+    s = await setupEdit(null, { editMode: false });
+    fakeComputedStyles();
+    await s.bec.dispatch("emptyDocumentStarted");
+    const ta = s.editor();
+    expect(ta.value).toBe("");
+    expect(ta.style.fontFamily).toBe("BodySans");
+    expect(ta.style.fontSize).toBe("16px");
+  });
 });
 
 describe("AT-BEC-TS INV-84 the caret where the block was pressed", () => {
@@ -103,21 +150,46 @@ describe("AT-BEC-TS INV-84 the caret where the block was pressed", () => {
 });
 
 describe("AT-BEC-TS INV-40 fitting the height keeps the scroll", () => {
-  it("AT-BEC-TS-07 a scroll the browser pulled back while the editor was short is put back", async () => {
+  /** The view was last seen at seen (a scroll the browser reported); while the editor is measured it is at now. */
+  function scrolled(seen, now) {
+    const save = vi.spyOn(s.scrollMemento, "save").mockReturnValue(seen);
+    s.preview.dispatchEvent(new Event("scroll"));
+    save.mockReturnValue(now);
+    return save;
+  }
+
+  it("AT-BEC-TS-07 a scroll the browser pulled back to the end while the editor was short is put back", async () => {
     s = await setupEdit(DOC);
     const { ta } = open(isType("paragraph"));
-    vi.spyOn(s.scrollMemento, "save").mockReturnValueOnce(120).mockReturnValueOnce(95);
+    scrolled(120, 95); // jsdom: the end of the view is 0, so 95 is at the end
     const restore = vi.spyOn(s.scrollMemento, "restore").mockImplementation(() => {});
     ta.value += " more";
     ta.dispatchEvent(new Event("input", { bubbles: true }));
     expect(restore).toHaveBeenCalledWith(120);
   });
 
-  it("AT-BEC-TS-08 an unmoved scroll is left alone", async () => {
+  it("AT-BEC-TS-08 an unmoved scroll is left alone, and the position is read once per key, after the measure", async () => {
     s = await setupEdit(DOC);
     const { ta } = open(isType("paragraph"));
-    vi.spyOn(s.scrollMemento, "save").mockReturnValue(120);
+    const save = scrolled(120, 120);
+    save.mockClear();
     const restore = vi.spyOn(s.scrollMemento, "restore").mockImplementation(() => {});
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(restore).not.toHaveBeenCalled();
+    // the position before is the one noted at the last scroll (no layout of
+    // the document before the measure, INV-40, G10)
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it("AT-BEC-TS-09 a scroll of the browser's own is kept: down to show the caret, or up away from the end", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    const restore = vi.spyOn(s.scrollMemento, "restore").mockImplementation(() => {});
+    scrolled(120, 150);
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    Object.defineProperty(s.preview, "scrollHeight", { value: 600, configurable: true });
+    Object.defineProperty(s.preview, "clientHeight", { value: 100, configurable: true });
+    scrolled(120, 95); // the end is 500: not pulled back
     ta.dispatchEvent(new Event("input", { bubbles: true }));
     expect(restore).not.toHaveBeenCalled();
   });

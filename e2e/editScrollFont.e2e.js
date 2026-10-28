@@ -4,7 +4,7 @@ import { test, expect, renderMarkdown, settled } from "./fixtures.js";
 // with the caret where the block was double-clicked, and keeps that line
 // where it was on screen when it opens and when it is committed (INV-84).
 // Fitting its height while typing does not move the view (INV-40). Owner
-// rulings ESF-1 to ESF-5 (2026-10-27).
+// rulings ESF-1 to ESF-8 (2026-10-27 to 2026-10-29).
 
 test.beforeEach(() => test.slow());
 
@@ -159,6 +159,49 @@ test("a paragraph with links before the double-clicked word: the caret is at tha
   expect(Math.abs(after - word.top)).toBeLessThanOrEqual(1);
 });
 
+// A list, a quote and a paragraph, each long enough to wrap, with text
+// above and below: the view can scroll both ways to keep a line (the
+// editor may wrap a line where the rendered block does not).
+const FILLER = (from, count) => Array.from({ length: count }, (_, i) => `Filler ${from + i} ` + "lorem ipsum dolor sit amet ".repeat(6));
+const KINDS_DOC = [
+  ...FILLER(0, 20),
+  ["- first item " + "alpha beta gamma ".repeat(8) + "listword end", "- second item", "  - nested item"].join("\n"),
+  "> quoted " + "delta epsilon zeta ".repeat(8) + "quoteword end\n> second line",
+  "A paragraph with **bold** and a [link](https://example.com/p) " + "eta theta iota ".repeat(8) + "paraword end",
+  ...FILLER(20, 20),
+].join("\n\n");
+
+test("edit mode: one press on a list item, a quote, a paragraph opens with the caret at the pressed word, and its line stays (INV-84)", async ({ page, browserName }) => {
+  await page.goto("/");
+  await renderMarkdown(page, KINDS_DOC);
+  await settled(page);
+  await page.locator("#editBtn").click();
+  await expect(page.locator("body")).toHaveClass(/\bedit-mode\b/);
+  await settled(page);
+  const editor = page.locator("#preview textarea.md-block-editor");
+  for (const { word, source } of [
+    { word: "listword", source: /alpha beta gamma $/ },
+    { word: "quoteword", source: /delta epsilon zeta $/ },
+    { word: "paraword", source: /eta theta iota $/ },
+  ]) {
+    await scrollTextTo(page, word, 300);
+    const before = await renderedChar(page, word);
+    // the left edge of the word's first character: the caret goes before it
+    await page.mouse.click(before.x - 2, before.y);
+    await expect(editor).toBeFocused();
+    const opened = await editorState(page, word);
+    const caret = await editor.evaluate((ta) => ta.value.slice(0, ta.selectionStart));
+    await page.keyboard.press("Escape");
+    await expect(editor).toHaveCount(0);
+    await settled(page);
+    const closed = await renderedChar(page, word);
+    console.log(`${browserName} one press on ${word}: before ${before.top}, opened ${opened.top}, after Esc ${closed.top}`);
+    expect(caret, word).toMatch(source);
+    expect(Math.abs(opened.top - before.top), word).toBeLessThanOrEqual(1);
+    expect(Math.abs(closed.top - before.top), word).toBeLessThanOrEqual(1);
+  }
+});
+
 test("the editor shows its text as the rendered block does: paragraph, heading, code (INV-83)", async ({ page }) => {
   await open(page);
   const cases = [
@@ -222,7 +265,7 @@ for (const touch of [false, true]) {
   });
 }
 
-// The owner's case (2026-10-29, Edge): the last block is a tall code block,
+// The owner's case (ESF-8, 2026-10-29, Edge): the last block is a tall code block,
 // mostly blank lines, typed into in its middle. Fitting the height shrank the
 // editor for a moment, so Chromium too clamped the scroll: before the fix the
 // view moved 351 px at the first key and 21 px more at each Enter.
@@ -340,5 +383,56 @@ for (const c of PERF_CASES) {
     console.log(`${c.name}: open ${open.toFixed(1)} ms (caret at ${JSON.stringify(caretAt)}), Esc to swap ${commit.toFixed(1)} ms`);
     expect(caretAt).toContain(c.pick.trim().slice(0, 4));
     expect(open).toBeLessThanOrEqual(c.budget);
+  });
+}
+
+// INV-40 (performance, logged only): one key in a paragraph of a 1 MB
+// document, from the input to the layout read after it. Fitting the editor's
+// height lays out the whole document once; before review M1 (2026-10-29) the
+// scroll was read before that too, which laid it out once more at each key.
+// The budget is the review standard's G10 (a quarter of a frame, 4 ms); no
+// number is set in the spec, so this logs the median (coordinator ruling
+// 2026-10-29). The measures are in the spec at INV-40.
+const BIG_DOC = Array.from({ length: 3000 }, (_, i) => {
+  if (i % 10 === 0) return `## Section ${i}`;
+  if (i % 10 === 5) return `- item ${i} one\n- item ${i} two\n- item ${i} three`;
+  return `Para ${i} ` + "lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(7);
+}).join("\n\n");
+
+for (const where of [
+  { name: "in the middle", pick: "Para 1501 " },
+  { name: "near the end", pick: "Para 2991 " },
+]) {
+  test(`INV-40 (performance): one key in a paragraph ${where.name} of a 1 MB document (logged)`, async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "measured in Chrome (INV-51)");
+    test.skip(process.env.GRSMD_PERF !== "1", "timing: GRSMD_PERF=1 only");
+    test.setTimeout(180000);
+    await page.goto("/");
+    await renderMarkdown(page, BIG_DOC);
+    await settled(page);
+    await scrollTextTo(page, where.pick, 300);
+    const target = await renderedChar(page, where.pick);
+    await page.mouse.dblclick(target.x, target.y);
+    const editor = page.locator("#preview textarea.md-block-editor");
+    await expect(editor).toBeFocused();
+    const times = await page.evaluate(async () => {
+      const ta = document.querySelector("#preview textarea.md-block-editor");
+      const out = [];
+      for (let k = 0; k < 15; k++) {
+        // a frame between keys, as when typing: the layout is current and
+        // the scroll events of the last key have come
+        await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+        const t0 = performance.now();
+        ta.setRangeText(k % 5 === 4 ? "\n" : "x", ta.selectionStart, ta.selectionStart, "end");
+        ta.dispatchEvent(new Event("input", { bubbles: true }));
+        document.querySelector("#preview").getBoundingClientRect();
+        out.push(performance.now() - t0);
+      }
+      return out;
+    });
+    const sorted = [...times].sort((a, b) => a - b);
+    console.log(`1 MB, one key ${where.name}: median ${sorted[7].toFixed(2)} ms (min ${sorted[0].toFixed(2)}, max ${sorted[14].toFixed(2)})`);
+    await page.keyboard.press("Escape");
+    await expect(editor).toHaveCount(0);
   });
 }

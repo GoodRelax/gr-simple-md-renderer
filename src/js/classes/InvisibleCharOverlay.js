@@ -1,5 +1,6 @@
 import { nextFrame } from "../utils.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
+import { EDITOR_PADDING_PROPS, EDITOR_TEXT_PROPS } from "../editorTextStyle.js";
 
 // INV-70: characters that look like a space or like nothing. ZWJ (U+200D)
 // and the variation selectors are not here: an emoji stays one glyph.
@@ -7,7 +8,7 @@ const MARKED_RUN = /[\u00a0\u2007\u202f\u200b\u200c\u2060\ufeff\u00ad]+/g;
 const OVERLAID_CLASS = "md-block-editor-overlaid";
 // The text style a block editor can take from its block (INV-83), set on
 // the editor itself: the layer takes the same.
-const MATCHED_PROPS = ["fontFamily", "fontSize", "fontWeight", "fontStyle", "lineHeight", "letterSpacing", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"];
+const MATCHED_PROPS = [...EDITOR_TEXT_PROPS, ...EDITOR_PADDING_PROPS];
 
 /**
  * The marks layer behind a block editor (INV-70). A textarea cannot color

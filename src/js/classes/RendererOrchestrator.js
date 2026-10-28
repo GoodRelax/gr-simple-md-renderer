@@ -990,8 +990,10 @@ export default class RendererOrchestrator {
   /**
    * The anchor's scroll, with the caret line of a commit (INV-84) turned
    * into the block's top: the line is found in the rendered block from the
-   * block's source as the editor shows it.
-   * @purity semi-pure-b
+   * block's source as the editor shows it. The place found is noted on the
+   * anchor (anchor.found), once per rendered block: the anchor is restored
+   * again when the DOM is stable.
+   * @purity non-pure
    * @param {{scroll: object, blockId: number}} anchor
    * @param {Element|null} element
    * @returns {{offsetTop: number}|null}
@@ -1001,7 +1003,11 @@ export default class RendererOrchestrator {
     const model = this._renderedModel;
     const index = model ? model.findIndexById(anchor.blockId) : -1;
     if (index < 0) return { offsetTop: anchor.scroll.offsetTop };
-    const block = model.getBlocks()[index];
-    return BlockCaretMap.lineAnchor(anchor.scroll, element, MarkdownBlockModel.toEditableText(block.raw), block.type);
+    if (!element) return anchor.scroll;
+    if (anchor.found?.element !== element) {
+      const block = model.getBlocks()[index];
+      anchor.found = { element, place: BlockCaretMap.placeOfLine(anchor.scroll.line, element, MarkdownBlockModel.toEditableText(block.raw), block.type) };
+    }
+    return BlockCaretMap.lineAnchor(anchor.scroll, element, anchor.found.place);
   }
 }
