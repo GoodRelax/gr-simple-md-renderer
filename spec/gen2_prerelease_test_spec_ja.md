@@ -60,6 +60,8 @@
 
 > v2.23 の変更 (2026-10-29、監査の直しのレビュー (2 回目) の直し): 確認は 4 つのライブラリが決まった後 (answering。settled の前) に出る、という言い方に、PRT-AE09 の期待結果、AT.4 の fastStartup.e2e.js の行、v2.21・v2.22 の記録の settled をそろえた (N7)。v2.20 の記録の裁定 AQ3 をタッチだけに直し、AT-BEC-TS-15 の注もタッチと書いた (N2)。PRT-AE12 の手順 4・5 は、時間ではなく確認が出るのを待つ (文書に `E -> F` を足し、その確認で Cancel。N9)。AT-LSM-15 は 4 つが決まる前に Clear する形に書き直し (N5)、AT-LSM-25 (待ちの枠が無くても answering から settled に移る。N4) を足して、AT-LSM を 01〜25 にした。PRT-AE09 の備考に AT-LSM-25 を足した。改めたケースの判定は空欄 (未実施)。
 
+> v2.24 の変更 (2026-10-29、パレットのグリップのダブルクリック): 仕様の INV-68・SC-23・11-d・5.15.3・5.15.4 の改め (オーナーの裁定 PD1〜PD3) に合わせて、セクション AI (PRT-AI01 / AI02) を追加した。AT-PAL に 37・38 を足し、AT-PAL-03 のグリップの tooltip を改めた。AT-PSM を 15 の出来事 × 5 の状態 (`gripDoubleClicked`、`pointerPressedOutsidePalette`) にし、AT-PSM-11 (マウスのダブルクリック、タッチとペンのダブルタップ、移動・長押し・グリップ以外のどこかの押下 (パレット本体のボタン・隙間、ポップオーバーのボタン・隙間、パレットの外)・非表示で組にならないこと、`isQuickSecondGripTap`) を足した。AT-CFG-01 に `paletteDoubleTapMs` を足した。e2e に paletteDoubleClick.e2e.js を足した (touch に、プレビューのダブルタップ (AQ3) とぶつからないことの確認を含む)。
+
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
 ---
@@ -4645,6 +4647,66 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 
 ---
 
+## セクション AI: パレットのグリップのダブルクリック (2026-10-29)
+
+INV-68、SC-23、11-d (仕様 2026-10-29 の改訂)。オーナーの要望 (2026-10-28) と裁定 PD1〜PD3: グリップ「::」のダブルクリック (タッチとペンはダブルタップ) でも最小化・復活する。長押しはそのまま。
+
+---
+
+### PRT-AI01: マウスのダブルクリック (PC)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | `sample-data-2.md` を表示し、[Edit] でパレットを表示。段落を開き、文字を 3 字選ぶ |
+| **手順** | 1. グリップにマウスを置き、tooltip を見る |
+|  | 2. グリップをダブルクリックする |
+|  | 3. もう一度グリップをダブルクリックする |
+|  | 4. グリップを 1 回だけクリックする |
+|  | 5. グリップでパレットを動かし、すぐにグリップをクリックする |
+|  | 6. グリップを長押しして最小化し、離してすぐにグリップをクリックする |
+|  | 7. Mermaid のボタンとパレットの隙間を、それぞれダブルクリックする |
+|  | 8. OS のダブルクリックの速さを遅く (または速く) して、2 を行う (Windows: 設定 > Bluetooth とデバイス > マウス > マウスの追加設定) |
+| **期待結果** | - 1 で、`Move palette (double-click or long press: minimize / restore)` |
+|  | - 2 で、パレットはグリップだけになり、グリップの画面上の位置は変わらない。パレットの中の文字は選ばれない。編集欄は開いたままで、フォーカスと 3 字の選択はそのまま。ほかのブロックは開かず、本文は変わらない |
+|  | - 3 で、元の大きさに戻る。編集欄のフォーカスと選択はそのまま |
+|  | - 4 で、何も変わらない |
+|  | - 5 で、最小化しない (動かした押下はダブルクリックの 1 回目にならない) |
+|  | - 6 で、長押しで最小化したままで、クリックで戻らない |
+|  | - 7 で、最小化しない (Mermaid はポップオーバーが開いて閉じる) |
+|  | - 8 で、OS の速さに従う (遅い設定では間をあけた 2 回でも切り替わり、速い設定では切り替わらない) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-68、INV-36、5.15.3 (PD2・PD3)。自動では AT-PAL-03・37・38、AT-PSM-11、paletteDoubleClick.e2e.js (8 は自動では確かめない) |
+
+---
+
+### PRT-AI02: タッチとペンのダブルタップ (iPad / スマートフォン)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | iPad (Safari) または Android (Chrome) で `sample-data-2.md` を表示し、[Edit] でパレットを表示 |
+| **手順** | 1. グリップを指ですばやく 2 回タップする |
+|  | 2. もう一度すばやく 2 回タップする |
+|  | 3. グリップを 1 秒ほど間をあけて 2 回タップする |
+|  | 4. Apple Pencil (またはペン) で 1・2 を行う |
+|  | 5. プレビューの本文をすばやく 2 回タップする |
+|  | 6. 編集モードで、グリップをタップし、本文をタップしてから、すぐにグリップをタップする。開いた書式のポップオーバーの隙間とパレットの隙間でも同じことをする |
+| **期待結果** | - 1 で、2 回目のタップでパレットはグリップだけになる。画面は拡大しない。文脈メニュー・文字の選択・拡大鏡が出ない |
+|  | - 2 で、元に戻る。1 回のダブルタップで 2 回切り替わる (戻ってしまう) ことはない |
+|  | - 3 で、何も変わらない |
+|  | - 4 で、1・2 と同じ |
+|  | - 5 で、ブラウザの拡大のまま (編集を始めない。オーナーの裁定 AQ3)。パレットの最小化は変わらない |
+|  | - 6 で、最小化しない (間にグリップ以外を押すと組が切れる。調整役の裁定 Q1) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-68 (PD1・PD2)。自動では AT-PSM-11 (タッチ・ペン)、paletteDoubleClick.e2e.js の touch (Chromium と WebKit の合成のタップ。本物の指とペン、拡大の有無はこの試験で見る) |
+
+---
+
 ## 自動テスト (AT) の一覧
 
 この章は、PRT の備考と仕様が引く自動テストの ID (`AT-<族>-<番号>`) の行き先である。手で行う試験ではないので、判定の欄は持たない (前提条件 P-02 で全件の合格を確かめる)。
@@ -4698,8 +4760,8 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
 | AT-ICO | `InvisibleCharOverlay` (20: 行の中の長い空白の並びで、行末の空白の判定が線形。21: 編集欄が写した字と余白を写す) | INV-70、INV-83 | InvisibleCharOverlay.test.js | 01〜21 |
-| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜36 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス) |
-| AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
+| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜38 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス。37: グリップのダブルクリックで最小化・復活し、編集欄のフォーカスと選択を保つ。38: ボタン・隙間のダブルクリックと非表示の間の `dblclick` では最小化しない) |
+| AT-PSM | 11-d パレットのジェスチャの状態機械 (15 の出来事 × 5 の状態、ガード、ポップオーバー。11: グリップのダブルクリックとダブルタップ (INV-68)。グリップ以外のどこを押しても組が切れる) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10・11 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
 | AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(e) ポップオーバーが開いていれば、検索の箱の中の最初の Esc はポップオーバーだけを閉じる、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く) | INV-80、INV-48、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜19 |
 | AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル) | INV-24〜26、INV-79、CON-14 | MarkdownFileAccess.test.js | 01〜09 |
@@ -4720,7 +4782,7 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | AT-MMD | `MermaidRenderer.initializeMermaid` (ラベルの画像を落とす、init の指示で設定を変えられない、テーマの対応) | CON-12 | MermaidRenderer.test.js | 01 |
 | AT-DCC | `DiagramCopyController` (01: コピーのバーは足された図の入れ物だけに付ける。プレビュー全体を探し直さず、2 つ目のバーを付けない。02: 許した PlantUML の図の Copy SVG / PNG は、その図の `/svg/` と `/png/` を取りに行き、確認を出さない (INV-02 の唯一の例外)) | FS-09、INV-02 (02) | DiagramCopyController.observer.test.js | 01〜02 |
 | AT-CSP | CSP のビルドのプラグイン (script の hash、meta の置き場所、`<script src>` があればビルドを失敗させる、指示の値) | INV-20、INV-06、INV-07 | cspPlugin.test.js | 01 |
-| AT-CFG | `CONFIG.edit` と文言 (10: 初期画面の 4 行が同じ長さで、4 行目が編集の始め方。裁定 AQ4。11: ファイルのドロップの設定 (5 MB と文言)、12: `EXT_TO_HLJS`、13: `BINARY_EXTENSIONS`、14: `FILE_SYSTEM_HANDLE_SUPPORTED`) | 5.2、CON-06、FS-16 (10)、INV-11・INV-18・CON-08 (11)、INV-18・5.3 (12)、INV-18・5.4 (13)、INV-15 (14) | config.edit.test.js、UIController.editMode.test.js、config.test.js (09〜14) | 01〜14 |
+| AT-CFG | `CONFIG.edit` と文言 (01: 合意した値。グリップのダブルタップの `paletteDoubleTapMs` (INV-68) はあり、プレビューのダブルタップの値は無い (AQ3)。10: 初期画面の 4 行が同じ長さで、4 行目が編集の始め方。裁定 AQ4。11: ファイルのドロップの設定 (5 MB と文言)、12: `EXT_TO_HLJS`、13: `BINARY_EXTENSIONS`、14: `FILE_SYSTEM_HANDLE_SUPPORTED`) | 5.2、CON-06、FS-16 (10)、INV-11・INV-18・CON-08 (11)、INV-18・5.3 (12)、INV-18・5.4 (13)、INV-15 (14) | config.edit.test.js、UIController.editMode.test.js、config.test.js (09〜14) | 01〜14 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと | 5.8.1、5.15.2 | themeColors.test.js、hljsThemePlugin.test.js | 01〜20 |
 | AT-STA | `src/js` と `src/css` の静的な検査 (01: ストレージの API を使わない。03 (b): `src/index.html` の日本語のヘルプの外は ASCII) | CON-06、CON-13、CON-14、CON-15、INV-04 (01)、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜19 |
@@ -4794,6 +4856,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | notices.e2e.js | 同梱 OSS の表記: ビルドしたファイルの最後のコメントに、直接の依存 7 件 (入れた版)・ほかの dist の中のコード・KaTeX のフォントの表記があること、先頭の案内のコメントが CSP の後にあること、ヘルプの「Licenses」/「ライセンス」の一覧 (日英) | PRT-AA01、PRT-AA02 |
 | beta.e2e.js | ベータ版: ファイルが本番の robots の meta だけを `noindex` にしたものであること、CSP とヘルプの版が本番と同じで BETA の印が無いこと、4 つのライブラリが CSP の下で動くこと、同じ文書 (数式・表・コード) の描画が本番と同じ HTML になり、Mermaid も描けること | PRT-AF01、PRT-AF02 |
 | editScrollFont.e2e.js | ブロック編集欄の字とスクロール: 押した字にカーソルが来てその行が開く・打つ・Esc の前後で ±1 px (コードブロック・リンクのある段落。編集モードの 1 回押しでリスト・引用・段落)、段落・見出し・コードの編集欄の字が表示と同じで枠の線が無い、文書の終わりで打ってもビューが動かない (マウスとタッチ。文書の最後の高いコードブロックの中ほどで打つ形も)、目次と検索の箱の地が 0.85。GRSMD_PERF=1 のとき、大きなブロック (5,000 行のコード・色付けの上限の手前のコード・100 KB の段落) をダブルクリックで開く時間 (INV-84 (7))、1 MB の文書の中ほどと終わりの近くの段落で 1 キーの時間 (INV-40。記録だけ) | PRT-AG01〜AG03、PRT-AG05 |
+| paletteDoubleClick.e2e.js | パレットのグリップのダブルクリック (INV-68、PD1〜PD3): マウスのダブルクリックで最小化・復活し、グリップの位置・開いた編集欄のフォーカスと選択を保ち、文字を選ばず、ブロックを開かず本文を変えない。移動や長押しの後のクリックをブラウザがダブルクリックと数えても切り替えない。ボタンのダブルクリックでは最小化しない。touch: すばやい 2 回のタップで 1 回だけ切り替え、拡大しない (タップは pointerType touch で届く)。間をあけた 2 回では切り替えない | PRT-AI01、PRT-AI02 |
 
 ---
 
@@ -5027,6 +5090,8 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-AG04      | 編集欄の字 | iPad (Safari) |      |
 | PRT-AG05      | 編集欄の字 | 目次と検索の箱が 15% 透け |      |
 | PRT-AH01      | 印刷 | 印刷に出るもの・出ないもの |      |
+| PRT-AI01      | グリップのダブルクリック | マウスのダブルクリック (PC) |      |
+| PRT-AI02      | グリップのダブルクリック | タッチとペンのダブルタップ |      |
 
 **テスター:** \_\_\_\_\_\_\_\_\_\_
 **日付:** \_\_\_\_\_\_\_\_\_\_

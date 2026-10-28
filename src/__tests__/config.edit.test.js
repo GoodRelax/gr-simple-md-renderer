@@ -11,7 +11,9 @@ describe("CONFIG.edit (spec 5.2)", () => {
     const e = CONFIG.edit;
     expect(e.paletteMarginPx).toBe(16);
     expect(e.paletteLongPressMs).toBe(500); // INV-68
-    // no double-tap timing: a touch double tap does not start editing (owner ruling AQ3);
+    // the palette grip only: a touch / pen double tap minimizes (INV-68, owner rulings PD1, PD2)
+    expect(e.paletteDoubleTapMs).toBe(500);
+    // no double-tap timing for the preview: a touch double tap does not start editing (owner ruling AQ3);
     // a pen double tap comes as a dblclick and acts like a mouse double click (5.14.6)
     expect(e).not.toHaveProperty("doubleTapMaxIntervalMs");
     expect(e).not.toHaveProperty("doubleTapMaxDistancePx");

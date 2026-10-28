@@ -212,7 +212,7 @@ export const CONFIG = {
     palette: {
       modifier: { apple: "Cmd", other: "Ctrl" }, // the primary modifier key in the tooltips (INV-14)
       root: "Edit palette",
-      grip: "Move palette (long press: minimize / restore)", // INV-68
+      grip: "Move palette (double-click or long press: minimize / restore)", // INV-68
       bold: (mod) => `Bold (${mod}+B)`,
       italic: (mod) => `Italic (${mod}+I)`,
       format: "Text format", // the button and its popover
@@ -264,6 +264,7 @@ export const CONFIG = {
   edit: {
     paletteMarginPx: 16, // gap from viewport bottom-right (INV-32)
     paletteLongPressMs: 500, // grip long press toggles minimized (INV-68)
+    paletteDoubleTapMs: 500, // max time between the presses of a touch / pen double tap on the grip (INV-68; a mouse uses the OS double-click time)
     textColors: { // INV-66; the light value is written in the source
       red: { light: "#CF222E", dark: "#F85149" },
       blue: { light: "#0550AE", dark: "#58A6FF" },
