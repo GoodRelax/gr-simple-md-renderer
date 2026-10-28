@@ -8,7 +8,10 @@
 // In the code view (INV-91) the entries come from a code outline the caller
 // gives (setCodeOutline): built when the panel is shown and on refresh()
 // (a fold, edit mode in or out, a typing pause); level 1 and 2 entries look
-// like h1 and h2 entries. Pressing one scrolls its line to the top.
+// like h1 and h2 entries. Pressing one scrolls its line to the top. A
+// refresh keeps the entries that did not change (the same level and label
+// before and after the part that changed) and makes only the others (N2:
+// a typing pause in a large file changes a few entries, and their lines).
 
 import { placeSidePanels } from "../sidePanels.js";
 import { nextFrame, cancelFrame } from "../utils.js";
@@ -83,8 +86,10 @@ export default class DocumentIndex {
     this._entries = new Map(); // block -> its entries (buttons), for the blocks with headings
     this._headingOf = new WeakMap(); // entry -> its heading
     this._code = null; // the code outline (setCodeOutline), or null: the Markdown headings
-    this._codeEntryCount = 0; // entries of the code outline listed
     this._lineOf = new WeakMap(); // code entry -> its 0-based line
+    // the code entries in the panel, in order, and their {level, label}; _codeItems null: none kept (rebuilt whole)
+    this._codeButtons = [];
+    this._codeItems = null;
     this._records = []; // block changes not yet applied
     this._buildFrame = 0; // the frame that applies them (a nextFrame id), or 0: none asked for
     /** @purity non-pure */
@@ -125,6 +130,7 @@ export default class DocumentIndex {
    */
   setCodeOutline(outline) {
     this._code = outline;
+    this._codeItems = null;
     this._empty.textContent = outline ? this._emptyCodeText : this._emptyText;
     if (!this.isShown()) return;
     if (outline) this._observer.disconnect();
@@ -171,6 +177,7 @@ export default class DocumentIndex {
     this.button.setAttribute("aria-expanded", "false");
     this.panel.replaceChildren();
     this._entries.clear();
+    this._codeItems = null; // the next build makes them all
   }
 
   /**
@@ -184,6 +191,7 @@ export default class DocumentIndex {
       this._buildCode();
       return;
     }
+    this._codeItems = null;
     const all = document.createDocumentFragment();
     for (let block = this.preview.firstElementChild; block; block = block.nextElementSibling) {
       if (!isBlock(block)) continue;
@@ -202,24 +210,51 @@ export default class DocumentIndex {
   /**
    * The whole code outline (INV-91): one entry a line it lists, level 1 or
    * 2 shown as an h1 or h2 entry. The panel keeps its scroll position.
+   * Entries kept from the last build: those before and after the part that
+   * changed stay in the panel (only their lines follow; the panel's scroll
+   * is not read, so no layout is forced); the others are made (N2).
    * @purity non-pure
    */
   _buildCode() {
-    const all = document.createDocumentFragment();
     const entries = this._code.entries();
-    for (const { line, level, label } of entries) {
-      const entry = document.createElement("button");
-      entry.type = "button";
-      entry.className = `index-entry index-h${level}`;
-      entry.textContent = label;
-      this._lineOf.set(entry, line);
-      all.append(entry);
+    const old = this._codeItems;
+    const buttons = this._codeButtons;
+    let kept;
+    if (old) {
+      const sameAt = (i, j) => old[i].level === entries[j].level && old[i].label === entries[j].label;
+      const shorter = Math.min(old.length, entries.length);
+      let head = 0;
+      while (head < shorter && sameAt(head, head)) head++;
+      let tail = 0;
+      while (tail < shorter - head && sameAt(old.length - 1 - tail, entries.length - 1 - tail)) tail++;
+      for (let i = head; i < old.length - tail; i++) buttons[i].remove();
+      const made = entries.slice(head, entries.length - tail).map((entry) => this._codeEntry(entry));
+      this.panel.insertBefore(this._fragment(made), tail > 0 ? buttons[old.length - tail] : null);
+      kept = [...buttons.slice(0, head), ...made, ...buttons.slice(old.length - tail)];
+    } else {
+      kept = entries.map((entry) => this._codeEntry(entry));
+      const scrollTop = this.panel.scrollTop;
+      this.panel.replaceChildren(this._fragment(kept));
+      this.panel.scrollTop = scrollTop;
     }
-    this._codeEntryCount = entries.length;
-    const scrollTop = this.panel.scrollTop;
-    this.panel.replaceChildren(all);
+    entries.forEach((entry, i) => this._lineOf.set(kept[i], entry.line));
+    this._codeButtons = kept;
+    this._codeItems = entries;
     this._showEmptyIfNone();
-    this.panel.scrollTop = scrollTop;
+  }
+
+  /**
+   * One code outline entry (its line is set by the caller).
+   * @param {{level: number, label: string}} entry
+   * @returns {HTMLButtonElement}
+   * @purity non-pure
+   */
+  _codeEntry({ level, label }) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `index-entry index-h${level}`;
+    button.textContent = label;
+    return button;
   }
 
   /**
@@ -311,7 +346,7 @@ export default class DocumentIndex {
    * @purity non-pure
    */
   _showEmptyIfNone() {
-    if ((this._code ? this._codeEntryCount : this._entries.size) > 0) {
+    if ((this._code ? this._codeButtons.length : this._entries.size) > 0) {
       this._empty.remove();
     } else if (this._empty.parentNode !== this.panel) {
       this.panel.append(this._empty);

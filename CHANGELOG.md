@@ -131,8 +131,12 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   wrapping. While you type, the text shows without colors; 0.2 s after you
   stop typing, the colors, the line numbers, Search's marks and the unsaved
   mark follow, so a key does no work on the whole file (GRSMD's own work
-  per key stays under 4 ms). A file over 100 KB has no colors while you
-  edit it. The edit palette then shows only
+  per key stays under 4 ms in the median). Tab, Shift+Tab, Undo, Redo, a
+  replace and a fold rewrite only the lines they change. A file over
+  100 KB has no colors while you edit it. Files up to the 5 MB load limit
+  can be edited; starting to edit a file of 200 KB or more shows a toast
+  once that showing and editing it may take time (owner ruling NE-32).
+  The edit palette then shows only
   the grip, Save, Save as, Undo, Redo and Search. Tab / Shift+Tab indent
   or outdent the selected lines by the file's own indent, Enter keeps the
   line's indent, and Esc leaves the editor (edit mode stays until **Edit**
@@ -147,10 +151,11 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   encoding, which you can change, and the first 5 lines) or mixes line
   endings (unify them to CRLF or LF, or keep them). Save and Save as work
   as for Markdown. A file that is not UTF-8 asks whether to save it in its
-  own encoding or in UTF-8 (Save asks once, Save as every time), and
-  characters the encoding cannot hold stop the save, with their line
-  numbers. Where files cannot be written (download), Save remembers the
-  answer too. A UTF-16 file with a BOM opens whatever its extension. Shift_JIS and EUC-JP are written with a table built from the
+  own encoding or in UTF-8 (Save asks once, Save as every time). If the
+  encoding cannot hold some characters, GRSMD shows their line numbers and
+  asks, before the save dialog, whether to save in UTF-8 instead; Cancel
+  saves nothing (owner ruling NE-31). Where files cannot be written
+  (download), Save remembers the answer too. A UTF-16 file with a BOM opens whatever its extension. Shift_JIS and EUC-JP are written with a table built from the
   browser's own decoder, so no table is bundled. Save as offers the name
   with the extension the file was opened with and can change it; a name
   ending in `.md` is written in UTF-8 (a toast says so when you had chosen
@@ -336,11 +341,17 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 - Code editing has not yet been checked on a real iPad, with an input
   method (IME), or for clashes of its fold keys with the browser
   (`Ctrl+Shift+[` / `]`, `Cmd+Option+[` / `]`, `Option+Left` / `Right`).
-- Typing in a large code file: GRSMD's own work per key stays under 4 ms,
-  but the browser's own text box takes longer as the file grows. Measured
-  from a key to the next frame (median): 4.1 ms at 200 KB and 19.5 ms at
-  1 MB in Chromium; 12 ms at 100 KB and 116 ms at 1 MB in WebKit (on
-  Windows; a real Safari is not measured yet).
+- Typing in a large code file: GRSMD's own work per key stays under 4 ms
+  (median), but the browser's own text box takes longer as the file grows.
+  Measured from a key to the next frame (median): 4.1 ms at 200 KB and
+  19.5 ms at 1 MB in Chromium; 12 ms at 100 KB and 116 ms at 1 MB in WebKit
+  (on Windows; a real Safari is not measured yet). Tab, Undo and Redo
+  rewrite only the changed lines, yet Chromium's text box still takes about
+  0.4 s for one of them at 1 MB (2.4 s at 5 MB). A replace, a replace of
+  all and a JSON fold read the whole file, so they take longer in large
+  files (for example 11 ms, 11 ms and 33 ms of GRSMD's own work at 1 MB in
+  Chromium). With the Index shown, the pause after typing in a 5 MB file
+  takes about 0.2 s in WebKit (it was 1.8 s).
 
 ## [Unreleased] - 2026-10-10
 

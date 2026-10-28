@@ -109,6 +109,7 @@ export default class CodeEditController {
     this._saving = false; // a save runs, from its encoding question to its end (INV-54)
     this._editor = null; // the CodeEditor, made at the first edit
     this._displayText = null; // the view's text with JSON folds (INV-92), or null: the document's
+    this._toldSlow = false; // NE-32: the large file toast was shown for this document
     this._history = new CodeEditHistory({
       limit: CONFIG.edit.undoMaxSteps,
       pauseMs: CONFIG.codeEdit.undoPauseMs,
@@ -326,6 +327,11 @@ export default class CodeEditController {
       case "startEditor":
         this._editor ??= this._createEditor(this._editorHost());
         this._editor.start(this._document.text, this._history);
+        // NE-32: a file of slowEditBytes or more (its bytes, as the file info shows): one toast a document
+        if (!this._toldSlow && this._document.fileBytes >= CONFIG.codeEdit.slowEditBytes) {
+          this._toldSlow = true;
+          this._host.toast(CONFIG.messages.codeEdit.slowEdit);
+        }
         break;
       case "showCodePalette":
         this._host.codeEditModeChanged(true);
@@ -346,6 +352,7 @@ export default class CodeEditController {
         this._generation++;
         this._displayText = null;
         this._viewUnit = null;
+        this._toldSlow = false;
         this._history.reset(input.document?.text ?? "", 0, 0);
         this._setDocument(input.document ?? null);
         break;
@@ -413,9 +420,9 @@ export default class CodeEditController {
       return;
     }
     if (this.isEditing()) {
+      // one undo step; Search and the Index follow at the typing pause (INV-86 (4), N1)
       const caret = Math.min(this._editor.input.selectionStart, result.text.length);
       this._editor.setText(result.text, caret, caret);
-      this._host.codeTextSettled();
       return;
     }
     this._displayText = result.text;
@@ -486,6 +493,7 @@ export default class CodeEditController {
       encoding,
       bom: detectBom(bytes) === encoding,
       lineEndingMode,
+      fileBytes: bytes.length,
     });
   }
 
@@ -530,7 +538,7 @@ export default class CodeEditController {
         const bytes = new Uint8Array(await file.arrayBuffer());
         const current = this._document;
         if (!current) return decodeAs(bytes, "utf-8");
-        next = current.withReloaded(decodeAs(bytes, current.encoding), file.lastModified, detectBom(bytes) === current.encoding);
+        next = current.withReloaded(decodeAs(bytes, current.encoding), file.lastModified, detectBom(bytes) === current.encoding, bytes.length);
         return next.text;
       },
       /** @purity non-pure */
@@ -612,8 +620,10 @@ export default class CodeEditController {
   /**
    * Encode and write. Synchronous up to the start of the permission request,
    * the save dialog or the download (INV-33). Characters the chosen encoding
-   * cannot write stop the save before any of them; a .md name is written in
-   * UTF-8 (NE-30), known after the save dialog for Save as.
+   * cannot write are found before any of them: the save asks whether to
+   * write in UTF-8 instead (NE-31; its button press starts them), else
+   * nothing is written. A .md name is written in UTF-8 (NE-30), known after
+   * the save dialog for Save as.
    * Save's answer to the encoding question is remembered once the file is
    * written in it, or its download started (NE-24, L20): a save stopped or
    * canceled asks again.
@@ -625,14 +635,29 @@ export default class CodeEditController {
    * @param {"original"|"utf-8"|null} w.remember - Save asked: the answer to remember
    * @returns {Promise<{file: File, fileHandle: object}|null>} a file saved as .md to reopen (NE-19)
    */
-  async _write({ isSaveAs, encoding: chosen, generation, remember }) {
+  async _write({ isSaveAs, encoding: asked, generation, remember: answer }) {
     const doc = this._document;
     const text = this.currentText();
     const access = this._fileAccess;
     const name = doc.fileName;
-    if (!access.canWriteInPlace()) {
-      const encoded = this._encode(doc, text, chosen, name);
-      if (!encoded) return null;
+    const download = !access.canWriteInPlace();
+    const inPlace = !download && !isSaveAs && this._fileHandle !== null;
+    // Encoded and checked before the permission request or the save dialog:
+    // the dialog may create the file it returns, so a stop after it could
+    // leave an empty file. In place or downloaded the name is known (NE-30:
+    // a .md name is UTF-8); the dialog's name only after it, then a .md
+    // name is encoded again in UTF-8.
+    let chosen = asked;
+    let remember = answer;
+    let encoded = this._encode(doc, text, chosen, inPlace || download ? name : "");
+    if (encoded.unencodableLines) {
+      if (!(await this._askUtf8(encoded)) || generation !== this._generation) return null;
+      chosen = "utf-8"; // NE-31: answered UTF-8 (remembered as such for Save)
+      if (remember) remember = "utf-8";
+      encoded = this._encode(doc, text, chosen, name);
+      if (encoded.unencodableLines) return this._unencodable(encoded);
+    }
+    if (download) {
       access.startDownload(name, encoded.bytes, CONFIG.codeEdit.downloadMimeType);
       // the base (unsaved) stays (INV-26); the answer is kept for the next Save
       if (remember && generation === this._generation) this._document = this._document.withSaveEncoding(remember);
@@ -640,15 +665,7 @@ export default class CodeEditController {
       this._toastIfMadeUtf8(chosen, encoded.encoding);
       return null;
     }
-    const inPlace = !isSaveAs && this._fileHandle !== null;
     let fileHandle = this._fileHandle;
-    // Encoded and checked before the permission request or the save dialog:
-    // the dialog may create the file it returns, so a stop after it could
-    // leave an empty file. In place the name is known (NE-30: a .md name is
-    // UTF-8); the dialog's name only after it, then a .md name is encoded
-    // again in UTF-8.
-    let encoded = this._encode(doc, text, chosen, inPlace ? name : "");
-    if (!encoded) return null;
     const offered = this._offeredName(name);
     const started = inPlace ? access.startPermissionRequest(fileHandle) : access.startSavePicker(offered, this._pickerTypes(offered));
     let lastModified;
@@ -659,7 +676,7 @@ export default class CodeEditController {
         fileHandle = await started;
         if (isMarkdownName(fileHandle.name) && encoded.encoding !== "utf-8") {
           encoded = this._encode(doc, text, "utf-8", fileHandle.name);
-          if (!encoded) return null; // a lone surrogate: UTF-8 cannot write it either
+          if (encoded.unencodableLines) return this._unencodable(encoded); // a lone surrogate
         }
       }
       lastModified = await access.writeFile(fileHandle, encoded.bytes);
@@ -689,23 +706,44 @@ export default class CodeEditController {
   /**
    * The bytes to write under a name, in the chosen encoding; a name ending
    * in .md is always UTF-8 (NE-30; the BOM as CodeDocument.toBytes keeps
-   * it). Characters the encoding written cannot hold: the alert (with the
-   * lines) and null, nothing is written.
-   * @purity non-pure
+   * it). Characters the encoding cannot hold: their lines instead of bytes.
+   * @purity semi-pure-a
    * @param {CodeDocument} doc
    * @param {string} text - LF text
    * @param {string} chosen - the encoding chosen (or known)
    * @param {string} name - the name written to
-   * @returns {{bytes: Uint8Array, encoding: string}|null}
+   * @returns {{bytes: Uint8Array|null, encoding: string, unencodableLines: number[]|null}}
    */
   _encode(doc, text, chosen, name) {
     const encoding = isMarkdownName(name) ? "utf-8" : chosen;
     const { bytes, unencodableLines } = doc.toBytes(text, encoding);
-    if (unencodableLines.length > 0) {
-      window.alert(this._unencodableMessage(encoding, unencodableLines));
-      return null;
-    }
-    return { bytes, encoding };
+    return unencodableLines.length > 0 ? { bytes: null, encoding, unencodableLines } : { bytes, encoding, unencodableLines: null };
+  }
+
+  /**
+   * Characters the encoding cannot write (NE-31): ask whether to save in
+   * UTF-8 instead; nothing is written in the encoding with them lost
+   * (NE-24). A UTF encoding fails only on a lone surrogate, which UTF-8
+   * cannot write either: the alert, and no.
+   * @purity non-pure
+   * @param {{encoding: string, unencodableLines: number[]}} encoded
+   * @returns {Promise<boolean>} true: save in UTF-8
+   */
+  async _askUtf8(encoded) {
+    if (encoded.encoding.startsWith("utf-")) return Boolean(this._unencodable(encoded));
+    return this._dialog.askSaveUtf8(encoded.encoding, this._listed(encoded.unencodableLines));
+  }
+
+  /**
+   * The alert of a save stopped by characters the encoding cannot write.
+   * @purity non-pure
+   * @param {{encoding: string, unencodableLines: number[]}} encoded
+   * @returns {null} nothing written
+   */
+  _unencodable({ encoding, unencodableLines }) {
+    const m = CONFIG.messages.codeEdit;
+    window.alert(m.unencodable(m.encodingNames[encoding] ?? encoding, this._listed(unencodableLines)));
+    return null;
   }
 
   /**
@@ -768,18 +806,15 @@ export default class CodeEditController {
   }
 
   /**
-   * The alert of a save stopped by characters the encoding cannot write:
-   * the encoding and the lines, at most CONFIG.codeEdit.maxListedLines.
+   * The lines of characters an encoding cannot write, listed: at most
+   * CONFIG.codeEdit.maxListedLines, then ", ...".
    * @purity semi-pure-a
-   * @param {string} encoding
    * @param {number[]} lines - 1-based
    * @returns {string}
    */
-  _unencodableMessage(encoding, lines) {
+  _listed(lines) {
     const max = CONFIG.codeEdit.maxListedLines;
-    const listed = lines.slice(0, max).join(", ") + (lines.length > max ? ", ..." : "");
-    const m = CONFIG.messages.codeEdit;
-    return m.unencodable(m.encodingNames[encoding] ?? encoding, listed);
+    return lines.slice(0, max).join(", ") + (lines.length > max ? ", ..." : "");
   }
 
   /**

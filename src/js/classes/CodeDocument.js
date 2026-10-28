@@ -45,6 +45,7 @@ export default class CodeDocument {
    * @param {string} v.text - LF text now
    * @param {string} v.savedText - LF text at the last load or save
    * @param {"original"|"utf-8"|null} v.saveEncoding - Save's remembered choice (NE-24)
+   * @param {number} [v.fileBytes] - the size of the file read, in bytes (NE-32; 0: not known)
    */
   constructor(v) {
     this.fileName = v.fileName;
@@ -56,6 +57,7 @@ export default class CodeDocument {
     this.text = v.text;
     this.savedText = v.savedText;
     this.saveEncoding = v.saveEncoding;
+    this.fileBytes = v.fileBytes ?? 0;
     Object.freeze(this);
   }
 
@@ -70,9 +72,10 @@ export default class CodeDocument {
    * @param {string} v.encoding
    * @param {boolean} v.bom
    * @param {"\r\n"|"\n"|"\r"|"keep"} v.lineEndingMode
+   * @param {number} [v.fileBytes] - the file's size in bytes
    * @returns {CodeDocument}
    */
-  static fromDecoded({ fileName, lastModified, text, encoding, bom, lineEndingMode }) {
+  static fromDecoded({ fileName, lastModified, text, encoding, bom, lineEndingMode, fileBytes = 0 }) {
     const lf = normalizeLineEndings(text);
     return new CodeDocument({
       fileName,
@@ -84,6 +87,7 @@ export default class CodeDocument {
       text: lf,
       savedText: lf,
       saveEncoding: null,
+      fileBytes,
     });
   }
 
@@ -124,9 +128,10 @@ export default class CodeDocument {
    * @param {string} text - decoded with this.encoding, any line endings
    * @param {number} lastModified
    * @param {boolean} bom
+   * @param {number} [fileBytes] - the file's size in bytes
    * @returns {CodeDocument}
    */
-  withReloaded(text, lastModified, bom) {
+  withReloaded(text, lastModified, bom, fileBytes = 0) {
     const lf = normalizeLineEndings(text);
     return new CodeDocument({
       ...this,
@@ -135,6 +140,7 @@ export default class CodeDocument {
       original: this.lineEndingMode === "keep" ? originalOf(text) : null,
       text: lf,
       savedText: lf,
+      fileBytes,
     });
   }
 

@@ -209,6 +209,64 @@ test("INV-90 (6)(8), NE-30: Save as a Shift_JIS file to x.md (fake save dialog):
   expect(saves[0].bytes).toEqual([...new TextEncoder().encode(`# ${KANA}\r\ntext\r\n`)]);
 });
 
+test("INV-87 (1), INV-88 (N1): Tab, Shift+Tab, Undo and Redo in a 300 KB file write only the lines they change (no assignment of the whole value, no input event), one undo step each", async ({ page }) => {
+  await page.goto("/");
+  const line = "function f(a) {\n  return a + 1;\n}\n";
+  const text = line.repeat(Math.ceil((300 * 1024) / line.length));
+  await drop(page, "big.js", text);
+  const k = await keys(page);
+  await page.keyboard.press("e");
+  await expect(editor(page)).toBeFocused();
+  // count, not time (G12): whole-value writes, the parts written, and input events
+  const at = await page.evaluate(() => {
+    window.__valueWrites = 0;
+    window.__parts = [];
+    window.__inputs = 0;
+    const proto = HTMLTextAreaElement.prototype;
+    const value = Object.getOwnPropertyDescriptor(proto, "value");
+    Object.defineProperty(proto, "value", {
+      ...value,
+      set(v) {
+        window.__valueWrites++;
+        value.set.call(this, v);
+      },
+    });
+    const setRangeText = proto.setRangeText;
+    proto.setRangeText = function (inserted, start, end, ...rest) {
+      window.__parts.push([inserted.length, end - start]);
+      return setRangeText.call(this, inserted, start, end, ...rest);
+    };
+    const ta = document.querySelector("#codeEditBody textarea");
+    ta.addEventListener("input", () => window.__inputs++);
+    const v = ta.value;
+    const from = v.indexOf("\n", v.length >> 1) + 1;
+    ta.setSelectionRange(from, v.indexOf("\n", v.indexOf("\n", from) + 1)); // two lines
+    return from;
+  });
+  const lines = text.slice(at, text.indexOf("\n", text.indexOf("\n", at) + 1));
+  const deeper = "  " + lines.replace("\n", "\n  ");
+  const indented = text.slice(0, at) + deeper + text.slice(at + lines.length);
+  await page.keyboard.press("Tab");
+  await expect.poll(() => editor(page).evaluate((ta) => ta.value.length)).toBe(indented.length);
+  await page.keyboard.press("Shift+Tab");
+  await expect.poll(() => editor(page).evaluate((ta) => ta.value.length)).toBe(text.length);
+  await page.keyboard.press(`${k.primary}+z`); // the Shift+Tab
+  await expect.poll(() => editor(page).evaluate((ta) => ta.value.length)).toBe(indented.length);
+  await page.keyboard.press(`${k.primary}+z`); // the Tab
+  await expect.poll(() => editor(page).evaluate((ta) => ta.value.length)).toBe(text.length);
+  await page.keyboard.press(`${k.primary}+Shift+z`); // Redo the Tab
+  await expect.poll(() => editor(page).evaluate((ta) => ta.value.length)).toBe(indented.length);
+  const result = await page.evaluate(
+    ({ indented }) => {
+      const ta = document.querySelector("#codeEditBody textarea");
+      return { same: ta.value === indented, valueWrites: window.__valueWrites, parts: window.__parts, inputs: window.__inputs };
+    },
+    { indented },
+  );
+  const [d, l] = [deeper.length, lines.length];
+  expect(result).toEqual({ same: true, valueWrites: 0, parts: [[d, l], [l, d], [d, l], [l, d], [d, l]], inputs: 0 });
+});
+
 test("INV-86 (M1): typing in a 60 KB file (colored) writes neither the layer nor the gutter on a key; when typing stops both follow and the textarea is unscrolled and as large as its text", async ({ page }) => {
   await page.goto("/");
   const line = "const value = 1234567890; // a line of a big file\n";

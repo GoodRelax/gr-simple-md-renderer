@@ -288,4 +288,41 @@ describe("DocumentIndex code outline (INV-91)", () => {
     expect(scrollTargetTo).toHaveBeenLastCalledWith(textarea, 8 - (8 + 3 * 20));
     expect(outline.picked.mock.calls).toEqual([[2], [3]]);
   });
+
+  it("AT-IDX-14 (INV-91, N2) a refresh keeps the entries that did not change (the same nodes) and makes only the others; the kept ones follow their new lines", () => {
+    viewLines(12);
+    let list = [
+      { line: 0, level: 1, label: "import (2)" },
+      { line: 2, level: 1, label: "class A" },
+      { line: 3, level: 2, label: "run" },
+      { line: 5, level: 2, label: "stop" },
+      { line: 8, level: 1, label: "function f()" },
+    ];
+    const outline = { entries: () => list, place: () => null, picked: vi.fn() };
+    index.setCodeOutline(outline);
+    index.show();
+    const before = entries();
+    // a line typed before "run" renamed it: the entries around it stay, all lines after it move by one
+    list = [list[0], list[1], { line: 3, level: 2, label: "runs" }, { line: 6, level: 2, label: "stop" }, { line: 9, level: 1, label: "function f()" }];
+    index.refresh();
+    const after = entries();
+    expect(after.map((e) => e.textContent)).toEqual(["import (2)", "class A", "runs", "stop", "function f()"]);
+    expect(after.map((e, i) => e === before[i])).toEqual([true, true, false, true, true]);
+    vi.spyOn(memento, "scrollTargetTo").mockImplementation(() => {});
+    after[4].click();
+    expect(outline.picked).toHaveBeenLastCalledWith(9);
+    // the first entry removed, then one added at the end
+    list = list.slice(1);
+    index.refresh();
+    expect(entries()).toEqual(after.slice(1));
+    list = [...list, { line: 11, level: 1, label: "function g()" }];
+    index.refresh();
+    expect(entries().map((e) => e.textContent)).toEqual(["class A", "runs", "stop", "function f()", "function g()"]);
+    expect(entries().slice(0, 4).every((e, i) => e === after[i + 1])).toBe(true);
+    // hidden and shown again: all made anew
+    index.hide();
+    index.show();
+    expect(entries()[0]).not.toBe(after[1]);
+    expect(entries()).toHaveLength(5);
+  });
 });

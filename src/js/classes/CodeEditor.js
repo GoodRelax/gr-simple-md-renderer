@@ -1,6 +1,7 @@
 import { CONFIG } from "../config.js";
 import { shortcutLetter } from "../utils.js";
-import { inferIndentUnit, indentLines, outdentLines, leadingIndentAt } from "../indentText.js";
+import { inferIndentUnit, indentChange, leadingIndentAt } from "../indentText.js";
+import { textChange } from "./CodeEditHistory.js";
 import { releaseCodeView } from "./SourceFileRenderer.js";
 
 // Keys that move the caret without typing: the next typing starts a new
@@ -87,6 +88,10 @@ function gutterText(count) {
  * Undo and Redo are its own (INV-88): a CodeEditHistory given by the caller
  * (it lives as long as the document). Tab / Shift+Tab, a fold and a replace
  * are one step each; typing is one step until it pauses or the caret moves.
+ * These operations, Undo and Redo write only the part that changed into the
+ * textarea (setRangeText; N1): no assignment of the whole value, and no
+ * count or comparison over the whole text (a replace or a fold, given a
+ * whole new text, finds the changed part by textChange's block comparison).
  *
  * CodeEditorHost (the port it calls back, CodeEditController):
  *   highlight(text) -> string|null - highlight.js HTML; null: not colored
@@ -236,11 +241,7 @@ export default class CodeEditor {
    * @returns {boolean} true when a step was undone
    */
   undo() {
-    if (!this._root) return false;
-    const step = this._history.undo();
-    if (!step) return false;
-    this._show(step.text, step.selStart, step.selEnd);
-    return true;
+    return this._replay(false);
   }
 
   /**
@@ -249,16 +250,13 @@ export default class CodeEditor {
    * @returns {boolean} true when a step was redone
    */
   redo() {
-    if (!this._root) return false;
-    const step = this._history.redo();
-    if (!step) return false;
-    this._show(step.text, step.selStart, step.selEnd);
-    return true;
+    return this._replay(true);
   }
 
   /**
    * A whole operation (a fold, a replace, a replace of all): the new text
-   * as one undo step (INV-88, NE-18).
+   * as one undo step (INV-88, NE-18). Only the part that changed is
+   * written into the textarea (N1).
    * @purity non-pure
    * @param {string} text
    * @param {number} selStart
@@ -266,9 +264,7 @@ export default class CodeEditor {
    */
   setText(text, selStart, selEnd) {
     if (!this._root) return;
-    const input = this._input;
-    this._history.recordOperation(text, selStart, selEnd, [input.selectionStart, input.selectionEnd]);
-    this._show(text, selStart, selEnd);
+    this._operate(textChange(this._input.value, text), selStart, selEnd);
   }
 
   /**
@@ -444,14 +440,16 @@ export default class CodeEditor {
 
   /**
    * Room for lines added since the layer was written (the layer gives the
-   * height of the lines it holds).
+   * height of the lines it holds). Lines removed by the editor's own edits
+   * are taken off (count < 0); those removed by typing are not known, so
+   * the room is never less than the lines need.
    * @purity non-pure
    * @param {number} count
    */
   _addLines(count) {
-    if (count <= 0) return;
+    if (count === 0) return;
     this._extraLines += count;
-    this._stack.style.setProperty("--code-extra-lines", String(this._extraLines));
+    this._stack.style.setProperty("--code-extra-lines", String(Math.max(0, this._extraLines)));
   }
 
   /**
@@ -554,9 +552,64 @@ export default class CodeEditor {
    */
   _indent(outdent) {
     const input = this._input;
-    const change = (outdent ? outdentLines : indentLines)(input.value, input.selectionStart, input.selectionEnd, this._unit);
-    if (change.text === input.value) return;
-    this.setText(change.text, change.start, change.end);
+    const change = indentChange(input.value, input.selectionStart, input.selectionEnd, this._unit, outdent);
+    if (change) this._operate(change, change.start, change.end);
+  }
+
+  /**
+   * An operation as one undo step: its changed part is written into the
+   * textarea (setRangeText: no input event, so no typing step), and the
+   * history records that part (no comparison of the texts).
+   * @purity non-pure
+   * @param {{at: number, removed: string, inserted: string}} change
+   * @param {number} selStart - the selection after it
+   * @param {number} selEnd
+   */
+  _operate(change, selStart, selEnd) {
+    const input = this._input;
+    const before = [input.selectionStart, input.selectionEnd];
+    this._history.noteCaretMove(); // an open typing step ends with the selection before the edit
+    const text = this._writePart(change.at, change.removed, change.inserted);
+    input.setSelectionRange(selStart, selEnd);
+    this._history.recordOperation(text, selStart, selEnd, before, change);
+    this._edited(lineFeedsIn(change.inserted) - lineFeedsIn(change.removed), text);
+  }
+
+  /**
+   * Undo (redo false) or Redo one step: the step's changed part is written
+   * back into the textarea, and the selection of the step is put.
+   * @purity non-pure
+   * @param {boolean} redo
+   * @returns {boolean} true when a step was undone / redone
+   */
+  _replay(redo) {
+    if (!this._root) return false;
+    let lines = 0;
+    /** @purity non-pure */
+    const edit = (at, removed, inserted) => {
+      lines = lineFeedsIn(inserted) - lineFeedsIn(removed);
+      return this._writePart(at, removed, inserted);
+    };
+    const step = redo ? this._history.redo(edit) : this._history.undo(edit);
+    if (!step) return false;
+    this._input.setSelectionRange(step.selStart, step.selEnd);
+    this._edited(lines, step.text);
+    return true;
+  }
+
+  /**
+   * Write a part of the text: removed, at at, becomes inserted (only that
+   * part; the textarea's own undo is not used, INV-88).
+   * @purity non-pure
+   * @param {number} at
+   * @param {string} removed
+   * @param {string} inserted
+   * @returns {string} the text after it
+   */
+  _writePart(at, removed, inserted) {
+    const input = this._input;
+    input.setRangeText(inserted, at, at + removed.length);
+    return input.value;
   }
 
   /**
@@ -581,19 +634,15 @@ export default class CodeEditor {
   }
 
   /**
-   * Show a text set by the editor itself (Undo, Redo, an operation): as
-   * typing, with room for every line added (an operation writes the whole
-   * text anyway).
+   * After the editor's own edit (Undo, Redo, an operation): as typing,
+   * room for the lines it added (counted in its changed part only), the
+   * textarea's text shown and the pause waited for.
    * @purity non-pure
-   * @param {string} text
-   * @param {number} selStart
-   * @param {number} selEnd
+   * @param {number} lines - the lines added (less than 0: removed)
+   * @param {string} text - the text now
    */
-  _show(text, selStart, selEnd) {
-    const input = this._input;
-    input.value = text;
-    input.setSelectionRange(selStart, selEnd);
-    this._addLines(lineFeedsIn(text) + 1 - this._lineCount - this._extraLines);
+  _edited(lines, text) {
+    this._addLines(lines);
     this._setTyping(true);
     this._scheduleSettle();
     this._host.onTextChanged(text);

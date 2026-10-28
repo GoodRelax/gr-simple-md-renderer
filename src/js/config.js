@@ -161,8 +161,13 @@ export const CONFIG = {
       lineEndingCounts: (counts) => `CRLF ${counts.crlf}, LF ${counts.lf}, CR ${counts.cr}`,
       saveQuestion: (name) => `This file is in ${name}. Save it in ${name} or in UTF-8?`,
       saveOriginal: (name) => `${name} (original)`,
-      unencodable: (name, lines) =>
-        `Not saved: some characters can't be written in ${name} (lines ${lines}). Change them, or save in UTF-8.`,
+      // a lone surrogate, which no UTF encoding can write (NE-31 asks for the others)
+      unencodable: (name, lines) => `Not saved: ${name} can't write lines ${lines}. Change them.`,
+      // NE-31: the save question when the chosen encoding can't write some characters
+      unencodableAsk: (name, lines) => `${name} can't write some characters (lines ${lines}). Save in UTF-8?`,
+      saveInUtf8: "Save in UTF-8",
+      // NE-32: edit mode started on a file of CONFIG.codeEdit.slowEditBytes or more
+      slowEdit: "This file is 200 KB or larger. Showing and editing it may take time.",
       fileType: (ext) => `${ext} file`, // the file type name in the save dialog (Save as, NE-8)
       savedMarkdownUtf8: "Saved in UTF-8: .md files are always UTF-8.", // NE-30
       editorLabel: "Code editor", // the aria-label of the editor's textarea (INV-85)
@@ -304,6 +309,7 @@ export const CONFIG = {
     sampleLines: 5, // INV-89: lines shown in the open dialog's preview
     maxListedLines: 10, // INV-90: line numbers listed when characters can't be saved
     downloadMimeType: "application/octet-stream", // INV-90: a code file downloaded (no write API)
+    slowEditBytes: 200 * 1024, // NE-32: a toast when edit mode starts on a file this large (its bytes)
   },
   // In-place Markdown editing (SC-22 to SC-24)
   edit: {

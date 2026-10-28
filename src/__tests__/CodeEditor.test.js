@@ -4,6 +4,7 @@ import CodeEditHistory from "../js/classes/CodeEditHistory.js";
 import { CONFIG } from "../js/config.js";
 import { escapeHtml } from "../js/utils.js";
 import { keydown } from "./helpers/editDom.js";
+import { watchWholeTextWork } from "./helpers/wholeText.js";
 
 // AT-CED: the code editor (SC-27, INV-85 to INV-88, INV-92): the textarea
 // over the highlighted layer, the gutter, the keys and its own Undo.
@@ -495,5 +496,91 @@ describe("CodeEditor: performance (INV-86, G10; review M1; count-based, L7)", ()
     expect(host.onTextChanged).toHaveBeenCalledTimes(4);
     expect(selectionReads.map((read) => read.mock.calls.length)).toEqual([1, 1]);
     expect(extraLines()).toBe("1");
+  });
+});
+
+describe("CodeEditor: operations, Undo and Redo write only the changed part (INV-86, INV-87 (1), INV-88; review N1, count-based)", () => {
+  // about 5 MB of short lines, over highlightMaxChars (plain)
+  const bigText = () => "function f(a) {\n  return a + 1;\n}\n".repeat(150000);
+
+  it("AT-CED-33 (INV-87 (1), INV-88, N1) Tab, Shift+Tab on lines, Undo and Redo on a 5 MB text: no assignment of the whole value, no work on the whole text, setRangeText of the touched lines only", () => {
+    vi.useFakeTimers();
+    const text = bigText();
+    start(text);
+    const ta = input();
+    const at = text.indexOf("\n", text.length / 2) + 1; // a line's start in the middle
+    const end = text.indexOf("\n", at + 40); // three lines touched
+    ta.setSelectionRange(at, end);
+    const work = watchWholeTextWork(); // first: the spy below is the one it puts on setRangeText
+    const writes = vi.spyOn(HTMLTextAreaElement.prototype, "setRangeText");
+    work.start();
+    keydown(ta, "Tab");
+    const indented = input().value;
+    keydown(ta, "Tab", { shiftKey: true });
+    const outdented = input().value;
+    editor.undo();
+    const undone = input().value;
+    editor.redo();
+    work.stop();
+    expect(work.calls).toEqual([]);
+    expect(work.valueWrites).toBe(0);
+    const lines = text.slice(at, end);
+    const deeper = "  " + lines.replace(/\n/g, "\n  ");
+    expect(writes.mock.calls.map(([inserted, from, to]) => [inserted, from, to])).toEqual([
+      [deeper, at, end],
+      [lines, at, at + deeper.length],
+      [deeper, at, at + lines.length],
+      [lines, at, at + deeper.length],
+    ]);
+    expect([indented.length, outdented === text, undone.length, input().value === text]).toEqual([text.length + deeper.length - lines.length, true, indented.length, true]);
+    expect([ta.selectionStart, ta.selectionEnd]).toEqual([at, end]);
+    expect(host.onTextChanged).toHaveBeenCalledTimes(4);
+    expect(body().classList.contains("code-edit-typing")).toBe(true); // the layer and the gutter follow at the pause
+  });
+
+  it("AT-CED-34 (INV-80 (5), INV-88, N1) setText (a replace, a fold) on a 5 MB text writes only the part that changed, found by block comparison; Undo writes it back", () => {
+    vi.useFakeTimers();
+    const text = bigText();
+    start(text);
+    const at = text.length - 1000;
+    const replaced = text.slice(0, at) + "return b;" + text.slice(at + 9);
+    const writes = vi.spyOn(HTMLTextAreaElement.prototype, "setRangeText");
+    const reads = vi.spyOn(String.prototype, "charCodeAt");
+    const valueWrites = vi.spyOn(HTMLTextAreaElement.prototype, "value", "set");
+    editor.setText(replaced, at, at);
+    editor.undo();
+    expect(valueWrites).not.toHaveBeenCalled();
+    expect(reads.mock.calls.length).toBeLessThan(2000); // char by char: about 2 x 5,000,000
+    const changed = writes.mock.calls.map(([inserted, from, to]) => [inserted, from, to]);
+    expect(changed).toHaveLength(2);
+    expect(changed[0][2] - changed[0][1]).toBeLessThan(20);
+    expect(input().value === text).toBe(true);
+    expect([input().selectionStart, input().selectionEnd]).toEqual([0, 0]); // the selection before the operation
+  });
+
+  it("AT-CED-35 (INV-86, N1) room for lines: an operation that adds lines makes room for them at once; its Undo takes that room back", () => {
+    start("a\nb");
+    const ta = input();
+    ta.setSelectionRange(0, 0);
+    editor.setText("a\nx\ny\nb", 4, 4);
+    expect(extraLines()).toBe("2");
+    editor.undo();
+    expect(extraLines()).toBe("0");
+    type("a\n\nb", 2); // a line typed: room again
+    expect(extraLines()).toBe("1");
+  });
+
+  it("AT-CED-36 (INV-88 (1)(3), N1) an operation right after typing: the typing step ends with the selection before the operation (Redo of the typing puts the caret where typing left it)", () => {
+    start("x\ny");
+    editor.select(1, 1);
+    type("xa\ny", 2);
+    keydown(input(), "Tab"); // the line one unit (4 spaces) deeper; the caret moves with its text
+    expect([input().value, input().selectionStart]).toEqual(["    xa\ny", 6]);
+    editor.undo();
+    expect([input().value, input().selectionStart]).toEqual(["xa\ny", 2]);
+    editor.undo();
+    expect([input().value, input().selectionStart]).toEqual(["x\ny", 1]);
+    editor.redo();
+    expect([input().value, input().selectionStart, input().selectionEnd]).toEqual(["xa\ny", 2, 2]);
   });
 });

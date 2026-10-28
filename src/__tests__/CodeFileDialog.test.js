@@ -160,4 +160,25 @@ describe("CodeFileDialog: save encoding (INV-90, NE-24)", () => {
     t.s("codeSaveUtf8Btn").click();
     await expect(second).resolves.toBe("utf-8");
   });
+
+  it("AT-CFD-08 (INV-90 (3), NE-31) askSaveUtf8: the encoding and the lines, only [Save in UTF-8] and [Cancel]; it answers true, Cancel and Esc false; the encoding question shows its two buttons again", async () => {
+    const t = setup();
+    const yes = t.dialog.askSaveUtf8("shift_jis", "2, 4");
+    expect(isOpen(t.saveModal)).toBe(true);
+    expect(t.s("codeSaveQuestion").textContent).toBe("Shift_JIS can't write some characters (lines 2, 4). Save in UTF-8?");
+    expect([shown(t.s("codeSaveOriginalBtn")), t.s("codeSaveUtf8Btn").textContent, shown(t.s("codeSaveCancelBtn"))]).toEqual([false, "Save in UTF-8", true]);
+    expect(document.activeElement).toBe(t.s("codeSaveUtf8Btn"));
+    t.s("codeSaveUtf8Btn").click();
+    await expect(yes).resolves.toBe(true);
+    const cancel = t.dialog.askSaveUtf8("euc-jp", "1");
+    t.s("codeSaveCancelBtn").click();
+    await expect(cancel).resolves.toBe(false);
+    const esc = t.dialog.askSaveUtf8("euc-jp", "1");
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await expect(esc).resolves.toBe(false);
+    const again = t.dialog.askSaveEncoding("shift_jis");
+    expect([shown(t.s("codeSaveOriginalBtn")), t.s("codeSaveOriginalBtn").textContent, t.s("codeSaveUtf8Btn").textContent]).toEqual([true, "Shift_JIS (original)", "UTF-8"]);
+    t.s("codeSaveCancelBtn").click();
+    await expect(again).resolves.toBeNull();
+  });
 });

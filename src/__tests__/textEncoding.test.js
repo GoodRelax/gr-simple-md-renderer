@@ -16,6 +16,10 @@ import {
 // of non-.md files, and their line endings. Non-ASCII text is written with
 // \u escapes.
 
+// Timing (AT-ENC-27) only with GRSMD_PERF=1 (test spec AT.1; review N3): a
+// loaded machine must not fail it. The result is checked always.
+const PERF = process.env.GRSMD_PERF === "1";
+
 const KONNICHIWA = "\u3053\u3093\u306B\u3061\u306F"; // hiragana "konnichiwa"
 const KANJI = "\u6F22"; // "kan"
 const SJIS_KONNICHIWA = [0x82, 0xb1, 0x82, 0xf1, 0x82, 0xc9, 0x82, 0xbf, 0x82, 0xcd];
@@ -229,13 +233,13 @@ describe("textEncoding (INV-89, INV-90; NE-6, NE-15, NE-24, NE-25)", () => {
     expect(encodeText("a\r\n\udc00\rb", "utf-16be", false).unencodableLines).toEqual([2]);
   });
 
-  it("AT-ENC-27 encodeText on a 5 MB text runs in linear time", () => {
+  it("AT-ENC-27 (INV-90) encodeText on a 5 MB text writes every byte (within 5,000 ms with GRSMD_PERF=1)", () => {
     const text = ("abc" + KONNICHIWA + KANJI + "\n").repeat(500000); // 5,000,000 chars
     const t0 = performance.now();
     const sjis = encodeText(text, "shift_jis", false);
     const utf16 = encodeText(text, "utf-16le", true);
     const utf8 = encodeText(text, "utf-8", false);
-    expect(performance.now() - t0).toBeLessThan(5000);
+    if (PERF) expect(performance.now() - t0).toBeLessThan(5000);
     expect(sjis.bytes.length).toBe(500000 * 16);
     expect(utf16.bytes.length).toBe(2 + text.length * 2);
     expect(utf8.bytes.length).toBe(500000 * 22);

@@ -75,7 +75,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Edit | `E` | Show / hide the edit palette; click a block to edit its Markdown in place. In Code View: edit the whole file |
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
-   | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document or a Code View file is shown (a file that is not UTF-8 asks for the encoding to save in; characters that encoding cannot hold stop the save, with their line numbers) |
+   | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document or a Code View file is shown (a file that is not UTF-8 asks for the encoding to save in; if that encoding cannot hold some characters, it shows their line numbers and asks whether to save in UTF-8) |
    | | `Tab` / `Shift+Tab` | In the Code View editor: indent / outdent the selected lines (`Esc` leaves the editor) |
    | | `Ctrl+Left` / `Ctrl+Right` | In Code View of a JSON file: fold / unfold one level (in the editor: `Ctrl+Shift+[` / `Ctrl+Shift+]`) |
    | | `Esc` | Apply the open block or cell and close it; with blocks selected, clear the selection; with nothing open, hide the edit palette; then Search (in the search box: close it at once); then the Index. In the Code View editor: leave the editor; outside it: the Commands box, then Search, then the Index (edit mode stays) |
@@ -250,7 +250,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリックすると、その場で Markdown を編集。コードビューでは、ファイル全体を編集 |
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
-   | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書かコードビューのファイルを表示している間、保存 / 名前を付けて保存（UTF-8 以外のファイルは、保存する文字コードを聞く。その文字コードで書けない字があれば、その行を示して保存しない） |
+   | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書かコードビューのファイルを表示している間、保存 / 名前を付けて保存（UTF-8 以外のファイルは、保存する文字コードを聞く。その文字コードで書けない字があれば、その行を示して UTF-8 で保存するかを聞く） |
    | | `Tab` / `Shift+Tab` | コードビューの編集欄で、選んだ行の字下げを深く / 浅く（`Esc` で編集欄から抜ける） |
    | | `Ctrl+←` / `Ctrl+→` | コードビューの JSON のファイルで、1 段畳む / 開く（編集欄の中では `Ctrl+Shift+[` / `Ctrl+Shift+]`） |
    | | `Esc` | 開いているブロックやセルを反映して閉じる。ブロックを選んでいれば選択を解く。何も開いていなければ編集パレットを隠し、その次は検索を閉じ（検索欄の中ではすぐ閉じる）、その次は目次を消す。コードビューの編集欄の中では編集欄から抜け、外では Commands の箱、検索、目次の順に閉じる（編集は続く） |

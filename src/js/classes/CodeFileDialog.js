@@ -4,9 +4,11 @@ import { TEXT_ENCODINGS, decodeAs, detectBom, countLineEndings, hasMixedLineEndi
 import { singleLineEnding } from "./CodeDocument.js";
 
 /**
- * The two questions of a code file (UI): how to open a file that is not
- * valid UTF-8 or mixes line endings (INV-89, NE-15, NE-25), and in which
- * encoding to save a file that is not UTF-8 (INV-90, NE-24). Both are
+ * The questions of a code file (UI): how to open a file that is not
+ * valid UTF-8 or mixes line endings (INV-89, NE-15, NE-25), in which
+ * encoding to save a file that is not UTF-8 (INV-90, NE-24), and whether to
+ * save in UTF-8 when the chosen encoding can't write some characters
+ * (NE-31; the save modal with one answer button). They are
  * modals of index.html run by ModalController; closing one in any other
  * way (Cancel, Esc, a click outside) answers null. File content reaches the
  * page as textContent only (INV-19).
@@ -86,21 +88,50 @@ export default class CodeFileDialog {
    * @returns {Promise<"original"|"utf-8"|null>} null: canceled
    */
   askSaveEncoding(encoding) {
+    const name = this._encodingName(encoding);
+    return this._askSave(this._messages.saveQuestion(name), this._messages.saveOriginal(name), this._encodingName("utf-8"));
+  }
+
+  /**
+   * Ask whether to save in UTF-8 instead, as the chosen encoding can't
+   * write some characters (NE-31): the same modal, with [Save in UTF-8]
+   * and [Cancel] only.
+   * @purity non-pure
+   * @param {string} encoding - the encoding chosen
+   * @param {string} lines - the 1-based lines, listed
+   * @returns {Promise<boolean>} true: save in UTF-8
+   */
+  askSaveUtf8(encoding, lines) {
+    const question = this._messages.unencodableAsk(this._encodingName(encoding), lines);
+    return this._askSave(question, null, this._messages.saveInUtf8).then((answer) => answer === "utf-8");
+  }
+
+  // ---- private ----
+
+  /**
+   * Show the save modal with a question and its buttons; original null:
+   * that button hidden. The focus goes to the first button shown.
+   * @purity non-pure
+   * @param {string} question
+   * @param {string|null} original
+   * @param {string} utf8
+   * @returns {Promise<"original"|"utf-8"|null>}
+   */
+  _askSave(question, original, utf8) {
     this._settle(this._saving);
     const s = this._save;
-    const name = this._encodingName(encoding);
-    s.question.textContent = this._messages.saveQuestion(name);
-    s.original.textContent = this._messages.saveOriginal(name);
+    s.question.textContent = question;
+    s.original.hidden = original === null;
+    s.original.textContent = original ?? "";
+    s.utf8.textContent = utf8;
     /** @purity non-pure */
     const asked = new Promise((resolve) => {
       this._saving = { resolve, answer: null };
     });
     ModalController.show(s.modal);
-    s.original.focus();
+    (original === null ? s.utf8 : s.original).focus();
     return asked;
   }
-
-  // ---- private ----
 
   /**
    * The display name of an encoding (CONFIG), or the label itself.

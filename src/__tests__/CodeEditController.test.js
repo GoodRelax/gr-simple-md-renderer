@@ -24,7 +24,7 @@ let ctrl;
 
 beforeEach(() => {
   access = fakeFileAccess();
-  dialog = { askOpen: vi.fn(async () => null), askSaveEncoding: vi.fn(async () => null) };
+  dialog = { askOpen: vi.fn(async () => null), askSaveEncoding: vi.fn(async () => null), askSaveUtf8: vi.fn(async () => false) };
   host = {
     toast: vi.fn(),
     confirmOverwrite: vi.fn(async () => true),
@@ -275,24 +275,65 @@ describe("CodeEditController: Save (INV-90)", () => {
     expect([ctrl.isSaving(), ctrl.document.saveEncoding]).toEqual([false, null]);
   });
 
-  it("AT-CEC-21 characters the encoding cannot write: an alert with the encoding and the lines, nothing written, asked again next time", async () => {
+  it("AT-CEC-21 (INV-90 (3), NE-31) characters the encoding cannot write: asked whether to save in UTF-8 (the encoding and the lines), before the permission; Cancel writes nothing and asks again next time", async () => {
     dialog.askOpen.mockResolvedValue({ encoding: "shift_jis", lineEndingMode: "\n" });
     await open(sjis(`${A}\n`), { name: "a.txt" });
     ctrl.updateText(`a\n${EMOJI}\nb\nc${EMOJI}\n`);
     dialog.askSaveEncoding.mockResolvedValue("original");
     await ctrl.save();
-    expect(window.alert).toHaveBeenCalledWith(
-      "Not saved: some characters can't be written in Shift_JIS (lines 2, 4). Change them, or save in UTF-8.",
-    );
+    expect(dialog.askSaveUtf8.mock.calls).toEqual([["shift_jis", "2, 4"]]);
+    expect(window.alert).not.toHaveBeenCalled();
     expect(access.calls).toEqual([]);
-    expect(ctrl.document.saveEncoding).toBeNull();
+    expect([ctrl.document.saveEncoding, ctrl.document.encoding]).toEqual([null, "shift_jis"]);
     // more than 10 lines: the first 10, then "..."
     ctrl.updateText(Array.from({ length: 12 }, () => EMOJI).join("\n"));
     await ctrl.save();
-    expect(window.alert).toHaveBeenLastCalledWith(
-      "Not saved: some characters can't be written in Shift_JIS (lines 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...). Change them, or save in UTF-8.",
-    );
+    expect(dialog.askSaveUtf8).toHaveBeenLastCalledWith("shift_jis", "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...");
     expect(dialog.askSaveEncoding).toHaveBeenCalledTimes(2);
+    expect(access.writes).toHaveLength(0);
+  });
+
+  it("AT-CEC-47 (INV-90 (3), NE-31) [Save in UTF-8]: the same Save goes on in UTF-8 (the permission starts after the answer), no .md toast; the document is UTF-8 after", async () => {
+    dialog.askOpen.mockResolvedValue({ encoding: "shift_jis", lineEndingMode: "\n" });
+    await open(sjis(`${A}\n`), { name: "a.txt" });
+    ctrl.updateText(`${A}${EMOJI}\n`);
+    dialog.askSaveEncoding.mockResolvedValue("original");
+    dialog.askSaveUtf8.mockImplementation(async () => {
+      access.calls.push("askSaveUtf8");
+      return true;
+    });
+    await ctrl.save();
+    expect(access.calls).toEqual(["askSaveUtf8", "startPermissionRequest", "readLastModified", "writeFile:a.txt"]);
+    expect(bytesOf(access.writes[0].text)).toEqual(bytesOf(utf8(`${A}${EMOJI}\n`)));
+    expect(host.toast.mock.calls).toEqual([[m.edit.saved("a.txt")]]);
+    expect([ctrl.document.encoding, ctrl.isDirty()]).toEqual(["utf-8", false]);
+    // the next Save: UTF-8, no question
+    await ctrl.save();
+    expect([dialog.askSaveEncoding.mock.calls.length, dialog.askSaveUtf8.mock.calls.length, access.writes.length]).toEqual([1, 1, 2]);
+  });
+
+  it("AT-CEC-48 (INV-90 (3), NE-31) no write API: [Save in UTF-8] downloads in UTF-8 and Save remembers UTF-8; a lone surrogate in a UTF encoding is not asked about (UTF-8 cannot write it either): the alert", async () => {
+    access = fakeFileAccess({ canWrite: false });
+    ctrl = new CodeEditController(access, dialog, host);
+    dialog.askOpen.mockResolvedValue({ encoding: "shift_jis", lineEndingMode: "\n" });
+    await open(sjis(`${A}\n`), { name: "a.txt" });
+    ctrl.updateText(`${EMOJI}\n`);
+    dialog.askSaveEncoding.mockResolvedValue("original");
+    dialog.askSaveUtf8.mockResolvedValue(true);
+    await ctrl.save();
+    expect(bytesOf(access.downloads[0].text)).toEqual(bytesOf(utf8(`${EMOJI}\n`)));
+    expect([ctrl.document.saveEncoding, ctrl.document.encoding]).toEqual(["utf-8", "shift_jis"]);
+    await ctrl.save();
+    expect([dialog.askSaveEncoding.mock.calls.length, dialog.askSaveUtf8.mock.calls.length, access.downloads.length]).toEqual([1, 1, 2]);
+    // UTF-8 with a lone surrogate
+    await open(utf8("a\n"), { name: "b.txt" });
+    ctrl.updateText("a\n\ud800\n");
+    await ctrl.save();
+    expect(dialog.askSaveUtf8).toHaveBeenCalledTimes(1);
+    expect(window.alert).toHaveBeenCalledWith(
+      "Not saved: UTF-8 can't write lines 2. Change them.",
+    );
+    expect(access.downloads).toHaveLength(2);
   });
 
   it("AT-CEC-22 a second press while saving is ignored, as in the Markdown view (INV-54, INV-58 / 11-e; L16)", async () => {
@@ -440,6 +481,28 @@ describe("CodeEditController: edit mode (INV-85, INV-88) and the JSON fold (INV-
     expect(createEditor).toHaveBeenCalledTimes(1);
   });
 
+  it("AT-CEC-49 (INV-85 (1), NE-32) edit mode on a file of 200 KB or more (its bytes): one toast, once a document; under it none; a Reload or another file tells again", async () => {
+    withEditor();
+    const big = utf8("x".repeat(CONFIG.codeEdit.slowEditBytes - 2) + A); // the hiragana is 3 bytes: 1 byte over, 1 char under
+    await open(big);
+    ctrl.toggleEdit();
+    expect(host.toast.mock.calls).toEqual([[m.codeEdit.slowEdit]]);
+    ctrl.toggleEdit();
+    ctrl.toggleEdit();
+    expect(host.toast).toHaveBeenCalledTimes(1);
+    ctrl.toggleEdit();
+    const reload = ctrl.reloadReader();
+    await reload.readText(file(big, "a.py"));
+    reload.commit();
+    ctrl.toggleEdit();
+    expect(host.toast).toHaveBeenCalledTimes(2);
+    ctrl.toggleEdit();
+    await open(utf8("x".repeat(CONFIG.codeEdit.slowEditBytes - 1)));
+    ctrl.toggleEdit();
+    expect(host.toast).toHaveBeenCalledTimes(2);
+    expect(m.codeEdit.slowEdit).toBe("This file is 200 KB or larger. Showing and editing it may take time.");
+  });
+
   it("AT-CEC-27 without an editor factory (or a document), toggleEdit does nothing", async () => {
     ctrl.toggleEdit();
     await open(utf8("a\n"));
@@ -498,13 +561,17 @@ describe("CodeEditController: edit mode (INV-85, INV-88) and the JSON fold (INV-
     expect(textarea().value).toBe('{\n  "a": {\n    "b": 1\n  }\n}\n');
   });
 
-  it("AT-CEC-32 fold in the editor: its text, as one undo step; unsaved", async () => {
+  it("AT-CEC-32 (INV-92, INV-86 (4)) fold in the editor: its text, as one undo step; unsaved; Search and the Index follow at the typing pause, not in the operation (N1)", async () => {
     withEditor();
     await open(utf8('{\n  "a": {\n    "b": 1\n  }\n}\n'), { name: "x.json" });
     ctrl.toggleEdit();
+    vi.useFakeTimers();
     ctrl.fold("fold");
     expect([textarea().value, ctrl.currentText(), ctrl.isDirty()]).toEqual(['{\n  "a": { "b": 1 }\n}\n', '{\n  "a": { "b": 1 }\n}\n', true]);
+    expect(host.codeTextSettled).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(CONFIG.codeEdit.highlightPauseMs);
     expect(host.codeTextSettled).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
     ctrl.undo();
     expect([textarea().value, ctrl.isDirty()]).toEqual(['{\n  "a": {\n    "b": 1\n  }\n}\n', false]);
   });
@@ -630,21 +697,25 @@ describe("CodeEditController: a .md name is written in UTF-8 (INV-90 (6); NE-30)
     expect(host.toast.mock.calls).toEqual([[m.edit.saved("notes.MD")]]);
   });
 
-  it("AT-CEC-36 Save as: characters the chosen encoding cannot write stop the save before the save dialog (it may create the file), whatever name would be picked", async () => {
+  it("AT-CEC-36 (INV-90 (3)(6), NE-31) Save as: characters the chosen encoding cannot write are asked about before the save dialog (it may create the file), whatever name would be picked; [Save in UTF-8] opens it and writes UTF-8", async () => {
     const picked = fakeFileHandle({ name: "notes.md" });
     access = fakeFileAccess({ picker: Promise.resolve(picked) });
     ctrl = new CodeEditController(access, dialog, host);
     await sjisDoc(`${A}\n`);
     ctrl.updateText(`${EMOJI}\n`);
     dialog.askSaveEncoding.mockResolvedValue("original");
-    await ctrl.saveAs();
-    expect(window.alert).toHaveBeenCalledWith(
-      "Not saved: some characters can't be written in Shift_JIS (lines 1). Change them, or save in UTF-8.",
-    );
+    await ctrl.saveAs(); // Cancel
+    expect(dialog.askSaveUtf8.mock.calls).toEqual([["shift_jis", "1"]]);
     expect([access.calls, access.writes.length]).toEqual([[], 0]);
+    dialog.askSaveUtf8.mockResolvedValue(true);
+    await ctrl.saveAs();
+    expect(access.calls).toEqual(["startSavePicker:old.txt", "writeFile:notes.md"]);
+    expect(bytesOf(access.writes[0].text)).toEqual(bytesOf(utf8(`${EMOJI}\r\n`)));
+    expect(host.toast.mock.calls).toEqual([[m.edit.saved("notes.md")]]); // UTF-8 chosen: no .md toast
+    expect(window.alert).not.toHaveBeenCalled();
   });
 
-  it("AT-CEC-37 another name keeps the chosen encoding; a later Save as with characters it cannot write stops before the dialog", async () => {
+  it("AT-CEC-37 (INV-90 (3)(6), NE-31) another name keeps the chosen encoding; a later Save as with characters it cannot write asks before the dialog", async () => {
     const picked = fakeFileHandle({ name: "copy.txt" });
     access = fakeFileAccess({ picker: Promise.resolve(picked) });
     ctrl = new CodeEditController(access, dialog, host);
@@ -657,7 +728,7 @@ describe("CodeEditController: a .md name is written in UTF-8 (INV-90 (6); NE-30)
     await ctrl.saveAs();
     expect(access.calls.filter((c) => c.startsWith("startSavePicker")).length).toBe(1);
     expect(access.writes).toHaveLength(1);
-    expect(window.alert).toHaveBeenCalledTimes(1);
+    expect(dialog.askSaveUtf8).toHaveBeenCalledTimes(1);
   });
 
   it("AT-CEC-38 Save as to a name of another language tells the host so (the view is colored again); the same language does not", async () => {

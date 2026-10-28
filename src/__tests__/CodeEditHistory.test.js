@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import CodeEditHistory from "../js/classes/CodeEditHistory.js";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import CodeEditHistory, { textChange } from "../js/classes/CodeEditHistory.js";
+import { watchWholeTextWork } from "./helpers/wholeText.js";
 
 // NE-7, NE-18, NE-26: Undo / Redo of the code editor. The clock is injected.
 
@@ -218,5 +219,72 @@ describe("CodeEditHistory (INV-88; NE-7, NE-18, NE-26)", () => {
     clock.t = 200;
     h2.recordTyping("ab", 2, 2);
     expect(h2.undo()).toEqual(state("a", 1));
+  });
+});
+
+describe("CodeEditHistory: an operation, Undo and Redo do no work on the whole text (INV-88 (6), INV-86; review N1, count-based)", () => {
+  const big = () => "0123456789abcdef\n".repeat(320 * 1024); // about 5 MB
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it("AT-CEH-16 (INV-88 (6), N1) an operation given its changed part is recorded without comparing the texts; Undo / Redo put the part back through the editor's edit", () => {
+    const { history } = makeHistory();
+    const base = big();
+    const at = 2 * 1024 * 1024;
+    const change = { at, removed: base.slice(at, at + 3), inserted: "XYZW" };
+    const after = base.slice(0, at) + change.inserted + base.slice(at + 3);
+    history.reset(base, 0, 0);
+    const edits = [];
+    const edit = (where, removed, inserted) => {
+      edits.push([where, removed, inserted]);
+      return inserted === change.inserted ? after : base; // the editor's text after the edit
+    };
+    const work = watchWholeTextWork();
+    work.start();
+    history.recordOperation(after, at, at + 4, [at, at + 3], change);
+    const undone = history.undo(edit);
+    const redone = history.redo(edit);
+    work.stop();
+    expect(work.calls).toEqual([]);
+    expect(edits).toEqual([
+      [at, "XYZW", base.slice(at, at + 3)],
+      [at, base.slice(at, at + 3), "XYZW"],
+    ]);
+    expect([undone.text === base, undone.selStart, undone.selEnd]).toEqual([true, at, at + 3]);
+    expect([redone.text === after, redone.selStart, redone.selEnd]).toEqual([true, at, at + 4]);
+    // a change that changes nothing adds no step
+    history.recordOperation(after, 0, 0, null, { at: 5, removed: "", inserted: "" });
+    expect(history.undo(edit).text === base).toBe(true);
+    expect(history.canUndo()).toBe(false);
+  });
+
+  it("AT-CEH-17 (INV-88 (6), N1) textChange compares the common parts in blocks: the same change as char by char, with few char reads on a 5 MB text", () => {
+    const naive = (a, b) => {
+      let p = 0;
+      while (p < Math.min(a.length, b.length) && a[p] === b[p]) p++;
+      let q = 0;
+      while (q < Math.min(a.length, b.length) - p && a[a.length - 1 - q] === b[b.length - 1 - q]) q++;
+      return { at: p, removed: a.slice(p, a.length - q), inserted: b.slice(p, b.length - q) };
+    };
+    let seed = 7;
+    const random = (n) => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed % n;
+    };
+    for (let i = 0; i < 300; i++) {
+      const a = Array.from({ length: random(3000) }, () => "ab\n"[random(3)]).join("");
+      const at = random(a.length + 1);
+      const cut = random(Math.min(600, a.length - at) + 1);
+      const b = a.slice(0, at) + Array.from({ length: random(600) }, () => "ab\n"[random(3)]).join("") + a.slice(at + cut);
+      expect(textChange(a, b), `case ${i}`).toEqual(naive(a, b));
+    }
+    expect(textChange("", "")).toEqual({ at: 0, removed: "", inserted: "" });
+    expect(textChange("same", "same")).toEqual({ at: 4, removed: "", inserted: "" });
+    const base = big();
+    const mid = Math.floor(base.length / 2);
+    const edited = base.slice(0, mid) + "!" + base.slice(mid + 1);
+    const reads = vi.spyOn(String.prototype, "charCodeAt");
+    expect(textChange(base, edited)).toEqual({ at: mid, removed: base[mid], inserted: "!" });
+    expect(reads.mock.calls.length).toBeLessThan(2000); // char by char: about 5,000,000
   });
 });

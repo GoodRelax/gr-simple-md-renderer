@@ -1,36 +1,57 @@
+// Below this many chars a common part is compared char by char; above it,
+// in blocks compared as strings (native code), galloping (N1).
+const BLOCK_CHARS = 256;
+
+/**
+ * The length of the common part of a and b at their starts (atEnd false)
+ * or at their ends (atEnd true), at most limit. Blocks are compared whole,
+ * doubling while they match and halving once one does not, so the work is
+ * linear in the common part with a small factor (no char loop over it).
+ * @purity pure
+ * @param {string} a
+ * @param {string} b
+ * @param {number} limit
+ * @param {boolean} atEnd
+ * @returns {number}
+ */
+function commonLength(a, b, limit, atEnd) {
+  const blockOf = (s, from, size) => (atEnd ? s.slice(s.length - from - size, s.length - from) : s.slice(from, from + size));
+  const charOf = (s, i) => (atEnd ? s.charCodeAt(s.length - 1 - i) : s.charCodeAt(i));
+  let n = 0;
+  let hi = limit; // the common part is at most this long
+  let size = BLOCK_CHARS;
+  while (hi - n > BLOCK_CHARS) {
+    const m = Math.min(size, hi - n);
+    if (blockOf(a, n, m) === blockOf(b, n, m)) {
+      n += m;
+      size = m * 2;
+    } else {
+      hi = n + m - 1;
+      size = Math.ceil(m / 2);
+    }
+  }
+  while (n < hi && charOf(a, n) === charOf(b, n)) n++;
+  return n;
+}
+
 /**
  * The change between two texts: the common prefix and suffix are left out,
- * so a step stores only the part that changed (linear in the texts).
+ * so a step stores only the part that changed (linear in the common parts,
+ * compared in blocks: N1).
  * @purity pure
  * @param {string} before
  * @param {string} after
  * @returns {{at: number, removed: string, inserted: string}}
  */
-function textChange(before, after) {
+export function textChange(before, after) {
   const limit = Math.min(before.length, after.length);
-  let prefix = 0;
-  while (prefix < limit && before.charCodeAt(prefix) === after.charCodeAt(prefix)) prefix++;
-  let suffix = 0;
-  while (suffix < limit - prefix && before.charCodeAt(before.length - 1 - suffix) === after.charCodeAt(after.length - 1 - suffix)) suffix++;
+  const prefix = commonLength(before, after, limit, false);
+  const suffix = commonLength(before, after, limit - prefix, true);
   return {
     at: prefix,
     removed: before.slice(prefix, before.length - suffix),
     inserted: after.slice(prefix, after.length - suffix),
   };
-}
-
-/**
- * The text with a change applied forward (removed -> inserted) or back.
- * @purity pure
- * @param {string} text
- * @param {{at: number, removed: string, inserted: string}} change
- * @param {boolean} forward
- * @returns {string}
- */
-function applyChange(text, change, forward) {
-  const from = forward ? change.removed : change.inserted;
-  const to = forward ? change.inserted : change.removed;
-  return text.slice(0, change.at) + to + text.slice(change.at + from.length);
 }
 
 /**
@@ -143,17 +164,22 @@ export default class CodeEditHistory {
 
   /**
    * One whole operation (replace, replace all, indent, fold): its own step.
+   * Given its changed part (the editor knows it), the texts are not
+   * compared (N1: no work on the whole text); else they are (textChange).
    * @purity non-pure
-   * @param {string} text
+   * @param {string} text - the text after it
    * @param {number} selStart
    * @param {number} selEnd
    * @param {number[]|null} [before] - the selection just before it ([start, end]),
    *   which Undo puts back (INV-88 (3)); null: the last known
+   * @param {{at: number, removed: string, inserted: string}|null} [change] - its
+   *   changed part; null: compared here
    */
-  recordOperation(text, selStart, selEnd, before = null) {
+  recordOperation(text, selStart, selEnd, before = null, change = null) {
     this._closeOpen();
-    if (text !== this._text) {
-      this._undo.push({ change: textChange(this._text, text), beforeSel: before ?? this._selection(), afterSel: [selStart, selEnd] });
+    const step = change ?? (text === this._text ? null : textChange(this._text, text));
+    if (step && step.removed !== step.inserted) {
+      this._undo.push({ change: step, beforeSel: before ?? this._selection(), afterSel: [selStart, selEnd] });
       this._trim(this._limit);
       this._redo = [];
     }
@@ -197,33 +223,53 @@ export default class CodeEditHistory {
   }
 
   /**
-   * Undo one step (a step that changed nothing is skipped).
+   * Undo one step (a step that changed nothing is skipped). The step's
+   * changed part is put back through edit (the editor's textarea: only
+   * that part is written, N1), which gives the text after it.
    * @purity non-pure
+   * @param {((at: number, removed: string, inserted: string) => string)|null} [edit] -
+   *   the part from at, removed, becomes inserted; null: the edit is made on the text kept here
    * @returns {{text: string, selStart: number, selEnd: number}|null} the text and selection before the step
    */
-  undo() {
+  undo(edit = null) {
     this._closeOpen();
     let step = this._undo.pop();
     while (step && !this._compact(step)) step = this._undo.pop();
     if (!step) return null;
     this._redo.push(step);
-    this._text = applyChange(this._text, step.change, false);
+    const { at, removed, inserted } = step.change;
+    this._text = this._edit(edit, at, inserted, removed);
     this._sel = step.beforeSel;
     return { text: this._text, selStart: step.beforeSel[0], selEnd: step.beforeSel[1] };
   }
 
   /**
-   * Redo one step.
+   * Redo one step (as undo, forward).
    * @purity non-pure
+   * @param {((at: number, removed: string, inserted: string) => string)|null} [edit]
    * @returns {{text: string, selStart: number, selEnd: number}|null} the text and selection after the step
    */
-  redo() {
+  redo(edit = null) {
     const step = this._redo.pop();
     if (!step) return null;
     this._undo.push(step);
-    this._text = applyChange(this._text, step.change, true);
+    const { at, removed, inserted } = step.change;
+    this._text = this._edit(edit, at, removed, inserted);
     this._sel = step.afterSel;
     return { text: this._text, selStart: step.afterSel[0], selEnd: step.afterSel[1] };
+  }
+
+  /**
+   * One edit of an Undo or Redo: by the editor's edit, or on the text kept.
+   * @purity non-pure
+   * @param {Function|null} edit
+   * @param {number} at
+   * @param {string} removed
+   * @param {string} inserted
+   * @returns {string} the text after it
+   */
+  _edit(edit, at, removed, inserted) {
+    return edit ? edit(at, removed, inserted) : this._text.slice(0, at) + inserted + this._text.slice(at + removed.length);
   }
 
   /**

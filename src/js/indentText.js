@@ -174,6 +174,32 @@ export function outdentLines(text, start, end, unit) {
 }
 
 /**
+ * Tab / Shift+Tab as the change of the touched lines only (N1): the lines
+ * from the one holding start to the one holding end are cut out, indented
+ * or outdented as indentLines / outdentLines do, and returned as the part
+ * that changed; the rest of the text is not read (no work on the whole
+ * text). null when nothing changes.
+ * @purity pure
+ * @param {string} text - LF text
+ * @param {number} start
+ * @param {number} end
+ * @param {string} unit
+ * @param {boolean} outdent
+ * @returns {{at: number, removed: string, inserted: string, start: number, end: number}|null}
+ *   the part from at (removed) becomes inserted; start / end: the selection after
+ */
+export function indentChange(text, start, end, unit, outdent) {
+  const from = lineStartOf(text, start);
+  const last = end > start && end > 0 && text[end - 1] === "\n" ? end - 1 : end;
+  const lineEnd = text.indexOf("\n", last);
+  const to = lineEnd < 0 ? text.length : lineEnd;
+  const removed = text.slice(from, to);
+  const lines = (outdent ? outdentLines : indentLines)(removed, start - from, end - from, unit);
+  if (lines.text === removed) return null;
+  return { at: from, removed, inserted: lines.text, start: from + lines.start, end: from + lines.end };
+}
+
+/**
  * The leading white space of the line holding offset, up to offset (Enter
  * carries it to the new line, NE-5).
  * @purity pure

@@ -205,7 +205,7 @@
               <li>
                 Code view: <code>[Edit]</code> / <code>E</code> edits the whole file. <code>Tab</code> / <code>Shift+Tab</code>
                 indent, <code>Enter</code> keeps the indent, <code>Esc</code> leaves the text box. Save keeps the encoding, BOM and
-                line endings (a file not in UTF-8 asks which encoding to save in; characters it cannot hold stop the save); Save as can change the extension (a <code>.md</code> name is saved in UTF-8 and opens as Markdown).
+                line endings (a file not in UTF-8 asks which encoding to save in; characters it cannot hold: it asks to save in UTF-8); Save as can change the extension (a <code>.md</code> name is saved in UTF-8 and opens as Markdown).
                 A file that is not UTF-8, or mixes line endings, asks how to read it. JSON: <code>Ctrl+&larr;</code> /
                 <code>Ctrl+&rarr;</code> (Mac: <code>Option</code>; in the text box <code>Ctrl+Shift+[</code> / <code>]</code>, Mac
                 <code>Cmd+Option+[</code> / <code>]</code>) or <code>[Commands]</code> / <code>P</code> fold one level onto one line / unfold it
@@ -402,7 +402,7 @@
               <li><code>[Index]</code> / <code>I</code> : 見出しの一覧（目次）の表示・非表示。見出しを押すと、そこへ飛びます。コードビューでは、クラスや関数の一覧（Python、JS / TS、JSON、YAML、C、C++、C#、Java、Go）</li>
               <li>
                 コードビュー: <code>[Edit]</code> / <code>E</code> でファイル全体を編集します。<code>Tab</code> / <code>Shift+Tab</code> で字下げ、
-                <code>Enter</code> は字下げを引き継ぎ、<code>Esc</code> で入力欄から抜けます。Save は文字コード・BOM・改行を保ち（UTF-8 でなければ保存の文字コードを聞き、書けない字があれば保存しません）、Save as では拡張子を変えられます
+                <code>Enter</code> は字下げを引き継ぎ、<code>Esc</code> で入力欄から抜けます。Save は文字コード・BOM・改行を保ち（UTF-8 でなければ保存の文字コードを聞き、書けない字があれば UTF-8 で保存するか聞きます）、Save as では拡張子を変えられます
                 （<code>.md</code> の名前は UTF-8 で保存し、Markdown で開き直します）。UTF-8 でないファイルや改行が混ざったファイルは、開くときに読み方を聞きます。
                 JSON: <code>Ctrl+&larr;</code> / <code>Ctrl+&rarr;</code>（Mac は <code>Option</code>。入力欄の中では <code>Ctrl+Shift+[</code> / <code>]</code>、Mac は
                 <code>Cmd+Option+[</code> / <code>]</code>）か <code>[Commands]</code> / <code>P</code> で、1 段ずつ 1 行にまとめる / 開く
