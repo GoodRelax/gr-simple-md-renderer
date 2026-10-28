@@ -1,5 +1,5 @@
 import GitHubLink from "./GitHubLink.js";
-import { encodePath } from "../gitHubUrl.js";
+import { encodePath, hasUnsafeSegment } from "../gitHubUrl.js";
 import { base64ToText, textToBase64, withoutBom } from "../base64Text.js";
 
 const DETAIL_MAX_CHARS = 200;
@@ -33,6 +33,7 @@ export default class GitHubContentsClient {
    */
   async openFile(ref, token) {
     const m = this._options.messages;
+    if (isUnsafeRef(ref)) return { status: "error", message: m.unsafePath };
     const file = await this._request("GET", `${this._repoPath(ref)}/contents/${encodePath(ref.path)}?ref=${encodeURIComponent(ref.branch)}`, token);
     if (file.status !== "ok") return file;
     const body = file.body;
@@ -59,6 +60,7 @@ export default class GitHubContentsClient {
    * @returns {Promise<{sha: string, message: string, author: string, date: string, url: string}|null>}
    */
   async lastCommit(ref, token) {
+    if (isUnsafeRef(ref)) return null;
     const query = `path=${encodeURIComponent(ref.path)}&sha=${encodeURIComponent(ref.branch)}&per_page=1`;
     const result = await this._request("GET", `${this._repoPath(ref)}/commits?${query}`, token);
     const item = result.status === "ok" && Array.isArray(result.body) ? result.body[0] : null;
@@ -78,12 +80,15 @@ export default class GitHubContentsClient {
    */
   async pushFile(link, fileText, message, token) {
     const ref = link.ref;
+    const m = this._options.messages;
+    if (isUnsafeRef(ref)) return { status: "error", message: m.unsafePath };
     const payload = { message, content: textToBase64(fileText), sha: link.blobSha, branch: ref.branch };
     const result = await this._request("PUT", `${this._repoPath(ref)}/contents/${encodePath(ref.path)}`, token, payload);
     if (result.status !== "ok") return result;
     const content = result.body?.content;
     const commit = result.body?.commit;
-    if (!content?.sha || !commit?.sha) return { status: "error", message: this._options.messages.failed(200) };
+    // a 200 whose answer could not be read: the commit may have been made (L1)
+    if (!content?.sha || !commit?.sha) return { status: "error", message: m.pushUnknown };
     const lastCommit = commitSummary(commit.sha, commit, commit.html_url);
     return { status: "ok", link: link.withPushed(String(content.sha), fileText, lastCommit), commitSha: String(commit.sha) };
   }
@@ -125,7 +130,9 @@ export default class GitHubContentsClient {
       });
     } catch {
       clearTimeout(timer);
-      return { status: "error", message: this._options.messages.network };
+      // a PUT may have reached GitHub before the connection failed
+      const m = this._options.messages;
+      return { status: "error", message: method === "PUT" ? m.pushUnknown : m.network };
     }
     let body = null;
     try {
@@ -138,6 +145,15 @@ export default class GitHubContentsClient {
     if (response.ok) return { status: "ok", body };
     return { status: "error", message: errorMessage(response, body, this._options.messages, this._options.labels) };
   }
+}
+
+/**
+ * @purity pure
+ * @param {GitHubFileRef} ref
+ * @returns {boolean} true when a part would leave the API path (hasUnsafeSegment)
+ */
+function isUnsafeRef(ref) {
+  return [ref.owner, ref.repo, ref.branch, ref.path].some(hasUnsafeSegment);
 }
 
 /**

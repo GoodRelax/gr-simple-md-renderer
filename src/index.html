@@ -5,7 +5,7 @@
 
     <meta
       name="description"
-      content="GR Simple Markdown (GRSMD, formerly GR Simple MD Renderer &amp; Viewer) is a free, privacy-first Markdown viewer and editor in your browser for Markdown, Math (LaTeX), Mermaid, and PlantUML, with in-place editing and dark mode. Renamed because it now edits documents, not just renders them. No data leaves your browser unless you explicitly allow PlantUML rendering or external images."
+      content="GR Simple Markdown (GRSMD, formerly GR Simple MD Renderer &amp; Viewer) is a free, privacy-first Markdown viewer and editor in your browser for Markdown, Math (LaTeX), Mermaid, and PlantUML, with in-place editing and dark mode. Renamed because it now edits documents, not just renders them. No data leaves your browser unless you explicitly allow PlantUML rendering, external images, or a GitHub open or push that you confirm."
     />
     <meta
       name="keywords"
@@ -67,9 +67,10 @@
     <!-- All rendering libraries (marked, mermaid, highlight.js, katex + fonts,
          marked-katex-extension, plantuml-encoder) are bundled into this file at
          build time. No runtime CDN fetch. The only external calls are the
-         optional PlantUML server and external images in the document, both of
-         which require explicit user consent. A Content-Security-Policy <meta>
-         is injected at build time (vite.config.js). -->
+         optional PlantUML server, external images in the document, and the
+         GitHub API (api.github.com: open, reload and push of a GitHub .md file),
+         all of which require explicit user consent. A Content-Security-Policy
+         <meta> is injected at build time (vite.config.js). -->
   </head>
 
   <body>
@@ -267,7 +268,8 @@
               GR Simple Markdown (GRSMD) is a lightweight, privacy-first Markdown
               viewer and editor that runs entirely in your browser.<br />
               It supports Markdown, math (LaTeX), Mermaid diagrams, and PlantUML &mdash; no
-              backend, no data sent anywhere without your explicit consent.
+              backend, no data sent anywhere without your explicit consent (GitHub
+              editing sends only to api.github.com, after you confirm each request).
               Formerly "GR Simple MD Renderer &amp; Viewer".
             </p>
           </div>
@@ -399,6 +401,17 @@
                 release. Nothing is sent until you press it.
               </li>
               <li>
+                GitHub editing (PC only) sends requests only to api.github.com, and
+                only when you press [Open], [Reload] or [Push] in its dialog, every
+                time. Open and Reload send the repository, branch and path, and your
+                fine-grained personal access token. Push sends the full text of the
+                document, the commit message and the token. The token is sent only in
+                a request header, and GRSMD keeps it only while the request runs.
+                After a request succeeds, GRSMD asks the browser to save the token;
+                the browser asks you, and you can delete it in the browser's password
+                settings.
+              </li>
+              <li>
                 The edit palette's Paste copied link reads the clipboard, so the
                 browser may ask you to allow it. When GRSMD is opened from
                 goodrelax.github.io, in Chrome and Edge, once you allow it, other
@@ -459,7 +472,7 @@
             <h3>概要</h3>
             <p>
               GR Simple Markdown（GRSMD）は、すべての処理をブラウザ内で完結させる、軽量・プライバシー優先の Markdown のビューワー兼エディターです。<br />
-              Markdown、数式（LaTeX）、Mermaid ダイアグラム、PlantUML に対応し、明示的な同意なしにデータが外部へ送信されることはありません。旧名は「GR Simple MD Renderer &amp; Viewer」です。
+              Markdown、数式（LaTeX）、Mermaid ダイアグラム、PlantUML に対応し、明示的な同意なしにデータが外部へ送信されることはありません（GitHub 連携は、要求のたびに確かめた後、api.github.com にだけ送ります）。旧名は「GR Simple MD Renderer &amp; Viewer」です。
             </p>
           </div>
 
@@ -555,6 +568,9 @@
               </li>
               <li>
                 ダウンロードのボタンは、最新のリリースを取りに GitHub（github.com）を開きます。押すまでは何も送りません。
+              </li>
+              <li>
+                GitHub 連携（PC だけ）は、画面の [Open]・[Reload]・[Push] を押したときだけ、毎回、api.github.com にだけ送ります。Open と Reload は、リポジトリ・ブランチ・パスと、fine-grained personal access token を送ります。Push は、文書の本文の全部・コミットのメッセージ・トークンを送ります。トークンは要求のヘッダーにだけ載せ、GRSMD は送る間だけ持ちます。要求が成功すると、GRSMD はブラウザにトークンの保存を頼みます。保存するかはブラウザが尋ねます。消すときは、ブラウザのパスワードの設定から消します。
               </li>
               <li>
                 編集パレットの「リンクを貼る」はクリップボードを読むので、ブラウザが許可を求めることがあります。goodrelax.github.io で開いているとき、Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。

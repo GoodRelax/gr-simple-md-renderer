@@ -92,6 +92,18 @@ export function resolveRelativeUrl(ref, value, kind, options) {
 }
 
 /**
+ * A branch, path, owner or repo whose "/"-separated segments include "", "."
+ * or ".." would leave the API path it is put in (the URL parser resolves
+ * dot segments): it is refused before anything is sent.
+ * @purity pure
+ * @param {string} text
+ * @returns {boolean}
+ */
+export function hasUnsafeSegment(text) {
+  return String(text).split("/").some((segment) => segment === "" || segment === "." || segment === "..");
+}
+
+/**
  * Each "/"-separated segment percent-encoded (the separators kept).
  * @purity pure
  * @param {string} path

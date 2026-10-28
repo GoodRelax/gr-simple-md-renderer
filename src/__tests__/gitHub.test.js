@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { parseGitHubFileUrl, resolveRelativeUrl, classifyToken, encodePath } from "../js/gitHubUrl.js";
+import { parseGitHubFileUrl, resolveRelativeUrl, classifyToken, encodePath, hasUnsafeSegment } from "../js/gitHubUrl.js";
 import { textToBase64, base64ToText, withoutBom } from "../js/base64Text.js";
 import GitHubFileRef from "../js/classes/GitHubFileRef.js";
 import GitHubLink from "../js/classes/GitHubLink.js";
@@ -247,6 +247,33 @@ describe("AT-GH-06 DocumentLifecycle and the GitHub link", () => {
     expect(d.gitHub).toBeNull();
   });
 
+  it("11-e push cells: pushRequested idle -> pushing, refused in writingFile and pushing; pushFinished only in pushing; save outcomes ignored while pushing", async () => {
+    const d = setup();
+    d.openGitHub("# A\n", false, link);
+    d._saveOperationState = "writingFile";
+    expect(d.startPush()).toBeNull(); // pushRequested x writingFile
+    expect(d.finishPush({ documentId: d.session.documentId }, null)).toBe(false); // pushFinished x writingFile
+    expect(d.saveOperationState).toBe("writingFile");
+    d._saveOperationState = "idle";
+    expect(d.finishPush({ documentId: d.session.documentId }, null)).toBe(false); // pushFinished x idle
+    expect(d.saveOperationState).toBe("idle");
+    const started = d.startPush(); // pushRequested x idle
+    expect(d.saveOperationState).toBe("pushing");
+    expect(d.startPush()).toBeNull(); // pushRequested x pushing
+    for (const status of ["saved", "downloadStarted", "failed", "canceled"]) {
+      expect(d.finishSave({ status, documentId: started.documentId, session: d.session, location: d.location, message: "m" })).toBeNull();
+    }
+    const execute = vi.spyOn(d.saveDocument, "execute");
+    await d.save("saveRequested", { confirmStart: () => true, commitEdits: () => {}, getBody: () => "# A\n", confirmer: null, onFinished: () => {} });
+    await d.save("saveAsRequested", { confirmStart: () => true, commitEdits: () => {}, getBody: () => "# A\n", confirmer: null, onFinished: () => {} });
+    expect(execute).not.toHaveBeenCalled();
+    expect(d.isSaving()).toBe(true); // replaceRequested x pushing
+    expect(d.saveOperationState).toBe("pushing");
+    expect(d.finishPush(started, null)).toBe(false); // pushFinished x pushing (failed push)
+    expect(d.saveOperationState).toBe("idle");
+    expect(d.isSaving()).toBe(false);
+  });
+
   it("a push refuses replaces (as INV-54) and moves the baseline on success", () => {
     const d = setup();
     d.openGitHub("# A\n", false, link);
@@ -268,5 +295,86 @@ describe("AT-GH-06 DocumentLifecycle and the GitHub link", () => {
     expect(d.finishPush(started, null)).toBe(false);
     expect(d.gitHub).toBe(link);
     expect(d.isBodyChanged("# A\n")).toBe(false);
+  });
+});
+
+describe("AT-GH-05 GitHubContentsClient: the 5.19.4 messages and an unknown push result (L1)", () => {
+  it.each([
+    [{ status: 422, body: { message: "Invalid request" } }, G.messages.invalid(G.labels.gitHubDetail("Invalid request"))],
+    [{ status: 429, body: {}, headers: { "retry-after": "12" } }, G.messages.rateLimited(G.labels.retryIn("12"))],
+    [{ status: 429, body: {} }, G.messages.rateLimited(G.labels.retryLater)],
+    [
+      { status: 403, body: {}, headers: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": "1800000000" } },
+      G.messages.rateLimited(G.labels.retryAfter(new Date(1800000000 * 1000).toLocaleTimeString())),
+    ],
+    [{ status: 409, body: { message: "docs/a.md does not match blob1" } }, G.messages.conflict(G.labels.gitHubDetail("docs/a.md does not match blob1"))],
+  ])("a push answered %o shows its 5.19.4 message", async (answer, message) => {
+    const link = new GitHubLink({ ref: REF, blobSha: "blob1", fileText: "a\n", isPrivate: false, lastCommit: null });
+    const { fetchFn } = scriptedFetch([answer]);
+    const r = await new GitHubContentsClient(fetchFn, G).pushFile(link, "b\n", "m", TOKEN);
+    expect(r).toEqual({ status: "error", message });
+  });
+
+  it("the 409 message tells how to recover", () => {
+    expect(G.messages.conflict("")).toContain("Save your work locally, open the file again, then drop your saved file to replace it.");
+  });
+
+  it.each([
+    ["the connection fails after the PUT was sent", new TypeError("offline")],
+    ["a 200 whose body is not JSON", { status: 200, body: undefined }],
+    ["a 200 without the new sha", { status: 200, body: { content: {} } }],
+  ])("a push whose answer was not received (%s) says it may have been applied", async (_name, answer) => {
+    const link = new GitHubLink({ ref: REF, blobSha: "blob1", fileText: "a\n", isPrivate: false, lastCommit: null });
+    const { fetchFn } = scriptedFetch([answer]);
+    const r = await new GitHubContentsClient(fetchFn, G).pushFile(link, "b\n", "m", TOKEN);
+    expect(r).toEqual({ status: "error", message: G.messages.pushUnknown });
+    expect(r.message).not.toContain("Nothing was changed");
+  });
+
+  it("a read that fails still says nothing was changed", async () => {
+    const { fetchFn } = scriptedFetch([new TypeError("offline")]);
+    expect(await new GitHubContentsClient(fetchFn, G).openFile(REF, TOKEN)).toEqual({ status: "error", message: G.messages.network });
+  });
+});
+
+describe("AT-GH-12 the token never goes to another API path (L2, CON-16 (4))", () => {
+  it.each([
+    ["..", "docs/../../../../user/repos/x.md"],
+    [".", "docs/./a.md"],
+    ["empty", "docs//a.md"],
+    ["leading ..", "../a.md"],
+  ])("hasUnsafeSegment: a path with a %s part", (_name, path) => {
+    expect(hasUnsafeSegment(path)).toBe(true);
+  });
+
+  it("hasUnsafeSegment: ordinary names (dots inside a name are fine)", () => {
+    expect(hasUnsafeSegment("docs/a.md")).toBe(false);
+    expect(hasUnsafeSegment("feature/x")).toBe(false);
+    expect(hasUnsafeSegment("..hidden/a..md")).toBe(false);
+  });
+
+  it.each([
+    ["path", new GitHubFileRef("o", "r", "main", "docs/../../../../user/repos/x.md")],
+    ["branch", new GitHubFileRef("o", "r", "../../user", "a.md")],
+    ["owner", new GitHubFileRef("..", "r", "main", "a.md")],
+    ["repo", new GitHubFileRef("o", ".", "main", "a.md")],
+  ])("the client sends nothing for a %s with a dot part (open, last commit, push)", async (_name, ref) => {
+    const { fetchFn } = scriptedFetch([]);
+    const client = new GitHubContentsClient(fetchFn, G);
+    expect(await client.openFile(ref, TOKEN)).toEqual({ status: "error", message: G.messages.unsafePath });
+    expect(await client.lastCommit(ref, TOKEN)).toBeNull();
+    const link = new GitHubLink({ ref, blobSha: "s", fileText: "a\n", isPrivate: false, lastCommit: null });
+    expect(await client.pushFile(link, "b\n", "m", TOKEN)).toEqual({ status: "error", message: G.messages.unsafePath });
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("every URL the client sends to stays under /repos/<owner>/<repo>/", async () => {
+    const { fetchFn, calls } = scriptedFetch([{ body: FILE_BODY }, { body: COMMITS_BODY }, { body: { private: false } }]);
+    await new GitHubContentsClient(fetchFn, G).openFile(new GitHubFileRef("GoodRelax", "repo", "feature/x", "docs/a b/%2e%2e.md"), TOKEN);
+    for (const { url } of calls) {
+      const parsed = new URL(url);
+      expect(parsed.origin).toBe(G.apiOrigin);
+      expect(parsed.pathname.startsWith("/repos/GoodRelax/repo")).toBe(true);
+    }
   });
 });

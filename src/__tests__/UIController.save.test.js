@@ -330,7 +330,7 @@ describe("AT-UI-41 the save rows of 5.14.11", () => {
   });
 });
 
-describe("AT-SSM 11-e save operation (14 cells), with UI stimuli", () => {
+describe("AT-SSM 11-e save operation (27 cells), with UI stimuli", () => {
   it("AT-SSM-01 / 02 idle -> writingFile; while writing, Save and Save as are ignored (no second execute)", async () => {
     const permission = deferred();
     await withDocument({ permission: permission.promise });
@@ -470,6 +470,33 @@ describe("AT-SSM 11-e save operation (14 cells), with UI stimuli", () => {
     await saving;
   });
 
+  it.each(REPLACES)("AT-SSM-09 pushing: %s is refused with savingInProgress (INV-54, INV-88 (4))", async (_name, act) => {
+    await withDocument();
+    app.ui.documents._saveOperationState = "pushing"; // white box: a push in flight (GitHubController starts it)
+    const { session, location } = { session: app.ui.documents.session, location: app.ui.documents.location };
+    const model = app.orchestrator.getModel();
+    await act();
+    expect(showToast).toHaveBeenCalledWith(M.savingInProgress, TOAST_MS);
+    expect(app.ui.documents.session).toBe(session);
+    expect(app.ui.documents.location).toBe(location);
+    expect(app.orchestrator.getModel()).toBe(model);
+    expect(app.ui.documents.saveOperationState).toBe("pushing");
+  });
+
+  it("AT-SSM-09 pushing: Save and Save as are ignored (no execute, no state change)", async () => {
+    await withDocument();
+    showPalette();
+    app.ui.documents._saveOperationState = "pushing";
+    const execute = vi.spyOn(app.ui.documents.saveDocument, "execute");
+    const executeAs = vi.spyOn(app.ui.documents.saveDocumentAs, "execute");
+    press(paletteButton("paletteSave"));
+    press(paletteButton("paletteSaveAs"));
+    await app.ui.requestSave();
+    expect(execute).not.toHaveBeenCalled();
+    expect(executeAs).not.toHaveBeenCalled();
+    expect(app.ui.documents.saveOperationState).toBe("pushing");
+  });
+
   it("AT-SSM-07 idle: a replace is not refused (the save machine is not involved)", async () => {
     await withDocument();
     keydown(document.body, "c");
@@ -477,21 +504,25 @@ describe("AT-SSM 11-e save operation (14 cells), with UI stimuli", () => {
     expect(showToast).not.toHaveBeenCalledWith(M.savingInProgress, TOAST_MS);
   });
 
-  it("AT-SSM-08 the saveOperationStateMachine definition matches the 14 cells", () => {
+  it("AT-SSM-08 the saveOperationStateMachine definition matches the 27 cells", () => {
     const I = "idle";
     const W = "writingFile";
+    const P = "pushing";
     const TABLE = {
-      saveRequested: { [I]: [W, ["startPermissionRequest", "commitOpenBlock", "applyEditorText", "runSaveDocument"]], [W]: null },
-      saveAsRequested: { [I]: [W, ["startSavePicker", "commitOpenBlock", "applyEditorText", "runSaveDocumentAs"]], [W]: null },
-      fileWritten: { [I]: null, [W]: [I, ["applyOutcomeIfSameDocument", "refreshDirtyMark", "showSavedToast"]] },
-      downloadStarted: { [I]: null, [W]: [I, ["showDownloadStartedToast"]] },
-      writeFailed: { [I]: null, [W]: [I, ["showErrorToast"]] },
-      saveCanceled: { [I]: null, [W]: [I, []] },
-      replaceRequested: { [I]: null, [W]: [W, ["rejectReplace", "showSavingToast"]] },
+      saveRequested: { [I]: [W, ["startPermissionRequest", "commitOpenBlock", "applyEditorText", "runSaveDocument"]], [W]: null, [P]: null },
+      saveAsRequested: { [I]: [W, ["startSavePicker", "commitOpenBlock", "applyEditorText", "runSaveDocumentAs"]], [W]: null, [P]: null },
+      fileWritten: { [I]: null, [W]: [I, ["applyOutcomeIfSameDocument", "refreshDirtyMark", "showSavedToast"]], [P]: null },
+      downloadStarted: { [I]: null, [W]: [I, ["showDownloadStartedToast"]], [P]: null },
+      writeFailed: { [I]: null, [W]: [I, ["showErrorToast"]], [P]: null },
+      saveCanceled: { [I]: null, [W]: [I, []], [P]: null },
+      replaceRequested: { [I]: null, [W]: [W, ["rejectReplace", "showSavingToast"]], [P]: [P, ["rejectReplace", "showSavingToast"]] },
+      pushRequested: { [I]: [P, ["runPush"]], [W]: null, [P]: null },
+      pushFinished: { [I]: null, [W]: null, [P]: [I, ["applyPushIfSameDocument", "refreshDirtyMark", "showPushedToast"]] },
     };
     expect(Object.keys(saveOperationStateMachine).sort()).toEqual(Object.keys(TABLE).sort());
     for (const [event, row] of Object.entries(TABLE)) {
-      for (const state of [I, W]) {
+      expect(Object.keys(saveOperationStateMachine[event]).sort(), event).toEqual([I, P, W].sort());
+      for (const state of [I, W, P]) {
         const def = saveOperationStateMachine[event][state];
         if (row[state] === null) expect(def, `${event} x ${state}`).toBeNull();
         else {

@@ -68,6 +68,8 @@
 
 **改訂:** 2026-10-29 — **GitHub 連携を足す (SC-27、INV-85〜INV-92、FS-23、5.19。オーナーの裁定 D1〜D37)。** 上部バーの [Search] の右の [Open GitHub] (`o`) で、github.com の `.md` の URL を貼って開き、その場で直し、緑の [Push to GitHub] で開いたのと同じブランチへコミットする (Contents API の PUT 1 回。push と同じ)。Ctrl+S は今のまま手元へ保存し、通信しない (CON-14 は変えない)。通信先は `api.github.com` だけで、開く・push・Reload のたびに確認の画面を出す (CON-12、INV-20 を改める)。PAT は fine-grained だけ。成功したら GRSMD がブラウザに保存を頼み、次からは Token の欄をクリックしてブラウザの候補から選ぶ。GRSMD は送る間だけメモリに持つ (CON-16)。GitHub 側が先に変わっていたら 409 で止める。翌日に続けるときは、開いてから手元の下書きをドロップして「連携を続けたまま置き換える」(INV-90)。GitHub の文書の相対パスの画像とリンクは、GitHub での見え方に直す (画像は今の外部画像の同意を通す。INV-91)。マウスかトラックパッドの端末だけ、フレームの中では出さない (INV-92)。新しいクラス `GitHubFileRef`・`GitHubLink`・`GitHubContentsClient`・`GitHubController`、純粋関数のモジュール `gitHubUrl.js`・`base64Text.js`、`DocumentLifecycle` の GitHub の連携、`MarkdownRenderer.setRelativeUrlResolver`。G-11、OS-02・CON-03・CON-12・CON-13・INV-20・5.1・5.2・5.11 を改め、OS-19 を足す。gzip の上限 (レビュー基準 T4) は、この改訂では変えない (D22 の 1,470 kB は、オーナーの裁定 NE-29 の 1,480 kB (beta2 から) に置き換わった)。依存の追加はない (付録A 不変)。
 
+**改訂:** 2026-10-29 — **GitHub 連携のレビュー (1 回目) の直し (調整役の裁定 2026-10-29、レビューの M1〜M3・L1〜L9)。** push を 11-e の状態 `pushing` にする (出来事 `pushRequested` / `pushFinished`。交点は 27。別の真偽は持たない。M2)。INV-88 (4) を改める。GitHub の画面の中の主 + S / 主 + Shift + S は、ブラウザの既定の動作 (ページを保存) を止め、何もしない (INV-58、5.19.6。M3)。ヘルプ (日英) の「Privacy & Security」/「プライバシーとセキュリティ」・About・meta の description・head のコメントに、GitHub へ送るものを書く (CON-12、5.19.5。M1)。PUT の通信が切れたときと、200 の応答が読めないときは、`pushUnknown` を出す (「Nothing was changed」は GET と失敗の番号だけ。5.19.4。L1)。owner・repo・ブランチ・パスの `/` の区切りに空・`.`・`..` があれば、何も送らない (INV-85 (5)、INV-86 (6)、CON-16 (4)。L2)。画面を閉じるときも PAT の欄を空にする (CON-16 (2)。L3)。使わないメソッドと文 (`GitHubController.isDialogOpen`、`CONFIG.github.messages.closeCodeView`) を消す (L4。仕様には書いていなかった)。3.1・3.2 に GitHub の部品と `GitHubHost` を足す (L9)。5.16.1 に「最小構成 (GitHub 連携)」を足す (L8)。
+
 ---
 
 ## 目次
@@ -149,7 +151,7 @@
 | ファイル文字列 (fileText) | 保存するときの文字列。本文にラッパー・改行コード・BOM を戻したもの |
 | DocumentSession          | 新設 JS クラス (Entity、不変の値)。編集中の文書の値を持つ: 文書 ID、ラッパー、改行コード、BOM の有無、基準の本文、基準の更新日時。ブラウザの型 (fileHandle) は持たない |
 | DocumentLocation         | 新設の値 (UseCase 層)。保存先を表す: ファイル名と fileHandle (どちらも無い場合がある)。DocumentLifecycle が現在の値を 1 つだけ持つ (保存先の唯一の正。INV-55) |
-| DocumentLifecycle        | 新設のクラス (UseCase 層)。文書のライフサイクル: 現在の DocumentSession と DocumentLocation、文書 ID の採番、5.14.11 の表どおりの作り直し、11-e の保存の状態機械と保存の実行、Reload のファイルの読み込みを持つ。UI (`#editor`、表示、確認ダイアログ、トースト) には触れない。UIController が `services.documents` として受け取る |
+| DocumentLifecycle        | 新設のクラス (UseCase 層)。文書のライフサイクル: 現在の DocumentSession と DocumentLocation、文書 ID の採番、5.14.11 の表どおりの作り直し、11-e の保存と push の状態機械と保存の実行、GitHub の版 (`GitHubLink`。SC-27)、Reload のファイルの読み込みを持つ。UI (`#editor`、表示、確認ダイアログ、トースト) には触れない。UIController が `services.documents` として受け取る |
 | 文書 ID                  | 文書を作り直すたびに増える整数 (`DocumentSession.documentId`)。保存の結果を、保存を始めたときと同じ文書にだけ反映するために使う (INV-54) |
 | 表の編集 (表のセッション) | 最上位の表のブロック 1 つについて、セルの編集を続けている間。開始はセルの開始ジェスチャ (INV-29 の (a)、INV-57)、終了は表の外の押下・Esc (確定する)・最後の行の Enter・表のつまみ・別のブロック・すき間・保存など (11-c)。間は表のブロック ID を保ち (INV-62)、外枠を保持する (INV-47) |
 | セルの編集               | 表の編集の中で、セル 1 つを `contenteditable` にして編集している状態 (INV-62〜64) |
@@ -407,11 +409,11 @@ gr-simple-md-renderer/
 | CON-09 | JavaScriptはES6+クラスベースで記述すること。                                                                                                                                              |
 | CON-10 | バンドルしたライブラリ (npm依存) のバージョン変更は機能検証を必須とする。                                                                                                                 |
 | CON-11 | バックエンドを追加してはならない（サーバー処理、APIエンドポイント、Node.jsサーバー一切不可）。                                                                                            |
-| CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。**クリップボードの読み取り (INV-69) は外部との通信ではない。ただし「リンクを貼る」のボタンは、ブラウザの読み取りの許可 (`navigator.clipboard`) を使う。**既知の制約**: ブラウザは許可をサイト (オリジン `https://goodrelax.github.io`) ごとに記憶する。そのため Chrome / Edge では、GRSMD で一度許可すると、同じサイトの他のページ (gr-scheduler など) も、確認なしにクリップボードを読めるようになる。Safari / Firefox は、読むたびに確認を出し、許可を記憶しない見込み **[要検証: ブラウザごとの記憶のしかた]**。許可はブラウザのサイトの設定 (「クリップボード」) で取り消せる。Ctrl+V / Cmd+V の方式はこの許可を使わない。このため、許可の要らない Ctrl+V の方式を主とし (裁定 Q5)、ボタンは押したときだけ許可を使う。ヘルプ (日英) の「Privacy & Security」/「プライバシーとセキュリティ」の章には、利用者が取れる行動が分かるように 1 項目で短く書く (2026-10-23 に「編集」の章を消したので、この開示だけをこの章へ移した。調整役の裁定): ボタンはブラウザが許可を求めることがあること、Chrome / Edge ではその許可が goodrelax.github.io のすべてのページに及ぶこと、取り消すにはサイトの設定の「クリップボード」を変えること (オーナーの裁定 2026-10-22。2026-xx-xx)。この許可の説明は goodrelax.github.io で開いているときのものなので、ヘルプでは「goodrelax.github.io で開いているとき」と前置きする (ダウンロードした `GRSMD.html` を `file://` で開いたときは当てはまらない。2026-10-23)。** **ヘルプのダウンロードのボタン (SC-16) は、ページからの通信ではない。** 利用者が押したときに、新しいタブ (`target="_blank" rel="noopener noreferrer"`) で GitHub の最新のリリースの添付ファイルへ移るだけで、ページから `fetch` も先読みもしない (CSP の `connect-src` は変えない)。ヘルプ (日英) の「プライバシーとセキュリティ」に、押すと GitHub を開くこと、押すまでは何も送らないことを書く (調整役の裁定 D2・D7、2026-10-23)。**ブロックの範囲のカットとコピー (INV-74) は、クリップボードへ書くだけで読まない** (`copy` の事象の `clipboardData` に書く。読み取りの許可は使わない。2026-10-24)。 **例外 (2026-10-29): GitHub の API (`https://api.github.com`)。** SC-27 の開く・push・Reload は、利用者が確認の画面で押したときだけ、この 1 つのオリジンへ送る (毎回。『次から聞かない』は置かない)。送り先は CONFIG の固定の値で、URL や応答から読んだホストには送らない。開く・Reload で送るのはリポジトリ・ブランチ・パスと PAT だけで、本文を送るのは push だけ。GitHub の文書の相対パスの画像 (`raw.githubusercontent.com`) は、今の外部画像と同じ同意を通す (INV-91)。 |
+| CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。**クリップボードの読み取り (INV-69) は外部との通信ではない。ただし「リンクを貼る」のボタンは、ブラウザの読み取りの許可 (`navigator.clipboard`) を使う。**既知の制約**: ブラウザは許可をサイト (オリジン `https://goodrelax.github.io`) ごとに記憶する。そのため Chrome / Edge では、GRSMD で一度許可すると、同じサイトの他のページ (gr-scheduler など) も、確認なしにクリップボードを読めるようになる。Safari / Firefox は、読むたびに確認を出し、許可を記憶しない見込み **[要検証: ブラウザごとの記憶のしかた]**。許可はブラウザのサイトの設定 (「クリップボード」) で取り消せる。Ctrl+V / Cmd+V の方式はこの許可を使わない。このため、許可の要らない Ctrl+V の方式を主とし (裁定 Q5)、ボタンは押したときだけ許可を使う。ヘルプ (日英) の「Privacy & Security」/「プライバシーとセキュリティ」の章には、利用者が取れる行動が分かるように 1 項目で短く書く (2026-10-23 に「編集」の章を消したので、この開示だけをこの章へ移した。調整役の裁定): ボタンはブラウザが許可を求めることがあること、Chrome / Edge ではその許可が goodrelax.github.io のすべてのページに及ぶこと、取り消すにはサイトの設定の「クリップボード」を変えること (オーナーの裁定 2026-10-22。2026-xx-xx)。この許可の説明は goodrelax.github.io で開いているときのものなので、ヘルプでは「goodrelax.github.io で開いているとき」と前置きする (ダウンロードした `GRSMD.html` を `file://` で開いたときは当てはまらない。2026-10-23)。** **ヘルプのダウンロードのボタン (SC-16) は、ページからの通信ではない。** 利用者が押したときに、新しいタブ (`target="_blank" rel="noopener noreferrer"`) で GitHub の最新のリリースの添付ファイルへ移るだけで、ページから `fetch` も先読みもしない (CSP の `connect-src` は変えない)。ヘルプ (日英) の「プライバシーとセキュリティ」に、押すと GitHub を開くこと、押すまでは何も送らないことを書く (調整役の裁定 D2・D7、2026-10-23)。**ブロックの範囲のカットとコピー (INV-74) は、クリップボードへ書くだけで読まない** (`copy` の事象の `clipboardData` に書く。読み取りの許可は使わない。2026-10-24)。 **例外 (2026-10-29): GitHub の API (`https://api.github.com`)。** SC-27 の開く・push・Reload は、利用者が確認の画面で押したときだけ、この 1 つのオリジンへ送る (毎回。『次から聞かない』は置かない)。送り先は CONFIG の固定の値で、URL や応答から読んだホストには送らない。開く・Reload で送るのはリポジトリ・ブランチ・パスと PAT だけで、本文を送るのは push だけ (push は本文の全部・コミットのメッセージ・PAT を送る)。PAT は要求のヘッダーにだけ載せ、GRSMD は送る間だけ持つ。要求が成功すると、GRSMD はブラウザに PAT の保存を頼む (保存するかはブラウザが利用者に聞く。CON-16 (2))。GitHub の文書の相対パスの画像 (`raw.githubusercontent.com`) は、今の外部画像と同じ同意を通す (INV-91)。 ヘルプ (日英) の「Privacy & Security」/「プライバシーとセキュリティ」に、この送信を 1 項目で書く (送るもの・送る先・押したときだけ毎回送ること・PAT の保存はブラウザに頼むこと)。About (日英)・meta の description・head のコメントも、GitHub 連携は確かめた後に `api.github.com` にだけ送ると書く (レビューの M1、調整役の裁定 2026-10-29。5.19.5)。 |
 | CON-13 | 編集内容を自動保存してはならない。localStorage、sessionStorage、Cookie、IndexedDB、Origin Private File System、Cache Storage のいずれにも、編集内容・ファイル名・パレットの位置・パレットの最小化の状態を書いてはならない。保存はユーザーの明示操作 (SC-24) によるローカルファイルへの書き込み、またはダウンロードに限る。`document.title` にファイル名を入れてはならない (ブラウザの履歴に残るため。INV-50)。**注 (2026-10-29、SC-27):** GitHub の PAT は、利用者が選べばブラウザのパスワードマネージャーが覚える (ブラウザの機能)。GRSMD のスクリプトは、PAT も、GitHub の文書も、storage・Cookie・IndexedDB・OPFS・Cache Storage に書かない (D3・D13) |
 | CON-14 | 保存処理はネットワーク通信を行ってはならない。File System Access API の書き込み、または `blob:` URL によるダウンロードのみを用いる。**注 (2026-10-29):** push (SC-27) は保存ではない。Save / Save as は今のまま通信しない |
 | CON-15 | 製品コード (`src/js/`) のすべての関数とメソッドは、JSDoc のコメント内に `@purity` タグをちょうど 1 つ持つこと。値は `pure` / `semi-pure-a` / `semi-pure-b` / `non-pure` の 4 値とする (レビュー基準 `spec/grsmd_review_standards_ja.md` の「R7 純粋性の分類」と「R7 `@purity` タグ」)。既存コードにも適用する。数え方と検査の方法は 5.16 に定める |
-| CON-16 | PAT の扱い: (1) 受け付けるのは fine-grained (`github_pat_` で始まる) だけ。ほかの形 (classic の `ghp_` など) は、送らずに断る (D12)。(2) PAT は、確認の画面の欄から送るときに読み、送り終えたら変数と欄を空にする (D11)。そのトークンで要求が成功したら、Credential Management (`navigator.credentials.store(new PasswordCredential({id: "owner/repo", password}))`) でブラウザに保存を頼む (D25。ブラウザが吹き出しを出し、利用者が決める)。保存したトークンは、利用者が Token の欄をクリックし、ブラウザの自動入力の候補から選んで入れる (D34。[Saved] のボタンと `navigator.credentials.get` は使わない。2026-10-29 の確かめで、Edge は `get` に選ぶ画面を出さず何も返さなかった。D31)。`PasswordCredential` が無いブラウザでは保存を頼まず、貼って使う。欄の目のボタン (D28) は欄の伏字を開くだけで、トークンを欄の外へ出さない。インスタンスのフィールド・`window`・DOM の属性に持ち続けない。(3) `Authorization: Bearer` のヘッダーだけで送り、URL・トースト・エラーの文・コンソールに出さない。(4) 送り先は `CONFIG.github.apiOrigin` だけ。(5) フレームの中では機能ごと出さない (INV-92) |
+| CON-16 | PAT の扱い: (1) 受け付けるのは fine-grained (`github_pat_` で始まる) だけ。ほかの形 (classic の `ghp_` など) は、送らずに断る (D12)。(2) PAT は、確認の画面の欄から送るときに読み、送り終えたら変数と欄を空にする (D11)。送らずに画面を閉じたとき (Cancel・Esc) も欄を空にする (レビューの L3)。そのトークンで要求が成功したら、Credential Management (`navigator.credentials.store(new PasswordCredential({id: "owner/repo", password}))`) でブラウザに保存を頼む (D25。ブラウザが吹き出しを出し、利用者が決める)。保存したトークンは、利用者が Token の欄をクリックし、ブラウザの自動入力の候補から選んで入れる (D34。[Saved] のボタンと `navigator.credentials.get` は使わない。2026-10-29 の確かめで、Edge は `get` に選ぶ画面を出さず何も返さなかった。D31)。`PasswordCredential` が無いブラウザでは保存を頼まず、貼って使う。欄の目のボタン (D28) は欄の伏字を開くだけで、トークンを欄の外へ出さない。インスタンスのフィールド・`window`・DOM の属性に持ち続けない。(3) `Authorization: Bearer` のヘッダーだけで送り、URL・トースト・エラーの文・コンソールに出さない。(4) 送り先は `CONFIG.github.apiOrigin` の `/repos/<owner>/<repo>/` の下だけ。owner・repo・ブランチ・パスの `/` の区切りのどれかが空・`.`・`..` なら、何も送らずに断る (`hasUnsafeSegment`。URL の解析が `..` を解き、PAT を API の別の道へ送ってしまうため。画面も `GitHubContentsClient` も断る。レビューの L2)。(5) フレームの中では機能ごと出さない (INV-92) |
 
 ### 1.7 版の規則
 
@@ -532,7 +534,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-55 | イベント駆動 | 文書を作り直す出来事 (`.md` のドロップ、Reload、初期状態からのペーストまたは `#editor` からの描画、空の文書の開始、Clear、非 `.md` のドロップ) では、システムは 5.14.11 の表のとおりに `DocumentSession` と `DocumentLocation` を作り直す (または無しにする) こと。保存先は `DocumentLocation` だけを正とし、ほかの場所に fileHandle を持たないこと。 |
 | INV-56 | イベント駆動 | `#editor` の内容をモデルに取り込む操作 (Markdown 表示中の [Render Light] / [Render Dark] / `l` / `d`、INV-45 の自動の全体描画 (ブロックの開始ジェスチャ、パレットの Undo、編集中でないときの挿入)、Save / Save as での取り込み (INV-33)) の前に、`#editor` が空 (空白文字だけを含む場合を含む) で、現在の本文が空でない (空白文字以外を含む) 場合、システムは、何かを変える前に確認ダイアログ (`messages.edit.emptyEditorConfirm`) を表示すること。OK ならその操作を従来どおり行い (本文は空になる)、Cancel なら `#editor` を現在の本文に戻し (値の代入。`input` イベントは起きない)、`#editor` の未描画の変更の印を下ろし、未保存の印を再計算すること。それ以外は何も変えないこと (モデル、開いているブロック編集欄、テーマ、保存の状態を変えず、トーストも出さず、権限の要求も保存ダイアログも始めない)。Cancel の後は `#editor` に未描画の変更が無いので、同じ操作をもう一度行うと確認なしに進む。`#editor` が空でも本文も空なら、確認を表示しないこと。Save / Save as では、`#editor` を取り込まない場合 (未描画の変更が無い場合) は確認を表示しないこと。 |
 | INV-57 | イベント駆動 | Markdown 表示中で編集モードでないときに、プレビューがダブルクリックまたはダブルタップされた場合、対象が INV-29 の除外対象と図 (Mermaid の図、PlantUML の図とプレースホルダ) の内側でなければ、システムはブラウザが作った選択を解除し、11-c の `previewDoubleClicked` のとおりにすること: `#editor` に未描画の変更があれば INV-45。対象がセル (INV-29 の (a)) で、その表がセルの編集の条件 (INV-62 の構造の確認) を満たせば、編集パレットを表示してそのセルの編集を開く (カーソルはダブルクリックの位置)。満たさなければ、編集モードの中のクリックと同じく、編集パレットを表示して表の原文の編集欄を開き、トースト (`messages.edit.tableNotCellEditable`) で知らせる (INV-62 の (1)。オーナーの裁定 Q-c、2026-10-22)。対象がブロック (表のブロックの余白を除く) なら、編集パレットを表示してそのブロックの編集欄を開く (カーソルの位置は現行の開始ジェスチャと同じ)。文書が空 (ブロックが 0 個) なら、編集パレットを表示して空のブロックの編集欄を開く。それ以外 (ブロックの外の余白、表のブロックの余白) なら、編集パレットを表示するだけとする。図の上のダブルクリックは従来どおり (ズームのリセット)。 |
-| INV-58 | イベント駆動 | Markdown 表示中に主の修飾キー + S (INV-14 の判定式) が押された場合、システムはブラウザの既定の動作を止め、[Save] と同じ処理 (INV-33) を行うこと。Shift も押されていれば [Save as] と同じ処理を行うこと。パレットが表示されていなくても行うこと。初期状態とコードビューでも、主の修飾キー + S と主 + Shift + S はブラウザの既定の動作 (ページを保存) を止め、何もしないこと (GRSMD のタブでは常に占有する。オーナーの裁定 2026-10-21)。保存処理中は 11-e のとおり無視すること。**[要検証]** `keydown` の中で始めた `requestPermission` / `showSaveFilePicker` がユーザーアクティベーションの不足で拒まれないこと (PRT-W01 / W08) |
+| INV-58 | イベント駆動 | Markdown 表示中に主の修飾キー + S (INV-14 の判定式) が押された場合、システムはブラウザの既定の動作を止め、[Save] と同じ処理 (INV-33) を行うこと。Shift も押されていれば [Save as] と同じ処理を行うこと。パレットが表示されていなくても行うこと。初期状態とコードビューでも、主の修飾キー + S と主 + Shift + S はブラウザの既定の動作 (ページを保存) を止め、何もしないこと (GRSMD のタブでは常に占有する。オーナーの裁定 2026-10-21)。GitHub の画面 (5.19) を開いている間も、主の修飾キー + S と主 + Shift + S はブラウザの既定の動作を止め、何もしないこと (画面からは保存しない。5.19.6。レビューの M3、調整役の裁定 2026-10-29)。保存処理中は 11-e のとおり無視すること。**[要検証]** `keydown` の中で始めた `requestPermission` / `showSaveFilePicker` がユーザーアクティベーションの不足で拒まれないこと (PRT-W01 / W08) |
 | INV-59 | イベント駆動 | 編集モードの間 (パレットの表示中。最小化を含む) に主の修飾キー + Z (Shift なし。Undo)、または Redo のキー (主の修飾キー + Shift + Z、Mac 以外では Ctrl+Y も) が押された場合、システムは次のとおりにすること (Undo と Redo は同じ規則。オーナーの裁定 D7)。(a) フォーカスが `#editor`、またはブロック編集欄・セル以外の入力要素にあれば、横取りしない (ブラウザの既定)。(b) ブロック編集欄にあり、Undo ではその内容が開いた時点の原文と異なれば、Redo では変更の有無によらず、横取りしない (ブラウザの文字単位の Undo / Redo。裁定 Q2。Redo は、ブラウザの Undo で打った文字を全部戻した後でもやり直せるように、いつもブラウザ。合意 D7 の手直し、調整役の裁定 M5、2026-10-24)。(c) それ以外 (Undo ではブロック編集欄で変更が無いとき、セルの中、編集欄の外。Redo ではセルの中と編集欄の外) は、ブラウザの既定の動作を止め、Undo はパレットの Undo と同じ処理 (11-c の `undoRequested`)、Redo は 11-c の `redoRequested` を行うこと (INV-48)。セルの中の Redo のキーは TableCellEditor が止めて `redoRequested` を起こし (ブラウザの Redo はセルでは働かない。INV-63)、変更したセルの中では何もしない (やり直すものが無い。INV-64)。編集モードでないときは横取りしない (裁定 Q3。D8: パレットを隠しても記録は残り、出し直せば使える)。 |
 | INV-60 | イベント駆動 | ブロック編集欄またはセルの編集中に主の修飾キー + B / I (Shift なし。主 + Shift + B / I はブラウザの既定のまま。オーナーの裁定 2026-10-21) が押された場合、システムはブラウザの既定の動作を止め、選択が 5.15.5 の条件を満たせば Bold / Italic (INV-67) を行うこと (満たさなければ何もしない)。編集中でないときと `#editor` では横取りしないこと。 |
 | INV-61 | イベント駆動 | 種類が `table` のブロックを、原文の編集欄の確定、セルの確定、または INV-65 の操作で本文を変えて確定する場合、確定の結果が GFM の表として解釈できるなら、システムは表を次の形に整えてからモデルに入れること: 各行の両端に縦棒を置き、セルの前後に空白を 1 つ置き、列ごとに最も幅の広いセルに合わせて右に空白を足す。幅は East Asian Width の F / W を 2、結合文字 (Mn / Me) と幅 0 の文字 (Cf の一部、異体字セレクタ) を 0、それ以外 (Ambiguous、タブを含む) を 1 として数える。区切り行は列の幅 (最小 3) の `-` で作り、配置の `:` を保つ。セルの数が見出しより少ない行は空のセルを補い、多い行は余るセルを元のまま後ろに残す。内容を変えずに閉じた場合は整えないこと。幅の数え方の限界 (5.14.13) は既知の制約とする。列の幅はその列のいちばん広いセルに合わせるので、長いセル (INV-69 で貼った長い URL のリンクなど) があると、その列のすべての行に空白が足され、本文が大きくなる (既知の制約。動きは変えない。オーナーの裁定 Q-e、2026-10-22)。 |
@@ -558,10 +560,10 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-82 | イベント駆動 | ベータ版のビルド (`npm run build:beta`) を行う場合、システムは、本番と同じビルド (`vite build`。mode `production`) を `output/beta/` に作り、その `index.html` の robots の meta (`<meta name="robots" content="index, follow" />`) だけを `<meta name="robots" content="noindex" />` に置き換えたファイルを `docs/grsmd-beta.html` として書くこと (`tools/buildBeta.mjs`。オーナーの決定 2026-10-25。5.18)。`docs/index.html` は書かないこと。(1) ベータ版は、それだけのビルドをしない (ベータ版の Vite の mode もプラグインも無い)。そのため、script と CSP (INV-20) は、作りの上で本番の出力と同じになる (調整役の裁定、レビューの M1)。(2) `tools/buildBeta.mjs` は、次のどれかなら書かずに失敗する (終了コード 1): robots の meta (`name` が `robots` の `meta`。属性の順・大文字小文字・引用符にかかわらず数える) がちょうど 1 つでない、それが本番の値でない、置き換えの前と後で違う行が robots の meta だけの 1 行でない、script の要素が変わる、書く先の名前が `grsmd-beta.html` でない、書く先が読むファイルと同じ。(3) 本番のビルド (`npm run build`・`build:release`) は、ベータ版の有無で 1 バイトも変わらない (ベータ版の道具は本番のビルドに入らない)。(4) BETA の印は出さず、ヘルプも変えない (オーナーの裁定 2026-10-26)。版の行は開発版と同じ ("Development build" と HEAD のコミットの時刻。1.7.2) |
 | INV-83 | 状態駆動 | ブロック編集欄を開いている間、システムは、編集欄の字を、そのブロックの表示のときと同じフォント・大きさ・太さ・行の高さで出すこと (オーナーの指摘「編集中と表示中とでフォントが変わるのが違和感」と裁定 ESF-2〜ESF-4、2026-10-27)。(1) **表示に合わせる種類:** 段落 (`p`)、見出し (`h1`〜`h6`。その段の大きさと太さで、原文の `#` も見せる。ESF-3)、リスト (`li`)、引用 (中の `p`。無ければ `blockquote`)、コードブロック (`pre code`)。開く直前の描画された要素の算出スタイル (`getComputedStyle`) の `font-family`・`font-size`・`font-weight`・`font-style`・`line-height`・`letter-spacing` を編集欄に写す。上と下の外の余白は、その箱 (`p`・見出し・`ul` / `ol`・`blockquote`・`pre`) のものを写す。コードブロックは `pre` の内側の余白も写す (字の始まりが表示と同じ所になる)。(2) **等幅のままの種類:** 表の原文・数式のブロック・図 (Mermaid・PlantUML)・HTML・見えないブロック (参照の定義・コメント) は、5.14.13 の等幅フォントの並び (表の縦棒をそろえるため。INV-61)。(3) **新しいブロック:** 空の文書 (INV-49) とすき間 (INV-73) の編集欄は、本文 (`#preview`) の字で出す (オーナーの裁定 ESF-7、2026-10-29。表やコードを書き始めることもあるが、多いのは段落で、段落なら確定の前後で字が変わらない)。(4) **箱:** 編集欄は内側の余白も枠の線も持たない (`padding: 0`・`border: 0`)。枠は `outline` で示す (ライト `#0969da`・ダーク `#1f6feb`。幅 1 px、フォーカスで 2 px。`outline-offset` 2 px。場所を取らない。ESF-4)。地は今のまま (5.8.1)。見えない文字の印の層 (INV-70) も、編集欄に写した字と余白を写す (写す性質の並びは `editorTextStyle.js` の 1 か所)。(5) フォントの名前はコードに書かない (等幅は CSS、表示の字は描画された要素の算出スタイルから取る)。 |
 | INV-84 | イベント駆動 | ブロックを押して (編集モードのタップ・クリック、表示モードのダブルクリック・ダブルタップ。INV-29・INV-57) ブロック編集欄を開く場合、システムは、押した点の字に当たる原文の位置にカーソルを置き、その行の画面の上の位置を、開く前後で ±1 px 以内に保つこと (オーナーの裁定 ESF-5、2026-10-27)。ブロック編集欄を確定して閉じる場合 (Esc・外の押下・[Edit]。変更が無いときも) は、カーソルの行の画面の上の位置を、閉じる前後で ±1 px 以内に保つこと。前は、カーソルが原文の末尾に行き、基準がブロックの上端だった (INV-46) ので、長いブロックの下の方ほど行がずれた。(1) **押した点:** 押したとき (`pointerdown`。表示モードのダブルクリックは `dblclick`、ダブルタップは 2 回目の `pointerup`) に、`caretPositionFromPoint` (WebKit は `caretRangeFromPoint`) で描画された字の位置を取り (`BlockCaretMap.caretAt`。表のセルのカーソルも同じ関数で置く。INV-62)、空白を除いて前に何字あるか、直前が空白か、行の上端がブロックの上端から何 px かを覚える (開く前に上の編集欄の確定でブロックが動いても使える)。字の上でないとき (余白・図) は無し。(2) **対応の取り方 (`caretMatching.js`。純粋な関数。描画の字の読み取りと測りは `BlockCaretMap`):** 描画された字と原文を、空白を除いて先頭から 1 字ずつ対応させる。行頭の印 (字下げ・`>`・リストの印・タスクの箱・見出しの `#`)、コードブロックの開きの囲いの行、リンクの行き先 (`](...)`。中の括弧 1 組と引用符の題まで)、HTML のタグは飛ばす。直前の対応から 64 字の中に同じ字の無い描画の字 (実体参照・KaTeX の描いた字) は対応させない。KaTeX の MathML の写し・表のタブ・図のコピーの帯・ボタン・SVG の字は数えない。直前が空白なら次の字の前、そうでなければ前の字の後ろ (書式の印の外) に置く。(3) **行の位置:** 描画の側は、その字の範囲 (`Range.getClientRects`) の上端。編集欄の側は、編集欄と同じ字と余白の見えない写しで、描画の側と同じ字 (カーソルの前の字。前が空白なら次の字、無ければ最後の字) を印にして測る (折り返しを同じにするため、その字の語の終わりまで入れる。カーソルの位置そのものを測ると、折り返しの所で前の行の末尾に来て、行が 1 行分ずれた。レビュー 1 回目の直しで見つけた)。(4) **対象:** INV-83 で表示の字に合わせる種類 (段落・見出し・リスト・引用・コードブロック)。ほかの種類、押した点の無いとき、キーボードで開いたとき、雛形の挿入 (INV-52)、すき間と空の文書は、今どおり (カーソルは原文の末尾。Mermaid は INV-52 の 1 行目の末尾。基準はブロックの上端。INV-46)。(5) **確定の後:** 確定の部分描画 (INV-46) では、基準のブロックの原文 (編集欄に出す形) の中でカーソルの位置に当たる描画の字の行を探し、その行が閉じる前の高さに来るようにブロックの上端を決める。確定でブロックが分かれてカーソルが基準のブロックの外に出たとき、または字が見つからないときは、今どおりブロックの上端を保つ。保持中のブロックだけが変わった部分描画でも、DOM の安定を待たずに、描いた直後に 1 回補正する (行はブロックの中で動くため)。変更が無い確定 (描画しない) は、閉じた直後に補正する。編集モードを出る操作 (`keepReadingPosition`) で基準が動いても、行は保つ。開いた別のブロックに基準が移る (`retargetPendingAnchor`) と、行は使わない。(6) **既知の制限:** 文書の先頭や終わりの近くで、行を保つのに要るスクロールが範囲の外になるときは、届く所まで (編集欄の折り返しが表示と違うと、行が 1 行分ずれることがある)。対応は推測による。リンクの行き先やタグと見分けられない部分 (括弧が 2 段以上入れ子の行き先など) があると、カーソルが数字ずれることがある (ブロックの外には出ない)。(7) **(性能)** ダブルクリックから編集欄が開いて配置されるまでを、大きなブロックでも長いタスク 1 つ (50 ms、INV-74 と同じ) に収める (調整役の指示 2026-10-28)。そのため: コードブロックは原文をそのまま見せるので、押した位置を 1 回の文字列の比較で原文に移す。折り返しの無い字 (多くのコード) の行の位置は、行の数と 1 行の高さから数える (小さな見えない写しで 1 行の高さを測る)。折り返す字は、カーソルの語の終わりまでの写しを測る。ただし、カーソルの前が `CONFIG.edit.caretLineMaxChars` (20,000 字) を超える折り返す字は測らず、ブロックの上端を保つ (写しの配置に編集欄と同じだけかかるため。カーソルは押した字に置く)。押したときに読んだ描画の字は、開くときに使い回す。開くときは、高さを合わせる前のスクロールの読み取り (INV-40) をしない (基準を戻すので要らず、新しい編集欄の配置を 1 回減らす)。2026-10-28 の実測 (Chromium、この変更の前 / 後、3 回ずつ、ms): 5,000 行のコード 45・42・55 / 49・55・51、色付けの上限の手前のコード 11・14・12 / 16・27・17、100 KB の段落 18・17・24 / 36・41・33。5,000 行は変更の前から 50 ms 近く (編集欄の 200 KB の配置) なので、試験の上限は 80 ms とする。確定 (Esc から描き直しまで) は変更の前と同じ (100 KB の段落で 85〜95 ms。ブロックの描き直しによる)。e2e `editScrollFont.e2e.js` (GRSMD_PERF=1)。 |
-| INV-85 | イベント駆動 | [Open GitHub] (`gitHubBtn`) または `o` (入力要素の外) が押された場合、システムは「Open GitHub」の画面 (`gitHubOpenDialog`) を開き、何も送らないこと。(0) 画面の一番上は Token の欄で、開いたらそこにカーソルを置く (D24)。欄の名前は `Fine-grained personal access token` で、欄の上の行に置く (D35)。欄の横に目のボタンを置く (D28)。(1) URL の欄に入った文字が `https://github.com/<owner>/<repo>/blob/<branch>/<path>` の形で、パスが `.md` か `.markdown` で終わるときだけ、リポジトリ (`<owner>/<repo>`、読むだけ)・ブランチ・パス (直せる)・PAT の欄を出し、[Open] を押せるようにする。ブランチ名の `/` は URL では決まらないので、最初の 1 区切りをブランチとして入れる。(2) `raw.githubusercontent.com` の URL、ほかのホスト、`http:`、利用者名の付いた URL、ほかの形は、理由を 1 行で出し、何も取りに行かない。(3) ページのほかの所への URL の貼り付けは、今のまま (文字として描く。INV-69 も今のまま)。(4) GitHub の文書の間 (ボタンが [Push to GitHub] のとき) の `o` は何もしない (D9) |
-| INV-86 | イベント駆動 | 「Open GitHub」の画面で [Open] が押された場合、システムは `api.github.com` へ、ファイル (`GET contents`)、そのファイルの最後のコミット (`GET commits?path&sha&per_page=1`)、リポジトリ (`GET repos`、公開か非公開か) を、この順に 1 つずつ読むこと。(1) PAT の欄が空なら `Authorization` を付けない (公開のリポジトリ)。(2) ファイルでない、1 MB を超える、Base64 でない、NUL を含む、厳密な UTF-8 でないものは開かない。(3) 読めたら、今の文書を置き換える (INV-21 の順: 読んでから、保存中は断り、未保存なら聞き、置き換える)。BOM と改行コードは `DocumentSession` が覚える (INV-38・INV-44)。手元の保存先は、パスの最後の部分を名前にし、ハンドルは持たない (最初の Save は保存の画面を出す)。外部画像の同意は失効する (INV-43)。(4) 最後のコミットと公開か非公開かは、読めなければ「分からない」として続ける。(5) 失敗したら、画面に理由を出し、文書を変えない |
+| INV-85 | イベント駆動 | [Open GitHub] (`gitHubBtn`) または `o` (入力要素の外) が押された場合、システムは「Open GitHub」の画面 (`gitHubOpenDialog`) を開き、何も送らないこと。(0) 画面の一番上は Token の欄で、開いたらそこにカーソルを置く (D24)。欄の名前は `Fine-grained personal access token` で、欄の上の行に置く (D35)。欄の横に目のボタンを置く (D28)。(1) URL の欄に入った文字が `https://github.com/<owner>/<repo>/blob/<branch>/<path>` の形で、パスが `.md` か `.markdown` で終わるときだけ、リポジトリ (`<owner>/<repo>`、読むだけ)・ブランチ・パス (直せる)・PAT の欄を出し、[Open] を押せるようにする。ブランチ名の `/` は URL では決まらないので、最初の 1 区切りをブランチとして入れる。(2) `raw.githubusercontent.com` の URL、ほかのホスト、`http:`、利用者名の付いた URL、ほかの形は、理由を 1 行で出し、何も取りに行かない。(3) ページのほかの所への URL の貼り付けは、今のまま (文字として描く。INV-69 も今のまま)。(4) GitHub の文書の間 (ボタンが [Push to GitHub] のとき) の `o` は何もしない (D9)。(5) [Open] のとき、ブランチかパスの `/` の区切りのどれかが空・`.`・`..` なら、理由 (`messages.unsafePath`) を出し、何も送らない (CON-16 (4)。レビューの L2) |
+| INV-86 | イベント駆動 | 「Open GitHub」の画面で [Open] が押された場合、システムは `api.github.com` へ、ファイル (`GET contents`)、そのファイルの最後のコミット (`GET commits?path&sha&per_page=1`)、リポジトリ (`GET repos`、公開か非公開か) を、この順に 1 つずつ読むこと。(1) PAT の欄が空なら `Authorization` を付けない (公開のリポジトリ)。(2) ファイルでない、1 MB を超える、Base64 でない、NUL を含む、厳密な UTF-8 でないものは開かない。(3) 読めたら、今の文書を置き換える (INV-21 の順: 読んでから、保存中は断り、未保存なら聞き、置き換える)。BOM と改行コードは `DocumentSession` が覚える (INV-38・INV-44)。手元の保存先は、パスの最後の部分を名前にし、ハンドルは持たない (最初の Save は保存の画面を出す)。外部画像の同意は失効する (INV-43)。(4) 最後のコミットと公開か非公開かは、読めなければ「分からない」として続ける。(5) 失敗したら、画面に理由を出し、文書を変えない。(6) owner・repo・ブランチ・パスの区切りに空・`.`・`..` があれば、`GitHubContentsClient` も何も送らずに `unsafePath` を返す (最後のコミットは null。CON-16 (4)。レビューの L2) |
 | INV-87 | 状態駆動 | GitHub の文書 (GitHub から開いた文書。コードビューを除く) を表示している間、システムは、[Open GitHub] の場所に緑の [Push to GitHub] を出すこと。(1) 送るファイル (`toFileText(本文)`。ラッパー・改行コード・BOM を戻したもの) が GitHub の版 (最後に読んだか push した版) と同じで、開いている編集欄・セル・`#editor` に反映していない変更も無いときは、押せない表示にする (D8)。(2) title に `owner/repo @branch path` を出す。(3) Clear・別の `.md` のドロップ (連携を止める)・ペースト・コードビューへ移ると [Open GitHub] に戻る。(4) キーは割り当てない (D8) |
-| INV-88 | イベント駆動 | [Push to GitHub] が押された場合、システムは、保存と同じく (INV-56 を先に聞き) 開いている編集欄を確定してから、push の画面 (`gitHubPushDialog`) を出し、[Push] まで何も送らないこと。(1) 画面に、公開か非公開か (公開と分からないときは公開として警告)、リポジトリ・ブランチ・パス、メッセージの欄 (既定 `Update <path>`、空は不可)、PAT の欄、送る先と送るもの (本文の全部) を出す。(2) PAT が fine-grained でなければ送らない (CON-16)。(3) [Push] で、`PUT contents` に、本文の全部 (Base64)、メッセージ、読んだときの blob の `sha`、ブランチを送る。`committer`・`author` は送らない (GitHub の既定の利用者)。(4) push の間は、保存・別の push・文書の置き換えを断る (INV-54 と同じ)。(5) 成功したら、GitHub の版を新しい `sha` と送った中身にし、未保存の印を消し (D8。手元のファイルの時刻の基準は変えない。INV-39)、トーストでコミットの短い sha を知らせる (このトーストだけ 6 秒。ほかのトーストは今の 3 秒。D36)。(6) 失敗したら (401・403・404・409・422・429・ほか・通信の失敗)、画面に 5.19.4 の文を出し、本文・未保存の状態・GitHub の版を変えない。自動では再試行しない |
+| INV-88 | イベント駆動 | [Push to GitHub] が押された場合、システムは、保存と同じく (INV-56 を先に聞き) 開いている編集欄を確定してから、push の画面 (`gitHubPushDialog`) を出し、[Push] まで何も送らないこと。(1) 画面に、公開か非公開か (公開と分からないときは公開として警告)、リポジトリ・ブランチ・パス、メッセージの欄 (既定 `Update <path>`、空は不可)、PAT の欄、送る先と送るもの (本文の全部) を出す。(2) PAT が fine-grained でなければ送らない (CON-16)。(3) [Push] で、`PUT contents` に、本文の全部 (Base64)、メッセージ、読んだときの blob の `sha`、ブランチを送る。`committer`・`author` は送らない (GitHub の既定の利用者)。(4) push の間は 11-e の状態 `pushing` とし ([Push] で `pushRequested`、終わったら成功でも失敗でも `pushFinished`)、11-e の表のとおり、保存と別の push は始めず、文書の置き換えを断る (INV-54 と同じ。別の真偽は持たない。レビューの M2)。(5) 成功したら、GitHub の版を新しい `sha` と送った中身にし、未保存の印を消し (D8。手元のファイルの時刻の基準は変えない。INV-39)、トーストでコミットの短い sha を知らせる (このトーストだけ 6 秒。ほかのトーストは今の 3 秒。D36)。(6) 失敗したら (401・403・404・409・422・429・ほか・通信の失敗)、画面に 5.19.4 の文を出し、本文・未保存の状態・GitHub の版を変えない。PUT の通信が切れたときと、200 の応答が読めないか `sha` が無いときは、push が済んだかもしれないので `pushUnknown` を出す (レビューの L1)。自動では再試行しない |
 | INV-89 | イベント駆動 | GitHub の文書の間に Reload ([Reload] / `r`) が押された場合、システムは、手元のファイルからは読まず、Reload の画面 (`gitHubReloadDialog`) で確かめてから、INV-86 と同じに GitHub から読み直すこと。読めたら INV-21 の Reload の順で置き換える (読み始めた後に文書が変わっていたら置き換えない)。手元の保存先は変えない |
 | INV-90 | イベント駆動 | GitHub の文書の間に `.md` がドロップされた場合、システムは、ファイルを読んだ後、未保存の確認の前に、3 択の画面 (`gitHubDropDialog`) を出すこと。画面には、編集中のファイル、GitHub の最後のコミット (開いたときに読んだもの。通信しない)、ドロップしたファイルの名前、改行コードと BOM が GitHub の版と違えばその旨を出す。(1) 「連携を続けたまま置き換える」: 本文をドロップしたファイルにし (Undo の対象にしない)、手元の保存先をそのファイルにし、GitHub の連携 (ファイルと `sha`) を残す。(2) 「連携を止めて開く」: 今のドロップと同じ。(3) 「やめる」: 何もしない。`.md` 以外のドロップは今のまま (連携は止まる) |
 | INV-91 | 状態駆動 | GitHub の文書を描く間、システムは、サニタイズの後、外部画像の同意の前に、相対パスを GitHub での見え方に直すこと (D21)。(1) `img` の `src` は `https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<repo の中のパス>`。この後、今の外部画像の同意を通す (INV-19)。(2) `a` の `href` は `https://github.com/<owner>/<repo>/blob/<branch>/<repo の中のパス>` (問い合わせと `#` は残す)。(3) `/` で始まるものはリポジトリの最上位から。上へ出すぎたものは最上位で止める。(4) `http(s):`・`mailto:` などの形・`//host`・`#…`・空は直さない。`srcset` は直さない。(5) GitHub の文書でないときは、今のまま (相対パスは外部扱い) |
@@ -603,13 +605,16 @@ graph TB
             HELPLANG["HelpLanguageSwitch<br/>(Help language, memory only)"]:::framework
             INDEX["DocumentIndex<br/>(Index of headings, INV-77)"]:::framework
             SEARCH["DocumentSearch<br/>(Search and replace, INV-80)"]:::framework
+            GITHUB["GitHubController<br/>(GitHub button and dialogs, SC-27)"]:::framework
+            GHHOST["GitHubHost<br/>(Port implemented by UIController)"]:::framework
             ZOOM["DiagramZoomController<br/>(Ctrl+Scroll)"]:::framework
             PAN["DiagramPanController<br/>(Drag)"]:::framework
             COPY["DiagramCopyController<br/>(SVG and PNG)"]:::framework
             BLOCKEDIT["BlockEditController<br/>(In-place block editing)"]:::framework
             PALETTE["EditPalette<br/>(Palette and gestures)"]:::framework
             RANGE["BlockRangeSelection<br/>(Block range: frame and bar, INV-74)"]:::framework
-            LIFECYCLE["DocumentLifecycle<br/>(Session, save target, save state)"]:::usecase
+            LIFECYCLE["DocumentLifecycle<br/>(Session, save target, save and push state)"]:::usecase
+            GHLINK["GitHubLink<br/>(The GitHub version)"]:::usecase
             SAVEDOC["SaveDocument and SaveDocumentAs<br/>(Save use cases)"]:::usecase
             PORTS["ModelChangedPort and OverwriteConfirmPort<br/>(Ports owned by use cases)"]:::usecase
             BLOCKMODEL["MarkdownBlockModel<br/>(Source as blocks)"]:::entity
@@ -619,6 +624,8 @@ graph TB
             MARKS["InvisibleCharOverlay<br/>(Marks behind the editor, INV-70)"]:::framework
             SESSION["DocumentSession<br/>(Document values)"]:::entity
             SAVER["MarkdownFileAccess<br/>(Local file read and write)"]:::adapter
+            GHCLIENT["GitHubContentsClient<br/>(GitHub contents API, fetch injected)"]:::adapter
+            GHREF["GitHubFileRef and gitHubUrl.js<br/>(GitHub file, pure)"]:::entity
         end
         subgraph CDN_Libs["Bundled Libraries"]
             MARKED["marked.js v18.1.0"]
@@ -630,6 +637,7 @@ graph TB
         end
     end
     PUML_SERVER["PlantUML Server<br/>(External, consent required)"]
+    GITHUB_API["GitHub API api.github.com<br/>(External, confirmed per request)"]
     LOCALFS["Local File System<br/>(user permission per file)"]
 
     UI -->|"delegates render"| ORCH
@@ -639,6 +647,15 @@ graph TB
     UI -->|"toggles, hides, view mode"| INDEX
     UI -->|"opens, hides, view mode, edit mode"| SEARCH
     SEARCH -->|"reads the model, replaces the body"| ORCH
+    UI -->|"button, o, Reload and drop"| GITHUB
+    GITHUB -->|"changes the document through"| GHHOST
+    UI -->|"implements"| GHHOST
+    GITHUB -->|"opens and pushes"| GHCLIENT
+    GITHUB -->|"push state (11-e)"| LIFECYCLE
+    GHCLIENT -->|"sends after confirmation"| GITHUB_API
+    GHCLIENT -->|"returns"| GHLINK
+    GHLINK -->|"has"| GHREF
+    MD -->|"relative URLs of a GitHub document (INV-91)"| GHREF
     ORCH -->|"markdown pipeline"| MD
     ORCH -->|"diagram pipeline"| MERM
     ORCH -->|"diagram pipeline"| PUML
@@ -656,6 +673,7 @@ graph TB
     UI -->|"rebuilds and saves the document"| LIFECYCLE
     LIFECYCLE -->|"runs save use cases"| SAVEDOC
     LIFECYCLE -->|"holds current value"| SESSION
+    LIFECYCLE -->|"holds current value"| GHLINK
     LIFECYCLE -->|"reads for Reload, starts save access"| SAVER
     BLOCKEDIT -->|"commits blocks"| ORCH
     BLOCKEDIT -->|"format edits"| TEXTOPS
@@ -731,6 +749,7 @@ classDiagram
         +useLibrary(name, library) void
         +takeMissingLibraries() string[]
         +highlightPending() void
+        +setRelativeUrlResolver(resolve) void
     }
 
     class LibraryLoader {
@@ -879,6 +898,54 @@ classDiagram
         +open() : void
         +hide() : void
         +refresh() : void
+    }
+
+    class GitHubController {
+        -isRequesting : boolean
+        +GitHubController(elements, client, host, options)
+        +enabled : boolean
+        +refresh() void
+        +handleKey() void
+        +openDialog() void
+        +pushDialog() void
+        +reloadDialog() void
+        +askDropChoice(dropped) Promise~string~
+    }
+    class GitHubHost {
+        +documents : DocumentLifecycle
+        +isCodeView() boolean
+        +body() string
+        +hasUnsyncedEdits() boolean
+        +prepareBody() boolean
+        +openDocument(result) Promise
+        +reloadDocument(result, documentId) Promise
+        +refreshDirtyMark() void
+        +toast(message, durationMs) void
+    }
+    class GitHubContentsClient {
+        +GitHubContentsClient(fetchFn, options)
+        +openFile(ref, token) Promise~object~
+        +lastCommit(ref, token) Promise~object~
+        +pushFile(link, fileText, message, token) Promise~object~
+    }
+    class GitHubLink {
+        +ref : GitHubFileRef
+        +blobSha : string
+        +fileText : string
+        +isPrivate : boolean
+        +lastCommit : object
+        +withPushed(blobSha, fileText, lastCommit) GitHubLink
+        +isSameAs(fileText) boolean
+    }
+    class GitHubFileRef {
+        +owner : string
+        +repo : string
+        +branch : string
+        +path : string
+        +repoName() string
+        +fileName() string
+        +label() string
+        +equals(other) boolean
     }
 
     class DiagramZoomController {
@@ -1077,11 +1144,17 @@ classDiagram
         +session : DocumentSession
         +location : DocumentLocation
         +saveOperationState : string
+        +gitHub : GitHubLink
         +hasSession() boolean
         +isBodyChanged(bodyText) boolean
         +fileName() string
         +isSaving() boolean
-        +openFile(fileText, hasBom, lastModified, fileName, fileHandle) void
+        +openFile(fileText, hasBom, lastModified, fileName, fileHandle, keepGitHub) void
+        +openGitHub(fileText, hasBom, link) void
+        +reloadGitHub(fileText, hasBom, link) void
+        +fileTextOf(bodyText) string
+        +startPush() object
+        +finishPush(started, pushed) boolean
         +reloadTarget() object
         +readFile(target) Promise~LoadedFile~
         +isStale(target) boolean
@@ -1276,6 +1349,14 @@ classDiagram
     UIController --> DocumentIndex : toggles, hides, view mode
     UIController --> DocumentSearch : owns (opens, hides, modes)
     DocumentSearch --> RendererOrchestrator : replaceBody (through main.js)
+    UIController --> GitHubController : owns (button, o, Reload, drop)
+    GitHubController --> GitHubHost : calls back
+    UIController ..|> GitHubHost : implements
+    GitHubController --> GitHubContentsClient : opens and pushes
+    GitHubController ..> DocumentLifecycle : startPush, finishPush (11-e)
+    GitHubContentsClient ..> GitHubLink : returns
+    GitHubLink --> GitHubFileRef : has
+    DocumentLifecycle --> GitHubLink : holds current value
     RendererOrchestrator --> ApplicationState : owns
     RendererOrchestrator --> MarkdownRenderer : owns
     RendererOrchestrator --> MermaidRenderer : owns
@@ -1359,6 +1440,11 @@ classDiagram
     style HelpLanguageSwitch fill:#87CEEB,stroke:#333,color:#000
     style DocumentIndex fill:#87CEEB,stroke:#333,color:#000
     style DocumentSearch fill:#87CEEB,stroke:#333,color:#000
+    style GitHubController fill:#87CEEB,stroke:#333,color:#000
+    style GitHubHost fill:#87CEEB,stroke:#333,color:#000
+    style GitHubContentsClient fill:#90EE90,stroke:#333,color:#000
+    style GitHubLink fill:#FFD700,stroke:#333,color:#000
+    style GitHubFileRef fill:#FF8C00,stroke:#333,color:#000
     style UIController fill:#87CEEB,stroke:#333,color:#000
     style DiagramZoomController fill:#87CEEB,stroke:#333,color:#000
     style DiagramPanController fill:#87CEEB,stroke:#333,color:#000
@@ -1405,14 +1491,14 @@ classDiagram
 | --- | --- |
 | `RendererOrchestrator` | `+commitBlock(blockId, newRaw, anchor?) Promise` (`anchor` は BlockEditController が編集欄を閉じる前に取ったもの。無ければ自分で取る) / `+insertAfter(blockId, raw) Promise` / `+insertBlock(raw, at) {rendering, blockId, lastBlockId}` (INV-52。`at` は `{afterBlockId}` (`insertAfter` と同じ) か `{offset, scroll, anchorOffset, removeBefore}` (本文の位置に挿入し、ブロックの中なら割る。`removeBefore` は位置の直前の、同じ変更で除く文字の数。`scroll` は呼び出し側が編集欄を閉じる前に取った基準で、新しいモデルの `anchorOffset` の位置のブロックをそこに保つ。INV-46)。`blockId` は挿入したブロック (原文が複数のブロックなら先頭)、`lastBlockId` はその最後のブロック (1 ブロックなら `blockId` と同じ)) / `+deleteBlocks(firstId, lastId) Promise` (INV-74。範囲のブロックを 1 つの変更の単位として消す。基準は消える最初のブロックの上端で、その場所に来るブロックを保つ。ID が今のモデルに無ければ何もしない) / `+readBlocksSource(firstId, lastId) string` (INV-74。範囲の原文。無ければ `null`) / `+undoLastCommit() Promise` / `+redoLastCommit() Promise` / `+canUndo() boolean` / `+canRedo() boolean` / `+startEmptyDocument() Promise` / `+clearDocument() void` / `+getBody() string` / `+setModelChangedListener(listener) void` / `+retargetPendingAnchor(blockId) void` (INV-46) / `-_currentModel` / `-_renderedModel` / `-_undoModels` / `-_redoModels` (Undo / Redo の記録。それぞれ `CONFIG.edit.undoMaxSteps` 件まで。積むのは `withoutJoinedBody()` の値) / `-_renderQueue : Promise` / `-_nextBlockId : number` (アプリ全体のブロック ID のカウンタ) (INV-47 / INV-48)。`commitBlock` / `insertAfter` / `insertBlock` / `deleteBlocks` / `undoLastCommit` / `redoLastCommit` は、最初の `await` より前の同期の部分でモデルを更新して `onModelChanged` を呼び、描画だけをキューに入れて、描画の完了で解決する Promise を返す。**`_mdFileHandle` は廃止する** (INV-55) |
 | `RendererOrchestrator.readMarkdownFile` / `loadMarkdown` | `readMarkdownFile` は廃止し、Reload は `MarkdownFileAccess.readFile(location.fileHandle)` で `LoadedFile` (先頭のバイト列、デコード済みの文字列、更新日時) を読む (BOM と改行コードを読み直すため。INV-44 / INV-55)。`loadMarkdown(text, theme, fileHandle)` の第 3 引数は廃止する |
-| `MarkdownRenderer` | `+renderBlocks(model) void` (全体描画。ブロックごとに `div.md-block` を作り、`wrapper.innerHTML = sanitize(html)` で代入する) / `+replaceBlocks(renderedModel, currentModel, keepBlockId) HTMLElement[]` (ブロック ID で対応付け、HTML が変わったブロックだけ差し替える。参照リンクは `model.links`。`keepBlockId` は編集欄が開いているブロックで、外枠を差し替えない。INV-47) / `-_htmlCache : Map` (キー: 原文 + 参照リンク定義の署名。描画のたびに、現在のモデルに無いキーを捨てる。全体描画・文書の作り直し・Clear で空にする) |
+| `MarkdownRenderer` | `+renderBlocks(model) void` (全体描画。ブロックごとに `div.md-block` を作り、`wrapper.innerHTML = sanitize(html)` で代入する) / `+replaceBlocks(renderedModel, currentModel, keepBlockId) HTMLElement[]` (ブロック ID で対応付け、HTML が変わったブロックだけ差し替える。参照リンクは `model.links`。`keepBlockId` は編集欄が開いているブロックで、外枠を差し替えない。INV-47) / `-_htmlCache : Map` (キー: 原文 + 参照リンク定義の署名。描画のたびに、現在のモデルに無いキーを捨てる。全体描画・文書の作り直し・Clear で空にする) / `+setRelativeUrlResolver(resolve) void` (GitHub の文書の間の相対パスの解決。`resolve(value, "image"\|"link")` は直した URL か null。`afterSanitizeAttributes` の中で、外部画像の門 (`neutralize`) の前に当てる。null を渡すと今のまま。INV-91。2026-10-29) |
 | `MermaidRenderer` | `render(theme, root)` (描画範囲を引数で取る。省略時は preview 全体) |
 | `PlantUMLRenderer` | `render(theme, root, mode)` (`mode` は `"consent"` か `"placeholder"`。INV-23) / `+renderPending(placeholder, theme) Promise` |
 | `ExternalImageGate` | `apply(root)` (適用範囲を引数で取る。省略時は preview 全体。INV-43) |
 | `ScrollMemento` | `+captureAnchor(element) ScrollAnchor` (`@purity semi-pure-b`。要素の上端の画面上の位置を読む) / `+captureReadingAnchor()` / `+restoreReadingAnchor(saved)` / `+capturePlaceAt(top)` / `+movedBy(saved)` (読んでいる位置: 表示の上端に掛かる最初の子の中身の上端。表示の上端は、Markdown の表示の上端 (タッチ端末で document がスクロールするときは、上に貼り付く `#topbar` の下端)。子を半分ずつ探し、各子を読むのは高々 1 回。表示されていない子 (`display: none`。閲覧中の隠れたブロックなど) と、編集モードの間だけ見えるブロック (`.md-block-hidden` / `.md-block-empty`) は飛ばす。戻す時点で基準の要素が表示されていなければ、何もしない。`capturePlaceAt(top)` は、その位置がブロックの中なら、そこに掛かる流れの中の表示中の子 (表のつまみは流れの外なので選ばない。無ければブロック) を、ブロックの間 (編集モードだけの帯や余白) なら、その前のブロックの下端を返す。5.1 の表のつまみ、PRT-X08) / `+restoreAnchor(anchor, element) void` (基準の要素は呼び出し側が `anchorBlockId` で探して渡す。要素が無いか、箱を持たない (閲覧中の隠れたブロックなど) なら補正しない。タッチ端末で document がスクロールするとき、スクロールが刻みで止まるブラウザ (viewport の meta が無く縮めて表示する WebKit。刻みは、Playwright の WebKit の実測で画面の 1 px (縮尺の逆数。約 2.5 CSS px で、DPR によらない) で、切り捨てる。実機の刻みは PRT-X08 で記録する) でも、基準がいちばん近くに来る位置に止める (頼んだ位置から目標の側へ数 px の範囲を試す)。これにより、出るたびに元の位置へ戻り、何度出入りしても、ずれは溜まらない。編集モードの間のずれは、刻みの半分以内 (ブラウザが止められる、いちばん近い位置) に収まる。試す範囲は刻み (画面の 1 px) と 1 px (`1 / 縮尺` の切り上げ + 1。2〜32 px。`devicePixelRatio` は、Playwright の WebKit では縮尺を含んだ値になり、実機での出方も分からないので使わない)。最初の 1 回で動かず、範囲の先でも動かなければ、文書の端として止める。`restore(pos)` も同じく、`save()` が読んだ位置に戻るまで、範囲の中で試す) (INV-46。タッチ端末では document のスクロールを使う既存の切り替えに従う) / `+reveal(element) void` (INV-52。要素が表示の中 (表示の上端から、プレビューの下端、または document がスクロールするときは画面の下端まで) にあれば何もしない。外にあれば、近い方の端がその端に来るだけスクロールする (表示より高ければ上端をそろえる)。滑らかなスクロールはしない) / `+watchUserMoves()` / `+scrollTargetTo(target, offsetPx)` (INV-78。目次・検索で飛ぶ) / `+shownTop()` / `+shownRight()` (見えている範囲の上端と右端。右端はスクロールバーの左、タッチ端末では文書の幅。INV-77 (6)) / `+isScrollbarPress(e)` (コンテナかページのスクロールバーの押下。INV-30 の「外側」でなく、INV-78 の動かす操作) |
 | `ScrollAnchor` (新しい値の型) | `{ offsetTop : number }` (押下・確定の時点の、基準のブロックの上端の画面上の位置)。描画の時点の基準の要素は `ModelChange.anchorBlockId` で決める (INV-46) |
 | `UIController` | `+toggleEditPalette() void` / `+requestSave() Promise` / `+requestSaveAs() Promise` / `+confirmOverwrite(reason) Promise~boolean~` (`OverwriteConfirmPort` の実装。`reason` が `"changed"` なら `externalChangeConfirm`、`"unknown"` なら `overwriteUnknownConfirm` の文言で `window.confirm` を出す) / `+onModelChanged(change) void` (`ModelChangedPort` の実装。同期で `#editor.value` を本文で書き換え、`_editorChangedSinceRender` を下ろし、未保存の印を更新する) / `+onBlockSplitFailed() void` (`ModelChangedPort` の実装。本文をブロックに分けられず全体を 1 ブロックにしたことを `messages.edit.blockSplitFailed` のトーストで知らせる。5.14.2) / `-_confirmDiscardIfDirty() boolean` / `-_isDocumentDirty() boolean` / `-documents : DocumentLifecycle` / `-_editorChangedSinceRender : boolean` (INV-45) |
-| `DocumentLifecycle` | `+session : DocumentSession` / `+location : DocumentLocation` / `+saveOperationState : string` (読み取りだけ。値を変えるのは下のメソッドだけ) / `-_nextDocumentId : number` / `+openFile(fileText, hasBom, lastModified, fileName, fileHandle) void` / `+reloadTarget() object\|null` / `+readFile(target) Promise` / `+isStale(target) boolean` / `+reload(loaded) void` / `+startPasted(bodyText) void` / `+close() void` / `+save(event, steps) Promise` / `+finishSave(outcome) SaveResult\|null` |
+| `DocumentLifecycle` | `+session : DocumentSession` / `+location : DocumentLocation` / `+saveOperationState : string` (読み取りだけ。値を変えるのは下のメソッドだけ) / `-_nextDocumentId : number` / `+openFile(fileText, hasBom, lastModified, fileName, fileHandle) void` / `+reloadTarget() object\|null` / `+readFile(target) Promise` / `+isStale(target) boolean` / `+reload(loaded) void` / `+startPasted(bodyText) void` / `+close() void` / `+save(event, steps) Promise` / `+finishSave(outcome) SaveResult\|null` / GitHub (SC-27。2026-10-29): `+gitHub : GitHubLink` (読み取りだけ。無ければ null) / `+openFile(…, keepGitHub) void` (INV-90 の「連携を続けたまま置き換える」で真。偽なら連携を止める) / `+openGitHub(fileText, hasBom, link) void` / `+reloadGitHub(fileText, hasBom, link) void` / `+fileTextOf(bodyText) string\|null` (push で送るファイル。ラッパー・改行コード・BOM を戻す) / `+startPush() {documentId}\|null` (11-e の `pushRequested`) / `+finishPush(started, pushed) boolean` (11-e の `pushFinished`) |
 
 **実装で確定したメンバと決めごと (その場編集):**
 
@@ -1443,10 +1529,17 @@ classDiagram
 | `BlockGapInsert` (UI 層) | コンストラクタ `(preview, blockLocator, host, {requestFrame})` (`requestFrame` はマウスの動きを 1 フレームに 1 回まとめるもの。既定は `utils.nextFrame`)。`blockLocator` は MarkdownRenderer (`getBlockElements()` / `findBlockIdAt(node)` / `isTableTab(node)`)、`host` は `{onGapChosen(target)}` (BlockEditController の `dispatch("gapInsertRequested", target)`)。BlockEditController がコンストラクタの第 7 引数 `createGaps(gapHost)` で作る (既定はこのクラス)。`enable()` / `disable()` (編集モードの出入りで。`pointermove` と `scroll` の受け手) / `gapAt(x, y)` (INV-73 (1) の当たり判定。ブロックの外枠を二分探索する。`{kind: "gap", afterBlockId, beforeBlockId, top, bottom, line, left, width}` か `null`) / `show(target)` / `hide()` / `isLineNode(node)` / `shownGap()`。点線は `body` の直下の `.grsmd-gap-insert` (最初に要るときに作る)。タッチの 1 回目のタップは BlockEditController の `pointerdown` / `pointerup` で `gapAt` を使って扱う |
 | `BlockRangeSelection` (Framework 層) | 責務: 編集モードの選択を、ブロックの範囲 (枠と帯) として示すことだけ。範囲への操作 (削除・カット・コピー) は host を通して 11-c が行う。コンストラクタ `(preview, blockLocator, host, {isApple, requestFrame})` (`isApple` は帯の tooltip の主の修飾キー、`requestFrame` は既定 `utils.nextFrame`)。`blockLocator` は MarkdownRenderer (`getBlockElements()` / `findBlockIdAt(node)` / `isTableTab(node)`)、`host` は `{canSelect(), isPaletteNode(node), onRangeChanged(range), onActionRequested(kind, range)}` (BlockEditController。`canSelect` は editModeIdle で編集欄もセルも開いていないこと、`onRangeChanged` は範囲ができたらすき間の点線を隠す、`onActionRequested` は帯の押下を 11-c の `blockRangeDeleteRequested` / `blockRangeCutRequested` / `blockRangeCopyRequested` にする)。BlockEditController がコンストラクタの第 8 引数 `createRanges(rangeHost)` で作る。クエリ (`semi-pure-b`): `readRange()` (選択を読み直した範囲か `null`。表示を変えない) / `hasRange()` (最後に表示した範囲があるか。すき間の判定が使う) / `isBarNode(node)`。コマンド (`non-pure`): `enable()` / `disable()` (編集モードの出入りで。`selectionchange`・スクロール・リサイズ・マウスの押下と離しの受け手。マウスの `mouseup` は、INV-74 (2) の条件 (プレビューで始まったドラッグが選択を残したとき) で既定の動作を止める。Edge のミニメニュー、S1) / `update()` (選択を読んで枠と帯を出す。1 フレームに 1 回) / `reset()` (枠と帯を消す。選択は残す) / `clearSelection()` (選択も解く) / `showCopied()` (コピーのボタンを一瞬 ✓ に)。メンバはクエリ → コマンドの順に並べる。枠は、範囲のうちビューポートとその上下 1 画面分のブロックにだけ付け、同じ外枠の並びの上では増減した分だけ付け外しする。帯の位置は純粋な `floatingPlacement.placementNearLine(line, size, view, gap, margin)` で決める。帯は `body` の直下の `.grsmd-block-range-bar` (最初に要るときに作る)。INV-74 |
 | `ClipboardLink` (UI 層) | `+isLinkableUrl(text, schemes, maxLength)$` (`@purity pure`。INV-69 の URL の条件。制御文字・空白類・見えない文字 (双方向の制御文字、廃止された書式の文字、幅 0 の文字、U+FEFF など) を含む文字列は通さない。INV-72 (a) の `<URL>`・裸の URL の文字の変更の判定にも使う) / `+urlOptions()$` (`@purity semi-pure-a`。`CONFIG.edit.linkSchemes` と `maxPastedUrlLength`) / `+linkOp(url, strictEnds)$` (リンクを付ける書式の操作。`toDestination(url)` を行き先とする普通のリンク) / `+urlFromPasteEvent(event, options)$` (Ctrl+V の方式。`clipboardData` の `text/plain` だけを同期に読む。権限は要らない) / `+readUrlAndText(clipboard, options)$` (ボタン。`clipboard` は `navigator.clipboard` (テストでは偽物)。`read()` があればそれを、無ければ `readText()` を使い、拒否・失敗で読み直さない。URL でなければ、または拒否・失敗なら `null`。`text/html` は `DOMParser` の inert な文書で解析し (スクリプトは動かず、画像も読まない。DOM には入れない)、`href` が同じ URL の `a` がちょうど 1 つならその文字を返す) / `+linkTextOf(html, url, parseHtml)$` / `+toDestination(url)$` (`@purity pure`。利用者の文字列のまま (`new URL().href` にしない)。`\` → `%5C`。`<`・`>`・括弧の不釣り合いがあれば `<…>` (`<` `>` は `%3C` `%3E`)。表のセルの縦棒の逃がし (前に `\` を付ける) は書き出し (`InlineRuns`) が行う)。外部へ通信しない (CON-12) |
-| `UIController` | コンストラクタの第 5 引数 `services` = `{documents, isApple, createPalette(host), createBlockEdit(host), clipboard, documentIndex, createSearch(host)}` (main.js が組み立てる。`documents` は DocumentLifecycle。`isApple` は `utils.isApplePlatform(navigator)`。`clipboard` は INV-69 のボタンが読むもので、省略すれば押した時点の `navigator.clipboard`。テストでは偽物を渡す)。`isSameLinkTarget(a, b)$` (`@purity pure`。INV-69 の待つ間の対象の比較)。`setupDoubleClickGestures()` (`setupEventListeners` から呼ぶ。プレビューのダブルクリック・ダブルタップを受け、空の初期状態では空の文書を始め (INV-31)、Markdown 表示中は 11-c の `previewDoubleClicked` を起こす (交点は `browsingPreview` の列だけなので、編集モードの中では何もしない。INV-57))。`utils.shortcutLetter(event, isApple)` (`@purity pure`。TableCellEditor の Redo の判定と共有する) は INV-14 の判定式で主の修飾キーの文字 (`a`〜`z`) か `null` を返す。`requestSave()` / `requestSaveAs()` は `documents.save(event, steps)` を呼ぶ。`steps` (`SaveSteps`) は `confirmStart()` (`#editor` に未描画の変更があれば INV-56 の確認。偽なら何も始めない) / `commitEdits(event)` (11-c の `saveRequested` / `saveAsRequested` を起こし、`#editor` に未描画の変更があれば取り込む) / `getBody()` / `confirmer` (UIController。`OverwriteConfirmPort`) / `onFinished(result)` (保存の結果を、use case が終わった直後に同期で示す: `applied` なら未保存の印を再計算し、`message` があればトーストを出す)。`_rejectWhileSaving()` は `documents.isSaving()` を見てトーストを出す (INV-54)。`_isDocumentDirty()` は `documents.hasSession()` が偽なら偽で、そうでなければ `documents.isBodyChanged(orchestrator.getBody())`・開いている編集欄の変更・`_editorChangedSinceRender` のいずれか。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8) |
-| `DocumentLifecycle` (UseCase 層) | コンストラクタ `(fileAccess, {saveDocument, saveDocumentAs, messages, defaultFileName})` (main.js が `MarkdownFileAccess` から SaveDocument / SaveDocumentAs を作り、`CONFIG.messages.edit` と `CONFIG.edit.defaultFileName` と共に渡す。config を import しない)。`window` / `document` を使わない (AT-STA-17)。5.14.11 の行: `.md` のドロップ → `openFile` (`fromFileText`、ファイル名とドロップで得た handle)、Reload → `reloadTarget()` (同期。保存先か handle が無ければ `null`、あれば `{location, documentId}` を読む前に記録する) → `readFile(target)` (`MarkdownFileAccess.readFile` の Promise をそのまま返す。間に `await` を挟まないので、呼び出し側の `await` は読み込みと同じマイクロタスクで settle する) → `isStale(target)` (同期。保存先の参照か文書 ID が変わったか。判定はここだけ。呼び出し側は読み込みが settle した直後の 1 回の同期の流れで、`isStale` → 保存中の拒否 → 未保存の確認 → 置き換えを行う。INV-21) → `reload(loaded)` (`fromFileText`。BOM は `loaded.bytesHead` から。保存先は変えない)、初期状態からのペースト・`#editor` からの描画・空の文書 → `startPasted(body)` (`fromPastedText`。保存先は無し)、Clear と非 `.md` のドロップ → `close()`。文書 ID は 1 本の数で、作り直すたびに増える。11-e の遷移表を `saveOperationStateMachine` (モジュールの export) として持ち、`SaveOutcome.status` を出来事に対応させる (`saved` → fileWritten、`downloadStarted` → downloadStarted、`failed` → writeFailed、`canceled` → saveCanceled)。`save(event, steps)` の順 (最初の `await` は use case の `execute` だけ。INV-33): 交点が無い (書き込み中) かセッションが無ければ何もしない → `steps.confirmStart()` → 権限の要求 (Save で保存先の handle があるとき) または保存ダイアログ (`startSavePicker(location.fileName)`。保存先が無ければ `defaultFileName`)。書き込み API が無ければどちらも始めない → `steps.commitEdits(event)` → `saveOperationState` を writingFile に → `execute` (例外は `console.error` と `saveFailed` の失敗の結果) → `finishSave(outcome)` → `steps.onFinished(result)`。`finishSave(outcome)` は交点が無ければ `null`。あれば状態を移し、fileWritten で同じ文書 ID のときだけセッションと保存先を置き換え、`{applied, message}` (`message` は saveCanceled では `null`) を返す。`isSaving()` は `replaceRequested` の交点が有るか (INV-54) |
+| `UIController` | コンストラクタの第 5 引数 `services` = `{documents, isApple, createPalette(host), createBlockEdit(host), clipboard, documentIndex, createSearch(host)}` (main.js が組み立てる。`documents` は DocumentLifecycle。`isApple` は `utils.isApplePlatform(navigator)`。`clipboard` は INV-69 のボタンが読むもので、省略すれば押した時点の `navigator.clipboard`。テストでは偽物を渡す)。`isSameLinkTarget(a, b)$` (`@purity pure`。INV-69 の待つ間の対象の比較)。`setupDoubleClickGestures()` (`setupEventListeners` から呼ぶ。プレビューのダブルクリック・ダブルタップを受け、空の初期状態では空の文書を始め (INV-31)、Markdown 表示中は 11-c の `previewDoubleClicked` を起こす (交点は `browsingPreview` の列だけなので、編集モードの中では何もしない。INV-57))。`utils.shortcutLetter(event, isApple)` (`@purity pure`。TableCellEditor の Redo の判定と共有する) は INV-14 の判定式で主の修飾キーの文字 (`a`〜`z`) か `null` を返す。`requestSave()` / `requestSaveAs()` は `documents.save(event, steps)` を呼ぶ。`steps` (`SaveSteps`) は `confirmStart()` (`#editor` に未描画の変更があれば INV-56 の確認。偽なら何も始めない) / `commitEdits(event)` (11-c の `saveRequested` / `saveAsRequested` を起こし、`#editor` に未描画の変更があれば取り込む) / `getBody()` / `confirmer` (UIController。`OverwriteConfirmPort`) / `onFinished(result)` (保存の結果を、use case が終わった直後に同期で示す: `applied` なら未保存の印を再計算し、`message` があればトーストを出す)。`_rejectWhileSaving()` は `documents.isSaving()` を見てトーストを出す (INV-54)。`_isDocumentDirty()` は `documents.hasSession()` が偽なら偽で、そうでなければ `documents.isBodyChanged(orchestrator.getBody())`・開いている編集欄の変更・`_editorChangedSinceRender` のいずれか。モジュール関数: `classifyDroppedFile(fileName, fileSize)` (`@purity semi-pure-a`。5.4) / `hasNullByte(bytes)` / `renderRouteFor(isCodeView, isPreRender)` (`@purity pure`。5.8)。GitHub (SC-27。2026-10-29): `services.createGitHub(host)` (省略できる) が GitHubController を作り、`host` は UIController の GitHubHost (5.19.1)。Reload ([Reload] / `r`) は、GitHub の文書の間は `gitHub.reloadDialog()` に回す (INV-89)。`.md` のドロップは、GitHub の文書の間は `gitHub.askDropChoice` の答えで `openFile(…, keepGitHub)` に渡す (INV-90) |
+| `DocumentLifecycle` (UseCase 層) | コンストラクタ `(fileAccess, {saveDocument, saveDocumentAs, messages, defaultFileName})` (main.js が `MarkdownFileAccess` から SaveDocument / SaveDocumentAs を作り、`CONFIG.messages.edit` と `CONFIG.edit.defaultFileName` と共に渡す。config を import しない)。`window` / `document` を使わない (AT-STA-17)。5.14.11 の行: `.md` のドロップ → `openFile` (`fromFileText`、ファイル名とドロップで得た handle)、Reload → `reloadTarget()` (同期。保存先か handle が無ければ `null`、あれば `{location, documentId}` を読む前に記録する) → `readFile(target)` (`MarkdownFileAccess.readFile` の Promise をそのまま返す。間に `await` を挟まないので、呼び出し側の `await` は読み込みと同じマイクロタスクで settle する) → `isStale(target)` (同期。保存先の参照か文書 ID が変わったか。判定はここだけ。呼び出し側は読み込みが settle した直後の 1 回の同期の流れで、`isStale` → 保存中の拒否 → 未保存の確認 → 置き換えを行う。INV-21) → `reload(loaded)` (`fromFileText`。BOM は `loaded.bytesHead` から。保存先は変えない)、初期状態からのペースト・`#editor` からの描画・空の文書 → `startPasted(body)` (`fromPastedText`。保存先は無し)、Clear と非 `.md` のドロップ → `close()`。文書 ID は 1 本の数で、作り直すたびに増える。11-e の遷移表を `saveOperationStateMachine` (モジュールの export) として持ち、`SaveOutcome.status` を出来事に対応させる (`saved` → fileWritten、`downloadStarted` → downloadStarted、`failed` → writeFailed、`canceled` → saveCanceled)。`save(event, steps)` の順 (最初の `await` は use case の `execute` だけ。INV-33): 交点が無い (書き込み中) かセッションが無ければ何もしない → `steps.confirmStart()` → 権限の要求 (Save で保存先の handle があるとき) または保存ダイアログ (`startSavePicker(location.fileName)`。保存先が無ければ `defaultFileName`)。書き込み API が無ければどちらも始めない → `steps.commitEdits(event)` → `saveOperationState` を writingFile に → `execute` (例外は `console.error` と `saveFailed` の失敗の結果) → `finishSave(outcome)` → `steps.onFinished(result)`。`finishSave(outcome)` は交点が無ければ `null`。あれば状態を移し、fileWritten で同じ文書 ID のときだけセッションと保存先を置き換え、`{applied, message}` (`message` は saveCanceled では `null`) を返す。`isSaving()` は `replaceRequested` の交点が有るか (INV-54)。GitHub (SC-27。2026-10-29): `openGitHub` は新しいセッション (保存先はパスの最後の部分の名前で、handle 無し)、`reloadGitHub` はセッションだけを作り直す (保存先は変えない)。`startPush()` は 11-e の `pushRequested` の交点が無いか、セッションか GitHub の版が無ければ null、あれば `pushing` にして `{documentId}` を返す。`finishPush(started, pushed)` は `pushFinished` で idle に戻し、成功 (`pushed` が null でない) で文書 ID が同じときだけ、基準を送った本文にし (`withSaved`。手元のファイルの時刻の基準は変えない。INV-39)、GitHub の版を新しくして真を返す。push の状態は `saveOperationState` だけで持つ (別の真偽は持たない。レビューの M2) |
 | `SaveDocument` / `SaveDocumentAs` | コンストラクタ `(fileAccess, messages, defaultFileName)`。SaveDocument は、保存先 (handle) か書き込み API が無いときは、内部の SaveDocumentAs に任せる。`outcome(request, status, message)` はセッションと保存先を変えない結果を作る。`failureMessage(error)` は `SecurityError` → `saveActivationLost`、`NotFoundError` → `saveNotFound`、それ以外 → `saveFailed`。`SaveOutcome.status` は `saved` / `downloadStarted` / `canceled` / `failed` の 4 つ |
 | `MarkdownFileAccess` | コンストラクタ `(win = window)`。書き込み API の有無 (`canWriteInPlace`) は `win.showSaveFilePicker` の有無で判定する。保存のダイアログのファイルの種類の名前は `CONFIG.messages.edit.saveFileType`。`noteFile(fileHandle)` (null は無視) で覚えたファイル、またはダイアログで選んだファイルのハンドルをメモリだけに持ち、次のダイアログの `startIn` に渡す。ダイアログの `id` は `CONFIG.edit.savePickerId` (INV-79) |
+| `gitHubUrl.js` (Entity、`@purity pure`) | `parseGitHubFileUrl(text, options)` (`https://github.com/<owner>/<repo>/blob/<branch>/<path>` だけを読む。INV-85 (1)(2)) / `hasMarkdownExtension(path, extensions)` / `classifyToken(token, prefix)` (D12) / `resolveRelativeUrl(ref, value, kind, options)` (INV-91) / `hasUnsafeSegment(text)` (`/` の区切りに空・`.`・`..` があるか。CON-16 (4)。レビューの L2) / `encodePath(path)` (区切りごとに `encodeURIComponent`)。SC-27、5.19 |
+| `base64Text.js` (Entity、`@purity pure`) | `textToBase64(text)` / `base64ToText(base64)` (厳密な UTF-8 と NUL の検査) / `withoutBom(fileText)`。5.19.1 |
+| `GitHubFileRef` (Entity) | コンストラクタ `(owner, repo, branch, path)` (凍結。パスの先頭の `/` は除く)。`repoName()` (`owner/repo`) / `fileName()` (パスの最後の部分) / `label()` (`owner/repo @branch path`。INV-87 (2)) / `equals(other)` |
+| `GitHubLink` (UseCase の値) | コンストラクタ `({ref, blobSha, fileText, isPrivate, lastCommit})` (凍結。`isPrivate` と `lastCommit` は、分からなければ null。INV-86 (4))。`withPushed(blobSha, fileText, lastCommit)` (push の後の版) / `isSameAs(fileText)` (送るファイルが GitHub の版と同じか。INV-87 (1)) |
+| `GitHubContentsClient` (Adapter) | コンストラクタ `(fetchFn, options)` (`fetchFn` は main.js が注入する `window.fetch`、`options` は `CONFIG.github`)。`openFile(ref, token)` (5.19.2 の 3 つを順に読む) / `lastCommit(ref, token)` (読めなければ null) / `pushFile(link, fileText, message, token)` (5.19.3)。結果は `{status: "ok", …}` か `{status: "error", message}` の値で、例外を外へ投げない。送る前に owner・repo・ブランチ・パスを `hasUnsafeSegment` で見て、当たれば `unsafePath` (`lastCommit` は null) を返す (CON-16 (4)) |
+| `GitHubController` (Framework 層) | コンストラクタ `(elements, client, host, options)` (`elements` はボタンと 4 つの画面とその欄。`options` は `CONFIG.github` と、`enabled` (INV-92)・`passwordStore` (`navigator.credentials` の上の `{store(id, password)}`。無ければ null。D25)・`isApple` (INV-14))。`refresh()` (ボタンの切り替え。INV-87) / `handleKey()` (`o`。INV-85) / `openDialog()` / `pushDialog()` / `reloadDialog()` (INV-89) / `askDropChoice(dropped)` (`"keep"` / `"stop"` / `"cancel"` の Promise。INV-90)。push は `host.documents.startPush()` / `finishPush()` で 11-e を通す。画面の中のキーは 5.19.6 |
+| `GitHubHost` (UIController が実装するポート) | `documents` (DocumentLifecycle) / `isCodeView()` / `body()` / `hasUnsyncedEdits()` (開いている編集欄の変更か `#editor` の未描画の変更。INV-87 (1)) / `prepareBody()` (INV-56 を聞き、開いている編集欄と `#editor` を取り込む。取り消されたら偽) / `openDocument(result)` (INV-86 (3) の順で置き換える) / `reloadDocument(result, documentId)` (INV-89。読み始めた後に文書が変わっていたら置き換えない) / `refreshDirtyMark()` / `toast(message, durationMs)` (`durationMs` を省けば 3 秒) |
 
 ### 3.3 状態遷移図
 
@@ -1716,7 +1809,7 @@ stateDiagram-v2
 
 「未保存」は状態機械ではなく **導出値** とする (用語集。`UIController._isDocumentDirty()` = `documents.hasSession() && (documents.isBodyChanged(orchestrator.getBody()) || blockEdit.hasUncommittedChange() || this._editorChangedSinceRender)`)。状態変数を持たないので、未保存の印は「本文または編集欄が変わりうる時点」(確定、Undo、挿入、編集欄の `input`、`#editor` の `input`、全体描画、読み込み、保存の成功) で再計算する (INV-50)。
 
-保存の処理中かどうかだけを状態機械にする。定義の名前は `saveOperationStateMachine`、今の状態を持つ変数は `saveOperationState` (`DocumentLifecycle` が持つ。UIController は `documents.saveOperationState` / `documents.isSaving()` で読む)。
+保存と GitHub への push (SC-27) の処理中かどうかだけを状態機械にする (`pushing` は 2026-10-29 に足した。レビューの M2)。定義の名前は `saveOperationStateMachine`、今の状態を持つ変数は `saveOperationState` (`DocumentLifecycle` が持つ。UIController は `documents.saveOperationState` / `documents.isSaving()` で読み、GitHubController は `documents.startPush()` / `finishPush()` で動かす)。
 
 **Save operation state machine:**
 
@@ -1730,19 +1823,26 @@ stateDiagram-v2
     writingFile --> idle : writeFailed
     writingFile --> idle : saveCanceled
     writingFile --> writingFile : replaceRequested
+    idle --> pushing : pushRequested
+    pushing --> idle : pushFinished
+    pushing --> pushing : replaceRequested
 ```
 
-| 出来事 \ 今の状態 | idle | writingFile |
-| --- | --- | --- |
-| saveRequested | → writingFile / startPermissionRequest, commitOpenBlock, applyEditorText, runSaveDocument | — (無視する。二重保存の防止) |
-| saveAsRequested | → writingFile / startSavePicker, commitOpenBlock, applyEditorText, runSaveDocumentAs | — (無視する) |
-| fileWritten | — | → idle / applyOutcomeIfSameDocument, refreshDirtyMark, showSavedToast (トーストは文書 ID によらず出す) |
-| downloadStarted | — | → idle / showDownloadStartedToast (基準は更新しない。INV-26) |
-| writeFailed | — | → idle / showErrorToast |
-| saveCanceled | — | → idle |
-| replaceRequested (5.14.11 で文書を作り直す出来事。テーマの切り替えは含まない) | — (この状態機械は関与しない。INV-21 / INV-55 で処理する) | → writingFile / rejectReplace, showSavingToast (INV-54) |
+| 出来事 \ 今の状態 | idle | writingFile | pushing |
+| --- | --- | --- | --- |
+| saveRequested | → writingFile / startPermissionRequest, commitOpenBlock, applyEditorText, runSaveDocument | — (無視する。二重保存の防止) | — (無視する。GitHub の画面からも保存しない。INV-58) |
+| saveAsRequested | → writingFile / startSavePicker, commitOpenBlock, applyEditorText, runSaveDocumentAs | — (無視する) | — (無視する) |
+| fileWritten | — | → idle / applyOutcomeIfSameDocument, refreshDirtyMark, showSavedToast (トーストは文書 ID によらず出す) | — |
+| downloadStarted | — | → idle / showDownloadStartedToast (基準は更新しない。INV-26) | — |
+| writeFailed | — | → idle / showErrorToast | — |
+| saveCanceled | — | → idle | — |
+| replaceRequested (5.14.11 で文書を作り直す出来事。テーマの切り替えは含まない) | — (この状態機械は関与しない。INV-21 / INV-55 で処理する) | → writingFile / rejectReplace, showSavingToast (INV-54) | → pushing / rejectReplace, showSavingToast (INV-54、INV-88 (4)) |
+| pushRequested ([Push]。INV-88 (3)) | → pushing / runPush | — (書き込み中は push を始めない。画面に `busy`) | — (別の push は始めない) |
+| pushFinished | — | — | → idle / applyPushIfSameDocument, refreshDirtyMark, showPushedToast (トーストは成功のときだけ。失敗は画面に 5.19.4 の文) |
 
 `saveRequested` / `saveAsRequested` は、`#editor` を取り込む場合 (`applyEditorText` が要る場合) に INV-56 の確認が要るなら、OK が選ばれた後にだけ起きる (Cancel なら `#editor` を本文に戻すだけで idle のまま、権限の要求も保存ダイアログも始めない。確認は同期なので、(1) の開始は最初の `await` より前のままである。INV-33)。writingFile の間の押下は、確認を出さずに無視する。`applyOutcomeIfSameDocument` は、`SaveOutcome.documentId` が現在の `DocumentSession.documentId` と一致するときだけ、セッションと保存先を置き換え、未保存の印を再計算する (INV-54)。保存のトースト (`messages.edit.saved`) は、別の文書の結果でも出す。ファイルは実際に書かれたので、それを知らせない方が利用者を惑わせるためである。実装では、この表を `saveOperationStateMachine` というデータとして持つ。
+
+**push (SC-27。2026-10-29):** `pushRequested` は push の画面の [Push] で、PAT の形を確かめた後に起きる。`runPush` は `GitHubContentsClient.pushFile` を呼ぶ。`pushFinished` は成功でも失敗でも起き、idle に戻る。`applyPushIfSameDocument` は、push を始めたときの文書 ID が今の文書 ID と同じで、push が成功したときだけ、基準を送った本文にし、GitHub の版を新しくする (`DocumentLifecycle.finishPush`。INV-88 (5))。`pushing` の間の Save / Save as は writingFile の間と同じく無視し、文書の置き換えは断る (INV-54)。交点は 3 つの状態 × 9 の出来事で 27 (AT-SSM-08)。`isSaving()` は `replaceRequested` の交点が有るか (writingFile と pushing で真)。
 
 **11-f パレットの表示とポップオーバーの状態機械**
 
@@ -3485,7 +3585,7 @@ Feature: GitHub の .md を直して push する
 
 - 3 つの画面 (Open・Push・Reload) の PAT の欄は同じ形: 名前 `Fine-grained personal access token` (欄の上の行。D35)、目のボタン (押すと `type` を `password` と `text` で切り替える。画面を閉じるときと送った後は `password` に戻す。D28)。[Saved] のボタンは置かない (D34)。
 - PAT の欄に入力があったら、その画面のエラーの行を消す (D37)。
-- 送信は `preventDefault` で止める (`form-action 'none'` は変えない)。画面の中のキーは、アプリの 1 キーの操作に渡さない。送っている間の Esc では閉じない。
+- 送信は `preventDefault` で止める (`form-action 'none'` は変えない)。画面の中のキーは、アプリの 1 キーの操作に渡さない (主 + S は 5.19.6)。送っている間の Esc では閉じない。
 
 **[要検証]** `#controls` のボタンが 8 個 (`indexBtn`・`searchBtn` を足して。`helpBtn` を含めると上部バーで 9 個) になるので、iPhone (幅 375px) で折り返しや欠けが起きないかを PRT-V11 で確認する。
 
@@ -5378,6 +5478,7 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | 最小構成 (表記) | 手で書く NOTICE の 1 ファイル、またはビルドで node_modules の LICENSE だけを並べる | 不採用 (裁定 Q4 の (c)、レビューの H1・M1)。手で書くと依存の更新で古くなり、node_modules の LICENSE だけでは、ほかの道具が dist に束ねたコード (langium・pako・roughjs の中の 4 つなど) が漏れる。増やしたのは、印の検査・宣言した依存の検査・dist の確かめの記録 (`EMBEDDED`・`IGNORED_MARKS`・`IGNORED_DEPENDENCIES`・`DIST_RECORDS`)、`PACKAGE_OVERRIDES`、保存した文 (`tools/third-party-licenses/`)、版の検査、待ちの文、ヘルプの一覧。どれも「依存が変わったときに表記が黙って欠けない」ためで、ビルドの時だけ動き、ページの実行時のコードは増えない |
 | 最小構成 (ベータ版) | 本番のビルドの出力を写し、robots の meta の 1 行だけを置き換える | 採用 (調整役の裁定、レビューの M1・L4)。最初の実装は、それだけの Vite の mode とプラグインでベータ版をビルドした。mode で中身が変わると、本番と違う script と CSP でもビルドが通ったので、この最小構成に改めた。足したのは `tools/buildBeta.mjs` の検査 (robots の meta がちょうど 1 つで本番の値、違う行がその 1 行だけ、script が同じ、書く先の名前) だけで、どれも「本番と違う物を試さない」ためのもの |
 | 最小構成 (編集欄の字とスクロール) | 編集欄の字だけを表示に合わせ (CSS で本文と同じ字に)、カーソルは原文の末尾、基準はブロックの上端のまま。または、押した点の行の高さだけを保ち、カーソルは末尾 | 不採用 (オーナーの裁定 ESF-5: 押した字にカーソルを置き、その行を開く前後・閉じる前後で ±1 px に保つ)。カーソルが末尾だと、長いブロックで最初に打った字が末尾へ飛ぶ。行の高さだけを保つと、閉じるときにカーソルの行が分からない。増えた要素とその理由: `caretMatching.js` (描画された字と原文の対応。書式の印・リンクの行き先・行頭の印を飛ばす推測で、pure に分けて単体で試す)、`BlockCaretMap` (押した点の字・行の上端・編集欄の中の行の上端を DOM から読む)、速い道 3 つ (コードは原文をそのまま見せるので 1 回の比較で位置を移す、折り返しの無い字は行を数える、押したときに読んだ字を使い回す。INV-84 (7) の 50 ms のため)、`CONFIG.edit.caretLineMaxChars` (20,000 字を超える折り返す字は測らない。写しの配置が編集欄と同じだけかかるため。調整役の了承 2026-10-28)、`editorTextStyle.js` (編集欄と印の層が同じ並びの性質を写す。片方だけに足すと印が字とずれる)、`ScrollMemento.noteScrolls` / `isPulledBackFrom` (打つたびに文書全体の配置を増やさずに、ブラウザが詰めたスクロールだけを戻す。INV-40) |
+| 最小構成 (GitHub 連携) | GitHub の Web の編集の画面で直し、GRSMD は描画を見るだけ。または、GRSMD で直してダウンロードし、GitHub の Web の画面に貼る | 不採用 (オーナーの裁定 D1・D2・D3・D25 ほか)。オーナーは、GitHub の `.md` を GRSMD の描画を見ながらその場で直し、開いたのと同じブランチへ push することを求めた (D1)。途中の保存 (Ctrl+S) は手元へ、GitHub へ送るのは [Push to GitHub] だけと分け (D2)、PAT はブラウザのパスワードマネージャーに持たせる (D3・D25)。増えた要素とその理由: 4 つのクラス (`GitHubFileRef`: ファイルの値、`GitHubLink`: GitHub の版と 409 の基準の `sha`、`GitHubContentsClient`: 固定の 1 つのオリジンへの要求、`GitHubController`: ボタンと画面)、2 つのモジュール (`gitHubUrl.js`: URL・相対パス・PAT の形、`base64Text.js`: Contents API の Base64 と厳密な UTF-8)、4 つの画面 (Open・Push・Reload: 送る前の毎回の確認 (CON-12)、ドロップ: 翌日に下書きで続ける (INV-90))、ブラウザのパスワードマネージャーへの保存の依頼 (D25)。11-e に `pushing` を足し、push の間の保存と置き換えを表で断る (レビューの M2) |
 
 #### 5.16.2 `@purity` の検査 (CON-15)
 
@@ -5469,13 +5570,13 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 
 | 名前 | 層 | 役目 |
 | --- | --- | --- |
-| `gitHubUrl.js` (関数) | Entity (pure) | `parseGitHubFileUrl`、`resolveRelativeUrl`、`classifyToken`、`encodePath` |
+| `gitHubUrl.js` (関数) | Entity (pure) | `parseGitHubFileUrl`、`hasMarkdownExtension`、`resolveRelativeUrl`、`classifyToken`、`hasUnsafeSegment` (区切りに空・`.`・`..` があるか。CON-16 (4)。レビューの L2)、`encodePath` |
 | `base64Text.js` (関数) | Entity (pure) | UTF-8 の文字列と Base64 の行き来 (BOM は U+FEFF として保つ。分けて `btoa`)、厳密な UTF-8 と NUL の検査 |
 | `GitHubFileRef` | Entity | owner・repo・branch・path (不変) |
 | `GitHubLink` | UseCase の値 | GitHub の版: ファイル、blob の `sha`、その版のファイルの文字列、公開か非公開か、最後のコミット (不変)。`DocumentLifecycle` が今の 1 つを持つ (手元の保存先 `DocumentLocation` と並べる。INV-55 は変えない) |
-| `GitHubContentsClient` | Adapter | `openFile`・`lastCommit`・`pushFile`。`fetch` は注入。`cache: "no-store"`、`credentials: "omit"`、`referrerPolicy: "no-referrer"`、30 秒で打ち切る。例外を外へ投げない |
-| `GitHubController` | Framework | ボタンと 4 つの画面、`GitHubHost` (UIController) を通して文書を変える |
-| `DocumentLifecycle` (足す) | UseCase | `gitHub`、`openGitHub`、`reloadGitHub`、`openFile(..., keepGitHub)`、`fileTextOf`、`startPush` / `finishPush` (`isSaving()` は push の間も真) |
+| `GitHubContentsClient` | Adapter | `openFile`・`lastCommit`・`pushFile`。`fetch` は注入。`cache: "no-store"`、`credentials: "omit"`、`referrerPolicy: "no-referrer"`、30 秒で打ち切る。例外を外へ投げない。owner・repo・ブランチ・パスに `hasUnsafeSegment` が当たれば、何も送らずに `unsafePath` を返す (`lastCommit` は null) |
+| `GitHubController` | Framework | ボタンと 4 つの画面、`GitHubHost` (UIController。3.2) を通して文書を変える。push は `DocumentLifecycle.startPush` / `finishPush` で 11-e を通す |
+| `DocumentLifecycle` (足す) | UseCase | `gitHub`、`openGitHub`、`reloadGitHub`、`openFile(..., keepGitHub)`、`fileTextOf`、`startPush` / `finishPush` (11-e の `pushRequested` / `pushFinished`。状態 `pushing` の間は `isSaving()` も真。レビューの M2) |
 | `MarkdownRenderer` (足す) | Adapter | `setRelativeUrlResolver` (INV-91。`afterSanitizeAttributes` のフックで、外部画像の同意の前) |
 
 - 依存の追加は無い (`fetch`・`TextEncoder` / `TextDecoder`・`btoa` / `atob`)。
@@ -5506,15 +5607,26 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | 409 | `conflict`: GitHub 側が変わったか、ブランチが保護されている + GitHub の文 + 手元に保存して開き直し、ドロップで置き換える手順 |
 | 422 | `invalid` + GitHub の文 |
 | ほか | `failed (番号)` |
-| 通信の失敗・時間切れ | `network` |
+| GET の通信の失敗・時間切れ | `network` |
+| PUT の通信の失敗・時間切れ、200 で応答が読めないか `sha` が無い | `pushUnknown`: GitHub の答えが届かなかった。push は済んだかもしれないので、開き直して確かめる (レビューの L1) |
+| (送る前) owner・repo・ブランチ・パスの区切りに空・`.`・`..` | `unsafePath` (CON-16 (4)。レビューの L2) |
 
 - GitHub の文 (`message`) は 200 字までにし、`textContent` で出す。
+- 「Nothing was changed」(`failed`・`network`) は、GET と、失敗の番号の応答だけに出す。PUT は、答えが届かなければ `pushUnknown` にする (レビューの L1)。
 
 #### 5.19.5 ヘルプに書くこと (ヘルプのセッションへ渡す)
 
 - 保存したトークンの消し方 (D30): Chrome と Edge それぞれ、設定の URL を開く方法とメニューを操作する方法を並べる。絵は付けない。Chrome は `chrome://password-manager`、Edge は `edge://settings/autofill/passwords` (左の欄「パスワードとオートフィル」→「Microsoft パスワード マネージャー」)。Edge は 5 分さわらないと鍵が掛かり、PIN などを求めることがある。
 - 保存したトークンの使い方 (D34): Token の欄をクリックし、ブラウザの候補から選ぶ。
 - キーのヒントの `[O] GitHub;` (D33)。
+- **プライバシーの開示 (レビューの M1。この変更で済み):** ヘルプ (日英) の「Privacy & Security」/「プライバシーとセキュリティ」に 1 項目: GitHub 連携 (PC だけ) は、画面の [Open]・[Reload]・[Push] を押したときだけ、毎回、`api.github.com` にだけ送る。Open と Reload は、リポジトリ・ブランチ・パスと fine-grained personal access token を送る。Push は、文書の本文の全部・コミットのメッセージ・トークンを送る。トークンは要求のヘッダーにだけ載せ、GRSMD は送る間だけ持つ。要求が成功すると、GRSMD はブラウザにトークンの保存を頼む (保存するかはブラウザが聞き、ブラウザのパスワードの設定で消せる)。About (日英)・meta の description・head のコメントにも、GitHub 連携は確かめた後に `api.github.com` にだけ送ると書く (CON-12)。
+
+#### 5.19.6 画面の中のキーと閉じるとき (レビューの M3・L3。2026-10-29)
+
+- 4 つの画面 (Open・Push・Reload・ドロップ) の中のキーは、アプリの 1 キーの操作に渡さない (`keydown` を画面で止める)。
+- 画面の中の主 + S と主 + Shift + S (INV-14 の判定式) は、ブラウザの既定の動作 (ページを保存) を止め、何もしない。画面からは保存しない (INV-58。調整役の裁定 2026-10-29: 送る画面の中で保存が走らないため)。
+- 送っている間の Esc では閉じない (結果は画面に出す)。
+- 画面を閉じるとき (Cancel・Esc・送った後) は、PAT の欄を空にし、目のボタンを伏字に戻す (CON-16 (2)。D28。レビューの L3)。
 
 ## 付録 A: バンドル依存ライブラリ
 

@@ -210,7 +210,7 @@ const ui = new UIController(orchestrator, state, elements, scrollEngine, {
       },
       gitHubClient,
       host,
-      { ...CONFIG.github, enabled: gitHubEnabled, passwordStore: gitHubPasswordStore },
+      { ...CONFIG.github, enabled: gitHubEnabled, passwordStore: gitHubPasswordStore, isApple },
     ),
   isApple,
   documentIndex,

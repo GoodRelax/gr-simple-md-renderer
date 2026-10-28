@@ -5,25 +5,40 @@ import { cell } from "../stateTable.js";
 
 /**
  * Spec 11-e: event -> current state -> cell (null = no change). Only the save
- * in progress is a state; "unsaved" is derived (UIController._isDocumentDirty).
+ * or the push in progress is a state; "unsaved" is derived
+ * (UIController._isDocumentDirty). A push (SC-27, INV-88 (4)) refuses saves,
+ * another push and replaces as a save does (INV-54).
  */
 export const saveOperationStateMachine = Object.freeze({
   saveRequested: Object.freeze({
     idle: cell("writingFile", ["startPermissionRequest", "commitOpenBlock", "applyEditorText", "runSaveDocument"]),
     writingFile: null,
+    pushing: null,
   }),
   saveAsRequested: Object.freeze({
     idle: cell("writingFile", ["startSavePicker", "commitOpenBlock", "applyEditorText", "runSaveDocumentAs"]),
     writingFile: null,
+    pushing: null,
   }),
   fileWritten: Object.freeze({
     idle: null,
     writingFile: cell("idle", ["applyOutcomeIfSameDocument", "refreshDirtyMark", "showSavedToast"]),
+    pushing: null,
   }),
-  downloadStarted: Object.freeze({ idle: null, writingFile: cell("idle", ["showDownloadStartedToast"]) }),
-  writeFailed: Object.freeze({ idle: null, writingFile: cell("idle", ["showErrorToast"]) }),
-  saveCanceled: Object.freeze({ idle: null, writingFile: cell("idle", []) }),
-  replaceRequested: Object.freeze({ idle: null, writingFile: cell("writingFile", ["rejectReplace", "showSavingToast"]) }),
+  downloadStarted: Object.freeze({ idle: null, writingFile: cell("idle", ["showDownloadStartedToast"]), pushing: null }),
+  writeFailed: Object.freeze({ idle: null, writingFile: cell("idle", ["showErrorToast"]), pushing: null }),
+  saveCanceled: Object.freeze({ idle: null, writingFile: cell("idle", []), pushing: null }),
+  replaceRequested: Object.freeze({
+    idle: null,
+    writingFile: cell("writingFile", ["rejectReplace", "showSavingToast"]),
+    pushing: cell("pushing", ["rejectReplace", "showSavingToast"]),
+  }),
+  pushRequested: Object.freeze({ idle: cell("pushing", ["runPush"]), writingFile: null, pushing: null }),
+  pushFinished: Object.freeze({
+    idle: null,
+    writingFile: null,
+    pushing: cell("idle", ["applyPushIfSameDocument", "refreshDirtyMark", "showPushedToast"]),
+  }),
 });
 
 // SaveOutcome.status -> 11-e event
@@ -69,7 +84,6 @@ export default class DocumentLifecycle {
     this._nextDocumentId = 1;
     this._saveOperationState = "idle"; // 11-e
     this._gitHub = null; // GitHubLink: the GitHub version beside the local target (SC-27)
-    this._isPushing = false; // a push is running (refuses saves and replaces as INV-54)
   }
 
   /**
@@ -98,7 +112,7 @@ export default class DocumentLifecycle {
 
   /**
    * @purity semi-pure-b
-   * @returns {"idle"|"writingFile"}
+   * @returns {"idle"|"writingFile"|"pushing"}
    */
   get saveOperationState() {
     return this._saveOperationState;
@@ -132,12 +146,12 @@ export default class DocumentLifecycle {
   }
 
   /**
-   * INV-54: a document is not rebuilt while a save is running.
+   * INV-54: a document is not rebuilt while a save or a push is running.
    * @purity semi-pure-b
    * @returns {boolean}
    */
   isSaving() {
-    return this._isPushing || saveOperationStateMachine.replaceRequested[this._saveOperationState] !== null;
+    return saveOperationStateMachine.replaceRequested[this._saveOperationState] !== null;
   }
 
   // ---- 5.14.11: the document is rebuilt ----
@@ -197,13 +211,15 @@ export default class DocumentLifecycle {
   }
 
   /**
-   * A push starts (refused while a save or another push runs).
+   * A push starts (11-e pushRequested; refused while a save or another
+   * push runs).
    * @purity non-pure
    * @returns {{documentId: number}|null}
    */
   startPush() {
-    if (this.isSaving() || !this._session || !this._gitHub) return null;
-    this._isPushing = true;
+    const next = saveOperationStateMachine.pushRequested[this._saveOperationState];
+    if (!next || !this._session || !this._gitHub) return null;
+    this._saveOperationState = next.to;
     return { documentId: this._session.documentId };
   }
 
@@ -217,7 +233,9 @@ export default class DocumentLifecycle {
    * @returns {boolean} true when it was applied to the current document
    */
   finishPush(started, pushed) {
-    this._isPushing = false;
+    const next = saveOperationStateMachine.pushFinished[this._saveOperationState];
+    if (!next) return false;
+    this._saveOperationState = next.to;
     if (!pushed || !this._session || this._session.documentId !== started.documentId) return false;
     this._session = this._session.withSaved(pushed.bodyText, this._session.baselineLastModified);
     this._gitHub = pushed.link;
@@ -316,7 +334,7 @@ export default class DocumentLifecycle {
    */
   async save(event, steps) {
     const next = saveOperationStateMachine[event][this._saveOperationState];
-    if (!next || !this._session || this._isPushing) return;
+    if (!next || !this._session) return;
     if (!steps.confirmStart()) return;
     const isSaveAs = event === "saveAsRequested";
     const location = this._location ?? new DocumentLocation(this._defaultFileName, null);

@@ -308,3 +308,74 @@ describe("AT-GH-10 relative images and links of a GitHub document (INV-91)", () 
     expect(html).toContain('href="https://example.com/x"');
   });
 });
+
+describe("AT-GH-13 GitHubController: review fixes (M3, L2, L3)", () => {
+  it.each([
+    ["Ctrl+S", { key: "s", ctrlKey: true }, false],
+    ["Ctrl+Shift+S", { key: "S", ctrlKey: true, shiftKey: true }, false],
+    ["Cmd+S on a Mac", { key: "s", metaKey: true }, true],
+  ])("INV-58: %s in a dialog stops the browser's Save page and starts no save", (_name, init, isApple) => {
+    const el = mountDialogs();
+    const host = fakeHost();
+    host.documents.gitHub = null;
+    const c = new GitHubController(el, {}, host, { ...G, enabled: true, passwordStore: null, isApple });
+    c.openDialog();
+    const seen = vi.fn();
+    document.addEventListener("keydown", seen);
+    const event = new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true });
+    el.open.url.dispatchEvent(event);
+    document.removeEventListener("keydown", seen);
+    expect(event.defaultPrevented).toBe(true);
+    expect(seen).not.toHaveBeenCalled(); // the app's Save handler is never reached
+  });
+
+  it("a plain s typed in a dialog is text, not prevented", () => {
+    const { c, el } = make();
+    c.reloadDialog();
+    const event = new KeyboardEvent("keydown", { key: "s", bubbles: true, cancelable: true });
+    el.reload.token.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("CON-16 (2): a token typed and then canceled is emptied when the dialog closes", () => {
+    const { c, el } = make();
+    c.reloadDialog();
+    el.reload.token.value = TOKEN;
+    el.reloadDialog.querySelector(".gh-cancel").click();
+    expect(el.reloadDialog.open).toBe(false);
+    expect(el.reload.token.value).toBe("");
+  });
+
+  it("L2: a branch or path with a dot part is refused in the Open dialog and nothing is sent", async () => {
+    const client = { openFile: vi.fn() };
+    const host = fakeHost();
+    host.documents.gitHub = null;
+    const { c, el } = make(client, host);
+    c.openDialog();
+    el.open.url.value = "https://github.com/GoodRelax/sample/blob/main/docs/a.md";
+    el.open.url.dispatchEvent(new Event("input"));
+    el.open.token.value = TOKEN;
+    for (const [branch, path] of [["main", "docs/../../../../user/repos/x.md"], ["..", "a.md"], ["main", "docs/./a.md"]]) {
+      el.open.branch.value = branch;
+      el.open.path.value = path;
+      await c._submitOpen();
+      expect(el.open.error.textContent).toBe(G.messages.unsafePath);
+    }
+    expect(client.openFile).not.toHaveBeenCalled();
+  });
+});
+
+describe("AT-GH-10 a rewritten relative image still waits for consent (INV-91 (1), INV-19)", () => {
+  it("the raw.githubusercontent.com image is held (no src) until the user consents", () => {
+    const preview = document.createElement("div");
+    document.body.appendChild(preview);
+    const renderer = new MarkdownRenderer(preview, new Marked(), hljs, DOMPurify);
+    renderer.setRelativeUrlResolver((value, kind) => resolveRelativeUrl(REF, value, kind, G));
+    const holder = document.createElement("div");
+    holder.innerHTML = renderer.documentHtml("![a](img/a.png)").html;
+    const img = holder.querySelector("img");
+    expect(img.hasAttribute("src")).toBe(false);
+    const held = [...img.attributes].map((a) => a.value);
+    expect(held).toContain("https://raw.githubusercontent.com/GoodRelax/repo/main/docs/img/a.png");
+  });
+});

@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.20
+**バージョン:** 2.21
 **日付:** 2026-xx-xx (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -49,6 +49,8 @@
 > v2.19 の変更 (2026-10-29、ブロック編集欄の字とスクロールのレビュー (1 回目) の直し): 裁定 ESF-7 (すき間と空の文書の編集欄は本文の字)・ESF-8 (Edge で文書の最後の高いコードブロックがずれた件) を AG 節に書いた。PRT-AG01 にすき間の手順、PRT-AG02 にリスト・引用の 1 回押しを足した。AT-BEC-TS に 09〜15 を足し、07・08 を高さの合わせ方の改め (INV-40: 位置はスクロールのたびに覚え、詰められたときだけ戻す) に合わせた。AT-BCM を純粋な `caretMatching.js` と `BlockCaretMap` に分け、08・09 を足した。AT-SM に 42・43、AT-ORC に R6 を足した。e2e の editScrollFont.e2e.js に、編集モードの 1 回押し (リスト・引用・段落) と、1 MB の文書の 1 キーの時間 (記録だけ) を足した。
 
 > v2.20 の変更 (2026-10-29、GitHub 連携): 仕様の SC-27・INV-85〜INV-92・CON-16・FS-23・5.19 (新) と INV-20・CON-12 の改めに合わせて、セクション AH (PRT-AH01〜AH09) を追加した。AT に AT-GH (新。01〜06、08〜10) を足し、直した既存の試験を AT.2 の後に書いた。e2e に gitHub.e2e.js を足した。
+
+> v2.21 の変更 (2026-10-29、GitHub 連携のレビュー (1 回目) の直し): 仕様の 11-e (`pushing`)・INV-58・INV-85 (5)・INV-86 (6)・INV-88 (4)(6)・CON-16 (2)(4)・5.19.4〜5.19.6 の改めに合わせて、AT-GH を 01〜06、08〜13 に改めた (05 に 422・429・`x-ratelimit-reset`・409・`pushUnknown`、06 に 11-e の push の交点、10 に同意までの画像の保留を足し、11〜13 を足した。レビューの L1〜L3・L7)。AT-SSM を 27 の交点に改め、09 を足した (M2)。e2e の gitHub.e2e.js を 5 件にし (画面の中の主 + S。M3)、試験の名前に要求の ID を付け (L5)、Push のトーストの 6 秒を Playwright の時計で確かめる形にした (L6)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -4779,7 +4781,7 @@ SC-27、INV-85〜INV-92、CON-16 (仕様 5.19)。オーナーが PC で行う。
 | AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く) | INV-80、INV-48、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜19 |
 | AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル) | INV-24〜26、INV-79、CON-14 | MarkdownFileAccess.test.js | 01〜09 |
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
-| AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |
+| AT-SSM | 11-e 保存と push の処理の状態機械 (09: `pushing` の間は文書の置き換えを断り (INV-54)、Save / Save as を無視する) | 11-e、INV-54、INV-88 (4) | UIController.save.test.js | 01〜09 (01 と 02 は 1 つの試験) |
 | AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`)、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56、INV-79 | DocumentLifecycle.test.js | 01〜23 |
 | AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js | 01〜69 (25 は欠番。41 は AT.1 の注。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)) |
 | AT-KEY | 主の修飾キーのショートカット (08: Redo のキー) | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜08 |
@@ -4797,7 +4799,7 @@ SC-27、INV-85〜INV-92、CON-16 (仕様 5.19)。オーナーが PC で行う。
 | AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド、早い入力の受け継ぎ | INV-81、INV-20 | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜57 |
 | AT-OSS | 同梱 OSS の表記: 数えるパッケージ、表記が漏れるときにビルドを失敗させること (許さないライセンス、文が無い、一覧に無い束ねられたコード、古くなった一覧、宣言した依存、dist の確かめの記録、コメントを壊す文)、一覧のコード・上書き・待ちの文、読む段と処理の段、文の取り出し、コメントとヘルプの一覧の形、CSP の hash が変わらないこと、プラグインの並び、`@purity`、本物のビルドで一覧の項目を 1 つずつ外すと落ちること (07) | 付録 A.2、INV-75、INV-76 | notices.test.js | 01〜07 |
 | AT-BETA | ベータ版のビルド: robots の meta だけを変えること (違う行が 1 行だけ、script が同じ)、robots の meta を属性の順・大文字小文字にかかわらず数えて 1 つでなければ失敗すること (レビューの L1)、ベータ版だけの mode とプラグインが無いこと (scripts)、`writeBeta` と CLI (書く先の名前、失敗の終了コード)、`build` と `build:beta` を流した実際のビルドの比べ (`docs/index.html` 役のファイルが残る)、コードが mode を読んでも script と CSP が本番と同じこと (レビューの M1 の再現) | INV-82、INV-20 | betaBuild.test.js | 01〜08 |
-| AT-GH | GitHub 連携: URL の分解 (01: ブランチの `/`、% の符号、断る形)、相対パスの解決 (02: 画像・リンク・最上位・上へ出すぎ・直さない形)、PAT の形 (03。D12)、Base64 と UTF-8 の往復 (04: 日本語・BOM・CRLF・大きいもの、NUL と壊れた UTF-8)、`GitHubContentsClient` (05: URL・ヘッダー・固定のオリジン・PAT が URL と文に出ない・各失敗の文・PUT の中身・409)、`DocumentLifecycle` の連携 (06: 開く・残す・止める・push の間の拒否・成功と失敗)、`GitHubController` の PAT の欄と Push (08: 欄の名前 D35、[Saved] が無い D34、目のボタンの切り替えと閉じる・開くときの戻し D28、入力でエラーの行が消える D37、Push のトーストの 6 秒と送った後の欄 D36)、キーのヒントの `[O] GitHub;` (08: PC だけ。D33)、ボタンと `o` と画面 (09: ボタンの切り替え、`o` の開く・無動作、INV-92 で出さない、画面の中のキーを渡さない、ドロップの 3 択)、GitHub の文書の相対パスの描画 (10: INV-91) | SC-27、INV-85〜INV-92、CON-16 | gitHub.test.js (01〜06)、GitHubController.test.js (08〜10) | 01〜06、08〜10 (07 は試作の偽の GitHub。本実装で消した) |
+| AT-GH | GitHub 連携: URL の分解 (01: ブランチの `/`、% の符号、断る形)、相対パスの解決 (02: 画像・リンク・最上位・上へ出すぎ・直さない形)、PAT の形 (03。D12)、Base64 と UTF-8 の往復 (04: 日本語・BOM・CRLF・大きいもの、NUL と壊れた UTF-8)、`GitHubContentsClient` (05: URL・ヘッダー・固定のオリジン・PAT が URL と文に出ない・5.19.4 の各失敗の文 (403・`retry-after`・422・429・`x-ratelimit-reset`・409 の `conflict` の全文)・PUT の中身・409、PUT の通信の失敗と 200 の読めない応答の `pushUnknown` (L1))、`DocumentLifecycle` の連携 (06: 開く・残す・止める・push の間の拒否・成功と失敗、11-e の push の交点 (`pushRequested` / `pushFinished`、`pushing` の間の置き換えと保存。M2))、`GitHubController` の PAT の欄と Push (08: 欄の名前 D35、[Saved] が無い D34、目のボタンの切り替えと閉じる・開くときの戻し D28、入力でエラーの行が消える D37、Push のトーストの 6 秒と送った後の欄 D36)、キーのヒントの `[O] GitHub;` (08: PC だけ。D33)、ボタンと `o` と画面 (09: ボタンの切り替え、`o` の開く・無動作、INV-92 で出さない、画面の中のキーを渡さない、ドロップの 3 択)、GitHub の文書の相対パスの描画 (10: INV-91。書き換えた画像も同意まで読まずに保留する (INV-91 (1)、INV-19。L7))、UIController を通した結線 (11: 開く順 INV-86 (3) (保存中は断る)、Reload INV-89 (読み始めた後に文書が変わったら置き換えない)、ドロップの続ける・止める・やめる INV-90。L7)、パスの安全 (12: 区切りに空・`.`・`..` があれば送らない、PAT は `/repos/<owner>/<repo>/` の外へ出ない。CON-16 (4)。L2)、レビューの直し (13: 画面の中の主 + S は既定を止めて何もしない (INV-58。M3)、画面の `unsafePath` (INV-85 (5)。L2)、閉じた画面の PAT の欄を空にする (CON-16 (2)。L3)) | SC-27、INV-58、INV-85〜INV-92、CON-16、11-e | gitHub.test.js (01〜06、12)、GitHubController.test.js (08〜10、13)、UIController.gitHub.test.js (11) | 01〜06、08〜13 (07 は試作の偽の GitHub。本実装で消した) |
 
 ID を持たない試験ファイル (その場編集の前からあるクラスの試験、`stateTable.test.js` など) と、ID を持つファイルの中の ID の無い試験 (`staticChecks.test.js` の「style.css for in-place editing」の一部、`MarkdownRenderer.purifyConfig.test.js` の設定を 1 度だけ与えることの試験など) も `npm test` の全件に含まれる。
 
@@ -4831,7 +4833,7 @@ ID を持たない試験ファイル (その場編集の前からあるクラス
 | AT-UI-67 | とても大きなブロック (50,000 字を超える) で、押した時点で付けられない書式は文字を変えずに `formatNotApplicable`、外すリンクが無い「リンクを外す」は `linkNotRemovable` をトーストで出す。50,000 字以下ではボタンが無効なので、トーストは出ない (INV-71、オーナーの裁定 Q-f) |
 | AT-HB / AT-HBK | INV-71 の文脈 (リスト・引用・入れ子のコード、(i)〜(xi) の位置) と確定のときの後始末 |
 | AT-BSM / AT-PSM / AT-PDS | 状態機械 11-c / 11-d / 11-f の表のすべての交点と、仕様の図と表の一致 (`src/__tests__/helpers/specDiagram.js` で仕様の本文の図を読む) |
-| AT-SSM | 状態機械 11-e の表の 14 の交点 (試験の中に書いた表と `saveOperationStateMachine` の定義の一致。仕様の図は読まない) |
+| AT-SSM | 状態機械 11-e の表の 27 の交点 (3 つの状態 × 9 の出来事。2026-10-29 に `pushing` と push の 2 つの出来事を足した) (試験の中に書いた表と `saveOperationStateMachine` の定義の一致。仕様の図は読まない) |
 
 ### AT.4 e2e (Playwright)
 
@@ -4860,7 +4862,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | notices.e2e.js | 同梱 OSS の表記: ビルドしたファイルの最後のコメントに、直接の依存 7 件 (入れた版)・ほかの dist の中のコード・KaTeX のフォントの表記があること、先頭の案内のコメントが CSP の後にあること、ヘルプの「Licenses」/「ライセンス」の一覧 (日英) | PRT-AA01、PRT-AA02 |
 | beta.e2e.js | ベータ版: ファイルが本番の robots の meta だけを `noindex` にしたものであること、CSP とヘルプの版が本番と同じで BETA の印が無いこと、4 つのライブラリが CSP の下で動くこと、同じ文書 (数式・表・コード) の描画が本番と同じ HTML になり、Mermaid も描けること | PRT-AF01、PRT-AF02 |
 | editScrollFont.e2e.js | ブロック編集欄の字とスクロール: 押した字にカーソルが来てその行が開く・打つ・Esc の前後で ±1 px (コードブロック・リンクのある段落。編集モードの 1 回押しでリスト・引用・段落)、段落・見出し・コードの編集欄の字が表示と同じで枠の線が無い、文書の終わりで打ってもビューが動かない (マウスとタッチ。文書の最後の高いコードブロックの中ほどで打つ形も)、目次と検索の箱の地が 0.85。GRSMD_PERF=1 のとき、大きなブロック (5,000 行のコード・色付けの上限の手前のコード・100 KB の段落) をダブルクリックで開く時間 (INV-84 (7))、1 MB の文書の中ほどと終わりの近くの段落で 1 キーの時間 (INV-40。記録だけ) | PRT-AG01〜AG03、PRT-AG05 |
-| gitHub.e2e.js | GitHub 連携 (SC-27): `api.github.com` への要求は `page.route` の偽の GitHub が答え、本物の GitHub へは 1 件も出ない (外への要求の記録は 0 件)。PAT の欄の名前 `Fine-grained personal access token` が欄の上の行にある (D35)、[Saved] が無い (D34)、目のボタンで伏字と平文が切り替わり、閉じて開き直すと伏字に戻る (D28)、classic のトークンの赤い字が、欄の入力で消える (D37)、開く → 直す → push で `Pushed to GitHub (…)` が 4.5 s の後も出ていて、その後に消える (D36)、キーのヒントに `[O] GitHub;` (D33)。develop 989a1b0 では 4 件とも落ちる (G12) | PRT-AH01、PRT-AH05 |
+| gitHub.e2e.js | GitHub 連携 (SC-27): `api.github.com` への要求は `page.route` の偽の GitHub が答え、本物の GitHub へは 1 件も出ない (外への要求の記録は 0 件)。PAT の欄の名前 `Fine-grained personal access token` が欄の上の行にある (D35)、[Saved] が無い (D34)、目のボタンで伏字と平文が切り替わり、閉じて開き直すと伏字に戻る (D28)、classic のトークンの赤い字が、欄の入力で消える (D37)、開く → 直す → push で `Pushed to GitHub (…)` が 5.9 s の後も出ていて、6.1 s では消える (D36。Playwright の時計 (`page.clock`) で進め、壁の時計では待たない。レビューの L6)、キーのヒントに `[O] GitHub;` (D33)、GitHub の画面の中の主 + S がブラウザの既定 (ページを保存) を止め、何も保存しない (INV-58、仕様 5.19.6。レビューの M3)。試験の名前は要求の ID (INV-・CON-・PRT-) で始める (レビューの L5)。全 5 件。develop 989a1b0 では 5 件とも落ちる (G12) | PRT-AH01、PRT-AH05 |
 
 ---
 

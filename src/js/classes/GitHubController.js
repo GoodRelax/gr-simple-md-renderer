@@ -1,5 +1,6 @@
 import GitHubFileRef from "./GitHubFileRef.js";
-import { parseGitHubFileUrl, hasMarkdownExtension, classifyToken } from "../gitHubUrl.js";
+import { parseGitHubFileUrl, hasMarkdownExtension, classifyToken, hasUnsafeSegment } from "../gitHubUrl.js";
+import { shortcutLetter } from "../utils.js";
 import { detectLineEnding } from "../textTransforms.js";
 
 const BOM = "\uFEFF";
@@ -29,7 +30,7 @@ export default class GitHubController {
    * @param {GitHubContentsClient} client
    * @param {object} host - GitHubHost
    * @param {object} options - CONFIG.github, plus enabled (fine pointer, not in a frame; D15, D17)
-   *   and passwordStore ({store(id, password)} over navigator.credentials, or null)
+   *   passwordStore ({store(id, password)} over navigator.credentials, or null) and isApple (INV-14)
    */
   constructor(elements, client, host, options) {
     this.el = elements;
@@ -78,14 +79,6 @@ export default class GitHubController {
    */
   handleKey() {
     if (this.enabled && !this._link()) this.openDialog();
-  }
-
-  /**
-   * @purity semi-pure-b
-   * @returns {boolean}
-   */
-  isDialogOpen() {
-    return [this.el.openDialog, this.el.pushDialog, this.el.reloadDialog, this.el.dropDialog].some((d) => d.open);
   }
 
   // ---- Open ----
@@ -145,6 +138,8 @@ export default class GitHubController {
     const path = f.path.value.trim().replace(/^\/+/, "");
     if (!branch || !path) return this._showError(f.error, m.notGitHubUrl);
     if (!hasMarkdownExtension(path, this.options.extensions)) return this._showError(f.error, m.notMarkdown);
+    // a "." or ".." part would send the token to another API path (L2)
+    if (hasUnsafeSegment(branch) || hasUnsafeSegment(path)) return this._showError(f.error, m.unsafePath);
     const token = f.token.value.trim();
     if (classifyToken(token, this.options.tokenPrefix) === "other") return this._showError(f.error, m.tokenNotFineGrained);
     const ref = new GitHubFileRef(this._openRef.owner, this._openRef.repo, branch, path);
@@ -426,7 +421,12 @@ export default class GitHubController {
       f.reveal = f.form.querySelector(".gh-reveal");
       this._hideToken(f);
       f.reveal.addEventListener("click", () => this._setTokenShown(f, f.token.type === "password"));
-      f.form.closest("dialog").addEventListener("close", () => this._hideToken(f));
+      // a token typed and then canceled is not kept in the field (CON-16 (2))
+      /** @purity non-pure */
+      f.form.closest("dialog").addEventListener("close", () => {
+        f.token.value = "";
+        this._hideToken(f);
+      });
       // a token typed, pasted or filled by the browser clears the dialog's error (D37)
       f.token.addEventListener("input", () => this._showError(f.error, ""));
     }
@@ -435,8 +435,14 @@ export default class GitHubController {
     drop.cancel.addEventListener("click", () => this._endDrop("cancel"));
     this.el.dropDialog.addEventListener("close", () => this._endDrop("cancel"));
     for (const dialog of [this.el.openDialog, this.el.pushDialog, this.el.reloadDialog, this.el.dropDialog]) {
-      // the app's one-key shortcuts do not reach the page under a dialog
-      dialog.addEventListener("keydown", (e) => e.stopPropagation());
+      // the app's one-key shortcuts do not reach the page under a dialog;
+      // the primary key + S (with Shift too) stops the browser's "Save page"
+      // and does nothing else: no save starts from a dialog (INV-58)
+      /** @purity non-pure */
+      dialog.addEventListener("keydown", (e) => {
+        if (shortcutLetter(e, this.options.isApple) === "s") e.preventDefault();
+        e.stopPropagation();
+      });
       // Esc while a request runs: the dialog stays (its result is shown in it)
       /** @purity non-pure */
       dialog.addEventListener("cancel", (e) => {
