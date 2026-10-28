@@ -2,6 +2,18 @@ import { EXT_TO_HLJS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
 import { escapeHtml, formatDateTime, applyTheme, showToast } from "../utils.js";
 
 /**
+ * The highlight.js language of a file name (EXT_TO_HLJS: its extension, or
+ * the whole name for Dockerfile and the like); null when it has none.
+ * @purity semi-pure-a
+ * @param {string} fileName
+ * @returns {string|null}
+ */
+export function languageOfFileName(fileName) {
+  const ext = fileName.includes(".") ? fileName.slice(fileName.lastIndexOf(".")).toLowerCase() : "";
+  return EXT_TO_HLJS[ext] ?? EXT_TO_HLJS[fileName] ?? null;
+}
+
+/**
  * Renders non-.md files with syntax highlighting and line numbers.
  * Owns: code body only. UI chrome (fileInfo, keyHint) is managed by UIController.
  * Returns CodeViewMeta for UIController to display.
@@ -26,6 +38,8 @@ export default class SourceFileRenderer {
     this._missing = false; // shown plain since the last takeMissingLibraries
     this._fileHandle = null;
     this._fileName = "";
+    this._file = null; // the File shown (name, size, date), for showText
+    this._meta = null; // CodeViewMeta of the last _show
     this._lastScrollTop = 0;
   }
 
@@ -36,17 +50,50 @@ export default class SourceFileRenderer {
    * @param {'light'|'dark'} theme
    * @param {Function} [isCurrent] - () => false when another document was
    *   opened while the file was read or highlight.js awaited: nothing is shown
+   * @param {string} [text] - the decoded LF text (INV-89); not given: file.text()
    * @returns {Promise<CodeViewMeta|null>} null when it is no longer current
    * @purity non-pure
    */
-  async render(file, fileHandle, theme, isCurrent = () => true) {
-    const text = await file.text();
+  async render(file, fileHandle, theme, isCurrent = () => true, text = undefined) {
+    const shownText = text ?? (await file.text());
     await this._hljsReady();
     if (!isCurrent()) return null;
     this._fileHandle = fileHandle;
     this._fileName = file.name;
+    this._file = file;
     this._lastScrollTop = 0;
-    return this._show(text, file, theme);
+    return this._show(shownText, file, theme);
+  }
+
+  /**
+   * Show another text of the same file (the edited text, SC-27) where the
+   * view is: the file name, size and date stay, the line count follows.
+   * @param {string} text - LF text
+   * @returns {CodeViewMeta|null} null when no file is shown
+   * @purity non-pure
+   */
+  showText(text) {
+    if (!this._file) return null;
+    const scrollTop = window.scrollY;
+    const metadata = this._show(text, this._file, null);
+    window.scrollTo(0, scrollTop);
+    return metadata;
+  }
+
+  /**
+   * The file was saved (INV-90): Reload reads the written file, and the file
+   * info shows its name, size and date. The view is not drawn again.
+   * @param {File} file - name, size and lastModified of the written file
+   * @param {FileSystemFileHandle} fileHandle
+   * @returns {CodeViewMeta|null} null when no file is shown
+   * @purity non-pure
+   */
+  retarget(file, fileHandle) {
+    if (!this._file) return null;
+    this._file = file;
+    this._fileName = file.name;
+    this._fileHandle = fileHandle;
+    return { ...this._meta, fileName: file.name, fileSize: file.size, updatedAtStr: formatDateTime(file.lastModified) };
   }
 
   /**
@@ -55,11 +102,13 @@ export default class SourceFileRenderer {
    * this file came without one (as the Markdown view says, release test N5).
    * @param {'light'|'dark'} theme
    * @param {Function} [isCurrent] - as for render
+   * @param {Function} [readText] - (file) => Promise of the decoded LF text,
+   *   in the encoding the file was opened with (INV-89); not given: file.text()
    * @returns {Promise<CodeViewMeta|null>} null if fileHandle is unavailable,
    *   or when it is no longer current
    * @purity non-pure
    */
-  async reload(theme, isCurrent = () => true) {
+  async reload(theme, isCurrent = () => true, readText = (file) => file.text()) {
     if (!this._fileHandle) {
       const codeView = this._cfg.codeView;
       showToast(
@@ -70,9 +119,10 @@ export default class SourceFileRenderer {
     }
     this._lastScrollTop = window.scrollY;
     const file = await this._fileHandle.getFile();
-    const text = await file.text();
+    const text = await readText(file);
     await this._hljsReady();
     if (!isCurrent()) return null;
+    this._file = file;
     const metadata = this._show(text, file, theme);
     window.scrollTo(0, this._lastScrollTop);
     return metadata;
@@ -85,7 +135,9 @@ export default class SourceFileRenderer {
    * @purity non-pure
    */
   recolor() {
-    if (!this._shown || !this._hljs) return null;
+    // not while the editor takes the view's place (SC-27): the view is drawn
+    // again when edit mode ends, colored then
+    if (!this._shown || !this._hljs || !this._previewEl.querySelector("#codeViewBody")) return null;
     const { text, file } = this._shown;
     const scrollTop = window.scrollY;
     const metadata = this._show(text, file, null);
@@ -106,6 +158,23 @@ export default class SourceFileRenderer {
   }
 
   /**
+   * The text colored by highlight.js for the code editor (INV-86): its HTML,
+   * or null when highlight.js is not there (yet) or has no such language.
+   * @param {string} text
+   * @param {string|null} language - a highlight.js language id
+   * @returns {string|null}
+   * @purity semi-pure-a
+   */
+  highlightText(text, language) {
+    if (!language || !this._hljs?.getLanguage(language)) return null;
+    try {
+      return this._hljs.highlight(text, { language }).value;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /**
    * Clean up: clear previewEl, reset state.
    * @purity non-pure
    */
@@ -115,6 +184,8 @@ export default class SourceFileRenderer {
     this._fileName = "";
     this._lastScrollTop = 0;
     this._shown = null;
+    this._file = null;
+    this._meta = null;
   }
 
   /**
@@ -143,13 +214,14 @@ export default class SourceFileRenderer {
     const plain = !this._hljs && this._loadHljs !== null;
     this._shown = plain ? { text, file } : null;
     if (plain) this._missing = true;
-    return {
+    this._meta = {
       fileName: file.name,
       fileSize: file.size,
       lineCount,
       language,
       updatedAtStr: formatDateTime(file.lastModified),
     };
+    return this._meta;
   }
 
   /**
@@ -181,13 +253,8 @@ export default class SourceFileRenderer {
    * @purity semi-pure-a
    */
   _buildCodeBody(text, file) {
-    const fileName = file.name;
-
     // Resolve highlight.js language ID
-    const ext = fileName.includes(".")
-      ? fileName.slice(fileName.lastIndexOf(".")).toLowerCase()
-      : "";
-    const mapped = EXT_TO_HLJS[ext] ?? EXT_TO_HLJS[fileName] ?? null;
+    const mapped = languageOfFileName(file.name);
 
     // Highlight only languages present in the bundle. Unknown extensions and
     // languages missing from the bundle are shown as plaintext (no

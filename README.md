@@ -28,7 +28,8 @@ This tool was built to provide a **transparent, minimal, and privacy-respecting 
 - Mermaid diagrams
 - PlantUML diagrams, with a consent prompt every time before data is sent
 - Syntax highlighting for code blocks
-- Code View: drop any text file (.py, .js, .c, ...) to view it with syntax highlighting and line numbers
+- Code View: drop any text file (.py, .js, .c, ...) to view it with syntax highlighting and line numbers; press Edit to edit it and save it back in its own encoding (UTF-8, Shift_JIS, EUC-JP, UTF-16) and line endings
+- In Code View: an Index of classes and functions (Python, JavaScript / TypeScript, JSON, YAML, C, C++, C#, Java, Go), and JSON folding one level at a time
 - Auto-render on paste (Ctrl+V / Cmd+V anywhere on the page) or file drop
 - Reload the current file from disk (browsers with the File System Access API)
 - Edit the preview block by block and save to a file (no autosave; Save as / download where writing files is not supported)
@@ -66,14 +67,17 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    |---|---|---|
    | Index | `I` | Show / hide the headings (h1 to h6) at the right edge; press one to bring it to the top of the view |
    | Search | `F` | Find text in the Markdown source (`Aa` match case, `.*` regular expression; `Down` / `Up` in the box: next / previous). In edit mode `Ctrl+F` opens it too, and Replace / All replace (one Undo) |
+   | Commands | `P` | In Code View of a JSON file: buttons to fold / unfold one level |
    | Render Light | `L` | Render / switch to the light theme |
    | Render Dark | `D` | Render / switch to the dark theme |
    | Reload | `R` | Reload the current file from disk |
    | New Tab | `N` | Open GRSMD in a new tab |
-   | Edit | `E` | Show / hide the edit palette; click a block to edit its Markdown in place |
+   | Edit | `E` | Show / hide the edit palette; click a block to edit its Markdown in place. In Code View: edit the whole file |
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
-   | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document is shown |
+   | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document or a Code View file is shown (a file that is not UTF-8 asks for the encoding to save in) |
+   | | `Tab` / `Shift+Tab` | In the Code View editor: indent / outdent the selected lines (`Esc` leaves the editor) |
+   | | `Ctrl+Left` / `Ctrl+Right` | In Code View of a JSON file: fold / unfold one level (in the editor: `Ctrl+Shift+[` / `Ctrl+Shift+]`) |
    | | `Esc` | Apply the open block or cell and close it; with blocks selected, clear the selection; with nothing open, hide the edit palette; then Search (in the search box: close it at once); then the Index |
    | | `Delete` / `Backspace` | In edit mode, delete the selected blocks, also with `Shift` (one Undo brings them back) |
    | | `Ctrl+X` / `Ctrl+C` | In edit mode with blocks selected, cut / copy their Markdown whole (a menu's Copy copies it too) |
@@ -81,7 +85,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | | `Ctrl+Y` / `Ctrl+Shift+Z` | Redo while the edit palette is shown, up to 30 changes (in an open block, the browser redoes your typing) |
    | | `Ctrl+B` / `Ctrl+I` | Bold / Italic while editing |
 
-   On a Mac, use `Cmd` instead of `Ctrl` (Redo is `Cmd+Shift+Z`).
+   On a Mac, use `Cmd` instead of `Ctrl` (Redo is `Cmd+Shift+Z`); the fold keys are `Option+Left` / `Option+Right` and, in the editor, `Cmd+Option+[` / `Cmd+Option+]`.
 
    In edit mode, a dashed line with `+` shows between two blocks, above the first one and below the last one; click it (on a phone, tap the gap, then the line) to add a new block there.
 
@@ -152,7 +156,7 @@ Version rule: `spec/grsmd_gen2_spec_ja.md` section 1.7.
 
 - Markdown rendering is handled by a dedicated `MarkdownRenderer`
 - Diagram rendering is separated into Mermaid and PlantUML renderers
-- Code View is handled by `SourceFileRenderer`
+- Code View is handled by `SourceFileRenderer`; editing, encodings and saving of code files by `CodeEditController`
 - A central orchestrator coordinates rendering and scroll stability
 - Privacy and UX are treated as first-class design concerns
 
@@ -199,7 +203,8 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 - Mermaid 図のサポート
 - PlantUML 図のサポート（送信前に毎回、許可を確認）
 - コードブロックのシンタックスハイライト
-- コードビュー: テキスト系ファイル（.py、.js、.c など）をドロップすると、ハイライトと行番号付きで表示
+- コードビュー: テキスト系ファイル（.py、.js、.c など）をドロップすると、ハイライトと行番号付きで表示。Edit で編集し、元の文字コード（UTF-8、Shift_JIS、EUC-JP、UTF-16）と改行コードのまま保存
+- コードビューの目次（Python、JavaScript / TypeScript、JSON、YAML、C、C++、C#、Java、Go のクラスや関数）と、JSON の 1 段ずつの折りたたみ
 - ページ上どこでも貼り付け（Ctrl+V / Cmd+V）またはファイルのドロップで自動プレビュー
 - 表示中のファイルをディスクからリロード（File System Access API 対応ブラウザ）
 - プレビュー上でのブロック単位の編集と、ファイルへの保存（自動保存はしない。ファイルを書き込めないブラウザではダウンロード）
@@ -237,14 +242,17 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    |---|---|---|
    | Index | `I` | 見出し（h1〜h6）の目次を右端に出す / 消す。押した見出しを見えている範囲の上端へ |
    | Search | `F` | Markdown の原文から文字を探す（`Aa` で大文字と小文字を区別、`.*` で正規表現。検索欄の `↓` / `↑` で次 / 前）。編集モードでは `Ctrl+F` でも開け、Replace / All で置き換える（Undo 1 回で戻る） |
+   | Commands | `P` | コードビューの JSON のファイルで、1 段畳む / 開くボタンを出す |
    | Render Light | `L` | レンダリング / ライトテーマに切替 |
    | Render Dark | `D` | レンダリング / ダークテーマに切替 |
    | Reload | `R` | 表示中のファイルをディスクからリロード |
    | New Tab | `N` | 新しいタブで GRSMD を開く |
-   | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリックすると、その場で Markdown を編集 |
+   | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリックすると、その場で Markdown を編集。コードビューでは、ファイル全体を編集 |
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
-   | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書を表示している間、保存 / 名前を付けて保存 |
+   | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書かコードビューのファイルを表示している間、保存 / 名前を付けて保存（UTF-8 以外のファイルは、保存する文字コードを聞く） |
+   | | `Tab` / `Shift+Tab` | コードビューの編集欄で、選んだ行の字下げを深く / 浅く（`Esc` で編集欄から抜ける） |
+   | | `Ctrl+←` / `Ctrl+→` | コードビューの JSON のファイルで、1 段畳む / 開く（編集欄の中では `Ctrl+Shift+[` / `Ctrl+Shift+]`） |
    | | `Esc` | 開いているブロックやセルを反映して閉じる。ブロックを選んでいれば選択を解く。何も開いていなければ編集パレットを隠し、その次は検索を閉じ（検索欄の中ではすぐ閉じる）、その次は目次を消す |
    | | `Delete` / `Backspace` | 編集モードで、選んだブロックを削除（`Shift` を押していても同じ。Undo 1 回で戻る） |
    | | `Ctrl+X` / `Ctrl+C` | 編集モードでブロックを選んでいる間、その Markdown を丸ごとカット / コピー（メニューのコピーも同じ） |
@@ -252,7 +260,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | | `Ctrl+Y` / `Ctrl+Shift+Z` | 編集パレットを表示している間、やり直す（30 回まで。開いているブロックの中では、ブラウザが入力をやり直す） |
    | | `Ctrl+B` / `Ctrl+I` | 編集中に太字 / 斜体 |
 
-   Mac では `Ctrl` の代わりに `Cmd` を使います（やり直しは `Cmd+Shift+Z`）。
+   Mac では `Ctrl` の代わりに `Cmd` を使います（やり直しは `Cmd+Shift+Z`）。折りたたみのキーは `Option+←` / `Option+→`、編集欄の中では `Cmd+Option+[` / `Cmd+Option+]` です。
 
    編集モードでは、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下に、点線と `+` が出ます。押すと（スマートフォンでは、すき間をタップしてから点線をタップ）、そこに新しいブロックを入れます。
 
@@ -323,7 +331,7 @@ npm run test:e2e
 
 - Markdown は専用の `MarkdownRenderer` で処理
 - 図表レンダリングは Mermaid / PlantUML で分離
-- コードビューは `SourceFileRenderer` で処理
+- コードビューは `SourceFileRenderer` で処理し、コードのファイルの編集・文字コード・保存は `CodeEditController` が受け持つ
 - 中央のオーケストレーターが描画とスクロール安定性を制御
 - プライバシーと UX を最重要設計要素として扱っています
 

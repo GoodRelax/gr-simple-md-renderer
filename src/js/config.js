@@ -126,6 +126,7 @@ export const CONFIG = {
     },
     index: {
       empty: "This document has no headings.", // DocumentIndex with no heading
+      emptyCode: "Nothing to list in this file.", // the code view's Index with no entry (INV-91)
     },
     search: { // DocumentSearch: the count beside the query, and a toast
       count: (current, total) => (current > 0 ? `${current} / ${total}` : total),
@@ -148,6 +149,36 @@ export const CONFIG = {
       lines: (count) => `${count} lines`,
       size: (kb) => `${kb} KB`,
       updated: (when) => `Updated: ${when}`,
+      // INV-89: the second line also shows the encoding and the line endings
+      encoding: (name, bom) => (bom ? `${name} BOM` : name),
+      lineEndings: { "\r\n": "CRLF", "\n": "LF", "\r": "CR", keep: "Mixed (kept)" },
+    },
+    // Code files (SC-27): the open dialog (INV-89), the save encoding
+    // question and the save stop (INV-90). The fixed labels are in index.html.
+    codeEdit: {
+      encodingNames: { "utf-8": "UTF-8", shift_jis: "Shift_JIS", "euc-jp": "EUC-JP", "utf-16le": "UTF-16LE", "utf-16be": "UTF-16BE" },
+      bom: (has) => (has ? "BOM: yes" : "BOM: no"),
+      lineEndingCounts: (counts) => `CRLF ${counts.crlf}, LF ${counts.lf}, CR ${counts.cr}`,
+      saveQuestion: (name) => `This file is in ${name}. Save it in ${name} or in UTF-8?`,
+      saveOriginal: (name) => `${name} (original)`,
+      unencodable: (name, lines) =>
+        `Not saved: some characters can't be written in ${name} (lines ${lines}). Change them, or save in UTF-8.`,
+      fileType: (ext) => `${ext} file`, // the file type name in the save dialog (Save as, NE-8)
+      savedMarkdownUtf8: "Saved in UTF-8: .md files are always UTF-8.", // NE-30
+      editorLabel: "Code editor", // the aria-label of the editor's textarea (INV-85)
+      // INV-92: JSON fold and unfold (toasts)
+      foldJsonOnly: "Folding works on JSON files.",
+      foldInvalid: "This JSON can't be read, so it wasn't folded.",
+      nothingToFold: "Nothing more to fold.",
+      nothingToUnfold: "Nothing more to unfold.",
+    },
+    // The command palette of the code view (INV-92, NE-13): [Commands] / p.
+    // key is the fold modifier shown: Ctrl, or Option on Apple platforms.
+    codeCommands: {
+      title: "Commands",
+      modifier: { apple: "Option", other: "Ctrl" },
+      fold: (key) => `Fold one level (${key}+Left)`,
+      unfold: (key) => `Unfold one level (${key}+Right)`,
     },
     copy: {
       failed: "Couldn't copy. Select the text and press Ctrl+C (Mac: Cmd+C).",
@@ -225,6 +256,8 @@ export const CONFIG = {
       columnDelete: "Delete column",
       tableOptions: "Align column", // the button and its popover (R6)
       undo: (mod) => `Undo (${mod}+Z)`,
+      redo: (mod) => `Redo (${mod}+Shift+Z)`, // the code editor's palette only (NE-2)
+      search: (mod) => `Search (${mod}+F)`, // the code editor's palette only (NE-2)
       mermaidMenu: "Mermaid samples",
       flowchart: "Flowchart",
       sequence: "Sequence diagram",
@@ -258,6 +291,16 @@ export const CONFIG = {
     reloadUnavailableMsg: "Reload works only in Chrome and Edge.",
     reloadNoFileMsg: "No file to reload. Drop a file first.",
     highlightWaitMs: 3000, // the code view waits this long for highlight.js, then shows the code plain (INV-81 (3))
+  },
+  // Editing non-.md files in the code view (SC-27)
+  codeEdit: {
+    highlightPauseMs: 200, // INV-86: the editor is colored again this long after typing stops
+    highlightMaxChars: 200 * 1024, // INV-86: a longer text is plain while editing (provisional)
+    undoPauseMs: 1000, // INV-88: a typing step ends after this long without typing
+    defaultIndent: "    ", // INV-87: the indent unit when the file shows none
+    sampleLines: 5, // INV-89: lines shown in the open dialog's preview
+    maxListedLines: 10, // INV-90: line numbers listed when characters can't be saved
+    downloadMimeType: "application/octet-stream", // INV-90: a code file downloaded (no write API)
   },
   // In-place Markdown editing (SC-22 to SC-24)
   edit: {
@@ -348,7 +391,7 @@ export const CONFIG = {
   // Keyboard hint text per view mode
   keyHints: {
     markdown: "[I] Index; [F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
-    code:     "[F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
+    code:     "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
   },
 };
 

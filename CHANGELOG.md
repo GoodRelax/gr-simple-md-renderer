@@ -17,6 +17,12 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- Code View: the **Edit** button is no longer disabled (it starts code
+  editing), `Ctrl+S` / `Ctrl+Shift+S` save the file instead of doing
+  nothing, the second line of the file info adds the file's encoding and
+  line endings (for example `Shift_JIS  |  CRLF`), and the **Index** works
+  for the languages listed under Added. The key hint lists `[I] Index`,
+  `[P] Commands`, `[E] Edit` and the fold keys.
 - Block editing: the editor shows its text the way the block is shown. A
   paragraph, heading, list or quote is edited in the body text's font,
   size and line spacing (a heading at its own size, in bold, with its `#`
@@ -119,7 +125,44 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Added
 
-- Search: a **Search** button right of Index (or the `f` key; in edit mode
+- Edit files other than `.md` in the code view: **Edit** (or `e`) turns
+  the whole file into one editor, with colors and line numbers and no
+  wrapping. The colors are redone 0.2 s after you stop typing; a file over
+  200 KB has no colors while you edit it. The edit palette then shows only
+  the grip, Save, Save as, Undo, Redo and Search. Tab / Shift+Tab indent
+  or outdent the selected lines by the file's own indent, Enter keeps the
+  line's indent, and Esc leaves the editor (edit mode stays until **Edit**
+  or `e`). Undo and Redo are GRSMD's own, up to 30 steps: a step ends when
+  you stop typing for 1 s or move the caret, and a replace, an indent or a
+  fold is one step (owner rulings NE-1 to NE-5, NE-7, NE-14, NE-18,
+  NE-26).
+- Code files keep their encoding and line endings: UTF-8, Shift_JIS,
+  EUC-JP, UTF-16LE and UTF-16BE, with or without a BOM, and CRLF, LF or
+  CR. A dialog asks only when a file is not valid UTF-8 (the guessed
+  encoding, which you can change, and the first 5 lines) or mixes line
+  endings (unify them to CRLF or LF, or keep them). Save and Save as work
+  as for Markdown. A file that is not UTF-8 asks whether to save it in its
+  own encoding or in UTF-8 (Save asks once, Save as every time), and
+  characters the encoding cannot hold stop the save, with their line
+  numbers. Shift_JIS and EUC-JP are written with a table built from the
+  browser's own decoder, so no table is bundled. Save as can change the
+  extension; a name ending in `.md` is written in UTF-8 and opens in the
+  Markdown view (owner rulings NE-6, NE-8, NE-15, NE-16, NE-19, NE-24,
+  NE-25, NE-30).
+- JSON folding in the code view: `Ctrl+Left` puts the deepest `{ }` and
+  `[ ]` that span several lines on one line each, and `Ctrl+Right` spreads
+  the shallowest one-line ones out again, one level at a time (Mac:
+  `Option`). In the view only the display changes; in the editor the text
+  changes (one Undo; inside the editor `Ctrl+Shift+[` / `Ctrl+Shift+]`,
+  Mac `Cmd+Option+[` / `]`). A **Commands** button (or `p`) shows the two
+  commands as buttons, for touch screens too (owner rulings NE-10 to
+  NE-13, NE-21 to NE-23, NE-27).
+- Index in the code view: Python, JavaScript / TypeScript, JSON and YAML
+  get two levels; C, C++, C#, Java and Go one level (imports, types,
+  functions; a run of imports is one entry such as `import (12)`) (owner
+  rulings NE-9, NE-20). While a code file is edited, Search finds the
+  editor's text and can replace one match or all of them (one Undo each).
+ (or the `f` key; in edit mode
   also `Ctrl+F` / `Cmd+F`) shows a search box above the Index. It finds text
   in the Markdown source (in the code view, the file), including diagram and
   math source; `Aa` matches case and `.*` takes a regular expression (it is
@@ -278,7 +321,11 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   linear (5 MB in about 2 s; times of highlight.js alone, measured in
   Node). Open such a file with an extension that fits its content. The
   20,480-character limit of Markdown code blocks does not apply to Code
-  View.
+  View. The same holds for the colors while you edit such a file: they
+  are redone each time you stop typing.
+- Code editing has not yet been checked on a real iPad, with an input
+  method (IME), or for clashes of its fold keys with the browser
+  (`Ctrl+Shift+[` / `]`, `Cmd+Option+[` / `]`, `Option+Left` / `Right`).
 
 ## [Unreleased] - 2026-10-10
 

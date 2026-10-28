@@ -4,6 +4,11 @@
 // built when the panel is shown; while it is shown, the entries of the
 // top-level blocks that changed (a render, a commit, an Undo) are built
 // again, and the others are kept (INV-77 (2), performance).
+//
+// In the code view (INV-91) the entries come from a code outline the caller
+// gives (setCodeOutline): built when the panel is shown and on refresh()
+// (a fold, edit mode in or out, a typing pause); level 1 and 2 entries look
+// like h1 and h2 entries. Pressing one scrolls its line to the top.
 
 import { placeSidePanels } from "../sidePanels.js";
 import { nextFrame, cancelFrame } from "../utils.js";
@@ -60,7 +65,8 @@ export default class DocumentIndex {
    *   panel: in column (#sidePanels), outside #preview, so a press on it is
    *   not an edit gesture
    * @param {ScrollMemento} scrollMemento - where the view is and how it scrolls
-   * @param {{emptyText: string}} options - emptyText: shown when there is no heading
+   * @param {{emptyText: string, emptyCodeText?: string}} options - emptyText: shown when
+   *   there is no heading; emptyCodeText: ... no code outline entry (emptyText when not given)
    * @purity non-pure
    */
   constructor(elements, scrollMemento, options) {
@@ -69,11 +75,16 @@ export default class DocumentIndex {
     this.column = elements.column;
     this.preview = elements.preview;
     this.scrollMemento = scrollMemento;
+    this._emptyText = options.emptyText;
+    this._emptyCodeText = options.emptyCodeText ?? options.emptyText;
     this._empty = document.createElement("p"); // shown when there is no heading
     this._empty.className = "index-empty";
     this._empty.textContent = options.emptyText;
     this._entries = new Map(); // block -> its entries (buttons), for the blocks with headings
     this._headingOf = new WeakMap(); // entry -> its heading
+    this._code = null; // the code outline (setCodeOutline), or null: the Markdown headings
+    this._codeEntryCount = 0; // entries of the code outline listed
+    this._lineOf = new WeakMap(); // code entry -> its 0-based line
     this._records = []; // block changes not yet applied
     this._buildFrame = 0; // the frame that applies them (a nextFrame id), or 0: none asked for
     /** @purity non-pure */
@@ -93,13 +104,42 @@ export default class DocumentIndex {
   }
 
   /**
-   * The index is for the Markdown view only; elsewhere the button is off.
+   * The index is for the Markdown view, and the code view of a language
+   * with an outline (INV-91); elsewhere the button is off.
    * @param {boolean} isAvailable
    * @purity non-pure
    */
   setAvailable(isAvailable) {
     this.button.disabled = !isAvailable;
     if (!isAvailable) this.hide();
+  }
+
+  /**
+   * List a code outline instead of the Markdown headings (INV-91), or the
+   * headings again (null). A shown list is built again.
+   * @param {object|null} outline - entries() -> {line, level, label}[] (0-based
+   *   lines); place(line) -> {element, offset}|null: where the line is when the
+   *   view does not show it (the editor), offset px below the element's top;
+   *   picked(line): an entry was pressed (optional)
+   * @purity non-pure
+   */
+  setCodeOutline(outline) {
+    this._code = outline;
+    this._empty.textContent = outline ? this._emptyCodeText : this._emptyText;
+    if (!this.isShown()) return;
+    if (outline) this._observer.disconnect();
+    else this._observer.observe(this.preview, { childList: true });
+    this._build();
+  }
+
+  /**
+   * The code outline's text changed (a fold, edit mode in or out, a typing
+   * pause): a shown list is built again. Nothing for the Markdown headings
+   * (they follow the blocks by themselves).
+   * @purity non-pure
+   */
+  refresh() {
+    if (this._code && this.isShown()) this._build();
   }
 
   /** @purity non-pure */
@@ -115,7 +155,7 @@ export default class DocumentIndex {
     this.panel.hidden = false;
     this.button.setAttribute("aria-expanded", "true");
     this._onResize();
-    this._observer.observe(this.preview, { childList: true });
+    if (!this._code) this._observer.observe(this.preview, { childList: true });
     window.addEventListener("resize", this._onResize);
   }
 
@@ -140,6 +180,10 @@ export default class DocumentIndex {
    */
   _build() {
     this._entries.clear();
+    if (this._code) {
+      this._buildCode();
+      return;
+    }
     const all = document.createDocumentFragment();
     for (let block = this.preview.firstElementChild; block; block = block.nextElementSibling) {
       if (!isBlock(block)) continue;
@@ -149,6 +193,29 @@ export default class DocumentIndex {
         for (const entry of entries) all.append(entry);
       }
     }
+    const scrollTop = this.panel.scrollTop;
+    this.panel.replaceChildren(all);
+    this._showEmptyIfNone();
+    this.panel.scrollTop = scrollTop;
+  }
+
+  /**
+   * The whole code outline (INV-91): one entry a line it lists, level 1 or
+   * 2 shown as an h1 or h2 entry. The panel keeps its scroll position.
+   * @purity non-pure
+   */
+  _buildCode() {
+    const all = document.createDocumentFragment();
+    const entries = this._code.entries();
+    for (const { line, level, label } of entries) {
+      const entry = document.createElement("button");
+      entry.type = "button";
+      entry.className = `index-entry index-h${level}`;
+      entry.textContent = label;
+      this._lineOf.set(entry, line);
+      all.append(entry);
+    }
+    this._codeEntryCount = entries.length;
     const scrollTop = this.panel.scrollTop;
     this.panel.replaceChildren(all);
     this._showEmptyIfNone();
@@ -244,7 +311,7 @@ export default class DocumentIndex {
    * @purity non-pure
    */
   _showEmptyIfNone() {
-    if (this._entries.size > 0) {
+    if ((this._code ? this._codeEntryCount : this._entries.size) > 0) {
       this._empty.remove();
     } else if (this._empty.parentNode !== this.panel) {
       this.panel.append(this._empty);
@@ -261,6 +328,10 @@ export default class DocumentIndex {
   _onEntryClick(e) {
     const entry = e.target.closest?.(".index-entry");
     if (!entry) return;
+    if (this._code) {
+      this._jumpToLine(entry);
+      return;
+    }
     let heading = this._headingOf.get(entry);
     if (!heading?.isConnected) {
       const n = [...this.panel.children].indexOf(entry);
@@ -268,5 +339,20 @@ export default class DocumentIndex {
       heading = this._headingOf.get(this.panel.children[n]);
     }
     if (heading) this.scrollMemento.scrollTargetTo(heading, JUMP_MARGIN_PX);
+  }
+
+  /**
+   * A code outline entry: its line to the top of the view (INV-91), in the
+   * editor (the outline's place) or in the view (the n-th code line).
+   * @param {HTMLButtonElement} entry
+   * @purity non-pure
+   */
+  _jumpToLine(entry) {
+    const line = this._lineOf.get(entry);
+    if (line === undefined) return;
+    const element = this.preview.querySelector("#codeViewBody")?.children[line] ?? null;
+    const place = this._code.place(line) ?? (element ? { element, offset: 0 } : null);
+    if (place) this.scrollMemento.scrollTargetTo(place.element, JUMP_MARGIN_PX - place.offset);
+    this._code.picked?.(line);
   }
 }

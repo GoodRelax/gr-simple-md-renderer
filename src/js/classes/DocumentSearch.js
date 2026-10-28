@@ -1,8 +1,10 @@
 // Search and replace (INV-80, owner rulings S1 to S14, 2026-10-25): a panel
 // above the Index at the right edge of the view. The Markdown view searches
 // the document's source (the model's body), the code view the file's text.
-// Replacing is for the edit mode of the Markdown view only; one replace, or
-// one replace of all, is one change for Undo (INV-48).
+// Replacing is for the edit modes only: the Markdown view's, where one
+// replace, or one replace of all, is one change for Undo (INV-48), and the
+// code editor's (SC-27; setCodeEditor), where it is one undo step of the
+// editor (INV-88) and a match is selected in the editor.
 
 import { placeSidePanels } from "../sidePanels.js";
 import { searchPattern, findMatches, occurrences, countOccurrences, replaceOne, replaceAll } from "../textSearch.js";
@@ -83,6 +85,7 @@ export default class DocumentSearch {
     this.host = host;
     this.messages = messages;
     this._mode = "initial";
+    this._codeEditor = null; // the code editor while the code view is in edit mode (setCodeEditor)
     this._pattern = null; // the pattern of the matches, or null: none (an empty query, or an invalid one: _invalid)
     this._invalid = false; // the query is not a valid regular expression
     this._searched = null; // the conditions of the matches ({query, isRegex, matchCase}), or null: not searched for this text
@@ -159,9 +162,33 @@ export default class DocumentSearch {
   setMode(mode) {
     this._mode = mode;
     this.el.button.disabled = mode === "initial";
-    this.el.replaceRow.hidden = mode !== "markdown";
+    this._showReplaceRow();
     if (mode === "initial") this.hide();
     else if (this.isShown()) this.refresh();
+  }
+
+  /**
+   * The code view's edit mode (SC-27): its text is searched, a match is
+   * selected in it, and Replace / Replace all change it (each one undo step
+   * of the editor). null: the code view's lines again.
+   * @param {object|null} editor - CodeEditor: text(), select(start, end),
+   *   rangeOf(start, end) -> Range|null, placeOf(offset) -> {element, offset}|null,
+   *   setText(text, selStart, selEnd) (one undo step)
+   * @purity non-pure
+   */
+  setCodeEditor(editor) {
+    this._codeEditor = editor;
+    this._showReplaceRow();
+    if (this.isShown()) this.refresh();
+  }
+
+  /**
+   * The replace row is there where replacing can be: the Markdown view and
+   * the code editor (its controls are on in edit mode only).
+   * @purity non-pure
+   */
+  _showReplaceRow() {
+    this.el.replaceRow.hidden = this._mode !== "markdown" && !this._codeEditor;
   }
 
   /**
@@ -259,6 +286,7 @@ export default class DocumentSearch {
    * @purity semi-pure-a
    */
   _documentText() {
+    if (this._codeEditor) return this._codeEditor.text();
     if (this._mode === "markdown") return this.documents.getModel()?.toBody() ?? "";
     return Array.from(this._codeLines(), (line) => line.textContent).join("\n");
   }
@@ -383,6 +411,10 @@ export default class DocumentSearch {
    */
   _go(match) {
     this._clearHit();
+    if (this._codeEditor) {
+      this._goInEditor(match);
+      return;
+    }
     const place = this._mode === "code" ? this._codePlace(match) : this._blockPlace(match);
     if (!place) return;
     const { element, start } = place;
@@ -403,6 +435,27 @@ export default class DocumentSearch {
     box.scrollIntoView?.({ block: "nearest", inline: "nearest" });
     const shown = window.innerHeight - this.scrollMemento.shownTop();
     this.scrollMemento.scrollTargetTo(target, Math.max(REVEAL_MIN_PX, REVEAL_RATIO * shown));
+  }
+
+  /**
+   * A match in the code editor: selected there (the focus stays where it
+   * is), colored on the editor's layer when it holds the text, and its line
+   * scrolled to a quarter of the view.
+   * @purity non-pure
+   */
+  _goInEditor(match) {
+    const editor = this._codeEditor;
+    const end = match.index + match[0].length;
+    editor.select(match.index, end);
+    const range = editor.rangeOf(match.index, end);
+    if (range && typeof Highlight === "function") CSS.highlights.set(HIGHLIGHT_CURRENT, new Highlight(range));
+    // sideways: the colored piece holding the match (a long line)
+    const piece = range?.startContainer.parentElement;
+    if (piece?.tagName === "SPAN") piece.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    const place = editor.placeOf(match.index);
+    if (!place) return;
+    const shown = window.innerHeight - this.scrollMemento.shownTop();
+    this.scrollMemento.scrollTargetTo(place.element, Math.max(REVEAL_MIN_PX, REVEAL_RATIO * shown) - place.offset);
   }
 
   /**
@@ -461,15 +514,17 @@ export default class DocumentSearch {
   /**
    * Replace the current match (the first press only finds one), or all.
    * The open block editor or cell is committed first; one Undo takes the
-   * replace back.
+   * replace back. In the code editor the editor's text is replaced, one
+   * undo step of the editor.
    * @purity non-pure
    */
   _replace(all) {
-    if (this._mode !== "markdown" || this.el.replaceOne.disabled) return;
+    const editor = this._codeEditor;
+    if ((this._mode !== "markdown" && !editor) || this.el.replaceOne.disabled) return;
     this._cancelPending();
     const pressed = this._conditions();
     const current = this._isSearched() ? this._current : -1;
-    if (!this.host.beforeReplace()) return;
+    if (!editor && !this.host.beforeReplace()) return;
     // the commit may have changed the text; a regular expression is then
     // not searched again by itself (M2), the press searches it
     if (!this._isSearched() || this._documentText() !== this._text) {
@@ -482,7 +537,7 @@ export default class DocumentSearch {
     if (all) {
       const at = this._matches[Math.max(this._current, 0)].index;
       const { text, count } = replaceAll(this._text, this._pattern, template, isRegex);
-      void this.documents.replaceBody(text, at);
+      void this._replaceText(text, at);
       this.host.toast(this.messages.replaced(count));
       return;
     }
@@ -492,7 +547,7 @@ export default class DocumentSearch {
     // the next match starts after the replacement (it may match again)
     const after = match.index + text.length - this._text.length + match[0].length;
     /** @purity non-pure */
-    void this.documents.replaceBody(text, match.index).then(() => {
+    void this._replaceText(text, match.index).then(() => {
       // closed, or another query since the press: nothing more (review L8)
       if (!this.isShown() || !DocumentSearch._same(pressed, this._conditions())) return;
       // refresh() (the model changed) searched a plain query again by now
@@ -501,5 +556,20 @@ export default class DocumentSearch {
       this._current = (next < 0 ? 0 : next) - 1;
       this._step(1);
     });
+  }
+
+  /**
+   * The text after a replace becomes the document's (the Markdown body, a
+   * full render queued) or the code editor's (one undo step, the caret at
+   * offset).
+   * @param {string} text
+   * @param {number} offset - where the (first) replaced match was
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  _replaceText(text, offset) {
+    if (!this._codeEditor) return this.documents.replaceBody(text, offset);
+    this._codeEditor.setText(text, offset, offset);
+    return Promise.resolve();
   }
 }

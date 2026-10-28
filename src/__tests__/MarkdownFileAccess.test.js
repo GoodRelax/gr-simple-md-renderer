@@ -229,3 +229,30 @@ describe("writeFile clean-up and the lastModified read", () => {
     expect(h.calls).toEqual(["createWritable", "write", "close", "getFile"]);
   });
 });
+
+describe("MarkdownFileAccess for code files (INV-90)", () => {
+  it("AT-FA-10 startSavePicker offers the types given (a code file's extension), none for an empty list; same dialog id", async () => {
+    const picker = vi.fn((opts) => Promise.resolve(fakeFileHandle({ name: opts.suggestedName })));
+    const access = new MarkdownFileAccess({ showSaveFilePicker: picker });
+    const types = [{ description: "PY file", accept: { "text/plain": [".py"] } }];
+    await access.startSavePicker("a.py", types);
+    await access.startSavePicker("Makefile", []);
+    expect(picker.mock.calls[0][0]).toEqual({ id: CONFIG.edit.savePickerId, suggestedName: "a.py", types });
+    // a picked file is noted, so the second dialog starts in its folder (INV-79)
+    expect(Object.keys(picker.mock.calls[1][0]).sort()).toEqual(["id", "startIn", "suggestedName"]);
+    expect(picker.mock.calls[1][0].suggestedName).toBe("Makefile");
+  });
+
+  it("AT-FA-11 startDownload of bytes with a type: the blob holds those bytes and that type", async () => {
+    const blobs = [];
+    vi.spyOn(URL, "createObjectURL").mockImplementation((b) => {
+      blobs.push(b);
+      return "blob:fake-2";
+    });
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    new MarkdownFileAccess(window).startDownload("a.txt", Uint8Array.from([0x93, 0xfa, 0x0a]), "application/octet-stream");
+    expect(blobs[0].type).toBe("application/octet-stream");
+    expect([...new Uint8Array(await blobs[0].arrayBuffer())]).toEqual([0x93, 0xfa, 0x0a]);
+  });
+});

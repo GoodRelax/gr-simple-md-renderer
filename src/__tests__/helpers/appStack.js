@@ -15,6 +15,10 @@ import MarkdownFileAccess from "../../js/classes/MarkdownFileAccess.js";
 import UIController from "../../js/classes/UIController.js";
 import DocumentIndex from "../../js/classes/DocumentIndex.js";
 import DocumentSearch from "../../js/classes/DocumentSearch.js";
+import CodeEditController from "../../js/classes/CodeEditController.js";
+import CodeEditor from "../../js/classes/CodeEditor.js";
+import CodeCommandPalette from "../../js/classes/CodeCommandPalette.js";
+import { escapeHtml } from "../../js/utils.js";
 import { CONFIG } from "../../js/config.js";
 import { createUiElements, trackGlobalListeners, createDocuments } from "./uiMocks.js";
 
@@ -63,9 +67,13 @@ export async function settle() {
  *   clipboard: a fake navigator.clipboard (INV-69; null: none); withIndex: the
  *   Index (INV-77) as main.js composes it (app.index, app.indexBtn, app.indexPanel);
  *   withSearch: Search (INV-80) as main.js composes it, with the panel of
- *   index.html (app.search, app.searchEl)
+ *   index.html (app.search, app.searchEl); codeDialog: the code document
+ *   (SC-27) as main.js composes it, with this fake CodeFileDialog
+ *   ({askOpen, askSaveEncoding}; app.codeEdit); codeEditor: with codeDialog, the
+ *   code editor and the command palette (SC-27) as main.js composes them; the
+ *   fake code view then draws the text's lines (#codeViewBody > .code-line)
  */
-export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipboard, withIndex = false, withSearch = false } = {}) {
+export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipboard, withIndex = false, withSearch = false, codeDialog = null, codeEditor = false } = {}) {
   vi.stubGlobal("matchMedia", () => ({ matches: false }));
   document.title = BASE_TITLE;
   const elements = createUiElements({ attach: true });
@@ -76,10 +84,24 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
   const markdownRenderer = new MarkdownRenderer(preview, marked, hljs, DOMPurify);
   const scrollMemento = new ScrollMemento(preview);
   const meta = { fileName: "a.py", fileSize: 10, lineCount: 1, language: "python", lastModified: 0, updatedAtStr: "x" };
+  const drawCode = (text) => {
+    preview.innerHTML = `<div id="codeViewBody">${text
+      .split("\n")
+      .map((line) => `<span class="code-line">${escapeHtml(line)}</span>`)
+      .join("")}</div>`;
+  };
   const sourceFileRenderer = {
-    render: vi.fn().mockResolvedValue(meta),
+    render: vi.fn(async (file, handle, theme, isCurrent, text) => {
+      if (codeEditor && text !== undefined) drawCode(text);
+      return meta;
+    }),
     reload: vi.fn().mockResolvedValue(meta),
     destroy: vi.fn(),
+    showText: vi.fn((text) => {
+      if (codeEditor) drawCode(text);
+      return codeEditor ? { ...meta, lineCount: text.split("\n").length } : meta;
+    }),
+    retarget: vi.fn((file) => ({ ...meta, fileName: file.name, fileSize: file.size })),
   };
   const state = new ApplicationState();
   const orchestrator = new RendererOrchestrator(
@@ -105,6 +127,12 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
     column.append(panel);
     elements._bar.prepend(button);
     documentIndex = new DocumentIndex({ button, panel, column, preview }, scrollMemento, { emptyText: "none" });
+  }
+  const commandsBtn = make("button", "commandsBtn");
+  const commandsBox = make("div", "codeCommandPalette");
+  if (codeEditor) {
+    elements._bar.append(commandsBtn);
+    document.body.append(commandsBox);
   }
   let searchEl = null;
   if (withSearch) {
@@ -161,11 +189,25 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
                 ),
             }
           : {}),
+        ...(codeDialog
+          ? {
+              createCodeEdit: (host) =>
+                new CodeEditController(
+                  fileAccess,
+                  codeDialog,
+                  host,
+                  codeEditor ? { createEditor: (editorHost) => new CodeEditor(preview, editorHost, { isApple }), highlight: () => null } : {},
+                ),
+            }
+          : {}),
+        ...(codeEditor
+          ? { createCodeCommands: (host) => new CodeCommandPalette({ button: commandsBtn, box: commandsBox }, host, CONFIG.messages.codeCommands, { isApple }) }
+          : {}),
         createPalette: (host) => new EditPalette(host, { isApple }),
         createBlockEdit: (host) => new BlockEditController(preview, orchestrator, markdownRenderer, scrollMemento, host),
       }),
   );
-  const app = { ui, orchestrator, markdownRenderer, state, elements, preview, sourceFileRenderer, scrollEngine, fileAccess, documents, mermaidLib };
+  const app = { ui, orchestrator, markdownRenderer, state, elements, preview, sourceFileRenderer, scrollEngine, fileAccess, documents, mermaidLib, codeEdit: ui.codeEdit, commandsBtn, commandsBox };
   if (documentIndex) Object.assign(app, { index: documentIndex, indexBtn: documentIndex.button, indexPanel: documentIndex.panel });
   if (searchEl) Object.assign(app, { search: ui.documentSearch, searchEl });
   app.paletteRoot = () => document.body.querySelector(":scope > div.edit-palette");
@@ -183,6 +225,9 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
     documentIndex?.hide();
     ui.documentSearch?.hide();
     column.remove();
+    ui.codeCommands?.hide();
+    commandsBox.remove();
+    document.body.classList.remove("code-edit");
     elements._bar.remove();
     preview.remove();
     document.title = BASE_TITLE;

@@ -40,6 +40,10 @@ import UIController from "./classes/UIController.js";
 import HelpLanguageSwitch from "./classes/HelpLanguageSwitch.js";
 import DocumentIndex from "./classes/DocumentIndex.js";
 import DocumentSearch from "./classes/DocumentSearch.js";
+import CodeFileDialog from "./classes/CodeFileDialog.js";
+import CodeEditController from "./classes/CodeEditController.js";
+import CodeEditor from "./classes/CodeEditor.js";
+import CodeCommandPalette from "./classes/CodeCommandPalette.js";
 
 // ========================================
 // Initialization
@@ -54,6 +58,7 @@ const elements = {
   indexPanel: document.getElementById("indexPanel"),
   sidePanels: document.getElementById("sidePanels"),
   searchBtn: document.getElementById("searchBtn"),
+  commandsBtn: document.getElementById("commandsBtn"),
   renderLightBtn: document.getElementById("renderLight"),
   renderDarkBtn: document.getElementById("renderDark"),
   reloadBtn: document.getElementById("reloadBtn"),
@@ -133,12 +138,33 @@ const isApple = isApplePlatform(navigator);
 const documentIndex = new DocumentIndex(
   { button: elements.indexBtn, panel: elements.indexPanel, column: elements.sidePanels, preview: elements.preview },
   scrollManager,
-  { emptyText: CONFIG.messages.index.empty },
+  { emptyText: CONFIG.messages.index.empty, emptyCodeText: CONFIG.messages.index.emptyCode },
+);
+// The code document of the code view (SC-27): its dialogs (INV-89, INV-90)
+// and its writes through the same file access as the Markdown saves.
+const codeFileDialog = new CodeFileDialog(
+  document.getElementById("codeOpenModal"),
+  document.getElementById("codeSaveModal"),
+  CONFIG.messages.codeEdit,
+  CONFIG.codeEdit.sampleLines,
 );
 const ui = new UIController(orchestrator, state, elements, scrollEngine, {
   documents,
   isApple,
   documentIndex,
+  // The code editor (INV-85): colored by the code view's highlight.js
+  createCodeEdit: (host) =>
+    new CodeEditController(fileAccess, codeFileDialog, host, {
+      createEditor: (editorHost) => new CodeEditor(elements.preview, editorHost, { isApple }),
+      highlight: (text, language) => sourceFileRenderer.highlightText(text, language),
+    }),
+  createCodeCommands: (host) =>
+    new CodeCommandPalette(
+      { button: elements.commandsBtn, box: document.getElementById("codeCommandPalette") },
+      host,
+      CONFIG.messages.codeCommands,
+      { isApple },
+    ),
   createSearch: (host) =>
     new DocumentSearch(
       {

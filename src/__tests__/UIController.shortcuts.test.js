@@ -145,18 +145,23 @@ describe("AT-KEY-02 primary + S / Shift+S: Save / Save as in the Markdown view (
     expect(access.calls.filter((c) => c.startsWith("writeFile:"))).toHaveLength(1);
   });
 
-  it("taken in the initial state and in the code view too, but nothing is saved (owner ruling: GRSMD owns Ctrl+S)", async () => {
-    app = await setupApp();
+  it("taken in the initial state too, but nothing is saved (owner ruling: GRSMD owns Ctrl+S); in the code view it saves the code file (INV-90)", async () => {
+    // the save dialog stays open: the test ends before it answers
+    access = fakeFileAccess({ picker: new Promise(() => {}) });
+    app = await setupApp({ fileAccess: access, codeDialog: { askOpen: vi.fn(), askSaveEncoding: vi.fn() } });
     const save = vi.spyOn(app.ui, "requestSave");
     const saveAs = vi.spyOn(app.ui, "requestSaveAs");
     expect(ctrl(document.body, "s").defaultPrevented).toBe(true);
     app.elements.editor.focus();
     expect(ctrl(app.elements.editor, "S", { shiftKey: true }).defaultPrevented).toBe(true);
+    expect(save).not.toHaveBeenCalled();
+    expect(saveAs).not.toHaveBeenCalled();
     document.dispatchEvent(dropEvent(new File(["x = 1\n"], "a.py"), null));
     await settle();
     expect(ctrl(document.body, "s").defaultPrevented).toBe(true);
-    expect(save).not.toHaveBeenCalled();
-    expect(saveAs).not.toHaveBeenCalled();
+    expect(save).toHaveBeenCalledTimes(1);
+    // no file handle: the save dialog, started inside the keydown (INV-33)
+    expect(access.calls).toEqual(["startSavePicker:a.py"]);
   });
 
   it("a held key: the first keydown saves, the repeats are taken and do nothing (owner ruling)", async () => {

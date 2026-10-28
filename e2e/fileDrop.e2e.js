@@ -24,7 +24,7 @@ test("dropping a non-.md text file shows the code view", async ({ page }) => {
   await expect(page.locator("body")).toHaveClass(/\bview-code\b/);
   await expect(page.locator("#fileInfo")).toContainText("script.js");
   await expect(page.locator("#preview")).toContainText("function hello()");
-  await expect(page.locator("#editBtn")).toBeDisabled();
+  await expect(page.locator("#editBtn")).toBeEnabled(); // SC-27: the code view is editable
 });
 
 // Without the fix only Chromium fails this (see the known limit in load.e2e.js).

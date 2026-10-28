@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.18
+**バージョン:** 2.20
 **日付:** 2026-xx-xx (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -47,6 +47,8 @@
 > v2.18 の変更 (2026-10-28、ブロック編集欄の字とスクロール): 仕様の INV-83・INV-84 (新) と INV-40・INV-46・INV-77・INV-80 (8) の改めに合わせて、セクション AG (PRT-AG01〜AG05) を追加した。AT に AT-BCM (新。01〜07) と AT-BEC-TS (新。01〜08) を足し、AT-ICO に 21 を足した。AT-STA-08 (編集欄と印の層は枠の線を持たない) と AT-THM (編集欄の枠は `outline`、目次と検索の箱の地は 0.85) を改めた。e2e に editScrollFont.e2e.js を足し、index.e2e.js の地を 0.85 にした。
 
 > v2.19 の変更 (2026-10-29、ブロック編集欄の字とスクロールのレビュー (1 回目) の直し): 裁定 ESF-7 (すき間と空の文書の編集欄は本文の字)・ESF-8 (Edge で文書の最後の高いコードブロックがずれた件) を AG 節に書いた。PRT-AG01 にすき間の手順、PRT-AG02 にリスト・引用の 1 回押しを足した。AT-BEC-TS に 09〜15 を足し、07・08 を高さの合わせ方の改め (INV-40: 位置はスクロールのたびに覚え、詰められたときだけ戻す) に合わせた。AT-BCM を純粋な `caretMatching.js` と `BlockCaretMap` に分け、08・09 を足した。AT-SM に 42・43、AT-ORC に R6 を足した。e2e の editScrollFont.e2e.js に、編集モードの 1 回押し (リスト・引用・段落) と、1 MB の文書の 1 キーの時間 (記録だけ) を足した。
+
+> v2.20 の変更 (2026-10-29、.md 以外のファイルの編集): 仕様の SC-27・INV-85〜INV-92・FS-23・5.19 (オーナーの裁定 NE-1〜NE-30) と、OS-06・INV-58・INV-77 (5)・INV-80 (1)(5)(6) の改めに合わせて、セクション AH (PRT-AH01〜AH18) を追加した。PRT-E01 (ファイル情報の 2 行目の文字コードと改行、[Edit] が有効、コードビューのキーヒント)・PRT-X13 (コードビューの Ctrl+S は保存する)・PRT-AB04 (目次の無い言語のコードビュー) を改め、PRT-AD05・PRT-W17 の備考を足した。AT に AT-ENC・AT-IND・AT-JFO・AT-COL・AT-CEH・AT-CDOC・AT-CFD・AT-CEC・AT-CED・AT-CCP (新) を足し、AT-SFR (02〜07)・AT-ORC (29・30)・AT-FA (10・11)・AT-HLP (12)・AT-PAL (37〜39)・AT-IDX (11〜13)・AT-SRCH (20〜23)・AT-UI (70〜93) を足し、AT-UI-34・AT-CFG-05・AT-KEY-02 を改めた。e2e に codeEdit.e2e.js と codeEditor.e2e.js を足し、fileDrop.e2e.js の [Edit] の期待を有効に改めた。改訂・追加したケースの判定は空欄 (未実施) に戻してある。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -280,15 +282,16 @@
 |              | - 行番号が正しく連番で表示される                                         |
 |              | - コード行の間に余分な空行がない                                         |
 |              | - #fileInfo にファイル名、行数、サイズ、Updated 日時が表示される         |
-|              | - #fileInfo が 2 行形式である (1行目: name\|lines\|size, 2行目: Updated) |
+|              | - #fileInfo が 2 行形式である (1行目: name\|lines\|size, 2行目: Updated\|文字コード\|改行。例 `UTF-8  \|  LF`。INV-89 (5)) |
 |              | - editor textarea が非表示になる                                         |
 |              | - エディター背景色が寒色系になる                                         |
-|              | - キーヒントが表示される                                                 |
+|              | - キーヒントが表示される (`[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;` と `[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);`。`CONFIG.keyHints.code`) |
+|              | - [Edit] が有効 (押すとコード編集モード。PRT-AH03) |
 
 | 結果 | Pass / Fail / N/A |
 | ---- | ----------------- |
-| 判定 | Pass              |
-| 備考 |                   |
+| 判定 |                   |
+| 備考 | 2026-10-29 改訂 (SC-27): ファイル情報の文字コードと改行、[Edit]、キーヒント |
 
 ---
 
@@ -2682,7 +2685,7 @@
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-55、INV-21 |
+| 備考 | 要求: INV-55、INV-21。コードビューで編集すれば `* ` が付く (INV-85 (5)。PRT-AH18) |
 
 ---
 
@@ -3076,7 +3079,7 @@
 | **期待結果** | - 1 で Save と同じに動き、ブラウザの「ページを保存」は開かない |
 | | - 2 で、何も戻らない (編集モードでないときの Ctrl+Z は横取りしない。裁定 Q3) |
 | | - 3 で、どれも `#editor` のブラウザ既定のまま (Ctrl+Z は `#editor` を戻す) |
-| | - 4 で、ブラウザの「ページを保存」は開かず、何も起きない (GRSMD のタブでは Ctrl+S を常に占有する) |
+| | - 4 で、ブラウザの「ページを保存」は開かない。初期状態では何も起きない (GRSMD のタブでは Ctrl+S を常に占有する)。コードビューでは、そのファイルの Save が動く (保存先があれば上書き、無ければ保存のダイアログ。INV-90。2026-10-29 改訂) |
 | | - 5 で、サイドバーもページの情報も開かず、書式だけが適用される **[要検証]** |
 | | - 6 で、書式は適用されない (Mac の Ctrl+B は横取りしない) |
 | | - 7 で、それぞれの文字が入力される (保存も Undo も起きない) |
@@ -3087,7 +3090,7 @@
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-14、INV-58、INV-59、INV-60 |
+| 備考 | 要求: INV-14、INV-58、INV-59、INV-60、INV-90 (コードビューの Ctrl+S) |
 
 ---
 
@@ -3845,17 +3848,17 @@
 | --- | --- |
 | **前提条件** | ビルドしたファイルを開く |
 | **手順** | 1. 初期画面で [Index] と `i` |
-|  | 2. コードビュー (`.py` などをドロップ) で [Index] と `i` |
+|  | 2. 目次の無い言語のコードビュー (`.txt` などをドロップ) で [Index] と `i` |
 |  | 3. 見出しの無い文書で [Index] |
 |  | 4. 目次を出したまま印刷プレビュー |
-| **期待結果** | - 手順 1・2 では [Index] が無効で、`i` も何もしない。コードビューに替わると目次は閉じる |
+| **期待結果** | - 手順 1・2 では [Index] が無効で、`i` も何もしない。目次の無い言語のコードビューに替わると目次は閉じる (目次のある言語のコードビューは PRT-AH14。2026-10-29 改訂) |
 |  | - 手順 3 で「This document has no headings.」が出る |
 |  | - 手順 4 で目次は印刷に出ない |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-77 (1)(5)(6)。自動では index.e2e.js、AT-IDX-03 / 05 / 10 (a)(d) |
+| 備考 | 要求: INV-77 (1)(5)(6)、INV-91。自動では index.e2e.js、AT-IDX-03 / 05 / 10 (a)(d)、AT-UI-90 |
 
 ---
 
@@ -4047,7 +4050,7 @@
 | **手順** | 1. 表示モードで検索の箱を出す |
 |  | 2. コードビューで `f` |
 | **期待結果** | - 表示モードでは置換の段が無効 |
-|  | - コードビューでは置換の段が無く、一致の行に枠が付く |
+|  | - コードビュー (表示) では置換の段が無く、一致の行に枠が付く (コード編集モードの置換は PRT-AH15) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -4540,6 +4543,412 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 
 ---
 
+## セクション AH: .md 以外のファイルの編集 (2026-10-29)
+
+SC-27・INV-85〜INV-92、INV-80 (1)(5)(6)、FS-23、仕様 5.19。オーナーの裁定 NE-1〜NE-30 (2026-10-27〜29)。試料のファイルは手で作る (テキストエディタの「文字コードを指定して保存」): Shift_JIS の `.txt` (日本語の行を 12 行以上、半角カナを含む。CRLF)、EUC-JP の `.txt`、UTF-16LE (BOM 付き) の `.txt`、UTF-8 (BOM 付き、LF) の `.txt`、CRLF と LF の混ざった UTF-8 の `.py`、入れ子の深い `.json`、import の続く `.java`、空白 2 つで字下げした `.yaml`、タブで字下げした `.go`、300 KB の `.js`。
+
+---
+
+### PRT-AH01: Shift_JIS・EUC-JP のファイルを開く
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Markdown の文書を 1 つ表示している。Shift_JIS と EUC-JP の `.txt` |
+| **手順** | 1. Shift_JIS の `.txt` をドロップする |
+|  | 2. ダイアログの Encoding を EUC-JP に変え、また Shift_JIS に戻す |
+|  | 3. [Open] を押す |
+|  | 4. 別のタブで 1 を行い、[Cancel] を押す。もう一度行い Esc を押す。もう一度行い、箱の外を押す |
+|  | 5. EUC-JP の `.txt` をドロップする |
+| **期待結果** | - 1 で、ダイアログにファイル名、"This file isn't valid UTF-8. Check its encoding."、Encoding に Shift_JIS、"BOM: no"、先頭 5 行の見本 (化けない)、"Line endings: CRLF n, LF n, CR n"、[Open] と [Cancel] が出る |
+|  | - 2 で、EUC-JP では見本・改行の数が読み直され (見本は化ける)、Shift_JIS に戻すと直る |
+|  | - 3 で、コードビューに化けずに出て、ファイル情報の 2 行目が `Updated: ...  \|  Shift_JIS  \|  CRLF` |
+|  | - 4 で、どれも何も変わらない (Markdown の文書のまま。未保存の確認も出ない) |
+|  | - 5 で、Encoding に EUC-JP と推し量られ、見本が化けない |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-89 (1)〜(5) (NE-6、NE-15)。自動では AT-ENC-06〜09・11、AT-CFD-01・03〜05・07、AT-CEC-03・04・06、AT-HLP-12、AT-UI-70・72、codeEdit.e2e.js |
+
+---
+
+### PRT-AH02: 改行の混ざったファイルと BOM
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Chrome / Edge。CRLF と LF の混ざった UTF-8 の `.py`、UTF-16LE (BOM 付き) の `.txt`、UTF-8 (BOM 付き、LF) の `.txt`。改行とバイトの見えるビューア (バイナリのエディタ、または `file` コマンド) |
+| **手順** | 1. 混ざった `.py` をドロップする |
+|  | 2. [Keep as is] を押す。真ん中の 1 行を直し、Save as で別の名前に保存して、改行をビューアで見る |
+|  | 3. もう一度 `.py` をドロップし、[Unify to LF] を押して、同じく保存する |
+|  | 4. UTF-16LE の `.txt` をドロップして [Open] を押す。1 字直して Ctrl+S を押し、[UTF-16LE (original)] を選ぶ |
+|  | 5. UTF-8 (BOM 付き) の `.txt` をドロップする |
+| **期待結果** | - 1 で、ダイアログに文字コードの部分は無く、CRLF と LF の数、混ざっている旨の文、[Unify to CRLF] [Unify to LF] [Keep as is] [Cancel] が出る ([Open] は無い。フォーカスは [Keep as is]) |
+|  | - 2 で、ファイル情報が `Mixed (kept)`。書いたファイルは、直した行の前と後ろの行が元の改行のまま |
+|  | - 3 で、ファイル情報が `LF`、書いたファイルはすべて LF |
+|  | - 4 で、ダイアログに UTF-16LE と "BOM: yes" が出る。ファイル情報が `UTF-16LE BOM`。保存したファイルは UTF-16LE で BOM 付きのまま |
+|  | - 5 で、ダイアログは出ず、ファイル情報が `UTF-8 BOM  \|  LF` |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-89 (1)(2)(4)(5)、INV-90 (5) (NE-16、NE-25)。自動では AT-ENC-02・04・10・20〜26、AT-CFD-02、AT-CEC-01・02・05、AT-CDOC-02・05・09、AT-UI-71・79、codeEdit.e2e.js |
+
+---
+
+### PRT-AH03: 編集を始めて表示に戻る
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | 100 行以上の `.py` をドロップしてコードビュー。50 行目あたりが画面の上端にある |
+| **手順** | 1. [Edit] を押す |
+|  | 2. パレットを見る。Undo・Redo・Search のボタンにマウスを置いて名前を見る |
+|  | 3. 1 行打ち、長い行を打って横にはみ出させる |
+|  | 4. ページの余白を押してから `e` を押す |
+|  | 5. ダークの配色で 1〜4 を行う |
+|  | 6. コード編集モードのまま印刷プレビューを開く |
+| **期待結果** | - 1 で、ビューが動かず、行番号付きの編集欄になり、カーソルは上端の行の頭にある。字と行の高さは表示と同じ |
+|  | - 2 で、パレットは 1 段に、グリップ・Save・Save as・Undo・Redo・Search の 6 つだけ (ほかのボタンは無い)。Undo と Redo は無効。名前は "Undo (Ctrl+Z)"・"Redo (Ctrl+Shift+Z)"・"Search (Ctrl+F)" (Mac は Cmd)。下に `<file name> - saved` |
+|  | - 3 で、折り返さず、横にスクロールできる。行番号が増える。タブのタイトルに `* `、パレットに `* unsaved` |
+|  | - 4 で、表示に戻り、打った文字が色付きで出て、ファイル情報の行数が増え、`* ` は残る。パレットは消える |
+|  | - 5 で、編集欄の地・字・行番号がダークの表示と同じ |
+|  | - 6 で、編集欄ではなく、表示と同じ色付きの字が出る |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-85 (NE-1、NE-2、NE-4)。自動では AT-CED-01・06、AT-PAL-37〜39、AT-UI-80・93、AT-CEC-26・27・30、codeEditor.e2e.js、fileDrop.e2e.js |
+
+---
+
+### PRT-AH04: 打つと色が付き直る・大きいファイルは色なし
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | 小さい `.js` と 300 KB の `.js` |
+| **手順** | 1. 小さい `.js` を編集し、`const a = "x";` を続けて打って手を止める |
+|  | 2. 300 KB の `.js` を編集し、打つ |
+|  | 3. 300 KB の `.js` で表示に戻る |
+|  | 4. 300 KB の `.js` をまた編集し、半分を選んで消して 200 KB 未満にし、手を止める |
+| **期待結果** | - 1 で、打っている間は色が無く (字はずれない)、手を止めて 0.2 秒ほどで色が付く |
+|  | - 2 で、編集欄の字は色なしで読め、打つのが遅れない |
+|  | - 3 で、表示では色が付く |
+|  | - 4 で、また色が付く |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-86 (NE-3)。200 KB は仮の値で、ここで測って決める (遅れを感じた大きさを書く)。自動では AT-CED-02〜05・07・24、AT-SFR-06・07 |
+
+---
+
+### PRT-AH05: キー (Tab / Shift+Tab / Enter / Esc)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | 空白 2 つで字下げした `.yaml`、タブで字下げした `.go` |
+| **手順** | 1. `.yaml` を編集し、3 行を選んで Tab、次に Shift+Tab を押す。それぞれの後に Ctrl+Z |
+|  | 2. 字下げした行の末尾で Enter を押す |
+|  | 3. Shift+Enter を押す |
+|  | 4. Esc を押し、続けて Tab を押す |
+|  | 5. `.go` で 1 を行う |
+| **期待結果** | - 1 で、3 行が空白 2 つずつ深く / 浅くなり、選択は同じ行の上に残る。Ctrl+Z 1 回でそれぞれ戻る |
+|  | - 2 で、新しい行がその行と同じだけ字下げされる |
+|  | - 3 で、字下げの無い改行が入る |
+|  | - 4 で、編集欄から抜け、Tab でフォーカスがページの次の所へ移る。コード編集モードは続く (パレットは出たまま) |
+|  | - 5 で、タブ 1 つずつ深く / 浅くなる |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-87 (1)〜(3) (NE-5)。自動では AT-IND-01〜13、AT-CED-08〜11、codeEditor.e2e.js |
+
+---
+
+### PRT-AH06: Mac のキーと IME
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | macOS の Safari と Chrome、Windows の Chrome。日本語の IME。`.json` |
+| **手順** | 1. (Mac) 編集欄で Cmd+Z、Cmd+Shift+Z を押す |
+|  | 2. (Mac) 編集欄で Cmd+Option+[、Cmd+Option+] を押す |
+|  | 3. (Mac) 編集欄の外で Option+←、Option+→ を押す。Ctrl+← も押す |
+|  | 4. (Mac と Windows) 編集欄で日本語を変換している途中に、Enter・Tab・Esc を押す。確定した後に手を止める |
+| **期待結果** | - 1 で、自前の Undo / Redo が働く |
+|  | - 2 で、1 段畳む / 開く (Undo 1 回で戻る) |
+|  | - 3 で、Option+← / → が畳む / 開く。Ctrl+← は横取りされない |
+|  | - 4 で、IME の確定・候補・取り消しだけが働き、字下げも、字下げの付いた改行も、編集欄から抜けることも起きない。変換中に色の層が遅れても字が読め、確定して手を止めると色が合う |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-87、INV-88、INV-92 (4) (NE-23、NE-27)。実機で確かめていない (仕様 5.19.12 の [要検証])。自動では AT-CED-12・14・16、AT-UI-87 |
+
+---
+
+### PRT-AH07: 折りたたみのキーがブラウザとぶつからない
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Windows の Chrome / Edge / Firefox、macOS の Safari / Chrome、キーボード付きの iPad (Safari)。`.json` |
+| **手順** | 1. 編集欄で Ctrl+Shift+[ / ] (Mac と iPad: Cmd+Option+[ / ]) を押す |
+|  | 2. 編集欄の外で Ctrl+← / → (Mac と iPad: Option+← / →) を押す |
+|  | 3. 編集欄の中で Ctrl+← / → (Mac: Option+← / →) と、それに Shift を足したものを押す |
+| **期待結果** | - 1・2 で、畳む / 開くだけが起き、タブの切り替え・履歴の移動など、ブラウザや OS の操作は起きない |
+|  | - 3 で、1 語ずつの移動と選択 (ブラウザのまま) で、畳まれない |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-92 (4)(6)、INV-87 (5)(6) (NE-11、NE-23、NE-27)。ぶつかったらブラウザとキーを書き、調整役に知らせる。自動ではキーの受け方だけ (AT-CED-13、AT-UI-85) |
+
+---
+
+### PRT-AH08: Undo / Redo の区切りと 30 回
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Chrome / Edge。`.py` を編集している |
+| **手順** | 1. `abc` と打ち、1 秒以上止めて `def` と打つ。Ctrl+Z を 2 回、Ctrl+Y を 2 回押す |
+|  | 2. `abc` と打ち、← を押してから `x` と打つ。Ctrl+Z を押す |
+|  | 3. 右クリックのメニュー (またはブラウザの「編集」メニュー) の「元に戻す」を使う |
+|  | 4. 1 秒ずつ止めながら 1 字ずつ 35 回打ち、Ctrl+Z を 35 回押す |
+|  | 5. 表示に戻り、また [Edit] を押して Ctrl+Z を押す |
+|  | 6. Ctrl+S で保存した後に Ctrl+Z を押す |
+| **期待結果** | - 1 で、1 回目の Ctrl+Z で `def` だけ、2 回目で `abc` が消える。Ctrl+Y で順にやり直す |
+|  | - 2 で、`x` だけが消える |
+|  | - 3 で、自前の Undo と同じく 1 回戻る |
+|  | - 4 で、戻るのは 30 回まで |
+|  | - 5 で、表示に戻る前の変更も戻せる (履歴は残る) |
+|  | - 6 で、保存の前の変更も戻せ、未保存 (`* `) になる |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-88 (NE-7、NE-18、NE-26)。自動では AT-CEH-01〜12、AT-CED-15・17〜20、AT-CEC-28、AT-UI-81 |
+
+---
+
+### PRT-AH09: Save と Save as (拡張子と文字コードの問い)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Chrome / Edge。UTF-8 の `notes.txt`、Shift_JIS の `sjis.txt` と `sjis2.txt`。ほかに Firefox (書き込みの API が無い) |
+| **手順** | 1. `notes.txt` を直して Ctrl+S を押す (初めての許可を出す) |
+|  | 2. 外のエディタで `notes.txt` を変えてから、GRSMD でまた直して Ctrl+S を押す |
+|  | 3. Save as を押す。ダイアログの名前と種類を見て、`notes.py` にして保存する |
+|  | 4. `sjis.txt` を直して Ctrl+S を押し、[Shift_JIS (original)] を選ぶ。もう一度直して Ctrl+S を押す |
+|  | 5. Ctrl+Shift+S を押す |
+|  | 6. `sjis2.txt` で Ctrl+S を押し、[UTF-8] を選ぶ。もう一度直して Ctrl+S を押す |
+|  | 7. Firefox で `notes.txt` を直して Save を押す |
+| **期待結果** | - 1 で、上書きされ "Saved: notes.txt" が出て、`* ` が消える |
+|  | - 2 で、外での変更の確認 (INV-39) が出る |
+|  | - 3 で、ダイアログの名前は `notes.txt`、種類は "TXT file" で、「すべてのファイル」も選べる。保存の後、ファイル情報の名前が `notes.py` になり、[Index] が有効になる (表示の色は Reload までテキストのまま) |
+|  | - 4 で、1 回目だけ "This file is in Shift_JIS. Save it in Shift_JIS or in UTF-8?" と聞かれ、Shift_JIS で書かれる (外のエディタで化けない)。2 回目は聞かれない |
+|  | - 5 で、また聞かれる |
+|  | - 6 で、UTF-8 (BOM なし) で書かれ、ファイル情報が UTF-8 になり、2 回目は聞かれない |
+|  | - 7 で、ダウンロードになり、`* ` は残る |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-90 (1)(2)(4)(7)、INV-58 (NE-8、NE-24)。保存のダイアログで拡張子を変えられることは実機の Chromium でだけ見られる (仕様 5.19.12 の [要検証])。自動では AT-CEC-10〜20・22・29、AT-FA-10・11、AT-UI-77・82、AT-KEY-02、codeEdit.e2e.js |
+
+---
+
+### PRT-AH10: 書けない文字・CRLF と BOM を保つ
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Chrome / Edge。CRLF の Shift_JIS の `.txt` (12 行以上)。CRLF の UTF-8 (BOM 付き) の `.cs` |
+| **手順** | 1. Shift_JIS の `.txt` の 3 行目と 12 行目に絵文字 (😀) を入れ、Ctrl+S を押して [Shift_JIS (original)] を選ぶ |
+|  | 2. Save as を押して [Shift_JIS (original)] を選ぶ |
+|  | 3. 絵文字を消して Ctrl+S を押す |
+|  | 4. `.cs` を直して Ctrl+S を押し、ビューアで先頭と改行を見る |
+| **期待結果** | - 1 で、"Not saved: some characters can't be written in Shift_JIS (lines 3, 12). Change them, or save in UTF-8." が出て、何も書かれない |
+|  | - 2 で、同じメッセージが保存のダイアログを開く前に出る (空のファイルが残らない) |
+|  | - 3 で、また聞かれ、Shift_JIS・CRLF のまま書かれる |
+|  | - 4 で、BOM (`EF BB BF`) と CRLF が保たれる |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-90 (2)(3)(5) (NE-24、NE-25)。行は 10 個まで示し、続きは ", ..."。自動では AT-ENC-12〜19、AT-CDOC-04〜06、AT-CEC-21・36・37、codeEdit.e2e.js |
+
+---
+
+### PRT-AH11: .md にして保存する
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Chrome / Edge。Shift_JIS の `memo.txt` (日本語) |
+| **手順** | 1. `memo.txt` を直し、Save as を押して [Shift_JIS (original)] を選び、名前を `memo.md` (または `MEMO.MD`) にして保存する |
+|  | 2. 開き直された文書を見て、外のエディタでも開く |
+|  | 3. Ctrl+Z を押す |
+| **期待結果** | - 1 で、"Saved: memo.md" と "Saved in UTF-8: .md files are always UTF-8." が出る |
+|  | - 2 で、`memo.md` が Markdown のビューで開き直され、化けない。ファイルは UTF-8 (BOM なし) |
+|  | - 3 で、コードビューの変更は戻らない (履歴は消えた) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-90 (6)(8) (NE-19、NE-30)。自動では AT-CEC-23・35、AT-UI-78、codeEditor.e2e.js |
+
+---
+
+### PRT-AH12: JSON の折りたたみ (表示と編集)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | 3 段以上入れ子の、空白 2 つで字下げした `.json`。末尾にカンマのある `.json` |
+| **手順** | 1. 表示で Ctrl+← を 2 回、Ctrl+→ を 2 回押す |
+|  | 2. 何も畳めなくなるまで Ctrl+← を押す |
+|  | 3. [Edit] を押し、編集欄の外で Ctrl+← を押す。編集欄の中で Ctrl+Shift+[ と Ctrl+Shift+] を押す。Ctrl+Z を押す |
+|  | 4. もう一度畳んで、Ctrl+S を押す |
+|  | 5. 末尾にカンマのある `.json` で Ctrl+← を押す |
+| **期待結果** | - 1 で、最も深い `{ }` / `[ ]` から 1 段ずつ 1 行になり (`{ "a":1, "b":2 }` の形)、開くと元の形に戻る。`* ` は付かない |
+|  | - 2 で、一番外は畳まれず、"Nothing more to fold." が出る |
+|  | - 3 で、編集に入ると表示の折りたたみは元に戻る。編集欄の文字が畳まれ、`* ` が付き、Ctrl+Z 1 回で戻る |
+|  | - 4 で、畳んだ形で保存される |
+|  | - 5 で、"This JSON can't be read, so it wasn't folded." が出て、何も変わらない |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-92 (1)〜(4) (NE-10、NE-21、NE-22)。自動では AT-JFO-01〜13、AT-CEC-31〜33、AT-CED-13、AT-UI-85・86、codeEditor.e2e.js |
+
+---
+
+### PRT-AH13: コマンドパレット (p、ボタン、タッチ)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | `.json` と `.py`。PC、iPhone (幅 375 px)、iPad |
+| **手順** | 1. `.json` で `p` を押す。"Fold one level" を 2 回押し、Esc を押す |
+|  | 2. [Commands] を押し、箱の外を押す |
+|  | 3. `.py` で [Commands] と `p` |
+|  | 4. Markdown のビューで上部バーを見る |
+|  | 5. iPhone と iPad で `.json` を開き、上部バーを見て、[Commands] をタップし、ボタンで畳む |
+| **期待結果** | - 1 で、[Commands] の下に "Fold one level (Ctrl+Left)" と "Unfold one level (Ctrl+Right)" (Mac は Option) の箱が出て、フォーカスは最初のボタン。押しても箱は閉じず、2 段畳まれる。Esc で閉じ、フォーカスが元に戻る |
+|  | - 2 で、外を押すと閉じる |
+|  | - 3 で、[Commands] は無効。`p` で "Folding works on JSON files." が出る |
+|  | - 4 で、[Commands] は見えない |
+|  | - 5 で、上部バーのボタンが欠けずに出て (コードビューで `#controls` が 9 個)、タップで畳める |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-92 (5) (NE-13、NE-14)、仕様 5.1 の [要検証]。自動では AT-CCP-01〜07、AT-UI-84・88・89、codeEditor.e2e.js |
+
+---
+
+### PRT-AH14: 目次 (言語ごと)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | `.py` (クラスとメソッド)、`.ts`、`.json`、`.yaml`、`.java` (import が 12 行)、`.c`、`.cs`、`.go`、`.txt` |
+| **手順** | 1. それぞれをドロップし、[Index] (または `i`) を押す |
+|  | 2. `.java` の "import (12)" とメソッドの項目を押す |
+|  | 3. `.json` で Ctrl+← を押した後、目次を見る |
+|  | 4. `.py` を編集し、`def new_func():` を足して手を止める。その項目を押す |
+| **期待結果** | - 1 で、`.txt` では [Index] が無効。ほかは仕様 5.19.9 のとおりに並ぶ (Python・TS・JSON・YAML は 2 段、C の仲間は 1 段)。項目の無いファイルでは "Nothing to list in this file." |
+|  | - 2 で、その行が見えている範囲の上端の少し下に来る。目次は出たまま |
+|  | - 3 で、畳んだ後の行に合わせて作り直される |
+|  | - 4 で、0.2 秒ほどで `def new_func()` が加わる。押すと編集欄のその行へ行き、カーソルがその行の頭に来る |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-91 (NE-9、NE-20)、INV-77。自動では AT-COL-01〜18、AT-IDX-11〜13、AT-UI-90・91、codeEditor.e2e.js |
+
+---
+
+### PRT-AH15: 編集中の検索と置換
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | `foo` を何か所にも含む `.js` |
+| **手順** | 1. 表示で `f` を押し、`foo` を探す |
+|  | 2. [Edit] を押し、Ctrl+F (またはパレットの Search) で検索の箱を出す。`foo` を探し、↓ を押す |
+|  | 3. 置換欄に `bar` と打ち、[Replace]、次に [All] を押す |
+|  | 4. 編集欄の外で Ctrl+Z を 2 回押す |
+|  | 5. [Index] も出し、編集欄の外にフォーカスを置いて Esc を 3 回押す |
+| **期待結果** | - 1 で、置換の段は出ない |
+|  | - 2 で、置換の段が出る。一致は編集欄の中で選ばれ (今の一致は橙)、その行がスクロールで見える。フォーカスは検索欄のまま |
+|  | - 3 で、[Replace] は今の一致を置き換えて次へ行き、[All] は残りを置き換えて件数がトーストで出る |
+|  | - 4 で、[All]、[Replace] の順に 1 回ずつ戻る |
+|  | - 5 で、検索、目次の順に消え、コード編集モードは続く |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-80 (1)(5)(6)、INV-88 (1)。自動では AT-SRCH-20〜23、AT-UI-84・92、codeEditor.e2e.js |
+
+---
+
+### PRT-AH16: iPad とタッチ
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | iPad (Safari)。ベータ版 (grsmd-beta.html)。`.py` と `.json` |
+| **手順** | 1. `.py` を開いて [Edit] をタップし、行の途中をタップして画面のキーボードで打つ |
+|  | 2. 長い行で横にスクロールし、打つ |
+|  | 3. 日本語を入力する |
+|  | 4. `.json` で、パレットの Undo と、[Commands] のボタンで畳む |
+|  | 5. Save をタップする |
+| **期待結果** | - 1〜3 で、色の層の字と打った字がずれない。カーソルが見える所にある |
+|  | - 4 で、Undo と畳むが働く |
+|  | - 5 で、ダウンロードになる (iPad の Safari には書き込みの API が無い) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-85 (6)、INV-92 (5) (NE-14)。オーナーの iPad での確認 (ベータ版、リリースの前に 1 回)。ずれたら、タッチの機械だけ編集中の色付けを止める (NE-14) ので、調整役に知らせる |
+
+---
+
+### PRT-AH17: 大きいファイルの時間
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Chrome。1 MB の `.js` (本物のコード)、5 MB の `.json`、200 KB 弱の `.py`、5 MB の Shift_JIS の `.txt` |
+| **手順** | 1. 1 MB の `.js` を開いて [Edit] を押し、打つ |
+|  | 2. 5 MB の `.json` で Ctrl+← と Ctrl+→ を押し、目次を出す |
+|  | 3. 200 KB 弱の `.py` を編集し、打って手を止める |
+|  | 4. 5 MB の Shift_JIS の `.txt` を開き、直して保存する (元の文字コード) |
+| **期待結果** | - 1 で、編集欄がすぐ出て (色なし)、打つのが遅れない |
+|  | - 2 で、数秒以内に畳まれ / 開き、目次が出る |
+|  | - 3 で、手を止めた後の色付けで打つのが止まらない (止まるなら時間を書く) |
+|  | - 4 で、初めての保存 (逆引きの表を作る) も含めて数秒以内 |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-86 (2)、INV-89 (7)。目標の数は置かない (時間を書く)。自動では AT-CED-24、AT-ENC-27、AT-COL-18、AT-JFO-13 |
+
+---
+
+### PRT-AH18: 未保存の保護
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Chrome / Edge。`.py` をドロップして編集し、未保存 (`* `) |
+| **手順** | 1. Reload を押し、Cancel を選ぶ。もう一度押して OK を選ぶ |
+|  | 2. また編集して、別の `.md` をドロップし、Cancel を選ぶ |
+|  | 3. `c` を押し、Cancel を選ぶ |
+|  | 4. タブを閉じようとする |
+|  | 5. 保存先の無い文書で Ctrl+S を押し、保存のダイアログを開いたまま、別のファイルをドロップする |
+| **期待結果** | - 1 で、確認が出る。Cancel では何も変わらない。OK ではコード編集モードが終わり、開いたときの文字コードで読み直され、Undo は消える |
+|  | - 2・3 で、確認が出て、Cancel では何も変わらない |
+|  | - 4 で、離脱の確認が出る |
+|  | - 5 で、保存中である旨のトーストが出て、ドロップは行われない |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-85 (5)、INV-21、INV-22、INV-54、INV-89 (6)。自動では AT-UI-73〜76・83、AT-CEC-07〜09・24 |
+
+---
+
 ## 自動テスト (AT) の一覧
 
 この章は、PRT の備考と仕様が引く自動テストの ID (`AT-<族>-<番号>`) の行き先である。手で行う試験ではないので、判定の欄は持たない (前提条件 P-02 で全件の合格を確かめる)。
@@ -4581,8 +4990,8 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | AT-MR | `MarkdownRenderer` のブロックの描画 (15〜19: コードブロックの色付けの上限。言語の無い長いブロックと上限を超えるブロックの時間、20,480 / 20,481 文字の境目、先頭の 3,072 文字での言語の判定、CONFIG の値。5.14.4) | INV-41〜43、INV-47 | MarkdownRenderer.blocks.test.js、MarkdownRenderer.test.js、diagrams.partial.test.js、MarkdownRenderer.highlightLimit.test.js | 01〜19 (09 は `MarkdownRenderer.test.js` のコメントにだけある。AT.1 の注) |
 | AT-DG | 図と PlantUML の部分描画 | INV-02、INV-23 | diagrams.partial.test.js | 01〜07 |
 | AT-SM | `ScrollMemento` (アンカー、読んでいる位置、挿入の後の最小のスクロール。39〜41: 利用者がビューを動かす操作の見張り `watchUserMoves` (39: ホイール・指の移動・スクロールのキー・Space・スクロールバーの押下の後のスクロールで読んでいる位置を覚える。40: Shift、入力欄の中のスクロールのキー、本文の外と中の押下、ポインタの移動は数えない。41: パネルのスクロールは数えない、`scrollTargetTo` はその場で覚える、`stop()`)。42: 最後に見た位置 `noteScrolls` (読むときに配置しない)。43: 終わりへ詰められたか `isPulledBackFrom`) | INV-40、INV-46、INV-52、INV-78、5.1 の表のつまみ | ScrollMemento.anchor.test.js | 01〜43 |
-| AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R6 (R6: 確定のカーソルの行 (INV-84) は、編集モードを出て基準が動いても保つ)、Undo / Redo の記録 09〜09d。28: 全体の描画の間に利用者が動かしたら、最後に動かした所の読んでいる位置へ戻し (`restoreReadingAnchor`)、動かさなければ描画の前の位置へ戻す) | INV-42、INV-46〜48、INV-84、INV-62、INV-78 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜28 (06b、09b〜09d を含む)、R1〜R6、T1〜T6 |
-| AT-IDX | `DocumentIndex` (01: h1〜h6 だけを文書の順に段の class 付きで並べ、引用・リスト・コード・利用者の `.md-block` の中は入れない。02: 数式は TeX、書式を落とし空白をまとめ、空の見出しは入れない。03: 見出しが無いときの文言。04: toggle と `aria-expanded`・`hidden`。05: `setAvailable`。06: 表示中のブロックの変化で 1 フレームに 1 回、変わったブロックの項目だけを作り直し (変わらない項目は同じ要素)、全体の描画ではまるごと作り、どちらもスクロールを保つ。隠している間は作らない。07: 押下で `ScrollMemento.scrollTargetTo(見出し, 8)`。08: 外れた見出しは作り直してから飛ぶ。09: 列の置き場所 (`ScrollMemento.shownTop` / `shownRight`) とリサイズ。10: UIController の結線 ((a) 初期・コードビューで無効、(b) `i` と修飾キー・入力欄・挿入の待ち、(c) Esc の順、(d) Clear)) | INV-77、5.11 | DocumentIndex.test.js、UIController.index.test.js | 01〜10 |
+| AT-ORC | `RendererOrchestrator` (確定、キュー、表の確定 T1〜T6、読んでいる位置 R1〜R6 (R6: 確定のカーソルの行 (INV-84) は、編集モードを出て基準が動いても保つ)、Undo / Redo の記録 09〜09d。28: 全体の描画の間に利用者が動かしたら、最後に動かした所の読んでいる位置へ戻し (`restoreReadingAnchor`)、動かさなければ描画の前の位置へ戻す。29・30: コードビューの読んだ文字と Reload の読み手を渡す、`showCodeText`・`retargetCodeView` (SC-27)) | INV-42、INV-46〜48、INV-84、INV-62、INV-78、INV-89、INV-90 | RendererOrchestrator.edit.test.js、RendererOrchestrator.test.js | 01〜30 (06b、09b〜09d を含む)、R1〜R6、T1〜T6 |
+| AT-IDX | `DocumentIndex` (01: h1〜h6 だけを文書の順に段の class 付きで並べ、引用・リスト・コード・利用者の `.md-block` の中は入れない。02: 数式は TeX、書式を落とし空白をまとめ、空の見出しは入れない。03: 見出しが無いときの文言。04: toggle と `aria-expanded`・`hidden`。05: `setAvailable`。06: 表示中のブロックの変化で 1 フレームに 1 回、変わったブロックの項目だけを作り直し (変わらない項目は同じ要素)、全体の描画ではまるごと作り、どちらもスクロールを保つ。隠している間は作らない。07: 押下で `ScrollMemento.scrollTargetTo(見出し, 8)`。08: 外れた見出しは作り直してから飛ぶ。09: 列の置き場所 (`ScrollMemento.shownTop` / `shownRight`) とリサイズ。10: UIController の結線 ((a) 初期・コードビューで無効、(b) `i` と修飾キー・入力欄・挿入の待ち、(c) Esc の順、(d) Clear)。11〜13: コードの目次 (`setCodeOutline` の項目と空の文言、`refresh`、表示と編集欄での飛び方。INV-91)) | INV-77、INV-91、5.11 | DocumentIndex.test.js、UIController.index.test.js | 01〜13 |
 | AT-BEC | `BlockEditController` (ジェスチャ、外側、IME、キー、リンク) | INV-27〜30、INV-40、INV-69 | BlockEditController.test.js、BlockEditController.keys.test.js、BlockEditController.link.test.js、UIController.link.test.js (35) | 01〜35 |
 | AT-BEC-TS | ブロック編集欄の字とスクロール: 表示の字を写す種類と等幅のままの種類 (01〜04。10: リスト、11: 引用)、新しいブロックは本文の字 (12: すき間、13: 空の文書。ESF-7)、押した字にカーソル (05・06。14: 表示モードのダブルクリック、15: ダブルタップ)、高さを合わせてもスクロールを保つ (07: 終わりへ詰められたら戻す、08: 動かなければ触らず、位置の読みは 1 キーに 1 回、09: ブラウザがカーソルを見せる動きは保つ) | INV-83、INV-84、INV-40 | BlockEditController.textStyle.test.js、UIController.doubleClick.test.js (14・15) | 01〜15 |
 | AT-BCM | 描画された字と原文の対応 (`caretMatching.js`。pure): 書式・リンクの行き先・見出し・リスト・引用・コードの囲い・HTML のタグ・実体参照、逆向き、速い道が同じ答えを出すこと (05: 空白の判定・コードの行頭の印・途中で止める、06: コードの位置の直接の対応)。DOM の側 (`BlockCaretMap`): 数えない字 (04)、行の基準の取り消しと、渡したものに書かないこと (03)、長い折り返す字は測らないこと (07)、点のカーソル `caretAt` (08。表のセルも同じ関数)、編集欄の行を測る字が描画の側と同じこと (09) | INV-84、INV-62 | BlockCaretMap.test.js | 01〜09 |
@@ -4593,30 +5002,40 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
 | AT-ICO | `InvisibleCharOverlay` (20: 行の中の長い空白の並びで、行末の空白の判定が線形。21: 編集欄が写した字と余白を写す) | INV-70、INV-83 | InvisibleCharOverlay.test.js | 01〜21 |
-| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜36 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス) |
+| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜39 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス。37〜39: コードのモード (`setMode`、1 段 6 列、Redo と Search。INV-85 (4)、NE-2)) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (13 の出来事 × 5 の状態、ガード、ポップオーバー) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
-| AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く) | INV-80、INV-48、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜19 |
-| AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル) | INV-24〜26、INV-79、CON-14 | MarkdownFileAccess.test.js | 01〜09 |
+| AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く。20〜23: コード編集モード (`setCodeEditor`、編集欄の色、置換は編集欄の Undo 1 回、表示では置換しない)) | INV-80、INV-48、INV-88、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜23 |
+| AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル。10: コードのファイルの種類 (空の配列なら出さない)。11: バイト列と種類のダウンロード) | INV-24〜26、INV-79、INV-90、CON-14 | MarkdownFileAccess.test.js | 01〜11 |
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
 | AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |
 | AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`)、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56、INV-79 | DocumentLifecycle.test.js | 01〜23 |
-| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js | 01〜69 (25 は欠番。41 は AT.1 の注。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)) |
-| AT-KEY | 主の修飾キーのショートカット (08: Redo のキー) | INV-14、INV-58〜60 | UIController.shortcuts.test.js | 01〜08 |
+| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン) | INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69 | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js、UIController.codeEdit.test.js (70〜78)、UIController.formatFileInfo.test.js (79)、UIController.codeEditor.test.js (80〜93) | 01〜93 (25 は欠番。41 は AT.1 の注。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)。34: コードの文書の部品が無い構成のコードビュー ([Edit] は無効)。70〜79: コードの文書の結線 (開くダイアログ・ファイル情報の文字コードと改行・未保存・Reload・保存中・Save as・`.md` の開き直し)。80〜93: コード編集モード (パレット・Undo・保存・Esc の順・折りたたみのキー (Mac)・`p`・目次・検索、93: Redo と Search のボタン)。SC-27) |
+| AT-KEY | 主の修飾キーのショートカット (02: コードビューの主 + S はコードのファイルを保存する (INV-90)。08: Redo のキー) | INV-14、INV-58〜60、INV-90 | UIController.shortcuts.test.js | 01〜08 |
 | AT-DBL | 編集モードでないときのダブルクリック | INV-31、INV-57 | UIController.doubleClick.test.js | 01〜14 |
 | AT-PAN | `DiagramPanController` (図のパンの終わり 01〜03、始まりは閾値を超えたとき (5px ちょうどでは始まらない。`utils.isPastActivation`) 04)。04 の閾値の決まりそのもの (INV-29・INV-68・INV-74 (2)・3.5 の図のパンに共通) は utils.test.js の `isPastActivation` の試験 | INV-16b、FS-09、INV-29、INV-68、INV-74 | DiagramPanController.test.js、utils.test.js (`isPastActivation`) | 01〜04 |
-| AT-SFR | `SourceFileRenderer` (コードビューの Reload) | INV-15 | SourceFileRenderer.test.js | 01 |
-| AT-CFG | `CONFIG.edit` と文言 | 5.2、CON-06 | config.edit.test.js、UIController.editMode.test.js、config.test.js (09) | 01〜09 |
+| AT-SFR | `SourceFileRenderer` (01: コードビューの Reload。02〜07: 読んだ文字の受け取り、`readText`、`showText`、`retarget`、`highlightText`、編集欄の上に色付けし直さない) | INV-15、INV-86、INV-89、INV-90 | SourceFileRenderer.test.js | 01〜07 |
+| AT-CFG | `CONFIG.edit` と文言 (05: `keyHints.markdown` と `keyHints.code` の `[E] Edit;`、`code` の `[I] Index;`・`[P] Commands;`・折りたたみのキー。SC-27) | 5.2、CON-06 | config.edit.test.js、UIController.editMode.test.js、config.test.js (09) | 01〜09 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと | 5.8.1、5.15.2 | themeColors.test.js、hljsThemePlugin.test.js | 01〜20 |
-| AT-STA | `src/js` と `src/css` の静的な検査 | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜19 |
+| AT-STA | `src/js` と `src/css` の静的な検査 (コードの編集の新しいファイルも対象。`CodeDocument` は Entity の検査の対象) | CON-06、CON-13、CON-14、CON-15、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜19 |
 | AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
 | AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ、14: 目次を出したままの確定・Undo の後の作り直しの時間。jsdom に大きな文書が残ると遅くなるので別のファイル) | INV-42、INV-48、INV-51、INV-74、INV-77 | performance.inplaceEdit.test.js、performance.index.test.js | 01〜14 |
-| AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11) (`ModalController`) | SC-16、FS-10、CON-03、CON-12、5.1、5.11 | HelpLanguageSwitch.test.js、ModalController.test.js | 01〜11 |
+| AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11)、閉じ方によらず `onHide` を呼ぶ (AT-HLP-12。INV-89 のダイアログ) (`ModalController`) | SC-16、FS-10、CON-03、CON-12、INV-89、5.1、5.11 | HelpLanguageSwitch.test.js、ModalController.test.js | 01〜12 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
 | AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド、早い入力の受け継ぎ | INV-81、INV-20 | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜57 |
 | AT-OSS | 同梱 OSS の表記: 数えるパッケージ、表記が漏れるときにビルドを失敗させること (許さないライセンス、文が無い、一覧に無い束ねられたコード、古くなった一覧、宣言した依存、dist の確かめの記録、コメントを壊す文)、一覧のコード・上書き・待ちの文、読む段と処理の段、文の取り出し、コメントとヘルプの一覧の形、CSP の hash が変わらないこと、プラグインの並び、`@purity`、本物のビルドで一覧の項目を 1 つずつ外すと落ちること (07) | 付録 A.2、INV-75、INV-76 | notices.test.js | 01〜07 |
 | AT-BETA | ベータ版のビルド: robots の meta だけを変えること (違う行が 1 行だけ、script が同じ)、robots の meta を属性の順・大文字小文字にかかわらず数えて 1 つでなければ失敗すること (レビューの L1)、ベータ版だけの mode とプラグインが無いこと (scripts)、`writeBeta` と CLI (書く先の名前、失敗の終了コード)、`build` と `build:beta` を流した実際のビルドの比べ (`docs/index.html` 役のファイルが残る)、コードが mode を読んでも script と CSP が本番と同じこと (レビューの M1 の再現) | INV-82、INV-20 | betaBuild.test.js | 01〜08 |
+| AT-ENC | `textEncoding.js` (BOM、UTF-8 の判定、Shift_JIS と EUC-JP の推し量り、`decodeAs`、往復のバイト列、書けない行、WHATWG の符号器の決まり、逆引きの表、UTF-16、改行の数え方と `keep`。27: 5 MB で線形) | INV-89、INV-90、仕様 5.19.2・5.19.3 | textEncoding.test.js | 01〜27 |
+| AT-IND | `indentText.js` (1 段の推し量り、Tab / Shift+Tab と選択、Enter の字下げ) | INV-87 | indentText.test.js | 01〜13 |
+| AT-JFO | `jsonFold.js` (オーナーの例 (01・02)、深い順、一番外、読めない JSON、文字列の中、1 行の JSON、空の組。13: 1 MB) | INV-92 | jsonFold.test.js | 01〜13 |
+| AT-COL | `codeOutline.js` (10 の言語、import のまとめ (16)、投げない (17)、1 MB (18)) | INV-91 | codeOutline.test.js | 01〜18 |
+| AT-CEH | `CodeEditHistory` (1 s の区切り、カーソルの移動、操作、Redo、30 回、差分) | INV-88 | CodeEditHistory.test.js | 01〜12 |
+| AT-CDOC | `CodeDocument` (LF と基準、`keep`、`toBytes`、BOM、書けない行、`withSaved`・`withReloaded`、`singleLineEnding`) | INV-89、INV-90 | CodeDocument.test.js | 01〜11 |
+| AT-CFD | `CodeFileDialog` (開くダイアログの部分・選び直し・閉じ方、保存の問い、`textContent`) | INV-89、INV-90 (2)、INV-19 | CodeFileDialog.test.js | 01〜07 |
+| AT-CEC | `CodeEditController` (01〜09: 読む・ダイアログ・Reload。10〜25: 保存 (権限・上書き・保存のダイアログ・ダウンロード・文字コードの問いと覚え方・書けない文字・二重の保存・`.md` の開き直し)。26〜34: コード編集モードと折りたたみ。35〜37: NE-30 と、書けない文字を保存のダイアログの前に調べる。38: Save as で言語が変わると表示を描き直す) | INV-85、INV-88〜INV-90、INV-92 | CodeEditController.test.js | 01〜38 |
+| AT-CED | `CodeEditor` (DOM、色付けの間と色なし、行番号、キー (Tab・Enter・Esc・IME・折りたたみのキー・Mac)、自前の Undo、選択と行の位置、色の層の範囲。24: 1 MB) | INV-85〜INV-88、INV-92 (4) | CodeEditor.test.js | 01〜24 |
+| AT-CCP | `CodeCommandPalette` (箱の名前とボタン、開閉とフォーカス、命令で閉じない、Esc・外の押下、無効、リスナー) | INV-92 (5) | CodeCommandPalette.test.js | 01〜07 |
 
 ID を持たない試験ファイル (その場編集の前からあるクラスの試験、`stateTable.test.js` など) と、ID を持つファイルの中の ID の無い試験 (`staticChecks.test.js` の「style.css for in-place editing」の一部、`MarkdownRenderer.purifyConfig.test.js` の設定を 1 度だけ与えることの試験など) も `npm test` の全件に含まれる。
 
@@ -4658,7 +5077,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | --- | --- | --- |
 | load.e2e.js | 起動 (CSP を持ち、エラーが無い)、Markdown・数式・コード・Mermaid の描画でエラーが無い、先頭に空行 41 行の文書が描画される (5.13。既知の制限: 直す前に落ちるのは Chromium だけ。WebKit は約 1 s で一致なしを返すので直す前でも通る。退行は AT-WRAP-20 と Chromium で見る。時間の検査は機械しだいになるので足さない) | PRT-A01、PRT-R01、PRT-T03 |
 | guards.e2e.js | 試験の土台の検査 (CSP の違反、`console.error`、外への要求を記録できること) | (e2e の全件の前提) |
-| fileDrop.e2e.js | `.md` のドロップは Markdown の表示 (先頭に空行 41 行のものも。5.13。load.e2e.js と同じ既知の制限: 直す前に落ちるのは Chromium だけ)、それ以外のテキストはコードビュー | PRT-C01、PRT-E01 |
+| fileDrop.e2e.js | `.md` のドロップは Markdown の表示 (先頭に空行 41 行のものも。5.13。load.e2e.js と同じ既知の制限: 直す前に落ちるのは Chromium だけ)、それ以外のテキストはコードビュー (コードビューでは [Edit] が有効。SC-27) | PRT-C01、PRT-E01 |
 | externalConsent.e2e.js | 外部画像と PlantUML は、同意の前・拒否の後に通信しない | PRT-T02、PRT-M02 |
 | save.e2e.js | Save as のダウンロードと保存ダイアログ (偽の picker) | PRT-W06 (ダウンロード)。偽の picker の試験は、PRT-W05 / W16 などの Save as で選んだファイルへ書き込む経路と同じ (本物の保存ダイアログは自動にできないので、ダイアログそのものは PRT で確かめる) |
 | theme.e2e.js | 配色 (ライト・ダーク・コードビュー) と印刷の色、印刷に出ないもの | PRT-X16、PRT-X19、PRT-V13 |
@@ -4677,6 +5096,8 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | notices.e2e.js | 同梱 OSS の表記: ビルドしたファイルの最後のコメントに、直接の依存 7 件 (入れた版)・ほかの dist の中のコード・KaTeX のフォントの表記があること、先頭の案内のコメントが CSP の後にあること、ヘルプの「Licenses」/「ライセンス」の一覧 (日英) | PRT-AA01、PRT-AA02 |
 | beta.e2e.js | ベータ版: ファイルが本番の robots の meta だけを `noindex` にしたものであること、CSP とヘルプの版が本番と同じで BETA の印が無いこと、4 つのライブラリが CSP の下で動くこと、同じ文書 (数式・表・コード) の描画が本番と同じ HTML になり、Mermaid も描けること | PRT-AF01、PRT-AF02 |
 | editScrollFont.e2e.js | ブロック編集欄の字とスクロール: 押した字にカーソルが来てその行が開く・打つ・Esc の前後で ±1 px (コードブロック・リンクのある段落。編集モードの 1 回押しでリスト・引用・段落)、段落・見出し・コードの編集欄の字が表示と同じで枠の線が無い、文書の終わりで打ってもビューが動かない (マウスとタッチ。文書の最後の高いコードブロックの中ほどで打つ形も)、目次と検索の箱の地が 0.85。GRSMD_PERF=1 のとき、大きなブロック (5,000 行のコード・色付けの上限の手前のコード・100 KB の段落) をダブルクリックで開く時間 (INV-84 (7))、1 MB の文書の中ほどと終わりの近くの段落で 1 キーの時間 (INV-40。記録だけ) | PRT-AG01〜AG03、PRT-AG05 |
+| codeEdit.e2e.js | コードのファイルの開き方と保存: Shift_JIS のファイルの開くダイアログ (文字コードと先頭の行) とファイル情報、CRLF と LF の混在の 3 つのボタンと [Keep as is]、UTF-8 の `.txt` はダイアログ無し、Shift_JIS のまま Save as (偽の保存のダイアログ) で同じバイト列 | PRT-AH01、PRT-AH02、PRT-AH09、PRT-AH10 |
+| codeEditor.e2e.js | コード編集モード: `.json` で `e`・打つ・Tab・主 + Z・Ctrl+Shift+[、表示の Ctrl+← / → (未保存にならない)、`p` のコマンドパレット、目次の JSON のキー、編集中の [All] と主 + Z、Shift_JIS のファイルを `x.md` に Save as (UTF-8 とトーストと Markdown のビュー) | PRT-AH03、PRT-AH05、PRT-AH08、PRT-AH11〜AH15 |
 
 ---
 
@@ -4907,6 +5328,24 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-AG03      | 編集欄の字 | 文書の終わりで打ってもずれない |      |
 | PRT-AG04      | 編集欄の字 | iPad (Safari) |      |
 | PRT-AG05      | 編集欄の字 | 目次と検索の箱が 15% 透け |      |
+| PRT-AH01      | コードの編集 | Shift_JIS・EUC-JP のファイルを開く |      |
+| PRT-AH02      | コードの編集 | 改行の混在と BOM |      |
+| PRT-AH03      | コードの編集 | 編集を始めて表示に戻る |      |
+| PRT-AH04      | コードの編集 | 色の付き直しと色なし |      |
+| PRT-AH05      | コードの編集 | Tab / Shift+Tab / Enter / Esc |      |
+| PRT-AH06      | コードの編集 | Mac のキーと IME |      |
+| PRT-AH07      | コードの編集 | 折りたたみのキーのぶつかり |      |
+| PRT-AH08      | コードの編集 | Undo / Redo の区切りと 30 回 |      |
+| PRT-AH09      | コードの編集 | Save と Save as |      |
+| PRT-AH10      | コードの編集 | 書けない文字・CRLF と BOM |      |
+| PRT-AH11      | コードの編集 | .md にして保存する |      |
+| PRT-AH12      | コードの編集 | JSON の折りたたみ |      |
+| PRT-AH13      | コードの編集 | コマンドパレット |      |
+| PRT-AH14      | コードの編集 | 目次 (言語ごと) |      |
+| PRT-AH15      | コードの編集 | 編集中の検索と置換 |      |
+| PRT-AH16      | コードの編集 | iPad とタッチ |      |
+| PRT-AH17      | コードの編集 | 大きいファイルの時間 |      |
+| PRT-AH18      | コードの編集 | 未保存の保護 |      |
 
 **テスター:** \_\_\_\_\_\_\_\_\_\_
 **日付:** \_\_\_\_\_\_\_\_\_\_

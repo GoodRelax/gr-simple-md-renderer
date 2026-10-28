@@ -95,8 +95,11 @@ export function fakeFileAccess(opts = {}) {
       calls.push("startPermissionRequest");
       return opts.permission ?? Promise.resolve("granted");
     },
-    startSavePicker(name) {
+    pickerTypes: [], // the types argument of each startSavePicker (undefined: the Markdown default)
+    downloadTypes: [], // the mimeType argument of each startDownload
+    startSavePicker(name, types) {
       calls.push(`startSavePicker:${name}`);
+      this.pickerTypes.push(types);
       return opts.picker ?? Promise.resolve(fakeFileHandle({ name: "picked.md", calls }));
     },
     async readLastModified(handle) {
@@ -119,9 +122,10 @@ export function fakeFileAccess(opts = {}) {
         lastModified: file.lastModified,
       };
     },
-    startDownload(name, text) {
+    startDownload(name, text, mimeType) {
       calls.push(`startDownload:${name}`);
       this.downloads.push({ name, text });
+      this.downloadTypes.push(mimeType);
     },
   };
 }
