@@ -1234,7 +1234,7 @@ export default class BlockEditController {
    * @purity semi-pure-b
    * @param {{id: number}} target
    * @param {MouseEvent|PointerEvent} e
-   * @returns {{count: number, afterSpace: boolean, lineOffset: number}|null}
+   * @returns {{count: number, afterSpace: boolean, lineOffset: number, index: number, text: string}|null}
    */
   _textPlaceOf(target, e) {
     const element = this.blockLocator.getBlockElement(target.id);
@@ -1283,15 +1283,17 @@ export default class BlockEditController {
   }
 
   /**
-   * The top of the line of the editor's caret at offset, from the wrapper's top.
+   * The top of the line of the editor's caret at offset, from the wrapper's
+   * top; null for a long wrapping text (INV-84, CONFIG.edit.caretLineMaxChars).
    * @purity semi-pure-b
    * @param {{textarea: HTMLTextAreaElement, wrapper: Element}} editor
    * @param {number} offset
-   * @returns {number}
+   * @returns {number|null}
    */
   _editorLineOffset(editor, offset) {
     const { textarea, wrapper } = editor;
-    return BlockCaretMap.caretOffsetIn(textarea, offset) + textarea.getBoundingClientRect().top - wrapper.getBoundingClientRect().top;
+    const top = BlockCaretMap.caretOffsetIn(textarea, offset, CONFIG.edit.caretLineMaxChars);
+    return top === null ? null : top + textarea.getBoundingClientRect().top - wrapper.getBoundingClientRect().top;
   }
 
   /**
@@ -1342,7 +1344,9 @@ export default class BlockEditController {
     // INV-83 / INV-84: read from the rendered block before it is taken out
     const textStyle = this._matchedTextStyle(wrapper, blockType, blockId === null);
     const place = blockId !== null && textStyle && target.textPlace ? target.textPlace : null;
-    const renderedText = place ? BlockCaretMap.textOf(wrapper) : "";
+    // the block's text as it was at the press (the same unless a commit at
+    // that press changed this block too; the caret is then a little off)
+    const renderedText = place ? place.text : "";
     const textarea = document.createElement("textarea");
     textarea.className = "md-block-editor";
     textarea.spellcheck = false;
@@ -1368,7 +1372,7 @@ export default class BlockEditController {
     textarea.addEventListener("paste", this._onPaste);
     textarea.addEventListener("compositionstart", this._onCompositionStart);
     textarea.addEventListener("compositionend", this._onCompositionEnd);
-    this._fitHeight();
+    this._fitHeight(false); // the anchor below puts the scroll in place
     this._attachOverlay(textarea, blockType);
     textarea.focus({ preventScroll: true });
     let kept = anchor;
@@ -1379,9 +1383,10 @@ export default class BlockEditController {
     } else if (place) {
       // INV-84: the caret where the block was pressed, and that line stays
       // where it was on screen
-      const offset = BlockCaretMap.sourceOffsetFor(raw, renderedText, blockType, place.count, place.afterSpace);
+      const offset = BlockCaretMap.sourceOffsetFor(raw, renderedText, blockType, place.count, place.afterSpace, place.index);
       textarea.setSelectionRange(offset, offset);
-      if (anchor) kept = { offsetTop: anchor.offsetTop + place.lineOffset - this._editorLineOffset(this._editor, offset) };
+      const line = anchor ? this._editorLineOffset(this._editor, offset) : null;
+      if (line !== null) kept = { offsetTop: anchor.offsetTop + place.lineOffset - line };
     }
     this.scrollMemento.restoreAnchor(kept, wrapper);
     if (blockId !== null) this.orchestrator.retargetPendingAnchor(blockId);
@@ -1469,14 +1474,15 @@ export default class BlockEditController {
 
   /**
    * The line of an open editor's caret (INV-84): its top from the wrapper's
-   * top, and the caret in the source.
+   * top, and the caret in the source; null when it is not measured.
    * @purity semi-pure-b
    * @param {{textarea: HTMLTextAreaElement, wrapper: Element}} editor
-   * @returns {{offset: number, sourceOffset: number}}
+   * @returns {{offset: number, sourceOffset: number}|null}
    */
   _caretLine(editor) {
     const sourceOffset = editor.textarea.selectionStart;
-    return { offset: this._editorLineOffset(editor, sourceOffset), sourceOffset };
+    const offset = this._editorLineOffset(editor, sourceOffset);
+    return offset === null ? null : { offset, sourceOffset };
   }
 
   /**
@@ -1820,15 +1826,18 @@ export default class BlockEditController {
   /**
    * INV-40: the editor is as tall as its content.
    * @purity non-pure
+   * @param {boolean} [keepScroll] - false when the editor opens (its anchor
+   *   puts the scroll in place after, and reading it first would lay out
+   *   the new editor once more)
    */
-  _fitHeight() {
+  _fitHeight(keepScroll = true) {
     const { textarea } = this._editor;
     // The editor is short for a moment while it is measured: near the end
     // of the document the browser can pull the scroll back then (INV-40).
-    const scroll = this.scrollMemento.save();
+    const scroll = keepScroll ? this.scrollMemento.save() : null;
     textarea.style.height = "auto";
     // box-sizing: border-box (style.css): the height includes the borders
     textarea.style.height = `${textarea.scrollHeight + textarea.offsetHeight - textarea.clientHeight}px`;
-    if (this.scrollMemento.save() !== scroll) this.scrollMemento.restore(scroll);
+    if (keepScroll && this.scrollMemento.save() !== scroll) this.scrollMemento.restore(scroll);
   }
 }

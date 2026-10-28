@@ -270,6 +270,7 @@ export const CONFIG = {
     },
     invisibleMarkMaxChars: 50000, // INV-70: no marks layer above this length
     invisibleMarkMaxMarks: 2000, // INV-70: ... nor above this many marks
+    caretLineMaxChars: 20000, // INV-84: a wrapping text longer than this before the caret keeps the block's top
     linkSchemes: ["http:", "https:", "mailto:"], // a text that is a link URL (INV-69, INV-72 (a))
     maxPastedUrlLength: 2048, // INV-69
     doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device

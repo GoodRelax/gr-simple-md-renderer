@@ -29,7 +29,9 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   was on the screen. When you press Esc or click outside, the caret's line
   stays where it was too. Before, the lines of a long block (a code block,
   a long list) moved when it opened or closed, and the first key typed
-  jumped to the end of the block.
+  jumped to the end of the block. In a very long paragraph (more than 20,000
+  characters before the caret) the block's top stays in place instead, so
+  that opening it stays quick.
 - Block editing: typing no longer moves the view, also near the end of the
   document.
 - The Index and Search panels let less of the page show through (15%, it

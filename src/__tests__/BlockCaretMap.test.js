@@ -96,3 +96,62 @@ describe("AT-BCM-04 textOf leaves out what is not the block's own text", () => {
     expect(BlockCaretMap.textOf(el)).toBe("a x b");
   });
 });
+
+describe("AT-BCM-05 the fast paths give the same answers", () => {
+  it("_isSpace is /\s/ for every UTF-16 code", () => {
+    const wrong = [];
+    for (let code = 0; code <= 0xffff; code++) if (BlockCaretMap._isSpace(code) !== /\s/.test(String.fromCharCode(code))) wrong.push(code.toString(16));
+    expect(wrong).toEqual([]);
+  });
+
+  it("a code block's lines keep their leading # and - (no list or heading markers in code)", () => {
+    const source = "```sh\n# install\n- step\nrun it\n```";
+    const rendered = "# install\n- step\nrun it\n";
+    expect(offsetBefore(source, rendered, "code", "install")).toBe(source.indexOf("install"));
+    expect(offsetBefore(source, rendered, "code", "step")).toBe(source.indexOf("step"));
+    expect(offsetBefore(source, rendered, "code", "- step")).toBe(source.indexOf("- step"));
+  });
+
+  it("stopping early (at the caret, or at a source offset) changes nothing before the stop", () => {
+    const source = "Some **bold** text and [a link](https://example.com/x) here, then more words.";
+    const rendered = "Some bold text and a link here, then more words.";
+    const all = BlockCaretMap.align(source, rendered, "paragraph");
+    expect(BlockCaretMap.align(source, rendered, "paragraph", 10)).toEqual(all.slice(0, 10));
+    const stop = source.indexOf("here");
+    const upTo = BlockCaretMap.align(source, rendered, "paragraph", Infinity, stop);
+    expect(upTo).toEqual(all.slice(0, upTo.length));
+    expect(upTo[upTo.length - 1]).toBe(stop);
+  });
+});
+
+describe("AT-BCM-06 a code block shows its source as it is: the offset is found at once", () => {
+  const source = "```js\nconst a = 1;\n  // two spaces\nlet b = 2;\n```";
+  const rendered = "const a = 1;\n  // two spaces\nlet b = 2;\n";
+
+  it("by the caret's index, the same as by matching", () => {
+    for (let index = 0; index <= rendered.length; index++) {
+      const before = rendered.slice(0, index);
+      const count = before.replace(/\s/g, "").length;
+      const afterSpace = index === 0 || /\s$/.test(before);
+      expect(BlockCaretMap.sourceOffsetFor(source, rendered, "code", count, afterSpace, index), `index ${index}`).toBe(6 + index);
+    }
+  });
+
+  it("back: the place of each source offset in the code", () => {
+    expect(BlockCaretMap.renderedPlaceFor(source, rendered, "code", 6)).toEqual({ count: 0, afterSpace: true });
+    expect(BlockCaretMap.renderedPlaceFor(source, rendered, "code", source.indexOf("// two"))).toEqual({ count: 9, afterSpace: true });
+    expect(BlockCaretMap.renderedPlaceFor(source, rendered, "code", source.indexOf(" = 2"))).toEqual({ count: 24, afterSpace: false });
+  });
+});
+
+describe("AT-BCM-07 a long wrapping text is not measured (INV-84, CONFIG.edit.caretLineMaxChars)", () => {
+  it("more than maxChars before the caret: null (the block's top is kept); fewer: a number", () => {
+    const textarea = document.createElement("textarea");
+    textarea.value = "word ".repeat(100);
+    document.body.append(textarea);
+    // jsdom lays nothing out: the text is taken as wrapping, so the copy would be measured
+    expect(BlockCaretMap.caretOffsetIn(textarea, 300, 200)).toBe(null);
+    expect(typeof BlockCaretMap.caretOffsetIn(textarea, 100, 200)).toBe("number");
+    textarea.remove();
+  });
+});

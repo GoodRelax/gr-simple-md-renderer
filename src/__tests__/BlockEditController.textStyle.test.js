@@ -86,7 +86,7 @@ describe("AT-BEC-TS INV-84 the caret where the block was pressed", () => {
     s = await setupEdit(DOC);
     fakeComputedStyles();
     // right after "Hello" (5 characters, no whitespace before the caret)
-    const pointAt = vi.spyOn(BlockCaretMap, "pointAt").mockReturnValue({ count: 5, afterSpace: false, lineOffset: 0 });
+    const pointAt = vi.spyOn(BlockCaretMap, "pointAt").mockReturnValue({ count: 5, afterSpace: false, lineOffset: 0, index: 5, text: "Hello world." });
     const { ta } = open(isType("paragraph"));
     expect(pointAt).toHaveBeenCalled();
     expect(ta.selectionStart).toBe(5);

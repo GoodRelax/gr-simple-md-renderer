@@ -231,3 +231,78 @@ test("the Index and Search panels let 15% of what is behind show through (INV-77
     expect(await page.locator(id).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(255, 255, 255, 0.85)");
   }
 });
+
+// Timing depends on the machine: only with GRSMD_PERF=1, as the other timing
+// checks. INV-84 (performance): finding the double-clicked character in the
+// rendered block and in its source, placing the caret and keeping its line
+// must not make opening a large block slow: from the double click to the
+// open editor laid out, within a browser's long task (50 ms, as INV-74).
+// Measured 2026-10-28, develop before INV-84 / with it, three runs each
+// (ms): 5,000 lines 45, 42, 55 / 49, 55, 51; highlighted 11, 14, 12 / 16,
+// 27, 17; 100 KB paragraph 18, 17, 24 / 36, 41, 33. The 5,000 lines took
+// about 45 ms before (laying out the editor's 200 KB is most of it), so
+// their budget is 80 ms. Esc to the committed block drawn again is logged
+// only: it is the block's render (85 to 95 ms for the 100 KB paragraph,
+// before and with INV-84 alike).
+const PERF_CASES = [
+  {
+    name: "a code block of 5,000 lines (no highlighting)",
+    budget: 80,
+    markdown: ["Intro.", "", "```", ...Array.from({ length: 5000 }, (_, n) => `value_${n} = compute(${n}) + offset; // line ${n}`), "```", "", "Outro."].join("\n"),
+    pick: "line 4900",
+  },
+  {
+    name: "a JavaScript block just under the highlighting limit",
+    budget: 50,
+    markdown: ["Intro.", "", "```js", ...Array.from({ length: 480 }, (_, n) => `const v${n} = fn("s${n}", ${n}); // c${n}`), "```", "", "Outro."].join("\n"),
+    pick: "// c470",
+  },
+  {
+    name: "a paragraph of 100 KB with bold and links",
+    budget: 50,
+    markdown: ["Intro.", "", Array.from({ length: 1400 }, (_, n) => `word${n} **bold${n}** [link${n}](https://example.com/p/${n}) and more`).join(" "), "", "Outro."].join("\n"),
+    pick: "word1390 ",
+  },
+];
+
+for (const c of PERF_CASES) {
+  test(`INV-84 (performance): ${c.name}: double click to open within ${c.budget} ms`, async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "measured in Chrome (INV-51)");
+    test.skip(process.env.GRSMD_PERF !== "1", "timing: GRSMD_PERF=1 only");
+    test.setTimeout(180000);
+    await page.goto("/");
+    await renderMarkdown(page, c.markdown);
+    await settled(page);
+    await scrollTextTo(page, c.pick, 300);
+    const target = await renderedChar(page, c.pick);
+    const open = await page.evaluate(({ x, y }) => {
+      const t0 = performance.now();
+      document.elementFromPoint(x, y).dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, clientX: x, clientY: y, detail: 2, view: window }));
+      document.querySelector("#preview").getBoundingClientRect();
+      return performance.now() - t0;
+    }, target);
+    const editor = page.locator("#preview textarea.md-block-editor");
+    await expect(editor).toBeFocused();
+    const caretAt = await editor.evaluate((ta) => ta.value.slice(ta.selectionStart - 12, ta.selectionStart + 12));
+    await editor.evaluate((ta) => {
+      ta.setRangeText("X", ta.selectionStart, ta.selectionStart, "end");
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const commit = await page.evaluate(async () => {
+      performance.clearMeasures("grsmd-commit");
+      const ta = document.querySelector("#preview textarea.md-block-editor");
+      const t0 = performance.now();
+      ta.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      await new Promise((resolve) => {
+        const check = () => (performance.getEntriesByName("grsmd-commit", "measure").length ? resolve() : setTimeout(check, 1));
+        check();
+      });
+      const swap = performance.getEntriesByName("grsmd-commit", "measure")[0];
+      return swap.startTime + swap.duration - t0;
+    });
+    await settled(page);
+    console.log(`${c.name}: open ${open.toFixed(1)} ms (caret at ${JSON.stringify(caretAt)}), Esc to swap ${commit.toFixed(1)} ms`);
+    expect(caretAt).toContain(c.pick.trim().slice(0, 4));
+    expect(open).toBeLessThanOrEqual(c.budget);
+  });
+}

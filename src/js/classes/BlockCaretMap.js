@@ -21,7 +21,6 @@ const FENCE_LINE = /^ {0,3}(?:`{3,}|~{3,})[^\n]*(?:\n|$)/;
 // inside it, and a quoted title), and an HTML tag (not an autolink, whose
 // text is shown). No nested quantifier (AT-STA-18).
 const HIDDEN_PARTS = /\]\([^()\s]*(?:\([^()]*\)[^()\s]*)?(?:\s+(?:"[^"]*"|'[^']*'))?\)|<\/?[A-Za-z][A-Za-z0-9-]*(?:\s[^<>]*)?\/?>/g;
-const WHITESPACE = /\s/;
 // Copied to the measuring copy of an editor: what places its text.
 const MIRROR_PROPS = [
   "boxSizing",
@@ -52,34 +51,43 @@ const MIRROR_PROPS = [
 export default class BlockCaretMap {
   /**
    * For each character of rendered that is not whitespace, the index of the
-   * source character it matches, or -1.
+   * source character it matches, or -1. It stops after maxCount characters,
+   * or at the first match at or past stopAt (included).
    * @purity pure
    * @param {string} source - the block's source (as the editor shows it)
    * @param {string} rendered - the block's rendered text
-   * @param {string|null} type - the block's type ("code": its fence line is passed over)
+   * @param {string|null} type - the block's type ("code": its fence line is
+   *   passed over, and its lines have no markers)
+   * @param {number} [maxCount]
+   * @param {number} [stopAt]
    * @returns {number[]}
    */
-  static align(source, rendered, type) {
-    const hidden = BlockCaretMap._hiddenMask(source);
+  static align(source, rendered, type, maxCount = Infinity, stopAt = Infinity) {
+    const code = type === "code";
+    const hidden = code ? null : BlockCaretMap._hiddenMask(source);
     const out = [];
-    let from = type === "code" ? BlockCaretMap._afterFence(source) : BlockCaretMap._skipPrefix(source, 0);
-    for (let i = 0; i < rendered.length; i++) {
-      const ch = rendered[i];
-      if (WHITESPACE.test(ch)) continue;
+    let from = code ? BlockCaretMap._afterFence(source) : BlockCaretMap._skipPrefix(source, 0);
+    for (let i = 0; i < rendered.length && out.length < maxCount; i++) {
+      const ch = rendered.charCodeAt(i);
+      if (BlockCaretMap._isSpace(ch)) continue;
       const limit = Math.min(source.length, from + SEARCH_WINDOW);
       let found = -1;
       for (let k = from; k < limit; k++) {
-        if (source[k] === "\n") {
+        const at = source.charCodeAt(k);
+        if (at === 10 && !code) {
           k = BlockCaretMap._skipPrefix(source, k + 1) - 1;
           continue;
         }
-        if (!hidden[k] && source[k] === ch) {
+        if (at === ch && !(hidden && hidden[k])) {
           found = k;
           break;
         }
       }
       out.push(found);
-      if (found >= 0) from = found + 1;
+      if (found >= 0) {
+        from = found + 1;
+        if (found >= stopAt) break;
+      }
     }
     return out;
   }
@@ -95,10 +103,18 @@ export default class BlockCaretMap {
    * @param {string|null} type
    * @param {number} count
    * @param {boolean} afterSpace
+   * @param {number} [index] - the caret's index in rendered: a code block
+   *   shows its source as it is, so the source offset is found at once when
+   *   the text before the caret is the same in both
    * @returns {number}
    */
-  static sourceOffsetFor(source, rendered, type, count, afterSpace) {
-    const matches = BlockCaretMap.align(source, rendered, type);
+  static sourceOffsetFor(source, rendered, type, count, afterSpace, index = -1) {
+    if (type === "code" && index >= 0) {
+      const start = BlockCaretMap._afterFence(source);
+      if (source.startsWith(rendered.slice(0, index), start)) return start + index;
+    }
+    // the characters up to the caret, and a few after it to find the next match
+    const matches = BlockCaretMap.align(source, rendered, type, count + SEARCH_WINDOW);
     if (afterSpace || count === 0) {
       for (let i = count; i < matches.length; i++) if (matches[i] >= 0) return matches[i];
     }
@@ -119,7 +135,14 @@ export default class BlockCaretMap {
    * @returns {{count: number, afterSpace: boolean}}
    */
   static renderedPlaceFor(source, rendered, type, offset) {
-    const matches = BlockCaretMap.align(source, rendered, type);
+    if (type === "code") {
+      const start = BlockCaretMap._afterFence(source);
+      const index = offset - start;
+      if (index >= 0 && index <= rendered.length && source.startsWith(rendered.slice(0, index), start)) {
+        return { count: BlockCaretMap._countText(rendered, index), afterSpace: index === 0 || BlockCaretMap._isSpace(rendered.charCodeAt(index - 1)) };
+      }
+    }
+    const matches = BlockCaretMap.align(source, rendered, type, Infinity, offset);
     let count = 0;
     let last = -1;
     for (let i = 0; i < matches.length; i++) {
@@ -138,9 +161,9 @@ export default class BlockCaretMap {
    * @returns {string}
    */
   static textOf(element) {
-    let text = "";
-    for (const node of BlockCaretMap._textNodes(element)) text += node.data;
-    return text;
+    return BlockCaretMap._textNodes(element)
+      .map((node) => node.data)
+      .join("");
   }
 
   /**
@@ -152,27 +175,37 @@ export default class BlockCaretMap {
    * @param {Element} element
    * @param {number} x
    * @param {number} y
-   * @returns {{count: number, afterSpace: boolean, lineOffset: number}|null}
+   * @returns {{count: number, afterSpace: boolean, lineOffset: number, index: number, text: string}|null}
+   *   index: the caret's index in text, which is textOf(element) at the press
    */
   static pointAt(element, x, y) {
     const caret = BlockCaretMap._caretFromPoint(x, y);
     if (!caret || !element.contains(caret.node) || caret.node.nodeType !== Node.TEXT_NODE) return null;
-    let before = "";
+    let count = 0;
+    let index = 0;
+    let last = -1; // the last character before the caret (its code)
     let found = false;
-    for (const node of BlockCaretMap._textNodes(element)) {
+    const nodes = BlockCaretMap._textNodes(element);
+    for (const node of nodes) {
+      const end = node === caret.node ? caret.offset : node.data.length;
+      count += BlockCaretMap._countText(node.data, end);
+      index += end;
+      if (end > 0) last = node.data.charCodeAt(end - 1);
       if (node === caret.node) {
-        before += node.data.slice(0, caret.offset);
         found = true;
         break;
       }
-      before += node.data;
     }
     if (!found) return null;
-    let count = 0;
-    for (const ch of before) if (!WHITESPACE.test(ch)) count++;
-    const afterSpace = before.length === 0 || WHITESPACE.test(before[before.length - 1]);
-    const lineOffset = BlockCaretMap.lineOffsetOf(element, count, afterSpace);
-    return lineOffset === null ? null : { count, afterSpace, lineOffset };
+    const afterSpace = last < 0 || BlockCaretMap._isSpace(last);
+    // the character measured is in the caret's own text node when it can be
+    const data = caret.node.data;
+    let at = -1;
+    if (!afterSpace && caret.offset > 0) at = caret.offset - 1;
+    else for (let i = caret.offset; i < data.length && at < 0; i++) if (!BlockCaretMap._isSpace(data.charCodeAt(i))) at = i;
+    const lineOffset = at >= 0 ? BlockCaretMap._charTop(element, caret.node, at) : BlockCaretMap.lineOffsetOf(element, count, afterSpace);
+    if (lineOffset === null) return null;
+    return { count, afterSpace, lineOffset, index, text: nodes.map((node) => node.data).join("") };
   }
 
   /**
@@ -191,47 +224,54 @@ export default class BlockCaretMap {
     let last = null;
     for (const node of BlockCaretMap._textNodes(element)) {
       const data = node.data;
+      const inNode = BlockCaretMap._countText(data, data.length);
+      if (inNode === 0) continue;
+      if (seen + inNode <= wanted) {
+        // the whole node is before it: only its last character is kept
+        seen += inNode;
+        last = node;
+        continue;
+      }
       for (let i = 0; i < data.length; i++) {
-        if (WHITESPACE.test(data[i])) continue;
-        last = { node, i };
+        if (BlockCaretMap._isSpace(data.charCodeAt(i))) continue;
         if (seen === wanted) return BlockCaretMap._charTop(element, node, i);
         seen++;
       }
     }
-    return last ? BlockCaretMap._charTop(element, last.node, last.i) : null;
+    if (!last) return null;
+    let i = last.data.length - 1;
+    while (i > 0 && BlockCaretMap._isSpace(last.data.charCodeAt(i))) i--;
+    return BlockCaretMap._charTop(element, last, i);
   }
 
   /**
-   * The top of the caret's line in a textarea, from the textarea's top: a
-   * hidden copy with the same text box is measured (the caret is a mark
-   * there, with the rest of the text after it, so the wrapping is the same).
+   * The top of the caret's line in a textarea, from the textarea's top. When
+   * no line wraps (most code), it is counted: the top of the first line
+   * plus the lines before it, each as high as one line of a small hidden
+   * copy with the same text box. Otherwise the copy holds the text up to
+   * the end of the caret's word, with the caret a mark in it (the text
+   * after that word does not move it), and the mark is measured; when more
+   * than maxChars come before the caret, it is not measured (null: laying
+   * out the copy costs as much as the editor itself).
    * @purity semi-pure-b
    * @param {HTMLTextAreaElement} textarea
    * @param {number} offset
-   * @returns {number}
+   * @param {number} [maxChars]
+   * @returns {number|null}
    */
-  static caretOffsetIn(textarea, offset) {
-    const style = getComputedStyle(textarea);
-    const copy = document.createElement("div");
-    for (const prop of MIRROR_PROPS) copy.style[prop] = style[prop];
-    Object.assign(copy.style, {
-      position: "absolute",
-      visibility: "hidden",
-      top: "0",
-      left: "0",
-      height: "auto",
-      overflow: "hidden",
-      whiteSpace: "pre-wrap",
-      overflowWrap: "break-word",
-    });
+  static caretOffsetIn(textarea, offset, maxChars = Infinity) {
     const value = textarea.value;
-    const mark = document.createElement("span");
-    mark.textContent = "\u200b"; // zero width: the caret's place
-    copy.append(document.createTextNode(value.slice(0, offset)), mark, document.createTextNode(value.slice(offset)));
-    document.body.append(copy);
-    const top = mark.getBoundingClientRect().top - copy.getBoundingClientRect().top;
-    copy.remove();
-    return top;
+    const style = getComputedStyle(textarea);
+    const one = BlockCaretMap._measureCopy(style, ["x"], "x\nx");
+    const lines = BlockCaretMap._countLines(value, value.length);
+    const content = textarea.scrollHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+    if (Math.abs(content - lines * one.lineHeight) < one.lineHeight / 2) {
+      return one.firstTop + (BlockCaretMap._countLines(value, offset) - 1) * one.lineHeight;
+    }
+    if (offset > maxChars) return null;
+    let end = offset;
+    while (end < value.length && !BlockCaretMap._isSpace(value.charCodeAt(end))) end++;
+    return BlockCaretMap._measureCopy(style, [value.slice(0, offset)], value.slice(offset, end)).markTop;
   }
 
   /**
@@ -252,13 +292,94 @@ export default class BlockCaretMap {
     if (!anchor || !anchor.line || !element) return anchor;
     const plain = { offsetTop: anchor.offsetTop };
     if (anchor.line.sourceOffset > source.length) return plain;
-    const place = BlockCaretMap.renderedPlaceFor(source, BlockCaretMap.textOf(element), type, anchor.line.sourceOffset);
+    // the place is found once per rendered block (the anchor is restored
+    // again when the DOM is stable)
+    const line = anchor.line;
+    if (!line.found || line.found.element !== element) {
+      line.found = { element, place: BlockCaretMap.renderedPlaceFor(source, BlockCaretMap.textOf(element), type, line.sourceOffset) };
+    }
+    const place = line.found.place;
     const offset = BlockCaretMap.lineOffsetOf(element, place.count, place.afterSpace);
     if (offset === null) return plain;
     return { offsetTop: anchor.offsetTop + anchor.line.offset - offset };
   }
 
   // ---- internals ----
+
+  /**
+   * Whitespace as /\s/ sees it (by its code, to keep long texts fast).
+   * @purity pure
+   * @param {number} code
+   * @returns {boolean}
+   */
+  static _isSpace(code) {
+    if (code <= 32) return code === 32 || (code >= 9 && code <= 13);
+    if (code < 160) return false;
+    return code === 160 || code === 0x1680 || (code >= 0x2000 && code <= 0x200a) || code === 0x2028 || code === 0x2029 || code === 0x202f || code === 0x205f || code === 0x3000 || code === 0xfeff;
+  }
+
+  /**
+   * @purity pure
+   * @param {string} text
+   * @param {number} end
+   * @returns {number} the characters before end that are not whitespace
+   */
+  static _countText(text, end) {
+    let count = 0;
+    for (let i = 0; i < end; i++) if (!BlockCaretMap._isSpace(text.charCodeAt(i))) count++;
+    return count;
+  }
+
+  /**
+   * @purity pure
+   * @param {string} text
+   * @param {number} end
+   * @returns {number} the lines of text before end (1 when there is no line break)
+   */
+  static _countLines(text, end) {
+    let lines = 1;
+    for (let i = text.indexOf("\n"); i >= 0 && i < end; i = text.indexOf("\n", i + 1)) lines++;
+    return lines;
+  }
+
+  /**
+   * A hidden copy of a textarea's text box (style), holding the parts of
+   * before, a zero-width mark (the caret), then after: where the mark is
+   * from the copy's top, and with "x" before and "x\nx" after, the top of
+   * the first line and the height of one line.
+   * @purity semi-pure-b
+   * @param {CSSStyleDeclaration} style
+   * @param {string[]} before
+   * @param {string} after
+   * @returns {{markTop: number, firstTop: number, lineHeight: number}}
+   */
+  static _measureCopy(style, before, after) {
+    const copy = document.createElement("div");
+    for (const prop of MIRROR_PROPS) copy.style[prop] = style[prop];
+    Object.assign(copy.style, {
+      position: "absolute",
+      visibility: "hidden",
+      top: "0",
+      left: "0",
+      height: "auto",
+      overflow: "hidden",
+      whiteSpace: "pre-wrap",
+      overflowWrap: "break-word",
+    });
+    const mark = document.createElement("span");
+    mark.textContent = "\u200b"; // zero width: the caret's place
+    const tail = document.createElement("span");
+    tail.textContent = after;
+    copy.append(...before.map((text) => document.createTextNode(text)), mark, tail);
+    document.body.append(copy);
+    const top = copy.getBoundingClientRect().top;
+    const markTop = mark.getBoundingClientRect().top - top;
+    const rects = tail.getClientRects();
+    // "x\nx" after the mark: its two lines give the line height
+    const lineHeight = rects.length > 1 ? rects[rects.length - 1].top - rects[0].top : 0;
+    copy.remove();
+    return { markTop, firstTop: markTop, lineHeight };
+  }
 
   /**
    * @purity pure
@@ -304,9 +425,14 @@ export default class BlockCaretMap {
    */
   static _textNodes(element) {
     const nodes = [];
-    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+    // elements are visited too, so that a skipped one skips its whole
+    // subtree (one check per element, not one per text node)
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
       /** @purity semi-pure-b */
-      acceptNode: (node) => (node.parentElement?.closest(SKIP_SELECTOR) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+      acceptNode: (node) => {
+        if (node.nodeType === Node.TEXT_NODE) return NodeFilter.FILTER_ACCEPT;
+        return node.matches(SKIP_SELECTOR) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+      },
     });
     for (let node = walker.nextNode(); node; node = walker.nextNode()) nodes.push(node);
     return nodes;

@@ -64,6 +64,7 @@ describe("CONFIG.edit text colors and invisible marks (INV-66, INV-70, 5.14.14)"
     });
     expect(CONFIG.edit.invisibleMarkMaxChars).toBe(50000);
     expect(CONFIG.edit.invisibleMarkMaxMarks).toBe(2000); // P-3
+    expect(CONFIG.edit.caretLineMaxChars).toBe(20000); // INV-84 (performance)
   });
 
   // The grounds text can be on: page, block editor, table header (light);
