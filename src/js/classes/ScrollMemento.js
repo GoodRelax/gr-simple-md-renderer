@@ -67,6 +67,45 @@ export default class ScrollMemento {
   }
 
   /**
+   * From now on, the position of the view after each of its scrolls, noted
+   * when the browser reports the scroll: last() gives it without laying out
+   * the page (INV-40: a block editor's height is fitted at each key). stop()
+   * removes the listener.
+   * @returns {{last: () => number, stop: () => void}}
+   * @purity non-pure
+   */
+  noteScrolls() {
+    let last = this.save();
+    /** @purity non-pure */
+    const onScroll = (e) => {
+      if (e.target === this.container || e.target === document) last = this.save();
+    };
+    window.addEventListener("scroll", onScroll, true);
+    return {
+      last: () => last,
+      /** @purity non-pure */
+      stop: () => window.removeEventListener("scroll", onScroll, true),
+    };
+  }
+
+  /**
+   * Whether the view is at its end and above pos: the browser pulled it back
+   * when the document got shorter. Read it while the layout is current (it
+   * then lays out nothing).
+   * @param {number} pos - a position save() returned
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
+  isPulledBackFrom(pos) {
+    const now = this.save();
+    if (now >= pos) return false;
+    const end = this.useDocumentScroll
+      ? document.documentElement.scrollHeight - window.innerHeight
+      : this.container.scrollHeight - this.container.clientHeight;
+    return now >= end - 1;
+  }
+
+  /**
    * INV-78: from now on, where the user last took the view. After a move
    * (MOVE_KEYS and USER_ACTS: not Shift, not a press outside the text), each
    * scroll of the view notes the reader's place (captureReadingAnchor), and

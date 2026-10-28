@@ -894,7 +894,7 @@ body.dark #keyHint {
 #indexPanel {
   pointer-events: auto;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.85); /* 15% shows through (INV-77) */
   color: #1f2328;
   border: 1px solid #d1d9e0;
   border-radius: 6px;
@@ -1028,7 +1028,7 @@ body.dark #keyHint {
 @media screen {
   body.dark #searchPanel,
   body.dark #indexPanel {
-    background: rgba(21, 27, 35, 0.75);
+    background: rgba(21, 27, 35, 0.85);
     color: #f0f6fc;
     border-color: #3d444d;
   }
@@ -1178,20 +1178,27 @@ body.view-code.dark #editor {
    body.edit-mode is set while the edit palette is shown (EditPalette).
    ======================================== */
 
-/* Block editor (INV-40: as tall as its content, no inner scroll bar) */
+/* Block editor (INV-40: as tall as its content, no inner scroll bar).
+   INV-83: no padding and no border, so its text starts where the rendered
+   text did; the frame is an outline, which takes no room. A paragraph,
+   heading, list, quote or code block sets its text style, margins (and a
+   code block its padding) from the rendered block (BlockEditController);
+   the monospace below is for the other types. */
 .md-block-editor {
   display: block;
   box-sizing: border-box;
   width: 100%;
   margin: 4px 0;
-  padding: 6px 8px;
+  padding: 0;
   font-family: "BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace; /* as #editor (INV-61) */
   font-size: 14px;
   line-height: 1.5;
   color: #1f2328;
   background: #fffdf5;
-  border: 1px solid #0969da;
-  border-radius: 4px;
+  border: 0;
+  border-radius: 0;
+  outline: 1px solid #0969da;
+  outline-offset: 2px;
   resize: none;
   overflow-y: hidden;
   white-space: pre-wrap;
@@ -1201,7 +1208,7 @@ body.view-code.dark #editor {
 
 .md-block-editor:focus {
   outline: 2px solid #0969da;
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 /* Dark, screen only: print keeps the light colors (spec 5.8.1) */
@@ -1209,7 +1216,7 @@ body.view-code.dark #editor {
   .dark .md-block-editor {
     color: #f0f6fc;
     background: #010409;
-    border-color: #1f6feb;
+    outline-color: #1f6feb;
   }
 
   .dark .md-block-editor:focus {
@@ -1219,8 +1226,9 @@ body.view-code.dark #editor {
 
 /* Invisible character marks (INV-70): a layer right behind the block
    editor with the same text box (font, size, padding, border width,
-   wrapping); its text is transparent, only the marks show through the
-   editor, whose own background is then transparent. */
+   wrapping; the text style the editor takes from its block (INV-83) is
+   copied by InvisibleCharOverlay); its text is transparent, only the marks
+   show through the editor, whose own background is then transparent. */
 .md-block-editing {
   position: relative;
 }
@@ -1230,14 +1238,14 @@ body.view-code.dark #editor {
   z-index: 0;
   box-sizing: border-box;
   margin: 0;
-  padding: 6px 8px;
+  padding: 0;
   font-family: "BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace;
   font-size: 14px;
   line-height: 1.5;
   color: transparent;
   background: #fffdf5;
-  border: 1px solid transparent;
-  border-radius: 4px;
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
   white-space: pre-wrap;
   overflow-wrap: break-word;

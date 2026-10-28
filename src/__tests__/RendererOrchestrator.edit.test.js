@@ -11,6 +11,7 @@ vi.mock("../js/utils.js", async () => {
 });
 
 import RendererOrchestrator from "../js/classes/RendererOrchestrator.js";
+import BlockCaretMap from "../js/classes/BlockCaretMap.js";
 import ApplicationState from "../js/classes/ApplicationState.js";
 import { CONFIG } from "../js/config.js";
 import { waitForDOMStability } from "../js/utils.js";
@@ -668,6 +669,26 @@ describe("AT-ORC-R keepReadingPosition (5.1, PRT-X08, INV-46)", () => {
     const restores = t.scrollManager.restoreAnchor.mock.calls.filter((c) => c[1] === t.elements.get(opened));
     expect(restores.length).toBeGreaterThan(0);
     for (const [anchor] of restores) expect(anchor).toEqual({ offsetTop: measured - 22 });
+  });
+
+  it("AT-ORC-R6 a commit's caret line (INV-84) stays when leaving edit mode moves its anchor", async () => {
+    const t = await loaded();
+    withReading(t);
+    const placeOfLine = vi.spyOn(BlockCaretMap, "placeOfLine").mockReturnValue({ count: 1, afterSpace: false });
+    const lineOffsetOf = vi.spyOn(BlockCaretMap, "lineOffsetOf").mockReturnValue(7);
+    try {
+      t.orchestrator.commitBlock(t.idOf("B"), "B2", { offsetTop: 100, line: { offset: 30, sourceOffset: 1 } });
+      t.orchestrator.keepReadingPosition(() => {});
+      await flush();
+      // the block's top moved with the place (-22); the caret line, 30 px
+      // below it in the editor, is 7 px below it in the rendered block
+      expect(t.scrollManager.restoreAnchor.mock.calls.at(-1)[0]).toEqual({ offsetTop: 100 - 22 + 30 - 7 });
+      // the place is found once for the rendered block, then reused
+      expect(placeOfLine).toHaveBeenCalledTimes(1);
+    } finally {
+      placeOfLine.mockRestore();
+      lineOffsetOf.mockRestore();
+    }
   });
 });
 

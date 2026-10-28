@@ -770,3 +770,67 @@ describe("ScrollMemento user moves (INV-78)", () => {
     expect(memento.captureReadingAnchor).not.toHaveBeenCalled();
   });
 });
+
+describe("ScrollMemento: the last position seen, and a pull back to the end (INV-40)", () => {
+  let c;
+  let memento;
+
+  beforeEach(() => {
+    stubMatchMedia(false);
+    c = document.createElement("div");
+    document.body.append(c);
+    memento = new ScrollMemento(c);
+  });
+
+  afterEach(() => {
+    c.remove();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("AT-SM-42 noteScrolls: the position at the start, then after each scroll of the view (not of a panel); stop() lets go", () => {
+    c.scrollTop = 40;
+    const scrolls = memento.noteScrolls();
+    expect(scrolls.last()).toBe(40);
+    const read = vi.spyOn(memento, "save");
+    expect(scrolls.last()).toBe(40);
+    expect(read).not.toHaveBeenCalled(); // last() reads nothing
+    read.mockReturnValue(70);
+    c.dispatchEvent(new Event("scroll"));
+    expect(scrolls.last()).toBe(70);
+    const panel = document.createElement("div");
+    document.body.append(panel);
+    read.mockReturnValue(90);
+    panel.dispatchEvent(new Event("scroll"));
+    expect(scrolls.last()).toBe(70);
+    panel.remove();
+    scrolls.stop();
+    c.dispatchEvent(new Event("scroll"));
+    expect(scrolls.last()).toBe(70);
+  });
+
+  it("AT-SM-43 isPulledBackFrom: true only when the view is above pos and at its end", () => {
+    Object.defineProperty(c, "scrollHeight", { value: 600, configurable: true });
+    Object.defineProperty(c, "clientHeight", { value: 100, configurable: true });
+    const at = (pos) => vi.spyOn(memento, "save").mockReturnValue(pos);
+    at(500);
+    expect(memento.isPulledBackFrom(520)).toBe(true); // pulled back to the end (500)
+    at(499.5);
+    expect(memento.isPulledBackFrom(520)).toBe(true); // within 1 px of it
+    at(450);
+    expect(memento.isPulledBackFrom(520)).toBe(false); // above, but not at the end
+    at(530);
+    expect(memento.isPulledBackFrom(520)).toBe(false); // below: the browser showed the caret
+    at(520);
+    expect(memento.isPulledBackFrom(520)).toBe(false);
+  });
+
+  it("AT-SM-43 the document's end when the document scrolls (touch)", () => {
+    stubMatchMedia(true);
+    const touch = new ScrollMemento(c);
+    Object.defineProperty(document.documentElement, "scrollHeight", { value: 2000, configurable: true });
+    vi.spyOn(touch, "save").mockReturnValue(2000 - window.innerHeight);
+    expect(touch.isPulledBackFrom(2000)).toBe(true);
+    delete document.documentElement.scrollHeight;
+  });
+});

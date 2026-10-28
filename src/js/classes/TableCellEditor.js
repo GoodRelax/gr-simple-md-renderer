@@ -1,6 +1,7 @@
 import { CONFIG } from "../config.js";
 import { shortcutLetter } from "../utils.js";
 import ClipboardLink from "./ClipboardLink.js";
+import BlockCaretMap from "./BlockCaretMap.js";
 import InlineRuns from "./InlineRuns.js";
 import InvisibleCharOverlay from "./InvisibleCharOverlay.js";
 import MarkdownTable from "./MarkdownTable.js";
@@ -893,25 +894,16 @@ export default class TableCellEditor {
   }
 
   /**
-   * The caret at the click (caretPositionFromPoint / caretRangeFromPoint),
-   * or at the end of the cell.
+   * The caret at the click (BlockCaretMap.caretAt), or at the end of the cell.
    * @purity non-pure
    */
   _placeCaret(element, point) {
     const selection = window.getSelection();
     if (!selection) return;
-    let range = null;
-    if (point && typeof document.caretPositionFromPoint === "function") {
-      const position = document.caretPositionFromPoint(point.x, point.y);
-      if (position) {
-        range = document.createRange();
-        range.setStart(position.offsetNode, position.offset);
-      }
-    } else if (point && typeof document.caretRangeFromPoint === "function") {
-      range = document.caretRangeFromPoint(point.x, point.y);
-    }
-    if (!range || !element.contains(range.startContainer)) {
-      range = document.createRange();
+    const caret = point ? BlockCaretMap.caretAt(point.x, point.y) : null;
+    const range = document.createRange();
+    if (caret && element.contains(caret.node)) range.setStart(caret.node, caret.offset);
+    else {
       range.selectNodeContents(element);
       range.collapse(false);
     }

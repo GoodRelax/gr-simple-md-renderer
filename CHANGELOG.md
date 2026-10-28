@@ -17,6 +17,28 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- Block editing: the editor shows its text the way the block is shown. A
+  paragraph, heading, list or quote is edited in the body text's font,
+  size and line spacing (a heading at its own size, in bold, with its `#`
+  marks), and a code block in the code font. A table's source, math and
+  diagrams stay in the monospace font, so the table pipes still line up.
+  The editor has no inner padding; its blue frame is drawn around it and
+  takes no room, so the text does not jump when it opens or closes. A new
+  block (in an empty document, or opened from a gap between blocks) is
+  edited in the body text's font too (owner rulings ESF-2 to ESF-4, ESF-7).
+- Block editing: the caret goes where you double-clicked (or clicked, in
+  edit mode), not to the end of the block, and that line stays where it
+  was on the screen. When you press Esc or click outside, the caret's line
+  stays where it was too. Before, the lines of a long block (a code block,
+  a long list) moved when it opened or closed, and the first key typed
+  jumped to the end of the block. In a very long paragraph (more than 20,000
+  characters before the caret) the block's top stays in place instead, so
+  that opening it stays quick (owner ruling ESF-5).
+- Block editing: typing no longer moves the view, also near the end of the
+  document (for example in a tall code block at the end of the document,
+  seen in Edge; owner rulings ESF-1 and ESF-8).
+- The Index and Search panels let less of the page show through (15%, it
+  was 25%), so they are easier to read (owner ruling ESF-6).
 - Faster startup: the page is usable before the whole file has arrived
   (about 0.4 s on a 4 Mbps line with a 100 ms round trip, where it took
   about 3.2 s; a new tab is fast too). The file now starts with the styles,

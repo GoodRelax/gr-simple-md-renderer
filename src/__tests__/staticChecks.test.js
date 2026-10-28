@@ -640,8 +640,10 @@ describe("style.css for in-place editing", () => {
     expect(ruleBody(css, "#editor")).toMatch(stack);
     expect(ruleBody(css, ".md-block-editor")).toMatch(stack);
     expect(css).not.toMatch(/@font-face/);
+    // INV-83: a block editor takes a matched block's font from the rendered
+    // block (its computed style); no font is named in the code
     const bec = readFileSync(resolve(jsDir, "classes/BlockEditController.js"), "utf8");
-    expect(bec).not.toMatch(/fontFamily/); // the CSS decides the editor font
+    expect(bec).not.toMatch(/BIZ UDGothic|sans-serif|monospace["']/);
   });
 
   it("AT-STA-12 no url() in the editing rules, selectors and declarations both (CSP, no external fetch; review T-5)", () => {
@@ -694,8 +696,9 @@ describe("style.css: the marks layer has the block editor's text box (INV-70)", 
     for (const key of ["font-family", "font-size", "line-height", "padding", "border-radius", "box-sizing", "white-space", "overflow-wrap", "tab-size"]) {
       expect(layer[key], key).toBe(editor[key]);
     }
-    expect(layer.border.split(/\s+/)[0]).toBe(editor.border.split(/\s+/)[0]);
-    expect(layer.border).toMatch(/transparent$/);
+    // INV-83: neither has a border (the editor's frame is an outline)
+    expect(editor.border).toBe("0");
+    expect(layer.border).toBe("0");
   });
 
   it("AT-STA-09 the layer has the editor's ground (light and dark); the overlaid editor is transparent", () => {

@@ -47,7 +47,7 @@ test("INV-77 (1)(3)(4)(6): shows the headings over the preview, scrolls by itsel
     const right = preview.getBoundingClientRect().left + preview.clientWidth;
     return { background: getComputedStyle(el).backgroundColor, gap: right - box.right, scrolls: el.scrollHeight > el.clientHeight };
   });
-  expect(look.background).toBe("rgba(255, 255, 255, 0.75)");
+  expect(look.background).toBe("rgba(255, 255, 255, 0.85)"); // 15% shows through (owner ruling 2026-10-27)
   expect(Math.abs(look.gap - 8)).toBeLessThanOrEqual(1);
   expect(look.scrolls).toBe(true);
 
@@ -130,7 +130,7 @@ test("INV-77 (5)(6): dark colors, nothing in print, off after Clear", async ({ p
   await page.keyboard.press("d");
   await settled(page);
   await page.locator("#indexBtn").click();
-  await expect(page.locator("#indexPanel")).toHaveCSS("background-color", "rgba(21, 27, 35, 0.75)");
+  await expect(page.locator("#indexPanel")).toHaveCSS("background-color", "rgba(21, 27, 35, 0.85)");
   await page.emulateMedia({ media: "print" });
   await expect(page.locator("#sidePanels")).toBeHidden();
   await page.emulateMedia({ media: "screen" });
