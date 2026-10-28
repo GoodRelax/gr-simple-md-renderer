@@ -5,13 +5,15 @@ strips every change mark from both versions, diffs them line by line, and
 marks each changed line (each changed cell in a table) as SKILL.md says:
 
   prose, heading, list item:  MARK *text*
-  table row:                  MARK *cell* in every changed cell
+  table row:                  MARK *cell* in every changed cell (leading
+                              spaces, U+3000 included, stay before MARK)
   code block (not Mermaid):   MARK at the start of each changed line and
                               three spaces on the other lines of that block
-  Mermaid block:              MARK right after the first label opener
+  Mermaid block:              MARK before each changed label
 
 Blank lines, fences, table separator rows and empty answer fields are
-never marked. Deleted lines cannot be marked.
+never marked. Deleted lines cannot be marked. Each line keeps its own line
+ending (CRLF, LF and CR may be mixed) and a BOM stays.
 
   python <skill>/scripts/mark_changes.py <user_saved.md> <sheet.md>
       re-mark sheet.md against user_saved.md (the backup taken after the
@@ -29,6 +31,7 @@ import sys
 
 MARK = '\U0001F504'
 OPEN = MARK + ' *'
+EOL = re.compile(r'(\r\n|\r|\n)')
 FENCE = re.compile(r'^\s*(`{3,}|~{3,})\s*([\w-]*)')
 PREFIX = re.compile(r'^(\s*(?:>\s?)*\s*(?:#{1,6}\s+|[-*+]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+)?)')
 ANSWER = re.compile(r'^\s*(?:\u56de\u7b54|Answer)\s*[:\uff1a]\s*$')
@@ -39,16 +42,17 @@ MERMAID_LABEL = re.compile(r'\(\(([^)]*)\)\)|\[\[([^\]]*)\]\]|\{\{([^}]*)\}\}|\(
 
 
 def read_sheet(path):
+    """Lines, the line ending after each line (CRLF, LF and CR may be mixed), and the BOM."""
     with open(path, 'rb') as f:
         data = f.read()
     bom = data.startswith(b'\xef\xbb\xbf')
-    text = data.decode('utf-8-sig')
-    eol = '\r\n' if '\r\n' in text else '\n'
-    return text.split(eol), eol, bom
+    parts = EOL.split(data.decode('utf-8-sig'))
+    return parts[0::2], parts[1::2], bom
 
 
-def write_sheet(path, lines, eol, bom):
-    data = eol.join(lines).encode('utf-8')
+def write_sheet(path, lines, ends, bom):
+    # Marking keeps the number of lines, so every line gets its own ending back.
+    data = ''.join(line + end for line, end in zip(lines, ends + [''])).encode('utf-8')
     with open(path, 'wb') as f:
         f.write((b'\xef\xbb\xbf' if bom else b'') + data)
 
@@ -88,7 +92,8 @@ def split_row(line):
         body = body[1:]
     if body.endswith('|') and not body.endswith('\\|'):
         body = body[:-1]
-    return indent, [cell.strip() for cell in CELL_SPLIT.split(body)]
+    # Only the ASCII padding around a cell goes; a leading U+3000 indents a tree.
+    return indent, [cell.strip(' \t') for cell in CELL_SPLIT.split(body)]
 
 
 def join_row(indent, cells):
@@ -113,11 +118,13 @@ def strip_segment(seg):
 
 
 def mark_segment(seg):
-    core = seg.rstrip()
-    tail = seg[len(core):]
+    body = seg.lstrip()
+    lead = seg[:len(seg) - len(body)]  # leading spaces, U+3000 included, stay outside the mark
+    core = body.rstrip()
+    tail = body[len(core):]
     if core.endswith('\\'):  # a backslash line break stays last
-        return OPEN + core[:-1] + '*\\' + tail
-    return OPEN + core + '*' + tail
+        return lead + OPEN + core[:-1] + '*\\' + tail
+    return lead + OPEN + core + '*' + tail
 
 
 def strip_all(lines, kinds, blocks):
@@ -287,7 +294,7 @@ def main(argv):
         print(__doc__.strip())
         return 2
     sheet = paths[-1]
-    lines, eol, bom = read_sheet(sheet)
+    lines, ends, bom = read_sheet(sheet)
     if do_strip:
         kinds, blocks = classify(lines)
         stripped = strip_all(lines, kinds, blocks)
@@ -297,7 +304,7 @@ def main(argv):
                 print('FINDING ' + f)
             print('%s check: %d findings' % ('NG' if findings else 'OK', len(findings)))
             return 1 if findings else 0
-        write_sheet(sheet, stripped, eol, bom)
+        write_sheet(sheet, stripped, ends, bom)
         print('OK stripped every mark: %s' % sheet)
         return 0
     base, _, _ = read_sheet(paths[0])
@@ -310,7 +317,7 @@ def main(argv):
             print('FINDING ' + f)
         print('%s check: %d findings' % ('NG' if findings else 'OK', len(findings)))
         return 1 if findings else 0
-    write_sheet(sheet, expected, eol, bom)
+    write_sheet(sheet, expected, ends, bom)
     print('OK marked %d lines (%d table cells): %s' % (counts['lines'], counts['cells'], sheet))
     return 0
 
