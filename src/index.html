@@ -89,6 +89,7 @@
       <div id="controls">
         <button id="indexBtn" aria-expanded="false" aria-controls="indexPanel" disabled>Index</button>
         <button id="searchBtn" aria-expanded="false" aria-controls="searchPanel" disabled>Search</button>
+        <button id="gitHubBtn" hidden>Open<br />GitHub</button>
         <button id="renderLight">Render<br />Light</button>
         <button id="renderDark">Render<br />Dark</button>
         <button id="reloadBtn">Re-<br />load</button>
@@ -123,6 +124,109 @@
     </div>
 
     <div id="toastContainer"></div>
+
+    <!-- GitHub (SC-27): real forms for the password manager; the submit is stopped (form-action 'none') -->
+    <dialog id="gitHubOpenDialog" class="gh-dialog" aria-labelledby="gitHubOpenTitle">
+      <form id="gitHubOpenForm" class="gh-form">
+        <h2 id="gitHubOpenTitle">Open GitHub</h2>
+        <div class="gh-row gh-row-token">
+          <label for="gitHubOpenToken">Fine-grained personal access token</label>
+          <span class="gh-token">
+            <input id="gitHubOpenToken" type="password" name="password" autocomplete="current-password"
+              spellcheck="false" placeholder="github_pat_... (empty for a public repository)" />
+            <button type="button" class="gh-reveal" aria-pressed="false" title="Show the token"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+          </span>
+        </div>
+        <label class="gh-row">URL
+          <input id="gitHubOpenUrl" type="url" spellcheck="false" autocomplete="off"
+            placeholder="https://github.com/owner/repo/blob/main/docs/a.md" />
+        </label>
+        <div id="gitHubOpenFields" hidden>
+          <label class="gh-row">Repository
+            <input id="gitHubOpenRepo" name="username" autocomplete="username" readonly />
+          </label>
+          <label class="gh-row">Branch
+            <input id="gitHubOpenBranch" spellcheck="false" autocomplete="off" />
+          </label>
+          <label class="gh-row">Path
+            <input id="gitHubOpenPath" spellcheck="false" autocomplete="off" />
+          </label>
+        </div>
+        <p class="gh-send">Sends to <b>api.github.com</b>: the repository, branch and path, and the token. Nothing of the current document is sent.</p>
+        <p id="gitHubOpenError" class="gh-error" role="alert" hidden></p>
+        <div class="gh-buttons">
+          <button type="submit" id="gitHubOpenSubmit">Open</button>
+          <button type="button" class="gh-cancel">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="gitHubPushDialog" class="gh-dialog" aria-labelledby="gitHubPushTitle">
+      <form id="gitHubPushForm" class="gh-form">
+        <h2 id="gitHubPushTitle">Push to GitHub</h2>
+        <p id="gitHubPushVisibility" class="gh-visibility"></p>
+        <label class="gh-row">Repository
+          <input id="gitHubPushRepo" name="username" autocomplete="username" readonly />
+        </label>
+        <label class="gh-row">Branch <input id="gitHubPushBranch" readonly tabindex="-1" /></label>
+        <label class="gh-row">Path <input id="gitHubPushPath" readonly tabindex="-1" /></label>
+        <label class="gh-row">Message <input id="gitHubPushMessage" spellcheck="false" autocomplete="off" /></label>
+        <div class="gh-row gh-row-token">
+          <label for="gitHubPushToken">Fine-grained personal access token</label>
+          <span class="gh-token">
+            <input id="gitHubPushToken" type="password" name="password" autocomplete="current-password" spellcheck="false" placeholder="github_pat_..." />
+            <button type="button" class="gh-reveal" aria-pressed="false" title="Show the token"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+          </span>
+        </div>
+        <p class="gh-send">Sends to <b>api.github.com</b>: the <b>full text</b> of the document, the message and the token. The commit is made on the branch at once (this is the push).</p>
+        <p id="gitHubPushError" class="gh-error" role="alert" hidden></p>
+        <div class="gh-buttons">
+          <button type="submit" id="gitHubPushSubmit">Push</button>
+          <button type="button" class="gh-cancel">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="gitHubReloadDialog" class="gh-dialog" aria-labelledby="gitHubReloadTitle">
+      <form id="gitHubReloadForm" class="gh-form">
+        <h2 id="gitHubReloadTitle">Reload from GitHub</h2>
+        <label class="gh-row">Repository
+          <input id="gitHubReloadRepo" name="username" autocomplete="username" readonly />
+        </label>
+        <p id="gitHubReloadTarget" class="gh-target"></p>
+        <div class="gh-row gh-row-token">
+          <label for="gitHubReloadToken">Fine-grained personal access token</label>
+          <span class="gh-token">
+            <input id="gitHubReloadToken" type="password" name="password" autocomplete="current-password"
+              spellcheck="false" placeholder="github_pat_... (empty for a public repository)" />
+            <button type="button" class="gh-reveal" aria-pressed="false" title="Show the token"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+          </span>
+        </div>
+        <p class="gh-send">Sends to <b>api.github.com</b>: the repository, branch and path, and the token. The document is replaced by the GitHub version (unsaved changes are asked about first).</p>
+        <p id="gitHubReloadError" class="gh-error" role="alert" hidden></p>
+        <div class="gh-buttons">
+          <button type="submit" id="gitHubReloadSubmit">Reload</button>
+          <button type="button" class="gh-cancel">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="gitHubDropDialog" class="gh-dialog" aria-labelledby="gitHubDropTitle">
+      <div class="gh-form">
+        <h2 id="gitHubDropTitle">Editing a GitHub file</h2>
+        <dl class="gh-facts">
+          <dt>Editing</dt><dd id="gitHubDropEditing"></dd>
+          <dt>Last commit on GitHub</dt><dd id="gitHubDropLastCommit"></dd>
+          <dt>Dropped</dt><dd id="gitHubDropDropped"></dd>
+        </dl>
+        <p id="gitHubDropNotes" class="gh-error" hidden></p>
+        <div class="gh-buttons gh-buttons-column">
+          <button type="button" id="gitHubDropKeep">Replace the document, keep the GitHub link</button>
+          <button type="button" id="gitHubDropStop">Stop the GitHub link and open the file</button>
+          <button type="button" id="gitHubDropCancel">Cancel</button>
+        </div>
+      </div>
+    </dialog>
 
     <div id="helpModal" class="modal">
       <div class="modal-content">

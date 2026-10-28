@@ -81,7 +81,7 @@ export function renderRouteFor(isCodeView, isPreRender) {
 
 // The one-key shortcuts of setupKeyboard (3.12) that wait until an inserted
 // block's cell or source has opened (INV-52, owner ruling D5).
-const ONE_KEY_SHORTCUTS = new Set(["i", "f", "l", "d", "r", "n", "c", "e"]);
+const ONE_KEY_SHORTCUTS = new Set(["i", "f", "o", "l", "d", "r", "n", "c", "e"]);
 
 /**
  * Translates UI events into use-case calls.
@@ -101,7 +101,8 @@ export default class UIController {
    *   primary shortcut modifier, INV-14), clipboard (what the Paste link
    *   button reads, INV-69; navigator.clipboard when not given),
    *   documentIndex (DocumentIndex; optional), createSearch(host) ->
-   *   DocumentSearch (optional)
+   *   DocumentSearch (optional), createGitHub(host) -> GitHubController
+   *   (optional; SC-27)
    * @purity non-pure
    */
   constructor(orchestrator, state, elements, scrollEngine, services) {
@@ -132,6 +133,7 @@ export default class UIController {
     this.palette = services.createPalette(this._paletteHost());
     this.blockEdit = services.createBlockEdit(this._blockEditHost());
     this.documentSearch = services.createSearch ? services.createSearch(this._searchHost()) : null;
+    this.gitHub = services.createGitHub ? services.createGitHub(this._gitHubHost()) : null;
     this.orchestrator.setModelChangedListener(this);
 
     this.setupEventListeners();
@@ -226,7 +228,8 @@ export default class UIController {
   showKeyHint(mode) {
     const hint = this.elements.keyHint;
     if (!hint) return;
-    const text = CONFIG.keyHints[mode];
+    // [O] GitHub is listed only where GitHub editing is shown (D33)
+    const text = (this.gitHub?.enabled && CONFIG.keyHints[`${mode}GitHub`]) || CONFIG.keyHints[mode];
     if (!text) {
       hint.style.display = "none";
       return;
@@ -413,6 +416,11 @@ export default class UIController {
       if (metadata) this.setViewMode("code", metadata);
       return;
     }
+    // a GitHub document reads GitHub again, after its dialog (SC-27, D8)
+    if (this.gitHub && this.documents.gitHub) {
+      this.gitHub.reloadDialog();
+      return;
+    }
     const target = this.documents.reloadTarget();
     if (!target) {
       const msg = FILE_SYSTEM_HANDLE_SUPPORTED
@@ -535,10 +543,18 @@ export default class UIController {
     }
     const fileHandle = handlePromise ? await handlePromise : null;
 
+    // A .md on a GitHub document: replace it and keep the link, or stop the
+    // link (SC-27, owner ruling D6). Asked before the unsaved question.
+    let keepGitHub = false;
+    if (kind === "markdown" && this.gitHub && this.documents.gitHub && !this.orchestrator.isCodeViewActive()) {
+      const choice = await this.gitHub.askDropChoice({ fileName: file.name, text, hasBom });
+      if (choice === "cancel") return;
+      keepGitHub = choice === "keep";
+    }
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
     if (kind === "markdown") {
       this.blockEdit.dispatch("documentReplaced");
-      this.documents.openFile(text, hasBom, file.lastModified, file.name, fileHandle);
+      this.documents.openFile(text, hasBom, file.lastModified, file.name, fileHandle, keepGitHub);
       this.orchestrator.resetExternalImageConsent(); // INV-43
       await this._showSessionBody(systemTheme());
       return;
@@ -649,6 +665,10 @@ export default class UIController {
         case "f":
           e.preventDefault(); // the f is not typed into the search box
           this.documentSearch?.open();
+          break;
+        case "o":
+          e.preventDefault(); // the o is not typed into the URL field
+          this.gitHub?.handleKey();
           break;
         case "l":
           this.handleRender("light");
@@ -1246,6 +1266,7 @@ export default class UIController {
     if (this.documents.hasSession()) status = dirty ? m.statusUnsaved(name) : m.statusSaved(name);
     this.palette.setStatusText(status);
     this.palette.setUnsaved(dirty);
+    this.gitHub?.refresh(); // [Push to GitHub] is enabled while the file differs from GitHub (D8)
     // Inside an 11-c crossing the open cell or editor is closed for a moment
     // (the next one opens later in it): the states would disable the openers
     // and close an open popover (K-1). They follow when it ends.
@@ -1350,6 +1371,68 @@ export default class UIController {
    */
   _toast(message) {
     showToast(message, CONFIG.codeView.toastDurationMs);
+  }
+
+  /**
+   * GitHubHost (SC-27): what GitHubController asks of the document.
+   * @purity non-pure
+   * @returns {object}
+   */
+  _gitHubHost() {
+    return {
+      documents: this.documents,
+      isCodeView: () => this.orchestrator.isCodeViewActive(),
+      body: () => this.orchestrator.getBody(),
+      hasUnsyncedEdits: () => this.blockEdit.hasUncommittedChange() || this._editorChangedSinceRender,
+      // as a save does (11-e (0) and (2)): INV-56 asks first, then the open
+      // editor and #editor's unrendered text are taken in
+      /** @purity non-pure */
+      prepareBody: () => {
+        if (this._editorChangedSinceRender && !this._confirmEditorIntoDocument()) return false;
+        this.blockEdit.dispatch("saveRequested");
+        if (this._editorChangedSinceRender) this._takeEditorIntoModel(this.state.currentTheme);
+        return true;
+      },
+      openDocument: (result) => this._openGitHubDocument(result),
+      reloadDocument: (result, documentId) => this._reloadGitHubDocument(result, documentId),
+      refreshDirtyMark: () => this._refreshDirtyMark(),
+      toast: (message, durationMs) => showToast(message, durationMs ?? CONFIG.codeView.toastDurationMs),
+    };
+  }
+
+  /**
+   * A file read from GitHub becomes the document (INV-21 order: read first,
+   * then refuse while saving, ask when unsaved, replace).
+   * @param {{link: GitHubLink, text: string, hasBom: boolean}} result
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  async _openGitHubDocument(result) {
+    if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
+    this.blockEdit.dispatch("documentReplaced");
+    this.documents.openGitHub(result.text, result.hasBom, result.link);
+    this.orchestrator.resetExternalImageConsent(); // INV-43
+    await this._showSessionBody(systemTheme());
+    this._toast(CONFIG.github.messages.opened(result.link.ref.label()));
+  }
+
+  /**
+   * Reload of a GitHub document, read after its dialog (INV-21 Reload order).
+   * @param {{link: GitHubLink, text: string, hasBom: boolean}} result
+   * @param {number|undefined} documentId - the document when the read started
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  async _reloadGitHubDocument(result, documentId) {
+    if (this.documents.session?.documentId !== documentId) {
+      this._toast(CONFIG.messages.edit.reloadCanceled);
+      return;
+    }
+    if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
+    this.blockEdit.dispatch("documentReplaced");
+    this.documents.reloadGitHub(result.text, result.hasBom, result.link);
+    await this._showSessionBody(this.state.currentTheme);
+    this._toast(CONFIG.github.messages.reloaded);
   }
 
   /**

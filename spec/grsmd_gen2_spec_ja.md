@@ -66,6 +66,8 @@
 
 **改訂:** 2026-10-28 — **ブロック編集欄の字とスクロール (INV-83・INV-84 を足し、INV-40・INV-46 を改める。オーナーの指摘 2026-10-27 と裁定 ESF-1〜ESF-8)。** オーナーの指摘: (1) テキストブロックを編集すると、スクロールの位置が変わる (打っている途中に 1 字ごとに少しずつ。ESF-1)。(2) 編集中と表示中とでフォントが変わるのが違和感。**INV-83 (新):** 段落・見出し・リスト・引用・コードブロックの編集欄は、表示の字 (フォント・大きさ・太さ・行の高さ。見出しはその段の大きさと太さ。ESF-2・ESF-3) で出す。表の原文・数式・図・HTML は 5.14.13 の等幅のまま。編集欄の内側の余白と枠の線をなくし、枠は `outline` で示す (ESF-4)。**INV-84 (新):** 押して開くと、押した字にカーソルを置き、その行を画面の同じ高さに留める。確定・Esc では、カーソルの行を留める (ESF-5。前はカーソルが原文の末尾に行き、基準はブロックの上端だったので、長いブロックの下の方ほど行がずれた。2026-10-28 の実測 (Chrome): 表示の行の高さは段落 23.2 px・コード 13 px、編集欄は 21 px)。新しいクラス `BlockCaretMap` (描画された字の読み取りと測り)、純粋な `caretMatching.js` (描画された字と原文の対応)、`editorTextStyle.js` (編集欄と印の層が写す字の性質の並び)。すき間と空の文書の編集欄は本文の字 (INV-83 (3)。オーナーの裁定 ESF-7、2026-10-29)。**INV-40 を改める:** 高さを合わせるときに、スクロールの位置を変えない (測る前の位置を覚えて戻す。ESF-1。2026-10-28 の e2e `editScrollFont.e2e.js` で、直す前の WebKit では文書の末尾で打つと 126 px (マウス)・163 px (タッチ、改行) ずれ、直した後は 0 px。Chromium では、その段落の試験では直す前もずれなかったが、オーナーの指摘の形 (2026-10-29、Edge。文書の最後の高いコードブロック、ほとんど空行、の中ほどで打つ) では、直す前は 1 字目で 351 px、改行ごとにさらに 21 px ずれ、直した後は 0 px。高さを `auto` にした一瞬に文書が縮み、ブラウザがスクロールの位置を詰めるため。どのブラウザでも起きる。オーナーの指摘と裁定 ESF-8)。**INV-77・INV-80 (8)・5.8.1 を改める:** 目次と検索の箱の地は 15% 透ける (不透明度 75% → 85%。ESF-6。オーナーの自由欄の指摘: 背景が見えすぎて目次が見にくい)。5.14.13 と要素の表 (`.md-block-editor`) を INV-83 に合わせる。依存の追加はない (付録A 不変)。
 
+**改訂:** 2026-10-29 — **GitHub 連携を足す (SC-27、INV-85〜INV-92、FS-23、5.19。オーナーの裁定 D1〜D37)。** 上部バーの [Search] の右の [Open GitHub] (`o`) で、github.com の `.md` の URL を貼って開き、その場で直し、緑の [Push to GitHub] で開いたのと同じブランチへコミットする (Contents API の PUT 1 回。push と同じ)。Ctrl+S は今のまま手元へ保存し、通信しない (CON-14 は変えない)。通信先は `api.github.com` だけで、開く・push・Reload のたびに確認の画面を出す (CON-12、INV-20 を改める)。PAT は fine-grained だけ。成功したら GRSMD がブラウザに保存を頼み、次からは Token の欄をクリックしてブラウザの候補から選ぶ。GRSMD は送る間だけメモリに持つ (CON-16)。GitHub 側が先に変わっていたら 409 で止める。翌日に続けるときは、開いてから手元の下書きをドロップして「連携を続けたまま置き換える」(INV-90)。GitHub の文書の相対パスの画像とリンクは、GitHub での見え方に直す (画像は今の外部画像の同意を通す。INV-91)。マウスかトラックパッドの端末だけ、フレームの中では出さない (INV-92)。新しいクラス `GitHubFileRef`・`GitHubLink`・`GitHubContentsClient`・`GitHubController`、純粋関数のモジュール `gitHubUrl.js`・`base64Text.js`、`DocumentLifecycle` の GitHub の連携、`MarkdownRenderer.setRelativeUrlResolver`。G-11、OS-02・CON-03・CON-12・CON-13・INV-20・5.1・5.2・5.11 を改め、OS-19 を足す。gzip の上限 (レビュー基準 T4) は、この改訂では変えない (D22 の 1,470 kB は、オーナーの裁定 NE-29 の 1,480 kB (beta2 から) に置き換わった)。依存の追加はない (付録A 不変)。
+
 ---
 
 ## 目次
@@ -106,6 +108,7 @@
    - 5.16 SW設計原則 準拠確認
    - 5.17 高速起動
    - 5.18 ベータ版のビルド
+   - 5.19 GitHub 連携
 
 付録 A: バンドル依存ライブラリ
    - A.1 直接の依存
@@ -199,6 +202,7 @@
 | G-08 | **テーマ**: OS自動検出付きのライト/ダークテーマをサポートする。                                                      |
 | G-09 | **ライブリロード**: FileSystemFileHandle 経由でファイルシステムからソースファイルをリロードする（Chrome/Edge 86+）。 |
 | G-10 | **その場編集**: 編集モードの間、プレビュー上でブロック単位に Markdown の原文を直し、明示的に保存できる。画面の切り替えや分割は行わない。 |
+| G-11 | **GitHub の .md の編集**: GitHub のリポジトリにある `.md` を開き、GRSMD の描画を見ながら直し、開いたのと同じブランチへ push できる。途中の保存は手元に置き、push は利用者が押したときだけ行う。 |
 
 ### 1.4 解決方針
 
@@ -246,6 +250,8 @@ gr-simple-md-renderer/
 │   │   ├── editorTextStyle.js    # what a block editor takes from its block (INV-83)
 │   │   ├── sidePanels.js         # the right-edge column (#sidePanels) (INV-77)
 │   │   ├── textSearch.js         # search and replace in a text (pure, INV-80)
+│   │   ├── gitHubUrl.js          # GitHub file URLs, relative paths, token form (pure, SC-27)
+│   │   ├── base64Text.js         # UTF-8 text to and from Base64 (pure, SC-27)
 │   │   └── classes/              # one class per file
 │   │       ├── ApplicationState.js
 │   │       ├── ScrollMemento.js
@@ -276,6 +282,10 @@ gr-simple-md-renderer/
 │   │       ├── SaveDocument.js
 │   │       ├── SaveDocumentAs.js
 │   │       ├── MarkdownFileAccess.js
+│   │       ├── GitHubFileRef.js
+│   │       ├── GitHubLink.js
+│   │       ├── GitHubContentsClient.js
+│   │       ├── GitHubController.js
 │   │       ├── BlockEditController.js
 │   │       ├── BlockCaretMap.js
 │   │       ├── BlockGapInsert.js
@@ -356,13 +366,14 @@ gr-simple-md-renderer/
 | SC-24 | 明示保存: Save (元ファイルへ上書き。Chrome/Edge) と Save as (保存ダイアログ。非対応ブラウザはダウンロード) |
 | SC-25 | 目次 (Index): 上部バーの [Index] ボタン (`indexBtn`) または `i` キーで、Markdown ビューの見出し (h1〜h6) の一覧を表示・非表示する。一覧はプレビューの右端に重ねて浮かせ、項目を押すとその見出しへ飛ぶ (INV-77) |
 | SC-26 | 検索と置換: 上部バーの [Search] ボタン (`searchBtn`)、`f`、編集モードでは主 + F で検索の箱を出す。Markdown の原文 (コードビューではファイルの文字) を、通常の文字または正規表現で探す。編集モードの間は、1 件ずつ、またはすべてを置き換えられる (INV-80) |
+| SC-27 | GitHub 連携: 上部バーの [Open GitHub] (`gitHubBtn`)、`o` で「Open GitHub」の画面を出し、github.com の `.md` の URL から開く。GitHub の文書の間はボタンが [Push to GitHub] に変わり、確認の画面の後、同じブランチへコミットする (INV-85〜INV-92) |
 
 #### スコープ外
 
 | ID    | 除外機能                                                      | 理由                                                                                                                  |
 | ----- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | OS-01 | バックエンド / サーバーサイド処理                             | プライバシー優先原則                                                                                                  |
-| OS-02 | ユーザーアカウント / 認証                                     | 設計上データ永続化なし                                                                                                |
+| OS-02 | ユーザーアカウント / 認証                                     | 設計上データ永続化なし。**GRSMD 自身はアカウントを持たない。GitHub の PAT は、利用者が持ち込む GitHub の鍵として扱う (CON-16。D13。2026-10-29 改訂)**                                                                                                |
 | OS-03 | localStorage / sessionStorage / Cookie へのユーザーデータ保存 | プライバシー制約 (CON-03)                                                                                             |
 | OS-04 | マルチタブ / マルチファイル編集                               | YAGNI; 単一ファイルビューアのスコープ                                                                                 |
 | OS-05 | コードビュー内ページ内検索                                    | (2026-10-25 に SC-26・INV-80 でスコープ内にした。オーナーの裁定 S3: コードビューでも検索の箱で探す) 元の理由: YAGNI; ブラウザのCtrl+Fで十分 |
@@ -379,6 +390,7 @@ gr-simple-md-renderer/
 | OS-16 | アクセシビリティ（ARIA、スクリーンリーダー対応）              | 将来のフェーズに延期。現時点ではキーボードナビゲーションのみ対応。**ただし編集パレットはポインタ専用とする (2026-xx-xx、裁定 K1)。キーボードでは、ショートカット (Ctrl+S / Ctrl+Shift+S / Ctrl+Z / Ctrl+B / Ctrl+I。INV-58〜60) と、文字を選んで URL を Ctrl+V / Cmd+V で貼るとリンクになる方式 (INV-69) だけが使え、Insert table・Mermaid・行と列の操作・Align column・文字色・リンクを貼る・外すのボタンはキーボードでは使えない (後退として記録する。INV-53)。** |
 | OS-17 | highlight.js 非common言語の個別インポート                     | YAGNIとする。バンドルした `highlight.js/lib/common` (36言語) で十分。非common言語はplaintext表示のみ (highlightAutoは使わない。5.3参照)。 |
 | OS-18 | 確定済みのブロック編集の、`CONFIG.edit.undoMaxSteps` (30) 回を超える Undo / Redo と、パレットの Redo のボタン | YAGNI。**変更の単位** (用語集) の Undo を 30 回まで、Redo を同じ数まで提供する (INV-48。2026-10-23 改訂。オーナーの裁定 D4 / D5)。Redo はキーだけ (主 + Shift + Z、Mac 以外は Ctrl+Y も)。Ctrl+Z / Redo のキーは、編集モードの間 (INV-59)、ブロック編集欄では、Ctrl+Z は開いた時点から変更があればブラウザの文字単位の Undo、無ければ INV-59 (c) の Undo とし、Redo のキーはいつもブラウザの Redo とし (裁定 M5)、セルの中とそれ以外では INV-59 (c) (開いている編集欄・セルに変更があれば、Undo はそれを確定して戻し、Redo は何もしない。無ければ閉じてから単位の Undo / Redo。INV-48) とする |
+| OS-19 | GitHub 連携の次のもの: ブランチを作って pull request を出す、1 MB を超えるファイル、新しいファイルを作る、ファイルの削除・名前の変更、複数のファイルを 1 つのコミットにする、GitHub 以外のホスト (GitHub Enterprise を含む)、`raw.githubusercontent.com` の URL から開く、主に指で触る端末での連携、差分の表示 | YAGNI。D1・D14・D15・D16。保護されたブランチへの push は、失敗を知らせるだけ (INV-88 (6)) |
 
 ### 1.6 制約事項
 
@@ -386,7 +398,7 @@ gr-simple-md-renderer/
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CON-01 | `DataTransferItem.getAsFileSystemHandle()` はdropイベントハンドラ内で、最初の `await` よりも前に同期的に呼び出す必要がある。返されたPromiseは保存し、後でawaitする。                      |
 | CON-02 | highlight.js 11.12.0、marked.js 18.1.0、mermaid 11.17.2、plantuml-encoder 1.4.0、KaTeX 0.18.11、marked-katex-extension 5.1.13、DOMPurify 3.4.16 はnpm依存としてバンドルする。バージョンを変更する場合は機能検証を行うこと。2026-07-16よりCDN/SRI運用は廃止した。 |
-| CON-03 | ユーザーデータ（ファイル内容、ファイル名、メタデータ）をlocalStorage、sessionStorage、Cookieに保存してはならない。                                                                        |
+| CON-03 | ユーザーデータ（ファイル内容、ファイル名、メタデータ）をlocalStorage、sessionStorage、Cookieに保存してはならない。**注 (2026-10-29、SC-27):** GitHub の PAT は、利用者が選べばブラウザのパスワードマネージャーが覚える (ブラウザの機能)。GRSMD のスクリプトは、PAT も、GitHub の文書も、storage・Cookie・IndexedDB・OPFS・Cache Storage に書かない (D3・D13)                                                                        |
 | CON-04 | 既存のPlantUML同意ダイアログ（window.confirm）を削除またはバイパスしてはならない。                                                                                                        |
 | CON-05 | 本番リリースは単一HTMLファイルでなければならない。マルチファイル構成は開発時（Viteソース）のみ許容され、リリース前に統合すること。                                                        |
 | CON-06 | すべてのソースコード、UIテキスト、コメント、インラインドキュメントはASCII英語のみとする。例外: [?]ヘルプモーダルのコンテンツ（バイリンガル）。(PlantUML同意ダイアログの例外は、2026-10-23 に同意の文を ASCII の 1 文にしたため削除。オーナーの裁定 R14)            |
@@ -395,10 +407,11 @@ gr-simple-md-renderer/
 | CON-09 | JavaScriptはES6+クラスベースで記述すること。                                                                                                                                              |
 | CON-10 | バンドルしたライブラリ (npm依存) のバージョン変更は機能検証を必須とする。                                                                                                                 |
 | CON-11 | バックエンドを追加してはならない（サーバー処理、APIエンドポイント、Node.jsサーバー一切不可）。                                                                                            |
-| CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。**クリップボードの読み取り (INV-69) は外部との通信ではない。ただし「リンクを貼る」のボタンは、ブラウザの読み取りの許可 (`navigator.clipboard`) を使う。**既知の制約**: ブラウザは許可をサイト (オリジン `https://goodrelax.github.io`) ごとに記憶する。そのため Chrome / Edge では、GRSMD で一度許可すると、同じサイトの他のページ (gr-scheduler など) も、確認なしにクリップボードを読めるようになる。Safari / Firefox は、読むたびに確認を出し、許可を記憶しない見込み **[要検証: ブラウザごとの記憶のしかた]**。許可はブラウザのサイトの設定 (「クリップボード」) で取り消せる。Ctrl+V / Cmd+V の方式はこの許可を使わない。このため、許可の要らない Ctrl+V の方式を主とし (裁定 Q5)、ボタンは押したときだけ許可を使う。ヘルプ (日英) の「Privacy & Security」/「プライバシーとセキュリティ」の章には、利用者が取れる行動が分かるように 1 項目で短く書く (2026-10-23 に「編集」の章を消したので、この開示だけをこの章へ移した。調整役の裁定): ボタンはブラウザが許可を求めることがあること、Chrome / Edge ではその許可が goodrelax.github.io のすべてのページに及ぶこと、取り消すにはサイトの設定の「クリップボード」を変えること (オーナーの裁定 2026-10-22。2026-xx-xx)。この許可の説明は goodrelax.github.io で開いているときのものなので、ヘルプでは「goodrelax.github.io で開いているとき」と前置きする (ダウンロードした `GRSMD.html` を `file://` で開いたときは当てはまらない。2026-10-23)。** **ヘルプのダウンロードのボタン (SC-16) は、ページからの通信ではない。** 利用者が押したときに、新しいタブ (`target="_blank" rel="noopener noreferrer"`) で GitHub の最新のリリースの添付ファイルへ移るだけで、ページから `fetch` も先読みもしない (CSP の `connect-src` は変えない)。ヘルプ (日英) の「プライバシーとセキュリティ」に、押すと GitHub を開くこと、押すまでは何も送らないことを書く (調整役の裁定 D2・D7、2026-10-23)。**ブロックの範囲のカットとコピー (INV-74) は、クリップボードへ書くだけで読まない** (`copy` の事象の `clipboardData` に書く。読み取りの許可は使わない。2026-10-24)。 |
-| CON-13 | 編集内容を自動保存してはならない。localStorage、sessionStorage、Cookie、IndexedDB、Origin Private File System、Cache Storage のいずれにも、編集内容・ファイル名・パレットの位置・パレットの最小化の状態を書いてはならない。保存はユーザーの明示操作 (SC-24) によるローカルファイルへの書き込み、またはダウンロードに限る。`document.title` にファイル名を入れてはならない (ブラウザの履歴に残るため。INV-50) |
-| CON-14 | 保存処理はネットワーク通信を行ってはならない。File System Access API の書き込み、または `blob:` URL によるダウンロードのみを用いる |
+| CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。**クリップボードの読み取り (INV-69) は外部との通信ではない。ただし「リンクを貼る」のボタンは、ブラウザの読み取りの許可 (`navigator.clipboard`) を使う。**既知の制約**: ブラウザは許可をサイト (オリジン `https://goodrelax.github.io`) ごとに記憶する。そのため Chrome / Edge では、GRSMD で一度許可すると、同じサイトの他のページ (gr-scheduler など) も、確認なしにクリップボードを読めるようになる。Safari / Firefox は、読むたびに確認を出し、許可を記憶しない見込み **[要検証: ブラウザごとの記憶のしかた]**。許可はブラウザのサイトの設定 (「クリップボード」) で取り消せる。Ctrl+V / Cmd+V の方式はこの許可を使わない。このため、許可の要らない Ctrl+V の方式を主とし (裁定 Q5)、ボタンは押したときだけ許可を使う。ヘルプ (日英) の「Privacy & Security」/「プライバシーとセキュリティ」の章には、利用者が取れる行動が分かるように 1 項目で短く書く (2026-10-23 に「編集」の章を消したので、この開示だけをこの章へ移した。調整役の裁定): ボタンはブラウザが許可を求めることがあること、Chrome / Edge ではその許可が goodrelax.github.io のすべてのページに及ぶこと、取り消すにはサイトの設定の「クリップボード」を変えること (オーナーの裁定 2026-10-22。2026-xx-xx)。この許可の説明は goodrelax.github.io で開いているときのものなので、ヘルプでは「goodrelax.github.io で開いているとき」と前置きする (ダウンロードした `GRSMD.html` を `file://` で開いたときは当てはまらない。2026-10-23)。** **ヘルプのダウンロードのボタン (SC-16) は、ページからの通信ではない。** 利用者が押したときに、新しいタブ (`target="_blank" rel="noopener noreferrer"`) で GitHub の最新のリリースの添付ファイルへ移るだけで、ページから `fetch` も先読みもしない (CSP の `connect-src` は変えない)。ヘルプ (日英) の「プライバシーとセキュリティ」に、押すと GitHub を開くこと、押すまでは何も送らないことを書く (調整役の裁定 D2・D7、2026-10-23)。**ブロックの範囲のカットとコピー (INV-74) は、クリップボードへ書くだけで読まない** (`copy` の事象の `clipboardData` に書く。読み取りの許可は使わない。2026-10-24)。 **例外 (2026-10-29): GitHub の API (`https://api.github.com`)。** SC-27 の開く・push・Reload は、利用者が確認の画面で押したときだけ、この 1 つのオリジンへ送る (毎回。『次から聞かない』は置かない)。送り先は CONFIG の固定の値で、URL や応答から読んだホストには送らない。開く・Reload で送るのはリポジトリ・ブランチ・パスと PAT だけで、本文を送るのは push だけ。GitHub の文書の相対パスの画像 (`raw.githubusercontent.com`) は、今の外部画像と同じ同意を通す (INV-91)。 |
+| CON-13 | 編集内容を自動保存してはならない。localStorage、sessionStorage、Cookie、IndexedDB、Origin Private File System、Cache Storage のいずれにも、編集内容・ファイル名・パレットの位置・パレットの最小化の状態を書いてはならない。保存はユーザーの明示操作 (SC-24) によるローカルファイルへの書き込み、またはダウンロードに限る。`document.title` にファイル名を入れてはならない (ブラウザの履歴に残るため。INV-50)。**注 (2026-10-29、SC-27):** GitHub の PAT は、利用者が選べばブラウザのパスワードマネージャーが覚える (ブラウザの機能)。GRSMD のスクリプトは、PAT も、GitHub の文書も、storage・Cookie・IndexedDB・OPFS・Cache Storage に書かない (D3・D13) |
+| CON-14 | 保存処理はネットワーク通信を行ってはならない。File System Access API の書き込み、または `blob:` URL によるダウンロードのみを用いる。**注 (2026-10-29):** push (SC-27) は保存ではない。Save / Save as は今のまま通信しない |
 | CON-15 | 製品コード (`src/js/`) のすべての関数とメソッドは、JSDoc のコメント内に `@purity` タグをちょうど 1 つ持つこと。値は `pure` / `semi-pure-a` / `semi-pure-b` / `non-pure` の 4 値とする (レビュー基準 `spec/grsmd_review_standards_ja.md` の「R7 純粋性の分類」と「R7 `@purity` タグ」)。既存コードにも適用する。数え方と検査の方法は 5.16 に定める |
+| CON-16 | PAT の扱い: (1) 受け付けるのは fine-grained (`github_pat_` で始まる) だけ。ほかの形 (classic の `ghp_` など) は、送らずに断る (D12)。(2) PAT は、確認の画面の欄から送るときに読み、送り終えたら変数と欄を空にする (D11)。そのトークンで要求が成功したら、Credential Management (`navigator.credentials.store(new PasswordCredential({id: "owner/repo", password}))`) でブラウザに保存を頼む (D25。ブラウザが吹き出しを出し、利用者が決める)。保存したトークンは、利用者が Token の欄をクリックし、ブラウザの自動入力の候補から選んで入れる (D34。[Saved] のボタンと `navigator.credentials.get` は使わない。2026-10-29 の確かめで、Edge は `get` に選ぶ画面を出さず何も返さなかった。D31)。`PasswordCredential` が無いブラウザでは保存を頼まず、貼って使う。欄の目のボタン (D28) は欄の伏字を開くだけで、トークンを欄の外へ出さない。インスタンスのフィールド・`window`・DOM の属性に持ち続けない。(3) `Authorization: Bearer` のヘッダーだけで送り、URL・トースト・エラーの文・コンソールに出さない。(4) 送り先は `CONFIG.github.apiOrigin` だけ。(5) フレームの中では機能ごと出さない (INV-92) |
 
 ### 1.7 版の規則
 
@@ -481,7 +494,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-18  | イベント駆動 | ファイルドロップ時の分類は以下の5段階で行うこと: (1) `.md` → Markdownプレビュー、(2) `EXT_TO_HLJS` に登録済み → コードビュー（ハイライト試行）、(3) `BINARY_EXTENSIONS` に該当 → アラートで拒否、(4) 上記いずれにも該当しない場合は先頭8KBを読みnullバイト検査 → nullバイトあり → アラートで拒否、(5) nullバイトなし → コードビュー（plaintext表示）。拡張子を擬態したファイル（登録済み拡張子だが中身がバイナリ等）に対しては特別な対処を行わず、そのまま表示を試みること。 |
 | INV-18b | 状態駆動     | コードビューでキーボードスクロール中は、`.code-line:hover` によるハイライトを一時的に無効化すること（ちらつき防止）。                                                                                                                                                                                                                                                                                                                                                        |
 | INV-19  | 状態駆動     | 外部画像の同意がない間、システムはMarkdown内の外部画像 (CON-12) をネットワークから取得してはならない。サニタイズ時に `src` / `srcset` を `data-external-src` / `data-external-srcset` へ退避し、代替表示 (`.external-image-placeholder`、alt とホスト名) を表示すること。ユーザーが代替表示をクリック (またはEnter/Space) し、確認ダイアログ (固定の 1 文 "Is it OK to get images from other sites?"。`messages.externalImage.consent`。ホスト名の一覧は示さない。オーナーの裁定 R14、2026-10-23) で同意した場合、システムは現在のプレビュー内の保留中の画像をすべて復元し、同意が有効な間は以後の描画で直ちに読み込むこと。キャンセル時は代替表示を維持すること。文書自身が書いた `data-external-*` 属性は無視 (除去) すること。同意は localStorage / sessionStorage / Cookie に保存してはならない (INV-04)。 |
-| INV-20  | 常時         | ビルド成果物 (単一HTML) は `<meta http-equiv="Content-Security-Policy">` を `<meta charset>` の直後 (全スクリプトより前) に持つこと。値: `default-src 'none'; script-src 'sha256-<実行するインラインスクリプトと、遅れて読むライブラリのデータ (INV-81 (5)) のハッシュ>'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: <PlantUMLサーバ> https:; font-src data:; connect-src <PlantUMLサーバ>; base-uri 'none'; form-action 'none'`。ハッシュは vite.config.js の `content-security-policy` プラグインが、viteSingleFile のインライン化と高速起動の並べ替え (INV-81) の後 (`generateBundle`) に計算して注入する。PlantUMLサーバのオリジンは `CONFIG.plantuml.serverUrl` から導く。`<script src>` が残っている、またはインラインスクリプトが無い場合はビルドを失敗させる。JSON-LD などの実行されないスクリプトはハッシュ対象外。ただし `type="text/plain"` は、遅れて読むライブラリのデータ (`id="grsmd-lib-…"`) だけを許し、ハッシュに載せる (それ以外があればビルドを失敗させる。INV-81 (5))。開発サーバ (`npm run dev`) には適用しない (build only)。**制約:** `<meta>` のCSPは実行時に変更できないため、同意後の外部画像 (INV-19) を表示できるよう `img-src` に `https:` を含める。同意前に外部画像を読み込ませない役目は INV-19 のゲートが担い、CSPは スクリプト実行・fetch (PlantUML以外)・メディア・フォント・フレーム・`http:` 画像を遮断する多重防御である。`http:` の外部画像は同意後もCSPで遮断される。`frame-ancestors` は `<meta>` では無効なので含めない。 |
+| INV-20  | 常時         | ビルド成果物 (単一HTML) は `<meta http-equiv="Content-Security-Policy">` を `<meta charset>` の直後 (全スクリプトより前) に持つこと。値: `default-src 'none'; script-src 'sha256-<実行するインラインスクリプトと、遅れて読むライブラリのデータ (INV-81 (5)) のハッシュ>'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: <PlantUMLサーバ> https:; font-src data:; connect-src <PlantUMLサーバ> <GitHub の API>; base-uri 'none'; form-action 'none'`。ハッシュは vite.config.js の `content-security-policy` プラグインが、viteSingleFile のインライン化と高速起動の並べ替え (INV-81) の後 (`generateBundle`) に計算して注入する。PlantUMLサーバのオリジンは `CONFIG.plantuml.serverUrl` から導く。GitHub の API のオリジン (`https://api.github.com`) は `CONFIG.github.apiOrigin` から導く (SC-27。D20。2026-10-29。ほかの指令 (`img-src`・`form-action 'none'` も) は変えない)。`<script src>` が残っている、またはインラインスクリプトが無い場合はビルドを失敗させる。JSON-LD などの実行されないスクリプトはハッシュ対象外。ただし `type="text/plain"` は、遅れて読むライブラリのデータ (`id="grsmd-lib-…"`) だけを許し、ハッシュに載せる (それ以外があればビルドを失敗させる。INV-81 (5))。開発サーバ (`npm run dev`) には適用しない (build only)。**制約:** `<meta>` のCSPは実行時に変更できないため、同意後の外部画像 (INV-19) を表示できるよう `img-src` に `https:` を含める。同意前に外部画像を読み込ませない役目は INV-19 のゲートが担い、CSPは スクリプト実行・fetch (PlantUML と GitHub の API 以外)・メディア・フォント・フレーム・`http:` 画像を遮断する多重防御である。`http:` の外部画像は同意後もCSPで遮断される。`frame-ancestors` は `<meta>` では無効なので含めない。 |
 | INV-21 | 状態駆動 + イベント駆動 | 未保存 (用語集の定義。開いているブロック編集欄とセルの未確定の変更を含む) の間に、Reload、Clear (ボタンまたは `c` キー)、`.md` または非 `.md` のファイルドロップ、のいずれかで文書が置き換えられようとした場合、システムは置き換える前に確認ダイアログ (`window.confirm`) を表示すること。キャンセルされた場合は、文書・ブロック編集欄・ビュー状態を変更しないこと。OK の場合は、開いているブロック編集欄を確定せずに破棄してから置き換えること。未保存でない場合は確認しないこと。ファイルドロップの処理は次の順とする: (1) 同期的に fileHandle の Promise と File を取る (CON-01。最初の `await` より前) → (2) サイズとバイナリの判定 (INV-11 / INV-18) と、ファイルの内容の読み込み → (3) 保存中なら拒否 (INV-54) → (4) 未保存なら確認 → (5) OK なら、確認の直後に同期的に編集欄を破棄し、`.md` のドロップでは、モデル・セッション・保存先を置き換え、外部画像の同意を失効させ (INV-43)、全体描画をキューに入れる。非 `.md` のドロップでは、モデル・セッション・保存先を無しにし、キューの中の部分描画とそのアンカーを捨て、コードビューを描画する (Markdown の全体描画はキューに入れない。INV-47)。Reload は、(a) 読み込みの開始時の文書 ID と保存先を記録して、内容の読み込み (`MarkdownFileAccess.readFile`) を先に完了し (読み込みに失敗した場合は、何も変えずにトースト `messages.edit.reloadFailed` を表示して終える。読み込みの間に文書 ID または保存先が変わっていた場合は、何も変えずにトースト `messages.edit.reloadCanceled` を表示して終える) → (b) 保存中なら拒否 (INV-54) → (c) 未保存なら確認 → (d) OK なら確認の直後に同期的に置き換え、全体描画をキューに入れる。Clear は、(b) 保存中なら拒否 → (c) 未保存なら確認 → (e) OK なら確認の直後に同期的に、編集欄を破棄し、モデル・セッション・保存先を無しにし、キューの中の部分描画とそのアンカーを捨て、プレレンダー状態に戻す (全体描画はキューに入れない。INV-13 / INV-47)。どの場合も、描画の完了を待ってから置き換えることはしない。 |
 | INV-22 | 状態駆動 | 未保存 (INV-21 と同じ定義) の間にページを離れようとした場合、システムは `beforeunload` でブラウザの離脱確認を表示すること。未保存でない場合は表示しないこと。 |
 | INV-23 | イベント駆動 | ブロックの確定または Undo による部分描画で PlantUML ブロックを描画する場合、システムは PlantUML サーバーへ自動では送信せず、プレースホルダ (`.plantuml-pending`、[Render] ボタン付き) を表示すること。ユーザーが [Render] を押し、INV-02 の確認ダイアログで同意した場合に限り送信すること。差し替えなかったブロックの PlantUML の描画結果は変更せず、再送信もしないこと (INV-42)。 |
@@ -545,6 +558,14 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-82 | イベント駆動 | ベータ版のビルド (`npm run build:beta`) を行う場合、システムは、本番と同じビルド (`vite build`。mode `production`) を `output/beta/` に作り、その `index.html` の robots の meta (`<meta name="robots" content="index, follow" />`) だけを `<meta name="robots" content="noindex" />` に置き換えたファイルを `docs/grsmd-beta.html` として書くこと (`tools/buildBeta.mjs`。オーナーの決定 2026-10-25。5.18)。`docs/index.html` は書かないこと。(1) ベータ版は、それだけのビルドをしない (ベータ版の Vite の mode もプラグインも無い)。そのため、script と CSP (INV-20) は、作りの上で本番の出力と同じになる (調整役の裁定、レビューの M1)。(2) `tools/buildBeta.mjs` は、次のどれかなら書かずに失敗する (終了コード 1): robots の meta (`name` が `robots` の `meta`。属性の順・大文字小文字・引用符にかかわらず数える) がちょうど 1 つでない、それが本番の値でない、置き換えの前と後で違う行が robots の meta だけの 1 行でない、script の要素が変わる、書く先の名前が `grsmd-beta.html` でない、書く先が読むファイルと同じ。(3) 本番のビルド (`npm run build`・`build:release`) は、ベータ版の有無で 1 バイトも変わらない (ベータ版の道具は本番のビルドに入らない)。(4) BETA の印は出さず、ヘルプも変えない (オーナーの裁定 2026-10-26)。版の行は開発版と同じ ("Development build" と HEAD のコミットの時刻。1.7.2) |
 | INV-83 | 状態駆動 | ブロック編集欄を開いている間、システムは、編集欄の字を、そのブロックの表示のときと同じフォント・大きさ・太さ・行の高さで出すこと (オーナーの指摘「編集中と表示中とでフォントが変わるのが違和感」と裁定 ESF-2〜ESF-4、2026-10-27)。(1) **表示に合わせる種類:** 段落 (`p`)、見出し (`h1`〜`h6`。その段の大きさと太さで、原文の `#` も見せる。ESF-3)、リスト (`li`)、引用 (中の `p`。無ければ `blockquote`)、コードブロック (`pre code`)。開く直前の描画された要素の算出スタイル (`getComputedStyle`) の `font-family`・`font-size`・`font-weight`・`font-style`・`line-height`・`letter-spacing` を編集欄に写す。上と下の外の余白は、その箱 (`p`・見出し・`ul` / `ol`・`blockquote`・`pre`) のものを写す。コードブロックは `pre` の内側の余白も写す (字の始まりが表示と同じ所になる)。(2) **等幅のままの種類:** 表の原文・数式のブロック・図 (Mermaid・PlantUML)・HTML・見えないブロック (参照の定義・コメント) は、5.14.13 の等幅フォントの並び (表の縦棒をそろえるため。INV-61)。(3) **新しいブロック:** 空の文書 (INV-49) とすき間 (INV-73) の編集欄は、本文 (`#preview`) の字で出す (オーナーの裁定 ESF-7、2026-10-29。表やコードを書き始めることもあるが、多いのは段落で、段落なら確定の前後で字が変わらない)。(4) **箱:** 編集欄は内側の余白も枠の線も持たない (`padding: 0`・`border: 0`)。枠は `outline` で示す (ライト `#0969da`・ダーク `#1f6feb`。幅 1 px、フォーカスで 2 px。`outline-offset` 2 px。場所を取らない。ESF-4)。地は今のまま (5.8.1)。見えない文字の印の層 (INV-70) も、編集欄に写した字と余白を写す (写す性質の並びは `editorTextStyle.js` の 1 か所)。(5) フォントの名前はコードに書かない (等幅は CSS、表示の字は描画された要素の算出スタイルから取る)。 |
 | INV-84 | イベント駆動 | ブロックを押して (編集モードのタップ・クリック、表示モードのダブルクリック・ダブルタップ。INV-29・INV-57) ブロック編集欄を開く場合、システムは、押した点の字に当たる原文の位置にカーソルを置き、その行の画面の上の位置を、開く前後で ±1 px 以内に保つこと (オーナーの裁定 ESF-5、2026-10-27)。ブロック編集欄を確定して閉じる場合 (Esc・外の押下・[Edit]。変更が無いときも) は、カーソルの行の画面の上の位置を、閉じる前後で ±1 px 以内に保つこと。前は、カーソルが原文の末尾に行き、基準がブロックの上端だった (INV-46) ので、長いブロックの下の方ほど行がずれた。(1) **押した点:** 押したとき (`pointerdown`。表示モードのダブルクリックは `dblclick`、ダブルタップは 2 回目の `pointerup`) に、`caretPositionFromPoint` (WebKit は `caretRangeFromPoint`) で描画された字の位置を取り (`BlockCaretMap.caretAt`。表のセルのカーソルも同じ関数で置く。INV-62)、空白を除いて前に何字あるか、直前が空白か、行の上端がブロックの上端から何 px かを覚える (開く前に上の編集欄の確定でブロックが動いても使える)。字の上でないとき (余白・図) は無し。(2) **対応の取り方 (`caretMatching.js`。純粋な関数。描画の字の読み取りと測りは `BlockCaretMap`):** 描画された字と原文を、空白を除いて先頭から 1 字ずつ対応させる。行頭の印 (字下げ・`>`・リストの印・タスクの箱・見出しの `#`)、コードブロックの開きの囲いの行、リンクの行き先 (`](...)`。中の括弧 1 組と引用符の題まで)、HTML のタグは飛ばす。直前の対応から 64 字の中に同じ字の無い描画の字 (実体参照・KaTeX の描いた字) は対応させない。KaTeX の MathML の写し・表のタブ・図のコピーの帯・ボタン・SVG の字は数えない。直前が空白なら次の字の前、そうでなければ前の字の後ろ (書式の印の外) に置く。(3) **行の位置:** 描画の側は、その字の範囲 (`Range.getClientRects`) の上端。編集欄の側は、編集欄と同じ字と余白の見えない写しで、描画の側と同じ字 (カーソルの前の字。前が空白なら次の字、無ければ最後の字) を印にして測る (折り返しを同じにするため、その字の語の終わりまで入れる。カーソルの位置そのものを測ると、折り返しの所で前の行の末尾に来て、行が 1 行分ずれた。レビュー 1 回目の直しで見つけた)。(4) **対象:** INV-83 で表示の字に合わせる種類 (段落・見出し・リスト・引用・コードブロック)。ほかの種類、押した点の無いとき、キーボードで開いたとき、雛形の挿入 (INV-52)、すき間と空の文書は、今どおり (カーソルは原文の末尾。Mermaid は INV-52 の 1 行目の末尾。基準はブロックの上端。INV-46)。(5) **確定の後:** 確定の部分描画 (INV-46) では、基準のブロックの原文 (編集欄に出す形) の中でカーソルの位置に当たる描画の字の行を探し、その行が閉じる前の高さに来るようにブロックの上端を決める。確定でブロックが分かれてカーソルが基準のブロックの外に出たとき、または字が見つからないときは、今どおりブロックの上端を保つ。保持中のブロックだけが変わった部分描画でも、DOM の安定を待たずに、描いた直後に 1 回補正する (行はブロックの中で動くため)。変更が無い確定 (描画しない) は、閉じた直後に補正する。編集モードを出る操作 (`keepReadingPosition`) で基準が動いても、行は保つ。開いた別のブロックに基準が移る (`retargetPendingAnchor`) と、行は使わない。(6) **既知の制限:** 文書の先頭や終わりの近くで、行を保つのに要るスクロールが範囲の外になるときは、届く所まで (編集欄の折り返しが表示と違うと、行が 1 行分ずれることがある)。対応は推測による。リンクの行き先やタグと見分けられない部分 (括弧が 2 段以上入れ子の行き先など) があると、カーソルが数字ずれることがある (ブロックの外には出ない)。(7) **(性能)** ダブルクリックから編集欄が開いて配置されるまでを、大きなブロックでも長いタスク 1 つ (50 ms、INV-74 と同じ) に収める (調整役の指示 2026-10-28)。そのため: コードブロックは原文をそのまま見せるので、押した位置を 1 回の文字列の比較で原文に移す。折り返しの無い字 (多くのコード) の行の位置は、行の数と 1 行の高さから数える (小さな見えない写しで 1 行の高さを測る)。折り返す字は、カーソルの語の終わりまでの写しを測る。ただし、カーソルの前が `CONFIG.edit.caretLineMaxChars` (20,000 字) を超える折り返す字は測らず、ブロックの上端を保つ (写しの配置に編集欄と同じだけかかるため。カーソルは押した字に置く)。押したときに読んだ描画の字は、開くときに使い回す。開くときは、高さを合わせる前のスクロールの読み取り (INV-40) をしない (基準を戻すので要らず、新しい編集欄の配置を 1 回減らす)。2026-10-28 の実測 (Chromium、この変更の前 / 後、3 回ずつ、ms): 5,000 行のコード 45・42・55 / 49・55・51、色付けの上限の手前のコード 11・14・12 / 16・27・17、100 KB の段落 18・17・24 / 36・41・33。5,000 行は変更の前から 50 ms 近く (編集欄の 200 KB の配置) なので、試験の上限は 80 ms とする。確定 (Esc から描き直しまで) は変更の前と同じ (100 KB の段落で 85〜95 ms。ブロックの描き直しによる)。e2e `editScrollFont.e2e.js` (GRSMD_PERF=1)。 |
+| INV-85 | イベント駆動 | [Open GitHub] (`gitHubBtn`) または `o` (入力要素の外) が押された場合、システムは「Open GitHub」の画面 (`gitHubOpenDialog`) を開き、何も送らないこと。(0) 画面の一番上は Token の欄で、開いたらそこにカーソルを置く (D24)。欄の名前は `Fine-grained personal access token` で、欄の上の行に置く (D35)。欄の横に目のボタンを置く (D28)。(1) URL の欄に入った文字が `https://github.com/<owner>/<repo>/blob/<branch>/<path>` の形で、パスが `.md` か `.markdown` で終わるときだけ、リポジトリ (`<owner>/<repo>`、読むだけ)・ブランチ・パス (直せる)・PAT の欄を出し、[Open] を押せるようにする。ブランチ名の `/` は URL では決まらないので、最初の 1 区切りをブランチとして入れる。(2) `raw.githubusercontent.com` の URL、ほかのホスト、`http:`、利用者名の付いた URL、ほかの形は、理由を 1 行で出し、何も取りに行かない。(3) ページのほかの所への URL の貼り付けは、今のまま (文字として描く。INV-69 も今のまま)。(4) GitHub の文書の間 (ボタンが [Push to GitHub] のとき) の `o` は何もしない (D9) |
+| INV-86 | イベント駆動 | 「Open GitHub」の画面で [Open] が押された場合、システムは `api.github.com` へ、ファイル (`GET contents`)、そのファイルの最後のコミット (`GET commits?path&sha&per_page=1`)、リポジトリ (`GET repos`、公開か非公開か) を、この順に 1 つずつ読むこと。(1) PAT の欄が空なら `Authorization` を付けない (公開のリポジトリ)。(2) ファイルでない、1 MB を超える、Base64 でない、NUL を含む、厳密な UTF-8 でないものは開かない。(3) 読めたら、今の文書を置き換える (INV-21 の順: 読んでから、保存中は断り、未保存なら聞き、置き換える)。BOM と改行コードは `DocumentSession` が覚える (INV-38・INV-44)。手元の保存先は、パスの最後の部分を名前にし、ハンドルは持たない (最初の Save は保存の画面を出す)。外部画像の同意は失効する (INV-43)。(4) 最後のコミットと公開か非公開かは、読めなければ「分からない」として続ける。(5) 失敗したら、画面に理由を出し、文書を変えない |
+| INV-87 | 状態駆動 | GitHub の文書 (GitHub から開いた文書。コードビューを除く) を表示している間、システムは、[Open GitHub] の場所に緑の [Push to GitHub] を出すこと。(1) 送るファイル (`toFileText(本文)`。ラッパー・改行コード・BOM を戻したもの) が GitHub の版 (最後に読んだか push した版) と同じで、開いている編集欄・セル・`#editor` に反映していない変更も無いときは、押せない表示にする (D8)。(2) title に `owner/repo @branch path` を出す。(3) Clear・別の `.md` のドロップ (連携を止める)・ペースト・コードビューへ移ると [Open GitHub] に戻る。(4) キーは割り当てない (D8) |
+| INV-88 | イベント駆動 | [Push to GitHub] が押された場合、システムは、保存と同じく (INV-56 を先に聞き) 開いている編集欄を確定してから、push の画面 (`gitHubPushDialog`) を出し、[Push] まで何も送らないこと。(1) 画面に、公開か非公開か (公開と分からないときは公開として警告)、リポジトリ・ブランチ・パス、メッセージの欄 (既定 `Update <path>`、空は不可)、PAT の欄、送る先と送るもの (本文の全部) を出す。(2) PAT が fine-grained でなければ送らない (CON-16)。(3) [Push] で、`PUT contents` に、本文の全部 (Base64)、メッセージ、読んだときの blob の `sha`、ブランチを送る。`committer`・`author` は送らない (GitHub の既定の利用者)。(4) push の間は、保存・別の push・文書の置き換えを断る (INV-54 と同じ)。(5) 成功したら、GitHub の版を新しい `sha` と送った中身にし、未保存の印を消し (D8。手元のファイルの時刻の基準は変えない。INV-39)、トーストでコミットの短い sha を知らせる (このトーストだけ 6 秒。ほかのトーストは今の 3 秒。D36)。(6) 失敗したら (401・403・404・409・422・429・ほか・通信の失敗)、画面に 5.19.4 の文を出し、本文・未保存の状態・GitHub の版を変えない。自動では再試行しない |
+| INV-89 | イベント駆動 | GitHub の文書の間に Reload ([Reload] / `r`) が押された場合、システムは、手元のファイルからは読まず、Reload の画面 (`gitHubReloadDialog`) で確かめてから、INV-86 と同じに GitHub から読み直すこと。読めたら INV-21 の Reload の順で置き換える (読み始めた後に文書が変わっていたら置き換えない)。手元の保存先は変えない |
+| INV-90 | イベント駆動 | GitHub の文書の間に `.md` がドロップされた場合、システムは、ファイルを読んだ後、未保存の確認の前に、3 択の画面 (`gitHubDropDialog`) を出すこと。画面には、編集中のファイル、GitHub の最後のコミット (開いたときに読んだもの。通信しない)、ドロップしたファイルの名前、改行コードと BOM が GitHub の版と違えばその旨を出す。(1) 「連携を続けたまま置き換える」: 本文をドロップしたファイルにし (Undo の対象にしない)、手元の保存先をそのファイルにし、GitHub の連携 (ファイルと `sha`) を残す。(2) 「連携を止めて開く」: 今のドロップと同じ。(3) 「やめる」: 何もしない。`.md` 以外のドロップは今のまま (連携は止まる) |
+| INV-91 | 状態駆動 | GitHub の文書を描く間、システムは、サニタイズの後、外部画像の同意の前に、相対パスを GitHub での見え方に直すこと (D21)。(1) `img` の `src` は `https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<repo の中のパス>`。この後、今の外部画像の同意を通す (INV-19)。(2) `a` の `href` は `https://github.com/<owner>/<repo>/blob/<branch>/<repo の中のパス>` (問い合わせと `#` は残す)。(3) `/` で始まるものはリポジトリの最上位から。上へ出すぎたものは最上位で止める。(4) `http(s):`・`mailto:` などの形・`//host`・`#…`・空は直さない。`srcset` は直さない。(5) GitHub の文書でないときは、今のまま (相対パスは外部扱い) |
+| INV-92 | 常時 | GitHub 連携は、主な入力がマウスかトラックパッド (`(pointer: fine)`) で、フレームの中でない (`window.top === window.self`) ときだけ出す (D15・D17。`<meta>` の CSP では `frame-ancestors` が効かないため)。出さないときは、[Open GitHub] を `hidden` にし、`o` は何もしない |
 | INV-72 | 常時 | WYSIWYG のセルの書き出しでは、システムは表記を次のとおり保つこと。(a) リンク: 開く時点で、セルの原文をインラインの字句解析し、リンクのトークンを出現順に描画の `a` 要素と対応付け (数が合わなければ原文のセルにする)、要素ごとに種類と元の表記 (普通 `[文字](URL)`・参照 `[文字][ラベル]` / `[文字][]` / `[文字]`・`<URL>`・裸の URL) を記録する。書き出しでは、普通のリンクは `[文字](URL)`、参照リンクは `[文字][ラベル]` (省略形で文字が変わった場合は元の文字をラベルとして `[新しい文字][元の文字]`)、`<URL>` と裸の URL は、文字が変わっていなければ元の表記、変わっていれば新しい文字を URL として同じ形 (新しい文字が INV-69 の URL の条件を満たさなければ `[文字](元の URL)`) とする。INV-69 で作ったリンクは普通のリンクとする。(b) 実体参照は文字として書く (`&nbsp;` は U+00A0)。(c) 見えない文字は文字のまま書く (INV-70)。(d) 文字の逃がし: `` \ ``、`` ` ``、`*`、`_` (単語の中を除く)、`[`、`]`、`<`、`\|`、`~`、`$`、`&` を `` \ `` で逃がす (リンクの文字の中で、逃がした `]` の直後の `(` は `\(` と書く (marked はリンクの文字の `\[` `\]` を括弧に戻してから読むので、`\[x\](y)` が中のリンクになる)。リンクの直前の `!` も `\!` と書く。画像にしない。新しいリンクの直前に文字として書かれた `*` `_` `~` も `` \ `` で逃がす。`[` が続くと強調を閉じうるため) **[確認済: `\$` は KaTeX の拡張を入れた marked で数式にならない]**。表のセルでは、コードスパンの中の `\|` も、前に `` \ `` を付けて逃がす (marked の表は、逃がした縦棒を `\|` に戻してからセルを解析する **[確認済]**。`inlineHtml` も同じ前処理をする)。(d) の逃がしは、ブロック編集欄で INV-69 が作るリンクの文字にも当てる (5.14.15)。 |
 
 ---
@@ -3347,6 +3368,51 @@ Feature: 検索と置換
     Then 検索だけができ、置換の段は出ない
 ```
 
+### FS-23: GitHub 連携
+
+```gherkin
+Feature: GitHub の .md を直して push する
+  GitHub の文書を直す人として
+  GRSMD の描画を見ながら直し、途中は手元に保存し、できたら GitHub へ送りたい
+
+  Scenario: 開いて、直して、push する
+    Given PC のブラウザで GRSMD を開いている
+    When [Open GitHub] を押し、github.com のファイルの URL を貼る
+    Then リポジトリ・ブランチ・パス・PAT の欄が出る
+    When PAT を貼るか、Token の欄をクリックしてブラウザの候補から選んで、[Open] を押す
+    Then 文書が開き、ボタンが押せない表示の緑の [Push to GitHub] になる
+    When 直す
+    Then [Push to GitHub] が押せるようになる
+    When Ctrl+S を押す
+    Then 手元に保存され (最初は保存の画面)、GitHub には何も送られない
+    When [Push to GitHub] を押し、メッセージを確かめて [Push] を押す
+    Then 同じブランチにコミットされ、未保存の印が消え、ボタンは押せない表示に戻る
+
+  Scenario: GitHub 側が先に変わっていた
+    Given GitHub の文書を開いた後に、ほかの人が同じファイルを push した
+    When 直して push する
+    Then 「push しなかった (409)」と出て、本文は直したまま残る
+
+  Scenario: 古い形式の PAT
+    When push の画面で ghp_ で始まる PAT を入れて [Push] を押す
+    Then 何も送らず、fine-grained の PAT を使うよう出る
+
+  Scenario: 翌日に続ける
+    Given 昨日、手元に下書きを保存した
+    When GitHub の最新版を開き、下書きをドロップして「連携を続けたまま置き換える」を選ぶ
+    Then 本文が下書きになり、[Push to GitHub] で GitHub へ送れる
+
+  Scenario: 相対パスの画像とリンク
+    Given 公開のリポジトリの文書に ![](img/a.png) と [次](b.md) がある
+    When GitHub から開く
+    Then 画像はクリックで読む代わりの表示になり、ホストは raw.githubusercontent.com
+    And リンクの行き先は github.com のそのファイルのページ
+
+  Scenario: タッチの端末
+    Given iPad で GRSMD を開いている
+    Then [Open GitHub] は出ず、o を押しても何も起きない
+```
+
 ## 5. 実装仕様
 
 ### 5.1 UI要素マップ
@@ -3410,7 +3476,16 @@ Feature: 検索と置換
 | `searchPanel` | div | 検索の箱。`#sidePanels` の中の先頭 (目次の上)。`role="search"`、`aria-label="Search"`、初めは `hidden`。中に `searchInput` (`placeholder="Search"`)、`searchCase` ("Aa"、`aria-pressed`、`title="Match case"`)、`searchRegex` (".*"、`aria-pressed`、`title="Regular expression"`)、`searchCount` (`aria-live="polite"`)、`searchPrev` (↑。`title="Previous (Up)"`、`aria-label="Previous"`)、`searchNext` (↓。`title="Next (Down)"`、`aria-label="Next"`)、`searchClose` (×。`title="Close (Esc)"`、`aria-label="Close"`)、`replaceRow` (コードビューでは `hidden`。`replaceInput` (`placeholder="Replace (edit mode)"`、`aria-label="Replace"`)、`replaceOneBtn` ("Replace")、`replaceAllBtn` ("All")。編集モードでないときは無効) |
 | `.search-hit` | クラス | 今の一致のブロック (コードビューでは行) の枠 (INV-80 (4))。印刷では出さない |
 | `indexPanel` | nav | 目次。`#sidePanels` の中。`aria-label="Index"`、初めは `hidden`。中身は `button.index-entry.index-h1`〜`index-h6`、または `p.index-empty` (INV-77) |
+| `gitHubBtn` | button | 上部バーの [Search] と [Render Light] の間。`Open<br />GitHub` / GitHub の文書の間は `Push to<br />GitHub` (class `gh-push`、緑)。INV-92 で出さないときは `hidden` (SC-27。2026-10-29 追加) |
+| `gitHubOpenDialog` | dialog | `<dialog>` の中の `<form>`: URL (`autocomplete="off"`)、リポジトリ (`name="username"`、`autocomplete="username"`、読むだけ)、ブランチ、パス、PAT (`type="password"`、`autocomplete="current-password"`。名前は欄の上の行の `Fine-grained personal access token`。D35。横に目のボタン。D28)、送る先の文、[Open] [Cancel] |
+| `gitHubPushDialog` | dialog | 公開か非公開かの 1 行、リポジトリ (username)、ブランチ・パス (読むだけ)、メッセージ、PAT、送る先の文、[Push] [Cancel] |
+| `gitHubReloadDialog` | dialog | リポジトリ (username)、ブランチとパス、PAT、送る先の文、[Reload] [Cancel] |
+| `gitHubDropDialog` | dialog | 編集中・最後のコミット・ドロップしたもの・改行コードと BOM の違い、3 つのボタン |
 | `.plantuml-pending` | div (クラス) | 未送信の PlantUML ブロックのプレースホルダ。[Render] ボタン付き (INV-23) |
+
+- 3 つの画面 (Open・Push・Reload) の PAT の欄は同じ形: 名前 `Fine-grained personal access token` (欄の上の行。D35)、目のボタン (押すと `type` を `password` と `text` で切り替える。画面を閉じるときと送った後は `password` に戻す。D28)。[Saved] のボタンは置かない (D34)。
+- PAT の欄に入力があったら、その画面のエラーの行を消す (D37)。
+- 送信は `preventDefault` で止める (`form-action 'none'` は変えない)。画面の中のキーは、アプリの 1 キーの操作に渡さない。送っている間の Esc では閉じない。
 
 **[要検証]** `#controls` のボタンが 8 個 (`indexBtn`・`searchBtn` を足して。`helpBtn` を含めると上部バーで 9 個) になるので、iPhone (幅 375px) で折り返しや欠けが起きないかを PRT-V11 で確認する。
 
@@ -3715,6 +3790,8 @@ JS が画面に出す文言 (トースト・確認・alert・図とプレビュ�
 `MarkdownTextOps` は CONFIG を直接読まない。雛形や `tableLineBreak` は呼び出し側が引数で渡す (R7 外部読取の引き上げ。`MarkdownTextOps` を `pure` に保つ)。
 
 `keyHints.markdown` に `[E] Edit;` を追加した (表記はこの 1 つに統一する)。`CONFIG.edit` と `messages.edit` の UI の文言はすべて ASCII の英語とする (CON-06。確認の文は `\n` で行を分けてよい)。`CONFIG.edit` の数値は仮の値で、実機で調整する (`commitBudgetMs` は INV-51 の値)。
+
+`CONFIG.github` (SC-27。2026-10-29 追加): `apiOrigin` (`https://api.github.com`)、`apiVersion` (`2026-03-10`)、`webOrigin`、`rawOrigin`、`maxBytes` (1 MiB)、`timeoutMs` (30,000)、`extensions` (`.md`、`.markdown`)、`tokenPrefix` (`github_pat_`)、`authScheme`、`pushedToastMs` (6,000。D36)、`labels` (ボタン・画面の文。PAT の欄の名前 `Fine-grained personal access token` と目のボタンの `aria-label` を含む)、`messages` (5.19.4。試作の `noSavedToken` は消す。D34)。ビルドの CSP は `apiOrigin` から作る (INV-20)。
 
 ### 5.3 EXT_TO_HLJS マッピング
 
@@ -4680,6 +4757,7 @@ setupTouchPasteAssist() {
 | ArrowDown | 無動作                     | スムーススクロール↓            | スムーススクロール↓                     |
 | `i`       | 無動作                     | 目次の表示 / 非表示 (INV-77)   | 無動作 ([Index] は無効)                 |
 | `f`       | 無動作                     | 検索の箱を出す (INV-80)        | 検索の箱を出す (置換の段は無い)         |
+| `o` | 「Open GitHub」の画面を開く (INV-85) | 同じ。GitHub の文書の間は無動作 | 同じ (開くとコードビューは閉じる) |
 | `l`       | 無動作                     | Markdownをライトでレンダリング | ライトテーマに切替 (CSS切替のみ、即時)  |
 | `d`       | 無動作                     | Markdownをダークでレンダリング | ダークテーマに切替 (CSS切替のみ、即時)  |
 | `r`       | 無動作                     | fileHandleからファイル再読込   | fileHandleからファイル再読込            |
@@ -4691,6 +4769,12 @@ setupTouchPasteAssist() {
 注意: 修飾キー (Ctrl / Meta / Alt) が押されている場合、ショートカットハンドラをバイパスしてブラウザネイティブ動作を優先する (INV-14)。
 
 **モーダルを開いている間 (2026-10-23 追加):** ヘルプ (`helpModal`) またはプロンプト (`promptModal`) を開いている間は、Ctrl / Meta / Alt を伴わないキーをアプリのショートカット (この表と下の編集機能の表の 1 キーの操作。`Esc` を含む) に渡さない。`Esc` はそのモーダルを閉じる (既定の動作も止める)。`Tab` / `Shift+Tab` は既定の動作を止め、モーダルの中の、隠れていない (`[hidden]` の中でない) リンク・ボタン・入力欄を順に回す (最後の次は最初。フォーカスがモーダルの外にあれば最初 (Shift なら最後) へ)。それ以外のキーは既定の動作を止めないので、Enter・Space はモーダルの中のボタンで働く。**フォーカス:** 開くとき (`ModalController.show(modal, opener)`)、押されている (`aria-pressed="true"`) ボタン (ヘルプの表示中の言語) へ、無ければ × へフォーカスを移す。閉じるとき (×・背景・Esc・コピーの後)、フォーカスがモーダルの中 (または無い) なら、開いたボタン (`opener`。UIController は [?] を渡す) へ戻す (レビューの M1、調整役の裁定 2026-10-23)。Ctrl / Meta / Alt を伴うキーは従来どおり (主 + S など)。`ModalController.setupModal` が document の capture の段で `keydown` を受け、伝播だけを止める (UIController の `keydown` は bubble の段なので届かない)。
+
+**GitHub 連携のキー (SC-27。2026-10-29 追加):**
+
+- `r` の行に注: GitHub の文書の間は Reload の画面を出す (INV-89)。
+- 画面 (`<dialog>`) を開いている間は、1 キーの操作を渡さない。
+- キーのヒント (`CONFIG.keyHints`) に `[O] GitHub;` を足す。INV-92 で出すとき (PC) だけ。iPad では足さない (D33)。
 
 **編集機能のキー (SC-22〜24。2026-xx-xx 追加):**
 
@@ -5378,6 +5462,59 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | 置き場 | main の `docs/grsmd-beta.html`。調整役が、develop の統合のコミットから `npm run build:beta` で作り、オーナーの許可を得て、このファイルだけを 1 つのコミットで main に置く (develop のほかの中身は main に入れない)。リリースの後も、ベータ版の置き場として残す |
 | develop の上 | ビルドした `docs/grsmd-beta.html` は develop にはコミットしない。試した後は、develop で追跡していなければ消し、追跡していれば `git checkout -- docs/grsmd-beta.html` で戻す (リリースの手順 (1.7.4 の 5) で main を develop へ合流した後は、develop でもこのファイルを追跡する)。`.gitignore` には入れない (main で追跡するため) |
 | 試験 | 単体テスト: `src/__tests__/betaBuild.test.js` (AT-BETA-01〜08)。`package.json` の `build` と `build:beta` を試験の中で同じように流し (書く先は一時のフォルダ)、ベータ版が本番の robots の meta だけを変えたものであること、`docs/index.html` を書かないこと (AT-BETA-06・07)、コードが mode を読んでもベータ版の script と CSP が本番と同じであること (AT-BETA-08。レビューの M1 の再現) を確かめる。e2e: `e2e/beta.e2e.js` (`npm run build:e2e` が `output/e2e/` に本番を作り、`tools/buildBeta.mjs` でベータ版を作る)。手で行う試験: PRT-AF01〜AF03 |
+
+### 5.19 GitHub 連携 (SC-27、INV-85〜INV-92。2026-10-29)
+
+#### 5.19.1 部品
+
+| 名前 | 層 | 役目 |
+| --- | --- | --- |
+| `gitHubUrl.js` (関数) | Entity (pure) | `parseGitHubFileUrl`、`resolveRelativeUrl`、`classifyToken`、`encodePath` |
+| `base64Text.js` (関数) | Entity (pure) | UTF-8 の文字列と Base64 の行き来 (BOM は U+FEFF として保つ。分けて `btoa`)、厳密な UTF-8 と NUL の検査 |
+| `GitHubFileRef` | Entity | owner・repo・branch・path (不変) |
+| `GitHubLink` | UseCase の値 | GitHub の版: ファイル、blob の `sha`、その版のファイルの文字列、公開か非公開か、最後のコミット (不変)。`DocumentLifecycle` が今の 1 つを持つ (手元の保存先 `DocumentLocation` と並べる。INV-55 は変えない) |
+| `GitHubContentsClient` | Adapter | `openFile`・`lastCommit`・`pushFile`。`fetch` は注入。`cache: "no-store"`、`credentials: "omit"`、`referrerPolicy: "no-referrer"`、30 秒で打ち切る。例外を外へ投げない |
+| `GitHubController` | Framework | ボタンと 4 つの画面、`GitHubHost` (UIController) を通して文書を変える |
+| `DocumentLifecycle` (足す) | UseCase | `gitHub`、`openGitHub`、`reloadGitHub`、`openFile(..., keepGitHub)`、`fileTextOf`、`startPush` / `finishPush` (`isSaving()` は push の間も真) |
+| `MarkdownRenderer` (足す) | Adapter | `setRelativeUrlResolver` (INV-91。`afterSanitizeAttributes` のフックで、外部画像の同意の前) |
+
+- 依存の追加は無い (`fetch`・`TextEncoder` / `TextDecoder`・`btoa` / `atob`)。
+
+#### 5.19.2 読むときの要求 (INV-86)
+
+| # | 要求 | 使うもの |
+| --- | --- | --- |
+| 1 | `GET /repos/{o}/{r}/contents/{path}?ref={branch}` | `type`・`size`・`encoding`・`content`・`sha` |
+| 2 | `GET /repos/{o}/{r}/commits?path={path}&sha={branch}&per_page=1` | 1 件目の `sha`・`commit.message` (1 行目)・`commit.author.name` / `date`・`html_url` |
+| 3 | `GET /repos/{o}/{r}` | `private` |
+
+- ヘッダー: `Accept: application/vnd.github+json`、`X-GitHub-Api-Version: 2026-03-10`、PAT があれば `Authorization: Bearer …`。
+- 既知の限界: 1 と 2 の間に別の push があると、最後のコミットは新しい方を見せ、`sha` は古い方のまま (push は 409 で止まるので、中身は失われない)。
+
+#### 5.19.3 push の要求 (INV-88)
+
+`PUT /repos/{o}/{r}/contents/{path}`、本文 `{ message, content, sha, branch }`。応答の `content.sha` を新しい GitHub の版に、`commit.sha` をトーストに使う。
+
+#### 5.19.4 失敗の文 (英語だけ。D18)
+
+| 応答 | 文 (`CONFIG.github.messages`) |
+| --- | --- |
+| 401 | `unauthorized`: トークンと期限を確かめる |
+| 403 (回数の上限でない) | `forbidden`: 権限とブランチの保護を確かめる + GitHub の文 |
+| 403 / 429 (回数の上限) | `rateLimited`: `retry-after` か `x-ratelimit-reset` から、いつ試せるか |
+| 404 | `notFound`: リポジトリ・ブランチ・パス・読めるトークンか |
+| 409 | `conflict`: GitHub 側が変わったか、ブランチが保護されている + GitHub の文 + 手元に保存して開き直し、ドロップで置き換える手順 |
+| 422 | `invalid` + GitHub の文 |
+| ほか | `failed (番号)` |
+| 通信の失敗・時間切れ | `network` |
+
+- GitHub の文 (`message`) は 200 字までにし、`textContent` で出す。
+
+#### 5.19.5 ヘルプに書くこと (ヘルプのセッションへ渡す)
+
+- 保存したトークンの消し方 (D30): Chrome と Edge それぞれ、設定の URL を開く方法とメニューを操作する方法を並べる。絵は付けない。Chrome は `chrome://password-manager`、Edge は `edge://settings/autofill/passwords` (左の欄「パスワードとオートフィル」→「Microsoft パスワード マネージャー」)。Edge は 5 分さわらないと鍵が掛かり、PIN などを求めることがある。
+- 保存したトークンの使い方 (D34): Token の欄をクリックし、ブラウザの候補から選ぶ。
+- キーのヒントの `[O] GitHub;` (D33)。
 
 ## 付録 A: バンドル依存ライブラリ
 

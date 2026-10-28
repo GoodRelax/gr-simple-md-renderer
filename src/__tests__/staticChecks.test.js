@@ -96,7 +96,7 @@ describe("AT-STA static checks of src/js", () => {
     for (const f of FILES) expect(stripComments(read(f)), rel(f)).not.toMatch(pattern);
   });
 
-  it("AT-STA-02 fetch( only in DiagramCopyController.js (2); no XMLHttpRequest / sendBeacon / WebSocket / EventSource (CON-14)", () => {
+  it("AT-STA-02 fetch( only in DiagramCopyController.js (2) and main.js (1: the GitHub client's, injected; SC-27); no XMLHttpRequest / sendBeacon / WebSocket / EventSource (CON-14)", () => {
     const counts = {};
     for (const f of FILES) {
       const src = stripComments(read(f));
@@ -104,7 +104,8 @@ describe("AT-STA static checks of src/js", () => {
       if (n) counts[rel(f)] = n;
       expect(src, rel(f)).not.toMatch(/\bXMLHttpRequest\b|\bsendBeacon\b|\bWebSocket\b|\bEventSource\b/);
     }
-    expect(counts).toEqual({ "classes/DiagramCopyController.js": 2 });
+    expect(counts).toEqual({ "classes/DiagramCopyController.js": 2, "main.js": 1 });
+    expect(stripComments(read(resolve(jsDir, "main.js")))).toMatch(/new GitHubContentsClient\(gitHubFetch, CONFIG\.github\)/);
   });
 
   it("AT-STA-03 every file is ASCII only (CON-06)", () => {

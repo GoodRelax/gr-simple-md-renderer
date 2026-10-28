@@ -73,13 +73,15 @@ export default class MarkdownRenderer {
     // more than the sanitizing itself. The rules are the same.
     this.purify.setConfig(PURIFY_CONFIG);
     this.imageGate = imageGate;
+    this._resolveRelative = null; // (value, "image"|"link") -> URL|null (GitHub documents, SC-27)
     /** @purity non-pure */
     this.purify.addHook("afterSanitizeAttributes", (node) => {
       // the app keeps these ids for itself (INV-81 (5)): a document's own
       // id like a library's data block id is dropped
       // (the attribute is read: a form's "id" property may be a field of it)
       if (node.getAttribute?.("id")?.toLowerCase().startsWith(APP_ID_PREFIX)) node.removeAttribute("id");
-      this.imageGate.neutralize(node);
+      if (this._resolveRelative) this._rewriteRelative(node);
+      this.imageGate.neutralize(node); // after the rewrite: a resolved image is still gated (INV-19)
     });
     // Block rendering state. Wrappers are known by reference only (Q1): a
     // user-written class="md-block" or data-block-id is never trusted.
@@ -94,6 +96,30 @@ export default class MarkdownRenderer {
     this._emptyBlock = null;
     this._gap = null; // { element, afterBlockId }: the open gap editor's wrapper (INV-73)
     this._blockElements = null; // the wrappers in order, made again after the order changes
+  }
+
+  /**
+   * How relative image and link URLs resolve (a document opened from
+   * GitHub), or null to leave them as written. Read on every sanitize; the
+   * caller makes the value follow the current document, and a document
+   * change renders in full, which drops the HTML cache.
+   * @purity non-pure
+   * @param {Function|null} resolve - (value, "image"|"link") -> string|null
+   */
+  setRelativeUrlResolver(resolve) {
+    this._resolveRelative = resolve;
+  }
+
+  /**
+   * @purity non-pure
+   * @param {Element} node
+   */
+  _rewriteRelative(node) {
+    const tag = node.nodeName;
+    const attr = tag === "IMG" ? "src" : tag === "A" ? "href" : null;
+    if (!attr || !node.hasAttribute(attr)) return;
+    const url = this._resolveRelative(node.getAttribute(attr), tag === "IMG" ? "image" : "link");
+    if (url) node.setAttribute(attr, url);
   }
 
   /**

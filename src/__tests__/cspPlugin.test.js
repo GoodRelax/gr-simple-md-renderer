@@ -60,7 +60,8 @@ describe("content-security-policy build plugin (INV-20)", () => {
   it("has the expected directives", () => {
     const csp = buildCsp(["AAA="]);
     expect(csp).toContain("default-src 'none'");
-    expect(csp).toContain("connect-src https://www.plantuml.com");
+    // exactly the two origins (SC-27): nothing else can be fetched
+    expect(csp).toMatch(/(^|; )connect-src https:\/\/www\.plantuml\.com https:\/\/api\.github\.com(;|$)/);
     expect(csp).toContain("img-src 'self' data: blob: https://www.plantuml.com https:");
     expect(csp).toContain("font-src data:");
     expect(csp).toContain("base-uri 'none'");

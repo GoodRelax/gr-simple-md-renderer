@@ -1925,3 +1925,217 @@ div.math-pending {
     background: none;
   }
 }
+
+/* ============================================================
+   GitHub (SC-27): [Open GitHub] / [Push to GitHub] and the dialogs
+   ============================================================ */
+#controls #gitHubBtn.gh-push {
+  background: #1f883d; /* Primer button-primary */
+  color: #fff;
+  border: 1px solid #1a7f37;
+  border-radius: 3px;
+}
+
+#controls #gitHubBtn.gh-push:disabled {
+  background: #94d3a2;
+  border-color: #94d3a2;
+  color: #fff;
+  cursor: default;
+}
+
+.dark #controls #gitHubBtn.gh-push {
+  background: #238636;
+  border-color: #2ea043;
+}
+
+.dark #controls #gitHubBtn.gh-push:disabled {
+  background: #1b3d26;
+  border-color: #1b3d26;
+  color: #8b949e;
+}
+
+.gh-dialog {
+  width: min(560px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid #888;
+  border-radius: 8px;
+  background: #fefefe;
+  color: #1f2328;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.gh-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.dark .gh-dialog {
+  background: #151b23;
+  color: #e6edf3;
+  border-color: #3d444d;
+}
+
+.gh-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 20px;
+  font-size: 14px;
+}
+
+.gh-form h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.gh-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.gh-row input {
+  font-family: monospace;
+  font-size: 13px;
+  padding: 4px 6px;
+  min-width: 0;
+}
+
+#gitHubOpenFields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#gitHubOpenFields[hidden] {
+  display: none;
+}
+
+.gh-row input[readonly] {
+  background: #f3f3f3;
+  color: inherit;
+  border: 1px solid #ccc;
+}
+
+.dark .gh-row input {
+  background: #0d1117;
+  color: #e6edf3;
+  border: 1px solid #3d444d;
+}
+
+.dark .gh-row input[readonly] {
+  background: #212830;
+}
+
+.gh-send,
+.gh-target {
+  margin: 0;
+  font-size: 12px;
+  color: #59636e;
+}
+
+.gh-target {
+  font-family: monospace;
+}
+
+.dark .gh-send,
+.dark .gh-target {
+  color: #9198a1;
+}
+
+.gh-visibility {
+  margin: 0;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.gh-visibility.gh-public {
+  color: #cf222e;
+}
+
+.dark .gh-visibility.gh-public {
+  color: #f85149;
+}
+
+.gh-error {
+  margin: 0;
+  font-size: 13px;
+  color: #cf222e;
+  white-space: pre-line;
+}
+
+.dark .gh-error {
+  color: #f85149;
+}
+
+.gh-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.gh-buttons-column {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.gh-buttons button {
+  padding: 4px 14px;
+  font-size: 13px;
+}
+
+.gh-form.gh-busy {
+  cursor: progress;
+}
+
+.gh-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.gh-facts dt {
+  font-weight: bold;
+}
+
+.gh-facts dd {
+  margin: 0;
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+
+.gh-token {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.gh-token input {
+  flex: 1;
+}
+
+/* the token label is long (GitHub's name, D35): it sits on its own line */
+.gh-row.gh-row-token {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+/* the eye button shows or hides the token (D28) */
+.gh-token .gh-reveal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  line-height: 0;
+}
+
+.gh-token .gh-reveal[aria-pressed="true"] {
+  background: #d0d7de;
+}
+
+.dark .gh-token .gh-reveal[aria-pressed="true"] {
+  background: #3d444d;
+}

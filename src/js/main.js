@@ -40,6 +40,9 @@ import UIController from "./classes/UIController.js";
 import HelpLanguageSwitch from "./classes/HelpLanguageSwitch.js";
 import DocumentIndex from "./classes/DocumentIndex.js";
 import DocumentSearch from "./classes/DocumentSearch.js";
+import GitHubContentsClient from "./classes/GitHubContentsClient.js";
+import GitHubController from "./classes/GitHubController.js";
+import { resolveRelativeUrl } from "./gitHubUrl.js";
 
 // ========================================
 // Initialization
@@ -135,8 +138,80 @@ const documentIndex = new DocumentIndex(
   scrollManager,
   { emptyText: CONFIG.messages.index.empty },
 );
+// GitHub (SC-27): a mouse or trackpad device only (D15, D17), and not
+// inside a frame (a <meta> CSP cannot forbid framing).
+const gitHubEnabled = window.matchMedia("(pointer: fine)").matches && window.top === window.self;
+const gitHubFetch = (url, init) => window.fetch(url, init);
+const gitHubClient = new GitHubContentsClient(gitHubFetch, CONFIG.github);
+// The browser keeps the token (owner ruling D25): after a request succeeds,
+// Credential Management asks it to save the token (Chrome and Edge). The
+// saved token comes back through the browser's autofill on the token field
+// (D34); elsewhere the token is pasted.
+const gitHubPasswordStore =
+  typeof window.PasswordCredential === "function" && navigator.credentials
+    ? { store: (id, password) => navigator.credentials.store(new window.PasswordCredential({ id, password })) }
+    : null;
+// relative images and links of a GitHub document resolve as GitHub shows them
+/** @purity semi-pure-b */
+markdownRenderer.setRelativeUrlResolver((value, kind) => {
+  const link = documents.gitHub;
+  return link ? resolveRelativeUrl(link.ref, value, kind, CONFIG.github) : null;
+});
+const byId = (id) => document.getElementById(id);
 const ui = new UIController(orchestrator, state, elements, scrollEngine, {
   documents,
+  createGitHub: (host) =>
+    new GitHubController(
+      {
+        button: byId("gitHubBtn"),
+        openDialog: byId("gitHubOpenDialog"),
+        pushDialog: byId("gitHubPushDialog"),
+        reloadDialog: byId("gitHubReloadDialog"),
+        dropDialog: byId("gitHubDropDialog"),
+        open: {
+          form: byId("gitHubOpenForm"),
+          url: byId("gitHubOpenUrl"),
+          fields: byId("gitHubOpenFields"),
+          repo: byId("gitHubOpenRepo"),
+          branch: byId("gitHubOpenBranch"),
+          path: byId("gitHubOpenPath"),
+          token: byId("gitHubOpenToken"),
+          error: byId("gitHubOpenError"),
+          submit: byId("gitHubOpenSubmit"),
+        },
+        push: {
+          form: byId("gitHubPushForm"),
+          visibility: byId("gitHubPushVisibility"),
+          repo: byId("gitHubPushRepo"),
+          branch: byId("gitHubPushBranch"),
+          path: byId("gitHubPushPath"),
+          message: byId("gitHubPushMessage"),
+          token: byId("gitHubPushToken"),
+          error: byId("gitHubPushError"),
+          submit: byId("gitHubPushSubmit"),
+        },
+        reload: {
+          form: byId("gitHubReloadForm"),
+          repo: byId("gitHubReloadRepo"),
+          target: byId("gitHubReloadTarget"),
+          token: byId("gitHubReloadToken"),
+          error: byId("gitHubReloadError"),
+          submit: byId("gitHubReloadSubmit"),
+        },
+        drop: {
+          editing: byId("gitHubDropEditing"),
+          lastCommit: byId("gitHubDropLastCommit"),
+          dropped: byId("gitHubDropDropped"),
+          notes: byId("gitHubDropNotes"),
+          keep: byId("gitHubDropKeep"),
+          stop: byId("gitHubDropStop"),
+          cancel: byId("gitHubDropCancel"),
+        },
+      },
+      gitHubClient,
+      host,
+      { ...CONFIG.github, enabled: gitHubEnabled, passwordStore: gitHubPasswordStore },
+    ),
   isApple,
   documentIndex,
   createSearch: (host) =>

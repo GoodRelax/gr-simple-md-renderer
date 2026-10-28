@@ -68,6 +68,8 @@ export default class DocumentLifecycle {
     this._location = null; // DocumentLocation
     this._nextDocumentId = 1;
     this._saveOperationState = "idle"; // 11-e
+    this._gitHub = null; // GitHubLink: the GitHub version beside the local target (SC-27)
+    this._isPushing = false; // a push is running (refuses saves and replaces as INV-54)
   }
 
   /**
@@ -84,6 +86,14 @@ export default class DocumentLifecycle {
    */
   get location() {
     return this._location;
+  }
+
+  /**
+   * @purity semi-pure-b
+   * @returns {GitHubLink|null}
+   */
+  get gitHub() {
+    return this._gitHub;
   }
 
   /**
@@ -127,7 +137,7 @@ export default class DocumentLifecycle {
    * @returns {boolean}
    */
   isSaving() {
-    return saveOperationStateMachine.replaceRequested[this._saveOperationState] !== null;
+    return this._isPushing || saveOperationStateMachine.replaceRequested[this._saveOperationState] !== null;
   }
 
   // ---- 5.14.11: the document is rebuilt ----
@@ -141,11 +151,77 @@ export default class DocumentLifecycle {
    * @param {number} lastModified
    * @param {string} fileName
    * @param {object|null} fileHandle
+   * @param {boolean} [keepGitHub] - "replace and keep the GitHub link" (SC-27, D6)
    */
-  openFile(fileText, hasBom, lastModified, fileName, fileHandle) {
+  openFile(fileText, hasBom, lastModified, fileName, fileHandle, keepGitHub = false) {
     this._session = DocumentSession.fromFileText(fileText, hasBom, lastModified, this._newDocumentId());
     this._location = new DocumentLocation(fileName, fileHandle);
+    if (!keepGitHub) this._gitHub = null;
     this.fileAccess.noteFile(fileHandle);
+  }
+
+  /**
+   * A file opened from GitHub (SC-27): a new session; the local
+   * target has the file's name and no handle, so the first Save asks where.
+   * @purity non-pure
+   * @param {string} fileText - without the BOM
+   * @param {boolean} hasBom
+   * @param {GitHubLink} link
+   */
+  openGitHub(fileText, hasBom, link) {
+    this._session = DocumentSession.fromFileText(fileText, hasBom, null, this._newDocumentId());
+    this._location = new DocumentLocation(link.ref.fileName(), null);
+    this._gitHub = link;
+  }
+
+  /**
+   * Reload of a GitHub document: a new session from GitHub; the local target stays.
+   * @purity non-pure
+   * @param {string} fileText - without the BOM
+   * @param {boolean} hasBom
+   * @param {GitHubLink} link
+   */
+  reloadGitHub(fileText, hasBom, link) {
+    this._session = DocumentSession.fromFileText(fileText, hasBom, this._session?.baselineLastModified ?? null, this._newDocumentId());
+    this._gitHub = link;
+  }
+
+  /**
+   * The file a push sends: the body with the session's wrapper, line ending and BOM.
+   * @purity semi-pure-b
+   * @param {string} bodyText
+   * @returns {string|null} null without a session
+   */
+  fileTextOf(bodyText) {
+    return this._session ? this._session.toFileText(bodyText) : null;
+  }
+
+  /**
+   * A push starts (refused while a save or another push runs).
+   * @purity non-pure
+   * @returns {{documentId: number}|null}
+   */
+  startPush() {
+    if (this.isSaving() || !this._session || !this._gitHub) return null;
+    this._isPushing = true;
+    return { documentId: this._session.documentId };
+  }
+
+  /**
+   * A push ended. On success the GitHub link moves to the pushed version and
+   * the unsaved mark drops (D8: either Save or push keeps the text); the
+   * local file time stays the baseline of the next Save (INV-39).
+   * @purity non-pure
+   * @param {{documentId: number}} started - from startPush
+   * @param {{link: GitHubLink, bodyText: string}|null} pushed - null when it failed
+   * @returns {boolean} true when it was applied to the current document
+   */
+  finishPush(started, pushed) {
+    this._isPushing = false;
+    if (!pushed || !this._session || this._session.documentId !== started.documentId) return false;
+    this._session = this._session.withSaved(pushed.bodyText, this._session.baselineLastModified);
+    this._gitHub = pushed.link;
+    return true;
   }
 
   /**
@@ -210,6 +286,7 @@ export default class DocumentLifecycle {
   startPasted(bodyText) {
     this._session = DocumentSession.fromPastedText(bodyText, this._newDocumentId());
     this._location = null;
+    this._gitHub = null;
   }
 
   /**
@@ -219,6 +296,7 @@ export default class DocumentLifecycle {
   close() {
     this._session = null;
     this._location = null;
+    this._gitHub = null;
   }
 
   // ---- 11-e: save ----
@@ -238,7 +316,7 @@ export default class DocumentLifecycle {
    */
   async save(event, steps) {
     const next = saveOperationStateMachine[event][this._saveOperationState];
-    if (!next || !this._session) return;
+    if (!next || !this._session || this._isPushing) return;
     if (!steps.confirmStart()) return;
     const isSaveAs = event === "saveAsRequested";
     const location = this._location ?? new DocumentLocation(this._defaultFileName, null);
