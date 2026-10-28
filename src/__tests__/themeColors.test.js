@@ -132,7 +132,10 @@ const DARK = [
   [".dark .diagram-copy-btn", "color", "#f0f6fc"],
   [".dark .md-block-editor", "color", "#f0f6fc"],
   [".dark .md-block-editor", "background", "#010409"],
-  [".dark .md-block-editor", "border-color", "#1f6feb"],
+  [".dark .md-block-editor", "outline-color", "#1f6feb"],
+  // INV-77, INV-80 (8): 15% of what is behind shows through (owner ruling 2026-10-27)
+  ["body.dark #indexPanel", "background", "rgba(21, 27, 35, 0.85)"],
+  ["body.dark #searchPanel", "background", "rgba(21, 27, 35, 0.85)"],
   [".dark .md-block-editor:focus", "outline-color", "#1f6feb"],
   [".dark .md-invisible-overlay", "background", "#010409"],
   [".dark .grsmd-invisible", "background", "#bb800926"],
@@ -159,7 +162,10 @@ const LIGHT = [
   ["#codeViewBody", "color", "#1f2328"],
   [".code-line::before", "color", "#59636e"],
   [".md-block-editor", "background", "#fffdf5"],
-  [".md-block-editor", "border", "1px solid #0969da"],
+  [".md-block-editor", "outline", "1px solid #0969da"],
+  // INV-77, INV-80 (8): 15% of what is behind shows through (owner ruling 2026-10-27)
+  ["#indexPanel", "background", "rgba(255, 255, 255, 0.85)"],
+  ["#searchPanel", "background", "rgba(255, 255, 255, 0.85)"],
   [".md-block-editor:focus", "outline", "2px solid #0969da"],
   [".md-invisible-overlay", "background", "#fffdf5"],
   [".grsmd-invisible", "background", "#fff8c5"],

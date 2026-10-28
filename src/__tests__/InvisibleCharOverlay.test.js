@@ -242,6 +242,15 @@ describe("AT-ICO geometry and size", () => {
     expect([style.top, style.left, style.width, style.height]).toEqual(["4px", "2px", "300px", "50px"]);
   });
 
+  it("AT-ICO-21 the layer takes the text style the editor took from its block (INV-83)", () => {
+    const { textarea, overlay, frames } = setup();
+    Object.assign(textarea.style, { fontFamily: "BodySans", fontSize: "24px", fontWeight: "700", lineHeight: "normal", paddingLeft: "16px" });
+    overlay.attach();
+    frames.splice(0).forEach((fn) => fn());
+    const style = wrapper.querySelector(".md-invisible-overlay").style;
+    expect([style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight, style.paddingLeft]).toEqual(["BodySans", "24px", "700", "normal", "16px"]);
+  });
+
   it("AT-ICO-13 a ResizeObserver on the editor draws it again; detach disconnects it", () => {
     const observers = [];
     vi.stubGlobal(

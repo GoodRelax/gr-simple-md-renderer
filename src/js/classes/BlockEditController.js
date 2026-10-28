@@ -6,6 +6,7 @@ import TableCellEditor from "./TableCellEditor.js";
 import ClipboardLink from "./ClipboardLink.js";
 import BlockGapInsert from "./BlockGapInsert.js";
 import BlockRangeSelection from "./BlockRangeSelection.js";
+import BlockCaretMap from "./BlockCaretMap.js";
 import { cell, row, choice, selectCell } from "../stateTable.js";
 import { isPastActivation } from "../utils.js";
 
@@ -45,6 +46,20 @@ const OPEN_EXCLUDED_SELECTOR = [
 
 // Block types whose Enter inserts a line break mark (INV-71).
 const HARD_BREAK_TYPES = new Set(["paragraph", "list", "blockquote"]);
+
+// INV-83: the rendered element a block editor takes its text style from
+// (the first selector that matches), the element whose margins it takes,
+// and whether it takes its padding too (a code block's). Other types (a
+// table's source, math, a diagram, HTML) keep the monospace (5.14.13).
+const MATCHED_TEXT = {
+  paragraph: { text: ["p"], box: "p" },
+  heading: { text: ["h1, h2, h3, h4, h5, h6"], box: "h1, h2, h3, h4, h5, h6" },
+  list: { text: ["li"], box: "ul, ol" },
+  blockquote: { text: ["blockquote p", "blockquote"], box: "blockquote" },
+  code: { text: ["pre code", "pre"], box: "pre", padding: true },
+};
+const TEXT_STYLE_PROPS = ["fontFamily", "fontSize", "fontWeight", "fontStyle", "lineHeight", "letterSpacing"];
+const PADDING_PROPS = ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"];
 
 // A double click here keeps its own meaning (zoom reset of a diagram, INV-57).
 const DIAGRAM_SELECTOR = [".mermaid", ".plantuml-wrapper", ".plantuml-diagram", ".plantuml-pending"].join(", ");
@@ -428,6 +443,7 @@ export default class BlockEditController {
     if (model && model.getBlocks().length === 0) return { kind: "empty" };
     const target = this._targetAt(node);
     if (target?.kind === "cell") return { ...target, caret: this._caretOf(target, e) };
+    if (target?.kind === "block") return { ...target, textPlace: this._textPlaceOf(target, e) };
     return target && target.kind !== "tableSource" && target.kind !== "tableMargin" ? target : { kind: "none" };
   }
 
@@ -1212,6 +1228,73 @@ export default class BlockEditController {
   }
 
   /**
+   * Where a press on a block's text was (INV-84), taken at the press: the
+   * block can move before it opens, and its text is matched to the source
+   * when it opens. null off its text.
+   * @purity semi-pure-b
+   * @param {{id: number}} target
+   * @param {MouseEvent|PointerEvent} e
+   * @returns {{count: number, afterSpace: boolean, lineOffset: number}|null}
+   */
+  _textPlaceOf(target, e) {
+    const element = this.blockLocator.getBlockElement(target.id);
+    return element ? BlockCaretMap.pointAt(element, e.clientX, e.clientY) : null;
+  }
+
+  /**
+   * INV-83: the text style a block editor takes from the rendered block,
+   * read before the block's content is taken out (font, size, weight, line
+   * height, margins; a code block's padding). A new block (an empty
+   * document, a gap) takes the body text's. null: the editor keeps its
+   * monospace (style.css).
+   * @purity semi-pure-b
+   * @param {Element} wrapper
+   * @param {string|null} blockType
+   * @param {boolean} isNew
+   * @returns {Object<string, string>|null}
+   */
+  _matchedTextStyle(wrapper, blockType, isNew) {
+    if (isNew) return BlockEditController._pick(getComputedStyle(this.preview), TEXT_STYLE_PROPS);
+    const spec = MATCHED_TEXT[blockType];
+    if (!spec) return null;
+    let text = null;
+    for (const selector of spec.text) {
+      text = wrapper.querySelector(selector);
+      if (text) break;
+    }
+    if (!text) return null;
+    const box = getComputedStyle(wrapper.querySelector(spec.box) ?? text);
+    return {
+      ...BlockEditController._pick(getComputedStyle(text), TEXT_STYLE_PROPS),
+      ...BlockEditController._pick(box, ["marginTop", "marginBottom", ...(spec.padding ? PADDING_PROPS : [])]),
+    };
+  }
+
+  /**
+   * @purity pure
+   * @param {CSSStyleDeclaration} style
+   * @param {string[]} props
+   * @returns {Object<string, string>}
+   */
+  static _pick(style, props) {
+    const out = {};
+    for (const prop of props) out[prop] = style[prop];
+    return out;
+  }
+
+  /**
+   * The top of the line of the editor's caret at offset, from the wrapper's top.
+   * @purity semi-pure-b
+   * @param {{textarea: HTMLTextAreaElement, wrapper: Element}} editor
+   * @param {number} offset
+   * @returns {number}
+   */
+  _editorLineOffset(editor, offset) {
+    const { textarea, wrapper } = editor;
+    return BlockCaretMap.caretOffsetIn(textarea, offset) + textarea.getBoundingClientRect().top - wrapper.getBoundingClientRect().top;
+  }
+
+  /**
    * A cell of the session's table as a target, or null.
    * @purity semi-pure-b
    * @param {{row: number, col: number}|null} at
@@ -1256,17 +1339,22 @@ export default class BlockEditController {
     if (!wrapper) return;
 
     const anchor = tapped && tapped.wrapper === wrapper ? tapped.anchor : this.scrollMemento.captureAnchor(wrapper);
+    // INV-83 / INV-84: read from the rendered block before it is taken out
+    const textStyle = this._matchedTextStyle(wrapper, blockType, blockId === null);
+    const place = blockId !== null && textStyle && target.textPlace ? target.textPlace : null;
+    const renderedText = place ? BlockCaretMap.textOf(wrapper) : "";
     const textarea = document.createElement("textarea");
     textarea.className = "md-block-editor";
     textarea.spellcheck = false;
     textarea.rows = 1;
     textarea.value = raw;
     textarea.style.overflowY = "hidden"; // INV-40: the height follows the content
+    if (textStyle) Object.assign(textarea.style, textStyle);
     const savedNodes = [...wrapper.childNodes];
     wrapper.replaceChildren(textarea);
     wrapper.classList.add("md-block-editing");
     const gap = target.kind === "gap" ? { afterBlockId: target.afterBlockId } : null;
-    this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes, overlay: null, gap };
+    this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes, overlay: null, gap, matched: textStyle !== null };
     this._gaps.hide();
     this._composing = false;
     this.editGeneration++;
@@ -1283,12 +1371,19 @@ export default class BlockEditController {
     this._fitHeight();
     this._attachOverlay(textarea, blockType);
     textarea.focus({ preventScroll: true });
+    let kept = anchor;
     if (typeof target.caretLineEnd === "number") {
       // INV-52: the end of a line of the source (a Mermaid diagram's first line)
       const end = raw.split("\n").slice(0, target.caretLineEnd + 1).join("\n").length;
       textarea.setSelectionRange(end, end);
+    } else if (place) {
+      // INV-84: the caret where the block was pressed, and that line stays
+      // where it was on screen
+      const offset = BlockCaretMap.sourceOffsetFor(raw, renderedText, blockType, place.count, place.afterSpace);
+      textarea.setSelectionRange(offset, offset);
+      if (anchor) kept = { offsetTop: anchor.offsetTop + place.lineOffset - this._editorLineOffset(this._editor, offset) };
     }
-    this.scrollMemento.restoreAnchor(anchor, wrapper);
+    this.scrollMemento.restoreAnchor(kept, wrapper);
     if (blockId !== null) this.orchestrator.retargetPendingAnchor(blockId);
     this.host.onEditStateChanged();
   }
@@ -1342,6 +1437,8 @@ export default class BlockEditController {
     // preview (~20 ms on a 1 MB document).
     const open = this._editor;
     const anchor = open && (open.blockId !== null || open.gap) ? this.scrollMemento.captureAnchor(open.wrapper) : undefined;
+    // INV-84: the line of the caret, kept where it is on screen
+    const line = anchor && open.blockId !== null && open.matched ? this._caretLine(open) : null;
     const model = this.orchestrator.getModel();
     const closed = this._closeEditor();
     if (!closed) return null;
@@ -1351,9 +1448,14 @@ export default class BlockEditController {
       text: closed.blockId === null ? "" : closed.original,
       anchor: anchor ?? null,
     };
-    if (closed.text === closed.original) return kept;
+    /** Nothing to render: the rendered block is back as it was. @purity non-pure */
+    const keepLine = () => {
+      if (line) this.scrollMemento.restoreAnchor(BlockCaretMap.lineAnchor({ ...anchor, line }, open.wrapper, closed.original, closed.blockType), open.wrapper);
+      return kept;
+    };
+    if (closed.text === closed.original) return keepLine();
     const text = this._committedText(closed);
-    if (text === closed.original) return kept;
+    if (text === closed.original) return keepLine();
     if (closed.blockId === null) {
       // The empty first block of an empty document (INV-31, INV-49).
       if (closed.text.trim() === "") return kept;
@@ -1361,8 +1463,20 @@ export default class BlockEditController {
       // it went in at the end of the (blank) body
       return { ...kept, start: this.orchestrator.getBody().length - closed.text.length, text: closed.text };
     }
-    void this.orchestrator.commitBlock(closed.blockId, text, anchor);
+    void this.orchestrator.commitBlock(closed.blockId, text, line ? { ...anchor, line } : anchor);
     return { ...kept, text };
+  }
+
+  /**
+   * The line of an open editor's caret (INV-84): its top from the wrapper's
+   * top, and the caret in the source.
+   * @purity semi-pure-b
+   * @param {{textarea: HTMLTextAreaElement, wrapper: Element}} editor
+   * @returns {{offset: number, sourceOffset: number}}
+   */
+  _caretLine(editor) {
+    const sourceOffset = editor.textarea.selectionStart;
+    return { offset: this._editorLineOffset(editor, sourceOffset), sourceOffset };
   }
 
   /**
@@ -1459,6 +1573,7 @@ export default class BlockEditController {
     // editor below).
     const target = gap ?? ((outside || inSessionTable) && e.button === 0 ? this._targetAt(node) : null);
     if (target?.kind === "cell") target.caret = this._caretOf(target, e);
+    if (target?.kind === "block") target.textPlace = this._textPlaceOf(target, e);
     // INV-46: where the tapped block is before an open editor or cell is
     // committed by this press (nothing moves when none is open)
     const isOpen = this._editor !== null || this._cells.isOpen();
@@ -1708,8 +1823,12 @@ export default class BlockEditController {
    */
   _fitHeight() {
     const { textarea } = this._editor;
+    // The editor is short for a moment while it is measured: near the end
+    // of the document the browser can pull the scroll back then (INV-40).
+    const scroll = this.scrollMemento.save();
     textarea.style.height = "auto";
     // box-sizing: border-box (style.css): the height includes the borders
     textarea.style.height = `${textarea.scrollHeight + textarea.offsetHeight - textarea.clientHeight}px`;
+    if (this.scrollMemento.save() !== scroll) this.scrollMemento.restore(scroll);
   }
 }

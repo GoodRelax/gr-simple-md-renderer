@@ -263,7 +263,8 @@ describe("INV-46 the commit's anchor is taken before the editor closes (one forc
     const commit = vi.spyOn(s.orchestrator, "commitBlock");
     pointer(document.body, "pointerdown");
     expect(capture).toHaveBeenCalledTimes(1);
-    expect(commit).toHaveBeenCalledWith(expect.any(Number), "Hello changed.", anchor);
+    // INV-84: with the caret's line (at the end of the text after the value was set)
+    expect(commit).toHaveBeenCalledWith(expect.any(Number), "Hello changed.", { ...anchor, line: { offset: expect.any(Number), sourceOffset: "Hello changed.".length } });
     await flush();
   });
 });

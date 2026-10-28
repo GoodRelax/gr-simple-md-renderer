@@ -17,6 +17,23 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- Block editing: the editor shows its text the way the block is shown. A
+  paragraph, heading, list or quote is edited in the body text's font,
+  size and line spacing (a heading at its own size, in bold, with its `#`
+  marks), and a code block in the code font. A table's source, math and
+  diagrams stay in the monospace font, so the table pipes still line up.
+  The editor has no inner padding; its blue frame is drawn around it and
+  takes no room, so the text does not jump when it opens or closes.
+- Block editing: the caret goes where you double-clicked (or clicked, in
+  edit mode), not to the end of the block, and that line stays where it
+  was on the screen. When you press Esc or click outside, the caret's line
+  stays where it was too. Before, the lines of a long block (a code block,
+  a long list) moved when it opened or closed, and the first key typed
+  jumped to the end of the block.
+- Block editing: typing no longer moves the view, also near the end of the
+  document.
+- The Index and Search panels let less of the page show through (15%, it
+  was 25%), so they are easier to read.
 - Faster startup: the page is usable before the whole file has arrived
   (about 0.4 s on a 4 Mbps line with a 100 ms round trip, where it took
   about 3.2 s; a new tab is fast too). The file now starts with the styles,

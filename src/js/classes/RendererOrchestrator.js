@@ -2,6 +2,7 @@ import { CONFIG } from "../config.js";
 import { applyTheme, waitForDOMStability } from "../utils.js";
 import MarkdownBlockModel from "./MarkdownBlockModel.js";
 import MarkdownTable from "./MarkdownTable.js";
+import BlockCaretMap from "./BlockCaretMap.js";
 
 // Performance marker for PRT-U25 (spec 5.14.3): from the start of a commit to
 // the DOM swap of its partial render. Only the last measure is kept; nothing
@@ -455,8 +456,9 @@ export default class RendererOrchestrator {
    * text changes nothing (INV-48, AT-ORC-18).
    * @param {number} blockId
    * @param {string} newRaw - editor text
-   * @param {{offsetTop: number}|null} [anchor] - the scroll anchor of the
-   *   block, measured by the caller; left out, it is measured here (INV-46)
+   * @param {{offsetTop: number, line?: {offset: number, sourceOffset: number}}|null} [anchor] - the
+   *   scroll anchor of the block, measured by the caller; left out, it is
+   *   measured here (INV-46). line: the editor's caret line, kept instead (INV-84)
    * @returns {Promise<void>} settles when the render is done
    * @purity non-pure
    */
@@ -766,7 +768,7 @@ export default class RendererOrchestrator {
     memento.restoreReadingAnchor(saved);
     for (let i = 0; i < anchors.length; i++) {
       const moved = memento.movedBy(places[i]);
-      if (moved !== 0) anchors[i].scroll = { offsetTop: anchors[i].scroll.offsetTop + moved };
+      if (moved !== 0) anchors[i].scroll = { ...anchors[i].scroll, offsetTop: anchors[i].scroll.offsetTop + moved };
     }
   }
 
@@ -943,8 +945,10 @@ export default class RendererOrchestrator {
     // Nothing above the anchor block moved when it is the only block that
     // changed and the number of blocks is the same: its top is where it was,
     // so the correction can wait for the one after DOM stability (a
-    // correction here forces a layout of the whole preview).
-    if (!this._onlyAnchorChanged(before, target, replaced)) this._restoreAnchor(this._renderingAnchor, generation);
+    // correction here forces a layout of the whole preview). A caret line
+    // (INV-84) moves inside the block: corrected now.
+    const line = Boolean(this._renderingAnchor?.scroll?.line);
+    if (line || !this._onlyAnchorChanged(before, target, replaced)) this._restoreAnchor(this._renderingAnchor, generation);
     try {
       // a block drawn again with its math (settled above) left the page
       const shown = redrawn ? replaced.filter((el) => el.isConnected) : replaced;
@@ -979,6 +983,25 @@ export default class RendererOrchestrator {
    */
   _restoreAnchor(anchor, generation) {
     if (!anchor || generation !== this._generation) return;
-    this.scrollManager.restoreAnchor(anchor.scroll, this.markdownRenderer.getBlockElement(anchor.blockId));
+    const element = this.markdownRenderer.getBlockElement(anchor.blockId);
+    this.scrollManager.restoreAnchor(this._lineAnchor(anchor, element), element);
+  }
+
+  /**
+   * The anchor's scroll, with the caret line of a commit (INV-84) turned
+   * into the block's top: the line is found in the rendered block from the
+   * block's source as the editor shows it.
+   * @purity semi-pure-b
+   * @param {{scroll: object, blockId: number}} anchor
+   * @param {Element|null} element
+   * @returns {{offsetTop: number}|null}
+   */
+  _lineAnchor(anchor, element) {
+    if (!anchor.scroll?.line) return anchor.scroll;
+    const model = this._renderedModel;
+    const index = model ? model.findIndexById(anchor.blockId) : -1;
+    if (index < 0) return { offsetTop: anchor.scroll.offsetTop };
+    const block = model.getBlocks()[index];
+    return BlockCaretMap.lineAnchor(anchor.scroll, element, MarkdownBlockModel.toEditableText(block.raw), block.type);
   }
 }

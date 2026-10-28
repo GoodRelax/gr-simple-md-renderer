@@ -179,7 +179,7 @@ test("print in dark: the focused block editor with the marks layer shows no focu
   const { editor, look } = await openDarkEditor(page, MARKDOWN.replace("Text with", "Text\u00a0with"));
   await expect(editor).toHaveClass(/\bmd-block-editor-overlaid\b/);
   await expect(page.locator("#preview .md-invisible-overlay")).toHaveCount(1);
-  expect(await look()).toEqual({ ground: TRANSPARENT, border: "solid", outline: "solid" }); // on screen: the focus ring
+  expect(await look()).toEqual({ ground: TRANSPARENT, border: "none", outline: "solid" }); // on screen: the focus ring (no border line, INV-83)
   await page.emulateMedia({ media: "print" });
   expect(await look()).toEqual({ ground: TRANSPARENT, border: "none", outline: "none" });
   await page.emulateMedia({ media: null });
