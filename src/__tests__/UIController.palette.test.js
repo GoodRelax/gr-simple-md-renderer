@@ -44,9 +44,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function withDocument() {
+async function withDocument({ withIndex = false, withSearch = false } = {}) {
   access = fakeFileAccess();
-  app = await setupApp({ fileAccess: access });
+  app = await setupApp({ fileAccess: access, withIndex, withSearch });
   const handle = fakeFileHandle({ name: "doc.md", content: [DOC], calls: access.calls });
   document.dispatchEvent(dropEvent(new File([DOC], "doc.md", { lastModified: 1000 }), handle));
   await settle();
@@ -443,8 +443,8 @@ describe("AT-UI-36 / 37 Insert table and Mermaid samples", () => {
     expect(selectedText()).toBe("Col1");
   });
 
-  it("AT-UI-36h keys typed before Col1 opens are not page shortcuts (owner ruling D5)", async () => {
-    await withDocument();
+  it("AT-UI-36h keys typed before Col1 opens are not page shortcuts, i and f included (owner ruling D5, INV-52)", async () => {
+    await withDocument({ withIndex: true, withSearch: true });
     const ta = open(isPara("Second"));
     await selectInEditor(ta, 3, 3);
     const openTab = vi.spyOn(window, "open").mockReturnValue(null);
@@ -452,7 +452,9 @@ describe("AT-UI-36 / 37 Insert table and Mermaid samples", () => {
     const render = vi.spyOn(app.ui, "handleRender");
     const reload = vi.spyOn(app.ui, "handleReload");
     press(btn("paletteTable"));
-    for (const key of ["n", "c", "l", "d", "r", "e"]) keydown(document.body, key);
+    for (const key of ["i", "f", "n", "c", "l", "d", "r", "e"]) keydown(document.body, key);
+    expect(app.index.isShown()).toBe(false);
+    expect(app.search.isShown()).toBe(false);
     expect(openTab).not.toHaveBeenCalled();
     expect(clear).not.toHaveBeenCalled();
     expect(render).not.toHaveBeenCalled();
@@ -549,7 +551,7 @@ describe("AT-UI-36 / 37 Insert table and Mermaid samples", () => {
   });
 });
 
-describe("AT-UI-38 nothing is stored", () => {
+describe("AT-UI-38 nothing is stored (INV-04)", () => {
   it("after showing, moving, editing, saving and downloading: no storage, no cookie", async () => {
     localStorage.clear();
     sessionStorage.clear();

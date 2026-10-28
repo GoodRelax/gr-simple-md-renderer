@@ -218,7 +218,7 @@ describe("RendererOrchestrator", () => {
   });
 
   describe("full render and the user's scrolling (INV-78)", () => {
-    it("AT-ORC-28 the view goes back to where the user last moved it while the render ran, else to where it was; the watch ends", async () => {
+    it("AT-ORC-28 the view goes back to where the user last moved it while the render ran, else to where it was; the watch ends (INV-09, INV-78)", async () => {
       const { orchestrator, scrollManager, mermaidRenderer } = createOrchestrator();
       scrollManager.save.mockReturnValue(120);
       scrollManager.restoreReadingAnchor = vi.fn();

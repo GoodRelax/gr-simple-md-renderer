@@ -15,7 +15,7 @@ function createMarked() {
   return marked;
 }
 
-describe("External images (CON-12, INV-19)", () => {
+describe("AT-EIG External images (CON-12, INV-19, INV-01)", () => {
   let preview;
   let renderer;
 
@@ -34,7 +34,7 @@ describe("External images (CON-12, INV-19)", () => {
     preview.querySelectorAll(".external-image-placeholder");
   const liveImages = () => preview.querySelectorAll("img");
 
-  describe("before consent", () => {
+  describe("AT-EIG-01 before consent", () => {
     it.each([
       ["Markdown https", "![logo](https://example.com/a.png)"],
       ["Markdown http", "![logo](http://example.com/a.png)"],
@@ -152,7 +152,7 @@ describe("External images (CON-12, INV-19)", () => {
     });
   });
 
-  describe("consent", () => {
+  describe("AT-EIG-02 consent", () => {
     it("asks once with the fixed sentence (no host list, R14) and loads all pending images on OK", async () => {
       const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
       await renderer.render(

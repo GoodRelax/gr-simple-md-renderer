@@ -25,7 +25,7 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   The editor has no inner padding; its blue frame is drawn around it and
   takes no room, so the text does not jump when it opens or closes. A new
   block (in an empty document, or opened from a gap between blocks) is
-  edited in the body text's font too (owner rulings ESF-2 to ESF-4, ESF-7).
+  edited in the body text's font too.
 - Block editing: the caret goes where you double-clicked (or clicked, in
   edit mode), not to the end of the block, and that line stays where it
   was on the screen. When you press Esc or click outside, the caret's line
@@ -33,20 +33,20 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   a long list) moved when it opened or closed, and the first key typed
   jumped to the end of the block. In a very long paragraph (more than 20,000
   characters before the caret) the block's top stays in place instead, so
-  that opening it stays quick (owner ruling ESF-5).
+  that opening it stays quick.
 - Block editing: typing no longer moves the view, also near the end of the
   document (for example in a tall code block at the end of the document,
-  seen in Edge; owner rulings ESF-1 and ESF-8).
+  seen in Edge).
 - The Index and Search panels let less of the page show through (15%, it
-  was 25%), so they are easier to read (owner ruling ESF-6).
+  was 25%), so they are easier to read.
 - Faster startup: the page is usable before the whole file has arrived
-  (about 0.4 s on a 4 Mbps line with a 100 ms round trip, where it took
-  about 3.2 s; a new tab is fast too). The file now starts with the styles,
+  (within 1 s on a 4 Mbps line with a 100 ms round trip, where it waited
+  for the whole file; a new tab is fast too). The file now starts with the styles,
   the page and the app itself; mermaid, highlight.js, KaTeX and the
   PlantUML encoder come after it as data that runs when a document needs
   it, or when the page is idle. Until then a formula shows its TeX source
   in a dashed box, code is shown without colors and a diagram shows
-  "Loading diagram..." (a PlantUML diagram too, after you allow it); each
+  "Loading diagram..." (a PlantUML diagram too; see below); each
   is drawn as soon as its library is in. The code view waits up to 3
   seconds for highlight.js, then shows the code plain and colors it when
   highlight.js comes. A file dropped or text pasted while the
@@ -84,8 +84,8 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   Copy SVG / Copy PNG (PC), printing, pasting on a phone, where the
   Download button goes, and that the clipboard permission note applies on
   goodrelax.github.io.
-- While the help or the AI prompt is open, the one-key shortcuts (L, D, R,
-  N, C, E, arrows, Esc) no longer act on the page behind it; Esc closes it.
+- While the help or the AI prompt is open, the one-key shortcuts (I, F, L,
+  D, R, N, C, E, arrows, Esc) no longer act on the page behind it; Esc closes it.
   Opening it moves the focus in (the help's chosen language, or the prompt's
   close button), Tab and Shift+Tab go round inside it, and closing it gives
   the focus back to [?]. The close control is a real button (keyboard and
@@ -116,6 +116,19 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   insert line. The note on the clipboard permission of Paste copied link
   (shared by the pages of goodrelax.github.io in Chrome and Edge, and how
   to withdraw it) moves to Privacy & Security.
+- Touch editing, PlantUML and small fixes: on a phone or tablet, a double
+  tap on the preview zooms as the browser does and no longer starts
+  editing; press `[Edit]`, then tap a block (a mouse double-click, or a
+  pen double tap, still opens the block). The help's Details and the fourth line of the start
+  screen now say how to start editing. A PlantUML diagram shows
+  "Loading diagram..." until the page has fully loaded; then one dialog
+  asks for all the diagrams that waited, and only the allowed ones are
+  sent (a diagram added by an edit still waits for its Render button;
+  Copy SVG / PNG of an allowed diagram fetches it again without asking).
+  The mouse wheel over the dashed insert line between blocks, or over the
+  bar of selected blocks, now scrolls the page as it does over the text
+  (it did nothing). Ctrl+B / Ctrl+I (Mac: Cmd) in the Search box no longer
+  formats the text of a block left open.
 
 ### Added
 
@@ -136,7 +149,8 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   the box closes it;
   elsewhere `Esc` hides the edit palette first, then Search, then the Index.
   Nothing of it is stored or printed. The help says so in both languages.
-- Index: an **Index** button left of Render Light (or the `i` key) shows the
+- Index: an **Index** button, the first of the top bar's buttons (left of
+  Search and Render Light), or the `i` key, shows the
   document's headings (h1 to h6) in a panel floating at the right edge of the
   Markdown view, under the top bar. Its ground lets 25 % of the text behind
   show through, and the panel scrolls by itself. Press a heading to bring it
@@ -152,7 +166,7 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   before or after it only where Markdown needs one to read it as math, and
   where it would not read as math (or not as before) nothing changes and a
   toast says so. It is off in a table cell. **Insert math boxes** adds three
-  display equations at once, each under its name: Maxwell's Equations,
+  display math boxes at once, each under its name: Maxwell's Equations,
   Einstein Field Equations and Christoffel Symbols, and Schroedinger
   Equation, Wavefunction Normalization, and Pauli Matrices. They go in like
   Insert table and the Mermaid samples (the open block is applied and cut at
@@ -190,7 +204,7 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   `output/beta/`) and writes `docs/grsmd-beta.html` from it: the same file
   as `docs/index.html` except that it asks search engines not to index it
   (`<meta name="robots" content="noindex" />`). That robots meta is the only
-  difference (owner's ruling 2026-10-26): no BETA mark, and the same help,
+  difference: no BETA mark, and the same help,
   Content-Security-Policy and scripts. `docs/index.html` is not touched. It
   lets the next release be tried on a device without a local server (for
   example an iPad), at
@@ -464,7 +478,7 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
     other inline formatting that runs over two lines: the new block goes
     below that paragraph instead.
   - The opened cell or editor is scrolled into view only as far as needed.
-- **Behaviour change (ruling T33): while a Markdown document is shown, rendering
+- **Behaviour change: while a Markdown document is shown, rendering
   from the top `#editor` box no longer strips a ```` ```markdown ```` wrapper.**
   The box already holds the document body, and stripping it again cut the
   fences off a document that starts with a `markdown` example block and ends

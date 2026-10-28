@@ -249,6 +249,19 @@ export function isPastActivation(from, to) {
 }
 
 /**
+ * The diagram controllers to make for the device's pointers: zoom and copy
+ * where the main pointer is fine (INV-16); pan only where, in addition, no
+ * pointer is coarse (INV-16b: a PC without a touch screen).
+ * @purity pure
+ * @param {{fine: boolean, anyCoarse: boolean}} pointers - "(pointer: fine)"
+ *   and "(any-pointer: coarse)" matched
+ * @returns {{zoomAndCopy: boolean, pan: boolean}}
+ */
+export function diagramControllersFor({ fine, anyCoarse }) {
+  return { zoomAndCopy: fine, pan: fine && !anyCoarse };
+}
+
+/**
  * @purity non-pure
  * @param {number} id - from nextFrame
  */

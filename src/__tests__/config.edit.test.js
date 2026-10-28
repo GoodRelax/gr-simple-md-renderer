@@ -7,12 +7,14 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 describe("CONFIG.edit (spec 5.2)", () => {
-  it("AT-CFG-01 holds the agreed values", () => {
+  it("AT-CFG-01 (5.2, INV-68, INV-57) holds the agreed values; no double-tap values (owner ruling AQ3)", () => {
     const e = CONFIG.edit;
     expect(e.paletteMarginPx).toBe(16);
     expect(e.paletteLongPressMs).toBe(500); // INV-68
-    expect(e.doubleTapMaxIntervalMs).toBe(300);
-    expect(e.doubleTapMaxDistancePx).toBe(24);
+    // no double-tap timing: a touch double tap does not start editing (owner ruling AQ3);
+    // a pen double tap comes as a dblclick and acts like a mouse double click (5.14.6)
+    expect(e).not.toHaveProperty("doubleTapMaxIntervalMs");
+    expect(e).not.toHaveProperty("doubleTapMaxDistancePx");
     expect(e.defaultFileName).toBe("untitled.md");
     expect(e.commitBudgetMs).toBe(300);
     expect(e.diffMaxCells).toBe(250000);

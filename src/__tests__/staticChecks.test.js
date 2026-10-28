@@ -53,6 +53,23 @@ function scan(file) {
   return { identifiers, members, imports };
 }
 
+/**
+ * The HTML without the Japanese help body (<div class="help-body" lang="ja">
+ * and everything up to its own closing tag), which is Japanese by design.
+ */
+function withoutJapaneseHelp(html) {
+  const start = html.indexOf('<div class="help-body" lang="ja"');
+  if (start < 0) throw new Error("the Japanese help body was not found");
+  const tag = /<div\b|<\/div>/g;
+  tag.lastIndex = start;
+  let depth = 0;
+  for (let m = tag.exec(html); m; m = tag.exec(html)) {
+    depth += m[0] === "</div>" ? -1 : 1;
+    if (depth === 0) return html.slice(0, start) + html.slice(m.index + m[0].length);
+  }
+  throw new Error("the Japanese help body is not closed");
+}
+
 const NEW_FILES = [
   "classes/DocumentSession.js",
   "classes/DocumentLocation.js",
@@ -91,7 +108,7 @@ describe("AT-STA static checks of src/js", () => {
     for (const f of NEW_FILES) expect(names, f).toContain(f);
   });
 
-  it("AT-STA-01 no storage API at all (CON-13)", () => {
+  it("AT-STA-01 no storage API at all (CON-13, INV-04)", () => {
     const pattern = /\blocalStorage\b|\bsessionStorage\b|\bindexedDB\b|document\.cookie|\bcaches\.|navigator\.storage/;
     for (const f of FILES) expect(stripComments(read(f)), rel(f)).not.toMatch(pattern);
   });
@@ -112,6 +129,14 @@ describe("AT-STA static checks of src/js", () => {
       const bytes = readFileSync(f);
       expect(bytes.some((b) => b > 0x7f), rel(f)).toBe(false);
     }
+  });
+
+  it("AT-STA-03 (b) src/index.html is ASCII only outside the Japanese help (CON-06)", () => {
+    const html = readFileSync(resolve(here, "../index.html"), "utf8");
+    const rest = withoutJapaneseHelp(html);
+    expect(rest.length).toBeLessThan(html.length);
+    const lines = rest.split("\n").filter((line) => /[^\x00-\x7f]/.test(line));
+    expect(lines, "non-ASCII lines outside the Japanese help").toEqual([]);
   });
 
   it("AT-STA-04 no inline event handler in HTML strings, no setAttribute('on...') (INV-20)", () => {

@@ -544,6 +544,27 @@ export default class MarkdownRenderer {
   }
 
   /**
+   * Whether HTML that shows a formula waiting for KaTeX is kept (the
+   * preview, the cache or a block written in place): spec 11-g isShownWithout.
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  hasPendingMath() {
+    return this._mathPendingHtml.size > 0 || this._mathPendingWritten.size > 0;
+  }
+
+  /**
+   * Whether the preview shows code drawn before highlight.js had run
+   * (spec 11-g isShownWithout).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  hasPendingHighlight() {
+    if (this.hljs) return false;
+    return [...this.preview.querySelectorAll(HIGHLIGHT_SELECTOR)].some((block) => !block.classList.contains("hljs"));
+  }
+
+  /**
    * Color the code blocks drawn before highlight.js had run.
    * @purity non-pure
    */

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../js/config.js";
 
-describe("CONFIG", () => {
+describe("AT-CFG-11 INV-11, INV-18, CON-08: CONFIG file drop settings", () => {
   it("CONFIG.fileDrop.messages has no unused unsupportedType key", () => {
     expect(CONFIG.fileDrop.messages).not.toHaveProperty("unsupportedType");
   });
@@ -99,6 +99,16 @@ describe("CONFIG UI texts in plain English", () => {
     expect(M.diagram.tooltip).toBe("Ctrl+wheel: zoom | Double-click: reset | Drag: move");
   });
 
+  it("AT-CFG-10 the start screen: four steps of one length; the 4th says how to start editing (FS-16, INV-57, AQ4)", () => {
+    const lines = M.startScreen.split("\n");
+    expect(lines.slice(0, 2)).toEqual(["Get started:", ""]);
+    const steps = lines.slice(2);
+    expect(steps).toHaveLength(4);
+    steps.forEach((line, i) => expect(line.startsWith(`  ${i + 1}. `), line).toBe(true));
+    for (const line of steps) expect(line.length, line).toBe(71);
+    expect(steps[3].trimEnd()).toBe("  4. Double-click a block     ->  Edit  (phone: press [Edit], tap)");
+  });
+
   it("AT-CFG-09 palette names (P01-P03, R5, R6)", () => {
     expect(M.palette.linkPaste).toBe("Paste copied link");
     expect(M.palette.tableOptions).toBe("Align column");
@@ -119,7 +129,7 @@ describe("CONFIG UI texts in plain English", () => {
   });
 });
 
-describe("EXT_TO_HLJS", () => {
+describe("AT-CFG-12 INV-18, spec 5.3: EXT_TO_HLJS", () => {
   it("contains .py mapping to python", () => {
     expect(EXT_TO_HLJS[".py"]).toBe("python");
   });
@@ -150,7 +160,7 @@ describe("EXT_TO_HLJS", () => {
   });
 });
 
-describe("BINARY_EXTENSIONS", () => {
+describe("AT-CFG-13 INV-18, spec 5.4: BINARY_EXTENSIONS", () => {
   it("is a Set", () => {
     expect(BINARY_EXTENSIONS).toBeInstanceOf(Set);
   });
@@ -170,7 +180,7 @@ describe("BINARY_EXTENSIONS", () => {
   });
 });
 
-describe("FILE_SYSTEM_HANDLE_SUPPORTED", () => {
+describe("AT-CFG-14 INV-15: FILE_SYSTEM_HANDLE_SUPPORTED", () => {
   it("is a boolean", () => {
     expect(typeof FILE_SYSTEM_HANDLE_SUPPORTED).toBe("boolean");
   });

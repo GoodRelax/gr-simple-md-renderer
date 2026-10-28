@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
-describe("UIController._formatFileInfo", () => {
+describe("AT-UI-72 UIController._formatFileInfo (FS-03)", () => {
   let UIController;
 
   beforeEach(async () => {
