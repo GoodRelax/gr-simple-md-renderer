@@ -52,11 +52,11 @@ test("a mouse double click on the grip minimizes and restores; the grip stays; n
   const after = await grip(page).boundingBox();
   expect(Math.abs(after.x - before.x)).toBeLessThan(1);
   expect(Math.abs(after.y - before.y)).toBeLessThan(1);
-  expect(await documentSelection(page)).toEqual({ text: "", inPalette: false });
+  await expect.poll(() => documentSelection(page)).toEqual({ text: "", inPalette: false });
   await expect(blockEditor(page)).toHaveCount(0);
   await page.mouse.dblclick(c.x, c.y);
   await expectMinimized(page, false);
-  expect(await documentSelection(page)).toEqual({ text: "", inPalette: false });
+  await expect.poll(() => documentSelection(page)).toEqual({ text: "", inPalette: false });
   await expect(blockEditor(page)).toHaveCount(0);
   await expect(page.locator("#editor")).toHaveValue(body);
 });
@@ -135,8 +135,8 @@ test.describe("touch", () => {
     await expectMinimized(page, true);
     await page.waitForTimeout(LONG_PRESS_MS + 100); // a dblclick, if the browser sends one, does not toggle back
     await expectMinimized(page, true);
-    expect(await page.evaluate(() => window.visualViewport?.scale ?? 1)).toBe(1);
-    expect(await documentSelection(page)).toEqual({ text: "", inPalette: false });
+    await expect.poll(() => page.evaluate(() => window.visualViewport?.scale ?? 1)).toBe(1);
+    await expect.poll(() => documentSelection(page)).toEqual({ text: "", inPalette: false });
     await page.touchscreen.tap(c.x, c.y);
     await page.touchscreen.tap(c.x, c.y);
     await expectMinimized(page, false);
@@ -183,5 +183,15 @@ test.describe("touch", () => {
     await page.touchscreen.tap(at.x, at.y);
     await expect(blockEditor(page)).toHaveCount(1); // INV-29: a tap opens the block in edit mode
     await expectMinimized(page, true);
+    await page.touchscreen.tap(c.x, c.y); // preview, then grip: not a pair
+    await page.waitForTimeout(LONG_PRESS_MS + 100);
+    await expectMinimized(page, true);
+    // grip, preview, grip: the press on the preview breaks the pair (coordinator's ruling Q1)
+    await page.touchscreen.tap(c.x, c.y);
+    await page.touchscreen.tap(at.x, at.y);
+    await page.touchscreen.tap(c.x, c.y);
+    await page.waitForTimeout(LONG_PRESS_MS + 100);
+    await expectMinimized(page, true);
+    await expect(blockEditor(page)).toHaveCount(1);
   });
 });

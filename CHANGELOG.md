@@ -177,8 +177,8 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   brings it back, on a double click; a press and hold still works. On a
   phone or tablet, and with a pen, two quick taps (within 0.5 s) do it; the
   palette takes no browser zoom, so the double tap does not zoom the page.
-  Only two plain presses count: moving the palette or a press and hold
-  in between does not. The double click selects no text and leaves the open
+  Only two plain presses in a row on the grip count: moving the palette, a
+  press and hold, or a press anywhere else in between breaks the pair. The double click selects no text and leaves the open
   block, its cursor and its selection as they were. The grip's tooltip and
   the help say so (owner rulings PD1 to PD3).
 - In edit mode, drag over the text of some blocks (on a phone, long press

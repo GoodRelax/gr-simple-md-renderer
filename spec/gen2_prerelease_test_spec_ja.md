@@ -60,7 +60,7 @@
 
 > v2.23 の変更 (2026-10-29、監査の直しのレビュー (2 回目) の直し): 確認は 4 つのライブラリが決まった後 (answering。settled の前) に出る、という言い方に、PRT-AE09 の期待結果、AT.4 の fastStartup.e2e.js の行、v2.21・v2.22 の記録の settled をそろえた (N7)。v2.20 の記録の裁定 AQ3 をタッチだけに直し、AT-BEC-TS-15 の注もタッチと書いた (N2)。PRT-AE12 の手順 4・5 は、時間ではなく確認が出るのを待つ (文書に `E -> F` を足し、その確認で Cancel。N9)。AT-LSM-15 は 4 つが決まる前に Clear する形に書き直し (N5)、AT-LSM-25 (待ちの枠が無くても answering から settled に移る。N4) を足して、AT-LSM を 01〜25 にした。PRT-AE09 の備考に AT-LSM-25 を足した。改めたケースの判定は空欄 (未実施)。
 
-> v2.24 の変更 (2026-10-29、パレットのグリップのダブルクリック): 仕様の INV-68・SC-23・11-d・5.15.3・5.15.4 の改め (オーナーの裁定 PD1〜PD3) に合わせて、セクション AI (PRT-AI01 / AI02) を追加した。AT-PAL に 37・38 を足し、AT-PAL-03 のグリップの tooltip を改めた。AT-PSM を 14 の出来事 × 5 の状態 (`gripDoubleClicked`) にし、AT-PSM-11 (マウスのダブルクリック、タッチとペンのダブルタップ、移動・長押し・ほかの押下・非表示で組にならないこと、`isQuickSecondGripTap`) を足した。AT-CFG-01 に `paletteDoubleTapMs` を足した。e2e に paletteDoubleClick.e2e.js を足した (touch に、プレビューのダブルタップ (AQ3) とぶつからないことの確認を含む)。
+> v2.24 の変更 (2026-10-29、パレットのグリップのダブルクリック): 仕様の INV-68・SC-23・11-d・5.15.3・5.15.4 の改め (オーナーの裁定 PD1〜PD3) に合わせて、セクション AI (PRT-AI01 / AI02) を追加した。AT-PAL に 37・38 を足し、AT-PAL-03 のグリップの tooltip を改めた。AT-PSM を 15 の出来事 × 5 の状態 (`gripDoubleClicked`、`pointerPressedOutsidePalette`) にし、AT-PSM-11 (マウスのダブルクリック、タッチとペンのダブルタップ、移動・長押し・グリップ以外のどこかの押下 (パレット本体のボタン・隙間、ポップオーバーのボタン・隙間、パレットの外)・非表示で組にならないこと、`isQuickSecondGripTap`) を足した。AT-CFG-01 に `paletteDoubleTapMs` を足した。e2e に paletteDoubleClick.e2e.js を足した (touch に、プレビューのダブルタップ (AQ3) とぶつからないことの確認を含む)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -4692,11 +4692,13 @@ INV-68、SC-23、11-d (仕様 2026-10-29 の改訂)。オーナーの要望 (202
 |  | 3. グリップを 1 秒ほど間をあけて 2 回タップする |
 |  | 4. Apple Pencil (またはペン) で 1・2 を行う |
 |  | 5. プレビューの本文をすばやく 2 回タップする |
+|  | 6. 編集モードで、グリップをタップし、本文をタップしてから、すぐにグリップをタップする。開いた書式のポップオーバーの隙間とパレットの隙間でも同じことをする |
 | **期待結果** | - 1 で、2 回目のタップでパレットはグリップだけになる。画面は拡大しない。文脈メニュー・文字の選択・拡大鏡が出ない |
 |  | - 2 で、元に戻る。1 回のダブルタップで 2 回切り替わる (戻ってしまう) ことはない |
 |  | - 3 で、何も変わらない |
 |  | - 4 で、1・2 と同じ |
 |  | - 5 で、ブラウザの拡大のまま (編集を始めない。オーナーの裁定 AQ3)。パレットの最小化は変わらない |
+|  | - 6 で、最小化しない (間にグリップ以外を押すと組が切れる。調整役の裁定 Q1) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -4759,7 +4761,7 @@ INV-68、SC-23、11-d (仕様 2026-10-29 の改訂)。オーナーの要望 (202
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
 | AT-ICO | `InvisibleCharOverlay` (20: 行の中の長い空白の並びで、行末の空白の判定が線形。21: 編集欄が写した字と余白を写す) | INV-70、INV-83 | InvisibleCharOverlay.test.js | 01〜21 |
 | AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68 | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜38 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス。37: グリップのダブルクリックで最小化・復活し、編集欄のフォーカスと選択を保つ。38: ボタン・隙間のダブルクリックと非表示の間の `dblclick` では最小化しない) |
-| AT-PSM | 11-d パレットのジェスチャの状態機械 (14 の出来事 × 5 の状態、ガード、ポップオーバー。11: グリップのダブルクリックとダブルタップ (INV-68)) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10・11 |
+| AT-PSM | 11-d パレットのジェスチャの状態機械 (15 の出来事 × 5 の状態、ガード、ポップオーバー。11: グリップのダブルクリックとダブルタップ (INV-68)。グリップ以外のどこを押しても組が切れる) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10・11 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
 | AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(e) ポップオーバーが開いていれば、検索の箱の中の最初の Esc はポップオーバーだけを閉じる、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く) | INV-80、INV-48、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜19 |
 | AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル) | INV-24〜26、INV-79、CON-14 | MarkdownFileAccess.test.js | 01〜09 |

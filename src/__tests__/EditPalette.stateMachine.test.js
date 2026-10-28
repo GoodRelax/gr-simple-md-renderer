@@ -5,7 +5,7 @@ import { pointer } from "./helpers/editDom.js";
 import { fakePaletteLayout, paletteElements, removePaletteElements, centerOf, positionOf } from "./helpers/paletteLayout.js";
 import { diagramTransitions, tableTransitions } from "./helpers/specDiagram.js";
 
-// Spec 11-d: every cell of the 14 x 5 table. Each cell is reached through the
+// Spec 11-d: every cell of the 15 x 5 table. Each cell is reached through the
 // DOM where the DOM can produce the event in that state, and through
 // dispatch() otherwise. The next state is read from paletteGestureState (the
 // variable the spec names); the effects are seen from outside:
@@ -28,10 +28,11 @@ const T = CONFIG.pan.activationThresholdPx;
 const TABLE = {
   enabledButtonPressed: { [IDLE]: [PRESS, ["capture"]] },
   disabledButtonPressed: { [IDLE]: [DRAG, ["capture"]] },
-  disabledPopoverButtonPressed: {},
+  disabledPopoverButtonPressed: { [IDLE]: [IDLE, []] },
   gripPressed: { [IDLE]: [GRIP, ["capture", "timer"]] },
   gapPressed: { [IDLE]: [DRAG, ["capture"]] },
-  popoverGapPressed: {},
+  popoverGapPressed: { [IDLE]: [IDLE, []] },
+  pointerPressedOutsidePalette: { [IDLE]: [IDLE, []] },
   pointerMoved: { [GRIP]: [DRAG, ["moved"]], [DRAG]: [DRAG, ["moved"]] },
   longPressElapsed: { [GRIP]: [LONG, ["minimized"]] },
   gripDoubleClicked: { [IDLE]: [IDLE, ["minimized"]] },
@@ -138,6 +139,8 @@ function stimulus(event, state, { b, c, g }) {
       const p = gapOf(root, 228, 76);
       return downAt(root, p.x, p.y, id);
     }
+    case "pointerPressedOutsidePalette":
+      return downAt(document.body, 5, 5, id);
     case "popoverGapPressed": {
       const p = gapOf(formatMenu, 190, 140);
       return downAt(formatMenu, p.x, p.y, id);
@@ -198,9 +201,9 @@ function observedState() {
 
 const CELLS = Object.entries(TABLE).flatMap(([event, row]) => STATES.map((state) => [event, state, row[state] ?? null]));
 
-describe("AT-PSM 11-d palette gesture state machine: 14 events x 5 states", () => {
-  it("covers 70 cells", () => {
-    expect(CELLS).toHaveLength(70);
+describe("AT-PSM 11-d palette gesture state machine: 15 events x 5 states", () => {
+  it("covers 75 cells", () => {
+    expect(CELLS).toHaveLength(75);
   });
 
   it.each(CELLS)("%s in %s", (event, state, cell) => {
@@ -379,6 +382,55 @@ describe("AT-PSM-11 grip double click and double tap (INV-68, PD1-PD3)", () => {
     expect(palette.isMinimized()).toBe(false);
   });
 
+  // Owner rulings PD1, PD2 and the coordinator's ruling Q1 (2026-10-29):
+  // only two presses in a row on the grip count; a press anywhere else in
+  // between breaks the pair.
+  const openFormat = () => {
+    palette.setButtonStates({ format: true, linkPaste: true });
+    const f = root.querySelector("#paletteFormat");
+    const fc = centerOf(f);
+    pointer(f, "pointerdown", { x: fc.x, y: fc.y });
+    pointer(f, "pointerup", { x: fc.x, y: fc.y });
+    expect(formatMenu.hidden).toBe(false);
+  };
+  const pressAt = (target, p, pointerType) => {
+    pointer(target, "pointerdown", { x: p.x, y: p.y, pointerType });
+    pointer(target, "pointerup", { x: p.x, y: p.y, pointerType });
+  };
+  const popoverGap = () => gapOf(formatMenu, 190, 140);
+  const BETWEEN = [
+    ["the popover's gap", () => pressAt(formatMenu, popoverGap(), "touch")],
+    ["a disabled popover button", () => pressAt(el.popoverDisabled(), centerOf(el.popoverDisabled()), "touch")],
+    ["an enabled popover button", () => pressAt(el.popoverEnabled(), centerOf(el.popoverEnabled()), "touch")],
+    ["outside the palette", () => pressAt(document.body, { x: 5, y: 5 }, "touch")],
+  ];
+
+  it.each(BETWEEN)("touch: a press on %s between two grip taps breaks the pair", (_name, pressBetween) => {
+    openFormat();
+    tapGrip("touch");
+    pressBetween();
+    tapGrip("touch");
+    expect(palette.isMinimized()).toBe(false);
+    expect(observedState()).toBe(IDLE);
+  });
+
+  it("touch: after a broken pair, two more grip taps still toggle", () => {
+    tapGrip("touch");
+    pressAt(document.body, { x: 5, y: 5 }, "touch");
+    tapGrip("touch");
+    expect(palette.isMinimized()).toBe(false);
+    tapGrip("touch");
+    expect(palette.isMinimized()).toBe(true);
+  });
+
+  it("a mouse: a press outside the palette between the clicks breaks the pair", () => {
+    tapGrip();
+    pressAt(document.body, { x: 5, y: 5 }, "mouse");
+    tapGrip();
+    dblclick(el.grip());
+    expect(palette.isMinimized()).toBe(false);
+  });
+
   it("touch: hiding the palette between the taps cancels the pair", () => {
     tapGrip("touch");
     palette.hide();
@@ -421,6 +473,10 @@ describe("AT-PSM-10 the paletteGestureStateMachine definition matches the spec",
     expect(act("enabledButtonPressed", IDLE).actions).toEqual(["forgetGripTap", "capturePointer"]);
     expect(act("disabledButtonPressed", IDLE).actions).toEqual(["forgetGripTap", "capturePointer", "rememberOffset"]);
     expect(act("gripPressed", IDLE).actions).toEqual(["capturePointer", "rememberOffset", "startLongPressTimer"]);
+    for (const event of ["disabledPopoverButtonPressed", "popoverGapPressed", "pointerPressedOutsidePalette"]) {
+      expect(act(event, IDLE)).toMatchObject({ to: IDLE, actions: ["forgetGripTap"] });
+      for (const state of [PRESS, GRIP, DRAG, LONG]) expect(act(event, state), `${event} x ${state}`).toBeNull();
+    }
     expect(act("gapPressed", IDLE).actions).toEqual(["forgetGripTap", "capturePointer", "rememberOffset"]);
     expect(act("pointerMoved", GRIP)).toMatchObject({
       guard: "hasMovedBeyondThreshold",

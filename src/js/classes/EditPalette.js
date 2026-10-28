@@ -166,10 +166,11 @@ const gesture = (...cells) => row(GESTURE_STATES, cells);
 export const paletteGestureStateMachine = Object.freeze({
   enabledButtonPressed: gesture(cell(PRESS, ["forgetGripTap", "capturePointer"])),
   disabledButtonPressed: gesture(cell(DRAG, ["forgetGripTap", "capturePointer", "rememberOffset"])),
-  disabledPopoverButtonPressed: gesture(),
+  disabledPopoverButtonPressed: gesture(cell(IDLE, ["forgetGripTap"])),
   gripPressed: gesture(cell(GRIP, ["capturePointer", "rememberOffset", "startLongPressTimer"])),
   gapPressed: gesture(cell(DRAG, ["forgetGripTap", "capturePointer", "rememberOffset"])),
-  popoverGapPressed: gesture(),
+  popoverGapPressed: gesture(cell(IDLE, ["forgetGripTap"])),
+  pointerPressedOutsidePalette: gesture(cell(IDLE, ["forgetGripTap"])),
   pointerMoved: gesture(
     null,
     null,
@@ -486,7 +487,9 @@ export default class EditPalette {
    * Handle one 11-d event. A "-" cell changes nothing.
    * @purity non-pure
    * @param {string} event
-   * @param {{pointerId?: number, x?: number, y?: number, button?: HTMLElement|null, el?: Element}} [input]
+   * @param {{pointerId?: number, x?: number, y?: number, button?: HTMLElement|null, el?: Element, pointerType?: string, time?: number}} [input]
+   *   A press (the *Pressed events) always carries pointerType and time
+   *   (performance.now()); _handlePointerDown fills them in.
    */
   dispatch(event, input = {}) {
     const cells = paletteGestureStateMachine[event];
@@ -552,8 +555,8 @@ export default class EditPalette {
           el: input.el,
           start: { x: input.x, y: input.y },
           offset: null,
-          pointerType: input.pointerType ?? "mouse",
-          time: input.time ?? 0,
+          pointerType: input.pointerType,
+          time: input.time,
         };
         try {
           input.el.setPointerCapture?.(input.pointerId);
@@ -768,7 +771,10 @@ export default class EditPalette {
    * @purity non-pure
    */
   _handleDocumentPointerDown(e) {
-    if (!this.contains(e.target)) this.dispatchDisplay("pointerPressedOutsidePalette");
+    if (this.contains(e.target)) return;
+    // Both machines: a press anywhere but the grip breaks a grip double tap (INV-68).
+    this.dispatch("pointerPressedOutsidePalette");
+    this.dispatchDisplay("pointerPressedOutsidePalette");
   }
 
   /**
