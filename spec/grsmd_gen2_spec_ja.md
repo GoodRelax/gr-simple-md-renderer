@@ -88,6 +88,8 @@
 
 **改訂:** 2026-10-30 — **GitHub 連携に develop (`250192d`。.md 以外の編集) を取り込み、番号を振り直す (調整役の指示 2026-10-30)。** .md 以外の編集と番号が重なったので、GitHub 連携の側だけを振り直した: SC-27 → SC-28、INV-85〜INV-92 → INV-93〜INV-100、FS-23 → FS-24、5.19 → 5.20 (試験仕様の PRT-AH01〜AH09 → PRT-AK01〜AK09、セクション AH → AK)。これより前の 2 つの改訂の行の番号も、新しい番号で書き直してある。つなぎ目: [Open GitHub] (`gitHubBtn`) は [Commands] (`commandsBtn`) の右。キーのヒントは、コードビューでは `[P] Commands;` の後に `[O] GitHub;` (Mac の `codeAppleGitHub` も)。コードの文書 (SC-27) を表示している間に GitHub のファイルを開くときも、未保存なら先に聞き (INV-21)、コードの文書を閉じてから置き換える (UIController)。5.19.7 のキーの表に `o` を足した。
 
+**改訂:** 2026-10-30 — **gzip の上限を 1,510 kB にした (オーナーの裁定 D38。GitHub 連携、beta3)。** develop (`250192d`) を取り込んだ GitHub 連携は gzip 1,489.88 kB (Vite の表示) で、前の上限 1,490 kB (NE-33) に近い。ヘルプの GitHub の編集の方法の層 (約 +9.6 kB) と監査の直しの beta3 の分 (最大 +2.5 kB) を入れると約 1,502 kB になるので、レビューの直しの分 (約 8 kB) を残して上げた。レビュー基準 T4 を改めた。
+
 ---
 
 ## 目次
@@ -6451,7 +6453,7 @@ tooltip / aria-label: `Bold (Ctrl+B)`、`Italic (Ctrl+I)`、`Text format`、`Und
 | 10 | plantuml-encoder (データ) と、届いた知らせ | 約 1,393 KiB |
 | 11 | 同梱 OSS の表記 (コメント。付録 A.2) | 約 1,408 KiB |
 
-- 合計の大きさは、ほぼ変わらない (Vite の表示で gzip 1,456.83 kB。当時の上限 1,460 kB。今の上限は 1,490 kB (オーナーの裁定 NE-33。レビュー基準 T4))。
+- 合計の大きさは、ほぼ変わらない (Vite の表示で gzip 1,456.83 kB。当時の上限 1,460 kB。今の上限は 1,510 kB (オーナーの裁定 D38。レビュー基準 T4))。
 - 受け口と中核は classic script。今までの `type="module"` は、ファイル全体を解析し終わるまで動かないため。
 - 遅れて読むライブラリは、それぞれ別に Vite のライブラリのビルド (IIFE、圧縮、分割なし) でまとめる (`vite.config.js` の `fastStartup`)。入口は `src/js/lazy/<名前>.js`。
 
@@ -6869,6 +6871,6 @@ MIT・ISC・BSD・Apache-2.0・OFL などは、配布物に著作権の表記と
 
 **分からないこと (法律の判断。推測で決めない):** 1 つの HTML の中のコメントで、MIT・ISC の「含める」と BSD-3-Clause の「配布物に付ける資料で再現する」を満たすか。束ねた先の中の小さなコードや補助関数にまで表記が要るか。(chevrotain と @chevrotain/* 11.1.2 の tarball に NOTICE ファイルは無かった。)OFL のフォントの表記が、フォントの name テーブルとこのコメントで足りるか。jQuery の event を写した元の版 (と、その版の著作権の行)。roughjs が束ねたときの path-data-parser・points-on-curve・points-on-path・hachure-fill の版 (node_modules の版の文を使う)。cytoscape が束ねた gl-matrix の版 (devDependencies は `^3.4.3`。文は 3.4.4 の LICENSE で、著作権の年 (2015-2025) は束ねた版のものと違うかもしれない)。webpack の runtime と browserify の prelude を作った webpack・browser-pack の版 (devDependencies の範囲の中の最新の版の文を使う)。cytoscape が使った @rollup/plugin-commonjs の版 (devDependencies は `^28.0.2`。28 系の最新 28.0.9 の文を使う。js-yaml 4.3.0 は 29.0.3)。browser-pack の著作権の行 (LICENSE に無い)。
 
-**大きさ:** gzip で約 +15.5 kB (2026-10-25 の実測。develop `d077a24` を取り込み、レビューの 2 回目の N1 を直した後で 1,445.64 kB。その時点の上限は 1,450 kB)。今の上限はレビュー基準 T4 の 1,490 kB (オーナーの裁定 NE-33、2026-10-29) で、最新の実測は 5.19.12 にある。
+**大きさ:** gzip で約 +15.5 kB (2026-10-25 の実測。develop `d077a24` を取り込み、レビューの 2 回目の N1 を直した後で 1,445.64 kB。その時点の上限は 1,450 kB)。今の上限はレビュー基準 T4 の 1,510 kB (オーナーの裁定 D38、2026-10-30) で、最新の実測は 5.19.12 にある。
 
 **試験:** AT-OSS-01〜07 (`notices.test.js`。07 は本物のビルドの module の一覧で、`EMBEDDED`・`IGNORED_MARKS`・`IGNORED_DEPENDENCIES`・`DIST_RECORDS` の項目を 1 つずつ外すと、どれでも検査が落ちることを確かめる)、e2e の `notices.e2e.js`、PRT-AA01 / AA02。
