@@ -73,18 +73,20 @@ describe("CodeDocument (INV-89, INV-90; spec 5.19.1)", () => {
     expect(r.bytes.length).toBe(0);
   });
 
-  it("AT-CDOC-07 withSaved in its own encoding: new name, time and saved text; the typed text stays unsaved", () => {
+  it("AT-CDOC-07 withSaved in its own encoding: new name, time, size and saved text; the typed text stays unsaved", () => {
     const d = doc({ encoding: "shift_jis", text: "x\r\n" }).withSaveEncoding("original").withText("x\nmore\n");
-    const saved = d.withSaved("x\nmore\n", "b.txt", 5000, "shift_jis").withText("x\nmore\nagain\n");
+    const saved = d.withSaved("x\nmore\n", "b.txt", 5000, "shift_jis", 7).withText("x\nmore\nagain\n");
     expect([saved.fileName, saved.lastModified, saved.encoding, saved.saveEncoding]).toEqual(["b.txt", 5000, "shift_jis", "original"]);
+    // NE-32 (review 3 P4): the size is the bytes written, as the file info shows after a save
+    expect(saved.fileBytes).toBe(7);
     expect(saved.savedText).toBe("x\nmore\n");
     expect(saved.isDirty()).toBe(true);
-    expect(d.withSaved("x\nmore\n", "a.txt", null, "shift_jis").lastModified).toBeNull();
+    expect(d.withSaved("x\nmore\n", "a.txt", null, "shift_jis", 7).lastModified).toBeNull();
   });
 
   it("AT-CDOC-08 withSaved in UTF-8 for another encoding: UTF-8 from now on, no BOM, nothing remembered", () => {
     const d = doc({ encoding: "utf-16le", bom: true }).withSaveEncoding("original");
-    const saved = d.withSaved(d.text, "a.txt", 2000, "utf-8");
+    const saved = d.withSaved(d.text, "a.txt", 2000, "utf-8", 1);
     expect([saved.encoding, saved.bom, saved.saveEncoding]).toEqual(["utf-8", false, null]);
   });
 
@@ -93,7 +95,7 @@ describe("CodeDocument (INV-89, INV-90; spec 5.19.1)", () => {
     // a new line in the middle gets the majority ending (tie: LF)
     const first = d.withText("a\nnew\nb\nc");
     expect(new TextDecoder().decode(first.toBytes(first.text, "utf-8").bytes)).toBe("a\r\nnew\nb\nc");
-    const saved = first.withSaved(first.text, "a.txt", 2000, "utf-8");
+    const saved = first.withSaved(first.text, "a.txt", 2000, "utf-8", 8);
     expect(saved.original).toEqual({ lines: ["a", "new", "b", "c"], endings: ["\r\n", "\n", "\n"] });
     expect(new TextDecoder().decode(saved.toBytes(saved.text, "utf-8").bytes)).toBe("a\r\nnew\nb\nc");
   });

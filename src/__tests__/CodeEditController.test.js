@@ -503,6 +503,19 @@ describe("CodeEditController: edit mode (INV-85, INV-88) and the JSON fold (INV-
     expect(m.codeEdit.slowEdit).toBe("This file is 200 KB or larger. Showing and editing it may take time.");
   });
 
+  it("AT-CEC-50 (INV-85 (9), NE-32, review 3 P4) the size is the file's size now: a file saved at 200 KB or more tells on the next edit mode", async () => {
+    withEditor();
+    await open(utf8("a\n"));
+    ctrl.toggleEdit();
+    type("x".repeat(CONFIG.codeEdit.slowEditBytes));
+    await ctrl.save();
+    expect(ctrl.document.fileBytes).toBe(CONFIG.codeEdit.slowEditBytes);
+    ctrl.toggleEdit();
+    host.toast.mockClear();
+    ctrl.toggleEdit();
+    expect(host.toast.mock.calls).toEqual([[m.codeEdit.slowEdit]]);
+  });
+
   it("AT-CEC-27 without an editor factory (or a document), toggleEdit does nothing", async () => {
     ctrl.toggleEdit();
     await open(utf8("a\n"));

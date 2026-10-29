@@ -45,7 +45,7 @@ export default class CodeDocument {
    * @param {string} v.text - LF text now
    * @param {string} v.savedText - LF text at the last load or save
    * @param {"original"|"utf-8"|null} v.saveEncoding - Save's remembered choice (NE-24)
-   * @param {number} [v.fileBytes] - the size of the file read, in bytes (NE-32; 0: not known)
+   * @param {number} [v.fileBytes] - the file's size in bytes: as read, reloaded or last written (NE-32; 0: not known)
    */
   constructor(v) {
     this.fileName = v.fileName;
@@ -155,9 +155,10 @@ export default class CodeDocument {
    * @param {string} fileName - the name written to
    * @param {number|null} lastModified - of the written file; null when unreadable
    * @param {string} encoding - the encoding written
+   * @param {number} fileBytes - the number of bytes written (NE-32: the file's size now)
    * @returns {CodeDocument}
    */
-  withSaved(savedText, fileName, lastModified, encoding) {
+  withSaved(savedText, fileName, lastModified, encoding, fileBytes) {
     const changed = encoding !== this.encoding;
     const written = this.lineEndingMode === "keep" ? applyLineEndings(savedText, "keep", this.original) : null;
     return new CodeDocument({
@@ -169,6 +170,7 @@ export default class CodeDocument {
       saveEncoding: changed ? null : this.saveEncoding,
       original: written === null ? null : originalOf(written),
       savedText,
+      fileBytes,
     });
   }
 

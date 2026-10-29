@@ -327,7 +327,7 @@ export default class CodeEditController {
       case "startEditor":
         this._editor ??= this._createEditor(this._editorHost());
         this._editor.start(this._document.text, this._history);
-        // NE-32: a file of slowEditBytes or more (its bytes, as the file info shows): one toast a document
+        // NE-32: a file of slowEditBytes or more (its size now, as the file info shows): one toast a document
         if (!this._toldSlow && this._document.fileBytes >= CONFIG.codeEdit.slowEditBytes) {
           this._toldSlow = true;
           this._host.toast(CONFIG.messages.codeEdit.slowEdit);
@@ -687,7 +687,7 @@ export default class CodeEditController {
     const { bytes, encoding } = encoded;
     const savedName = inPlace ? name : fileHandle.name;
     if (generation === this._generation) {
-      const saved = this._document.withSaved(text, savedName, lastModified, encoding);
+      const saved = this._document.withSaved(text, savedName, lastModified, encoding, bytes.length);
       // UTF-8 chosen: the document is UTF-8 now, nothing left to remember
       this._setDocument(remember === "original" && encoding === doc.encoding ? saved.withSaveEncoding("original") : saved);
       this._fileHandle = fileHandle;
