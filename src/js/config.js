@@ -1,3 +1,5 @@
+import { FILE_TYPES } from "./fileTypes.js";
+
 // ========================================
 // Configuration
 // ========================================
@@ -85,14 +87,16 @@ export const CONFIG = {
   pan: {
     activationThresholdPx: 5,
   },
-  // Updated: markdownExtensions only; all other files go to code view
+  // A dropped file (INV-11, INV-18): the file types that open are FILE_TYPES
+  // (spec 5.4); the extensions that open in the Markdown preview come from it.
   fileDrop: {
-    markdownExtensions: [".md"],
+    markdownExtensions: FILE_TYPES.filter((t) => t.open === "markdown").map((t) => t.match),
     maxBytes: 5 * 1024 * 1024,
     messages: {
       tooLarge: "This file is too big. The limit is 5 MB.",
       readError: "Couldn't read this file.",
-      binaryFile: "GRSMD can only open text files.",
+      binaryFile: "GRSMD can only open text files.", // the decoded text holds U+0000 (INV-18)
+      notAllowed: "GRSMD can't open this type of file. It opens only known text file types.", // not in FILE_TYPES (INV-18)
     },
   },
   // Every text the user sees from JS (R15). Toasts and confirms use
@@ -107,6 +111,11 @@ export const CONFIG = {
       timeout: (seconds) => `The PlantUML server didn't answer in ${seconds} seconds.`,
       serverError: "Couldn't get the diagram from the PlantUML server.",
       diagramAlt: "PlantUML Diagram", // alt of the server image
+    },
+    hiddenChars: {
+      // INV-101: the toast at open and on Reload, once, when there is at least one run
+      found: (count) =>
+        `Hidden characters in ${count} ${count === 1 ? "place" : "places"}. They are marked in the view.`,
     },
     externalImage: {
       // CON-12, INV-19: one fixed sentence; the hosts are on the placeholders
@@ -144,8 +153,8 @@ export const CONFIG = {
       "Get started:\n\n" +
       "  1. Paste Markdown (Ctrl+V)  ->  Markdown Preview                     \n" +
       "  2. Drop a .md file          ->  Markdown Preview                     \n" +
-      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)\n" +
-      "  4. Double-click a block     ->  Edit  (phone: press [Edit], tap)     ",
+      "  3. Drop a text/code file    ->  Code View  (known types: .py .js ...)\n" +
+      "  4. Double-click a block     ->  Edit  (touch or pen: [Edit], tap)    ",
     fileInfo: { // #fileInfo of the code view
       lines: (count) => `${count} lines`,
       size: (kb) => `${kb} KB`,
@@ -410,76 +419,16 @@ export const CONFIG = {
 // Constants
 // ========================================
 
-// File extension to highlight.js language ID mapping (FR-02, Sect 3.10)
-export const EXT_TO_HLJS = {
-  // Python
-  ".py": "python", ".pyw": "python",
-  // JavaScript / TypeScript
-  ".js": "javascript", ".mjs": "javascript", ".cjs": "javascript",
-  ".jsx": "javascript", ".ts": "typescript", ".tsx": "typescript",
-  // C / C++
-  ".c": "c", ".h": "c", ".cpp": "cpp", ".cc": "cpp",
-  ".cxx": "cpp", ".hpp": "cpp", ".hxx": "cpp",
-  // C# / Java
-  ".cs": "csharp", ".java": "java",
-  // Go / Rust / Swift / Kotlin / Scala
-  ".go": "go", ".rs": "rust", ".swift": "swift",
-  ".kt": "kotlin", ".kts": "kotlin", ".scala": "scala",
-  // Ruby / PHP / Perl
-  ".rb": "ruby", ".php": "php", ".pl": "perl", ".pm": "perl",
-  // Shell / PowerShell
-  ".sh": "bash", ".bash": "bash", ".zsh": "bash",
-  ".fish": "bash", ".ps1": "powershell", ".psm1": "powershell",
-  // Data / Config
-  ".json": "json", ".jsonc": "json", ".xml": "xml", ".svg": "xml",
-  ".html": "xml", ".htm": "xml", ".yaml": "yaml", ".yml": "yaml",
-  ".toml": "ini", ".ini": "ini", ".cfg": "ini", ".conf": "ini",
-  // Web styles
-  ".css": "css", ".scss": "scss", ".sass": "scss", ".less": "less",
-  // Database
-  ".sql": "sql",
-  // Functional / System / Other
-  ".r": "r", ".R": "r", ".lua": "lua",
-  ".ex": "elixir", ".exs": "elixir",
-  ".erl": "erlang", ".hrl": "erlang",
-  ".hs": "haskell", ".lhs": "haskell",
-  ".clj": "clojure", ".cljs": "clojure",
-  ".dart": "dart", ".groovy": "groovy", ".gradle": "groovy",
-  ".vim": "vim", ".tex": "latex",
-  ".diff": "diff", ".patch": "diff",
-  ".proto": "protobuf", ".graphql": "graphql", ".gql": "graphql",
-  // Plain text (no color)
-  ".txt": "plaintext", ".log": "plaintext",
-  ".csv": "plaintext", ".tsv": "plaintext",
-  ".md": "markdown", // normally routed to Markdown Preview
-  // Extensionless files matched by full filename
-  "Dockerfile": "dockerfile",
-  "Makefile": "makefile",
-  "GNUmakefile": "makefile",
-};
+// The file types GRSMD opens (INV-18, INV-102): generated from
+// spec/data/file-types.json by tools/fileTypes.mjs (spec 5.4).
+export { FILE_TYPES };
 
-// Binary file extensions blacklist (INV-18)
-// Files with these extensions are rejected without content inspection.
-export const BINARY_EXTENSIONS = new Set([
-  // Images
-  ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".svg", ".tiff", ".tif",
-  // Audio
-  ".mp3", ".wav", ".ogg", ".flac", ".aac", ".wma", ".m4a",
-  // Video
-  ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm",
-  // Archives
-  ".zip", ".tar", ".gz", ".bz2", ".7z", ".rar", ".xz",
-  // Executables / Libraries
-  ".exe", ".dll", ".so", ".dylib", ".bin", ".msi", ".dmg", ".app", ".deb", ".rpm",
-  // Documents (binary formats)
-  ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp",
-  // Compiled / Object
-  ".class", ".o", ".obj", ".pyc", ".pyo", ".wasm",
-  // Fonts
-  ".ttf", ".otf", ".woff", ".woff2", ".eot",
-  // Database
-  ".db", ".sqlite", ".sqlite3",
-]);
+/** Each file type by its match: an extension (lower case) or a whole file name. */
+export const FILE_TYPE_BY_MATCH = new Map(FILE_TYPES.map((t) => [t.match, t]));
+
+// The highlight.js language of each match that has one (FR-02, spec 5.3);
+// a file type of no colors is not in it.
+export const EXT_TO_HLJS = Object.fromEntries(FILE_TYPES.filter((t) => t.hljs !== null).map((t) => [t.match, t.hljs]));
 
 // FileSystemFileHandle availability check (CON-01): the receiver before the
 // core uses it too (earlyInput.js)

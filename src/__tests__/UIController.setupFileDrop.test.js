@@ -189,7 +189,7 @@ describe("UIController.setupFileDrop", () => {
     });
   });
 
-  it("AT-UI-74 rejects known binary extension (.png) with alert (INV-18 (3))", async () => {
+  it("AT-UI-74 rejects a file of no listed type (.png) with the notAllowed alert (INV-18; D29: no black list)", async () => {
     createController();
 
     const file = new File(["fakecontent"], "image.png", { type: "image/png" });
@@ -206,13 +206,13 @@ describe("UIController.setupFileDrop", () => {
 
     await vi.waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
-        expect.stringContaining("only open text files"),
+        expect.stringContaining("only known text file types"),
       );
     });
     expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
   });
 
-  it("AT-UI-74 accepts unknown text extension (.xyz) via null byte check (INV-18)", async () => {
+  it("AT-UI-74 rejects an unknown text extension (.xyz) too: no look at its bytes (INV-18, owner ruling AQ1)", async () => {
     createController();
 
     // File with only ASCII content (no null bytes)
@@ -224,16 +224,19 @@ describe("UIController.setupFileDrop", () => {
     document.dispatchEvent(event);
 
     await vi.waitFor(() => {
-      expect(mockOrchestrator.renderCodeView).toHaveBeenCalled();
+      expect(alertSpy).toHaveBeenCalledWith(
+        expect.stringContaining("only known text file types"),
+      );
     });
+    expect(mockOrchestrator.renderCodeView).not.toHaveBeenCalled();
   });
 
-  it("AT-UI-74 rejects unknown extension with null bytes as binary (INV-18)", async () => {
+  it("AT-UI-74 rejects a listed type (.txt) whose text holds U+0000 as binary (INV-18, owner ruling AQ11)", async () => {
     createController();
 
     // File containing a null byte
     const content = new Uint8Array([0x48, 0x65, 0x6c, 0x00, 0x6f]);
-    const file = new File([content], "data.xyz", { type: "application/octet-stream" });
+    const file = new File([content], "data.txt", { type: "application/octet-stream" });
     const event = new Event("drop", { bubbles: true, cancelable: true });
     event.preventDefault = vi.fn();
     Object.defineProperty(event, "dataTransfer", {

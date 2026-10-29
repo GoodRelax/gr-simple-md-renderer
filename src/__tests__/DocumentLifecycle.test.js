@@ -136,15 +136,16 @@ describe("AT-DLC Reload: reloadTarget / readFile / isStale (INV-21 Reload order:
     expect(documents.reloadTarget().location.fileHandle).toBe(handle);
   });
 
-  it("AT-DLC-08 readFile returns the file access's promise as it is; a read error rejects it, the session stays", async () => {
+  it("AT-DLC-08 readFile returns the file access's promise as it is, with the open check passed on (INV-18 on Reload); a read error rejects it, the session stays", async () => {
     const { access, documents } = setup();
     documents.openFile("# A\n", false, 1, "a.md", fakeFileHandle({ getFileError: domError("NotReadableError") }));
     const session = documents.session;
     const gate = deferred();
     const spy = vi.spyOn(access, "readFile").mockReturnValue(gate.promise);
     const target = documents.reloadTarget();
-    expect(documents.readFile(target)).toBe(gate.promise); // no await in between (one step for the caller)
-    expect(spy).toHaveBeenCalledWith(target.location.fileHandle);
+    const check = () => undefined;
+    expect(documents.readFile(target, check)).toBe(gate.promise); // no await in between (one step for the caller)
+    expect(spy).toHaveBeenCalledWith(target.location.fileHandle, check);
     spy.mockRestore();
     await expect(documents.readFile(target)).rejects.toThrow();
     expect(documents.session).toBe(session);

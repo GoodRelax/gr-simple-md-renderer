@@ -121,20 +121,20 @@ describe("UIController and the code document (SC-27; INV-85 (5), INV-89, INV-90,
     expect([bodyView(), app.codeEdit.hasDocument(), document.title]).toEqual(["view-markdown", false, BASE_TITLE]);
   });
 
-  it("AT-UI-80 Reload in the code view reads in the opened encoding; unsaved: asked first, Cancel reads nothing", async () => {
+  it("AT-UI-80 Reload in the code view reads in the opened encoding; unsaved: read first, then asked (INV-21 (2)-(4)), Cancel changes nothing", async () => {
     await start();
     dialog.askOpen.mockResolvedValue({ encoding: "shift_jis", lineEndingMode: "\n" });
     const handle = fakeFileHandle({ name: "a.txt", content: [sjis(`${A}\n`)] });
     await drop(sjis(`${A}\n`), "a.txt", handle);
     app.sourceFileRenderer.reload.mockImplementation(async (theme, isCurrent, readText) => {
-      await readText(new File([sjis(`${A}${A}\n`)], "a.txt", { lastModified: 3000 }));
+      if ((await readText(new File([sjis(`${A}${A}\n`)], "a.txt", { lastModified: 3000 }))) === null) return null;
       return { fileName: "a.txt", fileSize: 5, lineCount: 2, language: "plaintext", updatedAtStr: "y" };
     });
     app.codeEdit.updateText("typed\n");
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     await app.ui.handleReload();
     expect(confirm).toHaveBeenCalledTimes(1);
-    expect(app.sourceFileRenderer.reload).not.toHaveBeenCalled();
+    expect([app.codeEdit.currentText(), app.codeEdit.isDirty()]).toEqual(["typed\n", true]); // Cancel: nothing changes
     confirm.mockReturnValue(true);
     await app.ui.handleReload();
     expect([app.codeEdit.currentText(), app.codeEdit.isDirty(), dialog.askOpen.mock.calls.length]).toEqual([`${A}${A}\n`, false, 1]);

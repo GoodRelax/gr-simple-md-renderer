@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../js/config.js";
+import * as configModule from "../js/config.js";
+import { CONFIG, EXT_TO_HLJS, FILE_TYPES, FILE_SYSTEM_HANDLE_SUPPORTED } from "../js/config.js";
 
 describe("AT-CFG-11 INV-11, INV-18, CON-08: CONFIG file drop settings", () => {
   it("CONFIG.fileDrop.messages has no unused unsupportedType key", () => {
@@ -71,6 +72,7 @@ describe("CONFIG UI texts in plain English", () => {
     expect(CONFIG.fileDrop.messages.tooLarge).toBe("This file is too big. The limit is 5 MB.");
     expect(CONFIG.fileDrop.messages.readError).toBe("Couldn't read this file.");
     expect(CONFIG.fileDrop.messages.binaryFile).toBe("GRSMD can only open text files.");
+    expect(CONFIG.fileDrop.messages.notAllowed).toBe("GRSMD can't open this type of file. It opens only known text file types."); // AT-FT-04 INV-18
     expect(M.copy.failed).toBe("Couldn't copy. Select the text and press Ctrl+C (Mac: Cmd+C).");
     expect(M.copy.blocked).toBe("Your browser blocked copying. Select the text and press Ctrl+C (Mac: Cmd+C).");
     expect(E.externalChangeConfirm).toBe("Something outside GRSMD changed this file. Replace it with your version?");
@@ -106,7 +108,9 @@ describe("CONFIG UI texts in plain English", () => {
     expect(steps).toHaveLength(4);
     steps.forEach((line, i) => expect(line.startsWith(`  ${i + 1}. `), line).toBe(true));
     for (const line of steps) expect(line.length, line).toBe(71);
-    expect(steps[3].trimEnd()).toBe("  4. Double-click a block     ->  Edit  (phone: press [Edit], tap)");
+    expect(steps[3].trimEnd()).toBe("  4. Double-click a block     ->  Edit  (touch or pen: [Edit], tap)"); // AQ13
+    // INV-18: only the file types of the table open (no "any text file")
+    expect(steps[2]).toBe("  3. Drop a text/code file    ->  Code View  (known types: .py .js ...)");
   });
 
   it("AT-CFG-09 palette names (P01-P03, R5, R6)", () => {
@@ -160,23 +164,25 @@ describe("AT-CFG-12 INV-18, spec 5.3: EXT_TO_HLJS", () => {
   });
 });
 
-describe("AT-CFG-13 INV-18, spec 5.4: BINARY_EXTENSIONS", () => {
-  it("is a Set", () => {
-    expect(BINARY_EXTENSIONS).toBeInstanceOf(Set);
+describe("AT-CFG-13 INV-18, INV-102 (D29, owner rulings AQ1, AQ9): the file types come from FILE_TYPES; no black list", () => {
+  it("AT-FT-04 INV-102 BINARY_EXTENSIONS is gone (D29)", () => {
+    expect(configModule).not.toHaveProperty("BINARY_EXTENSIONS");
   });
 
-  it("contains common binary extensions", () => {
-    expect(BINARY_EXTENSIONS.has(".png")).toBe(true);
-    expect(BINARY_EXTENSIONS.has(".exe")).toBe(true);
-    expect(BINARY_EXTENSIONS.has(".pdf")).toBe(true);
-    expect(BINARY_EXTENSIONS.has(".zip")).toBe(true);
+  it("AT-FT-04 INV-102 markdownExtensions and EXT_TO_HLJS are made from FILE_TYPES", () => {
+    expect(CONFIG.fileDrop.markdownExtensions).toEqual([".md", ".markdown"]);
+    const colored = FILE_TYPES.filter((t) => t.hljs !== null);
+    expect(Object.keys(EXT_TO_HLJS)).toEqual(colored.map((t) => t.match));
+    for (const t of colored) expect(EXT_TO_HLJS[t.match], t.match).toBe(t.hljs);
   });
 
-  it("does not contain text extensions", () => {
-    expect(BINARY_EXTENSIONS.has(".py")).toBe(false);
-    expect(BINARY_EXTENSIONS.has(".js")).toBe(false);
-    expect(BINARY_EXTENSIONS.has(".md")).toBe(false);
-    expect(BINARY_EXTENSIONS.has(".txt")).toBe(false);
+  it("AT-FT-04 INV-102 the AQ9 additions: .vue .svelte as XML, .env .properties as INI, the others with no colors", () => {
+    expect([EXT_TO_HLJS[".vue"], EXT_TO_HLJS[".svelte"], EXT_TO_HLJS[".env"], EXT_TO_HLJS[".properties"]]).toEqual(["xml", "xml", "ini", "ini"]);
+    const byMatch = new Map(FILE_TYPES.map((t) => [t.match, t]));
+    for (const m of [".mmd", ".puml", ".plantuml", ".bat", ".cmd", ".rst", ".adoc", ".jsonl", ".gitignore", ".gitattributes", ".editorconfig", "LICENSE"]) {
+      expect(byMatch.get(m), m).toMatchObject({ open: "code", hljs: null });
+      expect(EXT_TO_HLJS, m).not.toHaveProperty(m);
+    }
   });
 });
 

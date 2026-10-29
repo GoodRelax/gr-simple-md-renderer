@@ -90,12 +90,19 @@ export async function setupApp({ fileAccess: fakeAccess, isApple = false, clipbo
       .map((line) => `<span class="code-line">${escapeHtml(line)}</span>`)
       .join("")}</div>`;
   };
+  let shownFile = null; // the file the fake code view shows (Reload reads it again)
   const sourceFileRenderer = {
     render: vi.fn(async (file, handle, theme, isCurrent, text) => {
+      shownFile = file;
       if (codeEditor && text !== undefined) drawCode(text);
       return meta;
     }),
-    reload: vi.fn().mockResolvedValue(meta),
+    // as SourceFileRenderer.reload: readText runs the caller's checks and
+    // questions (INV-21 (2)-(4)); null stops the reload
+    reload: vi.fn(async (theme, isCurrent, readText) => {
+      if (readText && shownFile && (await readText(shownFile)) === null) return null;
+      return meta;
+    }),
     destroy: vi.fn(),
     showText: vi.fn((text) => {
       if (codeEditor) drawCode(text);

@@ -90,6 +90,18 @@ describe("CodeEditController: opening (INV-89)", () => {
     expect(doc.original).toEqual({ lines: ["a", "b", "c"], endings: ["\r\n", "\n"] });
   });
 
+  it("AT-FT-13 INV-18 (AQ11) read: a decoded text with U+0000 gives \"binary\" before the dialog; the dialog's encoding with U+0000 too; nothing opened", async () => {
+    expect(await ctrl.read(file(Uint8Array.from([0x61, 0x00, 0x62])))).toBe("binary");
+    expect(await ctrl.read(file(Uint8Array.from([0xfe, 0xff, 0x00, 0x00])))).toBe("binary"); // UTF-16BE U+0000
+    expect(dialog.askOpen).not.toHaveBeenCalled();
+    dialog.askOpen.mockResolvedValue({ encoding: "utf-8", lineEndingMode: "\n" });
+    expect(await ctrl.read(file(Uint8Array.from([0xff, 0xfe, 0x61, 0x00])))).toBe("binary");
+    expect(dialog.askOpen).toHaveBeenCalledTimes(1);
+    expect(ctrl.hasDocument()).toBe(false);
+    dialog.askOpen.mockResolvedValue({ encoding: "utf-16le", lineEndingMode: "\n" });
+    expect((await ctrl.read(file(Uint8Array.from([0xff, 0xfe, 0x61, 0x00])))).text).toBe("a");
+  });
+
   it("AT-CEC-06 the dialog canceled: null, nothing opened", async () => {
     dialog.askOpen.mockResolvedValue(null);
     expect(await ctrl.read(file(sjis(`${A}\n`)))).toBeNull();

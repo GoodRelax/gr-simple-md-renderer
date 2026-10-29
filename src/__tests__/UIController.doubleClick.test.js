@@ -21,11 +21,10 @@ import BlockCaretMap from "../js/classes/BlockCaretMap.js";
 import { setupApp, dropEvent, settle } from "./helpers/appStack.js";
 import { pointer, keydown } from "./helpers/editDom.js";
 
-// INV-57: a double click on the preview outside edit mode enters edit mode
-// and opens what was double-clicked (11-c previewDoubleClicked). A pen
-// double tap does the same (like the mouse, while the owner is asked:
-// question 2-8). A touch double tap does not (owner ruling AQ3): the
-// browser's double-tap zoom stays; [Edit] and then a tap opens a block.
+// INV-57: a mouse double click on the preview outside edit mode enters edit
+// mode and opens what was double-clicked (11-c previewDoubleClicked). A touch
+// or pen double tap does not (owner rulings AQ3, AQ13: the pen is as touch):
+// the browser's double-tap zoom stays; [Edit] and then a tap opens a block.
 
 const DOC = "# Title\n\nHello [link](https://example.com/) word.\n\n| A | B |\n|---|---|\n| x | y |\n\n```mermaid\nflowchart TD\n  A --> B\n```\n";
 const isPara = (b) => b.type === "paragraph";
@@ -224,7 +223,7 @@ describe("AT-DBL INV-57 double click outside edit mode", () => {
     expect(app.blockEditor()).toBeNull();
   });
 
-  it("AT-DBL-18 INV-57 (review M3; AQ3 names touch only, the pen is asked of the owner: question 2-8): a pen double tap (and the browser's dblclick) enters edit mode and opens the block, as a mouse double click", async () => {
+  it("AT-DBL-18 INV-57 (owner ruling AQ13: the pen is as touch): a pen double tap (and the browser's dblclick) does not enter edit mode; [Edit] and then a pen tap opens the block", async () => {
     await withDocument();
     const p = app.block(isPara).el.firstElementChild;
     for (let i = 0; i < 2; i++) {
@@ -232,7 +231,12 @@ describe("AT-DBL INV-57 double click outside edit mode", () => {
       pointer(p, "pointerup", { pointerType: "pen" });
     }
     dblclick(p);
-    expect(app.ui.palette.isShown()).toBe(true);
+    expect(app.ui.palette.isShown()).toBe(false);
+    expect(app.blockEditor()).toBeNull();
+    app.elements.editBtn.click();
+    pointer(p, "pointerdown", { pointerType: "pen" });
+    pointer(p, "pointerup", { pointerType: "pen" });
+    p.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: 10, clientY: 10 }));
     expect(app.blockEditor()).not.toBeNull();
     expect(app.blockEditor().value).toBe(app.block(isPara).block.raw.trimEnd());
   });
@@ -295,7 +299,7 @@ describe("AT-DBL INV-57 double click outside edit mode", () => {
     expect(app.blockEditor()).not.toBeNull();
   });
 
-  it("AT-DBL-19 INV-31 (review M3; AQ3 names touch only, the pen is asked of the owner: question 2-8): initial state, empty #editor: a pen double tap starts an empty document, as a mouse double click", async () => {
+  it("AT-DBL-19 INV-31, INV-57 (owner ruling AQ13: the pen is as touch): initial state, empty #editor: a pen double tap starts no empty document", async () => {
     app = await setupApp();
     for (let i = 0; i < 2; i++) {
       pointer(app.preview, "pointerdown", { pointerType: "pen" });
@@ -303,9 +307,9 @@ describe("AT-DBL INV-57 double click outside edit mode", () => {
     }
     dblclick(app.preview);
     await settle();
-    expect(app.ui.palette.isShown()).toBe(true);
-    expect(app.blockEditor()).not.toBeNull();
-    expect(app.orchestrator.isPreRenderState()).toBe(false);
+    expect(app.ui.palette.isShown()).toBe(false);
+    expect(app.blockEditor()).toBeNull();
+    expect(app.orchestrator.isPreRenderState()).toBe(true);
   });
 
   it.each(["touch"])("AT-DBL-17 INV-31 (AQ3): initial state, empty #editor: a %s double tap starts no empty document", async (pointerType) => {

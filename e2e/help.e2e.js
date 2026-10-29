@@ -226,15 +226,15 @@ test.describe("the clipboard permission note (CON-12, INV-69)", () => {
   });
 });
 
-test.describe("how to start editing (owner ruling AQ4, INV-57, INV-29)", () => {
+test.describe("how to start editing (owner rulings AQ4, AQ13, INV-57, INV-29)", () => {
   const LINES = {
-    en: "Double-click the preview to enter edit mode and open that block. On a phone or tablet, press [Edit], then tap a block.",
-    ja: "\u30d7\u30ec\u30d3\u30e5\u30fc\u3092\u30c0\u30d6\u30eb\u30af\u30ea\u30c3\u30af\u3059\u308b\u3068\u3001\u7de8\u96c6\u30e2\u30fc\u30c9\u306b\u5165\u308a\u3001\u305d\u306e\u30d6\u30ed\u30c3\u30af\u3092\u958b\u304d\u307e\u3059\u3002\u30b9\u30de\u30fc\u30c8\u30d5\u30a9\u30f3\u3084\u30bf\u30d6\u30ec\u30c3\u30c8\u3067\u306f\u3001[Edit] \u3092\u62bc\u3057\u3066\u304b\u3089\u30d6\u30ed\u30c3\u30af\u3092\u30bf\u30c3\u30d7\u3057\u307e\u3059\u3002",
+    en: "With a mouse, double-click the preview to enter edit mode and open that block. With touch or a pen, press [Edit], then tap a block.",
+    ja: "\u30de\u30a6\u30b9\u3067\u306f\u3001\u30d7\u30ec\u30d3\u30e5\u30fc\u3092\u30c0\u30d6\u30eb\u30af\u30ea\u30c3\u30af\u3059\u308b\u3068\u3001\u7de8\u96c6\u30e2\u30fc\u30c9\u306b\u5165\u308a\u3001\u305d\u306e\u30d6\u30ed\u30c3\u30af\u3092\u958b\u304d\u307e\u3059\u3002\u30bf\u30c3\u30c1\u3084\u30da\u30f3\u3067\u306f\u3001[Edit] \u3092\u62bc\u3057\u3066\u304b\u3089\u30d6\u30ed\u30c3\u30af\u3092\u30bf\u30c3\u30d7\u3057\u307e\u3059\u3002",
   };
 
-  test("AT-HLP-12 FS-10, INV-29, INV-57 (AQ4): Details has the line right after the [Edit] row in both languages; the start screen has its 4th step", async ({ page }) => {
+  test("AT-HLP-12 FS-10, INV-29, INV-57 (AQ4, AQ13: the pen is as touch): Details has the line right after the [Edit] row in both languages; the start screen has its 4th step", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("#affordanceText")).toContainText("4. Double-click a block     ->  Edit  (phone: press [Edit], tap)");
+    await expect(page.locator("#affordanceText")).toContainText("4. Double-click a block     ->  Edit  (touch or pen: [Edit], tap)");
     await openHelp(page);
     for (const lang of ["en", "ja"]) {
       if (lang === "ja") await langButton(page, "ja").click();

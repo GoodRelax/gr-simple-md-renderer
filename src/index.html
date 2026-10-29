@@ -176,10 +176,11 @@
             <p>Any of the following triggers an automatic preview:</p>
             <ol>
               <li>Paste text anywhere on the page (Ctrl+V / Cmd+V)</li>
-              <li>Drop a <code>.md</code> file anywhere on the page</li>
+              <li>Drop a <code>.md</code> or <code>.markdown</code> file anywhere on the page</li>
               <li>
-                Drop any text-based file (<code>.py</code>, <code>.js</code>,
-                <code>.c</code>, etc.) for Code View.<br />
+                Drop a text file of another known type (<code>.py</code>, <code>.js</code>,
+                <code>.json</code>, <code>.txt</code>, etc.) for Code View. Files of other
+                types are refused.<br />
                 <small>Note: Syntax highlighting uses the highlight.js common bundle.
                 Some languages (e.g. Dockerfile, Scala, PowerShell) may not be highlighted.</small>
               </li>
@@ -229,8 +230,8 @@
               <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
               <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette</li>
               <li>
-                Double-click the preview to enter edit mode and open that block. On a phone or tablet, press
-                <code>[Edit]</code>, then tap a block.
+                With a mouse, double-click the preview to enter edit mode and open that block. With touch or a
+                pen, press <code>[Edit]</code>, then tap a block.
               </li>
               <li>
                 <code>Esc</code> : Apply the open block or cell and close it.
@@ -396,10 +397,10 @@
             <ol>
               <li>ページ上のどこかにテキストをペースト（Ctrl+V / Cmd+V）</li>
               <li>
-                <code>.md</code> ファイルをページ上のどこかにドラッグ＆ドロップ
+                <code>.md</code> か <code>.markdown</code> のファイルをページ上のどこかにドラッグ＆ドロップ
               </li>
               <li>
-                テキスト系ファイル（<code>.py</code>、<code>.js</code>、<code>.c</code> 等）をドロップするとコードビューで表示。<br />
+                ほかの決まった種類のテキスト系ファイル（<code>.py</code>、<code>.js</code>、<code>.json</code>、<code>.txt</code> 等）をドロップするとコードビューで表示。ほかの種類のファイルは断ります。<br />
                 <small>※ シンタックスハイライトは highlight.js common バンドルを使用。
                 一部の言語（Dockerfile, Scala, PowerShell 等）はハイライトされない場合があります。</small>
               </li>
@@ -438,7 +439,7 @@
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
               <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
               <li>
-                プレビューをダブルクリックすると、編集モードに入り、そのブロックを開きます。スマートフォンやタブレットでは、<code>[Edit]</code> を押してからブロックをタップします。
+                マウスでは、プレビューをダブルクリックすると、編集モードに入り、そのブロックを開きます。タッチやペンでは、<code>[Edit]</code> を押してからブロックをタップします。
               </li>
               <li>
                 <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。ブロックを選んでいれば、まず選択を解きます。何も開いていなければ、編集パレットを隠します。編集パレットも出ていなければ、検索、目次の順に隠します。コードビューの入力欄の中では入力欄から抜けるだけで、外では [Commands]、検索、目次の順に隠します。

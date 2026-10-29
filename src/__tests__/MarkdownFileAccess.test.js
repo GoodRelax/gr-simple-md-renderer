@@ -98,6 +98,22 @@ describe("MarkdownFileAccess (Adapter: local file read/write, no network)", () =
     expect(loaded.lastModified).toBe(4242);
   });
 
+  it("AT-FT-21 INV-18 (1)(4), INV-21 Reload: readFile gives the file to check before its text is read; a refusal stops the read", async () => {
+    const handle = fakeFileHandle({ name: "doc.md", content: ["# A\n"] });
+    const seen = [];
+    const text = vi.spyOn(Blob.prototype, "text");
+    await new MarkdownFileAccess(window).readFile(handle, (file) => seen.push([file.name, file.size, text.mock.calls.length]));
+    expect(seen).toEqual([["doc.md", 4, 0]]); // name and size, before any text was read
+    text.mockClear();
+    const refused = new Error("refused");
+    await expect(
+      new MarkdownFileAccess(window).readFile(handle, () => {
+        throw refused;
+      }),
+    ).rejects.toBe(refused);
+    expect(text).not.toHaveBeenCalled();
+  });
+
   it("AT-FA-05 readLastModified returns getFile().lastModified and lets NotFoundError through", async () => {
     const access = new MarkdownFileAccess(window);
     await expect(access.readLastModified(fakeFileHandle({ lastModified: 77 }))).resolves.toBe(77);

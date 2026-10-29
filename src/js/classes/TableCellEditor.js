@@ -358,6 +358,9 @@ export default class TableCellEditor {
     const raw = parsed.rows[row][col];
     // the cell moved since it was pressed: the point moves with it
     const point = caret && typeof caret.top === "number" ? { x: caret.x, y: caret.y + element.getBoundingClientRect().top - caret.top } : caret;
+    // the hidden character marks go first: the cell is read and compared
+    // without them, and shows the INV-70 marks only (INV-101 (7), INV-63)
+    this.renderer.unmarkHiddenChars?.(element);
     const saved = [...element.childNodes];
     const opened = this._wysiwygCopy(element, raw);
     // literals: URL texts taken off a link here, kept text when written (INV-69)
@@ -405,6 +408,7 @@ export default class TableCellEditor {
       this.orchestrator.writeHeldInterior(this._session.blockId, () => {
         element.innerHTML = this.renderer.inlineHtml(text, links);
         this.renderer.applyImageGate(element);
+        this.renderer.markHiddenChars?.(element); // INV-101 (4)
       });
     }
     return true;
@@ -450,6 +454,7 @@ export default class TableCellEditor {
       if (!table) return;
       old.replaceWith(table);
       this.renderer.applyImageGate(table);
+      this.renderer.markHiddenChars?.(table); // INV-101 (4)
     });
     return from ? TableCellEditor.cellAfter(op, from) : null;
   }
@@ -981,8 +986,12 @@ export default class TableCellEditor {
     this._setEditable(element, false);
     element.classList.remove(EDITING_CLASS, RAW_CLASS);
     if (element.getAttribute("class") === "") element.removeAttribute("class");
-    if (restore) element.replaceChildren(...cell.saved);
-    else this._unmark(element);
+    if (restore) {
+      element.replaceChildren(...cell.saved);
+      this.renderer.markHiddenChars?.(element); // taken out when it opened (INV-101 (4))
+    } else {
+      this._unmark(element);
+    }
     this.editGeneration++;
   }
 

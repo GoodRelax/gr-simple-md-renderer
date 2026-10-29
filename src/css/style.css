@@ -1532,6 +1532,36 @@ body.view-code.dark #editor {
   box-shadow: 0 0 0 1px #bb800926;
 }
 
+/* Hidden character marks (INV-101, spec 5.21.4): an empty element right
+   before each run in the preview and the code view; the label is generated
+   content, so copy, search and a cell's text never see it. A frame in the
+   color of the text around it, in both themes; printed too (not in the
+   print rules that hide things). The brackets are U+27EA and U+27EB. The
+   mark is isolated, so a direction override in the text around it does
+   not turn its label around. */
+.grsmd-hidden-mark {
+  unicode-bidi: isolate;
+  direction: ltr;
+}
+
+.grsmd-hidden-mark::before {
+  content: "\27EA" attr(data-label) "\27EB";
+  display: inline;
+  margin: 0 1px;
+  padding: 0 2px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: transparent;
+  color: currentColor;
+  font-family: monospace;
+  font-size: 0.75em;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  white-space: pre-wrap;
+  user-select: none;
+}
+
 /* Table cells (INV-62, 7.1): the "Markdown" tab of a table block (shown in
    edit mode only; on touch it is always there, there is no hover), the
    open cell, and a cell opened as its text. The classes are for the look

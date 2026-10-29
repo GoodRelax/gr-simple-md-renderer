@@ -167,10 +167,11 @@ export default class DocumentLifecycle {
    * as the read itself.
    * @purity non-pure
    * @param {{location: DocumentLocation}} target - from reloadTarget()
+   * @param {(file: File) => void} [check] - before the content is read (INV-18 on Reload)
    * @returns {Promise<{bytesHead: Uint8Array, text: string, lastModified: number}>}
    */
-  readFile(target) {
-    return this.fileAccess.readFile(target.location.fileHandle);
+  readFile(target, check) {
+    return this.fileAccess.readFile(target.location.fileHandle, check);
   }
 
   /**
