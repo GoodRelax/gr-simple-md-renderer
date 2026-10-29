@@ -10,6 +10,10 @@ const returnFocus = new WeakMap();
 // click outside): the code file dialogs answer "canceled" then (INV-89).
 const hideListeners = new WeakMap();
 
+// The open modals, the last one on top. Only the top one takes the keys, so
+// Esc closes the GitHub help and leaves the help under it open.
+const openModals = [];
+
 export default class ModalController {
   /**
    * Close on the close controls and on a click outside the content. While the
@@ -37,7 +41,7 @@ export default class ModalController {
     });
     /** @purity non-pure */
     const onKeydown = (event) => {
-      if (!ModalController.isOpen(modal)) return;
+      if (!ModalController.isOpen(modal) || openModals.at(-1) !== modal) return;
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       event.stopPropagation();
       if (event.key === "Escape") {
@@ -97,6 +101,7 @@ export default class ModalController {
   static show(modal, opener = document.activeElement) {
     if (opener && opener !== document.body) returnFocus.set(modal, opener);
     modal.style.display = "block";
+    if (!openModals.includes(modal)) openModals.push(modal);
     const target =
       modal.querySelector('[aria-pressed="true"]:not([hidden])') ?? modal.querySelector(".close-btn");
     target?.focus();
@@ -112,6 +117,8 @@ export default class ModalController {
   static hide(modal) {
     const wasOpen = ModalController.isOpen(modal);
     modal.style.display = "none";
+    const at = openModals.indexOf(modal);
+    if (at >= 0) openModals.splice(at, 1);
     const opener = returnFocus.get(modal);
     returnFocus.delete(modal);
     const active = document.activeElement;

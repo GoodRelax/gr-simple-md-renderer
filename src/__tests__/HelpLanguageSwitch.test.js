@@ -208,3 +208,81 @@ describe("help markup in src/index.html (AT-HLP-05, AT-HLP-06, AT-HLP-14)", () =
     expect(ja).toContain("\u6642\u9593\u304c\u304b\u304b\u308a\u307e\u3059");
   });
 });
+
+describe("the GitHub help layer in src/index.html (AT-HLP-15, AT-HLP-16)", () => {
+  const doc = () => new DOMParser().parseFromString(INDEX_HTML, "text/html");
+  const layerBody = (d, lang) => d.querySelector(`#githubHelpModal .help-body[lang="${lang}"]`);
+  const text = (el) => el.textContent.replace(/\s+/g, " ");
+  // "GitHub no fairu wo henshuu shi komitto suru houhou" (GHH-9)
+  const JA_ENTRY = "GitHub\u306e\u30d5\u30a1\u30a4\u30eb\u3092\u7de8\u96c6\u3057\u30b3\u30df\u30c3\u30c8\u3059\u308b\u65b9\u6cd5";
+
+  it("AT-HLP-15 FS-25, GHH-9, D33: each help body has one entry button under the download box, and Details has the [Open GitHub] / O line", () => {
+    const modal = helpModal();
+    const entry = (lang) => [...body(modal, lang).querySelectorAll("[data-open-github-help]")];
+    expect(entry("en").map((el) => el.textContent.trim())).toEqual(["How to Edit and Commit Files on GitHub"]);
+    expect(entry("ja").map((el) => el.textContent.trim())).toEqual([JA_ENTRY]);
+    for (const lang of ["en", "ja"]) {
+      const button = entry(lang)[0];
+      expect(button.tagName).toBe("BUTTON");
+      expect(button.getAttribute("type")).toBe("button");
+      expect(button.previousElementSibling.classList.contains("help-download"), lang).toBe(true);
+      const line = [...body(modal, lang).querySelectorAll('[data-help-section="details"] li')].filter((li) =>
+        li.textContent.startsWith("[Open GitHub] / O :"),
+      );
+      expect(line, lang).toHaveLength(1);
+      expect(line[0].textContent).toContain("[Push to GitHub]");
+      expect(line[0].textContent).toContain("Chrome / Edge");
+    }
+  });
+
+  it("AT-HLP-16 FS-25, INV-103: the layer has the title row, two bodies (English first) and the as-of line", () => {
+    const d = doc();
+    const layer = d.getElementById("githubHelpModal");
+    expect(layer.classList.contains("modal")).toBe(true);
+    expect(layer.querySelector(".help-head h2").textContent).toBe("How to Edit and Commit Files on GitHub");
+    expect([...layer.querySelectorAll("[data-help-lang]")].map((el) => el.dataset.helpLang)).toEqual(["en", "ja"]);
+    expect(layer.querySelectorAll(".help-head .close-btn")).toHaveLength(1);
+    expect([...layer.querySelectorAll(".help-body")].map((el) => [el.lang, el.hidden])).toEqual([
+      ["en", false],
+      ["ja", true],
+    ]);
+    expect(text(layerBody(d, "en"))).toContain("Based on GitHub's screens as of October 2026.");
+    // "2026 nen 10 gatsu jiten" (as of October 2026; GHH-1)
+    expect(text(layerBody(d, "ja"))).toContain("2026 \u5e74 10 \u6708\u6642\u70b9");
+    // the same steps in each language
+    const steps = (lang) => layerBody(d, lang).querySelectorAll("ol.gh-steps > li").length;
+    expect(steps("en")).toBeGreaterThan(0);
+    expect(steps("ja")).toBe(steps("en"));
+    // the unchecked menu names are marked until the owner checks them (GHH-8)
+    expect(text(layerBody(d, "en"))).toContain("(TBD)");
+    expect(text(layerBody(d, "ja"))).toContain("\uff08\u4eee\uff09"); // "(kari)": provisional
+    // D34: there is no [Saved] button any more
+    expect(layer.textContent).not.toMatch(/\bSaved\b/);
+  });
+
+  it("AT-HLP-16 INV-103, GHH-5: the figures are inline SVG symbols drawn once, used by both languages, numbered 1 to 19 over all figures", () => {
+    const d = doc();
+    const layer = d.getElementById("githubHelpModal");
+    const symbols = new Map([...d.querySelectorAll("svg.ghf-defs > symbol")].map((s) => [s.id, s]));
+    expect(symbols.size).toBe(6);
+    const usesOf = (lang) => [...layerBody(d, lang).querySelectorAll("svg.ghf use")].map((u) => u.getAttribute("href").slice(1));
+    for (const lang of ["en", "ja"]) {
+      expect(new Set(usesOf(lang)), lang).toEqual(new Set(symbols.keys()));
+      for (const svg of layerBody(d, lang).querySelectorAll("svg.ghf")) {
+        expect(svg.getAttribute("role")).toBe("img");
+        expect(svg.getAttribute("aria-label")).toBeTruthy();
+      }
+    }
+    expect(usesOf("ja")).toEqual(usesOf("en"));
+    const numbers = [...d.querySelectorAll("svg.ghf-defs text.ghf-num")].map((t) => Number(t.textContent));
+    expect(numbers.sort((a, b) => a - b)).toEqual(Array.from({ length: 19 }, (_, i) => i + 1));
+    // no images, no other files and nothing fetched: the only link is the token page, opened by the user
+    expect(layer.querySelectorAll("img, image, iframe, object, embed, script, link")).toHaveLength(0);
+    expect(d.querySelectorAll("svg.ghf-defs image, svg.ghf-defs [href^='http']")).toHaveLength(0);
+    for (const a of layer.querySelectorAll("a[href]")) {
+      expect(a.getAttribute("href")).toBe("https://github.com/settings/personal-access-tokens");
+      expect(a.getAttribute("target")).toBe("_blank");
+      expect(a.getAttribute("rel")).toBe("noopener noreferrer");
+    }
+  });
+});

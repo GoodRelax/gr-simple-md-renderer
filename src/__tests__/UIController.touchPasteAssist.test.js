@@ -73,6 +73,7 @@ describe("AT-TPA-01 FS-16: Touch paste assist via editor.focus()", () => {
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
+      githubHelpModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),
       copyPromptBtn: document.createElement("button"),

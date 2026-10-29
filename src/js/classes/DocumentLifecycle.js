@@ -5,25 +5,40 @@ import { cell } from "../stateTable.js";
 
 /**
  * Spec 11-e: event -> current state -> cell (null = no change). Only the save
- * in progress is a state; "unsaved" is derived (UIController._isDocumentDirty).
+ * or the push in progress is a state; "unsaved" is derived
+ * (UIController._isDocumentDirty). A push (SC-28, INV-96 (4)) refuses saves,
+ * another push and replaces as a save does (INV-54).
  */
 export const saveOperationStateMachine = Object.freeze({
   saveRequested: Object.freeze({
     idle: cell("writingFile", ["startPermissionRequest", "commitOpenBlock", "applyEditorText", "runSaveDocument"]),
     writingFile: null,
+    pushing: null,
   }),
   saveAsRequested: Object.freeze({
     idle: cell("writingFile", ["startSavePicker", "commitOpenBlock", "applyEditorText", "runSaveDocumentAs"]),
     writingFile: null,
+    pushing: null,
   }),
   fileWritten: Object.freeze({
     idle: null,
     writingFile: cell("idle", ["applyOutcomeIfSameDocument", "refreshDirtyMark", "showSavedToast"]),
+    pushing: null,
   }),
-  downloadStarted: Object.freeze({ idle: null, writingFile: cell("idle", ["showDownloadStartedToast"]) }),
-  writeFailed: Object.freeze({ idle: null, writingFile: cell("idle", ["showErrorToast"]) }),
-  saveCanceled: Object.freeze({ idle: null, writingFile: cell("idle", []) }),
-  replaceRequested: Object.freeze({ idle: null, writingFile: cell("writingFile", ["rejectReplace", "showSavingToast"]) }),
+  downloadStarted: Object.freeze({ idle: null, writingFile: cell("idle", ["showDownloadStartedToast"]), pushing: null }),
+  writeFailed: Object.freeze({ idle: null, writingFile: cell("idle", ["showErrorToast"]), pushing: null }),
+  saveCanceled: Object.freeze({ idle: null, writingFile: cell("idle", []), pushing: null }),
+  replaceRequested: Object.freeze({
+    idle: null,
+    writingFile: cell("writingFile", ["rejectReplace", "showSavingToast"]),
+    pushing: cell("pushing", ["rejectReplace", "showSavingToast"]),
+  }),
+  pushRequested: Object.freeze({ idle: cell("pushing", ["runPush"]), writingFile: null, pushing: null }),
+  pushFinished: Object.freeze({
+    idle: null,
+    writingFile: null,
+    pushing: cell("idle", ["applyPushIfSameDocument", "refreshDirtyMark", "showPushedToast"]),
+  }),
 });
 
 // SaveOutcome.status -> 11-e event
@@ -68,6 +83,7 @@ export default class DocumentLifecycle {
     this._location = null; // DocumentLocation
     this._nextDocumentId = 1;
     this._saveOperationState = "idle"; // 11-e
+    this._gitHub = null; // GitHubLink: the GitHub version beside the local target (SC-28)
   }
 
   /**
@@ -88,7 +104,15 @@ export default class DocumentLifecycle {
 
   /**
    * @purity semi-pure-b
-   * @returns {"idle"|"writingFile"}
+   * @returns {GitHubLink|null}
+   */
+  get gitHub() {
+    return this._gitHub;
+  }
+
+  /**
+   * @purity semi-pure-b
+   * @returns {"idle"|"writingFile"|"pushing"}
    */
   get saveOperationState() {
     return this._saveOperationState;
@@ -122,7 +146,7 @@ export default class DocumentLifecycle {
   }
 
   /**
-   * INV-54: a document is not rebuilt while a save is running.
+   * INV-54: a document is not rebuilt while a save or a push is running.
    * @purity semi-pure-b
    * @returns {boolean}
    */
@@ -141,11 +165,81 @@ export default class DocumentLifecycle {
    * @param {number} lastModified
    * @param {string} fileName
    * @param {object|null} fileHandle
+   * @param {boolean} [keepGitHub] - "replace and keep the GitHub link" (SC-28, D6)
    */
-  openFile(fileText, hasBom, lastModified, fileName, fileHandle) {
+  openFile(fileText, hasBom, lastModified, fileName, fileHandle, keepGitHub = false) {
     this._session = DocumentSession.fromFileText(fileText, hasBom, lastModified, this._newDocumentId());
     this._location = new DocumentLocation(fileName, fileHandle);
+    if (!keepGitHub) this._gitHub = null;
     this.fileAccess.noteFile(fileHandle);
+  }
+
+  /**
+   * A file opened from GitHub (SC-28): a new session; the local
+   * target has the file's name and no handle, so the first Save asks where.
+   * @purity non-pure
+   * @param {string} fileText - without the BOM
+   * @param {boolean} hasBom
+   * @param {GitHubLink} link
+   */
+  openGitHub(fileText, hasBom, link) {
+    this._session = DocumentSession.fromFileText(fileText, hasBom, null, this._newDocumentId());
+    this._location = new DocumentLocation(link.ref.fileName(), null);
+    this._gitHub = link;
+  }
+
+  /**
+   * Reload of a GitHub document: a new session from GitHub; the local target stays.
+   * @purity non-pure
+   * @param {string} fileText - without the BOM
+   * @param {boolean} hasBom
+   * @param {GitHubLink} link
+   */
+  reloadGitHub(fileText, hasBom, link) {
+    this._session = DocumentSession.fromFileText(fileText, hasBom, this._session?.baselineLastModified ?? null, this._newDocumentId());
+    this._gitHub = link;
+  }
+
+  /**
+   * The file a push sends: the body with the session's wrapper, line ending and BOM.
+   * @purity semi-pure-b
+   * @param {string} bodyText
+   * @returns {string|null} null without a session
+   */
+  fileTextOf(bodyText) {
+    return this._session ? this._session.toFileText(bodyText) : null;
+  }
+
+  /**
+   * A push starts (11-e pushRequested; refused while a save or another
+   * push runs).
+   * @purity non-pure
+   * @returns {{documentId: number}|null}
+   */
+  startPush() {
+    const next = saveOperationStateMachine.pushRequested[this._saveOperationState];
+    if (!next || !this._session || !this._gitHub) return null;
+    this._saveOperationState = next.to;
+    return { documentId: this._session.documentId };
+  }
+
+  /**
+   * A push ended. On success the GitHub link moves to the pushed version and
+   * the unsaved mark drops (D8: either Save or push keeps the text); the
+   * local file time stays the baseline of the next Save (INV-39).
+   * @purity non-pure
+   * @param {{documentId: number}} started - from startPush
+   * @param {{link: GitHubLink, bodyText: string}|null} pushed - null when it failed
+   * @returns {boolean} true when it was applied to the current document
+   */
+  finishPush(started, pushed) {
+    const next = saveOperationStateMachine.pushFinished[this._saveOperationState];
+    if (!next) return false;
+    this._saveOperationState = next.to;
+    if (!pushed || !this._session || this._session.documentId !== started.documentId) return false;
+    this._session = this._session.withSaved(pushed.bodyText, this._session.baselineLastModified);
+    this._gitHub = pushed.link;
+    return true;
   }
 
   /**
@@ -210,6 +304,7 @@ export default class DocumentLifecycle {
   startPasted(bodyText) {
     this._session = DocumentSession.fromPastedText(bodyText, this._newDocumentId());
     this._location = null;
+    this._gitHub = null;
   }
 
   /**
@@ -219,6 +314,7 @@ export default class DocumentLifecycle {
   close() {
     this._session = null;
     this._location = null;
+    this._gitHub = null;
   }
 
   // ---- 11-e: save ----

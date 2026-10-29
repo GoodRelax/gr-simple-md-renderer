@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.29
+**バージョン:** 2.32
 **日付:** 2026-10-30 (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -71,6 +71,12 @@
 > v2.28 の変更 (2026-10-29、.md 以外のファイルの編集に develop を取り込んだ): develop の v2.20〜v2.24 と版の番号がぶつかったので、.md 以外のファイルの編集の 3 つの変更を v2.25〜v2.27 にした。develop のセクション AH (印刷) とぶつかったので、.md 以外のファイルの編集のセクションを AJ (PRT-AJ01〜AJ18) にした。develop が番号を付けた試験とぶつかったので、この機能の試験を AT-UI-75〜106 (旧 70〜101)、AT-SFR-08〜14 (旧 02〜08)、AT-PAL-39〜41 (旧 37〜39)、AT-HLP-13 (旧 12) にした (試験の中身は同じ)。上の注の番号も新しい番号で書いている。あわせて、オーナーの裁定 NE-33 (gzip の上限を 1,490 kB) で入れられるようになった NE-32 のヘルプの 1 文 (200 KB 以上のファイルは表示や編集に時間がかかる。英日) に合わせて、PRT-AJ17 の期待結果に足し、AT-HLP-14 を足した。
 
 > v2.29 の変更 (2026-10-30、.md 以外のファイルの編集のレビュー (3 回目) の直し): PRT-R01 の手順 9 のコンソールの確かめにセクション AJ を足し (P2)、並びに抜けていた develop のセクション AI も足して、範囲と並びを合わせた (調整役の裁定)。仕様の INV-85 (9) で NE-32 のトーストの大きさを今のファイルの大きさ (Save の後は書いたバイト数) に決めたのに合わせて (P4)、AT-CEC-50 を足し、AT-CDOC-07 に大きさの確かめを足した。
+
+> v2.30 の変更 (2026-10-29、GitHub 連携): 仕様の SC-28・INV-93〜INV-100・CON-16・FS-24・5.20 (新) と INV-20・CON-12 の改めに合わせて、セクション AK (PRT-AK01〜AK09) を追加した。AT に AT-GH (新。01〜06、08〜10) を足し、直した既存の試験を AT.2 の後に書いた。e2e に gitHub.e2e.js を足した。
+
+> v2.31 の変更 (2026-10-29、GitHub 連携のレビュー (1 回目) の直し): 仕様の 11-e (`pushing`)・INV-58・INV-93 (5)・INV-94 (6)・INV-96 (4)(6)・CON-16 (2)(4)・5.20.4〜5.20.6 の改めに合わせて、AT-GH を 01〜06、08〜13 に改めた (05 に 422・429・`x-ratelimit-reset`・409・`pushUnknown`、06 に 11-e の push の交点、10 に同意までの画像の保留を足し、11〜13 を足した。レビューの L1〜L3・L7)。AT-SSM を 27 の交点に改め、09 を足した (M2)。e2e の gitHub.e2e.js を 5 件にし (画面の中の主 + S。M3)、試験の名前に要求の ID を付け (L5)、Push のトーストの 6 秒を Playwright の時計で確かめる形にした (L6)。
+
+> v2.32 の変更 (2026-10-30、GitHub 連携に develop を取り込んだ): develop の v2.20〜v2.29 と版の番号がぶつかったので、GitHub 連携の 2 つの変更を v2.30・v2.31 にした。develop のセクション AH (印刷の配置) とぶつかったので、GitHub 連携のセクションを AK (PRT-AK01〜AK09) にし、仕様の番号の振り直し (SC-28・INV-93〜INV-100・FS-24・5.20) に合わせて書き直した。PRT-R01 の手順 9 のコンソールの確かめにセクション AK を足した。AT-GH-08 にコードビューのキーのヒント (`[P] Commands;` の後の `[O] GitHub;`、Mac の折りたたみのキー) を、AT-GH-11 にコードの文書を表示している間に GitHub のファイルを開く場合を足した。 同じ日に、GitHub の編集のヘルプ (仕様の FS-25・INV-103・5.20.7。オーナーの裁定 GHH-1〜GHH-9) に合わせて、セクション AK に PRT-AK10 (ヘルプだけを見て GitHub 連携を使う) と PRT-AK11 (iPad ではヘルプの入口も出さない) を足した。AT-HLP を 01〜19 にし (15・16: 入口と層の HTML と図、17: 重なったモーダルのキー、18・19: e2e)、e2e の help.e2e.js に 3 件を足した (版の番号は監査の v2.33 とぶつかるので取らない。調整役の裁定 2026-10-30)。 同じ日に、レビュー (3 回目) の直しで、gitHub.e2e.js の行に [Open GitHub] がフレームの中とタッチの端末で出ないこと (INV-100) を足して全 7 件にし、PRT-AK07 の備考に自動の試験を書き、v2.30 の注の「セクション AH」を AK に直した (L1・L2)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -1247,7 +1253,7 @@
 |              | 6. `c` キーでクリア                        |
 |              | 7. `sample-data.md` を D&D                 |
 |              | 8. `sample-data-2.md` を D&D し、[Edit] でパレットを表示して、段落の編集・確定・Undo・Esc での反映・Redo を行い、すき間の点線から段落を 1 つ入れる |
-|              | 9. 上記全操作中と、セクション U〜AJ (U / V / W / X / Y / Z / AA / AB / AC / AD / AE / AF / AG / AH / AI / AJ) を実施した後にコンソールを確認 |
+|              | 9. 上記全操作中と、セクション U〜AK (U / V / W / X / Y / Z / AA / AB / AC / AD / AE / AF / AG / AH / AI / AJ / AK) を実施した後にコンソールを確認 |
 | **期待結果** | - JavaScript エラーが表示されない          |
 |              | - CSP 違反が表示されない                   |
 
@@ -5164,6 +5170,224 @@ SC-27・INV-85〜INV-92、INV-80 (1)(5)(6)、FS-23、仕様 5.19。オーナー�
 
 ---
 
+## セクション AK: GitHub 連携 (2026-10-29)
+
+SC-28、INV-93〜INV-100、CON-16 (仕様 5.20)。GitHub の編集のヘルプは FS-25・INV-103 (仕様 5.20.7。PRT-AK10・AK11)。オーナーが PC で行う。本物の GitHub での試し (PRT-AK01〜AK04、AK08、AK09) は、本実装の後、beta3 の手で行う試験で行う (裁定 D32)。捨ててよいリポジトリと、そのリポジトリだけの fine-grained の PAT (Contents: Read and write、期限は短く) をオーナーが用意し、オーナーが操作する。Claude は PAT を入れない。
+
+---
+
+### PRT-AK01: 本物の GitHub で開いて、直して、push する
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC の Chrome または Edge。捨ててよい公開のリポジトリの `.md` と、そのリポジトリだけの fine-grained の PAT |
+| **手順** | 1. [Open GitHub] を押し、Token の欄に PAT を貼り、ファイルの URL (`https://github.com/<owner>/<repo>/blob/<branch>/<path>`) を貼って [Open] を押す |
+|  | 2. 直す |
+|  | 3. Ctrl+S を押す |
+|  | 4. [Push to GitHub] を押し、メッセージを確かめて [Push] を押す |
+|  | 5. GitHub の画面で、そのブランチのコミットを見る |
+| **期待結果** | - 1 で、文書が開き、ボタンが押せない表示の緑の [Push to GitHub] になる |
+|  | - 2 で、[Push to GitHub] が押せるようになる |
+|  | - 3 で、手元に保存され (最初は保存の画面)、GitHub には何も送られない |
+|  | - 4 で、トーストにコミットの短い sha が出て (6 秒)、未保存の印が消え、ボタンは押せない表示に戻る |
+|  | - 5 で、4 のメッセージのコミットがあり、中身が直したとおり |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: SC-28、INV-93〜INV-96。本物の GitHub での最初の試し (D32)。自動では AT-GH-05・06 |
+
+---
+
+### PRT-AK02: GitHub 側が先に変わっていたときと、手元の下書きで続ける
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PRT-AK01 のリポジトリと PAT。GRSMD でファイルを開いている |
+| **手順** | 1. GitHub の Web で、同じファイルを直してコミットする |
+|  | 2. GRSMD で直し、push する |
+|  | 3. Ctrl+S で手元に保存する |
+|  | 4. GitHub の最新版を開き直す |
+|  | 5. 3 で保存したファイルをドロップし、「連携を続けたまま置き換える」を選ぶ |
+|  | 6. push する |
+| **期待結果** | - 2 で、push しなかった旨 (409) と GitHub の文が出て、本文は直したまま残る |
+|  | - 5 で、本文が下書きになり、[Push to GitHub] が押せる |
+|  | - 6 で、コミットされる |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-96 (6)、INV-97、INV-98、5.20.4。自動では AT-GH-05・06 |
+
+---
+
+### PRT-AK03: 非公開のリポジトリ
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | 捨ててよい非公開のリポジトリ (相対パスの画像のある `.md`) と、そのリポジトリだけの fine-grained の PAT |
+| **手順** | 1. Token の欄を空にして開く |
+|  | 2. PAT を入れて開く |
+| **期待結果** | - 1 で、404 の文が出て、文書は変わらない |
+|  | - 2 で、開ける。相対パスの画像は見えない (`raw.githubusercontent.com` は非公開のリポジトリを見せない) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-94 (1)(5)、INV-99、5.20.4 |
+
+---
+
+### PRT-AK04: 保護されたブランチへの push
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | 直接の push を許さない保護の規則を付けたブランチの `.md` |
+| **手順** | 1. 開いて直し、push する |
+| **期待結果** | - 1 で、push しなかった旨と GitHub の文が出て、本文・未保存の状態・GitHub の版は変わらない |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-96 (6)、OS-19。返る番号 (409 か 422 か) は未確認。どちらでも失敗の文を出す |
+
+---
+
+### PRT-AK05: パスワードマネージャー
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC の Chrome と Edge、Firefox、Safari。PRT-AK01 のリポジトリと PAT |
+| **手順** | 1. Chrome で PAT を貼って開く |
+|  | 2. もう一度「Open GitHub」の画面を出し、Token の欄をクリックする |
+|  | 3. Edge で 1・2 を行う |
+|  | 4. Firefox と Safari で、PAT を貼って開く |
+|  | 5. goodrelax.github.io の他のページのパスワードの欄で、このトークンが候補に出るかを見る |
+|  | 6. 後片付けに、ヘルプの消し方 (D30) で、保存したトークンを消す |
+| **期待結果** | - 1 で、成功の後に Chrome が保存を申し出る |
+|  | - 2 で、候補から選ぶとトークンが入る |
+|  | - 3 で、Edge は尋ねずに保存することがある。2 は Chrome と同じ |
+|  | - 4 で、貼って使える |
+|  | - 5 は、結果を備考に書く (V-7) |
+|  | - 6 で、消せる |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: CON-16 (2)、D25・D34。偽の GitHub では 2026-10-29 に確かめた (D27・D31) |
+
+---
+
+### PRT-AK06: `file://` で開く
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | ダウンロードした `GRSMD.html` を `file://` で開く (Origin が `null`) |
+| **手順** | 1. PRT-AK01 の 1〜4 を行う |
+|  | 2. パスワードマネージャーの保存と候補を見る |
+| **期待結果** | - 1 で、開けて push できるかを備考に書く |
+|  | - 2 で、パスワードマネージャーが働くかを備考に書く (V-6) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: SC-28、CON-16 |
+
+---
+
+### PRT-AK07: iPad では出さない
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | iPad の Safari。ベータ版 (grsmd-beta.html) |
+| **手順** | 1. GRSMD を開く |
+|  | 2. キーボードを付けて `o` を押す |
+|  | 3. トラックパッド付きのキーボードを付けて開き直す |
+| **期待結果** | - 1 で、[Open GitHub] が出ない |
+|  | - 2 で、何も起きない |
+|  | - 3 で、出るかどうかを備考に書く (D17 の確かめ) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-100。自動では gitHub.e2e.js (タッチの端末とフレームの中で [Open GitHub] が出ない)。実機の iPad の見え方は、この項目で見る |
+
+---
+
+### PRT-AK08: 相対パスの画像とリンク
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | 公開のリポジトリの `.md` に `![](img/a.png)` と `[次](b.md)` がある |
+| **手順** | 1. GitHub から開く |
+|  | 2. 画像の代わりの表示を押して同意する |
+|  | 3. 直して未保存にし、リンクを押す |
+| **期待結果** | - 1 で、画像はクリックで読む代わりの表示になり、ホストは `raw.githubusercontent.com`。リンクの行き先は `github.com` のそのファイルのページ |
+|  | - 2 で、画像が出る |
+|  | - 3 で、未保存の確認が出る |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-99、INV-19 (D21)。自動では AT-GH-02 |
+
+---
+
+### PRT-AK09: ベータ版で行う
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC。ベータ版 (`grsmd-beta.html`) |
+| **手順** | 1. PRT-AK01 を行う |
+| **期待結果** | - 1 で、PRT-AK01 と同じ |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: SC-28 |
+
+---
+
+### PRT-AK10: ヘルプだけを見て GitHub 連携を使う
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC の Chrome と Edge。ベータ版 (`grsmd-beta.html`)。PRT-AK01 の捨ててよいリポジトリ。PAT はまだ作っていない |
+| **手順** | 1. [?] を押し、ダウンロードの枠の下の「How to Edit and Commit Files on GitHub」/「GitHubのファイルを編集しコミットする方法」を押す |
+|  | 2. 層の手順と図の番号 (1〜19) だけを見て、トークンを作り、ファイルを開き、直して push する |
+|  | 3. 層の「保存したトークンを消す」/「Delete a saved token」に従って、Chrome と Edge で保存したトークンを消す |
+|  | 4. Esc を 2 回押す |
+|  | 5. [Render Dark] にして、もう一度層を開く |
+| **期待結果** | - 1 で、ヘルプの上に層が、ヘルプと同じ言語で、先頭から開く。冒頭にいつの GitHub の画面かが年と月まで書いてある |
+|  | - 2 で、図の番号の順に押していけば push まで済む。GitHub の画面が図と違う所 (月・ボタンの名前・保存の吹き出しの見た目) を備考に書く (GHH-1・GHH-4) |
+|  | - 3 で、消せる。英 "(TBD)"・日「（仮）」の付いたメニューの名前が実機と合うかを備考に書く (合えば印を外す。GHH-8) |
+|  | - 4 で、1 回目に層だけが閉じてフォーカスが入口へ、2 回目にヘルプが閉じてフォーカスが [?] へ戻る |
+|  | - 5 で、図も暗い配色になり、文字と線が読める |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: FS-25、INV-103、SC-28。ヘルプが先で、オーナーはヘルプだけを見て使う (使い勝手の試しを兼ねる。GHH-5)。自動では AT-HLP-15〜18 |
+
+---
+
+### PRT-AK11: iPad ではヘルプの入口も出さない
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | iPad の Safari。ベータ版 (`grsmd-beta.html`) |
+| **手順** | 1. [?] を押す |
+|  | 2. Japanese を押す |
+| **期待結果** | - 1 で、ダウンロードの枠の下に GitHub の編集のヘルプの入口が無い |
+|  | - 2 で、日本語の本文にも無い |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: FS-25、INV-103 (3)、INV-100。自動では AT-HLP-19 |
+
+---
+
 ## 自動テスト (AT) の一覧
 
 この章は、PRT の備考と仕様が引く自動テストの ID (`AT-<族>-<番号>`) の行き先である。手で行う試験ではないので、判定の欄は持たない (前提条件 P-02 で全件の合格を確かめる)。
@@ -5224,7 +5448,7 @@ SC-27・INV-85〜INV-92、INV-80 (1)(5)(6)、FS-23、仕様 5.19。オーナー�
 | AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(e) ポップオーバーが開いていれば、検索の箱の中の最初の Esc はポップオーバーだけを閉じる、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く。20〜23: コード編集モード (`setCodeEditor`、編集欄の色、置換は編集欄の Undo 1 回、表示では置換しない)) | INV-80、INV-48、INV-88、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜23 |
 | AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル。10: コードのファイルの種類 (空の配列なら出さない)。11: バイト列と種類のダウンロード) | INV-24〜26、INV-79、INV-90、CON-14 | MarkdownFileAccess.test.js | 01〜11 |
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
-| AT-SSM | 11-e 保存の処理の状態機械 | 11-e、INV-54 | UIController.save.test.js | 01〜08 (01 と 02 は 1 つの試験) |
+| AT-SSM | 11-e 保存と push の処理の状態機械 (09: `pushing` の間は文書の置き換えを断り (INV-54)、Save / Save as を無視する) | 11-e、INV-54、INV-96 (4) | UIController.save.test.js | 01〜09 (01 と 02 は 1 つの試験) |
 | AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`)、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56、INV-79 | DocumentLifecycle.test.js | 01〜23 |
 | AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン。14: Clear (確認、初期状態、OS の配色の `applySystemTheme`)、38: 何も保存しない。70: 大きな本文は確定のたびに `#editor` へ書かず、フォーカス・ドラッグ・保存・描画のときに書く、71: 空の `#editor` を空でない文書へ取り込む前の確認、72: コードビューの #fileInfo の文字、73: キーヒントをスクロール・指の移動・クリック・キーで消し、見張りを外す、74: ドロップしたファイルの振り分け (.md、コードビュー、断るファイル、5 MB)) | INV-04 (38)、INV-12・INV-13 (14)、INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69、FS-03 (72)、FS-03・5.7 (73)、INV-11・INV-17・INV-18 (74)、INV-85〜INV-92 (34、75〜106) | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js、UIController.editorDeferredSync.test.js (70)、UIController.emptyEditorConfirm.test.js (71)、UIController.formatFileInfo.test.js (72)、UIController.showKeyHint.test.js (73)、UIController.setupFileDrop.test.js (74)、UIController.codeEdit.test.js (75〜83)、UIController.formatFileInfo.test.js (84)、UIController.codeEditor.test.js (85〜106) | 01〜106 (25 は欠番。41 は AT.1 の注。36a〜36j・37a は AT.1 の枝番。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)。34: コードの文書の部品が無い構成のコードビュー ([Edit] は無効)。75〜84: コードの文書の結線 (開くダイアログ・ファイル情報の文字コードと改行・未保存・Reload・保存中・Save as・`.md` の開き直し)。85〜98: コード編集モード (パレット・Undo・保存・Esc の順・折りたたみのキー (Mac)・`p`・目次・検索、98: Redo と Search のボタン)。99〜106: レビュー 1 回目の直し (99: Reload が読めないとき表示を描き直す、100: 打つ間の未保存の印、101: Mac のキーのヒント、102: UTF-16 の BOM の知らない拡張子、103: 押し続けた折りたたみのキーと IME、104: 編集欄の中の `e` / `p`、105: 主 + Shift + S、106: 打つのが止まったときの目次)。SC-27) |
 | AT-KEY | 主の修飾キーのショートカット (02: コードビューの主 + S はコードのファイルを保存する (INV-90)。04 (G49): 検索の箱などの入力要素では、ブロック編集欄を開いたままでも主 + B / I を横取りせず、書式を付けない。08: Redo のキー。09: 1 文字のショートカットと修飾キーのガード (`c`・`l`・`d`・`r`・ArrowDown に Ctrl / Meta / Alt)) | INV-13 (09)、INV-14、INV-58〜60、INV-59 (a)、INV-80 (7)、INV-90 (02) | UIController.shortcuts.test.js、UIController.keyboard.test.js (09) | 01〜09 |
@@ -5246,7 +5470,7 @@ SC-27・INV-85〜INV-92、INV-80 (1)(5)(6)、FS-23、仕様 5.19。オーナー�
 | AT-STA | `src/js` と `src/css` の静的な検査 (01: ストレージの API を使わない。03 (b): `src/index.html` の日本語のヘルプの外は ASCII。コードの編集の新しいファイルも対象で、`CodeDocument`・`textEncoding.js`・`indentText.js`・`jsonFold.js`・`codeOutline.js`・`CodeEditHistory` は Entity の検査 (05) の対象。20: 試験のファイル (`src/__tests__` と `e2e` の `.js`) も ASCII だけ (G5。レビュー 1 回目の L9、調整役の裁定 Q6)) | CON-06、CON-13、CON-14、CON-15、INV-04 (01)、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13、G5 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜20 |
 | AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
 | AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ、14: 目次を出したままの確定・Undo の後の作り直しの時間。jsdom に大きな文書が残ると遅くなるので別のファイル) | INV-42、INV-48、INV-51、INV-74、INV-77 | performance.inplaceEdit.test.js、performance.index.test.js | 01〜14 |
-| AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11)、閉じ方によらず `onHide` を呼ぶ (AT-HLP-13。INV-89 のダイアログ) (`ModalController`)、「Details」/「詳細」の [Edit] の行の次の編集の始め方の行と初期画面の 4 行目 (AT-HLP-12。e2e の help.e2e.js。オーナーの裁定 AQ4)、「Details」/「詳細」のコードビューの行の 200 KB 以上のファイルの 1 文 (AT-HLP-14。英日。NE-32・NE-33) | SC-16、FS-10、CON-03、CON-12、INV-89 (13)、INV-85・NE-32 (14)、5.1、5.11、INV-57 (12)、INV-29 (12) | HelpLanguageSwitch.test.js、ModalController.test.js、`e2e/help.e2e.js` (12) | 01〜14 |
+| AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11)、閉じ方によらず `onHide` を呼ぶ (AT-HLP-13。INV-89 のダイアログ) (`ModalController`)、「Details」/「詳細」の [Edit] の行の次の編集の始め方の行と初期画面の 4 行目 (AT-HLP-12。e2e の help.e2e.js。オーナーの裁定 AQ4)、「Details」/「詳細」のコードビューの行の 200 KB 以上のファイルの 1 文 (AT-HLP-14。英日。NE-32・NE-33)、GitHub の編集のヘルプ (FS-25・INV-103): 英日の入口のボタンと「Details」/「詳細」の `[Open GitHub]` / `O` の行 (AT-HLP-15。GHH-9・D33)、層の題名の行・英日の本文・時点の文・(TBD) と（仮）・[Saved] が無いこと、図は `<symbol>` 6 つを英日が `<use>` で使い、番号が全部の図で 1〜19、画像と外の資源が無く、外へのリンクはトークンのページだけ (AT-HLP-16。GHH-1・GHH-5・GHH-8・D34)、層がヘルプの上に開いている間は層だけがキーを受け、Esc の 1 回目で層 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる、下のモーダルを閉じても上が受ける (AT-HLP-17。`ModalController`)、入口で層がヘルプの言語で先頭から開き、図がすべて描かれ、Esc の 2 段 (AT-HLP-18。e2e)、フレームの中とタッチの端末では入口が出ない (AT-HLP-19。e2e。INV-100) | SC-16、FS-10、CON-03、CON-12、INV-89 (13)、INV-85・NE-32 (14)、5.1、5.11、INV-57 (12)、INV-29 (12)、FS-25・INV-103 (15〜19)、INV-100 (19) | HelpLanguageSwitch.test.js、ModalController.test.js、`e2e/help.e2e.js` (12・18・19) | 01〜19 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
 | AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド (30: 単一ファイルの並びでないものは失敗、38: 外部の import の検査はライブラリのコードも見る)、早い入力の受け継ぎ。25・26・47・48・52・56・57 はオーナーの裁定 AQ7 で改めた (PlantUML は 4 つのライブラリが決まるのを待つ。前の送り直し `"repeat"` は無い)。58: 11-g のガード `isShownWithout` の問い合わせ (数式・コードの色・Mermaid の枠) が、届く前の表示がある間は真で、ライブラリが動いた後は偽。文書が自分で書いた枠は数えない。59: コードビューの highlight.js の待ちが 2 つ重なっても、先に終わった方が待ちを消さない | INV-81、INV-20、INV-06 (30)、INV-07 (38)、INV-02 (52・56・57) | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜59 |
 | AT-LSM | 起動とライブラリの状態機械 (仕様 11-g): ライブラリの表のすべての交点 (6 × 4 = 24、ガードの枝で 25。02)、ページの表のすべての交点 (6 × 4 = 24、2 つのガードの枝で 26。07。`earlyInputArrived` の行は受け口 `installBoot` で確かめる)、表の大きさ (01・06)、はじめの状態の 3 つの枝 (04)、仕様の 2 つの図と表の一致 (05・08)、answering に入るのが 1 回だけ (03・09)、開発サーバー (10)、解析の終わり (11)。描画の側の処理が投げても、ライブラリの表の処理は続き、ページは決まる (20。レビューの L3)、解析の後に作った LibraryLoader はすぐ `parsingEnded` を送る (21。L4)、中核は `earlyInputArrived` を受けない (22。L5)。PlantUML: 4 つのライブラリが決まる前は確認も送信も無く、決まったら描画の列の中で 1 回だけ確認し、確定の図は [Render]、読んでいる位置を保つ (12)、Cancel (13)、エンコーダーが動かない (14)、4 つが決まる前の Clear・別の文書 (15。レビュー 2 回目の N5)、始めから settled で送り直しが無い (16)、e2e で決まる前に確認が無く後に 1 回 (17)、KaTeX が最後に動き、その描き直しが answering の間に待ちの枠の段より先に動いても、確認は 1 回で全部の図に答える (18。OK で全部を送る。19: Cancel で全部が「not sent」)、全体の描画の途中で 4 つが決まっても、その描画と KaTeX の描き直しで確認は 1 回 (23。L1)、決まった時に編集欄が開いていた図は、閉じた時に [Render] (24。M2)、決まった時に待ちの枠が無くても answering から settled に移り、後の図は確認が 1 回出て送られる (25。レビュー 2 回目の N4) | INV-81 (2)(3)(4)、INV-02、INV-03 (13・19)、INV-23 (12・13・24)、オーナーの裁定 AQ2・AQ7、G6 (18・19・23) | LibraryLoader.stateMachine.test.js (01〜11、20〜22)、fastStartup.render.test.js (12〜16、18、19、23〜25)、`e2e/fastStartup.e2e.js` (17) | 01〜25 |
@@ -5263,8 +5487,11 @@ SC-27・INV-85〜INV-92、INV-80 (1)(5)(6)、FS-23、仕様 5.19。オーナー�
 | AT-CED | `CodeEditor` (DOM、色付けの間と色なし、行番号、キー (Tab・Enter・Esc・IME・折りたたみのキー・Mac)、自前の Undo、選択と行の位置、色の層の範囲。24: 5 MB の 1 打鍵の処理を数える。25: Undo の選択。26: 押し続けた Undo / Redo。27: Mac の折りたたみのキーに Shift は無し。28: 文字を変えなかった打つ手順で Undo が無効。29: textarea が自分でスクロールしたら広げる。30: 表示の行を最後の行から外す。31: 始めのカーソル。32: 押し続けた折りたたみのキー。33: 5 MB の文字で Tab・Shift+Tab・Undo・Redo は値の全体を入れ替えず、全体の文字の処理をせず、触れる行だけを `setRangeText` で書く。34: `setText` (置換・折りたたみ) は変わった部分だけを書き、比べはブロックで。35: 操作で足した行の場所と、その Undo で戻す場所。36: 打ってすぐの操作は、打つ手順を操作の前の選択で閉じる (N1)) | INV-85〜INV-88、INV-92 (4) | CodeEditor.test.js | 01〜36 |
 | AT-CEM | 11-h コード編集モードの状態機械 (3 つの出来事 × 2 つの状態のすべての交点、ガード `canEdit`、知らないガード・処理は誤り、仕様の図と表の一致) | 11-h、INV-85 | CodeEditController.stateMachine.test.js | (族の名前) |
 | AT-CCP | `CodeCommandPalette` (箱の名前とボタン、開閉とフォーカス、命令で閉じない、Esc・外の押下、無効、リスナー) | INV-92 (5) | CodeCommandPalette.test.js | 01〜07 |
+| AT-GH | GitHub 連携: URL の分解 (01: ブランチの `/`、% の符号、断る形)、相対パスの解決 (02: 画像・リンク・最上位・上へ出すぎ・直さない形)、PAT の形 (03。D12)、Base64 と UTF-8 の往復 (04: 日本語・BOM・CRLF・大きいもの、NUL と壊れた UTF-8)、`GitHubContentsClient` (05: URL・ヘッダー・固定のオリジン・PAT が URL と文に出ない・5.20.4 の各失敗の文 (403・`retry-after`・422・429・`x-ratelimit-reset`・409 の `conflict` の全文)・PUT の中身・409、PUT の通信の失敗と 200 の読めない応答の `pushUnknown` (L1))、`DocumentLifecycle` の連携 (06: 開く・残す・止める・push の間の拒否・成功と失敗、11-e の push の交点 (`pushRequested` / `pushFinished`、`pushing` の間の置き換えと保存。M2))、`GitHubController` の PAT の欄と Push (08: 欄の名前 D35、[Saved] が無い D34、目のボタンの切り替えと閉じる・開くときの戻し D28、入力でエラーの行が消える D37、Push のトーストの 6 秒と送った後の欄 D36)、キーのヒントの `[O] GitHub;` (08: PC だけ。D33)、ボタンと `o` と画面 (09: ボタンの切り替え、`o` の開く・無動作、INV-100 で出さない、画面の中のキーを渡さない、ドロップの 3 択)、GitHub の文書の相対パスの描画 (10: INV-99。書き換えた画像も同意まで読まずに保留する (INV-99 (1)、INV-19。L7))、UIController を通した結線 (11: 開く順 INV-94 (3) (保存中は断る)、Reload INV-97 (読み始めた後に文書が変わったら置き換えない)、ドロップの続ける・止める・やめる INV-98。L7)、パスの安全 (12: 区切りに空・`.`・`..` があれば送らない、PAT は `/repos/<owner>/<repo>/` の外へ出ない。CON-16 (4)。L2)、レビューの直し (13: 画面の中の主 + S は既定を止めて何もしない (INV-58。M3)、画面の `unsafePath` (INV-93 (5)。L2)、閉じた画面の PAT の欄を空にする (CON-16 (2)。L3)) | SC-28、INV-58、INV-93〜INV-100、CON-16、11-e | gitHub.test.js (01〜06、12)、GitHubController.test.js (08〜10、13)、UIController.gitHub.test.js (11) | 01〜06、08〜13 (07 は試作の偽の GitHub。本実装で消した) |
 
 AT の ID の無い試験も `npm test` の全件に含まれる。2026-10-29 の時点で、それは次の 18 ファイルの 97 件 (`it.each` などは 1 件と数える。多くは名前か外側の `describe` に INV や仕様の節を書く): `BlockEditController.gap.test.js` (4)、`BlockEditController.test.js` (8)、`DocumentSession.test.js` (1)、`MarkdownBlockModel.planTableReplace.test.js` (3)、`MarkdownFileAccess.test.js` (4)、`MarkdownRenderer.blocks.test.js` (1)、`MarkdownRenderer.purifyConfig.test.js` (5。設定を 1 度だけ与えることの試験)、`MarkdownTextOps.test.js` (1)、`RendererOrchestrator.edit.test.js` (1)、`RendererOrchestrator.test.js` (14)、`SaveDocument.test.js` (4)、`UIController.editMode.test.js` (9)、`UIController.handleRender.test.js` (6)、`UIController.palette.test.js` (14)、`UIController.save.test.js` (1)、`preprocessInput.test.js` (12)、`stateTable.test.js` (4。ファイルの全部)、`staticChecks.test.js` (5。「style.css for in-place editing」の一部)。族に番号を足すまでは、ここに挙げて残す (監査の Medium 46、監査の直しのレビュー (1 回目) の L32。`SourceFileRenderer.test.js`・`utils.test.js`・`MarkdownRenderer.test.js`・`config.test.js` には番号を足した)。
+
+**AT-GH の残り (SC-28。2026-10-29):** e2e は gitHub.e2e.js (AT.4)。既存の試験の直し (済み): AT-STA-02 (`fetch(` は DiagramCopyController の 2 と main.js の 1)、cspPlugin の `connect-src`。
 
 ### AT.3 個別に定める試験
 
@@ -5294,7 +5521,7 @@ AT の ID の無い試験も `npm test` の全件に含まれる。2026-10-29 �
 | AT-UI-67 | とても大きなブロック (50,000 字を超える) で、押した時点で付けられない書式は文字を変えずに `formatNotApplicable`、外すリンクが無い「リンクを外す」は `linkNotRemovable` をトーストで出す。50,000 字以下ではボタンが無効なので、トーストは出ない (INV-71、オーナーの裁定 Q-f) |
 | AT-HB / AT-HBK | INV-71 の文脈 (リスト・引用・入れ子のコード、(i)〜(xi) の位置) と確定のときの後始末 |
 | AT-BSM / AT-PSM / AT-PDS / AT-CEM | 状態機械 11-c / 11-d / 11-f / 11-h の表のすべての交点と、仕様の図と表の一致 (`src/__tests__/helpers/specDiagram.js` で仕様の本文の図を読む) |
-| AT-SSM | 状態機械 11-e の表の 14 の交点 (試験の中に書いた表と `saveOperationStateMachine` の定義の一致。仕様の図は読まない) |
+| AT-SSM | 状態機械 11-e の表の 27 の交点 (3 つの状態 × 9 の出来事。2026-10-29 に `pushing` と push の 2 つの出来事を足した) (試験の中に書いた表と `saveOperationStateMachine` の定義の一致。仕様の図は読まない) |
 | AT-LSM-01〜08 | 状態機械 11-g の 2 つの表のすべての交点。試験の中に書いた仕様の表と、`dispatch` / `dispatchPage` で実際に通った遷移 (前の状態・次の状態・行った処理の並び) を比べ (ページの `earlyInputArrived` の行は、受け口 `installBoot` が行うことを、中核の前と後のペーストで確かめる)、処理ごとに外から見える結果 (受け口の口・手が空いた時の予約・`get` の Promise・ログ・データの塊・ページの次の出来事) も確かめる。仕様の図は `specDiagram.js` で読む (11-g は図が 2 つあるので、何番目の図かを渡す) |
 
 ### AT.4 e2e (Playwright)
@@ -5317,7 +5544,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | insertBlock.e2e.js | Insert table / Mermaid の挿入: 空の文書、行の境目で割る位置 (上・下・中・リスト・引用・下線の見出し)、断る場所とトースト (リストの中の表、字下げのコード、引用の中のコード、同意を Cancel にした PlantUML を含む)、行内の書式をまたぐ境目、`\` の改行、割った行の行末の空白、押した直後の打鍵がショートカットにならない、Undo で表だけが消える、挿入の後の最小のスクロール | PRT-V15〜V19 |
 | math.e2e.js | パレットの数式: Text format の 2 段の並び、行内の数式がカーソルに入り Esc で KaTeX が描く、読めないときのトースト、数式ボックスの 3 つの式 (エラー無く描け、何も開かない)・Undo 1 回と Redo、数式のブロックの中で断る | PRT-V21 |
 | toast.e2e.js | 幅 375 px で、トーストが画面の中で折り返す (長いファイル名も折る) | (5.12、オーナーの裁定 R11) |
-| help.e2e.js | ヘルプ: ブラウザの言語 (`en-US` / `ja-JP`) で最初の言語が決まる、トグルで片方だけになり閉じて開いても保つ、ダウンロードのリンクの属性、版が "Development build" と UTC の時刻、開いている間の 1 キーが裏に効かず Esc で閉じる (パレットを出しておき、Esc の後も出たままであること。プロンプトのモーダルも)、開くとフォーカスが中へ移り、Tab / Shift+Tab が中を回り、閉じると [?] へ戻る、トグルと × をキーボードだけで押せる、外への要求が無い、題名の行がスクロールしても上に残る、ヘルプの文字が 12px、クリップボードの許可の開示が日英のプライバシーの章にあり編集の章が無い、何も保存しない (INV-04)、「詳細」の [Edit] の行の次に編集の始め方の行が日英にあり、初期画面に 4 行目がある (AT-HLP-12。オーナーの裁定 AQ4) | PRT-A01、PRT-L01、PRT-L03、PRT-L05、PRT-L07、PRT-L08 |
+| help.e2e.js | ヘルプ: ブラウザの言語 (`en-US` / `ja-JP`) で最初の言語が決まる、トグルで片方だけになり閉じて開いても保つ、ダウンロードのリンクの属性、版が "Development build" と UTC の時刻、開いている間の 1 キーが裏に効かず Esc で閉じる (パレットを出しておき、Esc の後も出たままであること。プロンプトのモーダルも)、開くとフォーカスが中へ移り、Tab / Shift+Tab が中を回り、閉じると [?] へ戻る、トグルと × をキーボードだけで押せる、外への要求が無い、題名の行がスクロールしても上に残る、ヘルプの文字が 12px、クリップボードの許可の開示が日英のプライバシーの章にあり編集の章が無い、何も保存しない (INV-04)、「詳細」の [Edit] の行の次に編集の始め方の行が日英にあり、初期画面に 4 行目がある (AT-HLP-12。オーナーの裁定 AQ4)、GitHub の編集のヘルプの層が入口からヘルプの言語で開き、図がすべて描かれ、Esc の 1 回目で層 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる (AT-HLP-18)、フレームの中 (偽のページの `iframe`) とタッチの端末 (`isMobile`) では入口が出ない (AT-HLP-19。INV-100) | PRT-A01、PRT-L01、PRT-L03、PRT-L05、PRT-L07、PRT-L08、PRT-AK10、PRT-AK11 |
 | crossUnit.e2e.js | 単位をまたぐ動き: 変更のあるセルの移動でポップオーバーが開いたまま (K-1)、外部画像の入った HTML の貼り付けと画像のあるセルの編集で通信しない (S-2)、色のセルを残したままの Render Dark、図のコードを開いた後のボタンなしの移動でスクロールしない (U20)、文書の class にアプリの CSS が当たらない・帯のカーソル・数式の大きさ (N2 / N3 / M04)、[?] の長押し (N1。Chromium だけ)、スマートフォンの配置 (N6)、編集モードの出入りでブロックが動かず、つまみが表の真上にある (P1) | PRT-X04、PRT-X08、PRT-X11、PRT-U10、PRT-U20、PRT-Q01、PRT-M04、PRT-V11 (N6) |
 | index.e2e.js | 目次: 右端に浮き 15% 透け、目次自体がスクロールし、押した見出しが上端の 8 px 下、開いたまま、`i`。図を描き終える前の押下が描き終えた後も保たれる (INV-78)。テーマの切り替えの間のホイール 100 px は読んでいる位置に留まり、Shift と本文の外の押下では元の位置に戻る (INV-78)。リサイズで置き直し、開いてもフォーカスは [Index]、Tab / Enter / Space (INV-77 (6)(7))。確定で、目次の見えている項目を同じ所に保ち、変わらない項目を作り直さない (INV-77 (2))。編集欄の確定と Esc の順。ダークの地、印刷に出ない、Clear で無効。試験の名前に要求の ID | PRT-AB01〜AB05、PRT-AB07 |
 | search.e2e.js | 検索と置換: `f` と入力ごとの検索、↓ / ↑、Enter は何もしない、箱の中の Esc、正規表現と不正な式、大きい表の正しい行と右端の列、置換 (編集モードだけ、Replace / All、トースト、Ctrl+Z 1 回、置換欄の Enter)、Esc の順 (パレット → 検索 → 目次)、コードビュー、印刷。時間の試験 (GRSMD_PERF=1。1 MB の 1 キーと ↓ が 4 ms 以下、All が 300 ms 以内)。試験の名前に要求の ID | PRT-AD01〜AD03、AD05、AD08、AD10、AD11 |
@@ -5328,6 +5555,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | codeEdit.e2e.js | コードのファイルの開き方と保存: Shift_JIS のファイルの開くダイアログ (文字コードと先頭の行) とファイル情報、CRLF と LF の混在の 3 つのボタンと [Keep as is]、UTF-8 の `.txt` はダイアログ無し、Shift_JIS のまま Save as (偽の保存のダイアログ) で同じバイト列。試験の名前に要求の ID | PRT-AJ01、PRT-AJ02、PRT-AJ09、PRT-AJ10 |
 | codeEditor.e2e.js | コード編集モード: `.json` で `e`・打つ・Tab・主 + Z・Ctrl+Shift+[、表示の Ctrl+← / → (未保存にならない)、`p` のコマンドパレット、目次の JSON のキー、編集中の [All] と主 + Z、Shift_JIS のファイルを `x.md` に Save as (UTF-8 とトーストと Markdown のビュー)、60 KB のファイルの 1 打鍵で層と行番号を書かず、止まった後に合わせる (INV-86)。試験の名前に要求の ID | PRT-AJ03、PRT-AJ05、PRT-AJ08、PRT-AJ11〜AJ15 |
 | paletteDoubleClick.e2e.js | パレットのグリップのダブルクリック (INV-68、PD1〜PD3): マウスのダブルクリックで最小化・復活し、グリップの位置・開いた編集欄のフォーカスと選択を保ち、文字を選ばず、ブロックを開かず本文を変えない。移動や長押しの後のクリックをブラウザがダブルクリックと数えても切り替えない。ボタンのダブルクリックでは最小化しない。touch: すばやい 2 回のタップで 1 回だけ切り替え、拡大しない (タップは pointerType touch で届く)。間をあけた 2 回では切り替えない | PRT-AI01、PRT-AI02 |
+| gitHub.e2e.js | GitHub 連携 (SC-28): `api.github.com` への要求は `page.route` の偽の GitHub が答え、本物の GitHub へは 1 件も出ない (外への要求の記録は 0 件)。PAT の欄の名前 `Fine-grained personal access token` が欄の上の行にある (D35)、[Saved] が無い (D34)、目のボタンで伏字と平文が切り替わり、閉じて開き直すと伏字に戻る (D28)、classic のトークンの赤い字が、欄の入力で消える (D37)、開く → 直す → push で `Pushed to GitHub (…)` が 5.9 s の後も出ていて、6.1 s では消える (D36。Playwright の時計 (`page.clock`) で進め、壁の時計では待たない。レビューの L6)、キーのヒントに `[O] GitHub;` (D33)、GitHub の画面の中の主 + S がブラウザの既定 (ページを保存) を止め、何も保存しない (INV-58、仕様 5.20.6。レビューの M3)、[Open GitHub] が PC で出て、フレームの中 (偽のページの iframe) では出ず `o` も効かず、タッチの端末 (`isMobile`) でも出ない (INV-100)。試験の名前は要求の ID (INV-・CON-・PRT-) で始める (レビューの L5)。全 7 件。develop 989a1b0 では 5 件とも落ちる。INV-100 の 2 件は、`#controls button[hidden]` の規則の無い CSS で落ちる (G12) | PRT-AK01、PRT-AK05、PRT-AK07 |
 
 ---
 
@@ -5581,6 +5809,17 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-AJ16      | コードの編集 | iPad とタッチ |      |
 | PRT-AJ17      | コードの編集 | 大きいファイルの時間 |      |
 | PRT-AJ18      | コードの編集 | 未保存の保護 |      |
+| PRT-AK01      | GitHub 連携 | 本物の GitHub で開く・直す・push |      |
+| PRT-AK02      | GitHub 連携 | 先に変わっていた (409) と下書き |      |
+| PRT-AK03      | GitHub 連携 | 非公開のリポジトリ |      |
+| PRT-AK04      | GitHub 連携 | 保護されたブランチ |      |
+| PRT-AK05      | GitHub 連携 | パスワードマネージャー |      |
+| PRT-AK06      | GitHub 連携 | file:// |      |
+| PRT-AK07      | GitHub 連携 | iPad では出さない |      |
+| PRT-AK08      | GitHub 連携 | 相対パスの画像とリンク |      |
+| PRT-AK09      | GitHub 連携 | ベータ版 |      |
+| PRT-AK10      | GitHub 連携 | ヘルプだけを見て使う |      |
+| PRT-AK11      | GitHub 連携 | iPad ではヘルプの入口も出さない |      |
 
 **テスター:** \_\_\_\_\_\_\_\_\_\_
 **日付:** \_\_\_\_\_\_\_\_\_\_

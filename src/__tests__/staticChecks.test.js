@@ -54,20 +54,26 @@ function scan(file) {
 }
 
 /**
- * The HTML without the Japanese help body (<div class="help-body" lang="ja">
- * and everything up to its own closing tag), which is Japanese by design.
+ * The HTML without the Japanese help bodies (each <div class="help-body"
+ * lang="ja"> and everything up to its own closing tag: the help and the
+ * GitHub help layer), which are Japanese by design.
  */
 function withoutJapaneseHelp(html) {
-  const start = html.indexOf('<div class="help-body" lang="ja"');
-  if (start < 0) throw new Error("the Japanese help body was not found");
-  const tag = /<div\b|<\/div>/g;
-  tag.lastIndex = start;
-  let depth = 0;
-  for (let m = tag.exec(html); m; m = tag.exec(html)) {
-    depth += m[0] === "</div>" ? -1 : 1;
-    if (depth === 0) return html.slice(0, start) + html.slice(m.index + m[0].length);
+  const open = '<div class="help-body" lang="ja"';
+  if (!html.includes(open)) throw new Error("the Japanese help body was not found");
+  for (let start = html.indexOf(open); start >= 0; start = html.indexOf(open)) {
+    const tag = /<div\b|<\/div>/g;
+    tag.lastIndex = start;
+    let depth = 0;
+    let end = -1;
+    for (let m = tag.exec(html); m && end < 0; m = tag.exec(html)) {
+      depth += m[0] === "</div>" ? -1 : 1;
+      if (depth === 0) end = m.index + m[0].length;
+    }
+    if (end < 0) throw new Error("the Japanese help body is not closed");
+    html = html.slice(0, start) + html.slice(end);
   }
-  throw new Error("the Japanese help body is not closed");
+  return html;
 }
 
 const NEW_FILES = [
@@ -131,7 +137,7 @@ describe("AT-STA static checks of src/js", () => {
     for (const f of FILES) expect(stripComments(read(f)), rel(f)).not.toMatch(pattern);
   });
 
-  it("AT-STA-02 fetch( only in DiagramCopyController.js (2); no XMLHttpRequest / sendBeacon / WebSocket / EventSource (CON-14)", () => {
+  it("AT-STA-02 fetch( only in DiagramCopyController.js (2) and main.js (1: the GitHub client's, injected; SC-28); no XMLHttpRequest / sendBeacon / WebSocket / EventSource (CON-14)", () => {
     const counts = {};
     for (const f of FILES) {
       const src = stripComments(read(f));
@@ -139,7 +145,8 @@ describe("AT-STA static checks of src/js", () => {
       if (n) counts[rel(f)] = n;
       expect(src, rel(f)).not.toMatch(/\bXMLHttpRequest\b|\bsendBeacon\b|\bWebSocket\b|\bEventSource\b/);
     }
-    expect(counts).toEqual({ "classes/DiagramCopyController.js": 2 });
+    expect(counts).toEqual({ "classes/DiagramCopyController.js": 2, "main.js": 1 });
+    expect(stripComments(read(resolve(jsDir, "main.js")))).toMatch(/new GitHubContentsClient\(gitHubFetch, CONFIG\.github\)/);
   });
 
   it("AT-STA-03 every file is ASCII only (CON-06)", () => {
@@ -640,6 +647,11 @@ describe("style.css for in-place editing", () => {
     expect(body).toMatch(/width:\s*100%/);
     expect(body).toMatch(/overflow-y:\s*hidden/);
     expect(body).toMatch(/font-family:[^;]*monospace;/);
+  });
+
+  it("INV-100: a top-bar button with [hidden] is not shown, although #controls button sets display", () => {
+    expect(ruleBody(css, "#controls button")).toMatch(/display:\s*flex/);
+    expect(ruleBody(css, "#controls button[hidden]")).toMatch(/display:\s*none/);
   });
 
   it("bands and the empty block show only in edit mode (INV-41, INV-49)", () => {
