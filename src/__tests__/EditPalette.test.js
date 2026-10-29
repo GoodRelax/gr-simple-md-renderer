@@ -994,3 +994,65 @@ describe("AT-PAL states, status, life cycle, security", () => {
     expect(palette.isShown()).toBe(false);
   });
 });
+
+describe("EditPalette code mode (SC-27, INV-85)", () => {
+  const visible = () =>
+    [...root.querySelectorAll(".edit-palette-row")].map((row) =>
+      [...row.children].filter((el) => !el.hidden).map((el) => el.id),
+    );
+
+  it("AT-PAL-39 setMode('code'): only the grip, Save, Save as, Undo, Redo and Search, in one row; 'markdown': all of them again, in place; an open popover closes", () => {
+    palette.show();
+    palette.setButtonStates(ALL_ON);
+    press(root.querySelector("#paletteFormat"));
+    expect(palette.openPopoverKey()).toBe("format");
+    palette.setMode("code");
+    expect(palette.openPopoverKey()).toBeNull();
+    expect(root.classList.contains("edit-palette-code")).toBe(true);
+    expect(visible()).toEqual([["paletteGrip", "paletteSave", "paletteSaveAs", "paletteUndo", "paletteRedo", "paletteSearch"], []]);
+    palette.setButtonStates({ undo: true });
+    press(root.querySelector("#paletteUndo"));
+    expect(host.runCommand).toHaveBeenLastCalledWith("undo");
+    palette.setMode("markdown");
+    expect(root.classList.contains("edit-palette-code")).toBe(false);
+    expect(visible()).toEqual([
+      ["paletteGrip", "paletteBold", "paletteItalic", "paletteFormat", "paletteMermaid", "paletteSave", "paletteSaveAs"],
+      ["paletteTable", "paletteRow", "paletteRowDelete", "paletteColumn", "paletteColumnDelete", "paletteTableOptions", "paletteUndo"],
+    ]);
+  });
+
+  it("AT-PAL-40 style.css: hidden palette buttons take no place; code mode is one row of six", () => {
+    const rule = (selector) => {
+      for (const m of css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{([^{}]*)\}/g)) if (m[1].split(",").map((s) => s.trim()).includes(selector)) return m[2];
+      return null;
+    };
+    expect(rule(".edit-palette-btn[hidden]")).toMatch(/display:\s*none/);
+    expect(rule(".edit-palette.edit-palette-code .edit-palette-row")).toMatch(/grid-template-columns:\s*repeat\(6, 28px\)/);
+    expect(rule(".edit-palette.edit-palette-code .edit-palette-row + .edit-palette-row")).toMatch(/display:\s*none/);
+  });
+
+  it("AT-PAL-41 Redo and Search (NE-2): in the palette in code mode only; tooltips with the primary key; Redo off without a step; each runs its command", () => {
+    expect([document.getElementById("paletteRedo"), document.getElementById("paletteSearch")]).toEqual([null, null]);
+    palette.show();
+    palette.setMode("code");
+    const redo = root.querySelector("#paletteRedo");
+    const search = root.querySelector("#paletteSearch");
+    expect([redo.title, redo.getAttribute("aria-label"), search.title, redo.tabIndex]).toEqual(["Redo (Ctrl+Shift+Z)", "Redo (Ctrl+Shift+Z)", "Search (Ctrl+F)", -1]);
+    palette.setButtonStates({ undo: true });
+    expect([redo.getAttribute("aria-disabled"), search.getAttribute("aria-disabled")]).toEqual(["true", "false"]);
+    press(redo);
+    expect(host.runCommand).not.toHaveBeenCalled();
+    palette.setButtonStates({ redo: true });
+    press(redo);
+    press(search);
+    expect(host.runCommand.mock.calls).toEqual([["redo"], ["search"]]);
+    palette.setMode("markdown");
+    expect([redo.isConnected, search.isConnected]).toEqual([false, false]);
+    palette.hide();
+    removePaletteElements();
+    palette = new EditPalette(host, { isApple: true });
+    ({ root } = paletteElements());
+    palette.setMode("code");
+    expect([root.querySelector("#paletteRedo").title, root.querySelector("#paletteSearch").title]).toEqual(["Redo (Cmd+Shift+Z)", "Search (Cmd+F)"]);
+  });
+});

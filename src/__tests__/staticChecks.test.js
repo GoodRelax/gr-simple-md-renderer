@@ -87,8 +87,18 @@ const NEW_FILES = [
   "classes/InvisibleCharOverlay.js",
   "classes/TableCellEditor.js",
   "classes/ClipboardLink.js",
+  "classes/CodeDocument.js",
+  "classes/CodeFileDialog.js",
+  "classes/CodeEditController.js",
+  "classes/CodeEditor.js",
+  "classes/CodeCommandPalette.js",
+  "classes/CodeEditHistory.js",
   "textTransforms.js",
   "textWidth.js",
+  "textEncoding.js",
+  "indentText.js",
+  "jsonFold.js",
+  "codeOutline.js",
 ];
 
 const ENTITY_FILES = [
@@ -96,10 +106,18 @@ const ENTITY_FILES = [
   "classes/BlockDiff.js",
   "classes/MarkdownTextOps.js",
   "classes/DocumentSession.js",
+  "classes/CodeDocument.js",
   "classes/MarkdownTable.js",
   "classes/InlineRuns.js",
   "textTransforms.js",
   "textWidth.js",
+  // the pure modules of the code editor (5.19.1)
+  "textEncoding.js",
+  "indentText.js",
+  "jsonFold.js",
+  "codeOutline.js",
+  // the clock comes from CodeEditController (L21)
+  "classes/CodeEditHistory.js",
 ];
 
 describe("AT-STA static checks of src/js", () => {
@@ -128,6 +146,19 @@ describe("AT-STA static checks of src/js", () => {
     for (const f of FILES) {
       const bytes = readFileSync(f);
       expect(bytes.some((b) => b > 0x7f), rel(f)).toBe(false);
+    }
+  });
+
+  // Review standard G5: the test code is English and ASCII too (coordinator's
+  // ruling Q6, review L9). A character outside ASCII is written as an escape
+  // (backslash, u and four hex digits) with its name in a comment.
+  it("AT-STA-20 every test file (src/__tests__ and e2e, .js) is ASCII only (G5, CON-06)", () => {
+    const repo = resolve(here, "../..");
+    const testFiles = [...listJs(here), ...listJs(resolve(repo, "e2e"))];
+    expect(testFiles.length).toBeGreaterThan(100);
+    for (const f of testFiles) {
+      const bytes = readFileSync(f);
+      expect(bytes.some((b) => b > 0x7f), relative(repo, f).replace(/\\/g, "/")).toBe(false);
     }
   });
 

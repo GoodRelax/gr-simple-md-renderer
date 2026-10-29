@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -117,6 +117,26 @@ describe("SourceFileRenderer", () => {
       renderer._lastScrollTop = 500;
       renderer.destroy();
       expect(renderer._lastScrollTop).toBe(0);
+    });
+
+    it("AT-SFR-14 (INV-86, G10; review M1) the code view's lines are taken away from the last up (WebKit: linear, not quadratic), also when the view is drawn again", () => {
+      const { renderer, previewEl } = createRenderer();
+      const lines = '<div id="codeViewBody"><span class="code-line">1</span><span class="code-line">2</span><span class="code-line">3</span></div>';
+      const removed = [];
+      const original = Element.prototype.remove;
+      vi.spyOn(Element.prototype, "remove").mockImplementation(function () {
+        if (this.classList.contains("code-line")) removed.push(this.textContent);
+        return original.call(this);
+      });
+      previewEl.innerHTML = lines;
+      renderer.destroy();
+      expect([removed, previewEl.innerHTML]).toEqual([["3", "2", "1"], ""]);
+      removed.length = 0;
+      previewEl.innerHTML = lines;
+      renderer._show("x\n", new File(["x\n"], "a.txt"), null);
+      expect(removed).toEqual(["3", "2", "1"]);
+      expect(previewEl.querySelectorAll(".code-line")).toHaveLength(2);
+      vi.restoreAllMocks();
     });
   });
 
@@ -253,6 +273,85 @@ describe("SourceFileRenderer", () => {
       await renderer.reload("dark");
 
       expect(previewEl.innerHTML).toBe("<p>original</p>");
+    });
+  });
+
+  describe("decoded text (INV-89, SC-27)", () => {
+    const lines = (el) => [...el.querySelectorAll(".code-line")].map((x) => x.textContent);
+    const sjisFile = () => new File([Uint8Array.from([0x82, 0xa0, 0x0d, 0x0a])], "a.txt", { lastModified: 5 });
+    beforeEach(() => {
+      vi.spyOn(window, "scrollTo").mockImplementation(() => {}); // jsdom has none
+    });
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("AT-SFR-08 render shows the decoded text given, not file.text()", async () => {
+      const { renderer, previewEl } = createRenderer();
+      const file = sjisFile();
+      const text = vi.spyOn(file, "text");
+      const meta = await renderer.render(file, null, "dark", () => true, "\u3042\nsecond");
+      expect(text).not.toHaveBeenCalled();
+      expect(lines(previewEl)).toEqual(["\u3042", "second"]);
+      expect([meta.fileName, meta.fileSize, meta.lineCount]).toEqual(["a.txt", 4, 2]);
+    });
+
+    it("AT-SFR-09 reload reads through readText (the opened encoding)", async () => {
+      const { renderer, previewEl } = createRenderer();
+      const handle = { getFile: async () => sjisFile() };
+      await renderer.render(new File(["x"], "a.txt"), handle, "dark", () => true, "x");
+      const readText = vi.fn(async () => "decoded\nagain");
+      const meta = await renderer.reload("dark", () => true, readText);
+      expect(readText.mock.calls[0][0].name).toBe("a.txt");
+      expect(lines(previewEl)).toEqual(["decoded", "again"]);
+      expect(meta.lineCount).toBe(2);
+    });
+
+    it("AT-SFR-10 showText draws another text of the same file: name, size and date stay, the line count follows", async () => {
+      const { renderer, previewEl } = createRenderer();
+      expect(renderer.showText("x")).toBeNull(); // no file shown
+      await renderer.render(new File(["abc"], "a.py", { lastModified: 7 }), null, "dark", () => true, "abc");
+      const meta = renderer.showText("one\ntwo\nthree");
+      expect(lines(previewEl)).toEqual(["one", "two", "three"]);
+      expect(meta).toEqual({ fileName: "a.py", fileSize: 3, lineCount: 3, language: "python", updatedAtStr: "2024-01-01 12:00:00" });
+    });
+
+    it("AT-SFR-11 retarget: Reload reads the written file; the view is not drawn again", async () => {
+      const { renderer, previewEl } = createRenderer();
+      await renderer.render(new File(["abc"], "a.py"), null, "dark", () => true, "abc\nd");
+      const before = previewEl.innerHTML;
+      const written = { getFile: async () => new File(["new"], "b.py") };
+      const meta = renderer.retarget(new File(["12345"], "b.py", { lastModified: 9 }), written);
+      expect(previewEl.innerHTML).toBe(before);
+      expect(meta).toEqual({ fileName: "b.py", fileSize: 5, lineCount: 2, language: "python", updatedAtStr: "2024-01-01 12:00:00" });
+      await renderer.reload("dark", () => true, (f) => f.text());
+      expect(lines(previewEl)).toEqual(["new"]);
+      renderer.destroy();
+      expect(renderer.retarget(new File(["x"], "c.py"), written)).toBeNull();
+    });
+
+    it("AT-SFR-12 highlightText (the code editor, INV-86): highlight.js HTML for a bundled language; null without it, or for another language", () => {
+      const { renderer } = createRenderer();
+      expect(renderer.highlightText("x<", "python")).toBe('<span class="hljs-keyword">x<</span>');
+      expect(renderer.highlightText("x", "json")).toBeNull();
+      expect(renderer.highlightText("x", null)).toBeNull();
+      const config = { codeView: { highlightWaitMs: 10 } };
+      const waiting = new SourceFileRenderer(config, document.createElement("div"), null, false, () => new Promise(() => {}));
+      expect(waiting.highlightText("x", "python")).toBeNull();
+    });
+
+    it("AT-SFR-13 recolor (highlight.js came late) does not draw over the code editor: only while the view's body is shown", async () => {
+      const config = { codeView: { highlightWaitMs: 1 } };
+      const previewEl = document.createElement("div");
+      const renderer = new SourceFileRenderer(config, previewEl, null, false, () => new Promise(() => {}));
+      await renderer.render(new File(["a"], "a.py"), null, "dark", () => true, "a");
+      renderer.useLibrary("hljs", hljsMock);
+      previewEl.innerHTML = '<div id="codeEditBody"></div>';
+      expect(renderer.recolor()).toBeNull();
+      expect(previewEl.innerHTML).toBe('<div id="codeEditBody"></div>');
+      renderer.showText("b");
+      expect(renderer.recolor()).toBeNull(); // shown colored already
+      expect(previewEl.querySelector("#codeViewBody").innerHTML).toContain("hljs-keyword");
     });
   });
 });

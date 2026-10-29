@@ -213,4 +213,20 @@ describe("ModalController keys and focus (AT-HLP-07..11)", () => {
     press(document.body, "c");
     expect(seen).toEqual(["c"]);
   });
+
+  it("AT-HLP-13 onHide is called once each time the open modal closes, however it closes; not for a closed one (INV-89 dialogs)", () => {
+    const modal = makeModal();
+    const hidden = [];
+    cleanups.push(ModalController.setupModal(modal, [modal.querySelector(".close-btn")], () => hidden.push(modal.style.display)));
+    ModalController.hide(modal); // not open: nothing
+    expect(hidden).toEqual([]);
+    ModalController.show(modal);
+    modal.querySelector(".close-btn").click();
+    ModalController.show(modal);
+    press(document.body, "Escape");
+    ModalController.show(modal);
+    modal.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    // called after the modal is hidden
+    expect(hidden).toEqual(["none", "none", "none"]);
+  });
 });

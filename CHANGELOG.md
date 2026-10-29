@@ -17,6 +17,13 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- Code View: the **Edit** button is no longer disabled (it starts code
+  editing), `Ctrl+S` / `Ctrl+Shift+S` save the file instead of doing
+  nothing, the second line of the file info adds the file's encoding and
+  line endings (for example `Shift_JIS  |  CRLF`), and the **Index** works
+  for the languages listed under Added. The key hint lists `[I] Index`,
+  `[P] Commands`, `[E] Edit` and the fold keys (on a Mac, `Option+Left` /
+  `Option+Right`).
 - Block editing: the editor shows its text the way the block is shown. A
   paragraph, heading, list or quote is edited in the body text's font,
   size and line spacing (a heading at its own size, in bold, with its `#`
@@ -132,6 +139,58 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Added
 
+- Edit files other than `.md` in the code view: **Edit** (or `e`) turns
+  the whole file into one editor, with colors and line numbers and no
+  wrapping. While you type, the text shows without colors; 0.2 s after you
+  stop typing, the colors, the line numbers, Search's marks and the unsaved
+  mark follow, so a key does no work on the whole file (GRSMD's own work
+  per key stays under 4 ms in the median). Tab, Shift+Tab, Undo, Redo, a
+  replace and a fold rewrite only the lines they change. A file over
+  48 KB has no colors while you edit it. Files up to the 5 MB load limit
+  can be edited; starting to edit a file of 200 KB or more shows a toast
+  once that showing and editing it may take time (owner ruling NE-32); the
+  help's Code view line says so too.
+  The edit palette then shows only
+  the grip, Save, Save as, Undo, Redo and Search. Tab / Shift+Tab indent
+  or outdent the selected lines by the file's own indent, Enter keeps the
+  line's indent, and Esc leaves the editor (edit mode stays until **Edit**
+  or `e`). Undo and Redo are GRSMD's own, up to 30 steps: a step ends when
+  you stop typing for 1 s or move the caret, and a replace, an indent or a
+  fold is one step. Undo puts the caret back where the step began; a held
+  `Ctrl+Z` undoes once (owner rulings NE-1 to NE-5, NE-7, NE-14, NE-18,
+  NE-26).
+- Code files keep their encoding and line endings: UTF-8, Shift_JIS,
+  EUC-JP, UTF-16LE and UTF-16BE, with or without a BOM, and CRLF, LF or
+  CR. A dialog asks only when a file is not valid UTF-8 (the guessed
+  encoding, which you can change, and the first 5 lines) or mixes line
+  endings (unify them to CRLF or LF, or keep them). Save and Save as work
+  as for Markdown. A file that is not UTF-8 asks whether to save it in its
+  own encoding or in UTF-8 (Save asks once, Save as every time). If the
+  encoding cannot hold some characters, GRSMD shows their line numbers and
+  asks, before the save dialog, whether to save in UTF-8 instead; Cancel
+  saves nothing (owner ruling NE-31). Where files cannot be written
+  (download), Save remembers the answer too. A UTF-16 file with a BOM opens whatever its extension. Shift_JIS and EUC-JP are written with a table built from the
+  browser's own decoder, so no table is bundled. Save as offers the name
+  with the extension the file was opened with and can change it; a name
+  ending in `.md` is written in UTF-8 (a toast says so when you had chosen
+  another encoding) and opens in the Markdown view (owner rulings NE-6, NE-8, NE-15, NE-16, NE-19, NE-24,
+  NE-25, NE-30).
+- JSON folding in the code view: `Ctrl+Left` puts the deepest `{ }` and
+  `[ ]` that span several lines on one line each, and `Ctrl+Right` spreads
+  the shallowest one-line ones out again, one level at a time (Mac:
+  `Option`). Only the folded brackets change; the rest of the text,
+  blanks at line ends included, stays as it is. In the view only the display changes; in the editor the text
+  changes (one Undo; inside the editor `Ctrl+Shift+[` / `Ctrl+Shift+]`,
+  Mac `Cmd+Option+[` / `]`). A **Commands** button (or `p`) shows the two
+  commands as buttons, for touch screens too (owner rulings NE-10 to
+  NE-13, NE-21 to NE-23, NE-27).
+- Index in the code view: Python, JavaScript / TypeScript, JSON and YAML
+  get two levels; C, C++, C#, Java and Go one level (imports, types,
+  functions; a run of imports is one entry such as `import (12)`; a
+  `package` line is not counted, and `#` lines between `using` lines do
+  not break the run) (owner rulings NE-9, NE-20). While a code file is
+  edited, Search finds the editor's text and can replace one match or all
+  of them (one Undo each).
 - Search: a **Search** button right of Index (or the `f` key; in edit mode
   also `Ctrl+F` / `Cmd+F`) shows a search box above the Index. It finds text
   in the Markdown source (in the code view, the file), including diagram and
@@ -300,7 +359,22 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   linear (5 MB in about 2 s; times of highlight.js alone, measured in
   Node). Open such a file with an extension that fits its content. The
   20,480-character limit of Markdown code blocks does not apply to Code
-  View.
+  View. The same holds for the colors while you edit such a file: they
+  are redone each time you stop typing.
+- Code editing has not yet been checked on a real iPad, with an input
+  method (IME), or for clashes of its fold keys with the browser
+  (`Ctrl+Shift+[` / `]`, `Cmd+Option+[` / `]`, `Option+Left` / `Right`).
+- Typing in a large code file: GRSMD's own work per key stays under 4 ms
+  (median), but the browser's own text box takes longer as the file grows.
+  Measured from a key to the next frame (median): 4.1 ms at 200 KB and
+  19.5 ms at 1 MB in Chromium; 12 ms at 100 KB and 116 ms at 1 MB in WebKit
+  (on Windows; a real Safari is not measured yet). Tab, Undo and Redo
+  rewrite only the changed lines, yet Chromium's text box still takes about
+  0.4 s for one of them at 1 MB (2.4 s at 5 MB). A replace, a replace of
+  all and a JSON fold read the whole file, so they take longer in large
+  files (for example 11 ms, 11 ms and 33 ms of GRSMD's own work at 1 MB in
+  Chromium). With the Index shown, the pause after typing in a 5 MB file
+  takes about 0.2 s in WebKit (it was 1.8 s).
 
 ## [Unreleased] - 2026-10-10
 

@@ -180,6 +180,30 @@ describe("RendererOrchestrator", () => {
     });
   });
 
+  describe("code document pass-through (INV-89, INV-90)", () => {
+    it("AT-ORC-29 renderCodeView passes the decoded text; reloadCodeView passes the reader", async () => {
+      const { orchestrator, sourceFileRenderer } = createOrchestrator();
+      const file = new File(["x"], "a.txt");
+      await orchestrator.renderCodeView(file, null, "decoded");
+      expect(sourceFileRenderer.render).toHaveBeenCalledWith(file, null, "dark", expect.any(Function), "decoded");
+      const readText = async () => "t";
+      await orchestrator.reloadCodeView("light", readText);
+      expect(sourceFileRenderer.reload).toHaveBeenCalledWith("light", expect.any(Function), readText);
+    });
+
+    it("AT-ORC-30 showCodeText and retargetCodeView give the renderer's metadata", () => {
+      const { orchestrator, sourceFileRenderer } = createOrchestrator();
+      sourceFileRenderer.showText = vi.fn(() => ({ lineCount: 3 }));
+      sourceFileRenderer.retarget = vi.fn(() => ({ fileName: "b.py" }));
+      expect(orchestrator.showCodeText("a\nb\nc")).toEqual({ lineCount: 3 });
+      expect(sourceFileRenderer.showText).toHaveBeenCalledWith("a\nb\nc");
+      const file = new File(["x"], "b.py");
+      const handle = {};
+      expect(orchestrator.retargetCodeView(file, handle)).toEqual({ fileName: "b.py" });
+      expect(sourceFileRenderer.retarget).toHaveBeenCalledWith(file, handle);
+    });
+  });
+
   describe("loadMarkdown()", () => {
     it("sets _viewState to markdown", async () => {
       const { orchestrator } = createOrchestrator();

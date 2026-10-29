@@ -147,7 +147,7 @@ describe("AT-UI e / [Edit], double click, double tap (INV-31, OS-06)", () => {
     expect(app.blockEditor()).toBeNull();
   });
 
-  it("AT-UI-34 code view: palette hidden, editBtn disabled, e does nothing", async () => {
+  it("AT-UI-34 code view without a code document (no createCodeEdit): palette hidden, editBtn disabled, e does nothing", async () => {
     await withDocument();
     keydown(document.body, "e");
     document.dispatchEvent(dropEvent(new File(["print(1)"], "a.py"), null));
@@ -566,8 +566,11 @@ describe("AT-CFG-04 / 05 text and key hints", () => {
     }
   });
 
-  it("AT-CFG-05 keyHints.markdown has '[E] Edit;' exactly once; keyHints.code has none", () => {
+  it("AT-CFG-05 keyHints.markdown and keyHints.code (SC-27) each have '[E] Edit;' exactly once; code also Index, Commands and the fold keys", () => {
     expect(CONFIG.keyHints.markdown.split("[E] Edit;").length - 1).toBe(1);
-    expect(CONFIG.keyHints.code).not.toContain("[E] Edit;");
+    expect(CONFIG.keyHints.code.split("[E] Edit;").length - 1).toBe(1);
+    expect(CONFIG.keyHints.code).toBe(
+      "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
+    );
   });
 });

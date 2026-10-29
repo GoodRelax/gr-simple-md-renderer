@@ -685,6 +685,48 @@ blockquote {
   font-weight: bold;
 }
 
+/* The code file dialogs (INV-89, INV-90): open (encoding, line endings) and
+   the save encoding question. */
+.code-file-modal .modal-content {
+  max-width: 560px;
+}
+
+.code-file-name {
+  font-family: monospace;
+  color: #59636e;
+  overflow-wrap: anywhere;
+}
+
+.code-file-modal .code-file-preview {
+  margin: 8px 0;
+  padding: 8px;
+  max-height: 8.5em;
+  overflow: auto;
+  white-space: pre;
+  font-family: monospace;
+  font-size: 12px;
+  background: #f4f4f4;
+  border: 1px solid #ccc;
+  color: #333;
+}
+
+.code-file-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.code-file-buttons button {
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.code-file-buttons button[hidden],
+.code-file-modal [hidden] {
+  display: none;
+}
+
 /* Dark theme: GitHub (Primer) dark colors (spec 5.8.1). Screen only: print
    keeps the light colors (owner ruling 2026-10-22). */
 @media screen {
@@ -761,6 +803,16 @@ blockquote {
     background: #0d1117;
     border: 1px solid #3d444d;
     color: #f0f6fc;
+  }
+
+  .dark .code-file-modal .code-file-preview {
+    background: #0d1117;
+    border: 1px solid #3d444d;
+    color: #f0f6fc;
+  }
+
+  .dark .code-file-name {
+    color: #9198a1;
   }
 
   .dark .plantuml-error {
@@ -1109,6 +1161,202 @@ body.dark #keyHint {
 
   body.dark .code-line::before {
     color: #9198a1;
+  }
+}
+
+/* ============================================================
+   Code editor (SC-27, INV-85, INV-86): the textarea lies over the
+   highlighted layer, with the same font, line height, padding and
+   tab size, so the colored text shows through its transparent text.
+   No wrapping; the textarea is as large as its text and never scrolls
+   itself (#preview scrolls, as in the view). The first line is where
+   the view's first line is (the same top padding and line height).
+   While typing (.code-edit-typing) the textarea's text shows and the
+   layer, written again when typing stops, is hidden (G10).
+   ============================================================ */
+#codeEditBody {
+  display: flex;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 4;
+  background: #ffffff;
+  color: #1f2328;
+}
+
+.code-edit-gutter {
+  flex: none;
+  box-sizing: border-box;
+  min-width: 5.5em;
+  padding: 8px 1.5em 36px 0;
+  text-align: right;
+  white-space: pre;
+  color: #59636e;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.code-edit-stack {
+  position: relative;
+  flex: 1 0 auto;
+  /* room for the lines typed since the layer was written (1.6em: the line height) */
+  padding-bottom: calc(var(--code-extra-lines, 0) * 1.6em);
+}
+
+/* Plain (over CONFIG.codeEdit.highlightMaxChars): the layer is empty, the
+   number of lines gives the height (the line height and the paddings) */
+.code-edit-plain .code-edit-stack {
+  min-height: calc(var(--code-lines, 0) * 1.6em + 44px);
+}
+
+/* #codeEditBody: over the pre rules of the Markdown view (light and dark) */
+#codeEditBody .code-edit-layer,
+#codeEditBody .code-edit-input {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px 16px 36px 0;
+  border: 0;
+  border-radius: 0;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: normal;
+  tab-size: inherit;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+#codeEditBody .code-edit-layer {
+  overflow: visible;
+  background: transparent;
+  color: inherit;
+}
+
+.code-edit-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  resize: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: #1f2328;
+}
+
+.code-edit-input::selection {
+  background: rgba(9, 105, 218, 0.3);
+}
+
+/* Plain, or typed since the layer was written (INV-86): the textarea's
+   own text shows; the layer is hidden on the screen. */
+.code-edit-plain .code-edit-input,
+.code-edit-typing .code-edit-input {
+  color: inherit;
+}
+
+@media screen {
+  #codeEditBody.code-edit-plain .code-edit-layer,
+  #codeEditBody.code-edit-typing .code-edit-layer {
+    visibility: hidden;
+  }
+
+  body.dark #codeEditBody {
+    background: #0d1117;
+    color: #f0f6fc;
+  }
+
+  body.dark .code-edit-gutter {
+    color: #9198a1;
+  }
+
+  body.dark .code-edit-input {
+    caret-color: #f0f6fc;
+  }
+
+  body.dark .code-edit-input::selection {
+    background: rgba(56, 139, 253, 0.4);
+  }
+}
+
+/* Print shows the text as the view does: the layer, not the textarea */
+@media print {
+  .code-edit-input {
+    display: none;
+  }
+}
+
+/* ============================================================
+   The code view's command palette (INV-92, NE-13): [Commands] shows
+   in the code view only; the box floats under it.
+   ============================================================ */
+body:not(.view-code) #commandsBtn {
+  display: none;
+}
+
+#codeCommandPalette {
+  position: fixed;
+  z-index: 360; /* over the side panels; under the palette and the modals */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  box-sizing: border-box;
+  background: #f6f8fa;
+  color: #1f2328;
+  border: 1px solid #d1d9e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#codeCommandPalette[hidden] {
+  display: none;
+}
+
+.code-command {
+  padding: 4px 10px;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  color: inherit;
+  background: #ffffff;
+  border: 1px solid #d1d9e0;
+  border-radius: 4px;
+}
+
+.code-command:hover,
+.code-command:focus-visible {
+  background: rgba(9, 105, 218, 0.15);
+}
+
+@media screen {
+  body.dark #codeCommandPalette {
+    background: #151b23;
+    color: #f0f6fc;
+    border-color: #3d444d;
+  }
+
+  body.dark .code-command {
+    background: #0d1117;
+    border-color: #3d444d;
+  }
+
+  body.dark .code-command:hover,
+  body.dark .code-command:focus-visible {
+    background: rgba(56, 139, 253, 0.25);
+  }
+}
+
+@media print {
+  #codeCommandPalette {
+    display: none !important;
   }
 }
 
@@ -1699,6 +1947,20 @@ div.math-pending {
   grid-template-columns: repeat(7, 28px);
   align-items: center;
   gap: 4px;
+}
+
+/* The code editor's palette (INV-85, NE-2): grip, Save, Save as, Undo, Redo
+   and Search in one row */
+.edit-palette-btn[hidden] {
+  display: none;
+}
+
+.edit-palette.edit-palette-code .edit-palette-row {
+  grid-template-columns: repeat(6, 28px);
+}
+
+.edit-palette.edit-palette-code .edit-palette-row + .edit-palette-row {
+  display: none;
 }
 
 .edit-palette-btn {

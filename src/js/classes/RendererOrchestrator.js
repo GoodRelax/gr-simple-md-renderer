@@ -417,10 +417,11 @@ export default class RendererOrchestrator {
    * when another document was opened meanwhile (nothing was shown).
    * @param {File} file
    * @param {FileSystemFileHandle|null} fileHandle
+   * @param {string} [text] - the decoded LF text (INV-89); not given: the file is read as UTF-8
    * @returns {Promise<CodeViewMeta|null>}
    * @purity non-pure
    */
-  async renderCodeView(file, fileHandle) {
+  async renderCodeView(file, fileHandle, text) {
     this.clearDocument();
     this._viewState = "code";
     applyTheme(CONFIG.codeView.defaultTheme);
@@ -430,6 +431,7 @@ export default class RendererOrchestrator {
       fileHandle,
       CONFIG.codeView.defaultTheme,
       this._codeViewIsCurrent(),
+      ...(text === undefined ? [] : [text]),
     );
     this._settleCodeView();
     return metadata;
@@ -502,13 +504,41 @@ export default class RendererOrchestrator {
    * Returns CodeViewMeta for UIController to update #fileInfo; null when
    * there is no file to reload, or another document was opened meanwhile.
    * @param {'light'|'dark'} theme
+   * @param {Function} [readText] - (file) => Promise of the decoded LF text (INV-89)
    * @returns {Promise<CodeViewMeta|null>}
    * @purity non-pure
    */
-  async reloadCodeView(theme) {
-    const metadata = await this.sourceFileRenderer.reload(theme, this._codeViewIsCurrent());
+  async reloadCodeView(theme, readText) {
+    const metadata = await this.sourceFileRenderer.reload(
+      theme,
+      this._codeViewIsCurrent(),
+      ...(readText === undefined ? [] : [readText]),
+    );
     this._settleCodeView();
     return metadata;
+  }
+
+  /**
+   * Show another text of the code file where the view is (SC-27): the
+   * edited text when edit mode ends.
+   * @param {string} text - LF text
+   * @returns {CodeViewMeta|null}
+   * @purity non-pure
+   */
+  showCodeText(text) {
+    return this.sourceFileRenderer.showText(text);
+  }
+
+  /**
+   * The code file was saved (INV-90): Reload reads the written file; its
+   * name, size and date are returned for the file info.
+   * @param {File} file
+   * @param {FileSystemFileHandle} fileHandle
+   * @returns {CodeViewMeta|null}
+   * @purity non-pure
+   */
+  retargetCodeView(file, fileHandle) {
+    return this.sourceFileRenderer.retarget(file, fileHandle);
   }
 
   /**

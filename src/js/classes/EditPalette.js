@@ -24,6 +24,9 @@ const L = CONFIG.messages.palette;
 const POPOVER_GAP_PX = 4;
 const MINIMIZED_CLASS = "edit-palette-minimized";
 const UNSAVED_CLASS = "edit-palette-unsaved";
+const CODE_CLASS = "edit-palette-code";
+// The buttons the code editor's palette keeps (INV-85, NE-2)
+const CODE_COMMANDS = new Set(["save", "saveAs", "undo", "redo", "search"]);
 
 const STROKE = 'fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
 
@@ -48,6 +51,8 @@ const ICONS = {
   submenu: '<svg class="edit-palette-submenu" viewBox="0 0 6 6" fill="currentColor"><path d="M6 0v6H0z"/></svg>',
   class: `<svg viewBox="0 0 24 24" ${STROKE}><rect x="7" y="2.5" width="10" height="9" rx="1"/><path d="M7 5.5h10M7 8.5h10"/><rect x="2.5" y="16" width="7" height="5.5" rx="1"/><rect x="14.5" y="16" width="7" height="5.5" rx="1"/><path d="M12 11.5l-1.7 2.6h3.4z"/><path d="M12 14.1v.4M6 16v-1.5h12V16"/></svg>`,
   undo: `<svg viewBox="0 0 24 24" ${STROKE}><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>`,
+  redo: `<svg viewBox="0 0 24 24" ${STROKE}><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>`,
+  search: `<svg viewBox="0 0 24 24" ${STROKE}><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg>`,
   colorNone: `<svg viewBox="0 0 24 24" ${STROKE}><path d="M6.5 18L12 5.5 17.5 18M8.6 13.5h6.8M4 21L20 3"/></svg>`,
   colorSwatch: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="7"/></svg>',
   linkPaste: `<svg viewBox="0 0 24 24" ${STROKE}><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg>`,
@@ -305,7 +310,8 @@ function createButton(id, label, iconHtml) {
  *     insertRow, rowDelete, insertColumn, columnDelete, insertMermaid (arg: a
  *     CONFIG.edit.mermaidSamples key), textColor (red / blue / green / none),
  *     linkPaste, linkRemove, alignColumn (left / center / right / none),
- *     insertInlineMath, insertMathBox
+ *     insertInlineMath, insertMathBox; redo and search (the code editor's
+ *     palette only, NE-2)
  *   onPopoverOpened(key) - optional: a popover (format / mermaid / table)
  *     has just opened (its button states can be set now, 5.15.5)
  */
@@ -341,6 +347,12 @@ export default class EditPalette {
     this._status.className = "edit-palette-status";
     this._status.setAttribute("aria-live", "polite");
     this._root.appendChild(this._status);
+    // NE-2: Redo and Search are the code editor's only; out of the palette
+    // in Markdown mode, so its layout is as it was (setMode)
+    this._codeButtons = [
+      { id: "paletteRedo", command: "redo", label: L.redo(mod), icon: "redo", stateKey: "redo" },
+      { id: "paletteSearch", command: "search", label: L.search(mod), icon: "search", stateKey: null },
+    ].map((item) => this._codeButton(item));
 
     for (const [key, def] of Object.entries(POPOVERS)) this._popovers[key] = this._buildPopover(def);
 
@@ -462,6 +474,47 @@ export default class EditPalette {
    */
   setUnsaved(isUnsaved) {
     this._root.classList.toggle(UNSAVED_CLASS, isUnsaved);
+  }
+
+  /**
+   * The palette of the Markdown view, or of the code editor (INV-85, NE-2):
+   * "code" hides every button but the grip, Save, Save as and Undo (Undo
+   * moves up into the first row) and adds Redo and Search, which only the
+   * code mode has; "markdown" takes those two out and shows the others
+   * again. An open popover closes.
+   * @purity non-pure
+   * @param {"markdown"|"code"} mode
+   */
+  setMode(mode) {
+    const isCode = mode === "code";
+    if (isCode === this._root.classList.contains(CODE_CLASS)) return;
+    if (this._openPopoverKey()) this.dispatchDisplay("popoverEscapePressed");
+    this._root.classList.toggle(CODE_CLASS, isCode);
+    // the buttons of the palette itself (a popover's items open from them only)
+    for (const [button, info] of this._buttons) {
+      if (this._root.contains(button)) button.hidden = isCode && !CODE_COMMANDS.has(info.command);
+    }
+    const undo = [...this._buttons].find(([, info]) => info.command === "undo")[0];
+    const rows = this._root.querySelectorAll(":scope > .edit-palette-row");
+    if (isCode) {
+      rows[0].append(undo, ...this._codeButtons);
+    } else {
+      rows[1].append(undo);
+      for (const button of this._codeButtons) button.remove();
+    }
+  }
+
+  /**
+   * A button of the code editor's palette only (NE-2): made once, put in
+   * the palette by setMode("code").
+   * @purity non-pure
+   * @param {{id: string, command: string, label: string, icon: string, stateKey: string|null}} item
+   * @returns {HTMLButtonElement}
+   */
+  _codeButton(item) {
+    const button = createButton(item.id, item.label, ICONS[item.icon]);
+    this._buttons.set(button, { command: item.command, arg: undefined, stateKey: item.stateKey, popover: null });
+    return button;
   }
 
   /**
