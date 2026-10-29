@@ -123,8 +123,15 @@ describe("AT-GH-11 opening a GitHub document (INV-94 (3))", () => {
     expect(confirmSpy).toHaveBeenCalledTimes(1);
     expect([bodyView(), app.codeEdit.currentText()]).toEqual(["view-code", `b${LF}`]);
     confirmSpy.mockReturnValue(true);
+    // the code document is closed before the GitHub file replaces the
+    // document, not only later when the view turns to markdown (3.2)
+    const close = vi.spyOn(app.codeEdit, "close");
+    const openGitHub = vi.spyOn(app.ui.documents, "openGitHub");
     await host.openDocument(opened());
     await settle();
+    expect(close).toHaveBeenCalled();
+    expect(openGitHub).toHaveBeenCalledTimes(1);
+    expect(close.mock.invocationCallOrder[0]).toBeLessThan(openGitHub.mock.invocationCallOrder[0]);
     expect([bodyView(), app.codeEdit.hasDocument(), app.ui.documents.gitHub?.ref]).toEqual(["view-markdown", false, REF]);
     expect(app.orchestrator.getBody()).toBe(GITHUB_TEXT);
     expect(app.ui._isDocumentDirty()).toBe(false);

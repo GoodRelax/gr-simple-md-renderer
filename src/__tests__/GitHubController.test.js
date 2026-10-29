@@ -259,6 +259,31 @@ describe("AT-GH-09 GitHubController: the button, the o key and the dialogs", () 
     expect(el.button.textContent).toBe("OpenGitHub"); // G.labels.openButton
   });
 
+  it("refresh writes the button only when what it shows changes: not on every key (G10)", async () => {
+    const host = fakeHost();
+    const { c, el } = make({}, host);
+    const records = [];
+    const observer = new MutationObserver((list) => records.push(...list));
+    observer.observe(el.button, { childList: true, attributes: true, subtree: true });
+    const settle = async () => {
+      await Promise.resolve();
+      return records.splice(0).length;
+    };
+    for (let i = 0; i < 5; i++) c.refresh();
+    expect(await settle()).toBe(0);
+    host.body = () => "# A\n"; // back to the GitHub version: only disabled changes
+    c.refresh();
+    c.refresh();
+    expect(await settle()).toBe(1);
+    expect(el.button.disabled).toBe(true);
+    host.documents.gitHub = null; // [Open GitHub]
+    c.refresh();
+    expect(await settle()).toBeGreaterThan(0);
+    c.refresh();
+    expect(await settle()).toBe(0);
+    observer.disconnect();
+  });
+
   it("o opens the Open dialog with the cursor in the token field; nothing while a GitHub document is shown (INV-93, D9, D24)", () => {
     const host = fakeHost();
     const { c, el } = make({}, host);

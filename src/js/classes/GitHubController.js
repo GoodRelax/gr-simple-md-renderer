@@ -42,6 +42,7 @@ export default class GitHubController {
     this._isRequesting = false;
     this._openRef = null; // the file the Open dialog will read
     this._dropResolve = null;
+    this._shown = null; // what the button shows now (refresh writes only changes)
     this.el.button.hidden = !this.enabled;
     if (!this.enabled) return;
     this._wire();
@@ -53,24 +54,24 @@ export default class GitHubController {
   /**
    * The button follows the document: [Push to GitHub] while a GitHub
    * document is shown (disabled when it is the GitHub version, D8), else
-   * [Open GitHub].
+   * [Open GitHub]. It runs on every key in the editors, so it writes only
+   * what changed (G10).
    * @purity non-pure
    */
   refresh() {
     if (!this.enabled) return;
     const link = this._link();
+    const labels = this.options.labels;
+    const next = link
+      ? { push: true, html: labels.pushButton, title: labels.pushTitle(link.ref.label()), disabled: !this._hasChanges(link) }
+      : { push: false, html: labels.openButton, title: labels.openTitle, disabled: false };
+    const shown = this._shown ?? {};
     const button = this.el.button;
-    if (!link) {
-      button.classList.remove("gh-push");
-      button.innerHTML = this.options.labels.openButton;
-      button.title = this.options.labels.openTitle;
-      button.disabled = false;
-      return;
-    }
-    button.classList.add("gh-push");
-    button.innerHTML = this.options.labels.pushButton;
-    button.title = this.options.labels.pushTitle(link.ref.label());
-    button.disabled = !this._hasChanges(link);
+    if (next.push !== shown.push) button.classList.toggle("gh-push", next.push);
+    if (next.html !== shown.html) button.innerHTML = next.html;
+    if (next.title !== shown.title) button.title = next.title;
+    if (next.disabled !== shown.disabled) button.disabled = next.disabled;
+    this._shown = next;
   }
 
   /**

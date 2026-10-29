@@ -334,7 +334,7 @@
               <li><code>[Open GitHub]</code> / <code>O</code> : Open a <code>.md</code> on GitHub. While it is open, the button is <code>[Push to GitHub]</code>. PC only (Chrome / Edge)</li>
               <li><code>[Render Light]</code> / <code>L</code> : Render / switch to light mode</li>
               <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
-              <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge)</li>
+              <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge). A file opened from GitHub is read again from GitHub, after a confirmation</li>
               <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
               <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette</li>
               <li>
@@ -557,7 +557,7 @@
               <li><code>[Open GitHub]</code> / <code>O</code> : GitHub の <code>.md</code> を開きます。開いている間、ボタンは <code>[Push to GitHub]</code> になります。PC だけ（Chrome / Edge）</li>
               <li><code>[Render Light]</code> / <code>L</code> : レンダリング/ライトモード切替</li>
               <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
-              <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード（Chrome / Edge）</li>
+              <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード（Chrome / Edge）。GitHub から開いた文書は、確かめの画面の後に GitHub から読み直す</li>
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
               <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
               <li>
@@ -933,7 +933,7 @@
             <h3>3. Edit and push</h3>
             <ol class="gh-steps">
               <li>
-                Edit as usual. Ctrl+S saves to your PC only and sends nothing.
+                Edit as usual. Ctrl+S (Mac: Cmd+S) saves to your PC only and sends nothing.
               </li>
               <li>
                 Press <b>Push to GitHub</b> (15). Check the message (16), click
@@ -1041,7 +1041,7 @@
             <h3>3. 直して push する</h3>
             <ol class="gh-steps">
               <li>
-                ふつうに直します。Ctrl+S は PC に保存するだけで、何も送りません。
+                ふつうに直します。Ctrl+S（Mac は Cmd+S）は PC に保存するだけで、何も送りません。
               </li>
               <li>
                 <b>Push to GitHub</b> を押します（15）。メッセージを確かめ（16）、トークンの欄をクリックしてブラウザの候補から <code>owner/repo</code> を選び（17）、<b>Push</b> を押します（18）。「Pushed to GitHub」と出たら（19）、GitHub にコミットされています。
