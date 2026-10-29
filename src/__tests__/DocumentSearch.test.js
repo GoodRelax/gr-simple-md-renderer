@@ -427,3 +427,97 @@ describe("DocumentSearch (INV-80)", () => {
     expect(html).not.toMatch(/title="[^"]*Enter/);
   });
 });
+
+describe("DocumentSearch in the code editor (SC-27, INV-80, INV-88)", () => {
+  /** An editor as CodeEditor shows itself to Search; setText changes its text (one undo step there). */
+  function fakeEditor(text) {
+    const target = document.createElement("textarea");
+    const editor = {
+      value: text,
+      text: () => editor.value,
+      select: vi.fn(),
+      rangeOf: vi.fn(() => null),
+      placeOf: vi.fn((offset) => ({ element: target, offset: 100 + offset })),
+      setText: vi.fn((next) => {
+        editor.value = next;
+      }),
+    };
+    return editor;
+  }
+
+  beforeEach(() => {
+    preview.innerHTML = '<div id="codeViewBody"><span class="code-line">view text</span></div>';
+    search.setMode("code");
+    search.setReplaceEnabled(false);
+  });
+
+  it("AT-SRCH-20 setCodeEditor: the replace row is there; the editor's text is searched (not the view's); a match is selected in it and its line scrolled to", async () => {
+    const editor = fakeEditor("a cat\nthe cat\n");
+    expect(els.replaceRow.hidden).toBe(true);
+    search.setCodeEditor(editor);
+    search.setReplaceEnabled(true);
+    expect([els.replaceRow.hidden, els.replaceOne.disabled]).toEqual([false, false]);
+    const scrollTargetTo = vi.spyOn(memento, "scrollTargetTo").mockImplementation(() => {});
+    vi.spyOn(memento, "shownTop").mockReturnValue(0);
+    vi.spyOn(window, "innerHeight", "get").mockReturnValue(400);
+    search.open();
+    type("cat");
+    await wait(TYPING_PAUSE_MS + 50);
+    expect(els.count.textContent).toBe(M.count(1, "2"));
+    expect(editor.select.mock.calls).toEqual([[2, 5]]);
+    expect(scrollTargetTo).toHaveBeenLastCalledWith(editor.placeOf.mock.results[0].value.element, 100 - 102);
+    expect(marked()).toBeNull();
+    search.setCodeEditor(null);
+    expect(els.replaceRow.hidden).toBe(true);
+    expect(els.count.textContent).toBe(M.none);
+  });
+
+  it("AT-SRCH-21 the match is colored on the editor's layer when it holds the text", async () => {
+    const layer = document.createElement("code");
+    layer.innerHTML = '<span class="k">a cat</span>';
+    preview.append(layer);
+    const editor = fakeEditor("a cat");
+    editor.rangeOf.mockImplementation((start, end) => {
+      const range = document.createRange();
+      range.setStart(layer.firstChild.firstChild, start);
+      range.setEnd(layer.firstChild.firstChild, end);
+      return range;
+    });
+    search.setCodeEditor(editor);
+    search.open();
+    type("cat");
+    await wait(TYPING_PAUSE_MS + 50);
+    expect(current()).toEqual(["cat"]);
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  it("AT-SRCH-22 Replace / Replace all change the editor's text through setText (one undo step each), not the Markdown body; Replace moves on", async () => {
+    const editor = fakeEditor("cat cat cat");
+    search.setCodeEditor(editor);
+    search.setReplaceEnabled(true);
+    search.open();
+    type("cat");
+    await wait(TYPING_PAUSE_MS + 50);
+    els.replaceInput.value = "dog";
+    els.replaceOne.click();
+    await wait(0);
+    expect(editor.setText.mock.calls).toEqual([["dog cat cat", 0, 0]]);
+    expect(editor.select).toHaveBeenLastCalledWith(4, 7);
+    expect(els.count.textContent).toBe(M.count(1, "2"));
+    els.replaceAll.click();
+    expect(editor.setText.mock.calls[1]).toEqual(["dog dog dog", 4, 4]);
+    expect(host.toast).toHaveBeenCalledWith(M.replaced(2));
+    expect(host.beforeReplace).not.toHaveBeenCalled();
+    expect(search.documents.replaceBody).not.toHaveBeenCalled();
+  });
+
+  it("AT-SRCH-23 in the view (no editor): the code view's lines; Replace does nothing", async () => {
+    search.setReplaceEnabled(true);
+    search.open();
+    type("view");
+    await wait(TYPING_PAUSE_MS + 50);
+    expect(marked().textContent).toBe("view text");
+    els.replaceOne.click();
+    expect(search.documents.replaceBody).not.toHaveBeenCalled();
+  });
+});

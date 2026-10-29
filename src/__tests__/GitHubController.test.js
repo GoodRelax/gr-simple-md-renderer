@@ -12,7 +12,7 @@ import hljs from "highlight.js/lib/common";
 import DOMPurify from "dompurify";
 import { CONFIG } from "../js/config.js";
 
-// AT-GH-08 GitHubController (SC-27): the token field of the three
+// AT-GH-08 GitHubController (SC-28): the token field of the three
 // dialogs (owner rulings D28, D34, D35, D37) and the Pushed toast (D36).
 // The dialogs come from src/index.html; no request leaves the test.
 
@@ -202,12 +202,14 @@ describe("AT-GH-08 the key hint lists [O] GitHub where GitHub editing is shown (
   /**
    * @param {boolean} enabled - GitHub editing shown (a mouse or trackpad device)
    * @param {string} mode
+   * @param {boolean} [isApple] - a Mac (the fold keys are Option+Left / Right)
    * @returns {string} the hint text
    */
-  function hintText(enabled, mode) {
+  function hintText(enabled, mode, isApple = false) {
     const app = {
       elements: { keyHint: document.createElement("div"), preview: document.createElement("div") },
       gitHub: { enabled },
+      _isApple: isApple,
       _clearKeyHintDismiss: UIController.prototype._clearKeyHintDismiss,
     };
     UIController.prototype.showKeyHint.call(app, mode);
@@ -215,9 +217,17 @@ describe("AT-GH-08 the key hint lists [O] GitHub where GitHub editing is shown (
     return app.elements.keyHint.textContent;
   }
 
-  it("a PC: [O] GitHub; after [F] Search; in both views", () => {
+  it("a PC: [O] GitHub; after [F] Search; (the code view: after [P] Commands;) in both views", () => {
     expect(hintText(true, "markdown")).toContain("[F] Search; [O] GitHub; [L] Light;");
-    expect(hintText(true, "code")).toContain("[F] Search; [O] GitHub; [L] Light;");
+    expect(hintText(true, "code")).toContain("[F] Search; [P] Commands; [O] GitHub; [L] Light;");
+    expect(hintText(true, "code")).toContain("[Ctrl+Left][Ctrl+Right] Fold (JSON);");
+  });
+
+  it("a Mac: the code view keeps the Option fold keys with [O] GitHub;", () => {
+    expect(hintText(true, "code", true)).toBe(CONFIG.keyHints.codeAppleGitHub);
+    expect(hintText(true, "code", true)).toContain("[P] Commands; [O] GitHub;");
+    expect(hintText(true, "code", true)).toContain("[Option+Left][Option+Right] Fold (JSON);");
+    expect(hintText(false, "code", true)).toBe(CONFIG.keyHints.codeApple);
   });
 
   it("an iPad (GitHub editing not shown): no [O]", () => {
@@ -227,14 +237,14 @@ describe("AT-GH-08 the key hint lists [O] GitHub where GitHub editing is shown (
   });
 
   it("the GitHub hints differ from the plain ones only by [O] GitHub;", () => {
-    for (const mode of ["markdown", "code"]) {
+    for (const mode of ["markdown", "code", "codeApple"]) {
       expect(CONFIG.keyHints[`${mode}GitHub`].replace("[O] GitHub; ", "")).toBe(CONFIG.keyHints[mode]);
     }
   });
 });
 
 describe("AT-GH-09 GitHubController: the button, the o key and the dialogs", () => {
-  it("[Open GitHub] when no GitHub document; [Push to GitHub] while one is shown, enabled only when it differs (INV-87)", () => {
+  it("[Open GitHub] when no GitHub document; [Push to GitHub] while one is shown, enabled only when it differs (INV-95)", () => {
     const host = fakeHost();
     const { c, el } = make({}, host);
     expect(el.button.hidden).toBe(false);
@@ -249,7 +259,7 @@ describe("AT-GH-09 GitHubController: the button, the o key and the dialogs", () 
     expect(el.button.textContent).toBe("OpenGitHub"); // G.labels.openButton
   });
 
-  it("o opens the Open dialog with the cursor in the token field; nothing while a GitHub document is shown (INV-85, D9, D24)", () => {
+  it("o opens the Open dialog with the cursor in the token field; nothing while a GitHub document is shown (INV-93, D9, D24)", () => {
     const host = fakeHost();
     const { c, el } = make({}, host);
     c.handleKey();
@@ -260,7 +270,7 @@ describe("AT-GH-09 GitHubController: the button, the o key and the dialogs", () 
     expect(document.activeElement).toBe(el.open.token);
   });
 
-  it("not shown on a touch device or in a frame: the button is hidden and o does nothing (INV-92)", () => {
+  it("not shown on a touch device or in a frame: the button is hidden and o does nothing (INV-100)", () => {
     const el = mountDialogs();
     const host = fakeHost();
     host.documents.gitHub = null;
@@ -279,7 +289,7 @@ describe("AT-GH-09 GitHubController: the button, the o key and the dialogs", () 
     expect(seen).not.toHaveBeenCalled();
   });
 
-  it("a .md dropped on a GitHub document: keep, stop or cancel (INV-90)", async () => {
+  it("a .md dropped on a GitHub document: keep, stop or cancel (INV-98)", async () => {
     const { c, el } = make();
     for (const [button, choice] of [["keep", "keep"], ["stop", "stop"], ["cancel", "cancel"]]) {
       const answer = c.askDropChoice({ fileName: "draft.md", text: "# A\r\n", hasBom: false });
@@ -292,7 +302,7 @@ describe("AT-GH-09 GitHubController: the button, the o key and the dialogs", () 
   });
 });
 
-describe("AT-GH-10 relative images and links of a GitHub document (INV-91)", () => {
+describe("AT-GH-10 relative images and links of a GitHub document (INV-99)", () => {
   it("rewrites them after sanitizing, and leaves them alone without a resolver", () => {
     const preview = document.createElement("div");
     document.body.appendChild(preview);
@@ -365,7 +375,7 @@ describe("AT-GH-13 GitHubController: review fixes (M3, L2, L3)", () => {
   });
 });
 
-describe("AT-GH-10 a rewritten relative image still waits for consent (INV-91 (1), INV-19)", () => {
+describe("AT-GH-10 a rewritten relative image still waits for consent (INV-99 (1), INV-19)", () => {
   it("the raw.githubusercontent.com image is held (no src) until the user consents", () => {
     const preview = document.createElement("div");
     document.body.appendChild(preview);

@@ -70,7 +70,7 @@ function commit(start, text) {
 
 const COMMITTED = "# Title\n\nHello changed.\n\nSecond para.\n";
 
-describe("INV-47 a large body is not written into #editor on every commit", () => {
+describe("AT-UI-70 INV-47 a large body is not written into #editor on every commit", () => {
   it("the limit is a CONFIG value of 100,000 characters by default", () => {
     expect(limit).toBe(100000);
   });

@@ -122,6 +122,26 @@ describe("AT-SRCH-12 (INV-80 (5)(6)(7), 11-c, 5.11) UIController and Search", ()
     expect(app.index.isShown()).toBe(false);
   });
 
+  it("(e) INV-80 (6), INV-53 (review L17): with a palette popover open, the first Esc in the box closes the popover only; the next one closes Search", async () => {
+    await withFile("doc.md", "# A\n\nsome text\n");
+    keydown(document.body, "e");
+    keydown(document.body, "f");
+    app.searchEl.input.focus();
+    const mermaidButton = app.paletteRoot().querySelector("#paletteMermaid");
+    pointer(mermaidButton, "pointerdown", { x: 0, y: 0 });
+    pointer(mermaidButton, "pointerup", { x: 0, y: 0 });
+    const popover = document.querySelector("#paletteMermaidMenu");
+    expect(popover.hidden).toBe(false);
+    expect(document.activeElement).toBe(app.searchEl.input);
+    const first = keydown(app.searchEl.input, "Escape");
+    expect(first.defaultPrevented).toBe(true);
+    expect(popover.hidden).toBe(true);
+    expect(app.search.isShown()).toBe(true);
+    keydown(app.searchEl.input, "Escape");
+    expect(app.search.isShown()).toBe(false);
+    expect(app.ui.palette.isShown()).toBe(true);
+  });
+
   it("(d) INV-80 (5)(7), 11-c: a replace applies the open block first (11-c searchReplaceRequested) and is one Undo; Ctrl+Z in the box is the box's own; replace follows edit mode (S4)", async () => {
     await withFile("doc.md", "# A\n\nsome text\n\nmore text\n");
     keydown(document.body, "f");

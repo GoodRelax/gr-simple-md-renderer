@@ -1,6 +1,7 @@
 import { CONFIG } from "../config.js";
 import { nextFrame, isTypingTarget, isPastActivation } from "../utils.js";
 import { placementNearLine } from "../floatingPlacement.js";
+import { forwardWheel } from "../wheelForwarding.js";
 
 // Tooltips and aria-labels (config.js, owner ruling U1)
 const RANGE_MESSAGES = CONFIG.messages.blockRange;
@@ -95,7 +96,10 @@ function isAtEdge(wrapper, container, offset, after, isTab) {
  * on the selected text, where the browser clears the selection on release.
  *
  * The bar is one element on the body (position: fixed), never in the
- * preview, whose children the renderer owns (as BlockGapInsert).
+ * preview, whose children the renderer owns (as BlockGapInsert). A wheel
+ * turn over it scrolls the preview as over the preview (as the gap line,
+ * AQ8: wheelForwarding.forwardWheel); the bar and the frame follow that
+ * scroll as any other.
  *
  * blockLocator: getBlockElements(), findBlockIdAt(node), isTableTab(node).
  * host: { canSelect(), isPaletteNode(node), onRangeChanged(range),
@@ -164,6 +168,8 @@ export default class BlockRangeSelection {
     };
     /** @purity non-pure */
     this._keepSelection = (e) => e.preventDefault(); // a press on the bar keeps the selection and the focus
+    /** @purity non-pure */
+    this._onBarWheel = (e) => forwardWheel(e, this.preview); // the bar is on the body: the turn goes to the preview
   }
 
   // ---- Queries (semi-pure-b: they read the selection and the layout, and change nothing) ----
@@ -599,6 +605,8 @@ export default class BlockRangeSelection {
     bar.addEventListener("touchstart", this._keepSelection, { passive: false });
     bar.addEventListener("pointerup", this._onBarRelease);
     bar.addEventListener("pointercancel", this._onBarCancel);
+    // not passive: the turn is taken over when the preview scrolls (as the gap line, AQ8)
+    bar.addEventListener("wheel", this._onBarWheel, { passive: false });
     document.body.appendChild(bar);
     this._bar = bar;
     return bar;

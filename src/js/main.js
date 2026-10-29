@@ -16,7 +16,7 @@ import "katex/dist/katex.min.css";
 // Local Imports
 // ========================================
 import { CONFIG } from "./config.js";
-import { isApplePlatform } from "./utils.js";
+import { isApplePlatform, diagramControllersFor } from "./utils.js";
 import { lazyMath } from "./lazyMath.js";
 import LibraryLoader from "./classes/LibraryLoader.js";
 import ApplicationState from "./classes/ApplicationState.js";
@@ -40,6 +40,10 @@ import UIController from "./classes/UIController.js";
 import HelpLanguageSwitch from "./classes/HelpLanguageSwitch.js";
 import DocumentIndex from "./classes/DocumentIndex.js";
 import DocumentSearch from "./classes/DocumentSearch.js";
+import CodeFileDialog from "./classes/CodeFileDialog.js";
+import CodeEditController from "./classes/CodeEditController.js";
+import CodeEditor from "./classes/CodeEditor.js";
+import CodeCommandPalette from "./classes/CodeCommandPalette.js";
 import GitHubContentsClient from "./classes/GitHubContentsClient.js";
 import GitHubController from "./classes/GitHubController.js";
 import { resolveRelativeUrl } from "./gitHubUrl.js";
@@ -57,6 +61,7 @@ const elements = {
   indexPanel: document.getElementById("indexPanel"),
   sidePanels: document.getElementById("sidePanels"),
   searchBtn: document.getElementById("searchBtn"),
+  commandsBtn: document.getElementById("commandsBtn"),
   renderLightBtn: document.getElementById("renderLight"),
   renderDarkBtn: document.getElementById("renderDark"),
   reloadBtn: document.getElementById("reloadBtn"),
@@ -90,11 +95,9 @@ const markdownRenderer = new MarkdownRenderer(
   math,
 );
 const mermaidRenderer = new MermaidRenderer(elements.preview, null);
-const plantumlRenderer = new PlantUMLRenderer(
-  elements.preview,
-  null,
-  () => libraries.get("plantuml"),
-);
+// The encoder is handed over when it runs (11-g handToRenderers); the dev
+// server provides it from the start (ready), and nothing else asks for it.
+const plantumlRenderer = new PlantUMLRenderer(elements.preview, libraries.peek("plantuml"));
 
 // SourceFileRenderer is owned by RendererOrchestrator
 const sourceFileRenderer = new SourceFileRenderer(
@@ -136,9 +139,17 @@ const isApple = isApplePlatform(navigator);
 const documentIndex = new DocumentIndex(
   { button: elements.indexBtn, panel: elements.indexPanel, column: elements.sidePanels, preview: elements.preview },
   scrollManager,
-  { emptyText: CONFIG.messages.index.empty },
+  { emptyText: CONFIG.messages.index.empty, emptyCodeText: CONFIG.messages.index.emptyCode },
 );
-// GitHub (SC-27): a mouse or trackpad device only (D15, D17), and not
+// The code document of the code view (SC-27): its dialogs (INV-89, INV-90)
+// and its writes through the same file access as the Markdown saves.
+const codeFileDialog = new CodeFileDialog(
+  document.getElementById("codeOpenModal"),
+  document.getElementById("codeSaveModal"),
+  CONFIG.messages.codeEdit,
+  CONFIG.codeEdit.sampleLines,
+);
+// GitHub (SC-28): a mouse or trackpad device only (D15, D17), and not
 // inside a frame (a <meta> CSP cannot forbid framing).
 const gitHubEnabled = window.matchMedia("(pointer: fine)").matches && window.top === window.self;
 const gitHubFetch = (url, init) => window.fetch(url, init);
@@ -214,6 +225,19 @@ const ui = new UIController(orchestrator, state, elements, scrollEngine, {
     ),
   isApple,
   documentIndex,
+  // The code editor (INV-85): colored by the code view's highlight.js
+  createCodeEdit: (host) =>
+    new CodeEditController(fileAccess, codeFileDialog, host, {
+      createEditor: (editorHost) => new CodeEditor(elements.preview, editorHost, { isApple }),
+      highlight: (text, language) => sourceFileRenderer.highlightText(text, language),
+    }),
+  createCodeCommands: (host) =>
+    new CodeCommandPalette(
+      { button: elements.commandsBtn, box: document.getElementById("codeCommandPalette") },
+      host,
+      CONFIG.messages.codeCommands,
+      { isApple },
+    ),
   createSearch: (host) =>
     new DocumentSearch(
       {
@@ -251,19 +275,25 @@ const ui = new UIController(orchestrator, state, elements, scrollEngine, {
 // choice is kept in memory only (SC-16).
 new HelpLanguageSwitch(elements.helpModal, navigator.language);
 
-// Diagram controllers: fine-pointer (mouse/trackpad) devices only
-const isTouchCapable = window.matchMedia("(any-pointer: coarse)").matches;
-if (window.matchMedia("(pointer: fine)").matches) {
+// Diagram controllers: fine-pointer (mouse/trackpad) devices only; the pan
+// also needs no coarse pointer (INV-16, INV-16b)
+const diagramControllers = diagramControllersFor({
+  fine: window.matchMedia("(pointer: fine)").matches,
+  anyCoarse: window.matchMedia("(any-pointer: coarse)").matches,
+});
+if (diagramControllers.zoomAndCopy) {
   new DiagramZoomController(elements.preview);
   new DiagramCopyController(elements.preview);
-  if (!isTouchCapable) {
-    new DiagramPanController(elements.preview);
-  }
+}
+if (diagramControllers.pan) {
+  new DiagramPanController(elements.preview);
 }
 
-// The core runs (INV-81): a drop or paste made before it is taken now, and
-// the libraries run one by one when the page is idle (owner ruling 2026-10-25).
-const early = boot.takeEarlyInput();
-if (early) ui.receiveEarlyInput(early);
-libraries.preloadWhenIdle((name, library) => orchestrator.libraryLoaded(name, library));
+// The core runs (INV-81, spec 11-g coreStarted): a drop or paste made before
+// it is taken now, and the libraries run one by one when the page is idle
+// (owner ruling 2026-10-25). The page is loading until the four libraries are
+// ready or failed; then it answers the held PlantUML boxes (answering, one
+// dialog) and is settled. PlantUML asks and sends only from answering on (AQ7).
+libraries.connect(orchestrator);
+libraries.dispatchPage("coreStarted", { receiveEarlyInput: (early) => ui.receiveEarlyInput(early) });
 performance.mark("grsmd-core-ready");

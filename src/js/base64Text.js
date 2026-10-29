@@ -1,4 +1,4 @@
-// UTF-8 text <-> Base64, for the GitHub Contents API (SC-27). The BOM
+// UTF-8 text <-> Base64, for the GitHub Contents API (SC-28). The BOM
 // is kept as U+FEFF in the text, so a file round-trips byte for byte.
 
 const BOM = "\uFEFF";

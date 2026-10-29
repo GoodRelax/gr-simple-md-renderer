@@ -359,21 +359,6 @@ export default class BlockEditController {
     });
   }
 
-  /**
-   * Two taps close enough in time and place (INV-31, CONFIG.edit).
-   * @purity semi-pure-a
-   * @param {{time: number, x: number, y: number}|null} first
-   * @param {{time: number, x: number, y: number}|null} second
-   * @param {object} [limits] - CONFIG.edit
-   * @returns {boolean}
-   */
-  static isDoubleTap(first, second, limits = CONFIG.edit) {
-    if (!first || !second) return false;
-    const interval = second.time - first.time;
-    const distance = Math.hypot(second.x - first.x, second.y - first.y);
-    return interval >= 0 && interval <= limits.doubleTapMaxIntervalMs && distance <= limits.doubleTapMaxDistancePx;
-  }
-
   // ---- state machine (11-c) ----
 
   /**
@@ -431,7 +416,7 @@ export default class BlockEditController {
    * {kind: "block", id}; {kind: "cell", id, row, col, caret}; or
    * {kind: "none"} (a margin, also a table's: edit mode only).
    * @purity semi-pure-b
-   * @param {MouseEvent|PointerEvent} e - the dblclick, or the pointerup of a double tap
+   * @param {MouseEvent} e - the dblclick (of the mouse or a pen, 5.14.6)
    * @returns {{kind: string, id?: number}|null}
    */
   doubleClickTarget(e) {

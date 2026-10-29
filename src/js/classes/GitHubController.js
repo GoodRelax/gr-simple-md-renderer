@@ -6,7 +6,7 @@ import { detectLineEnding } from "../textTransforms.js";
 const BOM = "\uFEFF";
 
 /**
- * The GitHub UI (Framework layer; SC-27): the [Open GitHub] /
+ * The GitHub UI (Framework layer; SC-28): the [Open GitHub] /
  * [Push to GitHub] button, and the Open, Push, Reload and drop dialogs.
  * Every request to GitHub starts from a dialog the user confirms (CON-12
  * draft). The token is read from the dialog's field when a request is sent

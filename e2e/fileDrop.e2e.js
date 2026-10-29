@@ -13,7 +13,7 @@ test("dropping a .md file shows the Markdown preview", async ({ page }) => {
   await expect(page.locator("#preview em")).toHaveText("text");
 });
 
-test("dropping a non-.md text file shows the code view", async ({ page }) => {
+test("SC-27, INV-85: dropping a non-.md text file shows the code view; [Edit] is on", async ({ page }) => {
   await page.goto("/");
   await dropFile(page, {
     name: "script.js",
@@ -24,7 +24,7 @@ test("dropping a non-.md text file shows the code view", async ({ page }) => {
   await expect(page.locator("body")).toHaveClass(/\bview-code\b/);
   await expect(page.locator("#fileInfo")).toContainText("script.js");
   await expect(page.locator("#preview")).toContainText("function hello()");
-  await expect(page.locator("#editBtn")).toBeDisabled();
+  await expect(page.locator("#editBtn")).toBeEnabled(); // SC-27: the code view is editable
 });
 
 // Without the fix only Chromium fails this (see the known limit in load.e2e.js).

@@ -21,7 +21,7 @@ function cspOf(html) {
   return /http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(html)?.[1];
 }
 
-describe("content-security-policy build plugin (INV-20)", () => {
+describe("AT-CSP-01 content-security-policy build plugin (INV-20)", () => {
   const page = (script) =>
     '<!doctype html><html><head>\n<!-- <script src="//cdn.example/x.js"></script> -->\n' +
     '<meta charset="UTF-8" />\n<script type="application/ld+json">{"a":1}</script>\n' +
@@ -51,7 +51,7 @@ describe("content-security-policy build plugin (INV-20)", () => {
     expect(csp).toBeLessThan(html.indexOf("<script type="));
   });
 
-  it("fails the build on <script src>", () => {
+  it("fails the build on <script src> (INV-06, INV-07)", () => {
     expect(() =>
       run('<html><head><meta charset="UTF-8"><script src="a.js"></script></head></html>'),
     ).toThrow(/script src/);
@@ -60,7 +60,7 @@ describe("content-security-policy build plugin (INV-20)", () => {
   it("has the expected directives", () => {
     const csp = buildCsp(["AAA="]);
     expect(csp).toContain("default-src 'none'");
-    // exactly the two origins (SC-27): nothing else can be fetched
+    // exactly the two origins (SC-28): nothing else can be fetched
     expect(csp).toMatch(/(^|; )connect-src https:\/\/www\.plantuml\.com https:\/\/api\.github\.com(;|$)/);
     expect(csp).toContain("img-src 'self' data: blob: https://www.plantuml.com https:");
     expect(csp).toContain("font-src data:");

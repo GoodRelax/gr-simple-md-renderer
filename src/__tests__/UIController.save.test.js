@@ -470,7 +470,7 @@ describe("AT-SSM 11-e save operation (27 cells), with UI stimuli", () => {
     await saving;
   });
 
-  it.each(REPLACES)("AT-SSM-09 pushing: %s is refused with savingInProgress (INV-54, INV-88 (4))", async (_name, act) => {
+  it.each(REPLACES)("AT-SSM-09 pushing: %s is refused with savingInProgress (INV-54, INV-96 (4))", async (_name, act) => {
     await withDocument();
     app.ui.documents._saveOperationState = "pushing"; // white box: a push in flight (GitHubController starts it)
     const { session, location } = { session: app.ui.documents.session, location: app.ui.documents.location };

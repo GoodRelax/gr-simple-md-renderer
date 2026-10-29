@@ -10,7 +10,7 @@ import SaveDocumentAs from "../js/classes/SaveDocumentAs.js";
 import { CONFIG } from "../js/config.js";
 import { fakeFileAccess } from "./helpers/fakeFs.js";
 
-// AT-GH (SC-27): the GitHub URL, Base64, the API client and
+// AT-GH (SC-28): the GitHub URL, Base64, the API client and
 // the GitHub link of DocumentLifecycle. No request leaves the test.
 
 const G = CONFIG.github;
@@ -298,7 +298,7 @@ describe("AT-GH-06 DocumentLifecycle and the GitHub link", () => {
   });
 });
 
-describe("AT-GH-05 GitHubContentsClient: the 5.19.4 messages and an unknown push result (L1)", () => {
+describe("AT-GH-05 GitHubContentsClient: the 5.20.4 messages and an unknown push result (L1)", () => {
   it.each([
     [{ status: 422, body: { message: "Invalid request" } }, G.messages.invalid(G.labels.gitHubDetail("Invalid request"))],
     [{ status: 429, body: {}, headers: { "retry-after": "12" } }, G.messages.rateLimited(G.labels.retryIn("12"))],
@@ -308,7 +308,7 @@ describe("AT-GH-05 GitHubContentsClient: the 5.19.4 messages and an unknown push
       G.messages.rateLimited(G.labels.retryAfter(new Date(1800000000 * 1000).toLocaleTimeString())),
     ],
     [{ status: 409, body: { message: "docs/a.md does not match blob1" } }, G.messages.conflict(G.labels.gitHubDetail("docs/a.md does not match blob1"))],
-  ])("a push answered %o shows its 5.19.4 message", async (answer, message) => {
+  ])("a push answered %o shows its 5.20.4 message", async (answer, message) => {
     const link = new GitHubLink({ ref: REF, blobSha: "blob1", fileText: "a\n", isPrivate: false, lastCommit: null });
     const { fetchFn } = scriptedFetch([answer]);
     const r = await new GitHubContentsClient(fetchFn, G).pushFile(link, "b\n", "m", TOKEN);

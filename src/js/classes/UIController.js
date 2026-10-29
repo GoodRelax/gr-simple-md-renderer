@@ -2,10 +2,11 @@ import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } 
 import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame, shortcutLetter, isTypingTarget } from "../utils.js";
 import { splitMarkdownWrapper, normalizeLineEndings, hasUtf8Bom } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
-import BlockEditController from "./BlockEditController.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
 import ClipboardLink from "./ClipboardLink.js";
 import { dropHandlePromise, isOtherField, pasteStartsDocument } from "../earlyInput.js";
+import { hasCodeOutline, buildCodeOutline } from "../codeOutline.js";
+import { detectBom } from "../textEncoding.js";
 
 /**
  * An Undo or Redo of the browser's editing history.
@@ -65,6 +66,20 @@ export function hasNullByte(bytes) {
 }
 
 /**
+ * The first bytes of a file of an unknown extension mark it binary: a NUL
+ * byte, unless the bytes start with a UTF-16 BOM (UTF-16 text holds NUL
+ * bytes; INV-89, L19).
+ * @purity pure
+ * @param {Uint8Array} bytes
+ * @returns {boolean}
+ */
+export function looksBinary(bytes) {
+  const bom = detectBom(bytes);
+  if (bom === "utf-16le" || bom === "utf-16be") return false;
+  return hasNullByte(bytes);
+}
+
+/**
  * What [Render] / l / d does in each view (Sect 5.8, spec 5.14.1):
  * "theme" (code view: CSS only), "editorIntoDocument" (markdown view: the
  * same document, line endings normalized, no wrapper split, ruling T33) or
@@ -79,9 +94,9 @@ export function renderRouteFor(isCodeView, isPreRender) {
   return isPreRender ? "newDocument" : "editorIntoDocument";
 }
 
-// The one-key shortcuts of setupKeyboard (3.12) that wait until an inserted
+// The one-key shortcuts of setupKeyboard (5.11) that wait until an inserted
 // block's cell or source has opened (INV-52, owner ruling D5).
-const ONE_KEY_SHORTCUTS = new Set(["i", "f", "o", "l", "d", "r", "n", "c", "e"]);
+const ONE_KEY_SHORTCUTS = new Set(["i", "f", "o", "l", "d", "r", "n", "c", "e", "p"]);
 
 /**
  * Translates UI events into use-case calls.
@@ -101,8 +116,11 @@ export default class UIController {
    *   primary shortcut modifier, INV-14), clipboard (what the Paste link
    *   button reads, INV-69; navigator.clipboard when not given),
    *   documentIndex (DocumentIndex; optional), createSearch(host) ->
-   *   DocumentSearch (optional), createGitHub(host) -> GitHubController
-   *   (optional; SC-27)
+   *   DocumentSearch (optional), createCodeEdit(host) ->
+   *   CodeEditController (the code document, SC-27; optional: without it
+   *   the code view reads files as UTF-8 and does not save),
+   *   createCodeCommands(host) -> CodeCommandPalette (INV-92; optional),
+   *   createGitHub(host) -> GitHubController (optional; SC-28)
    * @purity non-pure
    */
   constructor(orchestrator, state, elements, scrollEngine, services) {
@@ -127,12 +145,16 @@ export default class UIController {
     this._clipboardTextWaiting = null; // a block range's source for the copy event execCommand fires (INV-74)
     this._copyEvent = null; // a copy event the browser started while blocks are selected (INV-74)
     this._baseTitle = document.title;
-    this._lastTap = null; // double tap on the empty preview (INV-31)
+    this._lastPressPointerType = null; // the last press on the preview: a dblclick from it counts for the mouse and the pen, not touch (AQ3)
     this._isEditorHistoryStale = false; // #editor's undo history after a system write (5.7 (6))
     this._isEditorTextStale = false; // #editor not yet given the body after a large commit (INV-47)
     this.palette = services.createPalette(this._paletteHost());
     this.blockEdit = services.createBlockEdit(this._blockEditHost());
     this.documentSearch = services.createSearch ? services.createSearch(this._searchHost()) : null;
+    this.codeEdit = services.createCodeEdit ? services.createCodeEdit(this._codeEditHost()) : null;
+    this.codeCommands = services.createCodeCommands
+      ? services.createCodeCommands({ runCommand: (command) => this.codeEdit?.fold(command) })
+      : null;
     this.gitHub = services.createGitHub ? services.createGitHub(this._gitHubHost()) : null;
     this.orchestrator.setModelChangedListener(this);
 
@@ -190,14 +212,16 @@ export default class UIController {
     const fileInfo = this.elements.fileInfo;
     const editor = this.elements.editor;
     const affordance = document.getElementById("affordanceText");
-    this.elements.editBtn.disabled = mode === "code"; // OS-06
-    this.documentIndex?.setAvailable(mode === "markdown");
+    // OS-06 as revised by SC-27: the code view is editable with a code document
+    this.elements.editBtn.disabled = mode === "code" && !this.codeEdit;
+    if (mode !== "code") this.codeEdit?.close(); // the code document goes with the code view (SC-27)
+    this._updateCodeTools(mode);
     this.documentSearch?.setMode(mode);
 
     switch (mode) {
       case "code":
         if (fileInfo) {
-          fileInfo.textContent = this._formatFileInfo(metadata);
+          this._showCodeFileInfo(metadata);
           fileInfo.style.display = "block";
         }
         editor.readOnly = true;
@@ -220,6 +244,36 @@ export default class UIController {
   }
 
   /**
+   * The Index (INV-77; INV-91: the code view of a language with an outline)
+   * and the command palette (INV-92: the code view of a JSON file) follow
+   * the view and the code document's language.
+   * @param {'initial'|'markdown'|'code'} mode
+   * @purity non-pure
+   */
+  _updateCodeTools(mode) {
+    const language = mode === "code" && this.codeEdit?.hasDocument() ? this.codeEdit.language() : null;
+    const hasOutline = language !== null && hasCodeOutline(language);
+    this.documentIndex?.setAvailable(mode === "markdown" || hasOutline);
+    this.documentIndex?.setCodeOutline(hasOutline ? this._codeOutline() : null);
+    this.codeCommands?.setAvailable(language === "json");
+  }
+
+  /**
+   * The code outline the Index lists (INV-91): of the text shown (the
+   * view's, with its folds, or the editor's); an entry goes to its line in
+   * the editor (with the caret) or in the view.
+   * @purity non-pure
+   * @returns {object}
+   */
+  _codeOutline() {
+    return {
+      entries: () => buildCodeOutline(this.codeEdit.shownText(), this.codeEdit.language()),
+      place: (line) => this.codeEdit.editor?.linePlace(line) ?? null,
+      picked: (line) => this.codeEdit.editor?.moveCaretToLine(line),
+    };
+  }
+
+  /**
    * Show keyboard shortcut hints in #keyHint, then dismiss on
    * timeout (5s), keydown, scroll, or click.
    * @param {'initial'|'markdown'|'code'} mode
@@ -228,8 +282,10 @@ export default class UIController {
   showKeyHint(mode) {
     const hint = this.elements.keyHint;
     if (!hint) return;
+    // the fold keys of a Mac are Option+Left / Right (INV-92, NE-23)
+    const key = mode === "code" && this._isApple ? "codeApple" : mode;
     // [O] GitHub is listed only where GitHub editing is shown (D33)
-    const text = (this.gitHub?.enabled && CONFIG.keyHints[`${mode}GitHub`]) || CONFIG.keyHints[mode];
+    const text = (this.gitHub?.enabled && CONFIG.keyHints[`${key}GitHub`]) || CONFIG.keyHints[key];
     if (!text) {
       hint.style.display = "none";
       return;
@@ -279,18 +335,37 @@ export default class UIController {
   }
 
   /**
-   * Format CodeViewMeta into a display string for #fileInfo.
-   * @param {CodeViewMeta} metadata
+   * Format CodeViewMeta into a display string for #fileInfo. With the code
+   * document's encoding, BOM and line ending mode (INV-89) the second line
+   * shows them too.
+   * @param {CodeViewMeta & {encoding?: string, bom?: boolean, lineEndingMode?: string}} metadata
    * @returns {string}
    * @purity semi-pure-a
    */
   _formatFileInfo(metadata) {
     if (!metadata) return "";
-    const { fileName, fileSize, lineCount, updatedAtStr } = metadata;
+    const { fileName, fileSize, lineCount, updatedAtStr, encoding } = metadata;
     const text = CONFIG.messages.fileInfo;
     const sizeStr = text.size((fileSize / 1024).toFixed(2));
     const linesStr = text.lines(lineCount.toLocaleString());
-    return `${fileName}  |  ${linesStr}  |  ${sizeStr}\n${text.updated(updatedAtStr)}`;
+    let second = text.updated(updatedAtStr);
+    if (encoding) {
+      const name = CONFIG.messages.codeEdit.encodingNames[encoding] ?? encoding;
+      second += `  |  ${text.encoding(name, metadata.bom)}  |  ${text.lineEndings[metadata.lineEndingMode]}`;
+    }
+    return `${fileName}  |  ${linesStr}  |  ${sizeStr}\n${second}`;
+  }
+
+  /**
+   * #fileInfo of the code view: the file, and the code document's encoding
+   * and line endings (INV-89).
+   * @param {CodeViewMeta} metadata
+   * @purity non-pure
+   */
+  _showCodeFileInfo(metadata) {
+    if (!this.elements.fileInfo) return;
+    const codeInfo = metadata ? this.codeEdit?.fileInfo() : null;
+    this.elements.fileInfo.textContent = this._formatFileInfo(codeInfo ? { ...metadata, ...codeInfo } : metadata);
   }
 
   // ---- Affordance management ----
@@ -406,17 +481,10 @@ export default class UIController {
     if (this.orchestrator.isPreRenderState()) return;
     const theme = this.state.currentTheme;
     if (this.orchestrator.isCodeViewActive()) {
-      let metadata;
-      try {
-        metadata = await this.orchestrator.reloadCodeView(theme);
-      } catch {
-        this._toast(CONFIG.messages.edit.reloadFailed); // the file could not be read (N4)
-        return;
-      }
-      if (metadata) this.setViewMode("code", metadata);
+      await this._reloadCodeView(theme);
       return;
     }
-    // a GitHub document reads GitHub again, after its dialog (SC-27, D8)
+    // a GitHub document reads GitHub again, after its dialog (SC-28, D8)
     if (this.gitHub && this.documents.gitHub) {
       this.gitHub.reloadDialog();
       return;
@@ -446,6 +514,34 @@ export default class UIController {
     this.blockEdit.dispatch("documentReplaced");
     this.documents.reload(loaded);
     await this._showSessionBody(theme);
+  }
+
+  /**
+   * Reload in the code view: refused while the code document is saved, asks
+   * first when it is unsaved (INV-21), then reads the file in the encoding
+   * it was opened with (INV-89; CodeEditController.reloadReader).
+   * @param {'light'|'dark'} theme
+   * @purity non-pure
+   */
+  async _reloadCodeView(theme) {
+    if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
+    // edit mode ends first, without drawing the view: the reload draws it (SC-27, L5)
+    const wasEditing = this.codeEdit?.stopEditing() ?? false;
+    const reader = this.codeEdit?.reloadReader() ?? null;
+    let metadata;
+    try {
+      metadata = reader
+        ? await this.orchestrator.reloadCodeView(theme, reader.readText)
+        : await this.orchestrator.reloadCodeView(theme);
+    } catch {
+      if (wasEditing) this.codeEdit.showDocumentText(); // the editor left the view empty
+      this._toast(CONFIG.messages.edit.reloadFailed); // the file could not be read (N4)
+      return;
+    }
+    if (!metadata) return;
+    reader?.commit();
+    this.setViewMode("code", metadata);
+    this._refreshDirtyMark();
   }
 
   /**
@@ -507,7 +603,8 @@ export default class UIController {
    * INV-21 order: (2) classify and read, (3) refuse while saving, (4) ask
    * when unsaved, (5) replace synchronously right after the answer.
    * .md -> Markdown preview (new session and save target); other text ->
-   * code view (no document).
+   * code view (a code document, decoded with the open dialog when needed,
+   * INV-89).
    * @param {File} file
    * @param {Promise|null} handlePromise - taken before the first await (CON-01)
    * @purity non-pure
@@ -524,10 +621,11 @@ export default class UIController {
     }
     let text = "";
     let hasBom = false;
+    let codeDocument = null;
     try {
       if (kind === "sniff") {
         const bytes = new Uint8Array(await file.slice(0, 8192).arrayBuffer());
-        if (hasNullByte(bytes)) {
+        if (looksBinary(bytes)) {
           alert(CONFIG.fileDrop.messages.binaryFile);
           return;
         }
@@ -536,6 +634,11 @@ export default class UIController {
       if (kind === "markdown") {
         hasBom = hasUtf8Bom(new Uint8Array(await file.slice(0, 3).arrayBuffer()));
         text = await file.text();
+      } else if (this.codeEdit) {
+        // INV-89: decoded here; the open dialog asks when it is not UTF-8
+        // or mixes line endings. Cancel: nothing changes.
+        codeDocument = await this.codeEdit.read(file);
+        if (!codeDocument) return;
       }
     } catch (_) {
       alert(CONFIG.fileDrop.messages.readError);
@@ -544,7 +647,7 @@ export default class UIController {
     const fileHandle = handlePromise ? await handlePromise : null;
 
     // A .md on a GitHub document: replace it and keep the link, or stop the
-    // link (SC-27, owner ruling D6). Asked before the unsaved question.
+    // link (SC-28, owner ruling D6). Asked before the unsaved question.
     let keepGitHub = false;
     if (kind === "markdown" && this.gitHub && this.documents.gitHub && !this.orchestrator.isCodeViewActive()) {
       const choice = await this.gitHub.askDropChoice({ fileName: file.name, text, hasBom });
@@ -552,6 +655,7 @@ export default class UIController {
       keepGitHub = choice === "keep";
     }
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
+    this.codeEdit?.close(); // the code document is replaced (SC-27)
     if (kind === "markdown") {
       this.blockEdit.dispatch("documentReplaced");
       this.documents.openFile(text, hasBom, file.lastModified, file.name, fileHandle, keepGitHub);
@@ -563,7 +667,13 @@ export default class UIController {
     this.documents.close();
     this._editorChangedSinceRender = false;
     this._setEditorText(""); // RTC2-07: clear editor before code view
-    const rendering = this.orchestrator.renderCodeView(file, fileHandle);
+    let rendering;
+    if (codeDocument) {
+      this.codeEdit.opened(codeDocument, fileHandle);
+      rendering = this.orchestrator.renderCodeView(file, fileHandle, codeDocument.text);
+    } else {
+      rendering = this.orchestrator.renderCodeView(file, fileHandle);
+    }
     this._refreshDirtyMark();
     let metadata;
     try {
@@ -600,12 +710,13 @@ export default class UIController {
 
   /**
    * ModelChangedPort: the code view shown plain was colored when
-   * highlight.js came (INV-81 (3)); its language is shown now.
+   * highlight.js came (INV-81 (3)); the file info (name, size, lines,
+   * date: no language) is written again.
    * @param {CodeViewMeta} metadata
    * @purity non-pure
    */
   onCodeViewRecolored(metadata) {
-    if (this.elements.fileInfo) this.elements.fileInfo.textContent = this._formatFileInfo(metadata);
+    this._showCodeFileInfo(metadata);
   }
 
   /**
@@ -626,7 +737,7 @@ export default class UIController {
   }
 
   /**
-   * Keyboard shortcuts (Sect 3.12).
+   * Keyboard shortcuts (Sect 5.11).
    * Up/Down: smooth scroll (disabled in initial state).
    * l / d: render or reload with theme.
    * n: new tab.
@@ -643,6 +754,7 @@ export default class UIController {
       // INV-14. The event target counts too: Esc in the block editor closes
       // it, so the focus has already left when the key reaches the document.
       if (isTypingTarget(document.activeElement) || isTypingTarget(e.target)) return;
+      if (this._handleCodeFoldKey(e)) return; // INV-92: before the modifier guard
       if (e.ctrlKey || e.metaKey || e.altKey) return; // INV-14: modifier guard
       // INV-52: until the inserted block's cell or source opens, a typed
       // letter is not a shortcut (owner ruling D5)
@@ -686,7 +798,12 @@ export default class UIController {
           this.doClear();
           break;
         case "e":
+          // the code editor takes the focus at once: the e is not typed into it
+          if (this.orchestrator.isCodeViewActive()) e.preventDefault();
           this.toggleEditPalette();
+          break;
+        case "p":
+          this._toggleCodeCommands();
           break;
         case "Delete":
         case "Backspace":
@@ -701,8 +818,10 @@ export default class UIController {
           if (this.orchestrator.isPreRenderState()) break;
           // The order (owner rulings 2026-10-25): the block editor, the
           // popover, the block range and the palette (11-c), then Search,
-          // then the Index. The code view has no palette.
-          if (this.palette.isShown()) this.blockEdit.dispatch("escapePressed");
+          // then the Index. The code view: the command palette, then Search,
+          // then the Index; its edit mode stays (left by e / [Edit], SC-27).
+          if (this.codeCommands?.isShown()) this.codeCommands.hide();
+          else if (this.palette.isShown() && !this.codeEdit?.isEditing()) this.blockEdit.dispatch("escapePressed");
           else if (this.documentSearch?.isShown()) this.documentSearch.hide();
           else if (this.documentIndex?.isShown()) this.documentIndex.hide();
           break;
@@ -714,6 +833,35 @@ export default class UIController {
       if (e.key === "ArrowUp" || e.key === "ArrowDown")
         this.scrollEngine.stopScroll();
     });
+  }
+
+  /**
+   * INV-92: Ctrl+Left / Ctrl+Right (Apple: Option+Left / Option+Right)
+   * outside a text entry in the code view of a JSON file fold / unfold one
+   * level (in the view, or in the editor's text in edit mode). Otherwise
+   * the key is not taken. A held key acts once.
+   * @purity non-pure
+   * @param {KeyboardEvent} e
+   * @returns {boolean} true when the key was taken
+   */
+  _handleCodeFoldKey(e) {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return false;
+    const held = this._isApple ? e.altKey && !e.ctrlKey && !e.metaKey : e.ctrlKey && !e.altKey && !e.metaKey;
+    if (!held || e.shiftKey || e.isComposing || !this._isCodeDocumentShown() || !this.codeEdit.isJson()) return false;
+    e.preventDefault();
+    if (!e.repeat) this.codeEdit.fold(e.key === "ArrowLeft" ? "fold" : "unfold");
+    return true;
+  }
+
+  /**
+   * p (INV-92, NE-13): the command palette of the code view; not JSON: a
+   * toast says folding is for JSON files.
+   * @purity non-pure
+   */
+  _toggleCodeCommands() {
+    if (!this._isCodeDocumentShown()) return;
+    if (!this.codeEdit.isJson()) this._toast(CONFIG.messages.codeEdit.foldJsonOnly);
+    else this.codeCommands?.toggle();
   }
 
   /**
@@ -743,8 +891,10 @@ export default class UIController {
   _primaryShortcutAction(letter, e) {
     if (letter === "s") {
       // INV-58: taken in every view (owner ruling, 2026-10-21); it saves in
-      // the Markdown view only, started inside the keydown (INV-33).
-      if (this.orchestrator.isPreRenderState() || this.orchestrator.isCodeViewActive()) return noAction;
+      // the Markdown view and the code view (INV-90), started inside the
+      // keydown (INV-33).
+      if (this.orchestrator.isPreRenderState()) return noAction;
+      if (this.orchestrator.isCodeViewActive() && !this.codeEdit) return noAction;
       /** @purity non-pure */
       return () => (e.shiftKey ? this.requestSaveAs() : this.requestSave());
     }
@@ -756,6 +906,17 @@ export default class UIController {
     }
     const isRedo = (letter === "z" && e.shiftKey) || (letter === "y" && !e.shiftKey && !this._isApple);
     if ((letter === "z" && !e.shiftKey) || isRedo) {
+      if (this.codeEdit?.isEditing()) {
+        // INV-88: the code editor's own, also outside it (the editor takes
+        // the keys typed in it); a text entry keeps the browser's
+        if (isTextEntry(document.activeElement)) return null;
+        /** @purity non-pure */
+        return () => {
+          if (isRedo) this.codeEdit.redo();
+          else this.codeEdit.undo();
+          this._refreshDirtyMark();
+        };
+      }
       // INV-59: edit mode only (ruling Q3). Redo (primary + Shift + Z, and
       // Ctrl+Y outside Apple platforms) goes by the same rules (owner ruling
       // D7), except in the block editor, where it is the browser's (ruling M5).
@@ -791,8 +952,12 @@ export default class UIController {
       };
     }
     if ((letter === "b" || letter === "i") && !e.shiftKey) {
-      // INV-60 (Shift not pressed): only while an editor is open.
-      if (!this.blockEdit.isEditing() || document.activeElement === this.elements.editor) return null;
+      // INV-60 (Shift not pressed): only while an editor is open. Not taken
+      // from #editor or another text entry (the search box), as INV-59 (a).
+      if (!this.blockEdit.isEditing()) return null;
+      const active = document.activeElement;
+      if (active === this.elements.editor) return null;
+      if (isTextEntry(active) && !this.blockEdit.isEditorElement(active) && !this.blockEdit.isCellElement(active)) return null;
       const command = letter === "b" ? "bold" : "italic";
       /** @purity non-pure */
       return () => {
@@ -904,12 +1069,16 @@ export default class UIController {
   /**
    * [Edit] / e (5.11, INV-31): toggle the palette in the markdown view; in
    * the initial state start an empty document (empty #editor) or render
-   * #editor with the system theme first; nothing in code view (OS-06).
+   * #editor with the system theme first; in the code view its edit mode
+   * (SC-27, INV-85; nothing without a code document).
    * @returns {Promise<void>}
    * @purity non-pure
    */
   async toggleEditPalette() {
-    if (this.orchestrator.isCodeViewActive()) return;
+    if (this.orchestrator.isCodeViewActive()) {
+      this.codeEdit?.toggleEdit();
+      return;
+    }
     if (this.orchestrator.isPreRenderState()) {
       if (this.elements.editor.value.trim() === "") {
         await this._startEmptyDocument();
@@ -1000,49 +1169,52 @@ export default class UIController {
   }
 
   /**
-   * A double click or a double tap on the preview: on the empty initial
+   * A mouse (or pen) double click on the preview: on the empty initial
    * preview it starts an empty document (INV-31); in the Markdown view
    * outside edit mode it enters edit mode and opens what was double-clicked
-   * (INV-57, 11-c previewDoubleClicked).
+   * (INV-57, 11-c previewDoubleClicked). A touch double tap does neither
+   * (owner ruling AQ3): the browser's double-tap zoom stays, and a phone
+   * enters edit mode with [Edit], then a tap opens a block (INV-29). A pen
+   * double tap acts as a mouse double click, as before the ruling (the pen
+   * is asked of the owner). The browser's dblclick carries no pointer type,
+   * so the last press on the preview decides.
    * @purity non-pure
    */
   setupDoubleClickGestures() {
     const preview = this.elements.preview;
     /** @purity non-pure */
-    preview.addEventListener("dblclick", (e) => this._handlePreviewDoubleClick(e));
+    preview.addEventListener(
+      "pointerdown",
+      (e) => {
+        this._lastPressPointerType = e.pointerType;
+      },
+      true,
+    );
     /** @purity non-pure */
-    preview.addEventListener("pointerup", (e) => {
-      if (e.pointerType !== "touch" || !this._acceptsDoubleClick()) {
-        this._lastTap = null;
-        return;
-      }
-      const tap = { time: performance.now(), x: e.clientX, y: e.clientY };
-      if (BlockEditController.isDoubleTap(this._lastTap, tap)) {
-        this._lastTap = null;
-        this._handlePreviewDoubleClick(e);
-      } else {
-        this._lastTap = tap;
-      }
+    preview.addEventListener("dblclick", (e) => {
+      if (!this._isMouseOrPenDoubleClick()) return;
+      this._handlePreviewDoubleClick(e);
     });
   }
 
   /**
-   * The preview takes a double click: the empty initial state (INV-31) or
-   * the Markdown view (INV-57). Not the code view.
+   * The double click came from the mouse or a pen: the last press on the
+   * preview was theirs, or there was none (a dblclick without Pointer
+   * Events counts as the mouse's). Touch and an empty pointer type do not.
    * @purity semi-pure-b
    * @returns {boolean}
    */
-  _acceptsDoubleClick() {
-    if (this._canStartEmptyDocument()) return true;
-    return !this.orchestrator.isPreRenderState() && !this.orchestrator.isCodeViewActive();
+  _isMouseOrPenDoubleClick() {
+    const type = this._lastPressPointerType;
+    return type === null || type === "mouse" || type === "pen";
   }
 
   /**
-   * A double click (or double tap) on the preview: start an empty document
-   * (INV-31), or 11-c previewDoubleClicked in the Markdown view (INV-57;
-   * only browsingPreview has a cell for it).
+   * A mouse (or pen) double click on the preview: start an empty document (INV-31),
+   * or 11-c previewDoubleClicked in the Markdown view (INV-57; only
+   * browsingPreview has a cell for it).
    * @purity non-pure
-   * @param {MouseEvent|PointerEvent} e - the dblclick, or the pointerup of a double tap
+   * @param {MouseEvent} e - the dblclick
    */
   _handlePreviewDoubleClick(e) {
     if (this._canStartEmptyDocument()) {
@@ -1240,9 +1412,12 @@ export default class UIController {
   /**
    * Unsaved (glossary, 11-e): a derived value, never stored.
    * @purity semi-pure-b
+   * @param {boolean} [isCodeTyping] - the mark of a key typed in the code editor
    * @returns {boolean}
    */
-  _isDocumentDirty() {
+  _isDocumentDirty(isCodeTyping = false) {
+    // the code document (SC-27); while typing in it, not compared on each key (G10)
+    if (this.codeEdit?.isDirty(isCodeTyping)) return true;
     if (!this.documents.hasSession()) return false;
     return (
       this.documents.isBodyChanged(this.orchestrator.getBody()) ||
@@ -1255,15 +1430,20 @@ export default class UIController {
    * Title prefix and palette status (INV-50). No file name in the title.
    * The button states follow now, or in the next frame (deferButtonStates).
    * @purity non-pure
-   * @param {{deferButtonStates?: boolean}} [options]
+   * @param {{deferButtonStates?: boolean, isCodeTyping?: boolean}} [options] -
+   *   isCodeTyping: a key typed in the code editor (exact when typing stops)
    */
   _refreshDirtyMark(options = {}) {
-    const dirty = this._isDocumentDirty();
+    const dirty = this._isDocumentDirty(options.isCodeTyping);
     document.title = dirty ? CONFIG.edit.titleUnsavedPrefix + this._baseTitle : this._baseTitle;
     const m = CONFIG.messages.edit;
     const name = this.documents.fileName();
     let status = "";
     if (this.documents.hasSession()) status = dirty ? m.statusUnsaved(name) : m.statusSaved(name);
+    else if (this.codeEdit?.hasDocument()) {
+      const codeName = this.codeEdit.fileName();
+      status = dirty ? m.statusUnsaved(codeName) : m.statusSaved(codeName);
+    }
     this.palette.setStatusText(status);
     this.palette.setUnsaved(dirty);
     this.gitHub?.refresh(); // [Push to GitHub] is enabled while the file differs from GitHub (D8)
@@ -1316,6 +1496,8 @@ export default class UIController {
    * @returns {object}
    */
   _paletteStates() {
+    // the code editor's palette: Save, Save as, Undo, Redo and Search (INV-85, NE-2)
+    if (this.codeEdit?.isEditing()) return { undo: this.codeEdit.canUndo(), redo: this.codeEdit.canRedo() };
     const isEditing = this.blockEdit.isEditing();
     // A selection in one inline range (INV-67 (6)).
     const canFormat = isEditing && this.blockEdit.canFormatSelection();
@@ -1361,7 +1543,7 @@ export default class UIController {
    * @returns {boolean} true when refused
    */
   _rejectWhileSaving() {
-    if (!this.documents.isSaving()) return false;
+    if (!this.documents.isSaving() && !this.codeEdit?.isSaving()) return false;
     this._toast(CONFIG.messages.edit.savingInProgress);
     return true;
   }
@@ -1374,7 +1556,7 @@ export default class UIController {
   }
 
   /**
-   * GitHubHost (SC-27): what GitHubController asks of the document.
+   * GitHubHost (SC-28): what GitHubController asks of the document.
    * @purity non-pure
    * @returns {object}
    */
@@ -1409,6 +1591,7 @@ export default class UIController {
    */
   async _openGitHubDocument(result) {
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
+    this.codeEdit?.close(); // the code document is replaced (SC-27)
     this.blockEdit.dispatch("documentReplaced");
     this.documents.openGitHub(result.text, result.hasBom, result.link);
     this.orchestrator.resetExternalImageConsent(); // INV-43
@@ -1542,8 +1725,16 @@ export default class UIController {
         this._tableOperation({ kind: "align", value: arg });
         break;
       case "undo":
-        this.blockEdit.dispatch("undoRequested"); // INV-48, 11-c
+        if (this.codeEdit?.isEditing()) this.codeEdit.undo(); // INV-88
+        else this.blockEdit.dispatch("undoRequested"); // INV-48, 11-c
         this._refreshDirtyMark();
+        break;
+      case "redo": // the code editor's palette only (NE-2)
+        if (this.codeEdit?.isEditing()) this.codeEdit.redo();
+        this._refreshDirtyMark();
+        break;
+      case "search": // ... as primary+F in edit mode (INV-80)
+        this.documentSearch?.open();
         break;
       case "insertTable":
         void this._insertBlock(CONFIG.edit.tableTemplate, "cell");
@@ -1695,11 +1886,13 @@ export default class UIController {
 
   /**
    * Save: overwrite the file (Save as without a target). The steps up to the
-   * use case call run synchronously in the press handler (INV-33).
+   * use case call run synchronously in the press handler (INV-33). In the
+   * code view the code document is saved (INV-90).
    * @returns {Promise<void>} settles when the outcome is shown
    * @purity non-pure
    */
   requestSave() {
+    if (this._isCodeDocumentShown()) return this.codeEdit.save();
     return this._startSave("saveRequested");
   }
 
@@ -1708,7 +1901,84 @@ export default class UIController {
    * @purity non-pure
    */
   requestSaveAs() {
+    if (this._isCodeDocumentShown()) return this.codeEdit.saveAs();
     return this._startSave("saveAsRequested");
+  }
+
+  /**
+   * The code view shows a code document (SC-27).
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
+  _isCodeDocumentShown() {
+    return this.orchestrator.isCodeViewActive() && this.codeEdit !== null;
+  }
+
+  /**
+   * CodeEditHost (the port CodeEditController calls back).
+   * @purity non-pure
+   */
+  _codeEditHost() {
+    return {
+      toast: (message) => this._toast(message),
+      confirmOverwrite: (reason) => this.confirmOverwrite(reason),
+      /** @purity non-pure */
+      codeFileSaved: (file, fileHandle, languageChanged) => {
+        let metadata = this.orchestrator.retargetCodeView(file, fileHandle);
+        // the view is colored in the new name's language (the editor follows it itself)
+        if (metadata && languageChanged && !this.codeEdit.isEditing()) {
+          metadata = this.orchestrator.showCodeText(this.codeEdit.shownText()) ?? metadata;
+        }
+        if (metadata) this._showCodeFileInfo(metadata);
+        this._updateCodeTools("code"); // Save as may change the language
+        this._refreshDirtyMark();
+      },
+      // NE-19: a file saved as .md opens in the Markdown view, as a drop
+      reopenAsMarkdown: (file, fileHandle) => this._handleDroppedFile(file, Promise.resolve(fileHandle)),
+      codeEditModeChanged: (isEditing) => this._codeEditModeChanged(isEditing),
+      /** @purity non-pure */
+      showCodeText: (text, isEdited) => {
+        const metadata = this.orchestrator.showCodeText(text);
+        if (metadata && isEdited) this._showCodeFileInfo(metadata);
+        this._codeTextSettled();
+      },
+      // typing: the button states once per frame (INV-51); nothing compared on a key (G10)
+      codeTextChanged: () => this._refreshDirtyMark({ deferButtonStates: true, isCodeTyping: true }),
+      codeTextSettled: () => this._codeTextSettled(),
+    };
+  }
+
+  /**
+   * The code view's edit mode began or ended (INV-85): the palette in its
+   * code mode, Search on the editor's text with Replace (INV-80), the Index
+   * of the text shown (INV-91).
+   * @param {boolean} isEditing
+   * @purity non-pure
+   */
+  _codeEditModeChanged(isEditing) {
+    if (isEditing) {
+      this.palette.setMode("code");
+      this.palette.show();
+    } else {
+      this.palette.hide();
+      this.palette.setMode("markdown");
+    }
+    document.body.classList.toggle("code-edit", isEditing);
+    this.documentSearch?.setCodeEditor(isEditing ? this.codeEdit.editor : null);
+    this.documentSearch?.setReplaceEnabled(isEditing);
+    this.documentIndex?.refresh();
+    this._refreshDirtyMark();
+  }
+
+  /**
+   * The code text shown changed for good (a fold, the view drawn again, a
+   * typing pause): Search, the Index, the unsaved mark and the buttons follow it.
+   * @purity non-pure
+   */
+  _codeTextSettled() {
+    this.documentSearch?.refresh();
+    this.documentIndex?.refresh();
+    this._refreshDirtyMark(); // exact now: the mark, Undo (L17)
   }
 
   /**

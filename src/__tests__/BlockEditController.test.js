@@ -811,23 +811,3 @@ describe("AT-BEC-28 spoofed attributes have no effect (Q1, T2)", () => {
     expect(s.editor()).toBeNull();
   });
 });
-
-describe("BlockEditController.isDoubleTap (INV-31, CONFIG.edit)", () => {
-  const first = { time: 1000, x: 100, y: 100 };
-  it("uses CONFIG.edit: 300 ms and 24 px", () => {
-    expect(CONFIG.edit.doubleTapMaxIntervalMs).toBe(300);
-    expect(CONFIG.edit.doubleTapMaxDistancePx).toBe(24);
-  });
-  it.each([
-    [{ time: 1300, x: 100, y: 124 }, true],
-    [{ time: 1300, x: 124, y: 100 }, true],
-    [{ time: 1301, x: 100, y: 100 }, false],
-    [{ time: 1000, x: 100, y: 125 }, false],
-    [{ time: 1000, x: 118, y: 118 }, false], // 25.5 px (Euclidean)
-  ])("second tap %o -> %s", (second, expected) => {
-    expect(BlockEditController.isDoubleTap(first, second)).toBe(expected);
-  });
-  it("no first tap -> false", () => {
-    expect(BlockEditController.isDoubleTap(null, first)).toBe(false);
-  });
-});

@@ -1,9 +1,9 @@
 import { test, expect } from "./fixtures.js";
 
-// GitHub editing (SC-27): the token field of the dialogs (CON-16, INV-85;
-// owner rulings D28, D34, D35, D37), open-edit-push and its toast (INV-85..88,
+// GitHub editing (SC-28): the token field of the dialogs (CON-16, INV-93;
+// owner rulings D28, D34, D35, D37), open-edit-push and its toast (INV-93..96,
 // D36), the primary key + S in a dialog (INV-58) and the [O] key hint (5.11,
-// INV-92, D33).
+// INV-100, D33).
 // Every request to api.github.com is answered here by page.route with a fake
 // GitHub: nothing reaches the real GitHub (the externalRequests guard checks
 // that nothing else leaves the browser either).
@@ -68,8 +68,8 @@ async function openFromGitHub(page) {
   await expect(page.locator("#gitHubBtn")).toHaveClass(/\bgh-push\b/);
 }
 
-test.describe("GitHub editing (SC-27)", () => {
-  test("CON-16 (2), INV-85 (0): the token field: GitHub's name, the eye button, no [Saved] (D35, D28, D34)", async ({ page }) => {
+test.describe("GitHub editing (SC-28)", () => {
+  test("CON-16 (2), INV-93 (0): the token field: GitHub's name, the eye button, no [Saved] (D35, D28, D34)", async ({ page }) => {
     await fakeGitHub(page);
     await page.goto("/");
     await page.keyboard.press("o");
@@ -96,7 +96,7 @@ test.describe("GitHub editing (SC-27)", () => {
     await expect(token).toHaveAttribute("type", "password");
   });
 
-  test("CON-16 (1), INV-85: a token typed into the field clears the dialog's error (D37)", async ({ page }) => {
+  test("CON-16 (1), INV-93: a token typed into the field clears the dialog's error (D37)", async ({ page }) => {
     await fakeGitHub(page);
     await page.goto("/");
     await page.keyboard.press("o");
@@ -109,7 +109,7 @@ test.describe("GitHub editing (SC-27)", () => {
     await expect(error).toBeHidden();
   });
 
-  test("INV-85..88, PRT-AH01: open, edit and push; the Pushed toast stays 6 s (D36); nothing reaches the real GitHub", async ({ page, externalRequests }) => {
+  test("INV-93..96, PRT-AK01: open, edit and push; the Pushed toast stays 6 s (D36); nothing reaches the real GitHub", async ({ page, externalRequests }) => {
     const seen = await fakeGitHub(page);
     // the page's clock is Playwright's: it runs as usual until paused below,
     // then the toast's 6 s is stepped exactly (no wall-clock wait)
@@ -143,7 +143,7 @@ test.describe("GitHub editing (SC-27)", () => {
     expect(externalRequests).toEqual([]); // the fixture checks this again at teardown
   });
 
-  test("INV-58, 5.19: the primary key + S in a GitHub dialog stops the browser's Save page and saves nothing", async ({ page }) => {
+  test("INV-58, 5.20: the primary key + S in a GitHub dialog stops the browser's Save page and saves nothing", async ({ page }) => {
     await page.goto("/");
     await page.keyboard.press("o");
     await expect(page.locator("#gitHubOpenDialog")).toBeVisible();
@@ -163,7 +163,7 @@ test.describe("GitHub editing (SC-27)", () => {
     await expect(page.locator("#gitHubOpenDialog")).toBeVisible(); // nothing else happened
   });
 
-  test("INV-92, 5.11: the key hint lists [O] GitHub on a PC (D33)", async ({ page }) => {
+  test("INV-100, 5.11: the key hint lists [O] GitHub on a PC (D33)", async ({ page }) => {
     await page.goto("/");
     await page.locator("#editor").evaluate((editor) => {
       editor.value = "# Hint\n";

@@ -147,7 +147,7 @@ describe("AT-UI e / [Edit], double click, double tap (INV-31, OS-06)", () => {
     expect(app.blockEditor()).toBeNull();
   });
 
-  it("AT-UI-34 code view: palette hidden, editBtn disabled, e does nothing", async () => {
+  it("AT-UI-34 code view without a code document (no createCodeEdit): palette hidden, editBtn disabled, e does nothing", async () => {
     await withDocument();
     keydown(document.body, "e");
     document.dispatchEvent(dropEvent(new File(["print(1)"], "a.py"), null));
@@ -187,23 +187,16 @@ describe("AT-UI e / [Edit], double click, double tap (INV-31, OS-06)", () => {
     expect(app.orchestrator.isPreRenderState()).toBe(false);
   });
 
-  it.each([
-    [300, 24, true],
-    [301, 0, false],
-    [0, 25, false],
-  ])("AT-UI-22 double tap: %i ms apart, %i px apart -> starts: %s (monotonic clock)", async (ms, px, starts) => {
+  it.each(["touch"])("AT-UI-22 INV-31 (AQ3): initial, empty #editor: a %s double tap (0 ms, 0 px apart, then the browser's dblclick) starts no empty document", async (pointerType) => {
     app = await setupApp();
-    let now = 10000;
-    vi.spyOn(performance, "now").mockImplementation(() => now);
-    // The wall clock jumps a minute at each read: a tap timed by it would never be double.
-    let wall = 0;
-    vi.spyOn(Date, "now").mockImplementation(() => (wall += 60000));
-    pointer(app.preview, "pointerup", { x: 100, y: 100, pointerType: "touch" });
-    now += ms;
-    pointer(app.preview, "pointerup", { x: 100, y: 100 + px, pointerType: "touch" });
-    vi.mocked(Date.now).mockRestore();
+    for (let i = 0; i < 2; i++) {
+      pointer(app.preview, "pointerdown", { x: 100, y: 100, pointerType });
+      pointer(app.preview, "pointerup", { x: 100, y: 100, pointerType });
+    }
+    app.preview.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
     await settle();
-    expect(app.orchestrator.isPreRenderState()).toBe(!starts);
+    expect(app.orchestrator.isPreRenderState()).toBe(true);
+    expect(app.ui.palette.isShown()).toBe(false);
   });
 
   it("AT-UI-23 #editor not empty: a double click does nothing", async () => {
@@ -573,8 +566,11 @@ describe("AT-CFG-04 / 05 text and key hints", () => {
     }
   });
 
-  it("AT-CFG-05 keyHints.markdown has '[E] Edit;' exactly once; keyHints.code has none", () => {
+  it("AT-CFG-05 keyHints.markdown and keyHints.code (SC-27) each have '[E] Edit;' exactly once; code also Index, Commands and the fold keys", () => {
     expect(CONFIG.keyHints.markdown.split("[E] Edit;").length - 1).toBe(1);
-    expect(CONFIG.keyHints.code).not.toContain("[E] Edit;");
+    expect(CONFIG.keyHints.code.split("[E] Edit;").length - 1).toBe(1);
+    expect(CONFIG.keyHints.code).toBe(
+      "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
+    );
   });
 });

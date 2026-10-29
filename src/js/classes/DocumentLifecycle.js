@@ -6,7 +6,7 @@ import { cell } from "../stateTable.js";
 /**
  * Spec 11-e: event -> current state -> cell (null = no change). Only the save
  * or the push in progress is a state; "unsaved" is derived
- * (UIController._isDocumentDirty). A push (SC-27, INV-88 (4)) refuses saves,
+ * (UIController._isDocumentDirty). A push (SC-28, INV-96 (4)) refuses saves,
  * another push and replaces as a save does (INV-54).
  */
 export const saveOperationStateMachine = Object.freeze({
@@ -83,7 +83,7 @@ export default class DocumentLifecycle {
     this._location = null; // DocumentLocation
     this._nextDocumentId = 1;
     this._saveOperationState = "idle"; // 11-e
-    this._gitHub = null; // GitHubLink: the GitHub version beside the local target (SC-27)
+    this._gitHub = null; // GitHubLink: the GitHub version beside the local target (SC-28)
   }
 
   /**
@@ -165,7 +165,7 @@ export default class DocumentLifecycle {
    * @param {number} lastModified
    * @param {string} fileName
    * @param {object|null} fileHandle
-   * @param {boolean} [keepGitHub] - "replace and keep the GitHub link" (SC-27, D6)
+   * @param {boolean} [keepGitHub] - "replace and keep the GitHub link" (SC-28, D6)
    */
   openFile(fileText, hasBom, lastModified, fileName, fileHandle, keepGitHub = false) {
     this._session = DocumentSession.fromFileText(fileText, hasBom, lastModified, this._newDocumentId());
@@ -175,7 +175,7 @@ export default class DocumentLifecycle {
   }
 
   /**
-   * A file opened from GitHub (SC-27): a new session; the local
+   * A file opened from GitHub (SC-28): a new session; the local
    * target has the file's name and no handle, so the first Save asks where.
    * @purity non-pure
    * @param {string} fileText - without the BOM

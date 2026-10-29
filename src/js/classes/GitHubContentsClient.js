@@ -5,7 +5,7 @@ import { base64ToText, textToBase64, withoutBom } from "../base64Text.js";
 const DETAIL_MAX_CHARS = 200;
 
 /**
- * Talks to the GitHub REST API only (Adapter; SC-27). The origin is
+ * Talks to the GitHub REST API only (Adapter; SC-28). The origin is
  * the fixed CONFIG value, never one read from a URL or a response. The token
  * is given per call and is not kept (owner ruling D11): it goes into the
  * Authorization header only, never into a URL, a message or the console.

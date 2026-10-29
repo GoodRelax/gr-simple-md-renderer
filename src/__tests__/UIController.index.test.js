@@ -40,7 +40,7 @@ afterEach(() => {
 });
 
 describe("AT-IDX-10 (INV-77 (4)(5), 5.11) UIController and the Index", () => {
-  it("(a) INV-77 (5): off in the initial state and in the code view; on in the Markdown view", async () => {
+  it("(a) INV-77 (5), INV-91: off in the initial state and in a code view without an outline (no code document parts here); on in the Markdown view", async () => {
     expect(app.indexBtn.disabled).toBe(true);
     keydown(document.body, "i");
     expect(app.index.isShown()).toBe(false);
@@ -54,6 +54,23 @@ describe("AT-IDX-10 (INV-77 (4)(5), 5.11) UIController and the Index", () => {
     await withFile("code.py", "print(1)\n");
     expect(app.indexBtn.disabled).toBe(true);
     expect(app.index.isShown()).toBe(false);
+  });
+
+  it("(a) INV-77 (5), INV-91: with the code document (as main.js composes it), on in a code view of a language with an outline (.py), off for one without (.txt)", async () => {
+    app.teardown();
+    const dialog = { askOpen: vi.fn(async () => null), askSaveEncoding: vi.fn(async () => null) };
+    app = await setupApp({ withIndex: true, codeDialog: dialog, codeEditor: true });
+
+    await withFile("code.py", "class A:\n    def f(self):\n        pass\n");
+    expect(app.indexBtn.disabled).toBe(false);
+    keydown(document.body, "i");
+    expect(app.index.isShown()).toBe(true);
+    expect([...app.indexPanel.querySelectorAll(".index-entry")].map((e) => e.textContent)).toEqual(["class A", "def f()"]);
+
+    await withFile("notes.txt", "plain text\n");
+    expect(app.indexBtn.disabled).toBe(true);
+    expect(app.index.isShown()).toBe(false);
+    expect(dialog.askOpen).not.toHaveBeenCalled(); // UTF-8 with one line ending: no open dialog
   });
 
   it("(b) INV-77 (5), INV-14, INV-52: i toggles; with a modifier, in an input and while an insert is pending it does nothing", async () => {

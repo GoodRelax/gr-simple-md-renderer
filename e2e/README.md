@@ -44,6 +44,22 @@ One browser only (after `npm run build:e2e`): `npx playwright test --project=web
 
 Files are named `*.e2e.js` so vitest (`npm test`) does not collect them.
 
+Timing tests depend on the machine, so they are skipped unless `GRSMD_PERF=1` is set (they
+run in Chromium only), for example in a POSIX shell:
+
+```bash
+GRSMD_PERF=1 npm run test:e2e
+```
+
+## Helpers
+
+- `fixtures.js`: the guards below, used by every test file.
+- `pausedServer.js`: a small server on `127.0.0.1` (a free port) for `fastStartup.e2e.js`. It
+  sends the built file up to a given point (before the core, or before the first library's
+  data) and holds the rest until the test resumes it, so a test sees the page while the file
+  is still arriving, in every browser and without network throttling. The test lets the page
+  reach this loopback origin with `extraOrigins.allow(origin)` (`fixtures.js`).
+
 ## Guards in every test (`fixtures.js`)
 
 Both guards are automatic fixtures: they run for every test, whether or not the test names

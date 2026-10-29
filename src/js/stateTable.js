@@ -1,5 +1,5 @@
 // Helpers for the state transition tables kept as data (spec 3.3: 11-c,
-// 11-d, 11-e). Pure: they only build frozen values.
+// 11-d, 11-e, 11-f, 11-g). Pure: they only build frozen values.
 
 /**
  * One cell of a transition table.

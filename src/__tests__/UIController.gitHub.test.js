@@ -25,10 +25,10 @@ import GitHubLink from "../js/classes/GitHubLink.js";
 import { setupApp, dropEvent, settle } from "./helpers/appStack.js";
 import { fakeFileAccess, fakeFileHandle } from "./helpers/fakeFs.js";
 
-// AT-GH-11 a GitHub document through UIController (SC-27): the INV-86 (3)
+// AT-GH-11 a GitHub document through UIController (SC-28): the INV-94 (3)
 // order of opening (read first, refuse while saving, ask when unsaved,
-// replace), the INV-89 Reload (a document changed after the read is not
-// replaced) and the INV-90 drop (keep the link, stop it, or cancel).
+// replace), the INV-97 Reload (a document changed after the read is not
+// replaced) and the INV-98 drop (keep the link, stop it, or cancel).
 
 const M = CONFIG.messages.edit;
 const G = CONFIG.github;
@@ -78,7 +78,7 @@ async function withGitHubDocument(dropChoice = "keep") {
   return { host, gitHub };
 }
 
-describe("AT-GH-11 opening a GitHub document (INV-86 (3))", () => {
+describe("AT-GH-11 opening a GitHub document (INV-94 (3))", () => {
   it("replaces the document, keeps the GitHub link and shows the Opened toast", async () => {
     const { host } = await withGitHubDocument();
     expect(app.ui.documents.gitHub.ref).toBe(REF);
@@ -109,9 +109,29 @@ describe("AT-GH-11 opening a GitHub document (INV-86 (3))", () => {
     expect(confirmSpy).toHaveBeenCalled();
     expect(app.orchestrator.getBody()).toBe(body);
   });
+
+  it("over an unsaved code document (SC-27): asks first; OK closes the code document and opens the GitHub file", async () => {
+    app = await setupApp({ fileAccess: fakeFileAccess({}), codeDialog: { askOpen: vi.fn(async () => null), askSaveEncoding: vi.fn(async () => null) } });
+    app.ui.gitHub = { enabled: true, refresh: vi.fn(), handleKey: vi.fn(), reloadDialog: vi.fn(), askDropChoice: vi.fn() };
+    const host = app.ui._gitHubHost();
+    document.dispatchEvent(dropEvent(new File([`a${LF}`], "a.py", { lastModified: 1000 }), null));
+    await settle();
+    app.codeEdit.updateText(`b${LF}`);
+    const bodyView = () => [...document.body.classList].find((c) => c.startsWith("view-"));
+    confirmSpy.mockReturnValue(false);
+    await host.openDocument(opened());
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect([bodyView(), app.codeEdit.currentText()]).toEqual(["view-code", `b${LF}`]);
+    confirmSpy.mockReturnValue(true);
+    await host.openDocument(opened());
+    await settle();
+    expect([bodyView(), app.codeEdit.hasDocument(), app.ui.documents.gitHub?.ref]).toEqual(["view-markdown", false, REF]);
+    expect(app.orchestrator.getBody()).toBe(GITHUB_TEXT);
+    expect(app.ui._isDocumentDirty()).toBe(false);
+  });
 });
 
-describe("AT-GH-11 Reload of a GitHub document (INV-89)", () => {
+describe("AT-GH-11 Reload of a GitHub document (INV-97)", () => {
   it("replaces the document with what was read", async () => {
     const { host } = await withGitHubDocument();
     const id = app.ui.documents.session.documentId;
@@ -131,7 +151,7 @@ describe("AT-GH-11 Reload of a GitHub document (INV-89)", () => {
   });
 });
 
-describe("AT-GH-11 a .md dropped on a GitHub document (INV-90)", () => {
+describe("AT-GH-11 a .md dropped on a GitHub document (INV-98)", () => {
   /**
    * @param {string} text
    */

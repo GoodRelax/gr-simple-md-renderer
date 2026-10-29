@@ -224,3 +224,105 @@ describe("DocumentIndex (INV-77)", () => {
     expect(els.column.style.top).toBe("74px"); // no longer listening
   });
 });
+
+describe("DocumentIndex code outline (INV-91)", () => {
+  const OUTLINE = [
+    { line: 0, level: 1, label: "import (2)" },
+    { line: 2, level: 1, label: "class A" },
+    { line: 3, level: 2, label: "run" },
+  ];
+
+  function viewLines(count) {
+    preview.innerHTML = `<div id="codeViewBody">${'<span class="code-line">x</span>'.repeat(count)}</div>`;
+  }
+
+  it("AT-IDX-11 a code outline is listed as h1 / h2 entries; none: the code empty text; null: the headings again", () => {
+    index = new DocumentIndex(els, memento, { emptyText: EMPTY, emptyCodeText: CONFIG.messages.index.emptyCode });
+    const outline = { entries: vi.fn(() => OUTLINE), place: () => null };
+    index.setCodeOutline(outline);
+    index.show();
+    expect(entries().map((e) => [e.className, e.textContent])).toEqual([
+      ["index-entry index-h1", "import (2)"],
+      ["index-entry index-h1", "class A"],
+      ["index-entry index-h2", "run"],
+    ]);
+    outline.entries.mockReturnValue([]);
+    index.refresh();
+    expect([entries().length, els.panel.textContent]).toEqual([0, CONFIG.messages.index.emptyCode]);
+    render("# Head\n");
+    index.setCodeOutline(null);
+    expect(texts()).toEqual(["Head"]);
+  });
+
+  it("AT-IDX-12 refresh builds a shown code list again (and only then); the preview's changes do not rebuild it", async () => {
+    viewLines(3);
+    const outline = { entries: vi.fn(() => OUTLINE), place: () => null };
+    index.setCodeOutline(outline);
+    index.refresh();
+    expect(outline.entries).not.toHaveBeenCalled();
+    index.show();
+    viewLines(5);
+    await frame();
+    expect(outline.entries).toHaveBeenCalledTimes(1);
+    outline.entries.mockReturnValue(OUTLINE.slice(1));
+    index.refresh();
+    expect(texts()).toEqual(["class A", "run"]);
+  });
+
+  it("AT-IDX-13 pressing an entry: in the view its code line goes 8 px below the top; in the editor the outline's place (its offset kept) and picked", () => {
+    viewLines(4);
+    const textarea = document.createElement("textarea");
+    let editing = false;
+    const outline = {
+      entries: () => OUTLINE,
+      place: (line) => (editing ? { element: textarea, offset: 8 + line * 20 } : null),
+      picked: vi.fn(),
+    };
+    index.setCodeOutline(outline);
+    index.show();
+    const scrollTargetTo = vi.spyOn(memento, "scrollTargetTo").mockImplementation(() => {});
+    entries()[1].click();
+    expect(scrollTargetTo).toHaveBeenLastCalledWith(preview.querySelectorAll(".code-line")[2], 8);
+    editing = true;
+    entries()[2].click();
+    expect(scrollTargetTo).toHaveBeenLastCalledWith(textarea, 8 - (8 + 3 * 20));
+    expect(outline.picked.mock.calls).toEqual([[2], [3]]);
+  });
+
+  it("AT-IDX-14 (INV-91, N2) a refresh keeps the entries that did not change (the same nodes) and makes only the others; the kept ones follow their new lines", () => {
+    viewLines(12);
+    let list = [
+      { line: 0, level: 1, label: "import (2)" },
+      { line: 2, level: 1, label: "class A" },
+      { line: 3, level: 2, label: "run" },
+      { line: 5, level: 2, label: "stop" },
+      { line: 8, level: 1, label: "function f()" },
+    ];
+    const outline = { entries: () => list, place: () => null, picked: vi.fn() };
+    index.setCodeOutline(outline);
+    index.show();
+    const before = entries();
+    // a line typed before "run" renamed it: the entries around it stay, all lines after it move by one
+    list = [list[0], list[1], { line: 3, level: 2, label: "runs" }, { line: 6, level: 2, label: "stop" }, { line: 9, level: 1, label: "function f()" }];
+    index.refresh();
+    const after = entries();
+    expect(after.map((e) => e.textContent)).toEqual(["import (2)", "class A", "runs", "stop", "function f()"]);
+    expect(after.map((e, i) => e === before[i])).toEqual([true, true, false, true, true]);
+    vi.spyOn(memento, "scrollTargetTo").mockImplementation(() => {});
+    after[4].click();
+    expect(outline.picked).toHaveBeenLastCalledWith(9);
+    // the first entry removed, then one added at the end
+    list = list.slice(1);
+    index.refresh();
+    expect(entries()).toEqual(after.slice(1));
+    list = [...list, { line: 11, level: 1, label: "function g()" }];
+    index.refresh();
+    expect(entries().map((e) => e.textContent)).toEqual(["class A", "runs", "stop", "function f()", "function g()"]);
+    expect(entries().slice(0, 4).every((e, i) => e === after[i + 1])).toBe(true);
+    // hidden and shown again: all made anew
+    index.hide();
+    index.show();
+    expect(entries()[0]).not.toBe(after[1]);
+    expect(entries()).toHaveLength(5);
+  });
+});

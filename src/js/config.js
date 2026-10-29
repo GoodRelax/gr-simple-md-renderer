@@ -72,7 +72,7 @@ export const CONFIG = {
     serverUrl: "https://www.plantuml.com/plantuml/svg/",
     darkTheme: "cyborg",
   },
-  // GitHub (SC-27): the only host a token is sent to is apiOrigin, a
+  // GitHub (SC-28): the only host a token is sent to is apiOrigin, a
   // fixed value (never a host read from a URL or a response).
   github: {
     apiOrigin: "https://api.github.com",
@@ -189,6 +189,7 @@ export const CONFIG = {
     },
     index: {
       empty: "This document has no headings.", // DocumentIndex with no heading
+      emptyCode: "Nothing to list in this file.", // the code view's Index with no entry (INV-91)
     },
     search: { // DocumentSearch: the count beside the query, and a toast
       count: (current, total) => (current > 0 ? `${current} / ${total}` : total),
@@ -200,17 +201,53 @@ export const CONFIG = {
     markdown: {
       parseError: (message) => `Couldn't read this Markdown: ${message}`, // marked threw
     },
-    // Initial state hint in #preview (FS-16). The three steps are padded to
+    // Initial state hint in #preview (FS-16). The four steps are padded to
     // the same length (spec 5.10).
     startScreen:
       "Get started:\n\n" +
       "  1. Paste Markdown (Ctrl+V)  ->  Markdown Preview                     \n" +
       "  2. Drop a .md file          ->  Markdown Preview                     \n" +
-      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)",
+      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)\n" +
+      "  4. Double-click a block     ->  Edit  (phone: press [Edit], tap)     ",
     fileInfo: { // #fileInfo of the code view
       lines: (count) => `${count} lines`,
       size: (kb) => `${kb} KB`,
       updated: (when) => `Updated: ${when}`,
+      // INV-89: the second line also shows the encoding and the line endings
+      encoding: (name, bom) => (bom ? `${name} BOM` : name),
+      lineEndings: { "\r\n": "CRLF", "\n": "LF", "\r": "CR", keep: "Mixed (kept)" },
+    },
+    // Code files (SC-27): the open dialog (INV-89), the save encoding
+    // question and the save stop (INV-90). The fixed labels are in index.html.
+    codeEdit: {
+      encodingNames: { "utf-8": "UTF-8", shift_jis: "Shift_JIS", "euc-jp": "EUC-JP", "utf-16le": "UTF-16LE", "utf-16be": "UTF-16BE" },
+      bom: (has) => (has ? "BOM: yes" : "BOM: no"),
+      lineEndingCounts: (counts) => `CRLF ${counts.crlf}, LF ${counts.lf}, CR ${counts.cr}`,
+      saveQuestion: (name) => `This file is in ${name}. Save it in ${name} or in UTF-8?`,
+      saveOriginal: (name) => `${name} (original)`,
+      // a lone surrogate, which no UTF encoding can write (NE-31 asks for the others)
+      unencodable: (name, lines) => `Not saved: ${name} can't write lines ${lines}. Change them.`,
+      // NE-31: the save question when the chosen encoding can't write some characters
+      unencodableAsk: (name, lines) => `${name} can't write some characters (lines ${lines}). Save in UTF-8?`,
+      saveInUtf8: "Save in UTF-8",
+      // NE-32: edit mode started on a file of CONFIG.codeEdit.slowEditBytes or more
+      slowEdit: "This file is 200 KB or larger. Showing and editing it may take time.",
+      fileType: (ext) => `${ext} file`, // the file type name in the save dialog (Save as, NE-8)
+      savedMarkdownUtf8: "Saved in UTF-8: .md files are always UTF-8.", // NE-30
+      editorLabel: "Code editor", // the aria-label of the editor's textarea (INV-85)
+      // INV-92: JSON fold and unfold (toasts)
+      foldJsonOnly: "Folding works on JSON files.",
+      foldInvalid: "This JSON can't be read, so it wasn't folded.",
+      nothingToFold: "Nothing more to fold.",
+      nothingToUnfold: "Nothing more to unfold.",
+    },
+    // The command palette of the code view (INV-92, NE-13): [Commands] / p.
+    // key is the fold modifier shown: Ctrl, or Option on Apple platforms.
+    codeCommands: {
+      title: "Commands",
+      modifier: { apple: "Option", other: "Ctrl" },
+      fold: (key) => `Fold one level (${key}+Left)`,
+      unfold: (key) => `Unfold one level (${key}+Right)`,
     },
     copy: {
       failed: "Couldn't copy. Select the text and press Ctrl+C (Mac: Cmd+C).",
@@ -274,7 +311,7 @@ export const CONFIG = {
     palette: {
       modifier: { apple: "Cmd", other: "Ctrl" }, // the primary modifier key in the tooltips (INV-14)
       root: "Edit palette",
-      grip: "Move palette (long press: minimize / restore)", // INV-68
+      grip: "Move palette (double-click or long press: minimize / restore)", // INV-68
       bold: (mod) => `Bold (${mod}+B)`,
       italic: (mod) => `Italic (${mod}+I)`,
       format: "Text format", // the button and its popover
@@ -288,6 +325,8 @@ export const CONFIG = {
       columnDelete: "Delete column",
       tableOptions: "Align column", // the button and its popover (R6)
       undo: (mod) => `Undo (${mod}+Z)`,
+      redo: (mod) => `Redo (${mod}+Shift+Z)`, // the code editor's palette only (NE-2)
+      search: (mod) => `Search (${mod}+F)`, // the code editor's palette only (NE-2)
       mermaidMenu: "Mermaid samples",
       flowchart: "Flowchart",
       sequence: "Sequence diagram",
@@ -322,10 +361,25 @@ export const CONFIG = {
     reloadNoFileMsg: "No file to reload. Drop a file first.",
     highlightWaitMs: 3000, // the code view waits this long for highlight.js, then shows the code plain (INV-81 (3))
   },
+  // Editing non-.md files in the code view (SC-27)
+  codeEdit: {
+    highlightPauseMs: 200, // INV-86: the editor is colored again this long after typing stops
+    // INV-86: a longer text is plain while editing. Measured (2026-10-29, spec 5.19.12): the
+    // recolor when typing stops, measured back to back in WebKit, takes about 43 ms (JS) and
+    // 90 ms to the next frame at 48 KB; at 96 KB it took 83 to 186 ms (JS), over 100 ms
+    highlightMaxChars: 48 * 1024,
+    undoPauseMs: 1000, // INV-88: a typing step ends after this long without typing
+    defaultIndent: "    ", // INV-87: the indent unit when the file shows none
+    sampleLines: 5, // INV-89: lines shown in the open dialog's preview
+    maxListedLines: 10, // INV-90: line numbers listed when characters can't be saved
+    downloadMimeType: "application/octet-stream", // INV-90: a code file downloaded (no write API)
+    slowEditBytes: 200 * 1024, // NE-32: a toast when edit mode starts on a file this large (its bytes)
+  },
   // In-place Markdown editing (SC-22 to SC-24)
   edit: {
     paletteMarginPx: 16, // gap from viewport bottom-right (INV-32)
     paletteLongPressMs: 500, // grip long press toggles minimized (INV-68)
+    paletteDoubleTapMs: 500, // max time between the presses of a touch / pen double tap on the grip (INV-68; a mouse uses the OS double-click time)
     textColors: { // INV-66; the light value is written in the source
       red: { light: "#CF222E", dark: "#F85149" },
       blue: { light: "#0550AE", dark: "#58A6FF" },
@@ -336,8 +390,6 @@ export const CONFIG = {
     caretLineMaxChars: 20000, // INV-84: a wrapping text longer than this before the caret keeps the block's top
     linkSchemes: ["http:", "https:", "mailto:"], // a text that is a link URL (INV-69, INV-72 (a))
     maxPastedUrlLength: 2048, // INV-69
-    doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
-    doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",
     // INV-79: the save dialog's id; the browser remembers its last folder
     // by this id (the app stores nothing)
@@ -411,10 +463,13 @@ export const CONFIG = {
   // Keyboard hint text per view mode
   keyHints: {
     markdown: "[I] Index; [F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
-    code:     "[F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
+    code:     "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
+    // a Mac: the fold keys are Option+Left / Right (INV-92, NE-23)
+    codeApple: "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Option+Left][Option+Right] Fold (JSON);",
     // where GitHub editing is shown (a mouse or trackpad device; D33)
-    markdownGitHub: "[I] Index; [F] Search; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
-    codeGitHub:     "[F] Search; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear;\n[Up][Down] Scroll Up/Down;",
+    markdownGitHub:  "[I] Index; [F] Search; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
+    codeGitHub:      "[I] Index; [F] Search; [P] Commands; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
+    codeAppleGitHub: "[I] Index; [F] Search; [P] Commands; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Option+Left][Option+Right] Fold (JSON);",
   },
 };
 

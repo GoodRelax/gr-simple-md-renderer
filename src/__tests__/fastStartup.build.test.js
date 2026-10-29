@@ -81,7 +81,7 @@ describe("the startup layout (INV-81 (1), spec 5.17.1)", () => {
     expect(html).toContain('{s:"<\\/script>"}');
   });
 
-  it("AT-FAST-30 a file that is not singlefile's layout fails", () => {
+  it("AT-FAST-30 a file that is not singlefile's layout fails (INV-06)", () => {
     expect(() => layoutForFastStartup("<html><body></body></html>", PARTS)).toThrow(/unexpected layout/);
     const scriptInBody = SINGLEFILE.replace('<script type="module" crossorigin>', "</head><body><script type=\"module\">");
     expect(() => layoutForFastStartup(scriptInBody, PARTS)).toThrow();
@@ -154,7 +154,7 @@ describe("the CSP of the laid-out file (INV-20, INV-81 (1))", () => {
     expect(() => csp(html)).toThrow(/not a library's data block/);
   });
 
-  it("AT-FAST-38 the external import check sees the libraries' code too", () => {
+  it("AT-FAST-38 the external import check sees the libraries' code too (INV-07)", () => {
     expect(hasExternalImport('import("https://cdn.example/x.js")')).toBe(true);
     expect(hasExternalImport("x.cdnjs.y")).toBe(true);
     expect(hasExternalImport('import a from "./a.js"')).toBe(false);

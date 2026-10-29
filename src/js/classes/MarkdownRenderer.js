@@ -73,7 +73,7 @@ export default class MarkdownRenderer {
     // more than the sanitizing itself. The rules are the same.
     this.purify.setConfig(PURIFY_CONFIG);
     this.imageGate = imageGate;
-    this._resolveRelative = null; // (value, "image"|"link") -> URL|null (GitHub documents, SC-27)
+    this._resolveRelative = null; // (value, "image"|"link") -> URL|null (GitHub documents, SC-28)
     /** @purity non-pure */
     this.purify.addHook("afterSanitizeAttributes", (node) => {
       // the app keeps these ids for itself (INV-81 (5)): a document's own
@@ -567,6 +567,27 @@ export default class MarkdownRenderer {
     const names = [...this._missing];
     this._missing.clear();
     return names;
+  }
+
+  /**
+   * Whether HTML that shows a formula waiting for KaTeX is kept (the
+   * preview, the cache or a block written in place): spec 11-g isShownWithout.
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  hasPendingMath() {
+    return this._mathPendingHtml.size > 0 || this._mathPendingWritten.size > 0;
+  }
+
+  /**
+   * Whether the preview shows code drawn before highlight.js had run
+   * (spec 11-g isShownWithout).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  hasPendingHighlight() {
+    if (this.hljs) return false;
+    return [...this.preview.querySelectorAll(HIGHLIGHT_SELECTOR)].some((block) => !block.classList.contains("hljs"));
   }
 
   /**

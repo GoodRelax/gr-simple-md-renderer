@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
-describe("UIController._formatFileInfo", () => {
+describe("AT-UI-72 UIController._formatFileInfo (FS-03)", () => {
   let UIController;
 
   beforeEach(async () => {
@@ -131,6 +131,18 @@ describe("UIController._formatFileInfo", () => {
       updatedAtStr: "2026-01-01 00:00:00",
     });
     expect(result).toContain("42 lines");
+  });
+
+  it.each([
+    [{ encoding: "utf-8", bom: false, lineEndingMode: "\n" }, "UTF-8  |  LF"],
+    [{ encoding: "utf-8", bom: true, lineEndingMode: "\r\n" }, "UTF-8 BOM  |  CRLF"],
+    [{ encoding: "shift_jis", bom: false, lineEndingMode: "\r" }, "Shift_JIS  |  CR"],
+    [{ encoding: "utf-16le", bom: true, lineEndingMode: "keep" }, "UTF-16LE BOM  |  Mixed (kept)"],
+    [{ encoding: "euc-jp", bom: false, lineEndingMode: "\n" }, "EUC-JP  |  LF"],
+  ])("AT-UI-84 a code document: the second line adds the encoding and the line endings (INV-89) %#", (codeInfo, tail) => {
+    const ctrl = createController();
+    const result = ctrl._formatFileInfo({ fileName: "a.txt", fileSize: 1024, lineCount: 3, updatedAtStr: "2026-01-01 00:00:00", ...codeInfo });
+    expect(result).toBe(`a.txt  |  3 lines  |  1.00 KB\nUpdated: 2026-01-01 00:00:00  |  ${tail}`);
   });
 
   it("formats file size in KB with two decimal places", () => {

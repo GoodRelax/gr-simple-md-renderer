@@ -39,7 +39,7 @@ function sameModel(body) {
   expect(a.toBody()).toBe(body);
 }
 
-describe("MarkdownRenderer.lex: block tokens only (render speed, INV-41 unchanged)", () => {
+describe("AT-MR-20 MarkdownRenderer.lex: block tokens only (render speed, INV-41 unchanged)", () => {
   it("does not tokenize inline content", () => {
     const tokens = renderer().lex("Some *em* and **strong** text with `code`.\n");
     const para = tokens.find((t) => t.type === "paragraph");

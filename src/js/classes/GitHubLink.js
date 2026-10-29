@@ -1,6 +1,6 @@
 /**
  * The GitHub version a document is linked to (UseCase-layer value,
- * immutable; SC-27): the file, the blob sha a push must replace, the
+ * immutable; SC-28): the file, the blob sha a push must replace, the
  * file text of that version (BOM included as U+FEFF), whether the
  * repository is private, and its last commit. DocumentLifecycle holds the
  * current one beside the local save target (DocumentLocation).

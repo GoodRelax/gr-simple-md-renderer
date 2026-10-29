@@ -309,7 +309,7 @@ export function thirdPartyNotices({ moreModules = () => [] } = {}) {
 // (INV-19) and a <meta> CSP cannot change at runtime. The consent gate is
 // what keeps them from loading earlier; the CSP still blocks http: images,
 // media, frames, plugins, remote fonts and any fetch except to PlantUML and
-// the GitHub API (SC-27: each request after the user confirms it).
+// the GitHub API (SC-28: each request after the user confirms it).
 const PLANTUML_ORIGIN = new URL(CONFIG.plantuml.serverUrl).origin;
 const GITHUB_API_ORIGIN = new URL(CONFIG.github.apiOrigin).origin;
 const SCRIPT_TYPES = new Set(["", "module", "text/javascript", "application/javascript"]);

@@ -1,4 +1,4 @@
-// GitHub URLs (SC-27): the file URL the Open GitHub dialog accepts,
+// GitHub URLs (SC-28): the file URL the Open GitHub dialog accepts,
 // the API paths built from it, and the relative paths of a document opened
 // from GitHub. Pure functions; no request is made here.
 

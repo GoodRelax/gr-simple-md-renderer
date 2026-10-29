@@ -45,9 +45,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function withDocument({ isApple = false, permission, doc = DOC } = {}) {
+async function withDocument({ isApple = false, permission, doc = DOC, withSearch = false } = {}) {
   access = fakeFileAccess();
-  app = await setupApp({ fileAccess: access, isApple });
+  app = await setupApp({ fileAccess: access, isApple, withSearch });
   const handle = fakeFileHandle({ name: "doc.md", content: [doc], calls: access.calls, permission });
   document.dispatchEvent(dropEvent(new File([doc], "doc.md", { lastModified: 1000 }), handle));
   await settle();
@@ -145,18 +145,23 @@ describe("AT-KEY-02 primary + S / Shift+S: Save / Save as in the Markdown view (
     expect(access.calls.filter((c) => c.startsWith("writeFile:"))).toHaveLength(1);
   });
 
-  it("taken in the initial state and in the code view too, but nothing is saved (owner ruling: GRSMD owns Ctrl+S)", async () => {
-    app = await setupApp();
+  it("taken in the initial state too, but nothing is saved (owner ruling: GRSMD owns Ctrl+S); in the code view it saves the code file (INV-90)", async () => {
+    // the save dialog stays open: the test ends before it answers
+    access = fakeFileAccess({ picker: new Promise(() => {}) });
+    app = await setupApp({ fileAccess: access, codeDialog: { askOpen: vi.fn(), askSaveEncoding: vi.fn() } });
     const save = vi.spyOn(app.ui, "requestSave");
     const saveAs = vi.spyOn(app.ui, "requestSaveAs");
     expect(ctrl(document.body, "s").defaultPrevented).toBe(true);
     app.elements.editor.focus();
     expect(ctrl(app.elements.editor, "S", { shiftKey: true }).defaultPrevented).toBe(true);
+    expect(save).not.toHaveBeenCalled();
+    expect(saveAs).not.toHaveBeenCalled();
     document.dispatchEvent(dropEvent(new File(["x = 1\n"], "a.py"), null));
     await settle();
     expect(ctrl(document.body, "s").defaultPrevented).toBe(true);
-    expect(save).not.toHaveBeenCalled();
-    expect(saveAs).not.toHaveBeenCalled();
+    expect(save).toHaveBeenCalledTimes(1);
+    // no file handle: the save dialog, started inside the keydown (INV-33)
+    expect(access.calls).toEqual(["startSavePicker:a.py"]);
   });
 
   it("a held key: the first keydown saves, the repeats are taken and do nothing (owner ruling)", async () => {
@@ -421,6 +426,31 @@ describe("AT-KEY-04 primary + B / I in an editor (INV-60)", () => {
     ta.setSelectionRange(6, 10);
     expect(ctrl(ta, "B", { shiftKey: true }).defaultPrevented).toBe(false);
     expect(ta.value).toBe("Hello word here.");
+  });
+
+  it("AT-KEY-04 (G49) the search box or another input while an editor is open: the browser's; the open editor is not formatted (INV-60, INV-59 (a), INV-80 (7))", async () => {
+    await withDocument({ withSearch: true });
+    showPalette();
+    const ta = open(isPara("Hello"));
+    ta.setSelectionRange(6, 10);
+    ctrl(ta, "f"); // INV-80 (7): Search opens; the block editor stays open
+    expect(app.search.isShown()).toBe(true);
+    expect(app.blockEditor()).toBe(ta);
+    const box = app.searchEl.input;
+    box.focus();
+    expect(document.activeElement).toBe(box);
+    expect(ctrl(box, "b").defaultPrevented).toBe(false);
+    expect(ctrl(box, "i").defaultPrevented).toBe(false);
+    expect(ta.value).toBe("Hello word here.");
+    const other = document.createElement("textarea");
+    document.body.append(other);
+    other.focus();
+    expect(ctrl(other, "b").defaultPrevented).toBe(false);
+    other.remove();
+    expect(ta.value).toBe("Hello word here.");
+    ta.focus();
+    expect(ctrl(ta, "b").defaultPrevented).toBe(true); // the block editor itself still takes it
+    expect(ta.value).toBe("Hello **word** here.");
   });
 });
 

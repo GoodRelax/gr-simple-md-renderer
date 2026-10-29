@@ -53,6 +53,23 @@ function scan(file) {
   return { identifiers, members, imports };
 }
 
+/**
+ * The HTML without the Japanese help body (<div class="help-body" lang="ja">
+ * and everything up to its own closing tag), which is Japanese by design.
+ */
+function withoutJapaneseHelp(html) {
+  const start = html.indexOf('<div class="help-body" lang="ja"');
+  if (start < 0) throw new Error("the Japanese help body was not found");
+  const tag = /<div\b|<\/div>/g;
+  tag.lastIndex = start;
+  let depth = 0;
+  for (let m = tag.exec(html); m; m = tag.exec(html)) {
+    depth += m[0] === "</div>" ? -1 : 1;
+    if (depth === 0) return html.slice(0, start) + html.slice(m.index + m[0].length);
+  }
+  throw new Error("the Japanese help body is not closed");
+}
+
 const NEW_FILES = [
   "classes/DocumentSession.js",
   "classes/DocumentLocation.js",
@@ -70,8 +87,18 @@ const NEW_FILES = [
   "classes/InvisibleCharOverlay.js",
   "classes/TableCellEditor.js",
   "classes/ClipboardLink.js",
+  "classes/CodeDocument.js",
+  "classes/CodeFileDialog.js",
+  "classes/CodeEditController.js",
+  "classes/CodeEditor.js",
+  "classes/CodeCommandPalette.js",
+  "classes/CodeEditHistory.js",
   "textTransforms.js",
   "textWidth.js",
+  "textEncoding.js",
+  "indentText.js",
+  "jsonFold.js",
+  "codeOutline.js",
 ];
 
 const ENTITY_FILES = [
@@ -79,10 +106,18 @@ const ENTITY_FILES = [
   "classes/BlockDiff.js",
   "classes/MarkdownTextOps.js",
   "classes/DocumentSession.js",
+  "classes/CodeDocument.js",
   "classes/MarkdownTable.js",
   "classes/InlineRuns.js",
   "textTransforms.js",
   "textWidth.js",
+  // the pure modules of the code editor (5.19.1)
+  "textEncoding.js",
+  "indentText.js",
+  "jsonFold.js",
+  "codeOutline.js",
+  // the clock comes from CodeEditController (L21)
+  "classes/CodeEditHistory.js",
 ];
 
 describe("AT-STA static checks of src/js", () => {
@@ -91,12 +126,12 @@ describe("AT-STA static checks of src/js", () => {
     for (const f of NEW_FILES) expect(names, f).toContain(f);
   });
 
-  it("AT-STA-01 no storage API at all (CON-13)", () => {
+  it("AT-STA-01 no storage API at all (CON-13, INV-04)", () => {
     const pattern = /\blocalStorage\b|\bsessionStorage\b|\bindexedDB\b|document\.cookie|\bcaches\.|navigator\.storage/;
     for (const f of FILES) expect(stripComments(read(f)), rel(f)).not.toMatch(pattern);
   });
 
-  it("AT-STA-02 fetch( only in DiagramCopyController.js (2) and main.js (1: the GitHub client's, injected; SC-27); no XMLHttpRequest / sendBeacon / WebSocket / EventSource (CON-14)", () => {
+  it("AT-STA-02 fetch( only in DiagramCopyController.js (2) and main.js (1: the GitHub client's, injected; SC-28); no XMLHttpRequest / sendBeacon / WebSocket / EventSource (CON-14)", () => {
     const counts = {};
     for (const f of FILES) {
       const src = stripComments(read(f));
@@ -113,6 +148,27 @@ describe("AT-STA static checks of src/js", () => {
       const bytes = readFileSync(f);
       expect(bytes.some((b) => b > 0x7f), rel(f)).toBe(false);
     }
+  });
+
+  // Review standard G5: the test code is English and ASCII too (coordinator's
+  // ruling Q6, review L9). A character outside ASCII is written as an escape
+  // (backslash, u and four hex digits) with its name in a comment.
+  it("AT-STA-20 every test file (src/__tests__ and e2e, .js) is ASCII only (G5, CON-06)", () => {
+    const repo = resolve(here, "../..");
+    const testFiles = [...listJs(here), ...listJs(resolve(repo, "e2e"))];
+    expect(testFiles.length).toBeGreaterThan(100);
+    for (const f of testFiles) {
+      const bytes = readFileSync(f);
+      expect(bytes.some((b) => b > 0x7f), relative(repo, f).replace(/\\/g, "/")).toBe(false);
+    }
+  });
+
+  it("AT-STA-03 (b) src/index.html is ASCII only outside the Japanese help (CON-06)", () => {
+    const html = readFileSync(resolve(here, "../index.html"), "utf8");
+    const rest = withoutJapaneseHelp(html);
+    expect(rest.length).toBeLessThan(html.length);
+    const lines = rest.split("\n").filter((line) => /[^\x00-\x7f]/.test(line));
+    expect(lines, "non-ASCII lines outside the Japanese help").toEqual([]);
   });
 
   it("AT-STA-04 no inline event handler in HTML strings, no setAttribute('on...') (INV-20)", () => {

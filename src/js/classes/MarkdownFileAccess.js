@@ -6,7 +6,8 @@ import { CONFIG } from "../config.js";
 const DOWNLOAD_URL_LIFETIME_MS = 60000;
 
 /**
- * Local file read and write for Markdown documents (Adapter, spec 5.14.7).
+ * Local file read and write for Markdown documents and code files (Adapter,
+ * spec 5.14.7, INV-90).
  * Uses only the File System Access API and blob: downloads: no network
  * (CON-14) and no browser storage (CON-13).
  */
@@ -62,15 +63,14 @@ export default class MarkdownFileAccess {
    * id (the browser remembers that by itself). The chosen file is noted.
    * @purity non-pure
    * @param {string} suggestedName
+   * @param {object[]} [types] - the file types offered; default: Markdown.
+   *   An empty list offers all files only (a code file without an extension)
    * @returns {Promise<object>} the chosen FileSystemFileHandle
    */
-  startSavePicker(suggestedName) {
+  startSavePicker(suggestedName, types = [{ description: CONFIG.messages.edit.saveFileType, accept: { "text/markdown": [".md"] } }]) {
     try {
-      const options = {
-        id: CONFIG.edit.savePickerId,
-        suggestedName,
-        types: [{ description: CONFIG.messages.edit.saveFileType, accept: { "text/markdown": [".md"] } }],
-      };
+      const options = { id: CONFIG.edit.savePickerId, suggestedName };
+      if (types.length > 0) options.types = types;
       if (this._lastFile) options.startIn = this._lastFile;
       /** @purity non-pure */
       return Promise.resolve(this._win.showSaveFilePicker(options)).then((handle) => {
@@ -114,13 +114,13 @@ export default class MarkdownFileAccess {
    * save itself succeeded (the baseline becomes unknown, INV-39).
    * @purity non-pure
    * @param {object} fileHandle
-   * @param {string} fileText
+   * @param {string|Uint8Array} data - the text, or the encoded bytes of a code file (INV-90)
    * @returns {Promise<number|null>} lastModified after the write, or null
    */
-  async writeFile(fileHandle, fileText) {
+  async writeFile(fileHandle, data) {
     const writable = await fileHandle.createWritable();
     try {
-      await writable.write(fileText);
+      await writable.write(data);
       await writable.close();
     } catch (error) {
       try {
@@ -138,15 +138,17 @@ export default class MarkdownFileAccess {
   }
 
   /**
-   * Download fileText as a .md file through a blob: URL. The link is clicked
+   * Download a file through a blob: URL: a .md text by default, or the
+   * bytes of a code file with their own type (INV-90). The link is clicked
    * synchronously (inside the press handler, INV-33); the URL is revoked a
    * minute later (DOWNLOAD_URL_LIFETIME_MS), when the browser has read it.
    * @purity non-pure
    * @param {string} suggestedName
-   * @param {string} fileText
+   * @param {string|Uint8Array} data
+   * @param {string} [mimeType]
    */
-  startDownload(suggestedName, fileText) {
-    const blob = new Blob([fileText], { type: "text/markdown;charset=utf-8" });
+  startDownload(suggestedName, data, mimeType = "text/markdown;charset=utf-8") {
+    const blob = new Blob([data], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
