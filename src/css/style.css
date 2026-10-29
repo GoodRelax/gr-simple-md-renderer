@@ -67,6 +67,12 @@ body {
   justify-content: center;
 }
 
+/* The display above beats the browser's [hidden]: a hidden top-bar button
+   would still show ([Open GitHub] off a PC and in a frame, INV-100). */
+#controls button[hidden] {
+  display: none;
+}
+
 #editor {
   flex: 1;
   /* Full-width monospace (ruling 7, spec 5.14.13): a CJK character is two columns,
@@ -2400,4 +2406,124 @@ div.math-pending {
 
 .dark .gh-token .gh-reveal[aria-pressed="true"] {
   background: #3d444d;
+}
+
+
+/* How to edit .md on GitHub: a full-screen layer over the help */
+.help-github-btn {
+  display: block;
+  width: 100%;
+  margin: -12px 0 24px;
+  padding: 8px 12px;
+  border: 1px solid #0969da;
+  border-radius: 6px;
+  background: transparent;
+  color: #0969da;
+  font: inherit;
+  font-weight: bold;
+  text-align: left;
+  cursor: pointer;
+}
+/* display: block above would show it; where GitHub editing is not offered, hidden wins */
+.help-github-btn[hidden] {
+  display: none;
+}
+
+#githubHelpModal .modal-content {
+  font-size: 75%;
+  margin: 0 auto;
+  min-height: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 760px;
+  border-radius: 0;
+}
+
+#githubHelpModal .close-btn {
+  font-size: 1.75em;
+}
+
+.gh-asof {
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  border-left: 4px solid #9a6700;
+  background: rgba(154, 103, 0, 0.08);
+}
+
+.gh-steps li {
+  margin-bottom: 24px;
+}
+
+/* Figures: drawn once as <symbol>, colored by custom properties that the
+   <use> clones inherit, so .dark only has to change the properties. */
+.ghf-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.ghf {
+  --ghf-bg: #fff;
+  --ghf-sub: #f6f8fa;
+  --ghf-line: #d1d9e0;
+  --ghf-fg: #1f2328;
+  --ghf-muted: #59636e;
+  --ghf-red: #cf222e;
+  --ghf-go: #1f883d;
+  --ghf-blue: #0969da;
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  margin: 8px 0 0;
+  font: 10px system-ui, sans-serif;
+  fill: var(--ghf-fg);
+}
+
+.ghf-frame { fill: var(--ghf-bg); stroke: var(--ghf-line); }
+.ghf-sub { fill: var(--ghf-sub); }
+.ghf-bar { fill: var(--ghf-line); }
+.ghf-btn { fill: var(--ghf-sub); stroke: var(--ghf-line); }
+.ghf-line { fill: none; stroke: var(--ghf-line); }
+.ghf-icon { fill: none; stroke: var(--ghf-muted); stroke-width: 1.2; }
+.ghf-radio { fill: var(--ghf-bg); stroke: var(--ghf-blue); stroke-width: 3; }
+.ghf-mono { font-family: monospace; fill: var(--ghf-muted); }
+.ghf-b { font-weight: 600; }
+.ghf-go { fill: var(--ghf-go); }
+.ghf-gotext { fill: #fff; font-weight: 600; }
+.ghf-dim { fill: var(--ghf-fg); opacity: 0.15; }
+.ghf-edit { fill: none; stroke: var(--ghf-blue); stroke-width: 1.5; }
+.ghf-ring { fill: none; stroke: var(--ghf-red); stroke-width: 2; }
+.ghf-mark { fill: var(--ghf-red); }
+.ghf-num { fill: #fff; font-weight: 700; text-anchor: middle; }
+.ghf-mid { text-anchor: middle; }
+.ghf-small { font-size: 8px; }
+.ghf-h { font-size: 11px; font-weight: 600; }
+.ghf-nav { fill: var(--ghf-blue); }
+.ghf-warn { fill: var(--ghf-red); opacity: 0.15; }
+.ghf-warntext { fill: var(--ghf-red); font-weight: 600; }
+.ghf-toast { fill: var(--ghf-fg); }
+.ghf-toasttext { fill: var(--ghf-bg); }
+
+@media screen {
+  .dark .help-github-btn {
+    border-color: #4493f8;
+    color: #4493f8;
+  }
+
+  .dark .gh-asof {
+    border-left-color: #d29922;
+    background: rgba(210, 153, 34, 0.12);
+  }
+
+  .dark .ghf {
+    --ghf-bg: #0d1117;
+    --ghf-sub: #151b23;
+    --ghf-line: #3d444d;
+    --ghf-fg: #f0f6fc;
+    --ghf-muted: #9198a1;
+    --ghf-red: #f85149;
+    --ghf-go: #238636;
+    --ghf-blue: #4493f8;
+  }
 }

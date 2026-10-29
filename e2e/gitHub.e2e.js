@@ -163,6 +163,21 @@ test.describe("GitHub editing (SC-28)", () => {
     await expect(page.locator("#gitHubOpenDialog")).toBeVisible(); // nothing else happened
   });
 
+  test("INV-100: [Open GitHub] is shown on a PC and not in a frame; o does nothing there", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#gitHubBtn")).toBeVisible();
+    await page.route("**/frame-host.html", (route) =>
+      route.fulfill({ contentType: "text/html", body: '<!doctype html><iframe src="/" width="1200" height="800"></iframe>' }),
+    );
+    await page.goto("/frame-host.html");
+    const app = page.frameLocator("iframe");
+    await expect(app.locator("#renderLight")).toBeVisible();
+    await expect(app.locator("#gitHubBtn")).toBeHidden();
+    await app.locator("#renderLight").focus();
+    await app.locator("#renderLight").press("o");
+    await expect(app.locator("#gitHubOpenDialog")).toBeHidden();
+  });
+
   test("INV-100, 5.11: the key hint lists [O] GitHub on a PC (D33)", async ({ page }) => {
     await page.goto("/");
     await page.locator("#editor").evaluate((editor) => {
@@ -171,5 +186,16 @@ test.describe("GitHub editing (SC-28)", () => {
     });
     await page.locator("#renderLight").click();
     await expect(page.locator("#keyHint")).toContainText("[F] Search; [O] GitHub; [L] Light;");
+  });
+});
+
+test.describe("GitHub editing on a touch device (SC-28)", () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+  test("INV-100: on a phone or iPad [Open GitHub] is not shown", async ({ page }) => {
+    await page.goto("/");
+    expect(await page.evaluate(() => window.matchMedia("(pointer: fine)").matches)).toBe(false);
+    await expect(page.locator("#renderLight")).toBeVisible();
+    await expect(page.locator("#gitHubBtn")).toBeHidden();
   });
 });

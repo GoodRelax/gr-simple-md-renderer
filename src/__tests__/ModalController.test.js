@@ -229,4 +229,45 @@ describe("ModalController keys and focus (AT-HLP-07..11)", () => {
     // called after the modal is hidden
     expect(hidden).toEqual(["none", "none", "none"]);
   });
+
+  it("AT-HLP-17 FS-25: the GitHub help over the help takes the keys; Esc closes it first (focus to its entry), then the help (focus to [?])", () => {
+    const helpBtn = pageButton("helpBtn");
+    const help = setup(realModal("helpModal"));
+    const layer = setup(realModal("githubHelpModal"));
+    new HelpLanguageSwitch(help, "en-US");
+    new HelpLanguageSwitch(layer, "en-US");
+    ModalController.show(help, helpBtn);
+    const entry = help.querySelector('.help-body[lang="en"] [data-open-github-help]');
+    entry.focus();
+    ModalController.show(layer, entry);
+    expect(document.activeElement).toBe(layer.querySelector('[data-help-lang="en"]'));
+    // Tab goes round the layer only, not the help under it
+    for (let i = 0; i < 5; i++) {
+      tab();
+      expect(layer.contains(document.activeElement)).toBe(true);
+    }
+    const seen = appListener();
+    press(document.activeElement, "c");
+    expect(seen).toEqual([]);
+    press(document.activeElement, "Escape");
+    expect(ModalController.isOpen(layer)).toBe(false);
+    expect(ModalController.isOpen(help)).toBe(true);
+    expect(document.activeElement).toBe(entry);
+    press(document.activeElement, "Escape");
+    expect(ModalController.isOpen(help)).toBe(false);
+    expect(document.activeElement).toBe(helpBtn);
+  });
+
+  it("AT-HLP-17 a modal closed under another one leaves the top one taking the keys", () => {
+    const lower = setup(makeModal());
+    const upper = setup(makeModal());
+    ModalController.show(lower);
+    ModalController.show(upper);
+    ModalController.hide(lower);
+    press(document.body, "Escape");
+    expect(ModalController.isOpen(upper)).toBe(false);
+    // nothing open: Esc is the page's again
+    const event = press(document.body, "Escape");
+    expect(event.defaultPrevented).toBe(false);
+  });
 });

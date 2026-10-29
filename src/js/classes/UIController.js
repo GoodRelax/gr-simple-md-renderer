@@ -2099,6 +2099,8 @@ export default class UIController {
     const promptCloseBtn =
       this.elements.promptModal.querySelector(".prompt-close");
     ModalController.setupModal(this.elements.helpModal, [helpCloseBtn]);
+    const githubHelp = this.elements.githubHelpModal;
+    ModalController.setupModal(githubHelp, [githubHelp.querySelector(".close-btn")]);
     ModalController.setupModal(this.elements.promptModal, [
       promptCloseBtn,
     ]);

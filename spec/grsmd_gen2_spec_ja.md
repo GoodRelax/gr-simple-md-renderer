@@ -90,6 +90,8 @@
 
 **改訂:** 2026-10-30 — **gzip の上限を 1,510 kB にした (オーナーの裁定 D38。GitHub 連携、beta3)。** develop (`250192d`) を取り込んだ GitHub 連携は gzip 1,489.88 kB (Vite の表示) で、前の上限 1,490 kB (NE-33) に近い。ヘルプの GitHub の編集の方法の層 (約 +9.6 kB) と監査の直しの beta3 の分 (最大 +2.5 kB) を入れると約 1,502 kB になるので、レビューの直しの分 (約 8 kB) を残して上げた。レビュー基準 T4 を改めた。
 
+**改訂:** 2026-10-30 — **GitHub の編集のヘルプ (全画面の層) を入れる (FS-25、INV-103、5.20.7。オーナーの裁定 GHH-1〜GHH-9、2026-10-26〜29。beta3)。** [?] のヘルプの英日の本文で、ダウンロードの枠の下に入口のボタン "How to Edit and Commit Files on GitHub" /「GitHubのファイルを編集しコミットする方法」を置く (GHH-9)。押すと、ヘルプの上に全画面の層 (`githubHelpModal`) が、ヘルプで選んでいる言語で開く。中身は、トークンを作る・ファイルを開く (初回)・直して push する・2 回目から・保存したトークンを消す・注意で、GitHub と GRSMD の画面を単純にしたインライン SVG の図 6 枚に、作業の順の通しの番号 1〜19 で押す所を示す (GHH-5)。入口は GitHub 連携を出すとき (INV-100) だけ出す。`ModalController` に開いているモーダルの積み重ねを足し、キーは一番上のモーダルだけが受ける (Esc の 1 回目で層、2 回目でヘルプが閉じる)。ヘルプの「Details」/「詳細」に `[Open GitHub]` / `O` の行を足す (D33)。これに合わせて **5.11・5.20.5・3 章の `ModalController` の行** を改める。依存の追加はない (付録A 不変)。gzip は 1,499.28 kB (Vite の表示。上限 1,510 kB、D38)。
+
 ---
 
 ## 目次
@@ -628,6 +630,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-98 | イベント駆動 | GitHub の文書の間に `.md` がドロップされた場合、システムは、ファイルを読んだ後、未保存の確認の前に、3 択の画面 (`gitHubDropDialog`) を出すこと。画面には、編集中のファイル、GitHub の最後のコミット (開いたときに読んだもの。通信しない)、ドロップしたファイルの名前、改行コードと BOM が GitHub の版と違えばその旨を出す。(1) 「連携を続けたまま置き換える」: 本文をドロップしたファイルにし (Undo の対象にしない)、手元の保存先をそのファイルにし、GitHub の連携 (ファイルと `sha`) を残す。(2) 「連携を止めて開く」: 今のドロップと同じ。(3) 「やめる」: 何もしない。`.md` 以外のドロップは今のまま (連携は止まる) |
 | INV-99 | 状態駆動 | GitHub の文書を描く間、システムは、サニタイズの後、外部画像の同意の前に、相対パスを GitHub での見え方に直すこと (D21)。(1) `img` の `src` は `https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<repo の中のパス>`。この後、今の外部画像の同意を通す (INV-19)。(2) `a` の `href` は `https://github.com/<owner>/<repo>/blob/<branch>/<repo の中のパス>` (問い合わせと `#` は残す)。(3) `/` で始まるものはリポジトリの最上位から。上へ出すぎたものは最上位で止める。(4) `http(s):`・`mailto:` などの形・`//host`・`#…`・空は直さない。`srcset` は直さない。(5) GitHub の文書でないときは、今のまま (相対パスは外部扱い) |
 | INV-100 | 常時 | GitHub 連携は、主な入力がマウスかトラックパッド (`(pointer: fine)`) で、フレームの中でない (`window.top === window.self`) ときだけ出す (D15・D17。`<meta>` の CSP では `frame-ancestors` が効かないため)。出さないときは、[Open GitHub] を `hidden` にし、`o` は何もしない |
+| INV-103 | 常時 | GitHub の編集のヘルプの層 (`githubHelpModal`。FS-25・5.20.7) は、外へ何も送らず、DOMPurify と CSP (INV-20) に例外を足さないこと。(1) 図は単一ファイルの中のインライン SVG に限る: 隠した `<svg class="ghf-defs">` の `<symbol>` に 1 回だけ描き、英日の本文が `<use>` で使う。画像のファイル・`<img>`・外の資源・GitHub のロゴは使わない。(2) 外へのリンクは、トークンの一覧のページ (`https://github.com/settings/personal-access-tokens`。新しいタブ、`rel="noopener noreferrer"`) だけで、利用者が押したときだけ開く。(3) 入口のボタン (`[data-open-github-help]`) は、GitHub 連携を出すとき (INV-100 の判定。`main.js` の `gitHubEnabled`) だけ出し、出さないときは `hidden` にする (CSS の `display` で出し直さない)。(4) 層のために何も保存しない (INV-04) |
 | INV-85 | 状態 / イベント駆動 | コードビューでコードの文書 (用語集) を表示している間に、[Edit] (`editBtn`) または `e` (入力要素の外) が押された場合、システムはファイル全体を 1 つの編集欄にし (コード編集モード)、コード編集モードの間にもう一度押されたら表示に戻すこと (オーナーの裁定 NE-1・NE-2・NE-4・NE-14、2026-10-27)。(1) **編集欄:** textarea を、highlight.js で色を付けた層 (`pre.code-edit-layer`) の上に重ねる (`#codeEditBody`。5.19.5)。依存は足さない (NE-1)。字・大きさ・行の高さ・上の余白は表示 (`#codeViewBody`) と同じ。左に行番号 (`.code-edit-gutter`) を出し、折り返さない (`wrap="off"`。横にスクロールする。NE-4)。編集欄は自分ではスクロールせず、文字の大きさまで伸び、ページがスクロールする。スペルチェック・自動の大文字・自動補完・自動修正はしない。`aria-label` は `CONFIG.messages.codeEdit.editorLabel` ("Code editor")。(2) **入る:** 表示の折りたたみ (INV-92 (2)) は捨て、コードの文書の文字で始める。カーソルは、見えている範囲の上端にある行の頭に置き、フォーカスを編集欄に移す (スクロールしない。ビューは動かない)。`e` の既定の動作は止める (フォーカスを移した編集欄に `e` が入らないように)。(3) **出る:** コード編集モードの間に [Edit] または `e` (編集欄の外。編集欄の中の `e` は文字) で表示に戻る。表示は編集した文字で同じ所に描き直し (ファイル名・大きさ・日時は保ち、行数は今の文字に従う)、コードの文書は編集した文字を持つ (未保存はそのまま)。Esc は編集欄から抜けるだけで、コード編集モードは終わらない (INV-87 (3))。Reload・別のファイルのドロップ・Clear・Markdown への切り替えでは、先にコード編集モードを終える (表示は描き直さない。Reload は読み直した文字で描き、読めなければ今の文書の文字を描き直す。11-h)。コード編集モードを終えると、開いている打つ手順を閉じる (INV-88 (1))。(4) **パレット:** コード編集モードの間は編集パレットを出し、グリップ・Save・Save as・Undo・Redo・Search だけを 1 段に並べる (ほかのボタンは隠す。Redo と Search のボタンはコード編集モードだけにある。NE-2。`EditPalette.setMode("code")`)。Undo / Redo は戻せる・やり直せる手順があるときだけ有効 (INV-88)。ただし打っている間は、文字を変えなかった打つ手順 (打って消して元に戻した) でも有効のままで、打つのが止まったとき (INV-86 (4)) に正しくなる。Search は検索の箱を出す (主 + F と同じ。INV-80)。状態の行は `<file name> * unsaved` / `<file name> - saved`。最小化 (INV-68) は Markdown と同じ。表示に戻ると、パレットを隠して Markdown のボタンに戻す。(5) **未保存:** コードの文書の文字が、最後に読み込んだ時点または保存した時点の文字と異なれば未保存 (用語集)。タブのタイトルの `* ` (INV-50)、離脱の確認 (INV-22)、置き換える前の確認 (INV-21) は Markdown と同じ。表示とコード編集モードを行き来しても未保存は変わらない。打っている間は 1 打鍵ごとに文字を比べない (INV-86 の性能): 長さが基準と違えば未保存、同じ長さなら比べるまで未保存として扱い、打つのが止まったとき (または未保存かを問うとき。INV-21・INV-22) に比べる。保存した時の文字に打ち戻すと、打つのが止まったときに印が消える。(6) **タッチ:** スマートフォンと iPad でも同じ (NE-14)。**[要検証]** iPad で色の層と字がずれたら、タッチの機械だけ編集中の色付けを止める (NE-14。実機で確かめていない。PRT-AJ16)。(7) **印刷:** 編集欄 (textarea) は出さず、色の層 (表示と同じ字) を出す。色付けを待っていれば印刷の前に済ませ、色なし (INV-86 (2)) の層には印刷の間だけ文字を入れる (`beforeprint` / `afterprint`)。(8) コードの文書を扱う部品 (`createCodeEdit`) の無い構成では、コードビューの [Edit] を無効にし、`e` は何もしない (前の OS-06 のまま)。(9) **大きいファイル:** 編集できる大きさの上限は読み込みの上限 (5 MB、CON-08) と同じ。ファイルの大きさ (今のファイルのバイト数: 読み込み・Reload では読んだバイト数、Save の後は書いたバイト数。ファイル情報の行に出す大きさと同じ。レビュー 3 回目の P4) が `CONFIG.codeEdit.slowEditBytes` (200 × 1024) 以上のファイルでコード編集モードに入ったとき、トースト `messages.codeEdit.slowEdit` ("This file is 200 KB or larger. Showing and editing it may take time."。オーナーの文「ファイルサイズが200kB以上あります。表示や編集に時間がかかります。」の英訳) を出す。文書ごとに 1 回 (同じ文書で出入りしても出さない。別のファイル・Reload の後はまた出す。Save で 200 KB 以上になり、まだ出していなければ、次にコード編集モードに入るときに出す) (オーナーの裁定 NE-32、質問票の問 19。5.19.5) |
 | INV-86 | 状態駆動 | コード編集モードの間に編集欄の文字が変わった場合、システムは、打っている間は編集欄 (textarea) の色の無い字をそのまま見せ (色の層は隠す。class `code-edit-typing`)、打つのが `CONFIG.codeEdit.highlightPauseMs` (200 ms) 止まったら、色の層を書き直して、ファイルの言語 (EXT_TO_HLJS) で全体を色付けし直すこと (オーナーの裁定 NE-3。2026-10-29 のレビュー 1 回目の M1 で、打つたびに層を書くのをやめた)。打って足した改行の分の高さは、打ったときにすぐ足す (入力の事象の文字から数える。全体は数えない)。編集欄が、足した高さより長い行・多い行で自分からスクロールしたら、すぐ文字の大きさまで広げてスクロールを 0 に戻し、カーソルが窓の外に出る分だけページをスクロールする (5.19.5)。(1) 言語が無いとき、その言語が同梱の highlight.js に無いとき、highlight.js がまだ届いていないとき (INV-81) は、色の無い文字のまま。(2) **色なし:** 文字の長さが `CONFIG.codeEdit.highlightMaxChars` (48 × 1024 = 49,152 字。NE-3 の「測って決める」で決めた値。WebKit で続けて測っても止まった後の色付けし直しが 100 ms 以下になる値 (調整役の裁定、レビュー 2 回目の後)。5.19.12) を超えている間は色を付けない: 編集欄の字をいつも見せ (class `code-edit-plain`)、画面の層は空にする (印刷の間だけ文字を入れる。INV-85 (7))。高さは行の数から決め、幅は打つのが止まったときに 1 回読む。超えなくなれば、打つのが止まったときにまた色を付ける。表示に戻ると、表示は INV-81 (3) のとおり色を付ける。(3) 層には highlight.js の出力だけを `innerHTML` で入れる (ファイルの文字は highlight.js がエスケープする。INV-19)。(4) 打つのが止まったとき (色付けし直した後) に、行番号、出ている検索 (INV-80。一致の色は層が文字を持つときだけ付く) と目次 (INV-91)、未保存の印 (INV-85 (5))、パレットの Undo / Redo の有効・無効 (INV-85 (4)) を今の文字に合わせる。(5) highlight.js が遅れて届いたときにコードビューの表示を色付けし直す処理 (INV-81 (3)) は、表示の本体 (`#codeViewBody`) があるときだけ行い、編集欄の上には描かない。行番号は、打つのが止まったときに、行の数が変わっていれば書き直す。**(性能)** アプリの処理 (キーや押下の事象の間のアプリの JS の同期の処理。ブラウザ自身の textarea の書き換えと、それが強いる layout は除く) は 1 回 4 ms 以下を目標とし、中央値で数える (レビュー基準 G10 の数え方。95 パーセンタイルは 5.19.12 に記録する。調整役の裁定 Q1・Q9)。目標の対象は、打鍵 (字・Enter・Backspace・貼り付け・切り取り・選択の Delete) と、操作 (字下げ (Tab / Shift+Tab)・Undo・Redo・置換・すべて置換・コード編集モードの折りたたみ。調整役の裁定 Q7)。そのために 1 打鍵では、層・行番号を書かず、文字の全体を数える・比べる処理 (行の数、未保存、Undo の記録) と layout の読みをしない (選択は、打つ手順の始まりと貼り付けのときだけ読む)。操作・Undo・Redo は、変わった部分だけを textarea に書き (`setRangeText`。値の全体を入れ替えない)、全体の文字を数える・比べる処理をしない (置換・折りたたみは、渡された全体の文字から変わった部分をブロックの比べで求める。5.19.5・5.19.7。レビュー 2 回目の N1)。ただし、操作の中身が文字の全体を読むもの (置換の後に次の一致を探し直すこと (INV-80 (3))、すべて置換の置き換え、折りたたみの `JSON.parse` と組の探し) は、その分が文字の長さに比例し、大きなファイルでは 4 ms を超える (実測と理由は 5.19.12)。打つのが止まった後の 1 回 (色付けし直し・行番号・Undo の整理・検索・目次の作り直し・未保存の比べ) は打鍵と操作に入れず、約 100 ms を目安とする (調整役の裁定 Q8。超える大きさは、オーナーの答え (質問票の問 19、NE-32: 編集はでき、200 KB 以上でトースト) で扱う)。測った値は 5.19.12。5 MB の文字で 1 打鍵・操作・Undo / Redo がこれらをしないことを AT-CED-24・33〜35、AT-CEH-15〜17、AT-IND-15 で数え、ブラウザでは `codeEditor.e2e.js` の INV-86 と INV-88 (N1) の試験で確かめる |
 | INV-87 | イベント駆動 | コードの編集欄 (textarea) にフォーカスがあるときに次のキーが押された場合、システムは次のとおりにすること (オーナーの裁定 NE-5・NE-27)。IME の変換中 (`isComposing`、keyCode 229) は、どのキーも横取りしない。横取りしたキーは既定の動作を止める (document のショートカットはそれを処理済みとして扱う。INV-14 (1))。(1) **Tab / Shift+Tab** (修飾キーなし): 選んだ行 (カーソルだけならその行。選択が行の頭で終わるときは、その行を含めない) の字下げを 1 段深く / 浅くする。複数の行のときは空の行には足さない。浅くするときは、1 段、無ければタブ 1 つ、無ければ 1 段の幅までの空白を除く。1 段の文字は編集を始めるときにファイルから推し量る: 字下げした行がタブで始まる方が多ければタブ、そうでなければ空でない行から次の空でない行への空白の増え方 (2・4・8 だけを数える) で最も多いもの (同じ数なら小さい方)、どちらも無ければ `CONFIG.codeEdit.defaultIndent` (空白 4 つ)。選択は同じ行の上に保つ (複数の行のときは最初の行の頭から)。Undo の 1 回 (INV-88)。何も変わらないとき (浅くする字下げが無いなど) も既定の動作 (フォーカスの移動) は止める (編集欄から出るのは (3) の Esc の後の Tab)。(2) **Enter** (Shift と修飾キーなし): 改行し、カーソルの行の頭の空白とタブ (カーソルより前の分) を新しい行に入れる (ブラウザの入力として入れる。打つことと同じ扱い。INV-88)。Shift+Enter と修飾キー付きの Enter はブラウザの既定。(3) **Esc:** 編集欄からフォーカスを外す (コード編集モードは続く)。その後の Tab でフォーカスが移る (NE-5)。(4) **主 + Z / 主 + Shift + Z / Ctrl+Y (Mac 以外):** INV-88 の Undo / Redo (主は INV-14 の判定式)。押し続けても 1 回 (繰り返しは既定の動作だけを止める。INV-14 (2)。編集欄の外と同じ。レビュー 1 回目の L18)。(5) **Ctrl+Shift+[ / Ctrl+Shift+]** (Mac は Cmd+Option+[ / ] で、Shift は無し。キーの位置 `event.code` の `BracketLeft` / `BracketRight` で受ける。配列によらない。NE-27): JSON のファイルでは INV-92 の 1 段畳む / 開く。JSON 以外では横取りしない。押し続けても 1 回 (`repeat`)。(6) **Ctrl+← / Ctrl+→** (Mac は Option+← / →) は横取りしない (1 語ずつの移動と選択を残す。NE-27)。矢印・Home・End・PageUp・PageDown は横取りせず、Undo の区切りにだけ使う (INV-88 (1))。(7) ほかのキーはブラウザの既定 (1 文字のショートカットは INV-14 のとおり効かない)。主 + S / 主 + Shift + S (INV-90) と主 + F (INV-80) は、編集欄の中でも効く |
@@ -1787,6 +1790,7 @@ classDiagram
 | `GitHubController` (Framework 層) | コンストラクタ `(elements, client, host, options)` (`elements` はボタンと 4 つの画面とその欄。`options` は `CONFIG.github` と、`enabled` (INV-100)・`passwordStore` (`navigator.credentials` の上の `{store(id, password)}`。無ければ null。D25)・`isApple` (INV-14))。`refresh()` (ボタンの切り替え。INV-95) / `handleKey()` (`o`。INV-93) / `openDialog()` / `pushDialog()` / `reloadDialog()` (INV-97) / `askDropChoice(dropped)` (`"keep"` / `"stop"` / `"cancel"` の Promise。INV-98)。push は `host.documents.startPush()` / `finishPush()` で 11-e を通す。画面の中のキーは 5.20.6 |
 | `GitHubHost` (UIController が実装するポート) | `documents` (DocumentLifecycle) / `isCodeView()` / `body()` / `hasUnsyncedEdits()` (開いている編集欄の変更か `#editor` の未描画の変更。INV-95 (1)) / `prepareBody()` (INV-56 を聞き、開いている編集欄と `#editor` を取り込む。取り消されたら偽) / `openDocument(result)` (INV-94 (3) の順で置き換える) / `reloadDocument(result, documentId)` (INV-97。読み始めた後に文書が変わっていたら置き換えない) / `refreshDirtyMark()` / `toast(message, durationMs)` (`durationMs` を省けば 3 秒) |
 | `ModalController` (2026-10-29) | `setupModal(modal, closeTriggers, onHide?)`: `onHide` は、開いていたモーダルが閉じるたびに (ボタン・Esc・外の押下のどれでも)、フォーカスを戻した後に呼ぶ (INV-89 のダイアログが、閉じ方によらず答えるため) |
+| `ModalController` (2026-10-30) | 開いているモーダルの積み重ね (`openModals`)。`show` で積み、`hide` で外す。キーは一番上のモーダルだけが受ける (5.11。FS-25 の層がヘルプの上に開くため) |
 | `SourceFileRenderer` (2026-10-29、SC-27) | `render(file, fileHandle, theme, isCurrent, text?)` (読んだ文字を受ける。無ければ `file.text()`) / `reload(theme, isCurrent, readText?)` (開いたときの文字コードで読む関数を受ける) / `showText(text)` (同じファイルの別の文字を同じ所に描く。名前・大きさ・日時は保ち、行数は従う) / `retarget(file, fileHandle)` (保存の後: Reload が書いたファイルを読む。描き直さない。言語は変えない) / `highlightText(text, language)` (編集欄の色。highlight.js の HTML、無ければ null。INV-86) / モジュール関数 `languageOfFileName(fileName)` (EXT_TO_HLJS の言語か null)。highlight.js が遅れて届いたときの色付け (INV-81 (3)) は `#codeViewBody` があるときだけ |
 | `RendererOrchestrator` (2026-10-29、SC-27) | `renderCodeView(file, fileHandle, text?)` / `reloadCodeView(theme, readText?)` / `showCodeText(text)` / `retargetCodeView(file, fileHandle)` (SourceFileRenderer へ渡すだけ) |
 | `CodeDocument` (Entity、不変の値。2026-10-29) | `fromDecoded({fileName, lastModified, text, encoding, bom, lineEndingMode, fileBytes})` (静的。文字を LF にして文字と基準に入れる。`keep` なら元の行と改行を持つ) / `isDirty()` / `withText(text)` / `withSaveEncoding(choice)` (`"original"`) / `withReloaded(text, lastModified, bom, fileBytes)` (文字コードと改行の扱いは保つ) / `withSaved(text, fileName, lastModified, encoding, fileBytes)` (大きさは書いたバイト数 (NE-32)。別の文字コードで書いたらその文字コードにし、BOM なし、覚えた答えを消す。`keep` は書いた文字を新しい元にする) / `toBytes(text, encoding)` → `{bytes, unencodableLines}` (`@purity semi-pure-a`: 逆引きの表をモジュールに持つ)。ほかは `@purity pure`。モジュール関数 `singleLineEnding(counts)` (1 種類の改行。無ければ LF)。fileHandle とブラウザの型は持たない (AT-STA の Entity の検査の対象) |
@@ -4342,6 +4346,42 @@ Feature: GitHub の .md を直して push する
     Then [Open GitHub] は出ず、o を押しても何も起きない
 ```
 
+### FS-25: GitHub の編集のヘルプ
+
+```gherkin
+Feature: GitHub のファイルを編集しコミットする方法
+  英語が苦手な利用者として
+  GitHub の .md を GRSMD で直して push する手順を、絵で知りたい
+
+  Scenario: ヘルプから開く
+    Given PC のブラウザで、ヘルプモーダルが開いている
+    When ダウンロードの枠の下の "How to Edit and Commit Files on GitHub" /「GitHubのファイルを編集しコミットする方法」を押す
+    Then ヘルプの上に全画面の層が開き、ヘルプで選んでいる言語の本文だけが、先頭から表示される
+    And 層の先頭は題名の行で、英語の題名・"English" と "Japanese" のトグル・× がある。スクロールしても上に残る
+    And 本文の最初に、いつの GitHub の画面に基づくかが年と月まで書かれている (GHH-1)
+    And 手順の図では、押す所が番号の丸と赤い囲みで示され、番号は全部の図で作業の順に 1 から 19 まで続く (GHH-5)
+
+  Scenario: 図
+    Then 図はインラインの SVG で描かれ、画像のファイル・外への通信・GitHub のロゴを使わない
+    And 1 つの図は 1 回だけ定義され、英日の本文は同じ図を使う
+    And 図の中の文字は GitHub と GRSMD の画面の英語の表記のままで、説明は図の外に英日で書く
+    And ダークのテーマでは、図も暗い配色になる
+    And 図には、言語ごとの代わりの文 (aria-label) がある
+
+  Scenario: 閉じる
+    Given GitHub の編集のヘルプの層が開いている
+    When × か Esc を押す
+    Then 層だけが閉じてヘルプが見え、フォーカスは入口のボタンに戻る
+    When もう一度 Esc を押す
+    Then ヘルプが閉じて、フォーカスは [?] に戻る
+    And 層が開いている間、Tab は層の中を回り、アプリの 1 キーの操作は効かない (FS-10 と同じ)
+
+  Scenario: GitHub 連携の無い所では入口が無い
+    Given スマートフォンか iPad で開いているか、GRSMD がほかのページのフレームの中にある (INV-100)
+    When ヘルプモーダルを開く
+    Then 入口のボタンは、英日のどちらの本文にも表示されない
+```
+
 ## 5. 実装仕様
 
 ### 5.1 UI要素マップ
@@ -4417,6 +4457,7 @@ Feature: GitHub の .md を直して push する
 | `gitHubPushDialog` | dialog | 公開か非公開かの 1 行、リポジトリ (username)、ブランチ・パス (読むだけ)、メッセージ、PAT、送る先の文、[Push] [Cancel] |
 | `gitHubReloadDialog` | dialog | リポジトリ (username)、ブランチとパス、PAT、送る先の文、[Reload] [Cancel] |
 | `gitHubDropDialog` | dialog | 編集中・最後のコミット・ドロップしたもの・改行コードと BOM の違い、3 つのボタン |
+| `githubHelpModal` | div | GitHub の編集のヘルプの層 (FS-25、INV-103、5.20.7)。`.modal.gh-help`。題名の行 (英語だけの題名 "How to Edit and Commit Files on GitHub"、English / Japanese のトグル、×) と英日の本文 (`.help-body[lang]`。層の `HelpLanguageSwitch`)。図は前に置いた隠した `<svg class="ghf-defs">` の `<symbol>` を `<use>` で使う。開くのは `helpModal` の英日の本文の入口のボタン (`[data-open-github-help]`、ダウンロードの枠の下) だけ |
 | `.plantuml-pending` | div (クラス) | 未送信の PlantUML ブロックのプレースホルダ。[Render] ボタン付き (INV-23) |
 
 **[要検証]** `#controls` のボタンが 8 個 (`indexBtn`・`searchBtn` を足して。`helpBtn` を含めると上部バーで 9 個) になるので、iPhone (幅 375px) で折り返しや欠けが起きないかを PRT-V11 で確認する。コードビューでは `commandsBtn` が加わって 9 個 (上部バーで 10 個) になるので、これも PRT-AJ13 で確かめる (2026-10-29)。
@@ -5815,7 +5856,7 @@ setupTouchPasteAssist() {
 
 注意: 修飾キー (Ctrl / Meta / Alt) が押されている場合、ショートカットハンドラをバイパスしてブラウザネイティブ動作を優先する (INV-14)。フォーカスが `#editor` などの入力欄にある間は、1 キーの操作はその欄の文字になる (INV-14。プレレンダーの列は、フォーカスが入力欄の外にあるとき)。ブロックの挿入の後、そのセルか原文の編集欄が開くまでの間 (`BlockEditController.isInsertPending()`) は、1 キーのショートカット (i, f, l, d, r, n, c, e) を受けない (打った文字がショートカットにならない。INV-52、オーナーの裁定 D5)。
 
-**モーダルを開いている間 (2026-10-23 追加):** ヘルプ (`helpModal`) またはプロンプト (`promptModal`) を開いている間は、Ctrl / Meta / Alt を伴わないキーをアプリのショートカット (この表と下の編集機能の表の 1 キーの操作。`Esc` を含む) に渡さない。`Esc` はそのモーダルを閉じる (既定の動作も止める)。`Tab` / `Shift+Tab` は既定の動作を止め、モーダルの中の、隠れていない (`[hidden]` の中でない) リンク・ボタン・入力欄を順に回す (最後の次は最初。フォーカスがモーダルの外にあれば最初 (Shift なら最後) へ)。それ以外のキーは既定の動作を止めないので、Enter・Space はモーダルの中のボタンで働く。**フォーカス:** 開くとき (`ModalController.show(modal, opener)`)、押されている (`aria-pressed="true"`) ボタン (ヘルプの表示中の言語) へ、無ければ × へフォーカスを移す。閉じるとき (×・背景・Esc・コピーの後)、フォーカスがモーダルの中 (または無い) なら、開いたボタン (`opener`。UIController は [?] を渡す) へ戻す (レビューの M1、調整役の裁定 2026-10-23)。Ctrl / Meta / Alt を伴うキーは従来どおり (主 + S など)。`ModalController.setupModal` が document の capture の段で `keydown` を受け、伝播だけを止める (UIController の `keydown` は bubble の段なので届かない)。
+**モーダルを開いている間 (2026-10-23 追加):** ヘルプ (`helpModal`) またはプロンプト (`promptModal`) を開いている間は、Ctrl / Meta / Alt を伴わないキーをアプリのショートカット (この表と下の編集機能の表の 1 キーの操作。`Esc` を含む) に渡さない。`Esc` はそのモーダルを閉じる (既定の動作も止める)。`Tab` / `Shift+Tab` は既定の動作を止め、モーダルの中の、隠れていない (`[hidden]` の中でない) リンク・ボタン・入力欄を順に回す (最後の次は最初。フォーカスがモーダルの外にあれば最初 (Shift なら最後) へ)。それ以外のキーは既定の動作を止めないので、Enter・Space はモーダルの中のボタンで働く。**フォーカス:** 開くとき (`ModalController.show(modal, opener)`)、押されている (`aria-pressed="true"`) ボタン (ヘルプの表示中の言語) へ、無ければ × へフォーカスを移す。閉じるとき (×・背景・Esc・コピーの後)、フォーカスがモーダルの中 (または無い) なら、開いたボタン (`opener`。UIController は [?] を渡す) へ戻す (レビューの M1、調整役の裁定 2026-10-23)。Ctrl / Meta / Alt を伴うキーは従来どおり (主 + S など)。`ModalController.setupModal` が document の capture の段で `keydown` を受け、伝播だけを止める (UIController の `keydown` は bubble の段なので届かない)。 **重なったモーダル (2026-10-30。FS-25):** モーダルの上にモーダルを開いたとき (ヘルプの上の GitHub の編集のヘルプの層)、キーは一番上のモーダルだけが受ける。Esc の 1 回目で上の層が閉じてフォーカスは入口へ、2 回目でヘルプが閉じてフォーカスは [?] へ戻る。
 
 **GitHub 連携のキー (SC-28。2026-10-29 追加):**
 
@@ -6789,6 +6830,7 @@ C の仲間の決まり:
 
 #### 5.20.5 ヘルプに書くこと (ヘルプのセッションへ渡す)
 
+- **2026-10-30:** 下の 3 つは、GitHub の編集のヘルプの層 (5.20.7) に入れた。キーのヒントの `[O] GitHub;` は本体の側 (`CONFIG.keyHints`)。ヘルプの「Details」/「詳細」には `[Open GitHub]` / `O` の行を足した。
 - 保存したトークンの消し方 (D30): Chrome と Edge それぞれ、設定の URL を開く方法とメニューを操作する方法を並べる。絵は付けない。Chrome は `chrome://password-manager`、Edge は `edge://settings/autofill/passwords` (左の欄「パスワードとオートフィル」→「Microsoft パスワード マネージャー」)。Edge は 5 分さわらないと鍵が掛かり、PIN などを求めることがある。
 - 保存したトークンの使い方 (D34): Token の欄をクリックし、ブラウザの候補から選ぶ。
 - キーのヒントの `[O] GitHub;` (D33)。
@@ -6800,6 +6842,36 @@ C の仲間の決まり:
 - 画面の中の主 + S と主 + Shift + S (INV-14 の判定式) は、ブラウザの既定の動作 (ページを保存) を止め、何もしない。画面からは保存しない (INV-58。調整役の裁定 2026-10-29: 送る画面の中で保存が走らないため)。
 - 送っている間の Esc では閉じない (結果は画面に出す)。
 - 画面を閉じるとき (Cancel・Esc・送った後) は、PAT の欄を空にし、目のボタンを伏字に戻す (CON-16 (2)。D28。レビューの L3)。
+
+#### 5.20.7 GitHub の編集のヘルプの層 (FS-25、INV-103。2026-10-30)
+
+オーナーの裁定 GHH-1〜GHH-9 (2026-10-26〜29)。ヘルプを先に書き、オーナーはヘルプだけを見て GitHub 連携を使う (使い勝手の試しを兼ねる。GHH-5)。
+
+| 場所 | 中身 |
+| --- | --- |
+| `src/index.html` の [?] のヘルプ | 英日の本文の、ダウンロードの枠 (`.help-download`) のすぐ下に入口のボタン (`<button type="button" class="help-github-btn" data-open-github-help>`)。「Details」/「詳細」の [Search] の行の次に `[Open GitHub]` / `O` の行 (開いている間はボタンが `[Push to GitHub]`、PC だけ (Chrome / Edge)。D33) |
+| `src/index.html` の図 | 隠した `<svg class="ghf-defs" aria-hidden="true">` に `<symbol>` 6 つ: `ghf-tokens` (トークンの一覧。1・2)、`ghf-newtoken` (新しいトークン。3〜8)、`ghf-open` (GRSMD の Open GitHub。9・10・12・13)、`ghf-file` (GitHub のファイルのページ。11)、`ghf-save` (ブラウザの保存の吹き出し。汎用の図。14。GHH-4)、`ghf-push` (GRSMD の Push to GitHub。15〜19) |
+| `src/index.html` の層 | `#githubHelpModal` (`.modal.gh-help`)。題名の行 (`.help-head`: 英語だけの題名、English / Japanese、×) と、英日の本文 (`.help-body[lang]`) |
+| `src/css/style.css` | 入口 (`.help-github-btn`。`[hidden]` では `display: none`)、層 (`#githubHelpModal`)、図の色 (`--ghf-*` の変数。ダークでは `.dark .ghf` で暗い色) |
+| `ModalController` | 開いているモーダルの積み重ね (`openModals`。`show` で積み、`hide` で外す)。キー (Esc・Tab・1 キーの止め) は一番上のモーダルだけが受ける (5.11) |
+| `UIController.setupModals` | `githubHelpModal` も `setupModal` する (× で閉じる) |
+| `main.js` | 層の `HelpLanguageSwitch` を 1 つ足す。入口は `hidden = !gitHubEnabled` (INV-100 の判定と同じ値)。押すと、層の言語をヘルプの言語にし、入口を opener にして開き、層を先頭までスクロールする |
+
+本文の構成 (英日とも同じ並び):
+
+| 節 | 中身 | 図の番号 |
+| --- | --- | --- |
+| 冒頭 | いつの GitHub の画面か (年と月まで。GHH-1)。送り先は `api.github.com` だけ。PC の Chrome か Edge だけ | なし |
+| 1. トークンを作る (最初の 1 回だけ) | Fine-grained tokens → Generate new token → 名前・期限・Only select repositories・Contents を Read and write → コピー (ほかをコピーする前に貼る) | 1〜8 |
+| 2. ファイルを開く (初回) | Open GitHub → トークンの欄に貼る → GitHub で作業用のブランチの .md の URL をコピー → URL に貼って Open → ブラウザで保存 (Edge は聞かずに保存することがある。ユーザー名は `owner/repo`。D31) | 9〜14 |
+| 3. 直して push する | ふつうに直す (Ctrl+S は手元に保存するだけ) → Push to GitHub → メッセージ → トークンの欄をクリックしてブラウザの候補から選ぶ (D34) → Push。main へは GitHub で PR と merge (D26) | 15〜19 |
+| 2 回目から | URL をコピー → Open GitHub → トークンの欄で候補を選ぶ → URL を貼る → Open | なし |
+| 保存したトークンを消す | Chrome と Edge。設定の URL を開く方法と、メニューの方法 (D30。絵なし)。確かめていないメニューの名前 (Chrome の英日、Edge の英語) には、英 "(TBD)"・日「（仮）」を付け、beta3 でオーナーが確かめたら外す (GHH-8) | なし |
+| 注意 | ブランチで作業する (ブランチの作り方は文だけ。GHH-2)、公開のリポジトリの push は残る、GRSMD は何も保存しない、トークンの範囲、保護されたブランチ、1 MB まで | なし |
+
+- トークンの欄の図は、本体の画面に合わせる: 欄の上の行に `Fine-grained personal access token`、横に目のボタン (D35・D28)。Open の画面ではトークンの欄が一番上 (D24)。
+- 図の番号は、全部の図で作業の順の通し番号 (段落が変わっても 1 に戻さない。番号の順に絵だけを見て作業するため。GHH-5)。本文の参照は (N) / （N）。
+- GitHub の画面を確かめ直したら、冒頭の月を書き換える (GHH-1)。保存の吹き出しの図は、実機で見た目が大きく違えば直す (GHH-4)。
 
 ## 付録 A: バンドル依存ライブラリ
 

@@ -38,6 +38,7 @@ import EditPalette from "./classes/EditPalette.js";
 import BlockEditController from "./classes/BlockEditController.js";
 import UIController from "./classes/UIController.js";
 import HelpLanguageSwitch from "./classes/HelpLanguageSwitch.js";
+import ModalController from "./classes/ModalController.js";
 import DocumentIndex from "./classes/DocumentIndex.js";
 import DocumentSearch from "./classes/DocumentSearch.js";
 import CodeFileDialog from "./classes/CodeFileDialog.js";
@@ -70,6 +71,7 @@ const elements = {
   clearBtn: document.getElementById("clearBtn"),
   helpBtn: document.getElementById("helpBtn"),
   helpModal: document.getElementById("helpModal"),
+  githubHelpModal: document.getElementById("githubHelpModal"),
   promptModal: document.getElementById("promptModal"),
   promptText: document.getElementById("promptText"),
   copyPromptBtn: document.getElementById("copyPromptBtn"),
@@ -273,7 +275,19 @@ const ui = new UIController(orchestrator, state, elements, scrollEngine, {
 
 // Help: English | Japanese. The first language follows the browser's; the
 // choice is kept in memory only (SC-16).
-new HelpLanguageSwitch(elements.helpModal, navigator.language);
+const helpLanguage = new HelpLanguageSwitch(elements.helpModal, navigator.language);
+// How to edit and commit files on GitHub: opens over the help in the help's language.
+const githubHelpLanguage = new HelpLanguageSwitch(elements.githubHelpModal, navigator.language);
+// Shown only where GitHub editing is offered: a fine pointer, not in a frame (D15, D17).
+for (const button of elements.helpModal.querySelectorAll("[data-open-github-help]")) {
+  button.hidden = !gitHubEnabled;
+  /** @purity non-pure */
+  button.addEventListener("click", () => {
+    githubHelpLanguage.setLanguage(helpLanguage.language);
+    ModalController.show(elements.githubHelpModal, button);
+    elements.githubHelpModal.scrollTop = 0; // focusing the switch may scroll
+  });
+}
 
 // Diagram controllers: fine-pointer (mouse/trackpad) devices only; the pan
 // also needs no coarse pointer (INV-16, INV-16b)
