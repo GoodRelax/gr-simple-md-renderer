@@ -105,7 +105,7 @@ describe("HelpLanguageSwitch (AT-HLP-01..04)", () => {
   });
 });
 
-describe("help markup in src/index.html (AT-HLP-05, AT-HLP-06)", () => {
+describe("help markup in src/index.html (AT-HLP-05, AT-HLP-06, AT-HLP-14)", () => {
   it("AT-HLP-05 two bodies (en, ja) with the same sections in the same order; English is the default before the script runs", () => {
     const modal = helpModal();
     const bodies = [...modal.querySelectorAll(".help-body")];
@@ -195,5 +195,16 @@ describe("help markup in src/index.html (AT-HLP-05, AT-HLP-06)", () => {
     }
     // no viewport meta (phones lay the page out 980 px wide, N6)
     expect(doc.querySelector('meta[name="viewport"]')).toBeNull();
+  });
+
+  it("AT-HLP-14 INV-85, NE-32: the code view item of Details says, in both languages, that a file of 200 KB or more takes time to show and edit", () => {
+    const modal = helpModal();
+    const codeItem = (lang) => [...body(modal, lang).querySelectorAll("li")].find((li) => li.textContent.includes("Cmd+Option+["));
+    const en = codeItem("en").textContent.replace(/\s+/g, " ");
+    expect(en).toContain("A file of 200 KB or more may take time to show and edit (a toast says so when you start editing).");
+    // "200 KB <ijou>" (200 KB or more) and "<jikan ga kakarimasu>" (takes time), as in the owner's words (NE-32)
+    const ja = codeItem("ja").textContent.replace(/\s+/g, " ");
+    expect(ja).toContain("200 KB \u4ee5\u4e0a");
+    expect(ja).toContain("\u6642\u9593\u304c\u304b\u304b\u308a\u307e\u3059");
   });
 });

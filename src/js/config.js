@@ -138,13 +138,14 @@ export const CONFIG = {
     markdown: {
       parseError: (message) => `Couldn't read this Markdown: ${message}`, // marked threw
     },
-    // Initial state hint in #preview (FS-16). The three steps are padded to
+    // Initial state hint in #preview (FS-16). The four steps are padded to
     // the same length (spec 5.10).
     startScreen:
       "Get started:\n\n" +
       "  1. Paste Markdown (Ctrl+V)  ->  Markdown Preview                     \n" +
       "  2. Drop a .md file          ->  Markdown Preview                     \n" +
-      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)",
+      "  3. Drop any text file       ->  Code View  (.py  .js  .json  .c  ...)\n" +
+      "  4. Double-click a block     ->  Edit  (phone: press [Edit], tap)     ",
     fileInfo: { // #fileInfo of the code view
       lines: (count) => `${count} lines`,
       size: (kb) => `${kb} KB`,
@@ -247,7 +248,7 @@ export const CONFIG = {
     palette: {
       modifier: { apple: "Cmd", other: "Ctrl" }, // the primary modifier key in the tooltips (INV-14)
       root: "Edit palette",
-      grip: "Move palette (long press: minimize / restore)", // INV-68
+      grip: "Move palette (double-click or long press: minimize / restore)", // INV-68
       bold: (mod) => `Bold (${mod}+B)`,
       italic: (mod) => `Italic (${mod}+I)`,
       format: "Text format", // the button and its popover
@@ -315,6 +316,7 @@ export const CONFIG = {
   edit: {
     paletteMarginPx: 16, // gap from viewport bottom-right (INV-32)
     paletteLongPressMs: 500, // grip long press toggles minimized (INV-68)
+    paletteDoubleTapMs: 500, // max time between the presses of a touch / pen double tap on the grip (INV-68; a mouse uses the OS double-click time)
     textColors: { // INV-66; the light value is written in the source
       red: { light: "#CF222E", dark: "#F85149" },
       blue: { light: "#0550AE", dark: "#58A6FF" },
@@ -325,8 +327,6 @@ export const CONFIG = {
     caretLineMaxChars: 20000, // INV-84: a wrapping text longer than this before the caret keeps the block's top
     linkSchemes: ["http:", "https:", "mailto:"], // a text that is a link URL (INV-69, INV-72 (a))
     maxPastedUrlLength: 2048, // INV-69
-    doubleTapMaxIntervalMs: 300, // double-tap detection (INV-31), tune on device
-    doubleTapMaxDistancePx: 24,
     defaultFileName: "untitled.md",
     // INV-79: the save dialog's id; the browser remembers its last folder
     // by this id (the app stores nothing)

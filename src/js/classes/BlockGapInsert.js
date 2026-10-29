@@ -1,5 +1,6 @@
 import { CONFIG } from "../config.js";
 import { nextFrame } from "../utils.js";
+import { forwardWheel } from "../wheelForwarding.js";
 
 // Room left between the end of the line and a table's tab.
 const TAB_MARGIN_PX = 8;
@@ -60,6 +61,7 @@ export default class BlockGapInsert {
     this._onPointerMove = (e) => this._handlePointerMove(e);
     this._onScroll = () => this.hide();
     this._onLineClick = (e) => this._handleLineClick(e);
+    this._onLineWheel = (e) => this._handleLineWheel(e);
     /** @purity non-pure */
     this._onLinePress = (e) => {
       if (e.button !== 0) return; // only the main button ends in a click
@@ -289,6 +291,8 @@ export default class BlockGapInsert {
     line.appendChild(plus);
     line.addEventListener("pointerdown", this._onLinePress);
     line.addEventListener("click", this._onLineClick);
+    // not passive: the turn is taken over when the preview scrolls (AQ8)
+    line.addEventListener("wheel", this._onLineWheel, { passive: false });
     document.body.appendChild(line);
     this._line = line;
     return line;
@@ -322,6 +326,18 @@ export default class BlockGapInsert {
     const gap = move.over ? this.gapAt(move.x, move.y) : null;
     if (gap) this.show(gap);
     else this.hide();
+  }
+
+  /**
+   * A wheel turn over the line (AQ8): passed to the preview when it scrolls
+   * itself (wheelForwarding.forwardWheel). The line hides in every case:
+   * what is under it moves.
+   * @purity non-pure
+   * @param {WheelEvent} e
+   */
+  _handleLineWheel(e) {
+    this.hide();
+    forwardWheel(e, this.preview);
   }
 
   /**

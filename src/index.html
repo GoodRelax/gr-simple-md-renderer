@@ -21,7 +21,7 @@
     />
     <meta
       property="og:title"
-      content="GR Simple Markdown (GRSMD) | Free Markdown Viewer &amp; Editor – Mermaid, PlantUML &amp; Math"
+      content="GR Simple Markdown (GRSMD) | Free Markdown Viewer &amp; Editor - Mermaid, PlantUML &amp; Math"
     />
     <meta
       property="og:description"
@@ -31,14 +31,14 @@
     <meta property="twitter:card" content="summary_large_image" />
     <meta
       property="twitter:title"
-      content="GR Simple Markdown (GRSMD) | Free Markdown Viewer &amp; Editor – Mermaid, PlantUML &amp; Math"
+      content="GR Simple Markdown (GRSMD) | Free Markdown Viewer &amp; Editor - Mermaid, PlantUML &amp; Math"
     />
     <meta
       property="twitter:description"
       content="Privacy-focused Markdown viewer and editor (formerly GR Simple MD Renderer &amp; Viewer) for Markdown, Math (LaTeX), Mermaid, and PlantUML. Renamed because it now edits documents, not just renders them."
     />
 
-    <title>GR Simple Markdown (GRSMD) | Free Markdown Viewer &amp; Editor – Mermaid, PlantUML &amp; Math</title>
+    <title>GR Simple Markdown (GRSMD) | Free Markdown Viewer &amp; Editor - Mermaid, PlantUML &amp; Math</title>
 
     <script type="application/ld+json">
       {
@@ -189,6 +189,11 @@
               </li>
             </ol>
             <p>
+              Pasting starts a preview only on the start screen, with the top box
+              empty. While a document is shown, press <code>[Clear]</code> first.
+              A dropped file can be up to 5 MB.
+            </p>
+            <p>
               On a phone or tablet, tap the empty page, then press and hold the
               top box to paste.
             </p>
@@ -206,7 +211,7 @@
                 Code view: <code>[Edit]</code> / <code>E</code> edits the whole file. <code>Tab</code> / <code>Shift+Tab</code>
                 indent, <code>Enter</code> keeps the indent, <code>Esc</code> leaves the text box. Save keeps the encoding, BOM and
                 line endings (a file not in UTF-8 asks which encoding to save in; characters it cannot hold: it asks to save in UTF-8); Save as can change the extension (a <code>.md</code> name is saved in UTF-8 and opens as Markdown).
-                A file that is not UTF-8, or mixes line endings, asks how to read it. JSON: <code>Ctrl+&larr;</code> /
+                A file that is not UTF-8, or mixes line endings, asks how to read it. A file of 200 KB or more may take time to show and edit (a toast says so when you start editing). JSON: <code>Ctrl+&larr;</code> /
                 <code>Ctrl+&rarr;</code> (Mac: <code>Option</code>; in the text box <code>Ctrl+Shift+[</code> / <code>]</code>, Mac
                 <code>Cmd+Option+[</code> / <code>]</code>) or <code>[Commands]</code> / <code>P</code> fold one level onto one line / unfold it
               </li>
@@ -223,6 +228,10 @@
               <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge)</li>
               <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
               <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette</li>
+              <li>
+                Double-click the preview to enter edit mode and open that block. On a phone or tablet, press
+                <code>[Edit]</code>, then tap a block.
+              </li>
               <li>
                 <code>Esc</code> : Apply the open block or cell and close it.
                 With blocks selected, clear the selection first. With nothing open, hide
@@ -243,7 +252,12 @@
               <li>
                 Edit mode: in an open block, the second row of the edit palette's Text format
                 adds math. Insert inline math puts a formula at the cursor. Insert math boxes
-                adds three equations (Maxwell, Einstein, Schroedinger), each with its name.
+                adds three math boxes (Maxwell, Einstein, Schroedinger), each under its name.
+              </li>
+              <li>
+                Edit mode: double-click the edit palette's grip (<code>::</code>; on a phone or
+                tablet, double tap it) or press and hold it to shrink the palette to the grip.
+                Do it again to bring the palette back.
               </li>
               <li>
                 Edit mode: drag over the text of some blocks (on a phone, long press and move
@@ -286,7 +300,12 @@
               <li>
                 PlantUML is an exception to client-side-only operation. This
                 tool shows a confirmation dialog before sending any PlantUML data
-                to the official server, every time it renders.
+                to the official server, every time it renders the document (a
+                diagram you changed while editing: when you press its [Render]
+                button). Only the diagrams you allowed in the dialog are sent;
+                Copy SVG / PNG of such a diagram fetches it again without asking.
+                While the page is still loading, a diagram shows "Loading
+                diagram..." and the dialog comes when loading is done.
               </li>
               <li>
                 External images (<code>![](https://...)</code>,
@@ -389,6 +408,9 @@
               </li>
             </ol>
             <p>
+              ペーストでプレビューが始まるのは、最初の画面で、上部のボックスが空のときだけです。文書を表示しているときは、先に <code>[Clear]</code> を押します。ドロップできるファイルは 5 MB までです。
+            </p>
+            <p>
               スマートフォンやタブレットでは、何も表示していない画面をタップし、上部のボックスを長押ししてペーストします。
             </p>
             <p>
@@ -403,7 +425,7 @@
               <li>
                 コードビュー: <code>[Edit]</code> / <code>E</code> でファイル全体を編集します。<code>Tab</code> / <code>Shift+Tab</code> で字下げ、
                 <code>Enter</code> は字下げを引き継ぎ、<code>Esc</code> で入力欄から抜けます。Save は文字コード・BOM・改行を保ち（UTF-8 でなければ保存の文字コードを聞き、書けない字があれば UTF-8 で保存するか聞きます）、Save as では拡張子を変えられます
-                （<code>.md</code> の名前は UTF-8 で保存し、Markdown で開き直します）。UTF-8 でないファイルや改行が混ざったファイルは、開くときに読み方を聞きます。
+                （<code>.md</code> の名前は UTF-8 で保存し、Markdown で開き直します）。UTF-8 でないファイルや改行が混ざったファイルは、開くときに読み方を聞きます。200 KB 以上のファイルは、表示や編集に時間がかかります（編集を始めるときにトーストで知らせます）。
                 JSON: <code>Ctrl+&larr;</code> / <code>Ctrl+&rarr;</code>（Mac は <code>Option</code>。入力欄の中では <code>Ctrl+Shift+[</code> / <code>]</code>、Mac は
                 <code>Cmd+Option+[</code> / <code>]</code>）か <code>[Commands]</code> / <code>P</code> で、1 段ずつ 1 行にまとめる / 開く
               </li>
@@ -416,6 +438,9 @@
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
               <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
               <li>
+                プレビューをダブルクリックすると、編集モードに入り、そのブロックを開きます。スマートフォンやタブレットでは、<code>[Edit]</code> を押してからブロックをタップします。
+              </li>
+              <li>
                 <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。ブロックを選んでいれば、まず選択を解きます。何も開いていなければ、編集パレットを隠します。編集パレットも出ていなければ、検索、目次の順に隠します。コードビューの入力欄の中では入力欄から抜けるだけで、外では [Commands]、検索、目次の順に隠します。
               </li>
               <li>
@@ -425,7 +450,10 @@
                 編集モードで、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下にマウスを置く（スマートフォンではタップする）と、点線と <code>+</code> が出ます。押すと、そこに新しいブロックを入れます。
               </li>
               <li>
-                編集モードで、ブロックを開いているとき、編集パレットの Text format の 2 段目で数式を入れられます。Insert inline math は、カーソルの位置に式を入れます。Insert math boxes は、3 つの方程式（Maxwell、Einstein、Schroedinger）を、それぞれの名前と一緒に入れます。
+                編集モードで、ブロックを開いているとき、編集パレットの Text format の 2 段目で数式を入れられます。Insert inline math は、カーソルの位置に式を入れます。Insert math boxes は、3 つの数式の箱（Maxwell、Einstein、Schroedinger）を、それぞれの名前の下に入れます。
+              </li>
+              <li>
+                編集モードで、編集パレットのグリップ（<code>::</code>）をダブルクリック（スマートフォンやタブレットではダブルタップ）するか長押しすると、パレットはグリップだけになります。もう一度で元に戻ります。
               </li>
               <li>
                 編集モードで、ブロックの文字をドラッグで選ぶ（スマートフォンでは長押ししてつまみを動かす）と、選択がかかったブロックが丸ごと選ばれ、選択の下に帯が出ます。<code>Delete</code> / <code>Backspace</code> で削除、<code>Ctrl+X</code> でカット、<code>Ctrl+C</code> でその Markdown をコピー（Mac は <code>Cmd</code>。メニューのコピーも同じ）。消したブロックは Undo 1 回で戻ります。見えている文字の一部だけをコピーするときは、編集モードを抜けてから選びます。
@@ -459,7 +487,7 @@
             <ul>
               <li>
                 PlantUML:
-                クライアントサイド動作の例外。公式サーバーにPlantUMLデータを送信する前に、描画のたびに確認ダイアログを表示します。
+                クライアントサイド動作の例外。公式サーバーにPlantUMLデータを送信する前に、文書を描くたびに確認ダイアログを表示します (編集で変えた図は、その [Render] を押したとき)。送るのは、ダイアログで許した図だけです。許した図の Copy SVG / PNG は、確認なしにその図をもう一度取りに行きます。ページの読み込みの途中は、図の所に「Loading diagram...」と出し、読み込みが終わってから確認します。
               </li>
               <li>
                 外部画像 (<code>![](https://...)</code>、<code>&lt;img src="https://..."&gt;</code>):

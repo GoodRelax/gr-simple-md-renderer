@@ -58,7 +58,7 @@ describe("SourceFileRenderer", () => {
     };
   }
 
-  describe("constructor", () => {
+  describe("AT-SFR-02 FS-03, spec 5.5: constructor", () => {
     it("stores config reference", () => {
       const { renderer, config } = createRenderer();
       expect(renderer._cfg).toBe(config);
@@ -90,7 +90,7 @@ describe("SourceFileRenderer", () => {
     });
   });
 
-  describe("destroy()", () => {
+  describe("AT-SFR-03 FS-07, INV-13: destroy()", () => {
     it("clears previewEl innerHTML", () => {
       const { renderer, previewEl } = createRenderer();
       previewEl.innerHTML = "<p>content</p>";
@@ -119,7 +119,7 @@ describe("SourceFileRenderer", () => {
       expect(renderer._lastScrollTop).toBe(0);
     });
 
-    it("AT-SFR-08 (INV-86, G10; review M1) the code view's lines are taken away from the last up (WebKit: linear, not quadratic), also when the view is drawn again", () => {
+    it("AT-SFR-14 (INV-86, G10; review M1) the code view's lines are taken away from the last up (WebKit: linear, not quadratic), also when the view is drawn again", () => {
       const { renderer, previewEl } = createRenderer();
       const lines = '<div id="codeViewBody"><span class="code-line">1</span><span class="code-line">2</span><span class="code-line">3</span></div>';
       const removed = [];
@@ -140,7 +140,7 @@ describe("SourceFileRenderer", () => {
     });
   });
 
-  describe("_buildCodeBody()", () => {
+  describe("AT-SFR-04 FS-03, INV-05, spec 5.3: _buildCodeBody()", () => {
     it("highlights a bundled language", () => {
       const { renderer } = createRenderer();
       const result = renderer._buildCodeBody("x = 1", { name: "a.py" });
@@ -172,7 +172,7 @@ describe("SourceFileRenderer", () => {
     });
   });
 
-  describe("source guard", () => {
+  describe("AT-SFR-05 INV-07: source guard", () => {
     it("has no external https:// import", () => {
       // Vitest root is the project root (vite.config.js test.root)
       const src = readFileSync(
@@ -184,7 +184,7 @@ describe("SourceFileRenderer", () => {
     });
   });
 
-  describe("_splitHighlightedLines()", () => {
+  describe("AT-SFR-06 FS-03, spec 5.5: _splitHighlightedLines()", () => {
     it("splits plain text by newlines", () => {
       const { renderer } = createRenderer();
       const result = renderer._splitHighlightedLines("line1\nline2\nline3");
@@ -245,7 +245,7 @@ describe("SourceFileRenderer", () => {
   });
 
   describe("reload()", () => {
-    it("shows toast when fileHandle is null", async () => {
+    it("AT-SFR-07 (a) FS-04, INV-15: shows toast when fileHandle is null", async () => {
       const { renderer, config } = createRenderer();
       renderer._fileHandle = null;
 
@@ -265,7 +265,7 @@ describe("SourceFileRenderer", () => {
       expect(showToastMock).not.toHaveBeenCalledWith(config.codeView.reloadUnavailableMsg, expect.anything());
     });
 
-    it("does not modify previewEl when fileHandle is null", async () => {
+    it("AT-SFR-07 (b) FS-04, INV-15: does not modify previewEl when fileHandle is null", async () => {
       const { renderer, previewEl } = createRenderer();
       renderer._fileHandle = null;
       previewEl.innerHTML = "<p>original</p>";
@@ -286,7 +286,7 @@ describe("SourceFileRenderer", () => {
       vi.restoreAllMocks();
     });
 
-    it("AT-SFR-02 render shows the decoded text given, not file.text()", async () => {
+    it("AT-SFR-08 render shows the decoded text given, not file.text()", async () => {
       const { renderer, previewEl } = createRenderer();
       const file = sjisFile();
       const text = vi.spyOn(file, "text");
@@ -296,7 +296,7 @@ describe("SourceFileRenderer", () => {
       expect([meta.fileName, meta.fileSize, meta.lineCount]).toEqual(["a.txt", 4, 2]);
     });
 
-    it("AT-SFR-03 reload reads through readText (the opened encoding)", async () => {
+    it("AT-SFR-09 reload reads through readText (the opened encoding)", async () => {
       const { renderer, previewEl } = createRenderer();
       const handle = { getFile: async () => sjisFile() };
       await renderer.render(new File(["x"], "a.txt"), handle, "dark", () => true, "x");
@@ -307,7 +307,7 @@ describe("SourceFileRenderer", () => {
       expect(meta.lineCount).toBe(2);
     });
 
-    it("AT-SFR-04 showText draws another text of the same file: name, size and date stay, the line count follows", async () => {
+    it("AT-SFR-10 showText draws another text of the same file: name, size and date stay, the line count follows", async () => {
       const { renderer, previewEl } = createRenderer();
       expect(renderer.showText("x")).toBeNull(); // no file shown
       await renderer.render(new File(["abc"], "a.py", { lastModified: 7 }), null, "dark", () => true, "abc");
@@ -316,7 +316,7 @@ describe("SourceFileRenderer", () => {
       expect(meta).toEqual({ fileName: "a.py", fileSize: 3, lineCount: 3, language: "python", updatedAtStr: "2024-01-01 12:00:00" });
     });
 
-    it("AT-SFR-05 retarget: Reload reads the written file; the view is not drawn again", async () => {
+    it("AT-SFR-11 retarget: Reload reads the written file; the view is not drawn again", async () => {
       const { renderer, previewEl } = createRenderer();
       await renderer.render(new File(["abc"], "a.py"), null, "dark", () => true, "abc\nd");
       const before = previewEl.innerHTML;
@@ -330,7 +330,7 @@ describe("SourceFileRenderer", () => {
       expect(renderer.retarget(new File(["x"], "c.py"), written)).toBeNull();
     });
 
-    it("AT-SFR-06 highlightText (the code editor, INV-86): highlight.js HTML for a bundled language; null without it, or for another language", () => {
+    it("AT-SFR-12 highlightText (the code editor, INV-86): highlight.js HTML for a bundled language; null without it, or for another language", () => {
       const { renderer } = createRenderer();
       expect(renderer.highlightText("x<", "python")).toBe('<span class="hljs-keyword">x<</span>');
       expect(renderer.highlightText("x", "json")).toBeNull();
@@ -340,7 +340,7 @@ describe("SourceFileRenderer", () => {
       expect(waiting.highlightText("x", "python")).toBeNull();
     });
 
-    it("AT-SFR-07 recolor (highlight.js came late) does not draw over the code editor: only while the view's body is shown", async () => {
+    it("AT-SFR-13 recolor (highlight.js came late) does not draw over the code editor: only while the view's body is shown", async () => {
       const config = { codeView: { highlightWaitMs: 1 } };
       const previewEl = document.createElement("div");
       const renderer = new SourceFileRenderer(config, previewEl, null, false, () => new Promise(() => {}));

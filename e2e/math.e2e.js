@@ -3,7 +3,7 @@ import { CONFIG } from "../src/js/config.js";
 
 // The palette's math (Text format, second row; owner ruling 2026-10-25) in
 // real browsers: inline math goes in at the caret and is drawn by KaTeX
-// once applied; the math boxes put the three equations under their names in
+// once applied; Insert math boxes puts the three math boxes under their names in
 // one press, drawn without an error and with nothing opened; one Undo takes
 // them away and Redo brings them back. No request leaves the page (the
 // fixture checks it).
@@ -11,7 +11,7 @@ import { CONFIG } from "../src/js/config.js";
 // CONFIG.edit.inlineMathTemplate
 const MATH = String.raw`$e = \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^{n} = \sum_{k=0}^{\infty} \frac{1}{k!}$`;
 const NAMES = ["Maxwell's Equations", "Einstein Field Equations and Christoffel Symbols", "Schroedinger Equation, Wavefunction Normalization, and Pauli Matrices"];
-// the three equations under their names, as inserted (AT-MATH-05 checks the text itself)
+// the three math boxes under their names, as inserted (AT-MATH-05 checks the text itself)
 const BOXES = CONFIG.edit.mathBoxesTemplate;
 const DOC = "# Doc\n\nPara one.\n\nEnd.\n";
 
@@ -91,7 +91,7 @@ test("inline math that would not read as itself: a toast, nothing changes", asyn
   await expect(ta).toHaveValue("costs $5 and");
 });
 
-test("the math boxes: three equations under their names in one press, drawn, nothing opened; Undo and Redo", async ({ page }) => {
+test("INV-52 Insert math boxes: three math boxes under their names in one press, drawn, nothing opened; Undo and Redo", async ({ page }) => {
   await openEditMode(page, DOC);
   await editBlock(page, "Para one.", "Line one\nLine two", 4);
   await pressInFormat(page, "paletteMathBox");

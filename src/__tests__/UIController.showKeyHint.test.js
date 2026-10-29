@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
-describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
+describe("AT-UI-73 UIController.showKeyHint dismiss on scroll (FS-03, spec 5.7)", () => {
   let UIController;
   let mockOrchestrator;
   let mockScrollEngine;

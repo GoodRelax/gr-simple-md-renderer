@@ -106,7 +106,7 @@ const PATHS = [
   }],
 ];
 
-describe("INV-56 an empty #editor taken into a non-empty document asks first", () => {
+describe("AT-UI-71 INV-56 an empty #editor taken into a non-empty document asks first", () => {
   it("the message is ASCII English in messages.edit", () => {
     expect(M.emptyEditorConfirm).toMatch(/^[\x20-\x7e\n]+$/); // OK and Cancel on their own lines (A08)
   });

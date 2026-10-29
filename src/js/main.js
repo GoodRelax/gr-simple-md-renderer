@@ -16,7 +16,7 @@ import "katex/dist/katex.min.css";
 // Local Imports
 // ========================================
 import { CONFIG } from "./config.js";
-import { isApplePlatform } from "./utils.js";
+import { isApplePlatform, diagramControllersFor } from "./utils.js";
 import { lazyMath } from "./lazyMath.js";
 import LibraryLoader from "./classes/LibraryLoader.js";
 import ApplicationState from "./classes/ApplicationState.js";
@@ -92,11 +92,9 @@ const markdownRenderer = new MarkdownRenderer(
   math,
 );
 const mermaidRenderer = new MermaidRenderer(elements.preview, null);
-const plantumlRenderer = new PlantUMLRenderer(
-  elements.preview,
-  null,
-  () => libraries.get("plantuml"),
-);
+// The encoder is handed over when it runs (11-g handToRenderers); the dev
+// server provides it from the start (ready), and nothing else asks for it.
+const plantumlRenderer = new PlantUMLRenderer(elements.preview, libraries.peek("plantuml"));
 
 // SourceFileRenderer is owned by RendererOrchestrator
 const sourceFileRenderer = new SourceFileRenderer(
@@ -202,19 +200,25 @@ const ui = new UIController(orchestrator, state, elements, scrollEngine, {
 // choice is kept in memory only (SC-16).
 new HelpLanguageSwitch(elements.helpModal, navigator.language);
 
-// Diagram controllers: fine-pointer (mouse/trackpad) devices only
-const isTouchCapable = window.matchMedia("(any-pointer: coarse)").matches;
-if (window.matchMedia("(pointer: fine)").matches) {
+// Diagram controllers: fine-pointer (mouse/trackpad) devices only; the pan
+// also needs no coarse pointer (INV-16, INV-16b)
+const diagramControllers = diagramControllersFor({
+  fine: window.matchMedia("(pointer: fine)").matches,
+  anyCoarse: window.matchMedia("(any-pointer: coarse)").matches,
+});
+if (diagramControllers.zoomAndCopy) {
   new DiagramZoomController(elements.preview);
   new DiagramCopyController(elements.preview);
-  if (!isTouchCapable) {
-    new DiagramPanController(elements.preview);
-  }
+}
+if (diagramControllers.pan) {
+  new DiagramPanController(elements.preview);
 }
 
-// The core runs (INV-81): a drop or paste made before it is taken now, and
-// the libraries run one by one when the page is idle (owner ruling 2026-10-25).
-const early = boot.takeEarlyInput();
-if (early) ui.receiveEarlyInput(early);
-libraries.preloadWhenIdle((name, library) => orchestrator.libraryLoaded(name, library));
+// The core runs (INV-81, spec 11-g coreStarted): a drop or paste made before
+// it is taken now, and the libraries run one by one when the page is idle
+// (owner ruling 2026-10-25). The page is loading until the four libraries are
+// ready or failed; then it answers the held PlantUML boxes (answering, one
+// dialog) and is settled. PlantUML asks and sends only from answering on (AQ7).
+libraries.connect(orchestrator);
+libraries.dispatchPage("coreStarted", { receiveEarlyInput: (early) => ui.receiveEarlyInput(early) });
 performance.mark("grsmd-core-ready");

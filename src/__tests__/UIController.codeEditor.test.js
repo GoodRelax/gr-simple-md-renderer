@@ -24,7 +24,7 @@ import { setupApp, dropEvent, settle, BASE_TITLE } from "./helpers/appStack.js";
 import { fakeFileAccess, fakeFileHandle } from "./helpers/fakeFs.js";
 import { keydown } from "./helpers/editDom.js";
 
-// AT-UI-80..: UIController routes the code view's edit mode (SC-27, INV-85
+// AT-UI-85..: UIController routes the code view's edit mode (SC-27, INV-85
 // to INV-88), the JSON fold keys and the command palette (INV-92), the Index
 // of a code file (INV-91) and Search in the code editor (INV-80).
 
@@ -73,7 +73,7 @@ function type(value) {
 }
 
 describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90)", () => {
-  it("AT-UI-80 e / [Edit] in the code view: the editor, the palette with Save, Save as, Undo, Redo and Search; Esc leaves the editor, e the edit mode, the view shows the edited text", async () => {
+  it("AT-UI-85 e / [Edit] in the code view: the editor, the palette with Save, Save as, Undo, Redo and Search; Esc leaves the editor, e the edit mode, the view shows the edited text", async () => {
     await start();
     await drop("a\nb\n", "a.py");
     expect(app.elements.editBtn.disabled).toBe(false);
@@ -94,7 +94,7 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect(textarea().value).toBe("a\nb\nc\n");
   });
 
-  it("AT-UI-81 Undo: the palette's button (on only when there is a step) and primary+Z / Shift+Z outside the editor are the editor's; in a text entry the browser's", async () => {
+  it("AT-UI-86 Undo: the palette's button (on only when there is a step) and primary+Z / Shift+Z outside the editor are the editor's; in a text entry the browser's", async () => {
     await start();
     await drop("a\n", "a.py");
     keydown(document.body, "e");
@@ -115,7 +115,7 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect(textarea().value).toBe("a\n");
   });
 
-  it("AT-UI-93 the palette's Redo (on only with a step) redoes in the editor; its Search opens Search (NE-2)", async () => {
+  it("AT-UI-98 the palette's Redo (on only with a step) redoes in the editor; its Search opens Search (NE-2)", async () => {
     await start();
     await drop("a\n", "a.py");
     keydown(document.body, "e");
@@ -131,7 +131,7 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect([app.search.isShown(), document.activeElement]).toEqual([true, app.searchEl.input]);
   });
 
-  it("AT-UI-82 Save (primary+S) while editing writes the editor's text and edit mode stays", async () => {
+  it("AT-UI-87 Save (primary+S) while editing writes the editor's text and edit mode stays", async () => {
     await start();
     await drop("a\n", "a.py", fakeFileHandle({ name: "a.py", calls: access.calls }));
     keydown(document.body, "e");
@@ -142,7 +142,7 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect([app.codeEdit.isEditing(), app.codeEdit.isDirty(), document.title]).toEqual([true, false, BASE_TITLE]);
   });
 
-  it("AT-UI-83 Reload and a dropped Markdown file end edit mode first; the palette is the Markdown one again; Reload does not draw the edited text first (L5)", async () => {
+  it("AT-UI-88 Reload and a dropped Markdown file end edit mode first; the palette is the Markdown one again; Reload does not draw the edited text first (L5)", async () => {
     await start();
     await drop("a\n", "a.py", fakeFileHandle({ name: "a.py", content: ["a\n"] }));
     keydown(document.body, "e");
@@ -156,7 +156,7 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect(shownButtons()).toContain("paletteBold");
   });
 
-  it("AT-UI-94 (INV-85 (3); review L5) a Reload that cannot read the file after edit mode ended: the view shows the document's text again", async () => {
+  it("AT-UI-99 (INV-85 (3); review L5) a Reload that cannot read the file after edit mode ended: the view shows the document's text again", async () => {
     await start();
     await drop("a\n", "a.py", fakeFileHandle({ name: "a.py", content: ["a\n"] }));
     keydown(document.body, "e");
@@ -168,7 +168,7 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect(toasts()).toContain(CONFIG.messages.edit.reloadFailed);
   });
 
-  it("AT-UI-95 (INV-85 (5), INV-86; review M1) the unsaved mark while typing is not compared on a key; when typing stops it is exact (typed back: no mark)", async () => {
+  it("AT-UI-100 (INV-85 (5), INV-86; review M1) the unsaved mark while typing is not compared on a key; when typing stops it is exact (typed back: no mark)", async () => {
     await start();
     await drop("same\n", "a.py");
     keydown(document.body, "e");
@@ -182,7 +182,7 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect([document.title, app.ui._paletteStates().undo]).toEqual([BASE_TITLE, false]);
   });
 
-  it("AT-UI-96 (INV-92 (4), NE-23; review L12) the key hint of the code view on a Mac names Option for the fold keys", async () => {
+  it("AT-UI-101 (INV-92 (4), NE-23; review L12) the key hint of the code view on a Mac names Option for the fold keys", async () => {
     await start({ isApple: true });
     await drop("{}\n", "a.json");
     expect(app.elements.keyHint.textContent).toBe(CONFIG.keyHints.codeApple);
@@ -194,7 +194,7 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect(app.elements.keyHint.textContent).toBe(CONFIG.keyHints.code);
   });
 
-  it("AT-UI-97 (INV-89; review L19) a UTF-16 file with a BOM and an unknown extension opens (its NUL bytes do not make it binary); without a BOM it is refused", async () => {
+  it("AT-UI-102 (INV-89; review L19) a UTF-16 file with a BOM and an unknown extension opens (its NUL bytes do not make it binary); without a BOM it is refused", async () => {
     await start();
     const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
     const le = Uint8Array.from([0xff, 0xfe, 0x61, 0x00, 0x0a, 0x00]);
@@ -206,7 +206,7 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect(alert).toHaveBeenCalledWith(CONFIG.fileDrop.messages.binaryFile);
   });
 
-  it("AT-UI-84 Esc outside the editor in edit mode: the command palette, then Search, then the Index close; edit mode stays", async () => {
+  it("AT-UI-89 Esc outside the editor in edit mode: the command palette, then Search, then the Index close; edit mode stays", async () => {
     await start();
     await drop(JSON_TEXT, "a.json");
     keydown(document.body, "i");
@@ -226,7 +226,7 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
 });
 
 describe("UIController: JSON fold keys and the command palette (INV-92)", () => {
-  it("AT-UI-85 Ctrl+Left / Ctrl+Right in the view fold / unfold the text shown, not unsaved; in a text entry not taken", async () => {
+  it("AT-UI-90 Ctrl+Left / Ctrl+Right in the view fold / unfold the text shown, not unsaved; in a text entry not taken", async () => {
     await start();
     await drop(JSON_TEXT, "a.json");
     expect(keydown(document.body, "ArrowLeft", { ctrlKey: true }).defaultPrevented).toBe(true);
@@ -239,7 +239,7 @@ describe("UIController: JSON fold keys and the command palette (INV-92)", () => 
     expect(lines().join("\n")).toBe(JSON_TEXT);
   });
 
-  it("AT-UI-86 in edit mode Ctrl+Left outside the editor folds the editor's text (unsaved, one undo step)", async () => {
+  it("AT-UI-91 in edit mode Ctrl+Left outside the editor folds the editor's text (unsaved, one undo step)", async () => {
     await start();
     await drop(JSON_TEXT, "a.json");
     keydown(document.body, "e");
@@ -250,7 +250,7 @@ describe("UIController: JSON fold keys and the command palette (INV-92)", () => 
     expect(textarea().value).toBe(JSON_TEXT);
   });
 
-  it("AT-UI-87 Mac: Option+Left / Option+Right; Ctrl+Left is not taken", async () => {
+  it("AT-UI-92 Mac: Option+Left / Option+Right; Ctrl+Left is not taken", async () => {
     await start({ isApple: true });
     await drop(JSON_TEXT, "a.json");
     expect(keydown(document.body, "ArrowLeft", { ctrlKey: true }).defaultPrevented).toBe(false);
@@ -261,7 +261,7 @@ describe("UIController: JSON fold keys and the command palette (INV-92)", () => 
     expect(lines().join("\n")).toBe(JSON_TEXT);
   });
 
-  it("AT-UI-88 not JSON: the fold keys are not taken; p says folding is for JSON; [Commands] is off", async () => {
+  it("AT-UI-93 not JSON: the fold keys are not taken; p says folding is for JSON; [Commands] is off", async () => {
     await start();
     await drop("a\n", "a.py");
     expect(keydown(document.body, "ArrowLeft", { ctrlKey: true }).defaultPrevented).toBe(false);
@@ -270,7 +270,7 @@ describe("UIController: JSON fold keys and the command palette (INV-92)", () => 
     expect([app.commandsBtn.disabled, app.ui.codeCommands.isShown()]).toEqual([true, false]);
   });
 
-  it("AT-UI-89 JSON: p and [Commands] open the command palette; its buttons fold and unfold the view; off again in the Markdown view", async () => {
+  it("AT-UI-94 JSON: p and [Commands] open the command palette; its buttons fold and unfold the view; off again in the Markdown view", async () => {
     await start();
     await drop(JSON_TEXT, "a.json");
     expect(app.commandsBtn.disabled).toBe(false);
@@ -293,7 +293,7 @@ describe("UIController: JSON fold keys and the command palette (INV-92)", () => 
 });
 
 describe("UIController: code edit behaviour of the spec without a test before (INV-14, INV-58, INV-91, INV-92; review L22)", () => {
-  it("AT-UI-98 INV-92 (4): a held Ctrl+Left on the page is taken and folds once; during IME composition it is not taken", async () => {
+  it("AT-UI-103 INV-92 (4): a held Ctrl+Left on the page is taken and folds once; during IME composition it is not taken", async () => {
     await start();
     await drop(JSON_TEXT, "a.json");
     expect(keydown(document.body, "ArrowLeft", { ctrlKey: true, isComposing: true }).defaultPrevented).toBe(false);
@@ -303,7 +303,7 @@ describe("UIController: code edit behaviour of the spec without a test before (I
     expect(lines().join("\n")).toBe(JSON_FOLDED);
   });
 
-  it("AT-UI-99 5.19.7 / INV-14: e and p typed in the editor are characters (edit mode and the command palette stay as they are)", async () => {
+  it("AT-UI-104 5.19.7 / INV-14: e and p typed in the editor are characters (edit mode and the command palette stay as they are)", async () => {
     await start();
     await drop(JSON_TEXT, "a.json");
     keydown(document.body, "e");
@@ -312,7 +312,7 @@ describe("UIController: code edit behaviour of the spec without a test before (I
     expect([app.codeEdit.isEditing(), app.ui.codeCommands.isShown()]).toEqual([true, false]);
   });
 
-  it("AT-UI-100 INV-58: primary+Shift+S in the code view is Save as (the save dialog with the file's name)", async () => {
+  it("AT-UI-105 INV-58: primary+Shift+S in the code view is Save as (the save dialog with the file's name)", async () => {
     await start();
     await drop("a\n", "a.py");
     expect(keydown(document.body, "s", { ctrlKey: true, shiftKey: true }).defaultPrevented).toBe(true);
@@ -320,7 +320,7 @@ describe("UIController: code edit behaviour of the spec without a test before (I
     expect(access.calls[0]).toBe("startSavePicker:a.py");
   });
 
-  it("AT-UI-101 INV-91 (2): the Index follows the editor's text when typing stops", async () => {
+  it("AT-UI-106 INV-91 (2): the Index follows the editor's text when typing stops", async () => {
     await start();
     await drop("def one():\n    pass\n", "a.py");
     keydown(document.body, "i");
@@ -334,7 +334,7 @@ describe("UIController: code edit behaviour of the spec without a test before (I
 });
 
 describe("UIController: the Index and Search of a code file (INV-91, INV-80)", () => {
-  it("AT-UI-90 the Index: on for JSON (its keys, after a fold too), off for a language without an outline", async () => {
+  it("AT-UI-95 the Index: on for JSON (its keys, after a fold too), off for a language without an outline", async () => {
     await start();
     await drop(JSON_TEXT, "a.json");
     expect(app.indexBtn.disabled).toBe(false);
@@ -357,7 +357,7 @@ describe("UIController: the Index and Search of a code file (INV-91, INV-80)", (
     expect([app.indexBtn.disabled, app.index.isShown()]).toEqual([true, false]);
   });
 
-  it("AT-UI-91 the Index in edit mode: a pick puts the caret at the start of its line", async () => {
+  it("AT-UI-96 the Index in edit mode: a pick puts the caret at the start of its line", async () => {
     await start();
     await drop(JSON_TEXT, "a.json");
     keydown(document.body, "i");
@@ -367,7 +367,7 @@ describe("UIController: the Index and Search of a code file (INV-91, INV-80)", (
     expect(textarea().selectionStart).toBe(JSON_TEXT.indexOf('  "c"'));
   });
 
-  it("AT-UI-92 Search in edit mode: Replace changes the editor's text, and primary+Z outside the editor takes it back", async () => {
+  it("AT-UI-97 Search in edit mode: Replace changes the editor's text, and primary+Z outside the editor takes it back", async () => {
     vi.stubGlobal("Highlight", class {});
     vi.stubGlobal("CSS", { highlights: new Map() });
     await start();

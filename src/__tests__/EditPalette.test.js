@@ -208,7 +208,7 @@ describe("AT-PAL show and layout (INV-32, 5.15.1)", () => {
     expect(root.querySelector(".edit-palette-sep")).toBeNull();
     expect(root.querySelector("#paletteStatus")).not.toBeNull();
     const labels = {
-      paletteGrip: "Move palette (long press: minimize / restore)",
+      paletteGrip: "Move palette (double-click or long press: minimize / restore)",
       paletteBold: "Bold (Ctrl+B)",
       paletteItalic: "Italic (Ctrl+I)",
       paletteFormat: "Text format",
@@ -781,6 +781,63 @@ describe("AT-PAL minimize (INV-68, 11-f)", () => {
     const rule = /\.edit-palette,\s*\.edit-palette-popover\s*\{[^}]*\}/.exec(css)?.[0] ?? "";
     expect(rule).toContain("-webkit-touch-callout: none");
   });
+
+  it("AT-PAL-37 a double click on the grip minimizes and restores, keeping the grip in place, the editor's focus and selection (INV-68, INV-36)", () => {
+    const editor = document.createElement("textarea");
+    editor.value = "Hello world";
+    document.body.appendChild(editor);
+    editor.focus();
+    editor.setSelectionRange(2, 7);
+    const gripBefore = grip().getBoundingClientRect();
+    const doubleClick = () => {
+      const c = centerOf(grip());
+      const downs = [];
+      for (let i = 0; i < 2; i++) {
+        downs.push(pointer(grip(), "pointerdown", { x: c.x, y: c.y }));
+        pointer(grip(), "pointerup", { x: c.x, y: c.y });
+      }
+      // The grip press captures the pointer on the palette, so browsers send
+      // the dblclick to the palette, not to the grip (e2e paletteDoubleClick).
+      root.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, detail: 2 }));
+      return downs;
+    };
+    const downs = doubleClick();
+    expect(downs.every((e) => e.defaultPrevented)).toBe(true); // no text selection, no focus move
+    expect(palette.isMinimized()).toBe(true);
+    expect(grip().getBoundingClientRect().left).toBe(gripBefore.left);
+    expect(grip().getBoundingClientRect().top).toBe(gripBefore.top);
+    doubleClick();
+    expect(palette.isMinimized()).toBe(false);
+    expect(document.activeElement).toBe(editor);
+    expect([editor.selectionStart, editor.selectionEnd]).toEqual([2, 7]);
+    expect(host.runCommand).not.toHaveBeenCalled();
+    const rule = /\.edit-palette\s*\{[^}]*\}/.exec(css)?.[0] ?? "";
+    expect(rule).toContain("user-select: none");
+    expect(rule).toContain("touch-action: none"); // no browser zoom on a double tap of the grip
+    editor.remove();
+  });
+
+  it("AT-PAL-38 a double click on a button or the gap, or a dblclick while hidden, does not minimize", () => {
+    const b = btn("paletteTable");
+    const c = centerOf(b);
+    for (let i = 0; i < 2; i++) {
+      pointer(b, "pointerdown", { x: c.x, y: c.y });
+      pointer(b, "pointerup", { x: c.x, y: c.y });
+    }
+    b.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, detail: 2 }));
+    root.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, detail: 2 }));
+    expect(palette.isMinimized()).toBe(false);
+    expect(host.runCommand).toHaveBeenCalledTimes(2); // the two presses, nothing more
+    const g = centerOf(grip());
+    for (let i = 0; i < 2; i++) {
+      pointer(grip(), "pointerdown", { x: g.x, y: g.y });
+      pointer(grip(), "pointerup", { x: g.x, y: g.y });
+    }
+    palette.hide(); // forgets the two taps
+    grip().dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, detail: 2 }));
+    palette.show();
+    expect(palette.isMinimized()).toBe(false);
+  });
 });
 
 describe("AT-PAL states, status, life cycle, security", () => {
@@ -944,7 +1001,7 @@ describe("EditPalette code mode (SC-27, INV-85)", () => {
       [...row.children].filter((el) => !el.hidden).map((el) => el.id),
     );
 
-  it("AT-PAL-37 setMode('code'): only the grip, Save, Save as, Undo, Redo and Search, in one row; 'markdown': all of them again, in place; an open popover closes", () => {
+  it("AT-PAL-39 setMode('code'): only the grip, Save, Save as, Undo, Redo and Search, in one row; 'markdown': all of them again, in place; an open popover closes", () => {
     palette.show();
     palette.setButtonStates(ALL_ON);
     press(root.querySelector("#paletteFormat"));
@@ -964,7 +1021,7 @@ describe("EditPalette code mode (SC-27, INV-85)", () => {
     ]);
   });
 
-  it("AT-PAL-38 style.css: hidden palette buttons take no place; code mode is one row of six", () => {
+  it("AT-PAL-40 style.css: hidden palette buttons take no place; code mode is one row of six", () => {
     const rule = (selector) => {
       for (const m of css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{([^{}]*)\}/g)) if (m[1].split(",").map((s) => s.trim()).includes(selector)) return m[2];
       return null;
@@ -974,7 +1031,7 @@ describe("EditPalette code mode (SC-27, INV-85)", () => {
     expect(rule(".edit-palette.edit-palette-code .edit-palette-row + .edit-palette-row")).toMatch(/display:\s*none/);
   });
 
-  it("AT-PAL-39 Redo and Search (NE-2): in the palette in code mode only; tooltips with the primary key; Redo off without a step; each runs its command", () => {
+  it("AT-PAL-41 Redo and Search (NE-2): in the palette in code mode only; tooltips with the primary key; Redo off without a step; each runs its command", () => {
     expect([document.getElementById("paletteRedo"), document.getElementById("paletteSearch")]).toEqual([null, null]);
     palette.show();
     palette.setMode("code");

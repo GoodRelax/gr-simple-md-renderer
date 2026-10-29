@@ -18,7 +18,7 @@ vi.mock("../js/classes/ModalController.js", () => ({
   default: { setupModal: vi.fn(), show: vi.fn(), hide: vi.fn() },
 }));
 
-import { showToast, waitForDOMStability } from "../js/utils.js";
+import { showToast, waitForDOMStability, applySystemTheme } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
 import { setupApp, dropEvent, settle, BASE_TITLE } from "./helpers/appStack.js";
 import { tap, pointer, keydown } from "./helpers/editDom.js";
@@ -356,15 +356,17 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     expect(app.orchestrator.getModel()).toBe(model);
   });
 
-  it("AT-UI-14 Clear: Cancel keeps all; OK discards the editor, drops session and target, initial state, palette hidden, consent revoked", async () => {
+  it("AT-UI-14 Clear: Cancel keeps all; OK discards the editor, drops session and target, initial state, palette hidden, consent revoked, the OS color scheme again (INV-13, INV-12)", async () => {
     app = await setupApp();
     await dropMd(DOC);
     const ta = editBlock("Hello", "Unsaved.");
     ta.blur(); // the editor keeps the keys while it has the focus (INV-14)
+    applySystemTheme.mockClear();
     confirmSpy.mockReturnValueOnce(false);
     keydown(document.body, "c");
     expect(app.blockEditor()).toBe(ta);
     expect(app.orchestrator.isPreRenderState()).toBe(false);
+    expect(applySystemTheme).not.toHaveBeenCalled();
 
     const commit = vi.spyOn(app.orchestrator, "commitBlock");
     const reset = vi.spyOn(app.markdownRenderer, "resetExternalImageConsent");
@@ -379,6 +381,7 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     expect(reset).toHaveBeenCalled();
     expect(app.ui._isDocumentDirty()).toBe(false);
     expect(document.title).toBe(BASE_TITLE);
+    expect(applySystemTheme).toHaveBeenCalledTimes(1);
   });
 
   it.each(["clear", "drop", "reload"])("AT-UI-15 no confirm when not unsaved: %s", async (what) => {
