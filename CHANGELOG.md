@@ -139,6 +139,23 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Added
 
+- [Save] button in the top bar, right of [Edit]: saves as `Ctrl+S` does. The
+  top bar's buttons are a little narrower to make room, and the help's
+  Details has a line for it (spec INV-105).
+- PowerShell launcher (Windows): `launcher/Open-Grsmd.ps1 <file>` opens a
+  file in the GRSMD you keep on your PC (`GRSMD.html` next to the script),
+  as if you had dropped it. The script writes a temporary copy of
+  `GRSMD.html` that carries the file into `%TEMP%\grsmd-launcher` (outside synced
+  folders such as OneDrive; the script keeps that folder's full path in
+  `grsmd-launcher-personal-help.md` next to itself),
+  opens the copy in the browser and deletes the copy after 30
+  seconds, saying so in its window. To save over the file, press the new
+  [Save] button: for a launched file it puts the file's full path on the
+  clipboard, to paste as the file name in the save dialog (spec INV-105).
+  Nothing is sent over the network and the CSP is unchanged: the
+  build has one launch slot (an HTML comment) in `<head>`, and the page
+  reads the launch block that replaces it, then removes it (spec SC-29,
+  INV-104; the launcher's own spec is `spec/grsmd_launcher_spec_en.md`).
 - GitHub editing (PC only: a mouse or trackpad, not in a frame): **Open
   GitHub** (or `o`) opens a `.md` file from its github.com URL with your
   fine-grained personal access token. Edit it as usual (`Ctrl+S` still
@@ -334,6 +351,12 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Fixed
 
+- Math in a document that opens while the page is still loading (a file
+  dropped very early, or opened by the PowerShell launcher) is drawn again
+  when the document also has a Mermaid diagram. Mermaid's tooltip, added at
+  the end of the page during loading, came between KaTeX's data and its
+  arrival note, so KaTeX was reported as "no data block for katex" and the
+  math stayed as TeX (spec INV-81 (2)).
 - A full render (Render, a theme switch, a dropped or pasted document) no
   longer takes the view back to where it was when the render began if you
   moved the view while the diagrams were being drawn (the Index, Search,

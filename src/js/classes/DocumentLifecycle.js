@@ -103,6 +103,28 @@ export default class DocumentLifecycle {
   }
 
   /**
+   * The full path that [Save] puts on the clipboard (INV-105): known only
+   * for a file the launcher opened, until it is saved to a file (that makes
+   * a new location, with a file handle and no full path). A download keeps
+   * the location, so the path stays. Null otherwise.
+   * @purity semi-pure-b
+   * @returns {string|null}
+   */
+  get pathToOffer() {
+    return this._location?.fullPath ?? null;
+  }
+
+  /**
+   * Saving is a download (no API to write a chosen file: Firefox), for the
+   * Markdown and the code documents alike (INV-26, INV-105 (3)).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  get savesByDownload() {
+    return !this.fileAccess.canWriteInPlace();
+  }
+
+  /**
    * @purity semi-pure-b
    * @returns {GitHubLink|null}
    */
@@ -166,10 +188,11 @@ export default class DocumentLifecycle {
    * @param {string} fileName
    * @param {object|null} fileHandle
    * @param {boolean} [keepGitHub] - "replace and keep the GitHub link" (SC-28, D6)
+   * @param {string|null} [fullPath] - from the launcher (INV-105)
    */
-  openFile(fileText, hasBom, lastModified, fileName, fileHandle, keepGitHub = false) {
+  openFile(fileText, hasBom, lastModified, fileName, fileHandle, keepGitHub = false, fullPath = null) {
     this._session = DocumentSession.fromFileText(fileText, hasBom, lastModified, this._newDocumentId());
-    this._location = new DocumentLocation(fileName, fileHandle);
+    this._location = new DocumentLocation(fileName, fileHandle, fullPath);
     if (!keepGitHub) this._gitHub = null;
     this.fileAccess.noteFile(fileHandle);
   }

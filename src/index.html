@@ -71,6 +71,10 @@
          GitHub API (api.github.com: open, reload and push of a GitHub .md file),
          all of which require explicit user consent. A Content-Security-Policy
          <meta> is injected at build time (vite.config.js). -->
+
+    <!-- The launch slot (INV-104): launcher/Open-Grsmd.ps1 replaces the next
+         comment with the file to open, in a temporary copy of this page. -->
+    <!--grsmd-launch-slot-->
   </head>
 
   <body>
@@ -97,6 +101,7 @@
         <button id="reloadBtn">Re-<br />load</button>
         <button id="newTabBtn">New<br />Tab</button>
         <button id="editBtn">Edit</button>
+        <button id="saveBtn" disabled>Save</button>
         <button id="clearBtn">Clear</button>
       </div>
 
@@ -343,6 +348,10 @@
                 pen, press <code>[Edit]</code>, then tap a block.
               </li>
               <li>
+                <code>[Save]</code> : Same as <code>Ctrl+S</code>. When GRSMD knows where the file is, it puts that
+                path on the clipboard: paste it with <code>Ctrl+V</code> as the file name
+              </li>
+              <li>
                 <code>Esc</code> : Apply the open block or cell and close it.
                 With blocks selected, clear the selection first. With nothing open, hide
                 the edit palette. With the edit palette hidden, hide Search, then the Index.
@@ -563,6 +572,9 @@
               <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
               <li>
                 マウスでは、プレビューをダブルクリックすると、編集モードに入り、そのブロックを開きます。タッチやペンでは、<code>[Edit]</code> を押してからブロックをタップします。
+              </li>
+              <li>
+                <code>[Save]</code> : <code>Ctrl+S</code> と同じ。GRSMD がファイルの場所を知っているときは、そのパスをクリップボードに入れます。保存の画面のファイル名の欄に <code>Ctrl+V</code> で貼ります
               </li>
               <li>
                 <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。ブロックを選んでいれば、まず選択を解きます。何も開いていなければ、編集パレットを隠します。編集パレットも出ていなければ、検索、目次の順に隠します。コードビューの入力欄の中では入力欄から抜けるだけで、外では [Commands]、検索、目次の順に隠します。

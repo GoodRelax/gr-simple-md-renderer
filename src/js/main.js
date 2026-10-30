@@ -68,6 +68,7 @@ const elements = {
   reloadBtn: document.getElementById("reloadBtn"),
   newTabBtn: document.getElementById("newTabBtn"),
   editBtn: document.getElementById("editBtn"),
+  saveBtn: document.getElementById("saveBtn"),
   clearBtn: document.getElementById("clearBtn"),
   helpBtn: document.getElementById("helpBtn"),
   helpModal: document.getElementById("helpModal"),

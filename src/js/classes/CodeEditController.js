@@ -105,6 +105,7 @@ export default class CodeEditController {
     this._openedExtension = ""; // the extension of the file opened, e.g. ".txt" (NE-8)
     this._viewUnit = null; // the indent unit of an unfold in the view, inferred once a document (L24)
     this._fileHandle = null; // the file to write in place, or null
+    this._fullPath = null; // the file's full path from the launcher (INV-105), or null
     this._generation = 0; // a new document (open, close, reload) since a save started
     this._saving = false; // a save runs, from its encoding question to its end (INV-54)
     this._editor = null; // the CodeEditor, made at the first edit
@@ -509,12 +510,25 @@ export default class CodeEditController {
    * @purity non-pure
    * @param {CodeDocument} codeDocument
    * @param {object|null} fileHandle
+   * @param {string|null} [fullPath] - from the launcher (INV-105)
    */
-  opened(codeDocument, fileHandle) {
+  opened(codeDocument, fileHandle, fullPath = null) {
     this._dispatch("documentReplaced", { document: codeDocument });
     this._openedExtension = extensionOf(codeDocument.fileName);
     this._fileHandle = fileHandle ?? null;
+    this._fullPath = fullPath ?? null;
     this._fileAccess.noteFile(fileHandle ?? null);
+  }
+
+  /**
+   * The full path that [Save] puts on the clipboard (INV-105): only while a
+   * save would ask where (no file handle yet; a download gives none, so the
+   * path stays). Null otherwise.
+   * @purity semi-pure-b
+   * @returns {string|null}
+   */
+  get pathToOffer() {
+    return this._fileHandle ? null : this._fullPath;
   }
 
   /**
@@ -525,6 +539,7 @@ export default class CodeEditController {
     this._dispatch("documentReplaced", { document: null });
     this._openedExtension = "";
     this._fileHandle = null;
+    this._fullPath = null;
   }
 
   /**

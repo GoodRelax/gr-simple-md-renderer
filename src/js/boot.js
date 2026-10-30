@@ -11,9 +11,19 @@
 // Until the core takes over, a drop never makes the browser open the file
 // (leaving the page), and the last file dropped or text pasted is kept in
 // memory only, for the core to use as if it came now. Nothing is stored.
+// A launch block (the file a PowerShell launcher put in a copy of the page,
+// INV-104) is taken at once as the first such drop, and removed from the page.
 // The rules are the core's own (earlyInput.js).
 
-import { FILE_SYSTEM_HANDLE_SUPPORTED, dropHandlePromise, isOtherField, pasteStartsDocument } from "./earlyInput.js";
+import {
+  FILE_SYSTEM_HANDLE_SUPPORTED,
+  LAUNCH_BLOCK_ID,
+  dropHandlePromise,
+  isLaunchBlock,
+  isOtherField,
+  pasteStartsDocument,
+  readLaunchBlock,
+} from "./earlyInput.js";
 import { DATA_ID_PREFIX } from "./libraryNames.js";
 
 /**
@@ -27,6 +37,22 @@ import { DATA_ID_PREFIX } from "./libraryNames.js";
  */
 function isDataBlock(data, name) {
   return data?.tagName === "SCRIPT" && data.type === "text/plain" && data.id === `${DATA_ID_PREFIX}${name}`;
+}
+
+/**
+ * The nearest <script> at or before an element, among its siblings: the
+ * element the note passes is the one right before it, but the page may have
+ * put an element at the end of <body> while the file was still arriving
+ * (mermaid's tooltip, when a document with a diagram opened early), between
+ * a data block and its note. Those are skipped (INV-81 (2)).
+ * @purity semi-pure-a
+ * @param {Element|null} element
+ * @returns {Element|null}
+ */
+function nearestScript(element) {
+  let found = element;
+  while (found && found.tagName !== "SCRIPT") found = found.previousElementSibling;
+  return found;
 }
 
 /**
@@ -50,7 +76,8 @@ export function installBoot(win) {
      * @purity non-pure
      */
     arrive(name, data) {
-      if (isDataBlock(data, name)) boot.data.set(name, data);
+      const block = nearestScript(data);
+      if (isDataBlock(block, name)) boot.data.set(name, block);
       win.performance.mark(`grsmd-arrived-${name}`);
       boot.arrived.add(name);
       if (boot.onArrive) boot.onArrive(name);
@@ -65,7 +92,7 @@ export function installBoot(win) {
     },
     /**
      * The core runs: the listeners here go, and the last input is handed over.
-     * @returns {{kind: "drop", file: File, handlePromise: Promise|null}|{kind: "paste", text: string}|null}
+     * @returns {{kind: "drop", file: File, handlePromise: Promise|null, launchPath?: string|null}|{kind: "paste", text: string}|null}
      * @purity non-pure
      */
     takeEarlyInput() {
@@ -114,5 +141,28 @@ export function installBoot(win) {
   doc.addEventListener("dragover", onDragOver);
   doc.addEventListener("drop", onDrop);
   doc.addEventListener("paste", onPaste);
+  takeLaunchBlock(win, boot);
   win.__grsmdBoot = boot;
+}
+
+/**
+ * The launch block, if the page has one (INV-104): read it, remove it from
+ * the page, and keep its file as the early drop (no file handle). A block
+ * that cannot be read leaves no early input and one console warning.
+ * @purity non-pure
+ * @param {Window} win
+ * @param {{early: object|null}} boot
+ */
+function takeLaunchBlock(win, boot) {
+  const doc = win.document;
+  const block = doc.getElementById(LAUNCH_BLOCK_ID);
+  if (!isLaunchBlock(block, doc.head)) return;
+  const launched = readLaunchBlock(block);
+  block.remove();
+  if (!launched) {
+    console.warn("GRSMD: the launch file could not be read.");
+    return;
+  }
+  // the full path goes with it, for [Save] (INV-105); null when unknown
+  boot.early = { kind: "drop", file: new win.File([launched.bytes], launched.name), handlePromise: null, launchPath: launched.path };
 }

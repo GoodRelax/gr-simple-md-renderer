@@ -222,6 +222,42 @@ describe("LibraryLoader (INV-81 (2), spec 5.17.2)", () => {
     boot.arrive("plantuml", real);
     expect(boot.data.get("plantuml")).toBe(real);
   });
+
+  // A document with a diagram, opened before the file was all in (an early
+  // drop, the launcher of INV-104), made mermaid put its tooltip at the end
+  // of <body>, between the KaTeX data and its note: KaTeX then failed with
+  // "no data block for katex" and the math was not drawn.
+  it("AT-FAST-60 (INV-81 (2)) arrive() skips elements the page put between a data block and its note", async () => {
+    const { window } = await page();
+    const boot = window.__grsmdBoot;
+    const body = window.document.body;
+    const data = window.document.createElement("script");
+    data.type = "text/plain";
+    data.id = "grsmd-lib-katex";
+    body.append(data);
+    const tooltip = window.document.createElement("div");
+    tooltip.className = "mermaidTooltip";
+    const other = window.document.createElement("span");
+    body.append(tooltip, other);
+    boot.arrive("katex", other); // the note's previous element
+    expect(boot.data.get("katex")).toBe(data);
+  });
+
+  it("AT-FAST-61 (INV-81 (2)) arrive() stops at the first <script> before the note: an earlier block never stands in", async () => {
+    const { window } = await page();
+    const boot = window.__grsmdBoot;
+    const body = window.document.body;
+    const data = window.document.createElement("script");
+    data.type = "text/plain";
+    data.id = "grsmd-lib-katex";
+    const run = window.document.createElement("script");
+    run.type = "text/plain";
+    run.id = "grsmd-lib-hljs";
+    const tooltip = window.document.createElement("div");
+    body.append(data, run, tooltip);
+    boot.arrive("katex", tooltip);
+    expect(boot.data.has("katex")).toBe(false);
+  });
 });
 
 describe("boot.js, the receiver before the core (INV-81 (4))", () => {
