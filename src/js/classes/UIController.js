@@ -495,7 +495,8 @@ export default class UIController {
   _saveButtonTitle() {
     const labels = CONFIG.messages.saveButton;
     const mod = this._isApple ? CONFIG.messages.palette.modifier.apple : CONFIG.messages.palette.modifier.other;
-    return this._savePathToOffer() ? labels.titleWithPath(mod) : labels.title(mod);
+    if (!this._savePathToOffer()) return labels.title(mod);
+    return this.documents.savesByDownload ? labels.titleWithPathDownload(mod) : labels.titleWithPath(mod);
   }
 
   /**

@@ -78,7 +78,7 @@
 
 > v2.32 の変更 (2026-10-30、GitHub 連携に develop を取り込んだ): develop の v2.20〜v2.29 と版の番号がぶつかったので、GitHub 連携の 2 つの変更を v2.30・v2.31 にした。develop のセクション AH (印刷の配置) とぶつかったので、GitHub 連携のセクションを AK (PRT-AK01〜AK09) にし、仕様の番号の振り直し (SC-28・INV-93〜INV-100・FS-24・5.20) に合わせて書き直した。PRT-R01 の手順 9 のコンソールの確かめにセクション AK を足した。AT-GH-08 にコードビューのキーのヒント (`[P] Commands;` の後の `[O] GitHub;`、Mac の折りたたみのキー) を、AT-GH-11 にコードの文書を表示している間に GitHub のファイルを開く場合を足した。 同じ日に、GitHub の編集のヘルプ (仕様の FS-25・INV-103・5.20.7。オーナーの裁定 GHH-1〜GHH-9) に合わせて、セクション AK に PRT-AK10 (ヘルプだけを見て GitHub 連携を使う) と PRT-AK11 (iPad ではヘルプの入口も出さない) を足した。AT-HLP を 01〜19 にし (15・16: 入口と層の HTML と図、17: 重なったモーダルのキー、18・19: e2e)、e2e の help.e2e.js に 3 件を足した (版の番号は監査の v2.33 とぶつかるので取らない。調整役の裁定 2026-10-30)。 同じ日に、レビュー (3 回目) の直しで、gitHub.e2e.js の行に [Open GitHub] がフレームの中とタッチの端末で出ないこと (INV-100) を足して全 7 件にし、PRT-AK07 の備考に自動の試験を書き、v2.30 の注の「セクション AH」を AK に直した (L1・L2)。
 
-> v2.35 の変更 (2026-10-30、PowerShell の起動役。v2.33・v2.34 は監査の直しの枝が使う): 仕様の SC-29・INV-104 と、起動役の仕様 `spec/grsmd_launcher_spec_en.md` の 5 章の手での確かめ (M-L1〜M-L4) に合わせて、セクション AM (PRT-AM01〜AM04) を足した。AT に AT-LAUNCH (新。01〜35・40〜42) を足した。高速起動の受け口の直し (INV-81 (2)。調整役の裁定 C-1) に合わせて、AT-FAST を 01〜61 にした (60・61)。同じ日に、オーナーの裁定 PL-19〜PL-23 (上部バーの [Save] とヘルプのその行。仕様の INV-105) に合わせて、PRT-AM01 の 2 の文と PRT-AM02 ([Save] で貼ったパスで上書き) を改め、PRT-V11 の上部バーのボタンに Save を、PRT-L01 にヘルプの [Save] の行を足し、AT-LAUNCH に 36〜39・43・44、AT-HLP に 20 を足した。
+> v2.35 の変更 (2026-10-30、PowerShell の起動役。v2.33・v2.34 は監査の直しの枝が使う): 仕様の SC-29・INV-104 と、起動役の仕様 `spec/grsmd_launcher_spec_en.md` の 5 章の手での確かめ (M-L1〜M-L4) に合わせて、セクション AM (PRT-AM01〜AM04) を足した。AT に AT-LAUNCH (新。01〜35・40〜42) を足した。高速起動の受け口の直し (INV-81 (2)。調整役の裁定 C-1) に合わせて、AT-FAST を 01〜61 にした (60・61)。同じ日に、オーナーの裁定 PL-19〜PL-23 (上部バーの [Save] とヘルプのその行。仕様の INV-105) に合わせて、PRT-AM01 の 2 の文と PRT-AM02 ([Save] で貼ったパスで上書き) を改め、PRT-V11 の上部バーのボタンに Save を、PRT-L01 にヘルプの [Save] の行を足し、AT-LAUNCH に 36〜39・43〜46、AT-HLP に 20 を足した。PRT-AM01・AM04 の備考に FR-L30・FR-L31 を足した (レビュー 3 回目の P4)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -5422,7 +5422,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: SC-29、INV-104、起動役の FR-L01・FR-L09・FR-L18・FR-L21・FR-L23・FR-L24・FR-L15・FR-L26・FR-L27 (オーナーの裁定 PL-14・PL-16〜PL-18・PL-22)。自動では AT-LAUNCH-05〜11・18・40 |
+| 備考 | 要求: SC-29、INV-104、起動役の FR-L01・FR-L09・FR-L18・FR-L21・FR-L23・FR-L24・FR-L15・FR-L26・FR-L27 (オーナーの裁定 PL-14・PL-16〜PL-18・PL-22)。自動では AT-LAUNCH-05〜11・18・40。窓の消した文は FR-L30 (オーナーの要望 2026-10-30)。自動では AT-LAUNCH-06・14 |
 
 ---
 
@@ -5452,7 +5452,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-105、起動役の FR-L10・FR-G08・L-1 (オーナーの裁定 PL-5・PL-19〜PL-23)。自動では AT-LAUNCH-36〜39・44、AT-HLP-20 |
+| 備考 | 要求: INV-105、起動役の FR-L10・FR-G08・L-1 (オーナーの裁定 PL-5・PL-19〜PL-23)。自動では AT-LAUNCH-36〜39・44〜46、AT-HLP-20 |
 
 ---
 
@@ -5489,7 +5489,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: 起動役の FR-L08・FR-L15、L-2 (オーナーの裁定 PL-13)。自動では AT-LAUNCH-07・14 |
+| 備考 | 要求: 起動役の FR-L08・FR-L15・FR-L30・FR-L31、L-2 (オーナーの裁定 PL-13。FR-L30・FR-L31 はオーナーの要望 2026-10-30)。自動では AT-LAUNCH-07・14 (窓の消した文も確かめる) |
 
 ---
 ## 自動テスト (AT) の一覧
@@ -5592,7 +5592,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-CEM | 11-h コード編集モードの状態機械 (3 つの出来事 × 2 つの状態のすべての交点、ガード `canEdit`、知らないガード・処理は誤り、仕様の図と表の一致) | 11-h、INV-85 | CodeEditController.stateMachine.test.js | (族の名前) |
 | AT-CCP | `CodeCommandPalette` (箱の名前とボタン、開閉とフォーカス、命令で閉じない、Esc・外の押下、無効、リスナー) | INV-92 (5) | CodeCommandPalette.test.js | 01〜07 |
 | AT-GH | GitHub 連携: URL の分解 (01: ブランチの `/`、% の符号、断る形)、相対パスの解決 (02: 画像・リンク・最上位・上へ出すぎ・直さない形)、PAT の形 (03。D12)、Base64 と UTF-8 の往復 (04: 日本語・BOM・CRLF・大きいもの、NUL と壊れた UTF-8)、`GitHubContentsClient` (05: URL・ヘッダー・固定のオリジン・PAT が URL と文に出ない・5.20.4 の各失敗の文 (403・`retry-after`・422・429・`x-ratelimit-reset`・409 の `conflict` の全文)・PUT の中身・409、PUT の通信の失敗と 200 の読めない応答の `pushUnknown` (L1))、`DocumentLifecycle` の連携 (06: 開く・残す・止める・push の間の拒否・成功と失敗、11-e の push の交点 (`pushRequested` / `pushFinished`、`pushing` の間の置き換えと保存。M2))、`GitHubController` の PAT の欄と Push (08: 欄の名前 D35、[Saved] が無い D34、目のボタンの切り替えと閉じる・開くときの戻し D28、入力でエラーの行が消える D37、Push のトーストの 6 秒と送った後の欄 D36)、キーのヒントの `[O] GitHub;` (08: PC だけ。D33)、ボタンと `o` と画面 (09: ボタンの切り替え、`o` の開く・無動作、INV-100 で出さない、画面の中のキーを渡さない、ドロップの 3 択)、GitHub の文書の相対パスの描画 (10: INV-99。書き換えた画像も同意まで読まずに保留する (INV-99 (1)、INV-19。L7))、UIController を通した結線 (11: 開く順 INV-94 (3) (保存中は断る)、Reload INV-97 (読み始めた後に文書が変わったら置き換えない)、ドロップの続ける・止める・やめる INV-98。L7)、パスの安全 (12: 区切りに空・`.`・`..` があれば送らない、PAT は `/repos/<owner>/<repo>/` の外へ出ない。CON-16 (4)。L2)、レビューの直し (13: 画面の中の主 + S は既定を止めて何もしない (INV-58。M3)、画面の `unsafePath` (INV-93 (5)。L2)、閉じた画面の PAT の欄を空にする (CON-16 (2)。L3)) | SC-28、INV-58、INV-93〜INV-100、CON-16、11-e | gitHub.test.js (01〜06、12)、GitHubController.test.js (08〜10、13)、UIController.gitHub.test.js (11) | 01〜06、08〜13 (07 は試作の偽の GitHub。本実装で消した) |
-| AT-LAUNCH | PowerShell の起動役 (SC-29): 起動役のファイル (01: ASCII だけ、02: ネットワークのコマンドが無い、03: ヘルプ、04: 差し込み口・塊の id・5 MB の上限がビルド・受け口・CONFIG と同じ)、写しの中身と名前 (05)、消すまで待つ (06・14)、消してよい時刻での掃除と警告 (07・17)、ワイルドカードを広げない (08)、大きさの線と空のファイル (09)、`-GrsmdPath` (10)、書く前に止まる誤り (11・12。5 秒より短い待ちを含む)、ブラウザが無い (13)、書けない (15)、`-NoStart` ではブラウザを探さない (16)、横に書くメモ (18・19・33)、git の外 (34)、写しの接頭辞は 1 か所 (35)、クリップボードに触れず [Save] の文を出す (43)、塊を読む規則 (20〜24)、受け口が塊を預かり外す (25〜29)、塊のフルパス (36)、ビルドの差し込み口 (30〜32)、[Save] がフルパスをクリップボードに入れる・保存の後は入れない・無効のとき (37〜39)、e2e で開く (40: 数式と図、41: コードビュー、42: バイナリを断る、44: [Save]) | SC-29、INV-104、INV-105 | launcher.test.js (Windows PowerShell 5.1 と 7)、launchBlock.test.js、UIController.saveButton.test.js、e2e/launcher.e2e.js (Chromium) | 01〜44 |
+| AT-LAUNCH | PowerShell の起動役 (SC-29): 起動役のファイル (01: ASCII だけ、02: ネットワークのコマンドが無い、03: ヘルプ、04: 差し込み口・塊の id・5 MB の上限がビルド・受け口・CONFIG と同じ)、写しの中身と名前 (05)、消すまで待つ (06・14)、消してよい時刻での掃除と警告 (07・17)、ワイルドカードを広げない (08)、大きさの線と空のファイル (09)、`-GrsmdPath` (10)、書く前に止まる誤り (11・12。5 秒より短い待ちを含む)、ブラウザが無い (13)、書けない (15)、`-NoStart` ではブラウザを探さない (16)、横に書くメモ (18・19・33)、git の外 (34)、写しの接頭辞は 1 か所 (35)、クリップボードに触れず [Save] の文を出す (43)、塊を読む規則 (20〜24)、受け口が塊を預かり外す (25〜29)、塊のフルパス (36)、ビルドの差し込み口 (30〜32)、[Save] がフルパスをクリップボードに入れる・保存の後は入れない・無効のとき (37〜39)・ダウンロードのときは押すたびに入れる (45)・クリップボードに書けなくても保存の画面は押下の中で開く (46)、e2e で開く (40: 数式と図、41: コードビュー、42: バイナリを断る、44: [Save]) | SC-29、INV-104、INV-105 | launcher.test.js (Windows PowerShell 5.1 と 7)、launchBlock.test.js、UIController.saveButton.test.js、e2e/launcher.e2e.js (Chromium) | 01〜46 |
 
 AT の ID の無い試験も `npm test` の全件に含まれる。2026-10-29 の時点で、それは次の 18 ファイルの 97 件 (`it.each` などは 1 件と数える。多くは名前か外側の `describe` に INV や仕様の節を書く): `BlockEditController.gap.test.js` (4)、`BlockEditController.test.js` (8)、`DocumentSession.test.js` (1)、`MarkdownBlockModel.planTableReplace.test.js` (3)、`MarkdownFileAccess.test.js` (4)、`MarkdownRenderer.blocks.test.js` (1)、`MarkdownRenderer.purifyConfig.test.js` (5。設定を 1 度だけ与えることの試験)、`MarkdownTextOps.test.js` (1)、`RendererOrchestrator.edit.test.js` (1)、`RendererOrchestrator.test.js` (14)、`SaveDocument.test.js` (4)、`UIController.editMode.test.js` (9)、`UIController.handleRender.test.js` (6)、`UIController.palette.test.js` (14)、`UIController.save.test.js` (1)、`preprocessInput.test.js` (12)、`stateTable.test.js` (4。ファイルの全部)、`staticChecks.test.js` (5。「style.css for in-place editing」の一部)。族に番号を足すまでは、ここに挙げて残す (監査の Medium 46、監査の直しのレビュー (1 回目) の L32。`SourceFileRenderer.test.js`・`utils.test.js`・`MarkdownRenderer.test.js`・`config.test.js` には番号を足した)。
 

@@ -78,7 +78,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Reload | `R` | Reload the current file from disk (a file opened from GitHub: read it again from GitHub, after a confirmation) |
    | New Tab | `N` | Open GRSMD in a new tab |
    | Edit | `E` | Show / hide the edit palette; click (tap) a block to edit its Markdown in place. In Code View: edit the whole file |
-   | Save | `Ctrl+S` | Save, as `Ctrl+S` does. For a file opened by the PowerShell launcher, it first puts the file's full path on the clipboard: paste it as the file name in the save dialog |
+   | Save | | Save, as `Ctrl+S` does. For a file opened by the PowerShell launcher, the button (not `Ctrl+S`) first puts the file's full path on the clipboard: paste it as the file name in the save dialog |
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document or a Code View file is shown (a file that is not UTF-8 asks for the encoding to save in; if that encoding cannot hold some characters, it shows their line numbers and asks whether to save in UTF-8) |
@@ -273,7 +273,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | Reload | `R` | 表示中のファイルをディスクからリロード（GitHub から開いた文書は、確かめの画面の後に GitHub から読み直す） |
    | New Tab | `N` | 新しいタブで GRSMD を開く |
    | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリック（タップ）すると、その場で Markdown を編集。コードビューでは、ファイル全体を編集 |
-   | Save | `Ctrl+S` | `Ctrl+S` と同じに保存。PowerShell の起動役で開いたファイルでは、先にそのフルパスをクリップボードに入れるので、保存の画面のファイル名の欄に貼る |
+   | Save | | `Ctrl+S` と同じに保存。PowerShell の起動役で開いたファイルでは、このボタン（`Ctrl+S` ではなく）が先にそのフルパスをクリップボードに入れるので、保存の画面のファイル名の欄に貼る |
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書かコードビューのファイルを表示している間、保存 / 名前を付けて保存（UTF-8 以外のファイルは、保存する文字コードを聞く。その文字コードで書けない字があれば、その行を示して UTF-8 で保存するかを聞く） |

@@ -151,7 +151,8 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   opens the copy in the browser and deletes the copy after 30
   seconds, saying so in its window. To save over the file, press the new
   [Save] button: for a launched file it puts the file's full path on the
-  clipboard, to paste as the file name in the save dialog (spec INV-105). Nothing is sent over the network and the CSP is unchanged: the
+  clipboard, to paste as the file name in the save dialog (spec INV-105).
+  Nothing is sent over the network and the CSP is unchanged: the
   build has one launch slot (an HTML comment) in `<head>`, and the page
   reads the launch block that replaces it, then removes it (spec SC-29,
   INV-104; the launcher's own spec is `spec/grsmd_launcher_spec_en.md`).

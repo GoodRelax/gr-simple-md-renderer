@@ -298,11 +298,15 @@ export const CONFIG = {
     },
     // The tooltip of the top bar's [Save] (INV-105, owner rulings PL-19 to
     // PL-21). mod as in palette. With a path: the launcher opened the file
-    // and [Save] puts its full path on the clipboard.
+    // and [Save] puts its full path on the clipboard. Download: the browser
+    // cannot write a chosen file (Firefox), so a save downloads it and asks
+    // where only when the browser is set to ask.
     saveButton: {
       title: (mod) => `Save (${mod}+S)`,
       titleWithPath: (mod) =>
         `Save (${mod}+S). The file's full path goes to the clipboard: in the save dialog, paste it as the file name with ${mod}+V.`,
+      titleWithPathDownload: (mod) =>
+        `Save (${mod}+S): downloads the file. Its full path goes to the clipboard: if the browser asks where to save, paste it as the file name with ${mod}+V.`,
     },
     // The bar of a block range (INV-74, owner ruling U1): icons only, these
     // are their tooltips and aria-labels. mod as in palette.

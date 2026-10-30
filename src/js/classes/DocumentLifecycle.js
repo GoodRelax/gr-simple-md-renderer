@@ -104,13 +104,24 @@ export default class DocumentLifecycle {
 
   /**
    * The full path that [Save] puts on the clipboard (INV-105): known only
-   * for a file the launcher opened, until it is saved (a save as makes a new
-   * location, with a file handle and no full path). Null otherwise.
+   * for a file the launcher opened, until it is saved to a file (that makes
+   * a new location, with a file handle and no full path). A download keeps
+   * the location, so the path stays. Null otherwise.
    * @purity semi-pure-b
    * @returns {string|null}
    */
   get pathToOffer() {
     return this._location?.fullPath ?? null;
+  }
+
+  /**
+   * Saving is a download (no API to write a chosen file: Firefox), for the
+   * Markdown and the code documents alike (INV-26, INV-105 (3)).
+   * @purity semi-pure-b
+   * @returns {boolean}
+   */
+  get savesByDownload() {
+    return !this.fileAccess.canWriteInPlace();
   }
 
   /**

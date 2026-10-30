@@ -150,4 +150,32 @@ describe("the [Save] button (INV-105)", () => {
     expect(clipboard.writeText).not.toHaveBeenCalled();
     expect(access.calls).toEqual([]);
   });
+
+  it.each([
+    ["a launched Markdown file", "# A\n", "note.md", FULL_PATH, {}],
+    ["a launched code file", "x = 1\n", "a.py", CODE_PATH, { codeDialog: { askOpen: vi.fn(async () => null), askSaveEncoding: vi.fn(async () => null) } }],
+  ])("AT-LAUNCH-45 INV-105 (3): saving is a download (no write API): %s gets the path at each press, and the download tooltip", async (_label, content, name, path, extra) => {
+    await start(extra, { canWrite: false });
+    await launch(content, name, path);
+    expect(hoverTitle()).toBe(labels.titleWithPathDownload(MOD));
+    for (const press of [1, 2]) {
+      app.elements.saveBtn.click();
+      await settle();
+      expect(clipboard.writeText).toHaveBeenCalledTimes(press);
+      expect(access.downloads).toHaveLength(press);
+    }
+    expect(clipboard.writeText).toHaveBeenLastCalledWith(path);
+    expect(access.downloads[1].name).toBe(name);
+    expect(app.elements.saveBtn.title).toBe(labels.titleWithPathDownload(MOD)); // the location did not change
+  });
+
+  it("AT-LAUNCH-46 INV-105 (1): a clipboard that refuses the path does not stop the save: the save dialog opens inside the press", async () => {
+    clipboard = { writeText: vi.fn(() => Promise.reject(new Error("denied"))) };
+    await start();
+    await launch("# A\n", "note.md", FULL_PATH);
+    app.elements.saveBtn.click(); // no await: the dialog must be asked for in the press itself (INV-33)
+    expect(access.calls[0]).toBe("startSavePicker:note.md");
+    await settle();
+    expect(clipboard.writeText).toHaveBeenCalledWith(FULL_PATH);
+  });
 });

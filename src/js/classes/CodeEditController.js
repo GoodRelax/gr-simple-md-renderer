@@ -516,7 +516,8 @@ export default class CodeEditController {
 
   /**
    * The full path that [Save] puts on the clipboard (INV-105): only while a
-   * save would ask where (no file handle yet). Null otherwise.
+   * save would ask where (no file handle yet; a download gives none, so the
+   * path stays). Null otherwise.
    * @purity semi-pure-b
    * @returns {string|null}
    */
