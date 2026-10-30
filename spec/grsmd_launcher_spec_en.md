@@ -1,12 +1,12 @@
 # GRSMD Launcher (Open-Grsmd.ps1) Specification
 
-**Version:** 0.4
+**Version:** 0.7
 **Date:** 2026-10-30
 **Status:** Draft for review (branch `feature/ps1-launcher`, from `develop` 30c3ccc)
 **Template:** ANMS v0.34, `process-rules/spec-template-en.md` of `GoodRelax/gr-sw-maker`, commit `b723439` (the `main` of 2026-10-24, read from a local checkout)
 **Review standards:** `process-rules/review-standards-en.md` of the same commit, applied through [grsmd_review_standards_ja.md](grsmd_review_standards_ja.md) (it pins the Japanese text at `63e6fdc` in [upstream_review_standards_ja.md](upstream_review_standards_ja.md) and the English row names at `b723439`, the same version read here)
-**Owner rulings:** PL-1 to PL-13 (2026-10-30, Q&A sheet of this branch), PL-14 to PL-18 (2026-10-30, the review's Q&A sheet). PL-14 replaces the place of PL-6
-**Main spec:** [grsmd_gen2_spec_ja.md](grsmd_gen2_spec_ja.md) (the GRSMD side of this feature is INV-104 there)
+**Owner rulings:** PL-1 to PL-13 (2026-10-30, Q&A sheet of this branch), PL-14 to PL-18 (2026-10-30, the review's Q&A sheet), PL-19 to PL-23 (2026-10-30, the save-path Q&A sheet). PL-14 replaces the place of PL-6; PL-22 replaces the clipboard of PL-5
+**Main spec:** [grsmd_gen2_spec_ja.md](grsmd_gen2_spec_ja.md) (the GRSMD side of this feature is INV-104 and INV-105 there)
 
 ---
 
@@ -48,11 +48,11 @@ GRSMD is a privacy-first Markdown viewer and editor in one HTML file. A user ope
 ### 1.4 Approach
 
 - The user keeps `GRSMD.html` (a GRSMD build) on the PC (PL-1).
-- A PowerShell script `launcher/Open-Grsmd.ps1` (PL-9) writes a temporary copy of `GRSMD.html` into the temp folder `%TEMP%\grsmd-launcher` (PL-14; it replaces the folder next to the script of PL-6, which may be synced to a cloud). In the copy, the **launch slot** (one HTML comment in `<head>`) is replaced by the **launch block**: a `<script type="text/plain">` element that holds the file's name and bytes in Base64. The script opens the copy in a browser (PL-3).
+- A PowerShell script `launcher/Open-Grsmd.ps1` (PL-9) writes a temporary copy of `GRSMD.html` into the temp folder `%TEMP%\grsmd-launcher` (PL-14; it replaces the folder next to the script of PL-6, which may be synced to a cloud). In the copy, the **launch slot** (one HTML comment in `<head>`) is replaced by the **launch block**: a `<script type="text/plain">` element that holds the file's name, full path and bytes in Base64. The script opens the copy in a browser (PL-3).
 - The receiver of GRSMD (`src/js/boot.js`, main spec INV-81 (4)) reads the launch block when it starts, removes it from the page, and hands the file to the core as an early drop. The core opens it on the drop path.
 - The launch block never executes, so the CSP and its hashes stay as they are.
 - A launched document is always an early input: it opens while the rest of the page (the on-demand libraries) is still being parsed. This needs the receiver fix of main spec INV-81 (2) (2026-10-30): an element that the page adds at the end of `<body>` during parsing (Mermaid's tooltip) no longer hides a library's data block from its arrival note.
-- The script puts the file's full path on the clipboard, so that Save as takes one paste (PL-5).
+- GRSMD's [Save] button (main spec INV-105) puts the file's full path from the block on the clipboard when it is pressed, so that the save dialog takes one paste (PL-5, PL-19 to PL-21). The script itself does not touch the clipboard (PL-22).
 - The script keeps the temp folder's full path in `grsmd-launcher-personal-help.md` next to itself, so that the user can find the folder (PL-16 to PL-18).
 - Rejected approaches and the comparison: A.4.
 
@@ -72,13 +72,13 @@ GRSMD is a privacy-first Markdown viewer and editor in one HTML file. A user ope
 
 | ID | Item | Reason |
 | --- | --- | --- |
-| OS-L1 | Saving over the original file (Ctrl+S writes to the file) | GRSMD gets no file handle (L-1). PL-5 accepts Save as |
+| OS-L1 | Saving over the original file (Ctrl+S writes to the file) | GRSMD gets no file handle (L-1). PL-5 accepts Save as; [Save] makes it one paste (PL-19) |
 | OS-L2 | Explorer integration (Send to, file association, context menu) | PL-12 |
 | OS-L3 | GitHub Pages GRSMD | PL-1. Taking the page from the web would be a network request |
-| OS-L4 | macOS and Linux | PowerShell on those systems is not targeted. The browser start and the clipboard are Windows ways |
+| OS-L4 | macOS and Linux | PowerShell on those systems is not targeted. The browser start is a Windows way |
 | OS-L5 | Attaching the script to a GitHub Release | Not asked. The script is taken from the repository |
 | OS-L6 | Opening several files at once | One page holds one document (main spec OS-04) |
-| OS-L7 | The launcher in GRSMD's own help ([?]) | PL-15: the launcher is an option outside GRSMD; its help is the script's own (`Get-Help`, FR-L14) and the README only |
+| OS-L7 | The launcher in GRSMD's own help ([?]) | PL-15: the launcher is an option outside GRSMD; its help is the script's own (`Get-Help`, FR-L14) and the README only. GRSMD's help has one [Save] line that does not name the launcher (PL-23, main spec INV-105 (7)) |
 
 ### 1.6 Constraints
 
@@ -88,7 +88,7 @@ GRSMD is a privacy-first Markdown viewer and editor in one HTML file. A user ope
 | CON-L2 | Nothing of the document goes into browser storage (main spec CON-03, CON-13). The launch block is removed from the page after it is read |
 | CON-L3 | The CSP of GRSMD is not changed (main spec INV-20). The build's script and `text/plain` checks are not loosened |
 | CON-L4 | The script is English and ASCII only: code, comments, messages, help (main spec CON-06) |
-| CON-L5 | The script does not change the execution policy, the registry or any setting. It writes only the temporary copy (in the temp folder), the clipboard and `grsmd-launcher-personal-help.md` next to itself |
+| CON-L5 | The script does not change the execution policy, the registry or any setting. It writes only the temporary copy (in the temp folder) and `grsmd-launcher-personal-help.md` next to itself. It does not touch the clipboard (PL-22) |
 | CON-L6 | No new dependency (npm or other). No `npx` in the tests or the tools |
 | CON-L7 | The size limit is the one of GRSMD: 5 MiB = 5,242,880 bytes (main spec CON-08, `CONFIG.fileDrop.maxBytes`) |
 
@@ -96,12 +96,12 @@ GRSMD is a privacy-first Markdown viewer and editor in one HTML file. A user ope
 
 | ID | Limitation | Effect | Way around |
 | --- | --- | --- | --- |
-| L-1 | Ctrl+S cannot write to the original file | Save asks where to save (Chrome, Edge) or downloads (Firefox), as after a drop in Firefox | Save as, paste the path from the clipboard (FR-L10), confirm the overwrite |
+| L-1 | Ctrl+S cannot write to the original file | Save asks where to save (Chrome, Edge) or downloads (Firefox), as after a drop in Firefox | Press [Save] in GRSMD (it puts the path on the clipboard, main spec INV-105), paste the path as the file name with Ctrl+V, confirm the overwrite. Later saves write to the file |
 | L-2 | The temporary copy holds the document on disk until it is removed | The document is in the temp folder for `KeepSeconds` (default 30 s; Ctrl+C deletes it at once). When the window is closed during the wait, the copy stays until a later run after its delete time (FR-L08) | The temp folder is `%TEMP%\grsmd-launcher`, outside synced folders (PL-14). The user can open and empty it |
 | L-3 | The tab shows the temporary copy's address | After the copy is removed, the browser's reload (F5) shows "file not found". GRSMD itself keeps working | Run the launcher again |
 | L-4 | The script waits `KeepSeconds` before it ends | The terminal or the shortcut's window stays open for that time (at least 5 s when a browser is started, FR-L18) | `-KeepSeconds` sets the time |
 | L-5 | `GRSMD.html` must have the launch slot | An older build is refused (FR-L06) | Use a newer `GRSMD.html` |
-| L-6 | The clipboard's former content is replaced by the path | Windows clipboard history (Win+V), when on, keeps the path | - |
+| L-6 | [Save] replaces the clipboard's former content with the path (only before the first save of a launched document) | Windows clipboard history (Win+V), when on, keeps the path | - |
 | L-7 | `grsmd-launcher-personal-help.md` holds the full path of the user's temp folder (it has the user's name) | The file is personal; a copy of the launcher's folder shared with others would show it | Ignored by git (`launcher/grsmd-launcher-personal-help.md`). It holds nothing of the opened files |
 
 ### 1.8 Glossary
@@ -112,7 +112,7 @@ GRSMD is a privacy-first Markdown viewer and editor in one HTML file. A user ope
 | GRSMD.html | A GRSMD build (the release `index.html` saved under this name) that the user keeps on the PC (PL-1) |
 | Target file | The file that the user names on the command line |
 | Launch slot | The HTML comment `<!--grsmd-launch-slot-->` in the `<head>` of the build. The launcher replaces it |
-| Launch block | `<script type="text/plain" id="grsmd-launch-file" data-name="...">...</script>`: the target file's name and bytes in Base64 (4.4) |
+| Launch block | `<script type="text/plain" id="grsmd-launch-file" data-name="..." data-path="...">...</script>`: the target file's name, full path and bytes in Base64 (4.4) |
 | Temporary copy | A copy of `GRSMD.html` with the launch block in place of the launch slot: `%TEMP%\grsmd-launcher\grsmd-launch-<delete time>-<32 hex>.html` (FR-L07) |
 | Delete time | The UTC time from which any run may delete a copy: the time of writing plus that run's `KeepSeconds`, in the copy's name |
 | Temp folder | `%TEMP%\grsmd-launcher`: the folder `grsmd-launcher` in the user's temporary folder (`[System.IO.Path]::GetTempPath()`, from `TMP` / `TEMP`) (PL-14). Outside the repository and outside synced folders such as OneDrive |
@@ -150,24 +150,26 @@ Each row has one response. "Before it writes anything" means before the sweep of
 | FR-L08 | Event-driven | When the checks (FR-L03 to FR-L06, FR-L16, FR-L18, FR-L19) have passed, the launcher shall delete the copies in the temp folder whose delete time (in the name, FR-L07) has passed. |
 | FR-L20 | Unwanted behavior | If a copy of FR-L08 cannot be deleted, then the launcher shall print the warning of 4.3 and go on. |
 | FR-L27 | Event-driven | When the checks have passed, the launcher shall write the personal help (4.4) next to itself, before the sweep of FR-L08. |
-| FR-L28 | Optional feature | Where the personal help already holds the same text, the launcher shall leave the file as it is. |
+| FR-L28 | State-driven | While the personal help already holds the same text, the launcher shall leave the file as it is. |
 | FR-L29 | Unwanted behavior | If the personal help cannot be written, then the launcher shall print the warning of 4.3 and go on. |
 | FR-L07 | Ubiquitous | The launcher shall write the temporary copy into the temp folder (creating the folder when missing) as the bytes of `GRSMD.html` with the first launch slot replaced by the launch block (4.4), under the name `grsmd-launch-<delete time>-<32 hex>.html`, where the delete time is the UTC time of writing plus `KeepSeconds`, as `yyyyMMddTHHmmssZ`. |
 | FR-L09 | Optional feature | Where `-NoStart` is not given, the launcher shall open the temporary copy with the browser chosen by `-Browser` (PL-7): `Default` = the program associated with `.html`; `Edge` / `Chrome` / `Firefox` = the program of FR-L16, given the copy's `file:///` URL. |
 | FR-L23 | Event-driven | When the browser has been started, the launcher shall print the line "Opened in GRSMD" of 4.3. |
-| FR-L10 | Event-driven | When the browser has been started, the launcher shall put the target file's full path on the clipboard (PL-5). |
-| FR-L21 | Event-driven | When the path is on the clipboard, the launcher shall print the clipboard line of 4.3. |
-| FR-L22 | Unwanted behavior | If the clipboard cannot be set, then the launcher shall print the warning of 4.3 and go on. |
+| FR-L10 | Ubiquitous | The launcher shall put the target file's full path in the launch block (`data-path`, 4.4), for GRSMD's [Save] (main spec INV-105; PL-19, PL-22). |
+| FR-L21 | Event-driven | When the browser has been started, the launcher shall print the [Save] line of 4.3 (PL-22). |
+| FR-L22 | - | Withdrawn (PL-22): the launcher no longer sets the clipboard. |
 | FR-L12 | Optional feature | Where `-NoStart` is given, the launcher shall print the line `Temporary copy: <full path>` of 4.3 instead of starting a browser (used by the tests). |
-| FR-L26 | Optional feature | Where `-NoStart` is given, the launcher shall leave the clipboard unchanged. |
+| FR-L26 | Ubiquitous | The launcher shall leave the clipboard unchanged (PL-22; before, only with `-NoStart`). |
 | FR-L24 | Event-driven | When the copy is written and the browser started (or, with `-NoStart`, the copy is written), the launcher shall print the waiting line of 4.3. |
 | FR-L11 | Event-driven | When the waiting line has been printed, the launcher shall wait `KeepSeconds` seconds (4.2) before it ends. |
 | FR-L15 | Ubiquitous | The launcher shall delete the temporary copy (or the part of it written) when it ends: after the wait, on an error, and on Ctrl+C (PL-13). A closed window ends the process without this (L-2). |
+| FR-L30 | Event-driven | When the launcher has deleted its own temporary copy (FR-L15: after the wait, on an error, or on Ctrl+C), it shall print the line "Deleted the temporary copy" of 4.3 (owner request 2026-10-30). |
+| FR-L31 | Event-driven | When the launcher has deleted an old copy (FR-L08), it shall print the line "Deleted an old temporary copy" of 4.3 (owner request 2026-10-30). |
 | FR-L25 | Unwanted behavior | If the temporary copy cannot be deleted at the end, then the launcher shall print the warning of 4.3. |
 | FR-L13 | Unwanted behavior | If the temporary copy cannot be written or the browser cannot be started, then the launcher shall end with exit code 1 and the error of 4.3. |
-| FR-L14 | Ubiquitous | The launcher shall carry a comment-based help (`Get-Help Open-Grsmd.ps1 -Full`) with the synopsis, every parameter, examples for a terminal and for a desktop shortcut, the Save as tip (L-1) and the way to run a downloaded script without changing the execution policy (PL-12). |
+| FR-L14 | Ubiquitous | The launcher shall carry a comment-based help (`Get-Help Open-Grsmd.ps1 -Full`) with the synopsis, every parameter, examples for a terminal and for a desktop shortcut, the [Save] and Ctrl+V tip (L-1) and the way to run a downloaded script without changing the execution policy (PL-12). |
 
-**GRSMD (receiver and build). The normative text is main spec INV-104; the rows here trace it.**
+**GRSMD (receiver and build). The normative text is main spec INV-104 and INV-105; the rows here trace it.**
 
 | ID | EARS | Requirement |
 | --- | --- | --- |
@@ -175,9 +177,10 @@ Each row has one response. "Before it writes anything" means before the sweep of
 | FR-G06 | Unwanted behavior | If the built page has no launch slot, more than one, or one outside `<head>`, then the build shall fail. |
 | FR-G02 | Event-driven | When the receiver starts and the page has a launch block (a `<script type="text/plain">` with the id `grsmd-launch-file` whose parent is `<head>`), the receiver shall keep the file it holds as the early input of the kind `drop`, with no file handle. |
 | FR-G03 | Event-driven | When the receiver has read the launch block, it shall remove the block from the page, whether the block was valid or not. |
-| FR-G04 | Unwanted behavior | If the launch block cannot be decoded (not Base64, an empty name, a name that is not UTF-8), then the receiver shall keep no early input from it. |
+| FR-G04 | Unwanted behavior | If the launch block cannot be decoded (not Base64, an empty name, a name or a path that is not UTF-8), then the receiver shall keep no early input from it. |
 | FR-G07 | Unwanted behavior | If the launch block cannot be decoded, then the receiver shall write one warning to the console (`GRSMD: the launch file could not be read.`). |
 | FR-G05 | Event-driven | When the user drops a file or pastes text before the core runs, the receiver shall keep that input instead of the launch file (the last input wins, as now). |
+| FR-G08 | Event-driven | When the launch block has a `data-path`, the receiver shall hand its decoded full path over with the early drop, and GRSMD's [Save] shall put it on the clipboard before the first save of that document (main spec INV-105). A block without `data-path`, or with an empty one, gives no path. |
 
 ### 2.2 Non-Functional Requirements
 
@@ -220,10 +223,10 @@ graph LR
     Main -->|"builds the block"| Block["Launch block rules<br/>New-LaunchBlock, Find-LaunchSlot"]:::entity
     Main -->|"reads, writes, deletes"| Fs["File system<br/>GRSMD.html, temp folder"]:::framework
     Main -->|"starts"| Browser["Browser<br/>Default, Edge, Chrome, Firefox"]:::framework
-    Main -->|"sets the path"| Clip["Clipboard"]:::framework
     Browser -->|"loads the copy"| Receiver["Receiver<br/>boot.js"]:::adapter
     Receiver -->|"decodes with"| Rules["Early input rules<br/>earlyInput.js readLaunchBlock"]:::entity
     Receiver -->|"early drop"| Core["GRSMD core<br/>UIController drop path"]:::usecase
+    Core -->|"[Save] puts the path"| Clip["Clipboard"]:::framework
     Build["Build<br/>vite.config.js launch-slot check"]:::framework -->|"puts one slot in head"| Fs
     classDef entity fill:#FF8C00,stroke:#333,color:#000
     classDef usecase fill:#FFD700,stroke:#333,color:#000
@@ -234,35 +237,39 @@ graph LR
 | Component | Responsibility | Purity |
 | --- | --- | --- |
 | Launch block rules (in the script) | Turn a file name and bytes into the launch block text; find the launch slot in the bytes of a build | pure |
-| Launcher main flow | Check the inputs, write the copy, start the browser, set the clipboard, wait and delete | non-pure |
-| `readLaunchBlock` (`earlyInput.js`) | Turn a launch block element into `{name, bytes}` or `null` | semi-pure-a (reads the element) |
-| Receiver (`boot.js`) | Take the block at start, remove it, keep the file as the early drop | non-pure |
+| Launcher main flow | Check the inputs, write the copy, start the browser, wait and delete | non-pure |
+| `readLaunchBlock` (`earlyInput.js`) | Turn a launch block element into `{name, path, bytes}` or `null` | semi-pure-a (reads the element) |
+| Receiver (`boot.js`) | Take the block at start, remove it, keep the file (and its full path) as the early drop | non-pure |
+| [Save] (`UIController.saveFromButton`) | Put the full path of a launched document on the clipboard before its first save, then save as Ctrl+S does (main spec INV-105) | non-pure |
 | `launchSlotError` (`vite.config.js`) | Say what is wrong with the slot in a built HTML text, or null | pure |
 
 ### 3.3 File Structure
 
 ```text
 launcher/
-  Open-Grsmd.ps1          the launcher (FR-L01 to FR-L14)
+  Open-Grsmd.ps1          the launcher (FR-L01 to FR-L31)
   GRSMD.html              placed by the user (ignored by git)
   grsmd-launcher-personal-help.md   written by the launcher (ignored by git, PL-16 to PL-18)
 %TEMP%\grsmd-launcher\     temporary copies (outside the repository, PL-14)
 src/index.html            the launch slot before </head> (FR-G01)
-src/js/earlyInput.js      LAUNCH_BLOCK_ID, isLaunchBlock, readLaunchBlock (FR-G02, FR-G04)
-src/js/boot.js            the receiver takes the block (FR-G02 to FR-G05)
+src/js/earlyInput.js      LAUNCH_BLOCK_ID, isLaunchBlock, readLaunchBlock (FR-G02, FR-G04, FR-G08)
+src/js/boot.js            the receiver takes the block (FR-G02 to FR-G05, FR-G08)
+src/js/classes/UIController.js   [Save] (FR-G08, main spec INV-105)
 vite.config.js            LAUNCH_SLOT, launchSlotError, the launch-slot plugin (FR-G01)
-src/__tests__/launcher.test.js       AT-LAUNCH-01 to 19, 33, 34: static checks and script runs
-src/__tests__/launchBlock.test.js    AT-LAUNCH-20 to 32: the block, the receiver, the slot
-e2e/launcher.e2e.js       AT-LAUNCH-40 to 42: the copy opened in a browser
+src/__tests__/launcher.test.js       AT-LAUNCH-01 to 19, 33 to 35, 43: static checks and script runs
+src/__tests__/launchBlock.test.js    AT-LAUNCH-20 to 32, 36: the block, the receiver, the slot
+src/__tests__/UIController.saveButton.test.js   AT-LAUNCH-37 to 39: [Save]
+e2e/launcher.e2e.js       AT-LAUNCH-40 to 42, 44: the copy opened in a browser, [Save]
 ```
 
 ### 3.4 Domain Model
 
-**Launch block** (4.4): one element, two values.
+**Launch block** (4.4): one element, three values.
 
 | Value | Where | Type | Meaning |
 | --- | --- | --- | --- |
 | name | attribute `data-name` | Base64 of the UTF-8 bytes of the target file's name (no folder) | The file name the drop path uses (classification by extension, Save as name) |
+| path | attribute `data-path` | Base64 of the UTF-8 bytes of the target file's full path | What [Save] puts on the clipboard (FR-L10, FR-G08) |
 | bytes | element text | Base64 of the target file's bytes | The file's content, unchanged |
 
 **Launcher run** (a straight sequence, no loops back):
@@ -299,12 +306,14 @@ sequenceDiagram
     L->>L : check file, size, GRSMD html, slot
     L->>F : delete old copies, write copy with launch block
     L->>B : open copy
-    L->>U : path on clipboard, message
+    L->>U : message
     B->>R : parse head, run receiver
     R->>R : read launch block, remove it, keep early drop
     B->>C : run core
     C->>R : takeEarlyInput
     C->>C : open as a dropped file
+    U->>C : Save button
+    C->>U : path on clipboard, save dialog
     L->>F : after KeepSeconds delete copy
 ```
 
@@ -317,18 +326,18 @@ sequenceDiagram
 | The launch slot and its build check (FR-L06, FR-G01, FR-G06) | Tells an older `GRSMD.html` apart before anything is written (ADR-L4) | An old build opens empty and the file is silently lost |
 | `-GrsmdPath` (FR-L05) | PL-4: the build may be elsewhere | The build must be next to the script |
 | `-Browser` (FR-L09, FR-L16) | PL-7 | Only the `.html` association |
-| The clipboard path (FR-L10) | PL-5: saving over the file in one paste | The user types the path in Save as |
+| The full path in the block (FR-L10, FR-G08) and [Save] | PL-5, PL-19 to PL-22: saving over the file in one paste | The user types the path in Save as |
 | The sweep of old copies (FR-L08) | PL-13: a closed window leaves the document on disk | Left copies stay until the user empties the temp folder |
 | The delete time in the name (FR-L07) | Overlapping runs (ADR-L8) | A short run deletes a copy a browser has not read yet |
 | Deletion on an error and on Ctrl+C (FR-L15) | PL-13: the document stays on disk no longer than needed | A stopped run leaves the copy |
 | The 5 s floor with a browser (FR-L18) | Review 1 (M2): the browser reads the copy after `Start-Process` returns | `-KeepSeconds 0` deletes the copy before the browser reads it |
-| `-NoStart` (FR-L12, FR-L26) | The tests run without a browser window and without the clipboard | No automatic test of the copy |
+| `-NoStart` (FR-L12, FR-L26) | The tests run without a browser window | No automatic test of the copy |
 | The personal help (FR-L27 to FR-L29) | PL-16 to PL-18: the temp folder is outside the launcher's folder (PL-14); the user keeps its path where the launcher is | The user must know where `%TEMP%` is |
 
 
 | ID | Status | Context | Decision | Consequences | Decided by |
 | --- | --- | --- | --- | --- | --- |
-| ADR-L0 | Accepted | The smallest launcher that meets GL-1 to GL-3: check the file, write the copy, open it, delete it after a wait | Start from that and add only what a ruling or a failure needs (the table below) | Each added part has its reason | Session, review 1 (L12) |
+| ADR-L0 | Accepted | The smallest launcher that meets GL-1 to GL-3: check the file, write the copy, open it, delete it after a wait | Start from that and add only what a ruling or a failure needs (the table above) | Each added part has its reason | Session, review 1 (L12) |
 | ADR-L1 | Accepted | Pages cannot be fed from the PC without a network request or a web-reachable entry | Use `GRSMD.html` kept on the PC | OS-L3. Updates of GRSMD are the user's (download a newer build) | Owner, PL-1 |
 | ADR-L2 | Accepted | Clipboard hand-over needs a manual paste, loses the name and can stay in clipboard history | Do not use the clipboard for the content | - | Owner, PL-2 |
 | ADR-L3 | Accepted | `window.name` crosses into the next web site in Edge and Chrome when the page does not clear it (measured, A.4) | Temporary copy with a launch slot, replaced by a non-executing launch block | No new input entry, nothing left in the browser, works in every browser. Costs: L-2, L-3 | Owner, PL-3 |
@@ -337,6 +346,7 @@ sequenceDiagram
 | ADR-L6 | Accepted | The copy must outlive the browser's first read, and the content must not stay on disk | Wait `KeepSeconds` (30; at least 5 with a browser) in the script, then delete in a `finally` block (also on an error and on Ctrl+C); sweep old copies before writing | L-2, L-4 | Owner, PL-6, PL-13 and PL-14 (the place) |
 | ADR-L9 | Accepted | With the copies under `%TEMP%` (PL-14), the user may not find them | The launcher writes `grsmd-launcher-personal-help.md` next to itself on each run (only when its text changes): the full path, how to open it, `Get-Help`. Nothing of the opened files | L-7. Ignored by git | Owner, PL-16 to PL-18 |
 | ADR-L8 | Accepted | Runs with different `KeepSeconds` can overlap: a sweep by file age would delete the copy of a run that still waits | Each copy's name carries its own delete time; the sweep deletes only copies whose time has passed | FR-L07, FR-L08. A name without the time (not a copy) is never deleted | Session, review 1 (L1) |
+| ADR-L10 | Accepted | The save dialog cannot be opened at a path (`showSaveFilePicker` takes only a handle or a well-known folder; `suggestedName` is a name), and a path put on the clipboard at launch is lost by any later copy (the owner's manual check) | The launcher passes the full path in the block (`data-path`); GRSMD's [Save] puts it on the clipboard when it is pressed, before the first save (main spec INV-105) | The page holds the full path in memory until the first save (4.4); L-6. The launcher no longer touches the clipboard | Owner, PL-19 to PL-22 |
 | ADR-L7 | Accepted | The core already opens a dropped file with all its checks | The receiver hands the launch file over as an early drop | GL-2 holds by construction. No second open path | Session |
 
 ---
@@ -368,9 +378,9 @@ Feature: Open a file in GRSMD from PowerShell
 ---
 
 ```gherkin
-Scenario: SC-L02 Save over the file through Save as (traces: FR-L10, L-1)
+Scenario: SC-L02 Save over the file through [Save] (traces: FR-L10, FR-G08, L-1)
   Given note.md is open through the launcher in Edge
-  When the user presses Ctrl+S and pastes the clipboard into the file name
+  When the user presses [Save] and pastes the clipboard into the file name with Ctrl+V
   Then the save dialog writes to note.md after the overwrite question
 ```
 
@@ -481,7 +491,7 @@ Open-Grsmd.ps1 [-Path] <string> [-GrsmdPath <string>] [-Browser Default|Edge|Chr
 | `-GrsmdPath` | string | `GRSMD.html` in the launcher's folder | The GRSMD build to copy (FR-L05) |
 | `-Browser` | `Default`, `Edge`, `Chrome`, `Firefox` | `Default` | The browser (FR-L09) |
 | `-KeepSeconds` | int, 0 to 3600; at least 5 unless `-NoStart` (FR-L18) | 30 | The wait before the copy is deleted (FR-L11); with the time of writing, it makes the copy's delete time (FR-L07) |
-| `-NoStart` | switch | off | Do not start a browser, do not touch the clipboard, do not look `-Browser` up (FR-L12, FR-L16, FR-L26) |
+| `-NoStart` | switch | off | Do not start a browser, do not look `-Browser` up (FR-L12, FR-L16) |
 
 Exit codes: 0 = done; 1 = any error of 4.3.
 
@@ -492,13 +502,14 @@ The launcher's own words are English ASCII. A `<reason>` is the system's message
 | Case | Message |
 | --- | --- |
 | Opened (FR-L23) | `Opened in GRSMD: <full path of the target file>` |
-| Clipboard (FR-L21) | `The full path of the file is on the clipboard. To save over the file, choose Save as and paste it as the file name.` |
+| Save tip (FR-L21) | `To save over the file, press [Save] in GRSMD and paste the path with Ctrl+V as the file name.` |
 | No start (FR-L12) | `Temporary copy: <full path of the copy>` |
 | Waiting (FR-L24) | `The temporary copy is deleted in <n> s (Ctrl+C deletes it now).` |
+| Copy deleted (FR-L30) | `Deleted the temporary copy: <full path of the copy>` (written straight to the console, so that it shows after Ctrl+C too) |
+| Old copy deleted (FR-L31) | `Deleted an old temporary copy: <full path of the copy>` |
 | Old copy kept (FR-L20, warning) | `Could not delete an old temporary copy: <path>` |
 | Copy kept (FR-L25, warning) | `Could not delete the temporary copy: <path>` |
 | Personal help not written (FR-L29, warning) | `Could not write <path of the personal help>: <reason>` |
-| Clipboard failed (FR-L22, warning) | `Could not put the path on the clipboard: <reason>` |
 | File missing (FR-L03) | `Open-Grsmd: File not found: <path>` |
 | Folder (FR-L03) | `Open-Grsmd: Not a file: <path>` |
 | Too large (FR-L04) | `Open-Grsmd: The file is larger than 5 MB (<n> bytes): <path>` |
@@ -522,11 +533,12 @@ The launcher's own words are English ASCII. A `<reason>` is the system's message
 **Launch block** (written by the launcher in place of the slot; one line):
 
 ```html
-<script type="text/plain" id="grsmd-launch-file" data-name="BASE64_OF_UTF8_NAME">BASE64_OF_FILE_BYTES</script>
+<script type="text/plain" id="grsmd-launch-file" data-name="BASE64_OF_UTF8_NAME" data-path="BASE64_OF_UTF8_FULL_PATH">BASE64_OF_FILE_BYTES</script>
 ```
 
 - Base64 is the standard alphabet with padding (RFC 4648 section 4), no line breaks.
-- The name is the leaf name only (no folder), so the page never sees the folder path.
+- `data-name` is the leaf name only (no folder): the name the drop path uses.
+- `data-path` is the full path, for [Save] (FR-L10, FR-G08). The page keeps it in memory only, until the first save, and gives it only to the clipboard when [Save] is pressed (main spec INV-105, CON-03). A block without `data-path` (an older launcher) gives no path.
 - The receiver accepts the block only as a child of `<head>` with `type="text/plain"`: a document rendered later can never stand in for it (it does not exist yet when the receiver runs, and ids that start with `grsmd-` are dropped from documents, main spec INV-81 (5)).
 
 **Personal help** (`grsmd-launcher-personal-help.md`, written by the launcher next to itself; UTF-8 without BOM, LF; three paragraphs, nothing else):
@@ -550,7 +562,6 @@ How to use the launcher: `Get-Help .\Open-Grsmd.ps1 -Full`
 | Temp folder not writable (or a file named `grsmd-launcher` in its place) | Launcher, Writing | Message, exit 1 | No (partial file deleted) |
 | Old copy cannot be deleted | Launcher, Writing | Warning, go on | - |
 | Browser start fails | Launcher, Starting | Delete the copy, message, exit 1 | Deleted |
-| Clipboard cannot be set | Launcher, Starting | Warning, go on | - |
 | Ctrl+C while waiting | Launcher, Waiting | Delete the copy at once | Deleted |
 | Window closed while waiting | - (the process is ended) | The next run sweeps the copy (FR-L08) | Left (L-2) |
 | Block not decodable | Receiver | Remove block, console warning, start empty | - |
@@ -562,13 +573,14 @@ How to use the launcher: `Get-Help .\Open-Grsmd.ps1 -Full`
 
 | Test level | Target | Policy | Tool | IDs | Pass criteria |
 | --- | --- | --- | --- | --- | --- |
-| Unit | `readLaunchBlock`, `isLaunchBlock`, the receiver with a launch block, `launchSlotError` and the build plugin, the source page's slot | jsdom pages; every branch of FR-G01 to FR-G07 (SC-L08, SC-L09): a non-ASCII name, kept bytes (BOM, CR LF, NUL), an empty file, each undecodable case, a block outside `<head>`, a drop after the block | Vitest (`npm test`, `src/__tests__/launchBlock.test.js`) | AT-LAUNCH-20 to 32 | All pass |
-| Static | The launcher file | ASCII only (NFR-L05); none of the network names of CON-L1 (NFR-L02); the help of FR-L14; the same slot, block id and size limit as the build, the receiver and `CONFIG` (DRY across the two languages); git ignores the personal help and `launcher/GRSMD.html` (L-7) | Vitest (`src/__tests__/launcher.test.js`) | AT-LAUNCH-01 to 04, 34 | All pass |
-| Script (integration) | The launcher, with `-NoStart` except for runs refused in the checks | Vitest starts `powershell.exe` and, when installed, `pwsh.exe`, each with `-NoProfile -ExecutionPolicy Bypass -File` (that process only; no setting changes), in a temporary folder with a copy of the launcher and a small `GRSMD.html`; each run gets `TEMP` and `TMP` of its own (the real temp folder is never touched). Checks: the copy is the build with the slot replaced, its name carries the delete time, and its block decodes to the file's name (non-ASCII, a space) and bytes (FR-L07); the copy is kept for `KeepSeconds` and then deleted (SC-L03); the sweep by delete time and its warning (SC-L04, FR-L20); a literal relative path, checked by the block's name and bytes (FR-L02); the size limit and an empty file (FR-L17); `-GrsmdPath` (FR-L05); each error of SC-L05 with its exact message, exit code 1 and no temp folder; a copy that cannot be written (FR-L13); SC-L06 and `-NoStart` with an unregistered browser when Firefox is not registered (skipped otherwise). The personal help: its exact text (and nothing of the opened file), left as it is when unchanged, a warning when it cannot be written, and none written by a run that stops in the checks (FR-L27 to FR-L29). Each new check was seen to fail on a changed launcher (wildcards expanded, every copy swept, no wait, the personal help always rewritten) | Vitest (`src/__tests__/launcher.test.js`) | AT-LAUNCH-05 to 19, 33 | All pass on both PowerShell versions |
+| Unit | `readLaunchBlock`, `isLaunchBlock`, the receiver with a launch block, `launchSlotError` and the build plugin, the source page's slot | jsdom pages; every branch of FR-G01 to FR-G07 (SC-L08, SC-L09): a non-ASCII name, kept bytes (BOM, CR LF, NUL), an empty file, each undecodable case, a block outside `<head>`, a drop after the block, the full path (FR-G08) | Vitest (`npm test`, `src/__tests__/launchBlock.test.js`) | AT-LAUNCH-20 to 32, 36 | All pass |
+| Unit | [Save] (FR-G08, main spec INV-105) | The app stack in jsdom with a fake file access and a fake clipboard: a launched Markdown or code document puts its path on the clipboard and opens the save dialog; after the first save, no path; a dropped document (with or without a handle) never; off in the initial view and in a code view without the code editor; the tooltip with and without the path. Each check was seen to fail on changed code | Vitest (`src/__tests__/UIController.saveButton.test.js`) | AT-LAUNCH-37 to 39 | All pass |
+| Static | The launcher file | ASCII only (NFR-L05); none of the network names of CON-L1 (NFR-L02); the help of FR-L14; the same slot, block id and size limit as the build, the receiver and `CONFIG` (DRY across the two languages); git ignores the personal help and `launcher/GRSMD.html` (L-7); the copy prefix written once, the sweep's name pattern made from it; no clipboard command and the [Save] line (FR-L21, FR-L26) | Vitest (`src/__tests__/launcher.test.js`) | AT-LAUNCH-01 to 04, 34, 35, 43 | All pass |
+| Script (integration) | The launcher, with `-NoStart` except for runs refused in the checks | Vitest starts `powershell.exe` and, when installed, `pwsh.exe`, each with `-NoProfile -ExecutionPolicy Bypass -File` (that process only; no setting changes), in a temporary folder with a copy of the launcher and a small `GRSMD.html`; each run gets `TEMP` and `TMP` of its own (the real temp folder is never touched). Checks: the copy is the build with the slot replaced, its name carries the delete time, and its block decodes to the file's name (non-ASCII, a space) and bytes (FR-L07); the copy is kept for `KeepSeconds` and then deleted, with the line of FR-L30 (SC-L03); the sweep by delete time, its line (FR-L31) and its warning (SC-L04, FR-L20); a literal relative path, checked by the block's name and bytes (FR-L02); the size limit and an empty file (FR-L17); `-GrsmdPath` (FR-L05); each error of SC-L05 with its exact message, exit code 1 and no temp folder; a copy that cannot be written (FR-L13); SC-L06 and `-NoStart` with an unregistered browser when Firefox is not registered (skipped otherwise). The personal help: its exact text (and nothing of the opened file), left as it is when unchanged, a warning when it cannot be written, and none written by a run that stops in the checks (FR-L27 to FR-L29). Each new check was seen to fail on a changed launcher (wildcards expanded, every copy swept, no wait, the personal help always rewritten, the deletion lines removed) | Vitest (`src/__tests__/launcher.test.js`) | AT-LAUNCH-05 to 19, 33 | All pass on both PowerShell versions |
 | Build | The built HTML | The build fails without exactly one slot in `<head>` (the `launch-slot` plugin, FR-G01, FR-G06); the size limit (NFR-L06) | `npm run build`, `npm run build:e2e` | (the build itself) | The build passes |
-| E2E | SC-L01, SC-L07 | Build to `output/e2e`, make a copy with the launcher (`-NoStart`), open it by `file:///` in Chromium (a page route lets through that one URL; the fixtures' guards stay on for everything else): a Markdown file with math and a diagram, a JavaScript file, a PNG file refused with GRSMD's message. Run only after the coordinator's OK | Playwright (`e2e/launcher.e2e.js`, `npm run test:e2e`) | AT-LAUNCH-40 to 42 | All pass |
+| E2E | SC-L01, SC-L07 | Build to `output/e2e`, make a copy with the launcher (`-NoStart`), open it by `file:///` in Chromium (a page route lets through that one URL; the fixtures' guards stay on for everything else): a Markdown file with math and a diagram, a JavaScript file, a PNG file refused with GRSMD's message; [Save] on a launched file puts its full path on the clipboard (the copy event) and opens a fake save dialog, and after the save neither (FR-G08). Run only after the coordinator's OK | Playwright (`e2e/launcher.e2e.js`, `npm run test:e2e`) | AT-LAUNCH-40 to 42, 44 | All pass |
 | Performance (T-L-PERF) | NFR-L01 | The way of NFR-L01 (one run thrown away, then the median of 3), for 100 KiB and 5 MiB files, with both PowerShell versions, on the reference PC | Manual with `Measure-Command` | T-L-PERF | Within NFR-L01 (A.3) |
-| Manual | What the automatic tests cannot reach: the browser started by the `.html` association and by `-Browser`, the clipboard, Save as with the pasted path, the desktop shortcut, Ctrl+C during the wait | By the owner on the reference PC: PRT-AM01 to AM04 of the pre-release test spec (= M-L1 to M-L4) | - | M-L1 to M-L4 | All pass |
+| Manual | What the automatic tests cannot reach: the browser started by the `.html` association and by `-Browser`, [Save] and the save dialog with the pasted path, the desktop shortcut, Ctrl+C during the wait | By the owner on the reference PC: PRT-AM01 to AM04 of the pre-release test spec (= M-L1 to M-L4) | - | M-L1 to M-L4 | All pass |
 
 ## 6. Design Principles Compliance
 
@@ -586,7 +598,7 @@ How to use the launcher: `Get-Help .\Open-Grsmd.ps1 -Full`
 | Coupling | LoD | The receiver reads only its own block element |
 | Coupling | CQS | `readLaunchBlock` only reads; the receiver removes the block in a separate step |
 | Readability | POLA / PIE | The launcher's messages say what happened and what to do next (4.3) |
-| Testability | Testability | `-NoStart` exercises everything but the browser start and the clipboard; the pure parts are tested alone |
+| Testability | Testability | `-NoStart` exercises everything but the browser start; the pure parts are tested alone |
 | Purity | Pure / Semi-pure / Non-pure | 3.2 classifies every part; side effects are at the edges |
 | Structure | Collect-Process Separation | The launcher collects all inputs (Checking) before it writes anything |
 | State Transitions | State Transition | 3.4: a straight sequence; the receiver adds no state |
@@ -604,7 +616,7 @@ How to use the launcher: `Get-Help .\Open-Grsmd.ps1 -Full`
 
 1. GoodRelax/gr-sw-maker, `process-rules/spec-template-en.md`, commit `b723439` (2026-10-24)
 2. GoodRelax/gr-sw-maker, `process-rules/review-standards-en.md`, commit `b723439` (2026-10-24)
-3. [grsmd_gen2_spec_ja.md](grsmd_gen2_spec_ja.md): INV-81 (receiver), INV-104 (launch block), CON-03, CON-08, INV-20
+3. [grsmd_gen2_spec_ja.md](grsmd_gen2_spec_ja.md): INV-81 (receiver), INV-104 (launch block), INV-105 ([Save]), CON-03, CON-08, INV-20
 4. RFC 4648, The Base16, Base32, and Base64 Data Encodings
 
 ### A.2 Licenses
@@ -619,6 +631,9 @@ No dependency is added. The launcher is part of this repository (MIT, `LICENSE`)
 | 0.2 | 2026-10-30 | Review 1 (M2, L1 to L4, L8 to L15): at least 5 s with a browser (FR-L18); the delete time in the copy's name and the sweep by it (FR-L07, FR-L08, ADR-L8); one response per requirement (new FR-L15 to FR-L26, FR-G06, FR-G07); the browser is looked up only without `-NoStart` (FR-L16); 4.3 on the standard error and the language of `<reason>`; the comparison with the smallest launcher (3.6, ADR-L0); the way of measuring NFR-L01. T-L-PERF measured again that way (one run thrown away, then the median of 3; output/e2e build, 2026-10-30): Windows PowerShell 5.1: 100 KiB 335 ms, 5 MiB 383 ms; PowerShell 7.6.9: 100 KiB 915 ms, 5 MiB 1,206 ms (all within NFR-L01; PowerShell 7 at 100 KiB is near its 1.0 s line). |
 | 0.3 | 2026-10-30 | Owner rulings PL-14 (the temp folder moves to `%TEMP%\grsmd-launcher`, outside synced folders; review 1, M1) and PL-15 (no launcher text in GRSMD's own help: OS-L7). |
 | 0.4 | 2026-10-30 | Owner rulings PL-16 to PL-18: the personal help `grsmd-launcher-personal-help.md` (FR-L27 to FR-L29, 4.4, ADR-L9, L-7) |
+| 0.5 | 2026-10-30 | Review 2 (N3 to N5): FR-L28 is State-driven; 3.3 names FR-L01 to FR-L29; ADR-L0 points to the table above; the sweep's name pattern is made from the copy prefix (AT-LAUNCH-35) |
+| 0.6 | 2026-10-30 | Owner request after the manual check ("消したら消したメッセージ出せよ。"): the launcher tells each deletion (FR-L30, FR-L31, 4.3) |
+| 0.7 | 2026-10-30 | Owner rulings PL-19 to PL-23 (the save-path Q&A sheet; PL-23: the [Save] line in GRSMD's help, without the launcher's name, OS-L7): the full path goes in the block (`data-path`, FR-L10, FR-G08, 4.4); GRSMD's [Save] puts it on the clipboard (main spec INV-105, ADR-L10); the launcher no longer touches the clipboard (FR-L21, FR-L26, FR-L22 withdrawn, L-1, L-6, 4.3) |
 
 ### A.4 Hand-over Approaches Compared (PL-2, PL-3)
 

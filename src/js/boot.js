@@ -92,7 +92,7 @@ export function installBoot(win) {
     },
     /**
      * The core runs: the listeners here go, and the last input is handed over.
-     * @returns {{kind: "drop", file: File, handlePromise: Promise|null}|{kind: "paste", text: string}|null}
+     * @returns {{kind: "drop", file: File, handlePromise: Promise|null, launchPath?: string|null}|{kind: "paste", text: string}|null}
      * @purity non-pure
      */
     takeEarlyInput() {
@@ -163,5 +163,6 @@ function takeLaunchBlock(win, boot) {
     console.warn("GRSMD: the launch file could not be read.");
     return;
   }
-  boot.early = { kind: "drop", file: new win.File([launched.bytes], launched.name), handlePromise: null };
+  // the full path goes with it, for [Save] (INV-105); null when unknown
+  boot.early = { kind: "drop", file: new win.File([launched.bytes], launched.name), handlePromise: null, launchPath: launched.path };
 }

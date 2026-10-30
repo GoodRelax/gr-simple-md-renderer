@@ -48,6 +48,7 @@ export function createUiElements({ attach = false } = {}) {
     reloadBtn: make("button", "reloadBtn"),
     newTabBtn: make("button", "newTabBtn"),
     editBtn: make("button", "editBtn"),
+    saveBtn: make("button", "saveBtn"),
     clearBtn: make("button", "clearBtn"),
     helpBtn: make("button", "helpBtn"),
     helpModal: modal(),
@@ -58,7 +59,7 @@ export function createUiElements({ attach = false } = {}) {
   };
   if (attach) {
     const bar = make("div", "testTopBar");
-    bar.append(elements.editor, elements.renderLightBtn, elements.renderDarkBtn, elements.reloadBtn, elements.editBtn, elements.clearBtn);
+    bar.append(elements.editor, elements.renderLightBtn, elements.renderDarkBtn, elements.reloadBtn, elements.editBtn, elements.saveBtn, elements.clearBtn);
     document.body.append(bar, elements.preview);
     elements._bar = bar;
   }

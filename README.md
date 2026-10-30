@@ -78,6 +78,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Reload | `R` | Reload the current file from disk (a file opened from GitHub: read it again from GitHub, after a confirmation) |
    | New Tab | `N` | Open GRSMD in a new tab |
    | Edit | `E` | Show / hide the edit palette; click (tap) a block to edit its Markdown in place. In Code View: edit the whole file |
+   | Save | `Ctrl+S` | Save, as `Ctrl+S` does. For a file opened by the PowerShell launcher, it first puts the file's full path on the clipboard: paste it as the file name in the save dialog |
    | Clear | `C` | Clear and reset |
    | ? | | Show help (long press: a prompt template for AI-generated Markdown) |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document or a Code View file is shown (a file that is not UTF-8 asks for the encoding to save in; if that encoding cannot hold some characters, it shows their line numbers and asks whether to save in UTF-8) |
@@ -110,7 +111,7 @@ Keep GRSMD on your PC: save the release `index.html` as `GRSMD.html` next to [`l
 .\Open-Grsmd.ps1 .\notes\plan.md
 ```
 
-opens the file in GRSMD as if you had dropped it. The script writes a temporary copy of `GRSMD.html` that carries the file into `%TEMP%\grsmd-launcher` (your temporary folder, outside folders that OneDrive or another cloud service syncs), opens the copy in your browser and deletes it after 30 seconds (Ctrl+C deletes it at once; if you close the window first, the copy stays there until a later run deletes it). To find that folder, the script keeps its full path in `grsmd-launcher-personal-help.md` next to itself. The script sends nothing over the network. GRSMD has no handle to the file, so Save asks where to save: the script puts the file's full path on the clipboard, so paste it as the file name. `Get-Help .\Open-Grsmd.ps1 -Full` shows every option (browser, wait time, a desktop shortcut you can drop files on).
+opens the file in GRSMD as if you had dropped it. The script writes a temporary copy of `GRSMD.html` that carries the file into `%TEMP%\grsmd-launcher` (your temporary folder, outside folders that OneDrive or another cloud service syncs), opens the copy in your browser and deletes it after 30 seconds (Ctrl+C deletes it at once; if you close the window first, the copy stays there until a later run deletes it). To find that folder, the script keeps its full path in `grsmd-launcher-personal-help.md` next to itself. The script sends nothing over the network. GRSMD has no handle to the file, so the first save asks where to save: press [Save] in GRSMD, which puts the file's full path on the clipboard, and paste it as the file name with Ctrl+V. Later saves write to the file. `Get-Help .\Open-Grsmd.ps1 -Full` shows every option (browser, wait time, a desktop shortcut you can drop files on).
 
 ---
 
@@ -122,7 +123,7 @@ opens the file in GRSMD as if you had dropped it. The script writes a temporary 
   - GitHub editing (PC only): requests go only to api.github.com, and only when you press [Open], [Reload] or [Push] in its dialog, every time. Open and Reload send the repository, branch and path, and your fine-grained personal access token. Push sends the full text of the document, the commit message and the token. The token is sent only in a request header, and GRSMD keeps it only while the request runs. After a request succeeds, GRSMD asks the browser to save the token; the browser asks you, and you can delete it in the browser's password settings.
 - **Nothing is stored.** Your content is never written to localStorage, sessionStorage, or cookies.
 - **Edits are not stored in the browser either.** They live only in the open page until you save them to a file.
-- **The PowerShell launcher** (Windows) writes the file you open into a temporary copy of `GRSMD.html` in `%TEMP%\grsmd-launcher` (outside synced folders), and deletes it after 30 seconds (a copy left by a closed window is deleted by a later run). It puts the file's full path on the clipboard; Windows clipboard history (Win+V), when on, keeps it. It sends nothing over the network.
+- **The PowerShell launcher** (Windows) writes the file you open into a temporary copy of `GRSMD.html` in `%TEMP%\grsmd-launcher` (outside synced folders), and deletes it after 30 seconds (a copy left by a closed window is deleted by a later run). The page keeps the file's full path in memory, and [Save] puts it on the clipboard (only until the first save); Windows clipboard history (Win+V), when on, keeps it. It sends nothing over the network.
 - **Clipboard.** The "Paste copied link" button reads the clipboard only when you press it, so the browser may ask you to allow it. When GRSMD is opened from goodrelax.github.io, in Chrome and Edge, once you allow it, other pages on goodrelax.github.io can also read your clipboard without asking. To withdraw it, open the site settings for goodrelax.github.io (the icon at the left of the address bar) and set Clipboard to Ask or Block. Pasting a URL onto selected text with Ctrl+V / Cmd+V makes a link without any permission. Nothing read from the clipboard is sent anywhere.
 - **HTML in Markdown is sanitized** with DOMPurify. Scripts and event handlers are removed. Other remote references (video, audio, CSS `url()`, `<style>`) are removed.
 - **Content-Security-Policy:** the built file only runs its own scripts (each allowed by its hash, the libraries that run on demand included), and it can fetch data only from the PlantUML server and the GitHub API (api.github.com). Images from other sites are allowed by the policy, but GRSMD loads them only after your consent (above).
@@ -272,6 +273,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | Reload | `R` | 表示中のファイルをディスクからリロード（GitHub から開いた文書は、確かめの画面の後に GitHub から読み直す） |
    | New Tab | `N` | 新しいタブで GRSMD を開く |
    | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリック（タップ）すると、その場で Markdown を編集。コードビューでは、ファイル全体を編集 |
+   | Save | `Ctrl+S` | `Ctrl+S` と同じに保存。PowerShell の起動役で開いたファイルでは、先にそのフルパスをクリップボードに入れるので、保存の画面のファイル名の欄に貼る |
    | Clear | `C` | 初期化 |
    | ? | | ヘルプを表示（長押し: AI に Markdown を書かせるためのプロンプト） |
    | | `Ctrl+S` / `Ctrl+Shift+S` | Markdown の文書かコードビューのファイルを表示している間、保存 / 名前を付けて保存（UTF-8 以外のファイルは、保存する文字コードを聞く。その文字コードで書けない字があれば、その行を示して UTF-8 で保存するかを聞く） |
@@ -304,7 +306,7 @@ GRSMD を PC に置きます。リリースの `index.html` を `GRSMD.html` と
 .\Open-Grsmd.ps1 .\notes\plan.md
 ```
 
-で、そのファイルをドロップしたときと同じに GRSMD で開きます。スクリプトは、ファイルを入れた `GRSMD.html` の一時的な写しを `%TEMP%\grsmd-launcher`（一時フォルダ。OneDrive などが同期するフォルダの外）に書き、ブラウザで開き、30 秒後に消します (Ctrl+C ですぐ消えます。先に窓を閉じると、写しは後の実行が消すまでそこに残ります)。そのフォルダを見つけられるよう、スクリプトはフルパスを横の `grsmd-launcher-personal-help.md` に書きます。スクリプトはネットワークに何も送りません。GRSMD はファイルのハンドルを持たないので、保存では保存先を聞かれます。スクリプトがファイルのフルパスをクリップボードに入れるので、ファイル名の欄に貼ってください。`Get-Help .\Open-Grsmd.ps1 -Full` ですべての使い方 (ブラウザ、待つ時間、ファイルをドロップできるデスクトップのショートカット) を見られます。
+で、そのファイルをドロップしたときと同じに GRSMD で開きます。スクリプトは、ファイルを入れた `GRSMD.html` の一時的な写しを `%TEMP%\grsmd-launcher`（一時フォルダ。OneDrive などが同期するフォルダの外）に書き、ブラウザで開き、30 秒後に消します (Ctrl+C ですぐ消えます。先に窓を閉じると、写しは後の実行が消すまでそこに残ります)。そのフォルダを見つけられるよう、スクリプトはフルパスを横の `grsmd-launcher-personal-help.md` に書きます。スクリプトはネットワークに何も送りません。GRSMD はファイルのハンドルを持たないので、最初の保存では保存先を聞かれます。GRSMD の [Save] を押すと、ファイルのフルパスがクリップボードに入るので、ファイル名の欄に Ctrl+V で貼ってください。次からはそのファイルに保存します。`Get-Help .\Open-Grsmd.ps1 -Full` ですべての使い方 (ブラウザ、待つ時間、ファイルをドロップできるデスクトップのショートカット) を見られます。
 
 ---
 
@@ -316,7 +318,7 @@ GRSMD を PC に置きます。リリースの `index.html` を `GRSMD.html` と
   - GitHub 連携（PC だけ）: 画面の [Open]・[Reload]・[Push] を押したときだけ、毎回、api.github.com にだけ送ります。Open と Reload は、リポジトリ・ブランチ・パスと、fine-grained personal access token を送ります。Push は、文書の本文の全部・コミットのメッセージ・トークンを送ります。トークンは要求のヘッダーにだけ載せ、GRSMD は送る間だけ持ちます。要求が成功すると、GRSMD はブラウザにトークンの保存を頼みます。保存するかはブラウザが尋ねます。消すときは、ブラウザのパスワードの設定から消します。
 - **何も保存しません。** 入力内容を localStorage・sessionStorage・Cookie に書き込みません。
 - **編集内容もブラウザに保存しません。** ファイルに保存するまでは、開いているページの中にだけあります。
-- **PowerShell の起動役**（Windows）は、開くファイルを、`%TEMP%\grsmd-launcher`（同期するフォルダの外）にある `GRSMD.html` の一時的な写しに入れ、30 秒後に消します（閉じた窓が残した写しは、後の実行が消します）。ファイルのフルパスをクリップボードに入れます。Windows のクリップボードの履歴（Win+V）が有効なら、そこに残ります。ネットワークには何も送りません。
+- **PowerShell の起動役**（Windows）は、開くファイルを、`%TEMP%\grsmd-launcher`（同期するフォルダの外）にある `GRSMD.html` の一時的な写しに入れ、30 秒後に消します（閉じた窓が残した写しは、後の実行が消します）。ページはファイルのフルパスをメモリにだけ持ち、[Save] がそれをクリップボードに入れます（最初の保存まで）。Windows のクリップボードの履歴（Win+V）が有効なら、そこに残ります。ネットワークには何も送りません。
 - **クリップボード。** 「リンクを貼る」（Paste copied link）のボタンは、押したときだけクリップボードを読むので、ブラウザが許可を求めることがあります。goodrelax.github.io で開いているとき、Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。選んだ文字に URL を Ctrl+V / Cmd+V で貼ってリンクにする方法には、許可が要りません。クリップボードから読んだものは、どこにも送りません。
 - **Markdown 内の HTML は DOMPurify でサニタイズ**します。スクリプトとイベント属性を除去し、その他の外部参照（動画・音声・CSS の `url()`・`<style>`）も除去します。
 - **Content-Security-Policy:** ビルド成果物は自身のスクリプト (要るときに動かすライブラリも含め、それぞれハッシュで許したもの) しか実行せず、データを取りに行ける先は PlantUML サーバーと GitHub の API（api.github.com）だけです。ほかのサイトの画像はポリシーでは許していますが、GRSMD は同意（上記）の後にだけ読み込みます。

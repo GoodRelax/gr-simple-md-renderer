@@ -207,6 +207,25 @@ describe("help markup in src/index.html (AT-HLP-05, AT-HLP-06, AT-HLP-14)", () =
     expect(ja).toContain("200 KB \u4ee5\u4e0a");
     expect(ja).toContain("\u6642\u9593\u304c\u304b\u304b\u308a\u307e\u3059");
   });
+
+  it("AT-HLP-20 INV-105, PL-19, PL-23: Details has the [Save] line after the start of editing, with Ctrl+V and no word of the launcher (PL-15)", () => {
+    const modal = helpModal();
+    for (const lang of ["en", "ja"]) {
+      const items = [...body(modal, lang).querySelectorAll('[data-help-section="details"] li')];
+      const at = items.findIndex((li) => li.textContent.trim().startsWith("[Save]"));
+      expect(at, lang).toBeGreaterThan(0);
+      expect(items[at - 1].textContent, lang).toContain("[Edit]"); // the start of editing stays right after [Edit] (the help scenario of SC-16)
+      const text = items[at].textContent.replace(/\s+/g, " ");
+      expect(text, lang).toContain("Ctrl+S");
+      expect(text, lang).toContain("Ctrl+V");
+      expect(text, lang).toContain("GRSMD");
+      // "<kidouyaku>" (the launcher) in Japanese
+      for (const word of ["launcher", "PowerShell", "Open-Grsmd", "\u8d77\u52d5\u5f79"]) expect(text.includes(word), `${lang} ${word}`).toBe(false);
+    }
+    expect(body(modal, "en").textContent.replace(/\s+/g, " ")).toContain(
+      "[Save] : Same as Ctrl+S. When GRSMD knows where the file is, it puts that path on the clipboard: paste it with Ctrl+V as the file name",
+    );
+  });
 });
 
 describe("the GitHub help layer in src/index.html (AT-HLP-15, AT-HLP-16)", () => {

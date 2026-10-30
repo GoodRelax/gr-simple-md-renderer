@@ -21,10 +21,12 @@ GRSMD.html is a GRSMD build (the index.html of a release, saved under the
 name GRSMD.html). Put it next to this script, or pass -GrsmdPath. An older
 build without the launch slot is refused.
 
-Saving: GRSMD has no handle to the file, so Ctrl+S asks where to save
-(Chrome and Edge) or downloads (Firefox). The script puts the full path of
-the file on the clipboard: choose Save as, paste the path as the file name
-and confirm the overwrite.
+Saving: GRSMD has no handle to the file, so the first save asks where to
+save (Chrome and Edge) or downloads (Firefox). Press [Save] in GRSMD: it
+puts the full path of the file on the clipboard and opens the save dialog.
+Paste the path as the file name with Ctrl+V and confirm the overwrite.
+Later saves write to the same file. The script itself does not touch the
+clipboard.
 
 .PARAMETER Path
 The file to open. A relative path is taken from the current directory.
@@ -44,8 +46,8 @@ be deleted; a copy left by a run whose window was closed is deleted by the
 next run once that time has passed.
 
 .PARAMETER NoStart
-Write the temporary copy and print its path, but do not start a browser and
-do not touch the clipboard. The copy is still deleted after -KeepSeconds.
+Write the temporary copy and print its path, but do not start a browser.
+The copy is still deleted after -KeepSeconds.
 -Browser is not checked.
 
 .EXAMPLE
@@ -105,7 +107,7 @@ $CopyPrefix = 'grsmd-launch-'
 # A copy's name: the prefix, the UTC time at which it may be deleted, a
 # random part (spec FR-L07, FR-L08).
 $CopyTimeFormat = 'yyyyMMdd\THHmmss\Z'
-$CopyNamePattern = '^grsmd-launch-(\d{8}T\d{6}Z)-[0-9a-f]{32}\.html$'
+$CopyNamePattern = '^' + [regex]::Escape($CopyPrefix) + '(\d{8}T\d{6}Z)-[0-9a-f]{32}\.html$'
 # The browser reads the copy after Start-Process returns (spec FR-L11).
 $MinBrowserKeepSeconds = 5
 # GRSMD's own limit (main spec CON-08, CONFIG.fileDrop.maxBytes).
@@ -141,13 +143,15 @@ function Find-LaunchSlot([byte[]]$Html) {
 
 <#
 .SYNOPSIS
-The launch block for a file: its leaf name and bytes, both in Base64 (spec 4.4).
+The launch block for a file: its leaf name, its full path (for GRSMD's
+[Save], main spec INV-105) and its bytes, all in Base64 (spec 4.4).
 @purity pure
 #>
-function New-LaunchBlock([string]$Name, [byte[]]$Bytes) {
+function New-LaunchBlock([string]$Name, [string]$FullPath, [byte[]]$Bytes) {
     $nameBase64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($Name))
+    $pathBase64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($FullPath))
     $bytesBase64 = [Convert]::ToBase64String($Bytes)
-    return "<script type=`"text/plain`" id=`"$LaunchBlockId`" data-name=`"$nameBase64`">$bytesBase64</script>"
+    return "<script type=`"text/plain`" id=`"$LaunchBlockId`" data-name=`"$nameBase64`" data-path=`"$pathBase64`">$bytesBase64</script>"
 }
 
 <#
@@ -210,6 +214,7 @@ function Remove-OldCopies([string]$Folder) {
         if ($null -eq $deleteAt -or $deleteAt -gt $now) { continue }
         try {
             Remove-Item -LiteralPath $old.FullName -Force
+            Write-Output "Deleted an old temporary copy: $($old.FullName)"
         } catch {
             Write-Warning "Could not delete an old temporary copy: $($old.FullName)"
         }
@@ -328,7 +333,7 @@ try {
         }
         $deleteAt = [DateTime]::UtcNow.AddSeconds($KeepSeconds)
         $candidate = Join-Path $tempFolder (New-CopyName $deleteAt ([Guid]::NewGuid().ToString('N')))
-        $block = New-LaunchBlock ([System.IO.Path]::GetFileName($targetPath)) $targetBytes
+        $block = New-LaunchBlock ([System.IO.Path]::GetFileName($targetPath)) $targetPath $targetBytes
         Write-LaunchCopy $candidate $grsmdBytes $slotAt $block
         $copyPath = $candidate
     } catch {
@@ -349,12 +354,9 @@ try {
             Stop-Launch "Cannot start the browser: $($_.Exception.Message)"
         }
         Write-Output "Opened in GRSMD: $targetPath"
-        try {
-            Set-Clipboard -Value $targetPath
-            Write-Output 'The full path of the file is on the clipboard. To save over the file, choose Save as and paste it as the file name.'
-        } catch {
-            Write-Warning "Could not put the path on the clipboard: $($_.Exception.Message)"
-        }
+        # The clipboard is left alone (owner ruling PL-22): GRSMD's [Save]
+        # puts the path there when it is pressed (main spec INV-105).
+        Write-Output 'To save over the file, press [Save] in GRSMD and paste the path with Ctrl+V as the file name.'
     }
 
     Write-Output "The temporary copy is deleted in $KeepSeconds s (Ctrl+C deletes it now)."
@@ -363,6 +365,9 @@ try {
     if ($copyPath -and (Test-Path -LiteralPath $copyPath)) {
         try {
             Remove-Item -LiteralPath $copyPath -Force
+            # Straight to the console: after Ctrl+C the pipeline is stopped
+            # and Write-Output would not show (owner request 2026-10-30).
+            [Console]::Out.WriteLine("Deleted the temporary copy: $copyPath")
         } catch {
             Write-Warning "Could not delete the temporary copy: $copyPath"
         }

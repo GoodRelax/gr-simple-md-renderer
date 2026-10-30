@@ -124,10 +124,10 @@ async function runAndTakeCopy(shell, dir, args, cwd = dir) {
   return { name: names[0], copy, stdout };
 }
 
-/** The launch block of a copy: [name, bytes]. */
+/** The launch block of a copy: [name, bytes, full path]. */
 function blockOf(copyText) {
-  const m = new RegExp(`<script type="text/plain" id="${LAUNCH_BLOCK_ID}" data-name="([A-Za-z0-9+/=]*)">([A-Za-z0-9+/=]*)</script>`).exec(copyText);
-  return [Buffer.from(m[1], "base64").toString("utf8"), Buffer.from(m[2], "base64")];
+  const m = new RegExp(`<script type="text/plain" id="${LAUNCH_BLOCK_ID}" data-name="([A-Za-z0-9+/=]*)" data-path="([A-Za-z0-9+/=]*)">([A-Za-z0-9+/=]*)</script>`).exec(copyText);
+  return [Buffer.from(m[1], "base64").toString("utf8"), Buffer.from(m[3], "base64"), Buffer.from(m[2], "base64").toString("utf8")];
 }
 
 describe("the launcher file (NFR-L02, NFR-L05, FR-L14, spec 4.4)", () => {
@@ -145,9 +145,17 @@ describe("the launcher file (NFR-L02, NFR-L05, FR-L14, spec 4.4)", () => {
     }
   });
 
+  it("AT-LAUNCH-43 leaves the clipboard alone and points to [Save] (PL-22, FR-L10)", () => {
+    const source = text.toString("ascii");
+    for (const name of ["Set-Clipboard", "Clipboard]::", "clip.exe", "System.Windows.Forms"]) {
+      expect(source.toLowerCase().includes(name.toLowerCase()), name).toBe(false);
+    }
+    expect(source).toContain("Write-Output 'To save over the file, press [Save] in GRSMD and paste the path with Ctrl+V as the file name.'");
+  });
+
   it("AT-LAUNCH-03 has the help of FR-L14", () => {
     const source = text.toString("ascii");
-    for (const part of [".SYNOPSIS", ".DESCRIPTION", ".PARAMETER Path", ".PARAMETER GrsmdPath", ".PARAMETER Browser", ".PARAMETER KeepSeconds", ".PARAMETER NoStart", ".EXAMPLE", ".NOTES", "Save as", "Unblock-File", "ExecutionPolicy Bypass", "shortcut"]) {
+    for (const part of [".SYNOPSIS", ".DESCRIPTION", ".PARAMETER Path", ".PARAMETER GrsmdPath", ".PARAMETER Browser", ".PARAMETER KeepSeconds", ".PARAMETER NoStart", ".EXAMPLE", ".NOTES", "[Save]", "Ctrl+V", "Unblock-File", "ExecutionPolicy Bypass", "shortcut"]) {
       expect(source.includes(part), part).toBe(true);
     }
   });
@@ -157,6 +165,12 @@ describe("the launcher file (NFR-L02, NFR-L05, FR-L14, spec 4.4)", () => {
     expect(source).toContain(`$LaunchSlot = '${LAUNCH_SLOT}'`);
     expect(source).toContain(`$LaunchBlockId = '${LAUNCH_BLOCK_ID}'`);
     expect(source).toContain(`$MaxBytes = ${CONFIG.fileDrop.maxBytes}`);
+  });
+
+  it("AT-LAUNCH-35 writes the copy prefix once: the name pattern of the sweep is made from it (R2 DRY, review 2 N5)", () => {
+    const source = text.toString("ascii");
+    expect(source.split("'grsmd-launch-'").length - 1).toBe(1);
+    expect(source).toContain("$CopyNamePattern = '^' + [regex]::Escape($CopyPrefix) + ");
   });
 
   // The personal help holds the user's temp path (with the user's name), and
@@ -184,9 +198,10 @@ describe.skipIf(SHELLS.length === 0).each(SHELLS)("the launcher under %s", (shel
     const [head, tail] = GRSMD.split(LAUNCH_SLOT);
     expect(text.startsWith(head)).toBe(true);
     expect(text.endsWith(tail)).toBe(true);
-    const [decodedName, decodedBytes] = blockOf(text);
+    const [decodedName, decodedBytes, decodedPath] = blockOf(text);
     expect(decodedName).toBe(name);
     expect(decodedBytes.equals(bytes)).toBe(true);
+    expect(decodedPath).toBe(join(dir, name)); // the full path, for GRSMD's [Save] (INV-105)
     expect(text).not.toContain(LAUNCH_SLOT);
     expect(taken.stdout).toContain(`Temporary copy: ${join(tempOf(dir), taken.name)}`);
   }, RUN_TIMEOUT);
@@ -196,7 +211,12 @@ describe.skipIf(SHELLS.length === 0).each(SHELLS)("the launcher under %s", (shel
     writeFileSync(join(dir, "a.md"), "# A\n");
     const result = run(shell, dir, ["a.md", "-NoStart", "-KeepSeconds", "0"]);
     expect(result.status).toBe(0);
-    expect(result.stdout).toMatch(/^Temporary copy: .*grsmd-launch-\d{8}T\d{6}Z-[0-9a-f]{32}\.html\r?\nThe temporary copy is deleted in 0 s \(Ctrl\+C deletes it now\)\.$/);
+    const copy = /^Temporary copy: (.*grsmd-launch-\d{8}T\d{6}Z-[0-9a-f]{32}\.html)\r?\n/.exec(result.stdout)[1];
+    expect(result.stdout.split(/\r?\n/)).toEqual([
+      `Temporary copy: ${copy}`,
+      "The temporary copy is deleted in 0 s (Ctrl+C deletes it now).",
+      `Deleted the temporary copy: ${copy}`, // owner request 2026-10-30 (FR-L30)
+    ]);
     expect(result.stderr).toBe("");
     expect(copies(dir)).toEqual([]);
   }, RUN_TIMEOUT);
@@ -206,6 +226,8 @@ describe.skipIf(SHELLS.length === 0).each(SHELLS)("the launcher under %s", (shel
     writeFileSync(join(dir, "a.md"), "# A\n");
     const started = Date.now();
     const child = spawn(shell, ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", join(dir, "Open-Grsmd.ps1"), "a.md", "-NoStart", "-KeepSeconds", "3"], { cwd: dir, env: envOf(dir) });
+    let stdout = "";
+    child.stdout.on("data", (d) => (stdout += d));
     const ended = new Promise((resolve) => child.on("exit", resolve));
     let seen = [];
     for (let i = 0; i < 300 && seen.length === 0; i++) {
@@ -215,9 +237,11 @@ describe.skipIf(SHELLS.length === 0).each(SHELLS)("the launcher under %s", (shel
     expect(seen).toHaveLength(1);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     expect(copies(dir)).toEqual(seen); // still there while it waits
+    expect(stdout).not.toContain("Deleted the temporary copy");
     expect(await ended).toBe(0);
     expect(Date.now() - started).toBeGreaterThanOrEqual(3000);
     expect(copies(dir)).toEqual([]);
+    expect(stdout.trim().split(/\r?\n/).at(-1)).toBe(`Deleted the temporary copy: ${join(tempOf(dir), seen[0])}`); // FR-L30
   }, RUN_TIMEOUT);
 
   it("AT-LAUNCH-07 deletes only copies whose delete time has passed, before writing (FR-L08, SC-L04)", () => {
@@ -231,6 +255,8 @@ describe.skipIf(SHELLS.length === 0).each(SHELLS)("the launcher under %s", (shel
     const result = run(shell, dir, ["a.md", "-NoStart", "-KeepSeconds", "0"]);
     expect(result.status).toBe(0);
     expect(copies(dir).sort()).toEqual([future, ...others].sort());
+    // the swept copy is told, and only that one (FR-L31)
+    expect(result.stdout.split(/\r?\n/).filter((l) => l.startsWith("Deleted an old temporary copy: "))).toEqual([`Deleted an old temporary copy: ${join(tempOf(dir), past)}`]);
   }, RUN_TIMEOUT);
 
   it("AT-LAUNCH-17 warns and goes on when an old copy cannot be deleted (FR-L08)", async () => {
@@ -260,9 +286,10 @@ describe.skipIf(SHELLS.length === 0).each(SHELLS)("the launcher under %s", (shel
     writeFileSync(join(dir, "a[1].md"), "# A\n");
     writeFileSync(join(dir, "a1.md"), "# wrong\n");
     const taken = await runAndTakeCopy(shell, dir, ["a[1].md"]);
-    const [decodedName, decodedBytes] = blockOf(taken.copy.toString("latin1"));
+    const [decodedName, decodedBytes, decodedPath] = blockOf(taken.copy.toString("latin1"));
     expect(decodedName).toBe("a[1].md");
     expect(decodedBytes.toString("utf8")).toBe("# A\n");
+    expect(decodedPath).toBe(join(dir, "a[1].md"));
   }, RUN_TIMEOUT);
 
   it("AT-LAUNCH-09 accepts exactly the size limit and an empty file (FR-L04)", () => {

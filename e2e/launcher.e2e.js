@@ -93,3 +93,62 @@ test("AT-LAUNCH-42 SC-L07: a binary file is refused by GRSMD with its message, a
   await expect(page.locator("body")).not.toHaveClass(/\bview-(markdown|code)\b/);
   await expect(page.locator("#grsmd-launch-file")).toHaveCount(0);
 });
+
+test("AT-LAUNCH-44 INV-105: [Save] puts the launched file's full path on the clipboard and opens the save dialog; after the save, neither", async ({ page }) => {
+  // The native save dialog cannot be automated: a fake one records the call
+  // and keeps the written text.
+  await page.addInitScript(() => {
+    window.__e2eSaves = [];
+    window.showSaveFilePicker = async (options) => {
+      const record = { suggestedName: options?.suggestedName, text: "" };
+      window.__e2eSaves.push(record);
+      let lastModified = Date.now();
+      return {
+        kind: "file",
+        name: "note.md",
+        async queryPermission() {
+          return "granted";
+        },
+        async requestPermission() {
+          return "granted";
+        },
+        async createWritable() {
+          return {
+            async write(data) {
+              record.text = typeof data === "string" ? data : new TextDecoder().decode(data);
+            },
+            async close() {
+              lastModified = Date.now();
+            },
+            async abort() {},
+          };
+        },
+        async getFile() {
+          return new File([record.text], "note.md", { lastModified });
+        },
+      };
+    };
+  });
+  const url = await launch("note.md", "# Launched heading\n");
+  await openCopy(page, url);
+  await expect(page.locator("#preview h1")).toHaveText("Launched heading");
+  await page.evaluate(() => {
+    window.__copied = [];
+    window.addEventListener("copy", (e) => window.__copied.push(e.clipboardData.getData("text/plain")));
+  });
+  const save = page.locator("#saveBtn");
+  await expect(save).toBeEnabled();
+  await save.hover();
+  await expect(save).toHaveAttribute("title", /paste it as the file name with (Ctrl|Cmd)\+V/);
+  await save.click();
+  await expect.poll(() => page.evaluate(() => window.__copied)).toEqual([join(dir, "note.md")]);
+  await expect.poll(() => page.evaluate(() => window.__e2eSaves.map((r) => r.suggestedName))).toEqual(["note.md"]);
+  await expect(page.locator("#toastContainer")).toContainText("Saved: note.md");
+  // the document has its file now: no path, no dialog
+  await save.hover();
+  await expect(save).toHaveAttribute("title", /^Save \((Ctrl|Cmd)\+S\)$/);
+  await save.click();
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.__copied)).toHaveLength(1);
+  expect(await page.evaluate(() => window.__e2eSaves)).toHaveLength(1);
+});

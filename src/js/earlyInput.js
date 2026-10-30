@@ -66,20 +66,34 @@ export function isLaunchBlock(element, head) {
 }
 
 /**
- * The file in a launch block: its name (data-name) and bytes (the text),
- * both Base64; null when either cannot be decoded or the name is empty.
+ * The file in a launch block: its name (data-name), its full path on the PC
+ * (data-path, for [Save], INV-105) and its bytes (the text), all Base64;
+ * null when one cannot be decoded or the name is empty. A block without
+ * data-path (an older launcher) gives the path null.
  * @purity semi-pure-a
  * @param {Element} block
- * @returns {{name: string, bytes: Uint8Array}|null}
+ * @returns {{name: string, path: string|null, bytes: Uint8Array}|null}
  */
 export function readLaunchBlock(block) {
   try {
-    const name = new TextDecoder("utf-8", { fatal: true }).decode(base64Bytes(block.getAttribute("data-name") ?? ""));
+    const name = utf8Of(block.getAttribute("data-name") ?? "");
     if (name === "") return null;
-    return { name, bytes: base64Bytes(block.textContent ?? "") };
+    const pathText = block.getAttribute("data-path");
+    const path = pathText === null ? null : utf8Of(pathText) || null;
+    return { name, path, bytes: base64Bytes(block.textContent ?? "") };
   } catch {
     return null;
   }
+}
+
+/**
+ * The text of Base64-coded UTF-8 (throws on a bad character or bad UTF-8).
+ * @purity pure
+ * @param {string} base64
+ * @returns {string}
+ */
+function utf8Of(base64) {
+  return new TextDecoder("utf-8", { fatal: true }).decode(base64Bytes(base64));
 }
 
 /**

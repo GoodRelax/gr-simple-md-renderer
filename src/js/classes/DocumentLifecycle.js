@@ -103,6 +103,17 @@ export default class DocumentLifecycle {
   }
 
   /**
+   * The full path that [Save] puts on the clipboard (INV-105): known only
+   * for a file the launcher opened, until it is saved (a save as makes a new
+   * location, with a file handle and no full path). Null otherwise.
+   * @purity semi-pure-b
+   * @returns {string|null}
+   */
+  get pathToOffer() {
+    return this._location?.fullPath ?? null;
+  }
+
+  /**
    * @purity semi-pure-b
    * @returns {GitHubLink|null}
    */
@@ -166,10 +177,11 @@ export default class DocumentLifecycle {
    * @param {string} fileName
    * @param {object|null} fileHandle
    * @param {boolean} [keepGitHub] - "replace and keep the GitHub link" (SC-28, D6)
+   * @param {string|null} [fullPath] - from the launcher (INV-105)
    */
-  openFile(fileText, hasBom, lastModified, fileName, fileHandle, keepGitHub = false) {
+  openFile(fileText, hasBom, lastModified, fileName, fileHandle, keepGitHub = false, fullPath = null) {
     this._session = DocumentSession.fromFileText(fileText, hasBom, lastModified, this._newDocumentId());
-    this._location = new DocumentLocation(fileName, fileHandle);
+    this._location = new DocumentLocation(fileName, fileHandle, fullPath);
     if (!keepGitHub) this._gitHub = null;
     this.fileAccess.noteFile(fileHandle);
   }

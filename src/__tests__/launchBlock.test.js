@@ -18,9 +18,12 @@ const b64 = (bytes) => Buffer.from(bytes).toString("base64");
 const b64Name = (name) => Buffer.from(name, "utf8").toString("base64");
 
 /** The launch block element's HTML (spec 4.4). */
-function blockHtml({ name = b64Name("note.md"), text = b64(BYTES), type = "text/plain", id = LAUNCH_BLOCK_ID } = {}) {
-  return `<script type="${type}" id="${id}" data-name="${name}">${text}</script>`;
+function blockHtml({ name = b64Name("note.md"), text = b64(BYTES), type = "text/plain", id = LAUNCH_BLOCK_ID, path } = {}) {
+  const pathAttr = path === undefined ? "" : ` data-path="${path}"`;
+  return `<script type="${type}" id="${id}" data-name="${name}"${pathAttr}>${text}</script>`;
 }
+
+const FULL_PATH = ["D:", "work", String.fromCharCode(0x30e1, 0x30e2), "note.md"].join("\\"); // a non-ASCII folder
 
 /** A page with the given HTML in <head> and in <body>. */
 function page({ head = "", body = "" } = {}) {
@@ -81,8 +84,17 @@ describe("readLaunchBlock and isLaunchBlock (INV-104 (1)(3)(4))", () => {
 });
 
 describe("the receiver takes the launch block (INV-104 (1)(2)(3), SC-L08, SC-L09)", () => {
+  it("AT-LAUNCH-36 (INV-105) reads the full path from data-path; none, or empty, is null", () => {
+    const read = (parts) => readLaunchBlock(page({ head: blockHtml(parts) }).document.getElementById(LAUNCH_BLOCK_ID));
+    expect(read({ path: b64Name(FULL_PATH) }).path).toBe(FULL_PATH);
+    expect(read({}).path).toBeNull(); // an older launcher
+    expect(read({ path: "" }).path).toBeNull();
+    expect(read({ path: "%%%" })).toBeNull(); // not Base64: the whole block is unreadable
+    expect(read({ path: b64([0xc3, 0x28]) })).toBeNull(); // not UTF-8
+  });
+
   it("AT-LAUNCH-25 keeps the file as the early drop with no handle, and removes the block", async () => {
-    const win = page({ head: blockHtml({ name: b64Name(NAME_JA) }) });
+    const win = page({ head: blockHtml({ name: b64Name(NAME_JA), path: b64Name(FULL_PATH) }) });
     const warn = vi.spyOn(console, "warn");
     installBoot(win);
     expect(win.document.getElementById(LAUNCH_BLOCK_ID)).toBeNull();
@@ -93,6 +105,7 @@ describe("the receiver takes the launch block (INV-104 (1)(2)(3), SC-L08, SC-L09
     expect(early.file.name).toBe(NAME_JA);
     expect(early.file.size).toBe(BYTES.length);
     expect([...(await bytesOf(win, early.file))]).toEqual([...BYTES]);
+    expect(early.launchPath).toBe(FULL_PATH); // for [Save] (INV-105)
     expect(warn).not.toHaveBeenCalled();
   });
 
