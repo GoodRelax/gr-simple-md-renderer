@@ -102,6 +102,16 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
 
 4. If your Markdown contains PlantUML blocks or external images, you will be asked for permission before anything is sent to an external server. GitHub editing asks each time before it sends anything to GitHub
 
+### Open a file from PowerShell (Windows)
+
+Keep GRSMD on your PC: save the release `index.html` as `GRSMD.html` next to [`launcher/Open-Grsmd.ps1`](launcher/Open-Grsmd.ps1). Then
+
+```powershell
+.\Open-Grsmd.ps1 .\notes\plan.md
+```
+
+opens the file in GRSMD as if you had dropped it. The script writes a temporary copy of `GRSMD.html` that carries the file into the folder `temp` next to it, opens the copy in your browser and deletes it after 30 seconds. Nothing is sent over the network. GRSMD has no handle to the file, so Save asks where to save: the script puts the file's full path on the clipboard, so paste it as the file name. `Get-Help .\Open-Grsmd.ps1 -Full` shows every option (browser, wait time, a desktop shortcut you can drop files on).
+
 ---
 
 ## Privacy & Security
@@ -284,6 +294,16 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    編集モードで、ブロックの文字をドラッグで選ぶ（スマートフォンでは長押し）と、選択がかかったブロックが丸ごと選ばれて枠が付き、選択の下に帯 [削除][カット][コピー] が出ます。確認は出ません。消したブロックは Undo 1 回で戻ります。見えている文字の一部だけをコピーするときは、編集モードを抜けてから選びます。
 
 4. Markdown に PlantUML ブロックや外部画像が含まれる場合、外部サーバーへ送信する前に許可確認が表示されます。GitHub 連携は、GitHub へ送る前に毎回確かめます
+
+### PowerShell からファイルを開く (Windows)
+
+GRSMD を PC に置きます。リリースの `index.html` を `GRSMD.html` という名前で、[`launcher/Open-Grsmd.ps1`](launcher/Open-Grsmd.ps1) の横に保存します。それから
+
+```powershell
+.\Open-Grsmd.ps1 .\notes\plan.md
+```
+
+で、そのファイルをドロップしたときと同じに GRSMD で開きます。スクリプトは、ファイルを入れた `GRSMD.html` の一時的な写しを、横の `temp` フォルダに書き、ブラウザで開き、30 秒後に消します。ネットワークには何も送りません。GRSMD はファイルのハンドルを持たないので、保存では保存先を聞かれます。スクリプトがファイルのフルパスをクリップボードに入れるので、ファイル名の欄に貼ってください。`Get-Help .\Open-Grsmd.ps1 -Full` ですべての使い方 (ブラウザ、待つ時間、ファイルをドロップできるデスクトップのショートカット) を見られます。
 
 ---
 

@@ -11,9 +11,19 @@
 // Until the core takes over, a drop never makes the browser open the file
 // (leaving the page), and the last file dropped or text pasted is kept in
 // memory only, for the core to use as if it came now. Nothing is stored.
+// A launch block (the file a PowerShell launcher put in a copy of the page,
+// INV-104) is taken at once as the first such drop, and removed from the page.
 // The rules are the core's own (earlyInput.js).
 
-import { FILE_SYSTEM_HANDLE_SUPPORTED, dropHandlePromise, isOtherField, pasteStartsDocument } from "./earlyInput.js";
+import {
+  FILE_SYSTEM_HANDLE_SUPPORTED,
+  LAUNCH_BLOCK_ID,
+  dropHandlePromise,
+  isLaunchBlock,
+  isOtherField,
+  pasteStartsDocument,
+  readLaunchBlock,
+} from "./earlyInput.js";
 import { DATA_ID_PREFIX } from "./libraryNames.js";
 
 /**
@@ -131,5 +141,27 @@ export function installBoot(win) {
   doc.addEventListener("dragover", onDragOver);
   doc.addEventListener("drop", onDrop);
   doc.addEventListener("paste", onPaste);
+  takeLaunchBlock(win, boot);
   win.__grsmdBoot = boot;
+}
+
+/**
+ * The launch block, if the page has one (INV-104): read it, remove it from
+ * the page, and keep its file as the early drop (no file handle). A block
+ * that cannot be read leaves no early input and one console warning.
+ * @purity non-pure
+ * @param {Window} win
+ * @param {{early: object|null}} boot
+ */
+function takeLaunchBlock(win, boot) {
+  const doc = win.document;
+  const block = doc.getElementById(LAUNCH_BLOCK_ID);
+  if (!isLaunchBlock(block, doc.head)) return;
+  const launched = readLaunchBlock(block);
+  block.remove();
+  if (!launched) {
+    console.warn("GRSMD: the launch file could not be read.");
+    return;
+  }
+  boot.early = { kind: "drop", file: new win.File([launched.bytes], launched.name), handlePromise: null };
 }

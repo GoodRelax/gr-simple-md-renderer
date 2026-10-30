@@ -385,6 +385,34 @@ export const contentSecurityPolicy = {
   },
 };
 
+// The launch slot (INV-104 (5), SC-29): launcher/Open-Grsmd.ps1 replaces it
+// with the file to open, in a temporary copy of the page. The build keeps
+// exactly one, inside <head>; the launcher refuses a page without it.
+export const LAUNCH_SLOT = "<!--grsmd-launch-slot-->";
+
+// What is wrong with the launch slot of a built page, or null.
+export function launchSlotError(html) {
+  const count = html.split(LAUNCH_SLOT).length - 1;
+  if (count === 0) return "no launch slot";
+  if (count > 1) return `${count} launch slots (one expected)`;
+  const headEnd = html.search(/<\/head>/i);
+  if (headEnd < 0 || html.indexOf(LAUNCH_SLOT) > headEnd) return "the launch slot is not inside <head>";
+  return null;
+}
+
+export const launchSlot = {
+  name: "launch-slot",
+  apply: "build",
+  enforce: "post",
+  generateBundle(_options, bundle) {
+    for (const file of Object.values(bundle)) {
+      if (file.type !== "asset" || !file.fileName.endsWith(".html")) continue;
+      const error = launchSlotError(String(file.source));
+      if (error) this.error(`${file.fileName}: ${error}`);
+    }
+  },
+};
+
 const onDemand = fastStartup();
 
 export default defineConfig({
@@ -409,6 +437,7 @@ export default defineConfig({
     onDemand,
     noExternalImports,
     thirdPartyNotices({ moreModules: onDemand.lazyModules }),
+    launchSlot,
     contentSecurityPolicy,
   ],
   test: {
