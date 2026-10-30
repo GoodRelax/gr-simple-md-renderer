@@ -30,6 +30,22 @@ function isDataBlock(data, name) {
 }
 
 /**
+ * The nearest <script> at or before an element, among its siblings: the
+ * element the note passes is the one right before it, but the page may have
+ * put an element at the end of <body> while the file was still arriving
+ * (mermaid's tooltip, when a document with a diagram opened early), between
+ * a data block and its note. Those are skipped (INV-81 (2)).
+ * @purity semi-pure-a
+ * @param {Element|null} element
+ * @returns {Element|null}
+ */
+function nearestScript(element) {
+  let found = element;
+  while (found && found.tagName !== "SCRIPT") found = found.previousElementSibling;
+  return found;
+}
+
+/**
  * Put window.__grsmdBoot in place and receive drops and pastes until the
  * core takes over.
  * @purity non-pure
@@ -50,7 +66,8 @@ export function installBoot(win) {
      * @purity non-pure
      */
     arrive(name, data) {
-      if (isDataBlock(data, name)) boot.data.set(name, data);
+      const block = nearestScript(data);
+      if (isDataBlock(block, name)) boot.data.set(name, block);
       win.performance.mark(`grsmd-arrived-${name}`);
       boot.arrived.add(name);
       if (boot.onArrive) boot.onArrive(name);
