@@ -6,7 +6,8 @@ import MarkdownTextOps from "./MarkdownTextOps.js";
 import ClipboardLink from "./ClipboardLink.js";
 import { dropHandlePromise, isOtherField, pasteStartsDocument } from "../earlyInput.js";
 import { hasCodeOutline, buildCodeOutline } from "../codeOutline.js";
-import { FileRefusal, checkFileToOpen, checkTextToOpen } from "../fileOpenChecks.js";
+import FileRefusal from "./FileRefusal.js";
+import { checkFileToOpen, checkTextToOpen } from "../fileOpenChecks.js";
 import { countHiddenRuns } from "../hiddenChars.js";
 
 /**

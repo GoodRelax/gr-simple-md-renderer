@@ -3,7 +3,7 @@ import CodeEditController from "../js/classes/CodeEditController.js";
 import CodeEditor from "../js/classes/CodeEditor.js";
 import { CONFIG } from "../js/config.js";
 import { encodeText } from "../js/textEncoding.js";
-import { FileRefusal } from "../js/fileOpenChecks.js";
+import FileRefusal from "../js/classes/FileRefusal.js";
 import { fakeFileAccess, fakeFileHandle, domError, deferred } from "./helpers/fakeFs.js";
 
 // AT-CEC: the code document while the code view is shown (SC-27): opening

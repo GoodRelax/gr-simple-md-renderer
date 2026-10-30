@@ -5,6 +5,7 @@
 
 import { CONFIG, FILE_TYPE_BY_MATCH } from "./config.js";
 import { containsNul } from "./textEncoding.js";
+import FileRefusal from "./classes/FileRefusal.js";
 
 /**
  * How a dropped file is handled, decided before anything is read (INV-11,
@@ -24,22 +25,6 @@ export function classifyDroppedFile(fileName, fileSize) {
     : "";
   const type = FILE_TYPE_BY_MATCH.get(ext) ?? FILE_TYPE_BY_MATCH.get(fileName);
   return type ? type.open : "notAllowed";
-}
-
-/**
- * A file the open checks refuse (INV-18 (1)(4)(5)). A drop and a Reload
- * (the file read from disk again) run the same checks and show the same
- * alert: reason is its key in CONFIG.fileDrop.messages.
- */
-export class FileRefusal extends Error {
-  /**
-   * @purity pure
-   * @param {"tooLarge"|"notAllowed"|"binaryFile"} reason
-   */
-  constructor(reason) {
-    super(reason);
-    this.reason = reason;
-  }
 }
 
 /**
