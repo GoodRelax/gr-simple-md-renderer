@@ -5452,7 +5452,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-105、起動役の FR-L10・FR-G08・L-1 (オーナーの裁定 PL-5・PL-19〜PL-23)。自動では AT-LAUNCH-36〜39・44〜46、AT-HLP-20 |
+| 備考 | 要求: INV-105、起動役の FR-L10・FR-G08〜FR-G10・L-1 (オーナーの裁定 PL-5・PL-19〜PL-23)。自動では AT-LAUNCH-36〜39・44〜46、AT-HLP-20 |
 
 ---
 

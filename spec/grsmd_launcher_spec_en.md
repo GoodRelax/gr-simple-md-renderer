@@ -1,7 +1,7 @@
 # GRSMD Launcher (Open-Grsmd.ps1) Specification
 
-**Version:** 0.7
-**Date:** 2026-10-30
+**Version:** 0.8
+**Date:** 2026-10-31
 **Status:** Draft for review (branch `feature/ps1-launcher`, from `develop` 30c3ccc)
 **Template:** ANMS v0.34, `process-rules/spec-template-en.md` of `GoodRelax/gr-sw-maker`, commit `b723439` (the `main` of 2026-10-24, read from a local checkout)
 **Review standards:** `process-rules/review-standards-en.md` of the same commit, applied through [grsmd_review_standards_ja.md](grsmd_review_standards_ja.md) (it pins the Japanese text at `63e6fdc` in [upstream_review_standards_ja.md](upstream_review_standards_ja.md) and the English row names at `b723439`, the same version read here)
@@ -180,7 +180,9 @@ Each row has one response. "Before it writes anything" means before the sweep of
 | FR-G04 | Unwanted behavior | If the launch block cannot be decoded (not Base64, an empty name, a name or a path that is not UTF-8), then the receiver shall keep no early input from it. |
 | FR-G07 | Unwanted behavior | If the launch block cannot be decoded, then the receiver shall write one warning to the console (`GRSMD: the launch file could not be read.`). |
 | FR-G05 | Event-driven | When the user drops a file or pastes text before the core runs, the receiver shall keep that input instead of the launch file (the last input wins, as now). |
-| FR-G08 | Event-driven | When the launch block has a `data-path`, the receiver shall hand its decoded full path over with the early drop, and GRSMD's [Save] shall put it on the clipboard before the first save of that document to a file (main spec INV-105). Where saving is a download (no API to write a chosen file: Firefox), the document keeps no file, so [Save] puts the path on the clipboard at each press. A block without `data-path`, or with an empty one, gives no path. |
+| FR-G08 | Event-driven | When the launch block has a non-empty `data-path`, the receiver shall hand its decoded full path over with the early drop. |
+| FR-G09 | Event-driven | When [Save] is pressed for a document that has a full path from the launch block and no file to write to yet, GRSMD shall put that path on the clipboard before it starts the save (main spec INV-105). |
+| FR-G10 | Optional feature | Where saving is a download (no API to write a chosen file: Firefox), GRSMD shall keep the document's full path after each save, so that each press of [Save] puts it on the clipboard (main spec INV-105 (3)). |
 
 ### 2.2 Non-Functional Requirements
 
@@ -254,7 +256,8 @@ launcher/
 src/index.html            the launch slot before </head> (FR-G01)
 src/js/earlyInput.js      LAUNCH_BLOCK_ID, isLaunchBlock, readLaunchBlock (FR-G02, FR-G04, FR-G08)
 src/js/boot.js            the receiver takes the block (FR-G02 to FR-G05, FR-G08)
-src/js/classes/UIController.js   [Save] (FR-G08, main spec INV-105)
+src/js/classes/UIController.js   [Save] (FR-G09, FR-G10, main spec INV-105)
+src/js/classes/DocumentLifecycle.js, CodeEditController.js   pathToOffer, savesByDownload (FR-G09, FR-G10)
 vite.config.js            LAUNCH_SLOT, launchSlotError, the launch-slot plugin (FR-G01)
 src/__tests__/launcher.test.js       AT-LAUNCH-01 to 19, 33 to 35, 43: static checks and script runs
 src/__tests__/launchBlock.test.js    AT-LAUNCH-20 to 32, 36: the block, the receiver, the slot
@@ -269,7 +272,7 @@ e2e/launcher.e2e.js       AT-LAUNCH-40 to 42, 44: the copy opened in a browser, 
 | Value | Where | Type | Meaning |
 | --- | --- | --- | --- |
 | name | attribute `data-name` | Base64 of the UTF-8 bytes of the target file's name (no folder) | The file name the drop path uses (classification by extension, Save as name) |
-| path | attribute `data-path` | Base64 of the UTF-8 bytes of the target file's full path | What [Save] puts on the clipboard (FR-L10, FR-G08) |
+| path | attribute `data-path` | Base64 of the UTF-8 bytes of the target file's full path | What [Save] puts on the clipboard (FR-L10, FR-G08, FR-G09) |
 | bytes | element text | Base64 of the target file's bytes | The file's content, unchanged |
 
 **Launcher run** (a straight sequence, no loops back):
@@ -326,7 +329,7 @@ sequenceDiagram
 | The launch slot and its build check (FR-L06, FR-G01, FR-G06) | Tells an older `GRSMD.html` apart before anything is written (ADR-L4) | An old build opens empty and the file is silently lost |
 | `-GrsmdPath` (FR-L05) | PL-4: the build may be elsewhere | The build must be next to the script |
 | `-Browser` (FR-L09, FR-L16) | PL-7 | Only the `.html` association |
-| The full path in the block (FR-L10, FR-G08) and [Save] | PL-5, PL-19 to PL-22: saving over the file in one paste | The user types the path in Save as |
+| The full path in the block (FR-L10, FR-G08) and [Save] (FR-G09, FR-G10) | PL-5, PL-19 to PL-22: saving over the file in one paste | The user types the path in Save as |
 | The sweep of old copies (FR-L08) | PL-13: a closed window leaves the document on disk | Left copies stay until the user empties the temp folder |
 | The delete time in the name (FR-L07) | Overlapping runs (ADR-L8) | A short run deletes a copy a browser has not read yet |
 | Deletion on an error and on Ctrl+C (FR-L15) | PL-13: the document stays on disk no longer than needed | A stopped run leaves the copy |
@@ -378,7 +381,7 @@ Feature: Open a file in GRSMD from PowerShell
 ---
 
 ```gherkin
-Scenario: SC-L02 Save over the file through [Save] (traces: FR-L10, FR-G08, L-1)
+Scenario: SC-L02 Save over the file through [Save] (traces: FR-L10, FR-G08, FR-G09, L-1)
   Given note.md is open through the launcher in Edge
   When the user presses [Save] and pastes the clipboard into the file name with Ctrl+V
   Then the save dialog writes to note.md after the overwrite question
@@ -538,7 +541,7 @@ The launcher's own words are English ASCII. A `<reason>` is the system's message
 
 - Base64 is the standard alphabet with padding (RFC 4648 section 4), no line breaks.
 - `data-name` is the leaf name only (no folder): the name the drop path uses.
-- `data-path` is the full path, for [Save] (FR-L10, FR-G08). The page keeps it in memory only, until the first save, and gives it only to the clipboard when [Save] is pressed (main spec INV-105, CON-03). A block without `data-path` (an older launcher) gives no path.
+- `data-path` is the full path, for [Save] (FR-L10, FR-G08, FR-G09). The page keeps it in memory only, until the first save, and gives it only to the clipboard when [Save] is pressed (main spec INV-105, CON-03). A block without `data-path` (an older launcher) gives no path.
 - The receiver accepts the block only as a child of `<head>` with `type="text/plain"`: a document rendered later can never stand in for it (it does not exist yet when the receiver runs, and ids that start with `grsmd-` are dropped from documents, main spec INV-81 (5)).
 
 **Personal help** (`grsmd-launcher-personal-help.md`, written by the launcher next to itself; UTF-8 without BOM, LF; three paragraphs, nothing else):
@@ -574,11 +577,11 @@ How to use the launcher: `Get-Help .\Open-Grsmd.ps1 -Full`
 | Test level | Target | Policy | Tool | IDs | Pass criteria |
 | --- | --- | --- | --- | --- | --- |
 | Unit | `readLaunchBlock`, `isLaunchBlock`, the receiver with a launch block, `launchSlotError` and the build plugin, the source page's slot | jsdom pages; every branch of FR-G01 to FR-G07 (SC-L08, SC-L09): a non-ASCII name, kept bytes (BOM, CR LF, NUL), an empty file, each undecodable case, a block outside `<head>`, a drop after the block, the full path (FR-G08) | Vitest (`npm test`, `src/__tests__/launchBlock.test.js`) | AT-LAUNCH-20 to 32, 36 | All pass |
-| Unit | [Save] (FR-G08, main spec INV-105) | The app stack in jsdom with a fake file access and a fake clipboard: a launched Markdown or code document puts its path on the clipboard and opens the save dialog; after the first save, no path; a dropped document (with or without a handle) never; off in the initial view and in a code view without the code editor; the tooltip with and without the path; where saving is a download, the path at each press and the download tooltip; a clipboard that refuses the path, with the save dialog still asked for inside the press. Each check was seen to fail on changed code | Vitest (`src/__tests__/UIController.saveButton.test.js`) | AT-LAUNCH-37 to 39, 45, 46 | All pass |
+| Unit | [Save] (FR-G09, FR-G10, main spec INV-105) | The app stack in jsdom with a fake file access and a fake clipboard: a launched Markdown or code document puts its path on the clipboard and opens the save dialog; after the first save, no path; a dropped document (with or without a handle) never; off in the initial view and in a code view without the code editor; the tooltip with and without the path; where saving is a download, the path at each press and the download tooltip; a clipboard that refuses the path, with the save dialog still asked for inside the press. Each check was seen to fail on changed code | Vitest (`src/__tests__/UIController.saveButton.test.js`) | AT-LAUNCH-37 to 39, 45, 46 | All pass |
 | Static | The launcher file | ASCII only (NFR-L05); none of the network names of CON-L1 (NFR-L02); the help of FR-L14; the same slot, block id and size limit as the build, the receiver and `CONFIG` (DRY across the two languages); git ignores the personal help and `launcher/GRSMD.html` (L-7); the copy prefix written once, the sweep's name pattern made from it; no clipboard command and the [Save] line (FR-L21, FR-L26) | Vitest (`src/__tests__/launcher.test.js`) | AT-LAUNCH-01 to 04, 34, 35, 43 | All pass |
 | Script (integration) | The launcher, with `-NoStart` except for runs refused in the checks | Vitest starts `powershell.exe` and, when installed, `pwsh.exe`, each with `-NoProfile -ExecutionPolicy Bypass -File` (that process only; no setting changes), in a temporary folder with a copy of the launcher and a small `GRSMD.html`; each run gets `TEMP` and `TMP` of its own (the real temp folder is never touched). Checks: the copy is the build with the slot replaced, its name carries the delete time, and its block decodes to the file's name (non-ASCII, a space) and bytes (FR-L07); the copy is kept for `KeepSeconds` and then deleted, with the line of FR-L30 (SC-L03); the sweep by delete time, its line (FR-L31) and its warning (SC-L04, FR-L20); a literal relative path, checked by the block's name and bytes (FR-L02); the size limit and an empty file (FR-L17); `-GrsmdPath` (FR-L05); each error of SC-L05 with its exact message, exit code 1 and no temp folder; a copy that cannot be written (FR-L13); SC-L06 and `-NoStart` with an unregistered browser when Firefox is not registered (skipped otherwise). The personal help: its exact text (and nothing of the opened file), left as it is when unchanged, a warning when it cannot be written, and none written by a run that stops in the checks (FR-L27 to FR-L29). Each new check was seen to fail on a changed launcher (wildcards expanded, every copy swept, no wait, the personal help always rewritten, the deletion lines removed) | Vitest (`src/__tests__/launcher.test.js`) | AT-LAUNCH-05 to 19, 33 | All pass on both PowerShell versions |
 | Build | The built HTML | The build fails without exactly one slot in `<head>` (the `launch-slot` plugin, FR-G01, FR-G06); the size limit (NFR-L06) | `npm run build`, `npm run build:e2e` | (the build itself) | The build passes |
-| E2E | SC-L01, SC-L07 | Build to `output/e2e`, make a copy with the launcher (`-NoStart`), open it by `file:///` in Chromium (a page route lets through that one URL; the fixtures' guards stay on for everything else): a Markdown file with math and a diagram, a JavaScript file, a PNG file refused with GRSMD's message; [Save] on a launched file puts its full path on the clipboard (the copy event) and opens a fake save dialog, and after the save neither (FR-G08). Run only after the coordinator's OK | Playwright (`e2e/launcher.e2e.js`, `npm run test:e2e`) | AT-LAUNCH-40 to 42, 44 | All pass |
+| E2E | SC-L01, SC-L07 | Build to `output/e2e`, make a copy with the launcher (`-NoStart`), open it by `file:///` in Chromium (a page route lets through that one URL; the fixtures' guards stay on for everything else): a Markdown file with math and a diagram, a JavaScript file, a PNG file refused with GRSMD's message; [Save] on a launched file puts its full path on the clipboard (the copy event) and opens a fake save dialog, and after the save neither (FR-G08, FR-G09). Run only after the coordinator's OK | Playwright (`e2e/launcher.e2e.js`, `npm run test:e2e`) | AT-LAUNCH-40 to 42, 44 | All pass |
 | Performance (T-L-PERF) | NFR-L01 | The way of NFR-L01 (one run thrown away, then the median of 3), for 100 KiB and 5 MiB files, with both PowerShell versions, on the reference PC | Manual with `Measure-Command` | T-L-PERF | Within NFR-L01 (A.3) |
 | Manual | What the automatic tests cannot reach: the browser started by the `.html` association and by `-Browser`, [Save] and the save dialog with the pasted path, the desktop shortcut, Ctrl+C during the wait | By the owner on the reference PC: PRT-AM01 to AM04 of the pre-release test spec (= M-L1 to M-L4) | - | M-L1 to M-L4 | All pass |
 
@@ -634,6 +637,7 @@ No dependency is added. The launcher is part of this repository (MIT, `LICENSE`)
 | 0.5 | 2026-10-30 | Review 2 (N3 to N5): FR-L28 is State-driven; 3.3 names FR-L01 to FR-L29; ADR-L0 points to the table above; the sweep's name pattern is made from the copy prefix (AT-LAUNCH-35) |
 | 0.6 | 2026-10-30 | Owner request after the manual check ("消したら消したメッセージ出せよ。"): the launcher tells each deletion (FR-L30, FR-L31, 4.3) |
 | 0.7 | 2026-10-30 | Owner rulings PL-19 to PL-23 (the save-path Q&A sheet; PL-23: the [Save] line in GRSMD's help, without the launcher's name, OS-L7): the full path goes in the block (`data-path`, FR-L10, FR-G08, 4.4); GRSMD's [Save] puts it on the clipboard (main spec INV-105, ADR-L10); the launcher no longer touches the clipboard (FR-L21, FR-L26, FR-L22 withdrawn, L-1, L-6, 4.3). Review 3 (P1): where saving is a download, [Save] puts the path on the clipboard at each press, with its own tooltip (FR-G08, L-1, AT-LAUNCH-45, 46) |
+| 0.8 | 2026-10-31 | Review 4 (Q1): FR-G08 had three responses; split into FR-G08 (the receiver hands the path over), FR-G09 ([Save] puts it on the clipboard before the first save) and FR-G10 (where saving is a download, at each press), one response per row. FR-G09 and FR-G10 were unused. The references follow (3.3, 3.4, 3.6, 4.1 SC-L02, 4.4, 5) |
 
 ### A.4 Hand-over Approaches Compared (PL-2, PL-3)
 
