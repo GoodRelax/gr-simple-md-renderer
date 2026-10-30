@@ -1,5 +1,6 @@
 import { EXT_TO_HLJS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
 import { escapeHtml, formatDateTime, applyTheme, showToast } from "../utils.js";
+import { markHiddenChars, firstTextNode } from "../hiddenCharMarks.js";
 
 /**
  * The highlight.js language of a file name (EXT_TO_HLJS: its extension, or
@@ -119,9 +120,11 @@ export default class SourceFileRenderer {
    * @param {'light'|'dark'} theme
    * @param {Function} [isCurrent] - as for render
    * @param {Function} [readText] - (file) => Promise of the decoded LF text,
-   *   in the encoding the file was opened with (INV-89); not given: file.text()
+   *   in the encoding the file was opened with (INV-89); not given: file.text().
+   *   It may answer null: the reload stops and nothing is drawn (the caller's
+   *   questions after the read, INV-21 (2)-(4))
    * @returns {Promise<CodeViewMeta|null>} null if fileHandle is unavailable,
-   *   or when it is no longer current
+   *   when readText answered null, or when it is no longer current
    * @purity non-pure
    */
   async reload(theme, isCurrent = () => true, readText = (file) => file.text()) {
@@ -133,9 +136,10 @@ export default class SourceFileRenderer {
       );
       return null;
     }
-    this._lastScrollTop = window.scrollY;
     const file = await this._fileHandle.getFile();
     const text = await readText(file);
+    if (text === null) return null;
+    this._lastScrollTop = window.scrollY; // after readText: code edit mode may have ended in it
     await this._hljsReady();
     if (!isCurrent()) return null;
     this._file = file;
@@ -238,6 +242,7 @@ export default class SourceFileRenderer {
     const { html, lineCount, language } = this._buildCodeBody(text, file);
     releaseCodeView(this._previewEl);
     this._previewEl.innerHTML = html;
+    this._markHiddenChars(text);
     if (theme) this._applyCodeTheme(theme);
     const plain = !this._hljs && this._loadHljs !== null;
     this._shown = plain ? { text, file } : null;
@@ -250,6 +255,21 @@ export default class SourceFileRenderer {
       updatedAtStr: formatDateTime(file.lastModified),
     };
     return this._meta;
+  }
+
+  /**
+   * The hidden character marks in the code lines just drawn (INV-101 (4)):
+   * every draw (open, Reload, the edited text, the colors that came late).
+   * Not in the code editor (INV-101 (7)): it draws its own layer.
+   * @param {string} text - the text drawn
+   * @purity non-pure
+   */
+  _markHiddenChars(text) {
+    const body = this._previewEl.querySelector("#codeViewBody");
+    if (!body) return;
+    // a U+FEFF at the start of the text is not one (spec 5.21.1)
+    const textStart = text.charCodeAt(0) === 0xfeff ? firstTextNode(body) : null;
+    markHiddenChars(body, { textStart });
   }
 
   /**

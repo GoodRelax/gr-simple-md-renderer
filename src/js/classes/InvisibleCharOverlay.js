@@ -1,10 +1,15 @@
 import { nextFrame } from "../utils.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
 import { EDITOR_PADDING_PROPS, EDITOR_TEXT_PROPS } from "../editorTextStyle.js";
+import { flagTagLength, HIDDEN_CHAR_CLASS_NO_ZWJ } from "../hiddenChars.js";
 
-// INV-70: characters that look like a space or like nothing. ZWJ (U+200D)
-// and the variation selectors are not here: an emoji stays one glyph.
-const MARKED_RUN = /[\u00a0\u2007\u202f\u200b\u200c\u2060\ufeff\u00ad]+/g;
+// INV-70: characters that look like a space (U+00A0, U+2007, U+202F), the
+// soft hyphen (U+00AD), and the hidden characters of INV-101 (1) but ZWJ:
+// the zero width characters, the tag characters and the characters that
+// change the text direction (owner ruling AQ10), from the one list in
+// hiddenChars.js. ZWJ (U+200D) and the variation selectors are not here,
+// nor the tags of an RGI flag (INV-101 (2) (b)): an emoji stays one glyph.
+const MARKED_RUN = new RegExp(`[\\u00a0\\u2007\\u202f\\u00ad${HIDDEN_CHAR_CLASS_NO_ZWJ}]+`, "gu");
 const OVERLAID_CLASS = "md-block-editor-overlaid";
 // The text style a block editor can take from its block (INV-83), set on
 // the editor itself: the layer takes the same.
@@ -82,7 +87,10 @@ export default class InvisibleCharOverlay {
       let last = 0;
       for (const m of body.matchAll(MARKED_RUN)) {
         push(body.slice(last, m.index), false);
-        push(m[0], true);
+        // a flag's tags can only start a run: right after U+1F3F4
+        const flag = flagTagLength(body, m.index);
+        push(m[0].slice(0, flag), false);
+        push(m[0].slice(flag), true);
         last = m.index + m[0].length;
       }
       push(body.slice(last), false);

@@ -3,6 +3,7 @@ import CodeEditController from "../js/classes/CodeEditController.js";
 import CodeEditor from "../js/classes/CodeEditor.js";
 import { CONFIG } from "../js/config.js";
 import { encodeText } from "../js/textEncoding.js";
+import FileRefusal from "../js/classes/FileRefusal.js";
 import { fakeFileAccess, fakeFileHandle, domError, deferred } from "./helpers/fakeFs.js";
 
 // AT-CEC: the code document while the code view is shown (SC-27): opening
@@ -88,6 +89,18 @@ describe("CodeEditController: opening (INV-89)", () => {
     expect(dialog.askOpen.mock.calls[0][0].mixed).toBe(true);
     expect(doc.lineEndingMode).toBe("keep");
     expect(doc.original).toEqual({ lines: ["a", "b", "c"], endings: ["\r\n", "\n"] });
+  });
+
+  it("AT-FT-13 INV-18 (AQ11) read: a decoded text with U+0000 throws FileRefusal binaryFile before the dialog; the dialog's encoding with U+0000 too; nothing opened", async () => {
+    await expect(ctrl.read(file(Uint8Array.from([0x61, 0x00, 0x62])))).rejects.toBeInstanceOf(FileRefusal);
+    await expect(ctrl.read(file(Uint8Array.from([0xfe, 0xff, 0x00, 0x00])))).rejects.toMatchObject({ reason: "binaryFile" }); // UTF-16BE U+0000
+    expect(dialog.askOpen).not.toHaveBeenCalled();
+    dialog.askOpen.mockResolvedValue({ encoding: "utf-8", lineEndingMode: "\n" });
+    await expect(ctrl.read(file(Uint8Array.from([0xff, 0xfe, 0x61, 0x00])))).rejects.toMatchObject({ reason: "binaryFile" });
+    expect(dialog.askOpen).toHaveBeenCalledTimes(1);
+    expect(ctrl.hasDocument()).toBe(false);
+    dialog.askOpen.mockResolvedValue({ encoding: "utf-16le", lineEndingMode: "\n" });
+    expect((await ctrl.read(file(Uint8Array.from([0xff, 0xfe, 0x61, 0x00])))).text).toBe("a");
   });
 
   it("AT-CEC-06 the dialog canceled: null, nothing opened", async () => {

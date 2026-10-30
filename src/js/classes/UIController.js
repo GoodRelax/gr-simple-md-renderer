@@ -1,4 +1,4 @@
-import { CONFIG, EXT_TO_HLJS, BINARY_EXTENSIONS, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
+import { CONFIG, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
 import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame, shortcutLetter, isTypingTarget } from "../utils.js";
 import { splitMarkdownWrapper, normalizeLineEndings, hasUtf8Bom } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
@@ -6,7 +6,9 @@ import MarkdownTextOps from "./MarkdownTextOps.js";
 import ClipboardLink from "./ClipboardLink.js";
 import { dropHandlePromise, isOtherField, pasteStartsDocument } from "../earlyInput.js";
 import { hasCodeOutline, buildCodeOutline } from "../codeOutline.js";
-import { detectBom } from "../textEncoding.js";
+import FileRefusal from "./FileRefusal.js";
+import { checkFileToOpen, checkTextToOpen } from "../fileOpenChecks.js";
+import { countHiddenRuns } from "../hiddenChars.js";
 
 /**
  * An Undo or Redo of the browser's editing history.
@@ -34,49 +36,6 @@ function noAction() {}
 function isTextEntry(el) {
   if (!el) return false;
   return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable === true;
-}
-
-/**
- * How a dropped file is handled, decided before anything is read (INV-11,
- * INV-18): "sniff" means an unknown extension whose first 8 KB must be
- * checked for a null byte.
- * @purity semi-pure-a
- * @param {string} fileName
- * @param {number} fileSize
- * @returns {"tooLarge"|"markdown"|"code"|"binary"|"sniff"}
- */
-export function classifyDroppedFile(fileName, fileSize) {
-  if (fileSize > CONFIG.fileDrop.maxBytes) return "tooLarge";
-  const ext = fileName.includes(".")
-    ? fileName.slice(fileName.lastIndexOf(".")).toLowerCase()
-    : "";
-  if (CONFIG.fileDrop.markdownExtensions.includes(ext)) return "markdown";
-  if (EXT_TO_HLJS[ext] || EXT_TO_HLJS[fileName]) return "code";
-  if (BINARY_EXTENSIONS.has(ext)) return "binary";
-  return "sniff";
-}
-
-/**
- * @purity pure
- * @param {Uint8Array} bytes
- * @returns {boolean}
- */
-export function hasNullByte(bytes) {
-  return bytes.some((b) => b === 0);
-}
-
-/**
- * The first bytes of a file of an unknown extension mark it binary: a NUL
- * byte, unless the bytes start with a UTF-16 BOM (UTF-16 text holds NUL
- * bytes; INV-89, L19).
- * @purity pure
- * @param {Uint8Array} bytes
- * @returns {boolean}
- */
-export function looksBinary(bytes) {
-  const bom = detectBom(bytes);
-  if (bom === "utf-16le" || bom === "utf-16be") return false;
-  return hasNullByte(bytes);
 }
 
 /**
@@ -145,7 +104,7 @@ export default class UIController {
     this._clipboardTextWaiting = null; // a block range's source for the copy event execCommand fires (INV-74)
     this._copyEvent = null; // a copy event the browser started while blocks are selected (INV-74)
     this._baseTitle = document.title;
-    this._lastPressPointerType = null; // the last press on the preview: a dblclick from it counts for the mouse and the pen, not touch (AQ3)
+    this._lastPressPointerType = null; // the last press on the preview: a dblclick from it counts for the mouse only, not touch or a pen (AQ3, AQ13)
     this._isEditorHistoryStale = false; // #editor's undo history after a system write (5.7 (6))
     this._isEditorTextStale = false; // #editor not yet given the body after a large commit (INV-47)
     this.palette = services.createPalette(this._paletteHost());
@@ -556,9 +515,12 @@ export default class UIController {
     }
     let loaded;
     try {
-      loaded = await this.documents.readFile(target);
-    } catch {
-      this._toast(CONFIG.messages.edit.reloadFailed);
+      // the same open checks as a drop (INV-18): by name and size before
+      // the read, U+0000 after it; a refusal changes nothing
+      loaded = await this.documents.readFile(target, checkFileToOpen);
+      checkTextToOpen(loaded.text);
+    } catch (error) {
+      if (!this._alertRefusal(error)) this._toast(CONFIG.messages.edit.reloadFailed);
       return;
     }
     // One synchronous step from here: nothing can change the document
@@ -570,35 +532,64 @@ export default class UIController {
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
     this.blockEdit.dispatch("documentReplaced");
     this.documents.reload(loaded);
-    await this._showSessionBody(theme);
+    await this._showOpenedSessionBody(theme); // INV-101 (3): told as at open
   }
 
   /**
-   * Reload in the code view: refused while the code document is saved, asks
-   * first when it is unsaved (INV-21), then reads the file in the encoding
-   * it was opened with (INV-89; CodeEditController.reloadReader).
+   * Reload in the code view, in the order of a drop (INV-21): (2) read the
+   * file in the encoding it was opened with (INV-89 (6);
+   * CodeEditController.reloadReader) with the open checks of a drop
+   * (INV-18 (8)), (3) refuse while saving, (4) ask when unsaved, then end
+   * code edit mode and draw. A refusal, a read error or Cancel changes
+   * nothing (edit mode goes on). The hidden characters are told as at open
+   * (INV-101 (3)).
    * @param {'light'|'dark'} theme
    * @purity non-pure
    */
   async _reloadCodeView(theme) {
-    if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
-    // edit mode ends first, without drawing the view: the reload draws it (SC-27, L5)
-    const wasEditing = this.codeEdit?.stopEditing() ?? false;
     const reader = this.codeEdit?.reloadReader() ?? null;
+    const decode = reader ? reader.readText : (file) => file.text();
+    let text = null;
+    let wasEditing = false;
+    /** @purity non-pure */
+    const readText = async (file) => {
+      checkFileToOpen(file);
+      const read = checkTextToOpen(await decode(file));
+      // another document came while the file was read: this reload stops
+      if (!this.orchestrator.isCodeViewActive() || (reader && !reader.isCurrent())) return null;
+      if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return null;
+      // edit mode ends now, without drawing the view: the reload draws it (SC-27, L5)
+      wasEditing = this.codeEdit?.stopEditing() ?? false;
+      text = read;
+      return text;
+    };
     let metadata;
     try {
-      metadata = reader
-        ? await this.orchestrator.reloadCodeView(theme, reader.readText)
-        : await this.orchestrator.reloadCodeView(theme);
-    } catch {
+      metadata = await this.orchestrator.reloadCodeView(theme, readText);
+    } catch (error) {
       if (wasEditing) this.codeEdit.showDocumentText(); // the editor left the view empty
-      this._toast(CONFIG.messages.edit.reloadFailed); // the file could not be read (N4)
+      // refused: the alert of a drop; else the file could not be read (N4)
+      if (!this._alertRefusal(error)) this._toast(CONFIG.messages.edit.reloadFailed);
       return;
     }
     if (!metadata) return;
     reader?.commit();
     this.setViewMode("code", metadata);
     this._refreshDirtyMark();
+    this._announceHiddenChars(text);
+  }
+
+  /**
+   * The alert of a file the open checks refused (INV-18), for a drop and a
+   * Reload alike.
+   * @param {unknown} error
+   * @returns {boolean} whether error was such a refusal (and told)
+   * @purity non-pure
+   */
+  _alertRefusal(error) {
+    if (!(error instanceof FileRefusal)) return false;
+    alert(CONFIG.fileDrop.messages[error.reason]);
+    return true;
   }
 
   /**
@@ -669,38 +660,29 @@ export default class UIController {
    * @purity non-pure
    */
   async _handleDroppedFile(file, handlePromise, fullPath = null) {
-    let kind = classifyDroppedFile(file.name, file.size);
-    if (kind === "tooLarge") {
-      alert(CONFIG.fileDrop.messages.tooLarge);
-      return;
-    }
-    if (kind === "binary") {
-      alert(CONFIG.fileDrop.messages.binaryFile);
-      return;
-    }
-    let text = "";
+    let kind;
+    let text;
     let hasBom = false;
     let codeDocument = null;
+    // INV-18, owner ruling AQ11: size and type before the read, U+0000 in
+    // the decoded text, all before any question; a refusal changes nothing
+    // on the screen (Reload runs the same checks)
     try {
-      if (kind === "sniff") {
-        const bytes = new Uint8Array(await file.slice(0, 8192).arrayBuffer());
-        if (looksBinary(bytes)) {
-          alert(CONFIG.fileDrop.messages.binaryFile);
-          return;
-        }
-        kind = "code";
-      }
+      kind = checkFileToOpen(file);
       if (kind === "markdown") {
         hasBom = hasUtf8Bom(new Uint8Array(await file.slice(0, 3).arrayBuffer()));
-        text = await file.text();
+        text = checkTextToOpen(await file.text());
       } else if (this.codeEdit) {
         // INV-89: decoded here; the open dialog asks when it is not UTF-8
-        // or mixes line endings. Cancel: nothing changes.
+        // or mixes line endings. Cancel: nothing changes. A text with
+        // U+0000 is refused (FileRefusal) before the dialog (INV-18).
         codeDocument = await this.codeEdit.read(file);
         if (!codeDocument) return;
+      } else {
+        text = checkTextToOpen(await file.text()); // no code document: shown as UTF-8
       }
-    } catch (_) {
-      alert(CONFIG.fileDrop.messages.readError);
+    } catch (error) {
+      if (!this._alertRefusal(error)) alert(CONFIG.fileDrop.messages.readError);
       return;
     }
     const fileHandle = handlePromise ? await handlePromise : null;
@@ -719,7 +701,7 @@ export default class UIController {
       this.blockEdit.dispatch("documentReplaced");
       this.documents.openFile(text, hasBom, file.lastModified, file.name, fileHandle, keepGitHub, fullPath);
       this.orchestrator.resetExternalImageConsent(); // INV-43
-      await this._showSessionBody(systemTheme());
+      await this._showOpenedSessionBody(systemTheme());
       return;
     }
     this.blockEdit.dispatch("viewSwitchedToCode");
@@ -731,7 +713,7 @@ export default class UIController {
       this.codeEdit.opened(codeDocument, fileHandle, fullPath);
       rendering = this.orchestrator.renderCodeView(file, fileHandle, codeDocument.text);
     } else {
-      rendering = this.orchestrator.renderCodeView(file, fileHandle);
+      rendering = this.orchestrator.renderCodeView(file, fileHandle, text);
     }
     this._refreshDirtyMark();
     let metadata;
@@ -748,6 +730,7 @@ export default class UIController {
     if (!metadata) return;
     this.setViewMode("code", metadata);
     this.showKeyHint("code");
+    this._announceHiddenChars(codeDocument ? codeDocument.text : text); // INV-101 (3), after the view shows
   }
 
   /**
@@ -764,7 +747,7 @@ export default class UIController {
       return;
     }
     if (!this.orchestrator.isPreRenderState() || !pasteStartsDocument(this.elements.editor.value, early.text)) return;
-    await this._startPastedDocument(early.text, systemTheme());
+    await this._startPastedDocument(early.text, systemTheme(), true);
   }
 
   /**
@@ -791,7 +774,7 @@ export default class UIController {
       const raw = e.clipboardData.getData("text/plain");
       if (!pasteStartsDocument(this.elements.editor.value, raw)) return;
       e.preventDefault();
-      await this._startPastedDocument(raw, systemTheme());
+      await this._startPastedDocument(raw, systemTheme(), true);
     });
   }
 
@@ -1228,15 +1211,14 @@ export default class UIController {
   }
 
   /**
-   * A mouse (or pen) double click on the preview: on the empty initial
-   * preview it starts an empty document (INV-31); in the Markdown view
-   * outside edit mode it enters edit mode and opens what was double-clicked
-   * (INV-57, 11-c previewDoubleClicked). A touch double tap does neither
-   * (owner ruling AQ3): the browser's double-tap zoom stays, and a phone
-   * enters edit mode with [Edit], then a tap opens a block (INV-29). A pen
-   * double tap acts as a mouse double click, as before the ruling (the pen
-   * is asked of the owner). The browser's dblclick carries no pointer type,
-   * so the last press on the preview decides.
+   * A mouse double click on the preview: on the empty initial preview it
+   * starts an empty document (INV-31); in the Markdown view outside edit
+   * mode it enters edit mode and opens what was double-clicked (INV-57, 11-c
+   * previewDoubleClicked). A touch or pen double tap does neither (owner
+   * rulings AQ3, AQ13: the pen is as touch): the browser's double-tap zoom
+   * stays, and touch or a pen enters edit mode with [Edit], then a tap opens
+   * a block (INV-29). The browser's dblclick carries no pointer type, so the
+   * last press on the preview decides.
    * @purity non-pure
    */
   setupDoubleClickGestures() {
@@ -1251,25 +1233,25 @@ export default class UIController {
     );
     /** @purity non-pure */
     preview.addEventListener("dblclick", (e) => {
-      if (!this._isMouseOrPenDoubleClick()) return;
+      if (!this._isMouseDoubleClick()) return;
       this._handlePreviewDoubleClick(e);
     });
   }
 
   /**
-   * The double click came from the mouse or a pen: the last press on the
-   * preview was theirs, or there was none (a dblclick without Pointer
-   * Events counts as the mouse's). Touch and an empty pointer type do not.
+   * The double click came from the mouse: the last press on the preview was
+   * the mouse's, or there was none (a dblclick without Pointer Events counts
+   * as the mouse's). Touch, a pen (AQ13) and an empty pointer type do not.
    * @purity semi-pure-b
    * @returns {boolean}
    */
-  _isMouseOrPenDoubleClick() {
+  _isMouseDoubleClick() {
     const type = this._lastPressPointerType;
-    return type === null || type === "mouse" || type === "pen";
+    return type === null || type === "mouse";
   }
 
   /**
-   * A mouse (or pen) double click on the preview: start an empty document (INV-31),
+   * A mouse double click on the preview: start an empty document (INV-31),
    * or 11-c previewDoubleClicked in the Markdown view (INV-57; only
    * browsingPreview has a cell for it).
    * @purity non-pure
@@ -1330,13 +1312,45 @@ export default class UIController {
    * are normalized before the wrapper is split (spec 5.14.1).
    * @param {string} rawText
    * @param {'light'|'dark'} theme
+   * @param {boolean} [opened] - a paste opened it (INV-101: the hidden
+   *   characters are told; not for [Render] of #editor)
    * @purity non-pure
    */
-  async _startPastedDocument(rawText, theme) {
+  async _startPastedDocument(rawText, theme, opened = false) {
     const body = this.preprocessInput(normalizeLineEndings(rawText));
     if (!body.trim() || this._rejectWhileSaving()) return;
     this.documents.startPasted(body);
+    if (opened) await this._showOpenedSessionBody(theme);
+    else await this._showSessionBody(theme);
+  }
+
+  /**
+   * _showSessionBody for a document just opened (a dropped .md, a paste
+   * that starts a document): when its full render is done and it is still
+   * the document shown, its hidden characters are told (INV-101 (3)).
+   * Reload comes here too (the file read again), and a GitHub file opened
+   * or reloaded (owner ruling AQ19); [Render] does not.
+   * @param {'light'|'dark'} theme
+   * @param {string|null} [openedMessage] - a toast shown first, above the
+   *   hidden characters toast (the GitHub Opened / Reloaded toast)
+   * @purity non-pure
+   */
+  async _showOpenedSessionBody(theme, openedMessage = null) {
+    const session = this.documents.session;
     await this._showSessionBody(theme);
+    if (openedMessage) this._toast(openedMessage);
+    if (this.documents.session === session) this._announceHiddenChars(session.getBodyText());
+  }
+
+  /**
+   * INV-101 (3): the toast with the number of hidden character runs in the
+   * whole text of a document just opened, when there is one.
+   * @param {string} text - the body, or the code file's text
+   * @purity non-pure
+   */
+  _announceHiddenChars(text) {
+    const count = countHiddenRuns(text);
+    if (count > 0) this._toast(CONFIG.messages.hiddenChars.found(count));
   }
 
   /**
@@ -1654,8 +1668,7 @@ export default class UIController {
     this.blockEdit.dispatch("documentReplaced");
     this.documents.openGitHub(result.text, result.hasBom, result.link);
     this.orchestrator.resetExternalImageConsent(); // INV-43
-    await this._showSessionBody(systemTheme());
-    this._toast(CONFIG.github.messages.opened(result.link.ref.label()));
+    await this._showOpenedSessionBody(systemTheme(), CONFIG.github.messages.opened(result.link.ref.label()));
   }
 
   /**
@@ -1673,8 +1686,7 @@ export default class UIController {
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
     this.blockEdit.dispatch("documentReplaced");
     this.documents.reloadGitHub(result.text, result.hasBom, result.link);
-    await this._showSessionBody(this.state.currentTheme);
-    this._toast(CONFIG.github.messages.reloaded);
+    await this._showOpenedSessionBody(this.state.currentTheme, CONFIG.github.messages.reloaded);
   }
 
   /**

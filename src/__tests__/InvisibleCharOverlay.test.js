@@ -355,3 +355,46 @@ describe("AT-ICO a long run of spaces inside a line (linear line-end-space searc
     expect(ms).toBeLessThan(LONG_RUN_BUDGET_MS);
   });
 });
+
+// INV-70 extended on 2026-10-30 (owner ruling AQ10): the tag and the direction
+// characters; the tags of an RGI flag stay unmarked (INV-101 (2) (b)).
+const ICO22_tags = (ascii) => String.fromCodePoint(...[...ascii].map((c) => 0xe0000 + c.charCodeAt(0)));
+const ICO22_CANCEL = "\u{E007F}";
+const ICO22_BLACK_FLAG = "\u{1F3F4}";
+const ICO22_ENGLAND = ICO22_BLACK_FLAG + ICO22_tags("gbeng") + ICO22_CANCEL;
+const ICO22_SCOTLAND = ICO22_BLACK_FLAG + ICO22_tags("gbsct") + ICO22_CANCEL;
+const ICO22_WALES = ICO22_BLACK_FLAG + ICO22_tags("gbwls") + ICO22_CANCEL;
+const ICO22_MAN = "\u{1F468}";
+const ICO22_WOMAN = "\u{1F469}";
+const ICO22_GIRL = "\u{1F467}";
+const ICO22_ZWJ = "\u200d";
+const ICO22_FAMILY = ICO22_MAN + ICO22_ZWJ + ICO22_WOMAN + ICO22_ZWJ + ICO22_GIRL;
+
+describe("AT-ICO-22 INV-70 (AQ10), INV-101 (2) (b): tag and direction characters are marked in the editor and the cell; a flag's tags are not", () => {
+  const marked = (text) => InvisibleCharOverlay.segments(text).filter((p) => p.mark).map((p) => p.text);
+
+  it("the direction characters", () => {
+    for (const ch of ["\u202a", "\u202b", "\u202c", "\u202d", "\u202e", "\u2066", "\u2067", "\u2068", "\u2069", "\u200e", "\u200f"]) {
+      expect(marked(`a${ch}b`), JSON.stringify(ch)).toEqual([ch]);
+    }
+  });
+
+  it("the tag characters, as one mark with their neighbours", () => {
+    expect(marked(`a${ICO22_tags("hi")}b`)).toEqual([ICO22_tags("hi")]);
+    expect(marked(`a\u200b${ICO22_tags("hi")}\u202eb`)).toEqual([`\u200b${ICO22_tags("hi")}\u202e`]);
+    expect(marked(`a\u{E0000}\u{E007F}b`)).toEqual(["\u{E0000}\u{E007F}"]);
+  });
+
+  it("the England, Scotland and Wales flags stay unmarked; tags after one, or another code, are marked", () => {
+    for (const flag of [ICO22_ENGLAND, ICO22_SCOTLAND, ICO22_WALES]) expect(marked(`a${flag}b`)).toEqual([]);
+    expect(marked(`${ICO22_ENGLAND}${ICO22_tags("x")}`)).toEqual([ICO22_tags("x")]);
+    expect(marked(`${ICO22_BLACK_FLAG}${ICO22_tags("usca")}${ICO22_CANCEL}`)).toEqual([ICO22_tags("usca") + ICO22_CANCEL]);
+    const parts = InvisibleCharOverlay.segments(`a${ICO22_ENGLAND}b`);
+    expect(parts.map((p) => p.text).join("")).toBe(`a${ICO22_ENGLAND}b`); // nothing lost
+  });
+
+  it("ZWJ stays unmarked (an emoji is one glyph)", () => {
+    expect(marked(ICO22_FAMILY)).toEqual([]);
+    expect(marked(`a${ICO22_ZWJ}${ICO22_ZWJ}b`)).toEqual([]);
+  });
+});

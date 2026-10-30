@@ -113,9 +113,10 @@ export function fakeFileAccess(opts = {}) {
       this.writes.push({ handle, text });
       return opts.writtenLastModified ?? 2000;
     },
-    async readFile(handle) {
+    async readFile(handle, check = () => {}) {
       calls.push("readFile");
       const file = await handle.getFile();
+      check(file); // as MarkdownFileAccess.readFile: before the text is read (INV-18 on Reload)
       return {
         bytesHead: new Uint8Array(await file.slice(0, 3).arrayBuffer()),
         text: await file.text(),

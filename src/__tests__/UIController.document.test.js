@@ -262,7 +262,7 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
 
   it.each([
     ["over 5 MB", () => ({ name: "big.md", size: CONFIG.fileDrop.maxBytes + 1 }), CONFIG.fileDrop.messages.tooLarge],
-    ["a binary extension", () => ({ name: "x.png", size: 10 }), CONFIG.fileDrop.messages.binaryFile],
+    ["a file of no listed type", () => ({ name: "x.png", size: 10 }), CONFIG.fileDrop.messages.notAllowed],
   ])("AT-UI-11 %s is refused before any confirm", async (_name, make, message) => {
     app = await setupApp();
     await dropMd(DOC);
@@ -275,11 +275,11 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
     expect(confirmSpy).not.toHaveBeenCalled();
   });
 
-  it("AT-UI-11 an unknown extension with a null byte is refused before any confirm", async () => {
+  it("AT-UI-11 a listed type whose text holds U+0000 is refused before any confirm (INV-18, AQ11)", async () => {
     app = await setupApp();
     await dropMd(DOC);
     typeInEditor("# changed\n");
-    document.dispatchEvent(dropEvent(new File([new Uint8Array([65, 0, 66])], "data.xyz"), null));
+    document.dispatchEvent(dropEvent(new File([new Uint8Array([65, 0, 66])], "data.txt"), null));
     await settle();
     expect(window.alert).toHaveBeenCalledWith(CONFIG.fileDrop.messages.binaryFile);
     expect(confirmSpy).not.toHaveBeenCalled();

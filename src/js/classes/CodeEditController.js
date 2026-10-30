@@ -1,5 +1,6 @@
 import { CONFIG } from "../config.js";
 import { decodeFileBytes, decodeAs, detectBom, countLineEndings, hasMixedLineEndings } from "../textEncoding.js";
+import { checkTextToOpen } from "../fileOpenChecks.js";
 import { inferIndentUnit } from "../indentText.js";
 import { foldJsonOnce, unfoldJsonOnce } from "../jsonFold.js";
 import CodeDocument, { singleLineEnding } from "./CodeDocument.js";
@@ -466,15 +467,20 @@ export default class CodeEditController {
 
   /**
    * Read a dropped file: decode it, and ask with the open dialog when it is
-   * not valid UTF-8 or mixes line endings (NE-15, NE-25). Nothing changes
-   * here: the caller opens the result (opened) after its own questions.
+   * not valid UTF-8 or mixes line endings (NE-15, NE-25). A decoded text
+   * that holds U+0000 is refused before the dialog asks anything (INV-18,
+   * owner ruling AQ11), and so is the text of an encoding chosen in the
+   * dialog. Nothing changes here: the caller opens the result (opened)
+   * after its own questions.
    * @purity non-pure
    * @param {File} file
    * @returns {Promise<CodeDocument|null>} null when the dialog was canceled
+   * @throws {FileRefusal} the text holds U+0000 (the caller tells it)
    */
   async read(file) {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const decoded = decodeFileBytes(bytes);
+    checkTextToOpen(decoded.text);
     const counts = countLineEndings(decoded.text);
     const mixed = hasMixedLineEndings(counts);
     let encoding = decoded.encoding;
@@ -486,6 +492,7 @@ export default class CodeEditController {
       encoding = choice.encoding;
       lineEndingMode = choice.lineEndingMode;
       if (encoding !== decoded.encoding) text = decodeAs(bytes, encoding);
+      checkTextToOpen(text);
     }
     return CodeDocument.fromDecoded({
       fileName: file.name,
@@ -540,9 +547,10 @@ export default class CodeEditController {
    * Reload in the encoding the file was opened with, keeping its line
    * ending mode; no dialog. readText decodes (for SourceFileRenderer.reload);
    * commit makes the read document the current one, once the view has
-   * shown it (nothing changes when the reload went stale).
+   * shown it (nothing changes when the reload went stale). isCurrent: no
+   * other document came since (the caller asks its questions only then).
    * @purity non-pure
-   * @returns {{readText: (file: File) => Promise<string>, commit: () => void}}
+   * @returns {{readText: (file: File) => Promise<string>, isCurrent: () => boolean, commit: () => void}}
    */
   reloadReader() {
     const generation = this._generation;
@@ -556,6 +564,7 @@ export default class CodeEditController {
         next = current.withReloaded(decodeAs(bytes, current.encoding), file.lastModified, detectBom(bytes) === current.encoding, bytes.length);
         return next.text;
       },
+      isCurrent: () => generation === this._generation,
       /** @purity non-pure */
       commit: () => {
         if (!next || generation !== this._generation) return;

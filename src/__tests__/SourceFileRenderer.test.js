@@ -307,6 +307,16 @@ describe("SourceFileRenderer", () => {
       expect(meta.lineCount).toBe(2);
     });
 
+    it("AT-FT-23 INV-21 (2)-(4) on Reload: readText answers null (a question said no, or the view went stale): nothing is drawn and reload gives null", async () => {
+      const { renderer, previewEl } = createRenderer();
+      const handle = { getFile: async () => sjisFile() };
+      await renderer.render(new File(["x"], "a.txt"), handle, "dark", () => true, "x");
+      const before = previewEl.innerHTML;
+      const meta = await renderer.reload("dark", () => true, async () => null);
+      expect(meta).toBeNull();
+      expect(previewEl.innerHTML).toBe(before);
+    });
+
     it("AT-SFR-10 showText draws another text of the same file: name, size and date stay, the line count follows", async () => {
       const { renderer, previewEl } = createRenderer();
       expect(renderer.showText("x")).toBeNull(); // no file shown

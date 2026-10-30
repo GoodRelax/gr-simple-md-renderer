@@ -84,13 +84,17 @@ export default class MarkdownFileAccess {
 
   /**
    * Read a file for Reload: the first bytes (to judge the BOM), the decoded
-   * text (File.text() drops the BOM) and lastModified.
+   * text (File.text() drops the BOM) and lastModified. check(file) runs
+   * before anything is read (the open checks by name and size, INV-18 (1)
+   * (4)); what it throws rejects the read.
    * @purity semi-pure-b
    * @param {object} fileHandle
+   * @param {(file: File) => void} [check]
    * @returns {Promise<{bytesHead: Uint8Array, text: string, lastModified: number}>}
    */
-  async readFile(fileHandle) {
+  async readFile(fileHandle, check = () => undefined) {
     const file = await fileHandle.getFile();
+    check(file);
     const bytesHead = new Uint8Array(await file.slice(0, 3).arrayBuffer());
     const text = await file.text();
     return { bytesHead, text, lastModified: file.lastModified };

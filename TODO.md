@@ -56,5 +56,5 @@
 - [x] `UIController` の責務が多い（約 1,740 行。2026-10-23）。「文書のライフサイクル」（セッション・保存先・保存の状態）を別のクラスへ分ける（R2 SRP / R2 SoC）。→ 2026-10-23 に `DocumentLifecycle`（UseCase 層）へ分けた（`feature/uicontroller-split`。動きは変えない）
 - [ ] `UIController` に、パレットの機能の振り分け（`_runPaletteCommand` から `_insertBlock` まで。約 190 行）が残っている。別のクラスへ分けるか決める（R2 SRP）
 - [ ] `SaveDocument` が内部で `SaveDocumentAs` を作り、その `outcome` / `failureMessage` を借りている（DocumentLifecycle も例外の経路で使う）。両方の use case が使う純粋な関数（例：`saveOutcome.js`）に出し、`SaveDocument` には `SaveDocumentAs` を注入する（R2 DRY / R2 SRP）
-- [ ] メンバの並び：`BlockEditController` の non-pure の `dispatch` が semi-pure-b のクエリより前にある。`UIController.js` の先頭の純粋関数（`classifyDroppedFile` / `hasNullByte` / `renderRouteFor`）を別ファイル（例：`dropClassification.js`）へ移す（R7 構造の分離（並び順） / R7 構造の分離（ファイル））
+- [ ] メンバの並び：`BlockEditController` の non-pure の `dispatch` が semi-pure-b のクエリより前にある。`UIController.js` の先頭の純粋関数 `renderRouteFor` を別ファイルへ移す（R7 構造の分離（並び順） / R7 構造の分離（ファイル））。`classifyDroppedFile` は 2026-10-30 に `fileOpenChecks.js` へ移した（beta3 のレビュー L2）。`hasNullByte` は消した
 - [ ] キャッシュ方針：部分再描画の HTML のキャッシュについて、レビュー基準の「R2 キャッシュ方針」が求める 4 つの項目（対象・無効化の契機・許容する陳腐化・同時の失効の挙動）が、仕様の 1 か所にそろっていない（対象と無効化は 3.2・5.14.3・5.14.4、採った理由は 5.16.1。陳腐化と同時の失効は書かれていない）。1 か所にまとめて書く

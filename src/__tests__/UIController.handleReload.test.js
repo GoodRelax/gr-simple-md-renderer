@@ -114,7 +114,8 @@ describe("AT-RLD-01 UIController.handleReload (FS-04, FS-20)", () => {
 
     await ctrl.handleReload();
 
-    expect(mockOrchestrator.reloadCodeView).toHaveBeenCalledWith("dark");
+    // readText decodes with the open checks of a drop (INV-18 on Reload)
+    expect(mockOrchestrator.reloadCodeView).toHaveBeenCalledWith("dark", expect.any(Function));
   });
 
   /** A markdown document dropped from doc.md (its session and save target). */
@@ -137,7 +138,8 @@ describe("AT-RLD-01 UIController.handleReload (FS-04, FS-20)", () => {
 
     await ctrl.handleReload();
 
-    expect(services.fileAccess.readFile).toHaveBeenCalledWith(handle);
+    // with the open checks by name and size before the read (INV-18 on Reload)
+    expect(services.fileAccess.readFile).toHaveBeenCalledWith(handle, expect.any(Function));
     expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# Hello", "light");
     expect(mockElements.editor.value).toBe("# Hello");
   });

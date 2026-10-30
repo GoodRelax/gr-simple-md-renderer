@@ -105,6 +105,8 @@ const NEW_FILES = [
   "indentText.js",
   "jsonFold.js",
   "codeOutline.js",
+  "hiddenChars.js",
+  "hiddenCharMarks.js",
 ];
 
 const ENTITY_FILES = [
@@ -124,6 +126,8 @@ const ENTITY_FILES = [
   "codeOutline.js",
   // the clock comes from CodeEditController (L21)
   "classes/CodeEditHistory.js",
+  // hidden characters (INV-101, spec 5.21.1)
+  "hiddenChars.js",
 ];
 
 describe("AT-STA static checks of src/js", () => {

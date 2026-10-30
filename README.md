@@ -28,7 +28,7 @@ This tool was built to provide a **transparent, minimal, and privacy-respecting 
 - Mermaid diagrams
 - PlantUML diagrams, with a consent prompt before data is sent (only the diagrams you allow are sent)
 - Syntax highlighting for code blocks
-- Code View: drop any text file (.py, .js, .c, ...) to view it with syntax highlighting and line numbers; press Edit to edit it and save it back in its own encoding (UTF-8, Shift_JIS, EUC-JP, UTF-16) and line endings
+- Code View: drop a text file of a known type (.py, .js, .c, .json, .txt, ...; files of other types are refused) to view it with syntax highlighting and line numbers; press Edit to edit it and save it back in its own encoding (UTF-8, Shift_JIS, EUC-JP, UTF-16) and line endings
 - In Code View: an Index of classes and functions (Python, JavaScript / TypeScript, JSON, YAML, C, C++, C#, Java, Go), and JSON folding one level at a time
 - Auto-render on paste (Ctrl+V / Cmd+V anywhere on the start screen) or file drop
 - Reload the current file from disk (browsers with the File System Access API)
@@ -59,8 +59,8 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
 1. Open the application in your browser
 2. Any of the following triggers an automatic preview:
    - Paste text anywhere on the page (Ctrl+V / Cmd+V)
-   - Drop a `.md` file anywhere on the page (Markdown preview)
-   - Drop any other text file (Code View)
+   - Drop a `.md` or `.markdown` file anywhere on the page (Markdown preview)
+   - Drop a text file of another known type, such as `.py`, `.js`, `.json` or `.txt` (Code View). Files of other types are refused; the list of known types is in section 5.4 of the [specification](spec/grsmd_gen2_spec_ja.md) (in Japanese)
    - Paste directly into the `[Paste Markdown...]` box at the top
 
    Pasting starts a preview only on the start screen, with the top box empty. While a document is shown, press `[Clear]` first. A dropped file can be up to 5 MB.
@@ -223,7 +223,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 - Mermaid 図のサポート
 - PlantUML 図のサポート（送信前に許可を確認。許した図だけを送る）
 - コードブロックのシンタックスハイライト
-- コードビュー: テキスト系ファイル（.py、.js、.c など）をドロップすると、ハイライトと行番号付きで表示。Edit で編集し、元の文字コード（UTF-8、Shift_JIS、EUC-JP、UTF-16）と改行コードのまま保存
+- コードビュー: 決まった種類のテキスト系ファイル（.py、.js、.c、.json、.txt など。ほかの種類のファイルは断る）をドロップすると、ハイライトと行番号付きで表示。Edit で編集し、元の文字コード（UTF-8、Shift_JIS、EUC-JP、UTF-16）と改行コードのまま保存
 - コードビューの目次（Python、JavaScript / TypeScript、JSON、YAML、C、C++、C#、Java、Go のクラスや関数）と、JSON の 1 段ずつの折りたたみ
 - 最初の画面ではページ上どこでも貼り付け（Ctrl+V / Cmd+V）、またはファイルのドロップで自動プレビュー
 - 表示中のファイルをディスクからリロード（File System Access API 対応ブラウザ）
@@ -254,8 +254,8 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
 1. ブラウザでアプリケーションを開く
 2. 以下のいずれかで自動プレビューが開始されます:
    - ページ上どこでも貼り付け（Ctrl+V / Cmd+V）
-   - `.md` ファイルをページ上にドロップ（Markdown プレビュー）
-   - その他のテキスト系ファイルをドロップ（コードビュー）
+   - `.md` か `.markdown` のファイルをページ上にドロップ（Markdown プレビュー）
+   - ほかの決まった種類のテキスト系ファイル（`.py`、`.js`、`.json`、`.txt` など）をドロップ（コードビュー）。ほかの種類のファイルは断ります。決まった種類の一覧は [仕様書](spec/grsmd_gen2_spec_ja.md) の 5.4 にあります
    - 画面上部の `[Paste Markdown...]` に直接ペースト
 
    ペーストでプレビューが始まるのは、最初の画面で、上部のボックスが空のときだけです。文書を表示しているときは、先に `[Clear]` を押します。ドロップできるファイルは 5 MB までです。

@@ -14,7 +14,7 @@ describe("CONFIG.edit (spec 5.2)", () => {
     // the palette grip only: a touch / pen double tap minimizes (INV-68, owner rulings PD1, PD2)
     expect(e.paletteDoubleTapMs).toBe(500);
     // no double-tap timing for the preview: a touch double tap does not start editing (owner ruling AQ3);
-    // a pen double tap comes as a dblclick and acts like a mouse double click (5.14.6)
+    // nor for a pen, which is as touch (owner ruling AQ13)
     expect(e).not.toHaveProperty("doubleTapMaxIntervalMs");
     expect(e).not.toHaveProperty("doubleTapMaxDistancePx");
     expect(e.defaultFileName).toBe("untitled.md");

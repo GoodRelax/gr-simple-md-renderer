@@ -2,6 +2,7 @@ import { escapeHtml } from "../utils.js";
 import { CONFIG } from "../config.js";
 import ExternalImageGate from "./ExternalImageGate.js";
 import { APP_ID_PREFIX } from "../libraryNames.js";
+import { markHiddenChars, unmarkHiddenChars, firstTextNode } from "../hiddenCharMarks.js";
 
 // DOMPurify defaults, plus the MathML wrappers KaTeX emits:
 // <semantics><mrow>...</mrow><annotation encoding="application/x-tex">TeX</annotation></semantics>.
@@ -19,6 +20,15 @@ export const PURIFY_CONFIG = Object.freeze({
 
 const HIGHLIGHT_SELECTOR =
   "pre code:not(.language-mermaid):not(.language-plantuml):not(.language-puml)";
+
+// No hidden character marks inside these (INV-101 (4), spec 5.21.4): the
+// source of a diagram (Mermaid, PlantUML) and what is drawn from it, and
+// math (KaTeX, or its source waiting for KaTeX). Their characters count in
+// the toast only. Nor in the placeholder of an image from another site: its
+// text is made from the image's alt, an attribute.
+const NO_HIDDEN_MARKS =
+  "code.language-mermaid, code.language-plantuml, code.language-puml, .mermaid, .plantuml-loading, " +
+  ".plantuml-pending, .plantuml-wrapper, .plantuml-error, .katex, .math-pending, svg, .external-image-placeholder";
 
 /**
  * A stable text for the reference link definitions of a model; part of the
@@ -96,6 +106,7 @@ export default class MarkdownRenderer {
     this._emptyBlock = null;
     this._gap = null; // { element, afterBlockId }: the open gap editor's wrapper (INV-73)
     this._blockElements = null; // the wrappers in order, made again after the order changes
+    this._bodyStartsWithBom = false; // the shown body starts with U+FEFF (not a hidden character there, 5.21.1)
   }
 
   /**
@@ -265,6 +276,7 @@ export default class MarkdownRenderer {
     this._forgetBlocks();
     const { html, error } = this.documentHtml(markdownText);
     if (error) console.error("Markdown parse error:", error);
+    this._bodyStartsWithBom = markdownText.charCodeAt(0) === 0xfeff;
     this.preview.innerHTML = html;
     this._afterInsert(this.preview);
   }
@@ -277,6 +289,7 @@ export default class MarkdownRenderer {
    */
   renderBlocks(model) {
     this._forgetBlocks();
+    this._bodyStartsWithBom = model.toBody?.().charCodeAt(0) === 0xfeff; // a model made in a test may have no body
     const signature = linksSignature(model.links);
     const elements = model
       .getBlocks()
@@ -304,6 +317,7 @@ export default class MarkdownRenderer {
    */
   replaceBlocks(renderedModel, currentModel, keepBlockId = null) {
     void renderedModel; // the wrappers on screen are tracked by id
+    this._bodyStartsWithBom = currentModel.toBody?.().charCodeAt(0) === 0xfeff;
     const signature = linksSignature(currentModel.links);
     const replaced = [];
     const order = [];
@@ -482,6 +496,28 @@ export default class MarkdownRenderer {
    */
   applyImageGate(root) {
     this.imageGate.apply(root);
+  }
+
+  /**
+   * Mark the hidden characters in HTML the caller has just written (a held
+   * table's cell or table element, a cell closed unchanged; INV-101 (4)).
+   * Not for an open cell: it shows the INV-70 marks only.
+   * @purity non-pure
+   * @param {HTMLElement} root
+   */
+  markHiddenChars(root) {
+    const textStart = this._bodyStartsWithBom ? firstTextNode(this.preview) : null;
+    markHiddenChars(root, { skip: NO_HIDDEN_MARKS, textStart });
+  }
+
+  /**
+   * Take the hidden character marks out of root (a cell about to open for
+   * editing: its text and HTML are read without them, INV-63).
+   * @purity non-pure
+   * @param {HTMLElement} root
+   */
+  unmarkHiddenChars(root) {
+    unmarkHiddenChars(root);
   }
 
   /**
@@ -769,13 +805,14 @@ export default class MarkdownRenderer {
       if (!this.hljs) {
         // colored when highlight.js has run (highlightPending, INV-81)
         if (blocks.length > 0) this._missing.add("hljs");
-        return;
+      } else {
+        /** @purity non-pure */
+        blocks.forEach((block) => this._highlight(block));
       }
-      /** @purity non-pure */
-      blocks.forEach((block) => this._highlight(block));
     } catch (hljsError) {
       console.error("Syntax highlighting error:", hljsError);
     }
+    this.markHiddenChars(root); // INV-101 (4): after the colors, which write the code again
   }
 
   /**
@@ -799,7 +836,11 @@ export default class MarkdownRenderer {
       const detected = this.hljs.highlightAuto(text.slice(0, highlightDetectChars)).language;
       block.classList.add(`language-${detected || "plaintext"}`);
     }
+    // the code is written again from its text: the marks of code drawn
+    // before highlight.js had run go first (no element in it), and come back
+    unmarkHiddenChars(block);
     this.hljs.highlightElement(block);
+    this.markHiddenChars(block);
   }
 
   /**

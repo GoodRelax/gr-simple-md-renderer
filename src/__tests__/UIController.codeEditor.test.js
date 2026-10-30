@@ -156,12 +156,15 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect(shownButtons()).toContain("paletteBold");
   });
 
-  it("AT-UI-99 (INV-85 (3); review L5) a Reload that cannot read the file after edit mode ended: the view shows the document's text again", async () => {
+  it("AT-UI-99 (INV-85 (3); review L5) a Reload that fails after edit mode ended (after its questions): the view shows the document's text again", async () => {
     await start();
     await drop("a\n", "a.py", fakeFileHandle({ name: "a.py", content: ["a\n"] }));
     keydown(document.body, "e");
     type("typed\n");
-    app.sourceFileRenderer.reload.mockRejectedValue(new Error("gone"));
+    app.sourceFileRenderer.reload.mockImplementation(async (theme, isCurrent, readText) => {
+      await readText(new File(["a\n"], "a.py")); // read, checked, asked: edit mode ends
+      throw new Error("gone");
+    });
     await app.ui.handleReload();
     expect(app.codeEdit.isEditing()).toBe(false);
     expect(app.sourceFileRenderer.showText.mock.calls.map((c) => c[0])).toEqual(["typed\n"]);
@@ -194,16 +197,17 @@ describe("UIController: the code view's edit mode (SC-27; INV-85, INV-88, INV-90
     expect(app.elements.keyHint.textContent).toBe(CONFIG.keyHints.code);
   });
 
-  it("AT-UI-102 (INV-89; review L19) a UTF-16 file with a BOM and an unknown extension opens (its NUL bytes do not make it binary); without a BOM it is refused", async () => {
+  it("AT-UI-102 (INV-89, INV-18; review L19, owner ruling AQ11) a UTF-16 .txt with a BOM opens (its NUL bytes are not U+0000); the same bytes without a BOM decode as UTF-8 with U+0000: refused", async () => {
     await start();
     const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
     const le = Uint8Array.from([0xff, 0xfe, 0x61, 0x00, 0x0a, 0x00]);
     dialog.askOpen.mockResolvedValue({ encoding: "utf-16le", lineEndingMode: "\n" }); // not UTF-8: the open dialog (NE-15)
-    await drop(le, "x.utf16data");
+    await drop(le, "x.txt");
     expect(alert).not.toHaveBeenCalled();
     expect([app.codeEdit.currentText(), app.codeEdit.fileInfo().encoding]).toEqual(["a\n", "utf-16le"]);
-    await drop(Uint8Array.from([0x61, 0x00, 0x62]), "y.utf16data");
+    await drop(Uint8Array.from([0x61, 0x00, 0x62]), "y.txt");
     expect(alert).toHaveBeenCalledWith(CONFIG.fileDrop.messages.binaryFile);
+    expect(app.codeEdit.currentText()).toBe("a\n");
   });
 
   it("AT-UI-89 Esc outside the editor in edit mode: the command palette, then Search, then the Index close; edit mode stays", async () => {
@@ -385,5 +389,85 @@ describe("UIController: the Index and Search of a code file (INV-91, INV-80)", (
     expect(textarea().value).toBe("cat dog cat\n");
     keydown(document.body, "e");
     expect([app.searchEl.replaceRow.hidden, app.searchEl.replaceOne.disabled]).toEqual([true, true]);
+  });
+});
+
+describe("UIController: the open checks of a dropped file (INV-18; owner rulings AQ1, AQ6, AQ9, AQ11)", () => {
+  /** A code file a.py is shown; the alerts are recorded. */
+  async function withCodeFile() {
+    await start();
+    await drop("a\n", "a.py");
+    const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
+    return alert;
+  }
+  const unchanged = () => {
+    expect([app.orchestrator.isCodeViewActive(), app.codeEdit.currentText()]).toEqual([true, "a\n"]);
+    expect(window.confirm).not.toHaveBeenCalled();
+  };
+
+  it("AT-FT-06 INV-18 (AQ11) a text that holds U+0000 after decoding is refused before the open dialog asks anything; nothing changes", async () => {
+    const alert = await withCodeFile();
+    // not valid UTF-8: decoded as Shift_JIS, which keeps the NUL byte as U+0000
+    await drop(Uint8Array.from([0x82, 0xa0, 0x00, 0x0a]), "b.py");
+    expect(alert).toHaveBeenCalledWith(CONFIG.fileDrop.messages.binaryFile);
+    expect(dialog.askOpen).not.toHaveBeenCalled();
+    unchanged();
+  });
+
+  it("AT-FT-07 INV-18 (AQ11) the whole text is checked, not only the first 8 KB; a listed extension does not skip it", async () => {
+    const alert = await withCodeFile();
+    await drop("x".repeat(10000) + "\u0000\n", "late.txt");
+    expect(alert).toHaveBeenCalledWith(CONFIG.fileDrop.messages.binaryFile);
+    unchanged();
+  });
+
+  it("AT-FT-08 INV-18 (AQ11) a UTF-16 file with a BOM whose text holds U+0000 is refused before the dialog", async () => {
+    const alert = await withCodeFile();
+    await drop(Uint8Array.from([0xff, 0xfe, 0x61, 0x00, 0x00, 0x00]), "w.txt");
+    expect(alert).toHaveBeenCalledWith(CONFIG.fileDrop.messages.binaryFile);
+    expect(dialog.askOpen).not.toHaveBeenCalled();
+    unchanged();
+  });
+
+  it("AT-FT-09 INV-18 (AQ11) an encoding chosen in the open dialog whose text holds U+0000 is refused too; nothing changes", async () => {
+    const alert = await withCodeFile();
+    dialog.askOpen.mockResolvedValue({ encoding: "utf-8", lineEndingMode: "\n" }); // the UTF-16 bytes read as UTF-8
+    await drop(Uint8Array.from([0xff, 0xfe, 0x61, 0x00]), "w.txt");
+    expect(dialog.askOpen).toHaveBeenCalledTimes(1);
+    expect(alert).toHaveBeenCalledWith(CONFIG.fileDrop.messages.binaryFile);
+    unchanged();
+  });
+
+  it("AT-FT-10 INV-18 (AQ11) a .md whose text holds U+0000 is refused; nothing changes", async () => {
+    const alert = await withCodeFile();
+    await drop("# Title\n\u0000\n", "n.md");
+    expect(alert).toHaveBeenCalledWith(CONFIG.fileDrop.messages.binaryFile);
+    unchanged();
+  });
+
+  it("AT-FT-11 INV-18 (AQ1, D29) a file of no listed type is refused with notAllowed before it is read; nothing changes", async () => {
+    const alert = await withCodeFile();
+    for (const name of ["image.png", "notes.xyz", "README"]) {
+      const file = new File(["plain text"], name, { lastModified: 1000 });
+      const read = vi.spyOn(file, "arrayBuffer");
+      const text = vi.spyOn(file, "text");
+      document.dispatchEvent(dropEvent(file, null));
+      await settle();
+      expect(alert, name).toHaveBeenLastCalledWith(CONFIG.fileDrop.messages.notAllowed);
+      expect([read.mock.calls.length, text.mock.calls.length], name).toEqual([0, 0]);
+    }
+    expect(alert).toHaveBeenCalledTimes(3);
+    unchanged();
+  });
+
+  it("AT-FT-12 INV-18 (AQ9) .markdown opens in the Markdown preview; LICENSE and .vue open in the code view (.vue colored as XML)", async () => {
+    const alert = await withCodeFile();
+    await drop("# Notes\n", "notes.markdown");
+    expect([app.orchestrator.isCodeViewActive(), app.orchestrator.getBody()]).toEqual([false, "# Notes\n"]);
+    await drop("MIT License\n", "LICENSE");
+    expect([app.orchestrator.isCodeViewActive(), app.codeEdit.currentText(), app.codeEdit.language()]).toEqual([true, "MIT License\n", "plaintext"]);
+    await drop("<template></template>\n", "a.vue");
+    expect([app.codeEdit.currentText(), app.codeEdit.language()]).toEqual(["<template></template>\n", "xml"]);
+    expect(alert).not.toHaveBeenCalled();
   });
 });

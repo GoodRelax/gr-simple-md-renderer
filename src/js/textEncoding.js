@@ -31,6 +31,18 @@ export function detectBom(bytes) {
 }
 
 /**
+ * The decoded text holds U+0000 somewhere: GRSMD does not open it (INV-18,
+ * owner ruling AQ11). The same rule for every encoding, UTF-16 included, so
+ * the NUL bytes of UTF-16 text do not count; only a NUL character does.
+ * @purity pure
+ * @param {string} text
+ * @returns {boolean}
+ */
+export function containsNul(text) {
+  return text.includes("\u0000");
+}
+
+/**
  * Decode strictly; null when the bytes are not valid in the encoding.
  * TextDecoder strips a BOM of its own encoding.
  * @purity pure
