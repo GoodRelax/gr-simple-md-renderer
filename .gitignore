@@ -37,3 +37,5 @@ bat/
 
 # Launcher: the GRSMD build a user puts next to the script
 launcher/GRSMD.html
+# Launcher: the note it writes next to itself (the temp folder's full path)
+launcher/grsmd-launcher-personal-help.md

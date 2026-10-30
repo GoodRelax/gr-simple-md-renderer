@@ -10,8 +10,12 @@ rendered, another text file is shown in the code view, and a binary file is
 refused.
 
 Nothing is sent over the network. The file goes into the temporary copy
-only, in the folder "temp" next to this script. GRSMD reads it from the
-page and removes it from the page.
+only, in the folder "grsmd-launcher" of your temporary folder
+(%TEMP%\grsmd-launcher), outside folders that a cloud service such as
+OneDrive syncs. GRSMD reads it from the page and removes it from the page.
+So that you can find that folder, the script keeps its full path in
+grsmd-launcher-personal-help.md next to this script (nothing of the files
+you open goes there).
 
 GRSMD.html is a GRSMD build (the index.html of a release, saved under the
 name GRSMD.html). Put it next to this script, or pass -GrsmdPath. An older
@@ -33,13 +37,16 @@ The GRSMD build to copy. Default: GRSMD.html in the folder of this script.
 Default (the program that opens .html files), Edge, Chrome or Firefox.
 
 .PARAMETER KeepSeconds
-How long to wait before the temporary copy is deleted (0 to 3600, default
-30). Copies older than this, left by a run whose window was closed, are
-deleted when the script starts.
+How long to wait before the temporary copy is deleted (default 30). When a
+browser is started: 5 to 3600, so that the browser can read the copy first.
+With -NoStart: 0 to 3600. The copy's name carries the time at which it may
+be deleted; a copy left by a run whose window was closed is deleted by the
+next run once that time has passed.
 
 .PARAMETER NoStart
 Write the temporary copy and print its path, but do not start a browser and
 do not touch the clipboard. The copy is still deleted after -KeepSeconds.
+-Browser is not checked.
 
 .EXAMPLE
 .\Open-Grsmd.ps1 .\notes\plan.md
@@ -50,6 +57,8 @@ Opens plan.md in the browser that opens .html files.
 .\Open-Grsmd.ps1 C:\work\README.md -Browser Chrome -KeepSeconds 60
 
 Opens README.md in Chrome and deletes the temporary copy after 60 seconds.
+If you close the window before that, the copy stays in
+%TEMP%\grsmd-launcher until a later run deletes it.
 
 .EXAMPLE
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Tools\grsmd\Open-Grsmd.ps1"
@@ -64,8 +73,9 @@ policy. Either run "Unblock-File .\Open-Grsmd.ps1" once, or start it with
 "powershell.exe -ExecutionPolicy Bypass -File .\Open-Grsmd.ps1 <file>"
 (this applies to that one run only). The script itself changes no setting.
 
-Exit code: 0 when done, 1 on any error (the error is one line that starts
-with "Open-Grsmd:").
+Exit code: 0 when done, 1 on any error. The error is one line on the
+standard error of the process, starting with "Open-Grsmd:"; a reason given
+by Windows is in the language of Windows.
 
 Specification: spec/grsmd_launcher_spec_en.md
 #>
@@ -92,9 +102,18 @@ $ErrorActionPreference = 'Stop'
 $LaunchSlot = '<!--grsmd-launch-slot-->'
 $LaunchBlockId = 'grsmd-launch-file'
 $CopyPrefix = 'grsmd-launch-'
+# A copy's name: the prefix, the UTC time at which it may be deleted, a
+# random part (spec FR-L07, FR-L08).
+$CopyTimeFormat = 'yyyyMMdd\THHmmss\Z'
+$CopyNamePattern = '^grsmd-launch-(\d{8}T\d{6}Z)-[0-9a-f]{32}\.html$'
+# The browser reads the copy after Start-Process returns (spec FR-L11).
+$MinBrowserKeepSeconds = 5
 # GRSMD's own limit (main spec CON-08, CONFIG.fileDrop.maxBytes).
 $MaxBytes = 5242880
 $BrowserExe = @{ Edge = 'msedge.exe'; Chrome = 'chrome.exe'; Firefox = 'firefox.exe' }
+# The note next to this script that keeps the temp folder's full path, so the
+# user can find it (owner rulings PL-16 to PL-18; spec FR-L27, 4.4).
+$PersonalHelpName = 'grsmd-launcher-personal-help.md'
 
 <#
 .SYNOPSIS
@@ -151,19 +170,85 @@ function Get-BrowserPath([string]$ExeName) {
 
 <#
 .SYNOPSIS
-Deletes the copies in the temp folder older than KeepSeconds (spec FR-L08).
+The file name of a copy that may be deleted at DeleteAt (UTC) (spec FR-L07).
+@purity pure
+#>
+function New-CopyName([DateTime]$DeleteAt, [string]$RandomHex) {
+    $stamp = $DeleteAt.ToString($CopyTimeFormat, [System.Globalization.CultureInfo]::InvariantCulture)
+    return "$CopyPrefix$stamp-$RandomHex.html"
+}
+
+<#
+.SYNOPSIS
+The UTC time at which a copy may be deleted, read from its name; $null for
+a name that is not a copy's (spec FR-L08).
+@purity pure
+#>
+function Get-CopyDeleteTime([string]$Name) {
+    $match = [regex]::Match($Name, $CopyNamePattern)
+    if (-not $match.Success) { return $null }
+    $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+    $time = [DateTime]::MinValue
+    if (-not [DateTime]::TryParseExact($match.Groups[1].Value, $CopyTimeFormat, [System.Globalization.CultureInfo]::InvariantCulture, $styles, [ref]$time)) {
+        return $null
+    }
+    return $time
+}
+
+<#
+.SYNOPSIS
+Deletes the copies in the temp folder whose delete time has passed (spec
+FR-L08). The time is in each name, so a run with a short wait never deletes
+the copy of another run that still waits.
 @purity non-pure
 #>
-function Remove-OldCopies([string]$Folder, [int]$AgeSeconds) {
+function Remove-OldCopies([string]$Folder) {
     if (-not (Test-Path -LiteralPath $Folder -PathType Container)) { return }
-    $limit = [DateTime]::UtcNow.AddSeconds(-$AgeSeconds)
+    $now = [DateTime]::UtcNow
     foreach ($old in Get-ChildItem -LiteralPath $Folder -Filter "$CopyPrefix*.html" -File) {
-        if ($old.LastWriteTimeUtc -ge $limit) { continue }
+        $deleteAt = Get-CopyDeleteTime $old.Name
+        if ($null -eq $deleteAt -or $deleteAt -gt $now) { continue }
         try {
             Remove-Item -LiteralPath $old.FullName -Force
         } catch {
             Write-Warning "Could not delete an old temporary copy: $($old.FullName)"
         }
+    }
+}
+
+<#
+.SYNOPSIS
+The text of the personal help: the temp folder's full path, how to open it,
+where the usage is. Nothing of the opened file (spec 4.4, PL-18).
+@purity pure
+#>
+function New-PersonalHelp([string]$TempFolder) {
+    return @(
+        "Temporary folder of Open-Grsmd.ps1: ``$TempFolder``",
+        '',
+        'To open it, paste the path into the address bar of File Explorer.',
+        '',
+        'How to use the launcher: `Get-Help .\Open-Grsmd.ps1 -Full`',
+        ''
+    ) -join "`n"
+}
+
+<#
+.SYNOPSIS
+Writes the personal help next to this script, unless it already holds the
+same text; warns and goes on when it cannot (spec FR-L27 to FR-L29).
+@purity non-pure
+#>
+function Write-PersonalHelp([string]$HelpPath, [string]$Text) {
+    try {
+        $bytes = (New-Object System.Text.UTF8Encoding $false).GetBytes($Text)
+        if (Test-Path -LiteralPath $HelpPath -PathType Leaf) {
+            $old = [System.IO.File]::ReadAllBytes($HelpPath)
+            if ([Convert]::ToBase64String($old) -eq [Convert]::ToBase64String($bytes)) { return }
+        }
+        [System.IO.File]::WriteAllBytes($HelpPath, $bytes)
+    } catch {
+        Write-Warning "Could not write ${HelpPath}: $($_.Exception.Message)"
     }
 }
 
@@ -186,6 +271,10 @@ function Write-LaunchCopy([string]$CopyPath, [byte[]]$Html, [int]$SlotAt, [strin
 }
 
 # --- Checking: every input is read before anything is written (spec 3.4).
+
+if (-not $NoStart -and $KeepSeconds -lt $MinBrowserKeepSeconds) {
+    Stop-Launch "-KeepSeconds must be $MinBrowserKeepSeconds or more when a browser is started (0 to $($MinBrowserKeepSeconds - 1) only with -NoStart)."
+}
 
 $targetPath = $PSCmdlet.GetUnresolvedProviderPathFromPSPath($Path)
 if (Test-Path -LiteralPath $targetPath -PathType Container) { Stop-Launch "Not a file: $targetPath" }
@@ -224,16 +313,21 @@ if (-not $NoStart -and $Browser -ne 'Default') {
 # the wait, on an error, and on Ctrl+C. Only a closed window leaves it, for
 # the next run's sweep.
 
-$tempFolder = Join-Path $PSScriptRoot 'temp'
+# The user's temporary folder, not the script's: a script kept under a synced
+# folder (OneDrive) would send the copy to the cloud (owner ruling PL-14).
+$tempFolder = Join-Path ([System.IO.Path]::GetTempPath()) 'grsmd-launcher'
+Write-PersonalHelp (Join-Path $PSScriptRoot $PersonalHelpName) (New-PersonalHelp $tempFolder)
+
 $copyPath = $null
 $candidate = $null
 try {
     try {
-        Remove-OldCopies $tempFolder $KeepSeconds
+        Remove-OldCopies $tempFolder
         if (-not (Test-Path -LiteralPath $tempFolder -PathType Container)) {
             New-Item -ItemType Directory -Path $tempFolder | Out-Null
         }
-        $candidate = Join-Path $tempFolder ($CopyPrefix + [Guid]::NewGuid().ToString('N') + '.html')
+        $deleteAt = [DateTime]::UtcNow.AddSeconds($KeepSeconds)
+        $candidate = Join-Path $tempFolder (New-CopyName $deleteAt ([Guid]::NewGuid().ToString('N')))
         $block = New-LaunchBlock ([System.IO.Path]::GetFileName($targetPath)) $targetBytes
         Write-LaunchCopy $candidate $grsmdBytes $slotAt $block
         $copyPath = $candidate

@@ -1,8 +1,9 @@
 import { spawn, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { CONFIG } from "../src/js/config.js";
 import { test, expect } from "./fixtures.js";
 
 // The PowerShell launcher end to end (launcher spec SC-L01, SC-L07; main spec
@@ -24,6 +25,7 @@ test.beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "grsmd-launcher-e2e-"));
   copyFileSync(SCRIPT, join(dir, "Open-Grsmd.ps1"));
   copyFileSync(BUILD, join(dir, "GRSMD.html"));
+  mkdirSync(join(dir, "tmp"));
 });
 test.afterEach(async () => {
   if (launcher && launcher.exitCode === null) {
@@ -48,13 +50,15 @@ async function openCopy(page, url) {
 /** Run the launcher with -NoStart and return the file:/// URL of its copy. */
 async function launch(fileName, text) {
   writeFileSync(join(dir, fileName), text);
-  launcher = spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", join(dir, "Open-Grsmd.ps1"), join(dir, fileName), "-NoStart", "-KeepSeconds", "60"]);
+  launcher = spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", join(dir, "Open-Grsmd.ps1"), join(dir, fileName), "-NoStart", "-KeepSeconds", "60"], {
+    env: { ...process.env, TEMP: join(dir, "tmp"), TMP: join(dir, "tmp") }, // the copy goes under TEMP (PL-14); not the real one
+  });
   let stdout = "";
   launcher.stdout.on("data", (d) => (stdout += d));
   await expect.poll(() => /Temporary copy: (.+\.html)/.test(stdout), { timeout: 20_000 }).toBe(true);
   const copy = /Temporary copy: (.+\.html)/.exec(stdout)[1].trim();
   expect(existsSync(copy)).toBe(true);
-  expect(readdirSync(join(dir, "temp"))).toHaveLength(1);
+  expect(readdirSync(join(dir, "tmp", "grsmd-launcher"))).toHaveLength(1);
   return pathToFileURL(copy).href;
 }
 
@@ -74,4 +78,18 @@ test("AT-LAUNCH-41 SC-L07: another text file opens in the code view", async ({ p
   await expect(page.locator("body")).toHaveClass(/\bview-code\b/);
   await expect(page.locator("#fileInfo")).toContainText("app.js");
   await expect(page.locator("#preview")).toContainText("function hello()");
+});
+
+test("AT-LAUNCH-42 SC-L07: a binary file is refused by GRSMD with its message, as on a drop", async ({ page }) => {
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52]);
+  const url = await launch("image.png", png);
+  const messages = [];
+  page.on("dialog", (dialog) => {
+    messages.push(dialog.message());
+    dialog.accept();
+  });
+  await openCopy(page, url);
+  await expect.poll(() => messages).toEqual([CONFIG.fileDrop.messages.binaryFile]);
+  await expect(page.locator("body")).not.toHaveClass(/\bview-(markdown|code)\b/);
+  await expect(page.locator("#grsmd-launch-file")).toHaveCount(0);
 });

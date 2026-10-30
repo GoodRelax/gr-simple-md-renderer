@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.32
+**バージョン:** 2.35
 **日付:** 2026-10-30 (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -77,6 +77,8 @@
 > v2.31 の変更 (2026-10-29、GitHub 連携のレビュー (1 回目) の直し): 仕様の 11-e (`pushing`)・INV-58・INV-93 (5)・INV-94 (6)・INV-96 (4)(6)・CON-16 (2)(4)・5.20.4〜5.20.6 の改めに合わせて、AT-GH を 01〜06、08〜13 に改めた (05 に 422・429・`x-ratelimit-reset`・409・`pushUnknown`、06 に 11-e の push の交点、10 に同意までの画像の保留を足し、11〜13 を足した。レビューの L1〜L3・L7)。AT-SSM を 27 の交点に改め、09 を足した (M2)。e2e の gitHub.e2e.js を 5 件にし (画面の中の主 + S。M3)、試験の名前に要求の ID を付け (L5)、Push のトーストの 6 秒を Playwright の時計で確かめる形にした (L6)。
 
 > v2.32 の変更 (2026-10-30、GitHub 連携に develop を取り込んだ): develop の v2.20〜v2.29 と版の番号がぶつかったので、GitHub 連携の 2 つの変更を v2.30・v2.31 にした。develop のセクション AH (印刷の配置) とぶつかったので、GitHub 連携のセクションを AK (PRT-AK01〜AK09) にし、仕様の番号の振り直し (SC-28・INV-93〜INV-100・FS-24・5.20) に合わせて書き直した。PRT-R01 の手順 9 のコンソールの確かめにセクション AK を足した。AT-GH-08 にコードビューのキーのヒント (`[P] Commands;` の後の `[O] GitHub;`、Mac の折りたたみのキー) を、AT-GH-11 にコードの文書を表示している間に GitHub のファイルを開く場合を足した。 同じ日に、GitHub の編集のヘルプ (仕様の FS-25・INV-103・5.20.7。オーナーの裁定 GHH-1〜GHH-9) に合わせて、セクション AK に PRT-AK10 (ヘルプだけを見て GitHub 連携を使う) と PRT-AK11 (iPad ではヘルプの入口も出さない) を足した。AT-HLP を 01〜19 にし (15・16: 入口と層の HTML と図、17: 重なったモーダルのキー、18・19: e2e)、e2e の help.e2e.js に 3 件を足した (版の番号は監査の v2.33 とぶつかるので取らない。調整役の裁定 2026-10-30)。 同じ日に、レビュー (3 回目) の直しで、gitHub.e2e.js の行に [Open GitHub] がフレームの中とタッチの端末で出ないこと (INV-100) を足して全 7 件にし、PRT-AK07 の備考に自動の試験を書き、v2.30 の注の「セクション AH」を AK に直した (L1・L2)。
+
+> v2.35 の変更 (2026-10-30、PowerShell の起動役。v2.33・v2.34 は監査の直しの枝が使う): 仕様の SC-29・INV-104 と、起動役の仕様 `spec/grsmd_launcher_spec_en.md` の 5 章の手での確かめ (M-L1〜M-L4) に合わせて、セクション AM (PRT-AM01〜AM04) を足した。AT に AT-LAUNCH (新。01〜34・40〜42) を足した。高速起動の受け口の直し (INV-81 (2)。調整役の裁定 C-1) に合わせて、AT-FAST を 01〜61 にした (60・61)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -5388,6 +5390,96 @@ SC-28、INV-93〜INV-100、CON-16 (仕様 5.20)。GitHub の編集のヘルプ�
 
 ---
 
+## セクション AM: PowerShell の起動役 (2026-10-30)
+
+SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` の 5 章の M-L1〜M-L4。オーナーが Windows の PC で行う。自動の試験 (AT-LAUNCH) は `-NoStart` でしか動かず、ブラウザを開く道・クリップボード・保存の画面・ショートカット・Ctrl+C を通らないので、ここで確かめる。
+
+**準備 (各項の前提条件):** `npm run build:e2e` で作った `output/e2e/index.html` (差し込み口のある GRSMD) を、`launcher/GRSMD.html` という名前で写す (git の外。`.gitignore`)。リリースの後は、リリースの `index.html` を同じ名前で置く。
+
+---
+
+### PRT-AM01: 関連付けと -Browser で開く
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | `launcher/GRSMD.html` がある。数式と Mermaid の図のある `.md` (例 `docs/sample-data.md`)。`.html` の関連付けは Edge または Chrome |
+| **手順** | 1. PowerShell で `.\launcher\Open-Grsmd.ps1 .\docs\sample-data.md` を動かす |
+|  | 2. 開いたタブの画面と、PowerShell の窓の文を見る |
+|  | 3. 30 秒待ち、`%TEMP%\grsmd-launcher` の中を見る |
+|  | 6. `launcher\grsmd-launcher-personal-help.md` を GRSMD で開く |
+|  | 4. `-Browser Edge`、`-Browser Chrome` で 1 をもう一度行う |
+|  | 5. `-KeepSeconds 0` で 1 を行う |
+| **期待結果** | - 1 で、関連付けのブラウザに新しいタブが開き、文書がドロップと同じに描かれる (見出し・数式・図) |
+|  | - 2 で、窓に「Opened in GRSMD: <パス>」、クリップボードの文、「The temporary copy is deleted in 30 s (Ctrl+C deletes it now).」が出る |
+|  | - 3 で、30 秒の後に窓が終わり、`%TEMP%\grsmd-launcher` に写しが残らない |
+|  | - 4 で、それぞれのブラウザで開く |
+|  | - 5 で、ブラウザは開かず、「Open-Grsmd: -KeepSeconds must be 5 or more when a browser is started (0 to 4 only with -NoStart).」で止まる |
+|  | - 6 で、一時フォルダのフルパス・その開き方・`Get-Help` の 3 つだけが書いてある (開いたファイルの名前も中身も無い) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: SC-29、INV-104、起動役の FR-L01・FR-L09・FR-L18・FR-L23・FR-L24・FR-L15・FR-L27 (オーナーの裁定 PL-14・PL-16〜PL-18)。自動では AT-LAUNCH-05〜11・18・40 |
+
+---
+
+### PRT-AM02: 名前を付けて保存に、貼ったパスで上書きする
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PRT-AM01 の 1 の後 (Edge または Chrome)。試しに直してよい `.md` の写しを使う |
+| **手順** | 1. 文書を直す (例: 見出しの字を足す) |
+|  | 2. Ctrl+S (または Ctrl+Shift+S) を押す |
+|  | 3. 保存の画面のファイル名の欄に Ctrl+V で貼り、保存する |
+|  | 4. 上書きの確かめに答える |
+|  | 5. 元の `.md` をエディタで開く |
+| **期待結果** | - 2 で、保存の画面が出る (元のファイルに黙って書かない) |
+|  | - 3 で、欄に元のファイルのフルパスが入る |
+|  | - 4 で、上書きを確かめられる |
+|  | - 5 で、1 の変更が元のファイルにある |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: 起動役の FR-L10・FR-L21・L-1 (オーナーの裁定 PL-5) |
+
+---
+
+### PRT-AM03: デスクトップのショートカットにドロップする
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | `Get-Help .\launcher\Open-Grsmd.ps1 -Full` の 3 つ目の例のとおりのショートカット (リンク先 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "<launcher のフルパス>\Open-Grsmd.ps1"`) |
+| **手順** | 1. エクスプローラーから `.md` をショートカットのアイコンにドロップする |
+| **期待結果** | - 1 で、ブラウザで文書が開く。PowerShell の窓が 30 秒出て、閉じる |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: 起動役の FR-L14 (オーナーの裁定 PL-12) |
+
+---
+
+### PRT-AM04: 待つ間の Ctrl+C と、閉じた窓の写し
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | `launcher/GRSMD.html` がある |
+| **手順** | 1. `.\launcher\Open-Grsmd.ps1 .\docs\sample-data.md` を動かし、待つ間に Ctrl+C を押す |
+|  | 2. `%TEMP%\grsmd-launcher` の中を見る |
+|  | 3. もう一度動かし、待つ間に PowerShell の窓を閉じる (× で) |
+|  | 4. `%TEMP%\grsmd-launcher` の中を見る |
+|  | 5. 30 秒より後に、もう一度動かし、終わってから `%TEMP%\grsmd-launcher` の中を見る |
+| **期待結果** | - 2 で、写しが無い (Ctrl+C ですぐ消える) |
+|  | - 4 で、写しが 1 つ残る (名前は `grsmd-launch-<消してよい時刻>-<32 桁>.html`) |
+|  | - 5 で、4 の写しも、5 の写しも無い |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: 起動役の FR-L08・FR-L15、L-2 (オーナーの裁定 PL-13)。自動では AT-LAUNCH-07・14 |
+
+---
 ## 自動テスト (AT) の一覧
 
 この章は、PRT の備考と仕様が引く自動テストの ID (`AT-<族>-<番号>`) の行き先である。手で行う試験ではないので、判定の欄は持たない (前提条件 P-02 で全件の合格を確かめる)。
@@ -5472,7 +5564,7 @@ SC-28、INV-93〜INV-100、CON-16 (仕様 5.20)。GitHub の編集のヘルプ�
 | AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ、14: 目次を出したままの確定・Undo の後の作り直しの時間。jsdom に大きな文書が残ると遅くなるので別のファイル) | INV-42、INV-48、INV-51、INV-74、INV-77 | performance.inplaceEdit.test.js、performance.index.test.js | 01〜14 |
 | AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11)、閉じ方によらず `onHide` を呼ぶ (AT-HLP-13。INV-89 のダイアログ) (`ModalController`)、「Details」/「詳細」の [Edit] の行の次の編集の始め方の行と初期画面の 4 行目 (AT-HLP-12。e2e の help.e2e.js。オーナーの裁定 AQ4)、「Details」/「詳細」のコードビューの行の 200 KB 以上のファイルの 1 文 (AT-HLP-14。英日。NE-32・NE-33)、GitHub の編集のヘルプ (FS-25・INV-103): 英日の入口のボタンと「Details」/「詳細」の `[Open GitHub]` / `O` の行 (AT-HLP-15。GHH-9・D33)、層の題名の行・英日の本文・時点の文・(TBD) と（仮）・[Saved] が無いこと、図は `<symbol>` 6 つを英日が `<use>` で使い、番号が全部の図で 1〜19、画像と外の資源が無く、外へのリンクはトークンのページだけ (AT-HLP-16。GHH-1・GHH-5・GHH-8・D34)、層がヘルプの上に開いている間は層だけがキーを受け、Esc の 1 回目で層 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる、下のモーダルを閉じても上が受ける (AT-HLP-17。`ModalController`)、入口で層がヘルプの言語で先頭から開き、図がすべて描かれ、Esc の 2 段 (AT-HLP-18。e2e)、フレームの中とタッチの端末では入口が出ない (AT-HLP-19。e2e。INV-100) | SC-16、FS-10、CON-03、CON-12、INV-89 (13)、INV-85・NE-32 (14)、5.1、5.11、INV-57 (12)、INV-29 (12)、FS-25・INV-103 (15〜19)、INV-100 (19) | HelpLanguageSwitch.test.js、ModalController.test.js、`e2e/help.e2e.js` (12・18・19) | 01〜19 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
-| AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド (30: 単一ファイルの並びでないものは失敗、38: 外部の import の検査はライブラリのコードも見る)、早い入力の受け継ぎ。25・26・47・48・52・56・57 はオーナーの裁定 AQ7 で改めた (PlantUML は 4 つのライブラリが決まるのを待つ。前の送り直し `"repeat"` は無い)。58: 11-g のガード `isShownWithout` の問い合わせ (数式・コードの色・Mermaid の枠) が、届く前の表示がある間は真で、ライブラリが動いた後は偽。文書が自分で書いた枠は数えない。59: コードビューの highlight.js の待ちが 2 つ重なっても、先に終わった方が待ちを消さない | INV-81、INV-20、INV-06 (30)、INV-07 (38)、INV-02 (52・56・57) | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜59 |
+| AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド (30: 単一ファイルの並びでないものは失敗、38: 外部の import の検査はライブラリのコードも見る)、早い入力の受け継ぎ。25・26・47・48・52・56・57 はオーナーの裁定 AQ7 で改めた (PlantUML は 4 つのライブラリが決まるのを待つ。前の送り直し `"repeat"` は無い)。58: 11-g のガード `isShownWithout` の問い合わせ (数式・コードの色・Mermaid の枠) が、届く前の表示がある間は真で、ライブラリが動いた後は偽。文書が自分で書いた枠は数えない。59: コードビューの highlight.js の待ちが 2 つ重なっても、先に終わった方が待ちを消さない、60・61: 受け口の `arrive` は、読み込みの途中でページが足した要素 (mermaid のツールチップ) を飛ばして最初の `<script>` を候補にし、前の別の塊は代わりにしない | INV-81、INV-20、INV-06 (30)、INV-07 (38)、INV-02 (52・56・57)、INV-81 (2) (60・61) | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜61 |
 | AT-LSM | 起動とライブラリの状態機械 (仕様 11-g): ライブラリの表のすべての交点 (6 × 4 = 24、ガードの枝で 25。02)、ページの表のすべての交点 (6 × 4 = 24、2 つのガードの枝で 26。07。`earlyInputArrived` の行は受け口 `installBoot` で確かめる)、表の大きさ (01・06)、はじめの状態の 3 つの枝 (04)、仕様の 2 つの図と表の一致 (05・08)、answering に入るのが 1 回だけ (03・09)、開発サーバー (10)、解析の終わり (11)。描画の側の処理が投げても、ライブラリの表の処理は続き、ページは決まる (20。レビューの L3)、解析の後に作った LibraryLoader はすぐ `parsingEnded` を送る (21。L4)、中核は `earlyInputArrived` を受けない (22。L5)。PlantUML: 4 つのライブラリが決まる前は確認も送信も無く、決まったら描画の列の中で 1 回だけ確認し、確定の図は [Render]、読んでいる位置を保つ (12)、Cancel (13)、エンコーダーが動かない (14)、4 つが決まる前の Clear・別の文書 (15。レビュー 2 回目の N5)、始めから settled で送り直しが無い (16)、e2e で決まる前に確認が無く後に 1 回 (17)、KaTeX が最後に動き、その描き直しが answering の間に待ちの枠の段より先に動いても、確認は 1 回で全部の図に答える (18。OK で全部を送る。19: Cancel で全部が「not sent」)、全体の描画の途中で 4 つが決まっても、その描画と KaTeX の描き直しで確認は 1 回 (23。L1)、決まった時に編集欄が開いていた図は、閉じた時に [Render] (24。M2)、決まった時に待ちの枠が無くても answering から settled に移り、後の図は確認が 1 回出て送られる (25。レビュー 2 回目の N4) | INV-81 (2)(3)(4)、INV-02、INV-03 (13・19)、INV-23 (12・13・24)、オーナーの裁定 AQ2・AQ7、G6 (18・19・23) | LibraryLoader.stateMachine.test.js (01〜11、20〜22)、fastStartup.render.test.js (12〜16、18、19、23〜25)、`e2e/fastStartup.e2e.js` (17) | 01〜25 |
 | AT-OSS | 同梱 OSS の表記: 数えるパッケージ、表記が漏れるときにビルドを失敗させること (許さないライセンス、文が無い、一覧に無い束ねられたコード、古くなった一覧、宣言した依存、dist の確かめの記録、コメントを壊す文)、一覧のコード・上書き・待ちの文、読む段と処理の段、文の取り出し、コメントとヘルプの一覧の形、CSP の hash が変わらないこと、プラグインの並び、`@purity`、本物のビルドで一覧の項目を 1 つずつ外すと落ちること (07) | 付録 A.2、INV-75、INV-76 | notices.test.js | 01〜07 |
 | AT-BETA | ベータ版のビルド: robots の meta だけを変えること (違う行が 1 行だけ、script が同じ)、robots の meta を属性の順・大文字小文字にかかわらず数えて 1 つでなければ失敗すること (レビューの L1)、ベータ版だけの mode とプラグインが無いこと (scripts)、`writeBeta` と CLI (書く先の名前、失敗の終了コード)、`build` と `build:beta` を流した実際のビルドの比べ (`docs/index.html` 役のファイルが残る)、コードが mode を読んでも script と CSP が本番と同じこと (レビューの M1 の再現) | INV-82、INV-20 | betaBuild.test.js | 01〜08 |
@@ -5488,6 +5580,7 @@ SC-28、INV-93〜INV-100、CON-16 (仕様 5.20)。GitHub の編集のヘルプ�
 | AT-CEM | 11-h コード編集モードの状態機械 (3 つの出来事 × 2 つの状態のすべての交点、ガード `canEdit`、知らないガード・処理は誤り、仕様の図と表の一致) | 11-h、INV-85 | CodeEditController.stateMachine.test.js | (族の名前) |
 | AT-CCP | `CodeCommandPalette` (箱の名前とボタン、開閉とフォーカス、命令で閉じない、Esc・外の押下、無効、リスナー) | INV-92 (5) | CodeCommandPalette.test.js | 01〜07 |
 | AT-GH | GitHub 連携: URL の分解 (01: ブランチの `/`、% の符号、断る形)、相対パスの解決 (02: 画像・リンク・最上位・上へ出すぎ・直さない形)、PAT の形 (03。D12)、Base64 と UTF-8 の往復 (04: 日本語・BOM・CRLF・大きいもの、NUL と壊れた UTF-8)、`GitHubContentsClient` (05: URL・ヘッダー・固定のオリジン・PAT が URL と文に出ない・5.20.4 の各失敗の文 (403・`retry-after`・422・429・`x-ratelimit-reset`・409 の `conflict` の全文)・PUT の中身・409、PUT の通信の失敗と 200 の読めない応答の `pushUnknown` (L1))、`DocumentLifecycle` の連携 (06: 開く・残す・止める・push の間の拒否・成功と失敗、11-e の push の交点 (`pushRequested` / `pushFinished`、`pushing` の間の置き換えと保存。M2))、`GitHubController` の PAT の欄と Push (08: 欄の名前 D35、[Saved] が無い D34、目のボタンの切り替えと閉じる・開くときの戻し D28、入力でエラーの行が消える D37、Push のトーストの 6 秒と送った後の欄 D36)、キーのヒントの `[O] GitHub;` (08: PC だけ。D33)、ボタンと `o` と画面 (09: ボタンの切り替え、`o` の開く・無動作、INV-100 で出さない、画面の中のキーを渡さない、ドロップの 3 択)、GitHub の文書の相対パスの描画 (10: INV-99。書き換えた画像も同意まで読まずに保留する (INV-99 (1)、INV-19。L7))、UIController を通した結線 (11: 開く順 INV-94 (3) (保存中は断る)、Reload INV-97 (読み始めた後に文書が変わったら置き換えない)、ドロップの続ける・止める・やめる INV-98。L7)、パスの安全 (12: 区切りに空・`.`・`..` があれば送らない、PAT は `/repos/<owner>/<repo>/` の外へ出ない。CON-16 (4)。L2)、レビューの直し (13: 画面の中の主 + S は既定を止めて何もしない (INV-58。M3)、画面の `unsafePath` (INV-93 (5)。L2)、閉じた画面の PAT の欄を空にする (CON-16 (2)。L3)) | SC-28、INV-58、INV-93〜INV-100、CON-16、11-e | gitHub.test.js (01〜06、12)、GitHubController.test.js (08〜10、13)、UIController.gitHub.test.js (11) | 01〜06、08〜13 (07 は試作の偽の GitHub。本実装で消した) |
+| AT-LAUNCH | PowerShell の起動役 (SC-29): 起動役のファイル (01: ASCII だけ、02: ネットワークのコマンドが無い、03: ヘルプ、04: 差し込み口・塊の id・5 MB の上限がビルド・受け口・CONFIG と同じ)、写しの中身と名前 (05)、消すまで待つ (06・14)、消してよい時刻での掃除と警告 (07・17)、ワイルドカードを広げない (08)、大きさの線と空のファイル (09)、`-GrsmdPath` (10)、書く前に止まる誤り (11・12。5 秒より短い待ちを含む)、ブラウザが無い (13)、書けない (15)、`-NoStart` ではブラウザを探さない (16)、横に書くメモ (18・19・33)、git の外 (34)、塊を読む規則 (20〜24)、受け口が塊を預かり外す (25〜29)、ビルドの差し込み口 (30〜32)、e2e で開く (40: 数式と図、41: コードビュー、42: バイナリを断る) | SC-29、INV-104 | launcher.test.js (Windows PowerShell 5.1 と 7)、launchBlock.test.js、e2e/launcher.e2e.js (Chromium) | 01〜34、40〜42 |
 
 AT の ID の無い試験も `npm test` の全件に含まれる。2026-10-29 の時点で、それは次の 18 ファイルの 97 件 (`it.each` などは 1 件と数える。多くは名前か外側の `describe` に INV や仕様の節を書く): `BlockEditController.gap.test.js` (4)、`BlockEditController.test.js` (8)、`DocumentSession.test.js` (1)、`MarkdownBlockModel.planTableReplace.test.js` (3)、`MarkdownFileAccess.test.js` (4)、`MarkdownRenderer.blocks.test.js` (1)、`MarkdownRenderer.purifyConfig.test.js` (5。設定を 1 度だけ与えることの試験)、`MarkdownTextOps.test.js` (1)、`RendererOrchestrator.edit.test.js` (1)、`RendererOrchestrator.test.js` (14)、`SaveDocument.test.js` (4)、`UIController.editMode.test.js` (9)、`UIController.handleRender.test.js` (6)、`UIController.palette.test.js` (14)、`UIController.save.test.js` (1)、`preprocessInput.test.js` (12)、`stateTable.test.js` (4。ファイルの全部)、`staticChecks.test.js` (5。「style.css for in-place editing」の一部)。族に番号を足すまでは、ここに挙げて残す (監査の Medium 46、監査の直しのレビュー (1 回目) の L32。`SourceFileRenderer.test.js`・`utils.test.js`・`MarkdownRenderer.test.js`・`config.test.js` には番号を足した)。
 
@@ -5820,6 +5913,10 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-AK09      | GitHub 連携 | ベータ版 |      |
 | PRT-AK10      | GitHub 連携 | ヘルプだけを見て使う |      |
 | PRT-AK11      | GitHub 連携 | iPad ではヘルプの入口も出さない |      |
+| PRT-AM01      | 起動役 | 関連付けと -Browser で開く |      |
+| PRT-AM02      | 起動役 | 名前を付けて保存に、貼ったパスで上書き |      |
+| PRT-AM03      | 起動役 | デスクトップのショートカットにドロップ |      |
+| PRT-AM04      | 起動役 | 待つ間の Ctrl+C と、閉じた窓の写し |      |
 
 **テスター:** \_\_\_\_\_\_\_\_\_\_
 **日付:** \_\_\_\_\_\_\_\_\_\_

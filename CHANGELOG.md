@@ -142,7 +142,9 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 - PowerShell launcher (Windows): `launcher/Open-Grsmd.ps1 <file>` opens a
   file in the GRSMD you keep on your PC (`GRSMD.html` next to the script),
   as if you had dropped it. The script writes a temporary copy of
-  `GRSMD.html` that carries the file into the `temp` folder next to it,
+  `GRSMD.html` that carries the file into `%TEMP%\grsmd-launcher` (outside synced
+  folders such as OneDrive; the script keeps that folder's full path in
+  `grsmd-launcher-personal-help.md` next to itself),
   opens the copy in the browser, puts the file's full path on the clipboard
   (paste it in Save as to save over the file) and deletes the copy after 30
   seconds. Nothing is sent over the network and the CSP is unchanged: the

@@ -390,7 +390,12 @@ export const contentSecurityPolicy = {
 // exactly one, inside <head>; the launcher refuses a page without it.
 export const LAUNCH_SLOT = "<!--grsmd-launch-slot-->";
 
-// What is wrong with the launch slot of a built page, or null.
+/**
+ * What is wrong with the launch slot of a built page, or null.
+ * @purity pure
+ * @param {string} html
+ * @returns {string|null}
+ */
 export function launchSlotError(html) {
   const count = html.split(LAUNCH_SLOT).length - 1;
   if (count === 0) return "no launch slot";
@@ -404,6 +409,12 @@ export const launchSlot = {
   name: "launch-slot",
   apply: "build",
   enforce: "post",
+  /**
+   * Fail the build when a page's launch slot is wrong.
+   * @purity non-pure
+   * @param {object} _options
+   * @param {object} bundle
+   */
   generateBundle(_options, bundle) {
     for (const file of Object.values(bundle)) {
       if (file.type !== "asset" || !file.fileName.endsWith(".html")) continue;
