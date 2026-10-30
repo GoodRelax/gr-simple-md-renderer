@@ -1,5 +1,6 @@
 import { CONFIG } from "../config.js";
-import { decodeFileBytes, decodeAs, detectBom, countLineEndings, hasMixedLineEndings, containsNul } from "../textEncoding.js";
+import { decodeFileBytes, decodeAs, detectBom, countLineEndings, hasMixedLineEndings } from "../textEncoding.js";
+import { checkTextToOpen } from "../fileOpenChecks.js";
 import { inferIndentUnit } from "../indentText.js";
 import { foldJsonOnce, unfoldJsonOnce } from "../jsonFold.js";
 import CodeDocument, { singleLineEnding } from "./CodeDocument.js";
@@ -473,13 +474,13 @@ export default class CodeEditController {
    * after its own questions.
    * @purity non-pure
    * @param {File} file
-   * @returns {Promise<CodeDocument|null|"binary">} null when the dialog was
-   *   canceled; "binary" when the text holds U+0000 (the caller tells it)
+   * @returns {Promise<CodeDocument|null>} null when the dialog was canceled
+   * @throws {FileRefusal} the text holds U+0000 (the caller tells it)
    */
   async read(file) {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const decoded = decodeFileBytes(bytes);
-    if (containsNul(decoded.text)) return "binary";
+    checkTextToOpen(decoded.text);
     const counts = countLineEndings(decoded.text);
     const mixed = hasMixedLineEndings(counts);
     let encoding = decoded.encoding;
@@ -491,7 +492,7 @@ export default class CodeEditController {
       encoding = choice.encoding;
       lineEndingMode = choice.lineEndingMode;
       if (encoding !== decoded.encoding) text = decodeAs(bytes, encoding);
-      if (containsNul(text)) return "binary";
+      checkTextToOpen(text);
     }
     return CodeDocument.fromDecoded({
       fileName: file.name,

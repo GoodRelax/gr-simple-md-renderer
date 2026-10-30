@@ -31,6 +31,7 @@ import { keydown } from "./helpers/editDom.js";
 // the save target and the unsaved state stay as they were.
 
 const NUL = "\u0000";
+const ZWSP = "\u200b";
 const messages = CONFIG.fileDrop.messages;
 const tooBig = () => "x".repeat(CONFIG.fileDrop.maxBytes + 1);
 const toasts = () => showToast.mock.calls.map((c) => c[0]);
@@ -253,5 +254,33 @@ describe("AT-FT-22 INV-21 (2) before (3)(4), INV-18 (8): the code view's Reload 
     await settle();
     expect(order).toEqual(["confirm after getFile, editing true"]);
     expect([app.codeEdit.isEditing(), app.codeEdit.currentText(), app.codeEdit.isDirty()]).toEqual([false, "let c = 3;\n", false]);
+  });
+
+  it.each([
+    ["a .md", "other.md", "# Other\n", "view-markdown"],
+    ["another code file (edited)", "b.js", "let b = 1;\n", "view-code"],
+  ])("AT-FT-22 INV-21: %s opened while Reload reads: the Reload stops; no question, the new document stays as it is, no toast", async (_label, name, content, view) => {
+    const handle = await openEditingCode();
+    handle.state.content = [`let a${ZWSP} = 3;\n`]; // the toast would tell 1 place
+    const reload = app.sourceFileRenderer.reload.getMockImplementation();
+    app.sourceFileRenderer.reload.mockImplementation(async (theme, isCurrent, readText) =>
+      reload(theme, isCurrent, async (file) => {
+        await drop(content, name); // asks about the unsaved code (OK)
+        if (name.endsWith(".js")) keydown(document.body, "e"); // the new code document is edited
+        window.confirm.mockClear();
+        return readText(file);
+      }),
+    );
+    await app.ui.handleReload();
+    await settle();
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(bodyView()).toBe(view);
+    expect(toasts()).not.toContain(CONFIG.messages.hiddenChars.found(1));
+    if (name.endsWith(".js")) {
+      expect(app.codeEdit.isEditing()).toBe(true);
+      expect(app.codeEdit.currentText()).toBe(content);
+    } else {
+      expect(app.preview.querySelector("h1").textContent).toBe("Other");
+    }
   });
 });

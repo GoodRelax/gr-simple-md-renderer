@@ -37,8 +37,19 @@ export const HIDDEN_CHAR_NAMES = Object.freeze({
 /** What a run of tag characters is written after (owner ruling AQ14 a). */
 export const HIDDEN_TEXT_PREFIX = "hidden: ";
 
-// One character of the set (a tag character is a surrogate pair)
-const CANDIDATE = /[\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ufeff]|\udb40[\udc00-\udc7f]/;
+/**
+ * The set of INV-101 (1) but U+200D, as the body of a character class of a
+ * regular expression with the u flag: the zero width characters, the
+ * characters that change the text direction and the tag characters. These
+ * ranges live here only: the marks of a block editor (INV-70,
+ * InvisibleCharOverlay) are built from it too. U+200D is apart: it is
+ * hidden only outside an emoji (INV-101 (2) (a)), and INV-70 never marks it.
+ */
+export const HIDDEN_CHAR_CLASS_NO_ZWJ =
+  "\\u200b\\u200c\\u2060\\ufeff\\u200e\\u200f\\u202a-\\u202e\\u2066-\\u2069\\u{E0000}-\\u{E007F}";
+
+// One character of the set
+const CANDIDATE = new RegExp(`[\\u200d${HIDDEN_CHAR_CLASS_NO_ZWJ}]`, "u");
 const PICTOGRAPHIC = /^\p{Extended_Pictographic}$/u;
 
 // The tag codes of the three RGI flags after U+1F3F4 (INV-101 (2) (b)),
@@ -166,7 +177,7 @@ export function hiddenRunLabel(codePoints) {
 export function findHiddenRuns(text, { textStart = true } = {}) {
   const runs = [];
   let run = null; // { start, end, codePoints }
-  const candidates = new RegExp(CANDIDATE.source, "g"); // its own lastIndex
+  const candidates = new RegExp(CANDIDATE.source, "gu"); // its own lastIndex
   for (let m = candidates.exec(text); m; m = candidates.exec(text)) {
     const i = m.index;
     const cp = text.codePointAt(i);

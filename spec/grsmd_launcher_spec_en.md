@@ -450,7 +450,7 @@ Scenario: SC-L07 Other file kinds follow the drop rules (traces: FR-L01, FR-G02)
   Given a file app.js and a file image.png
   When the user opens each through the launcher
   Then app.js is shown in the code view
-  And image.png is refused by GRSMD with its binary-file message
+  And image.png is refused by GRSMD with its message for a file type it does not open (main spec INV-18)
 ```
 
 **Result:** PASS  CONDITIONAL  FAIL  SKIP
@@ -568,7 +568,7 @@ How to use the launcher: `Get-Help .\Open-Grsmd.ps1 -Full`
 | Ctrl+C while waiting | Launcher, Waiting | Delete the copy at once | Deleted |
 | Window closed while waiting | - (the process is ended) | The next run sweeps the copy (FR-L08) | Left (L-2) |
 | Block not decodable | Receiver | Remove block, console warning, start empty | - |
-| File too large, binary, unsaved changes | GRSMD core (drop path) | As for a drop (main spec INV-11, INV-18, INV-21) | - |
+| File too large, of a type GRSMD does not open, holding U+0000, unsaved changes | GRSMD core (drop path) | As for a drop (main spec INV-11, INV-18, INV-21) | - |
 
 ---
 

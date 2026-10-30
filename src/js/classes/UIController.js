@@ -1,4 +1,4 @@
-import { CONFIG, FILE_TYPE_BY_MATCH, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
+import { CONFIG, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
 import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame, shortcutLetter, isTypingTarget } from "../utils.js";
 import { splitMarkdownWrapper, normalizeLineEndings, hasUtf8Bom } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
@@ -6,7 +6,7 @@ import MarkdownTextOps from "./MarkdownTextOps.js";
 import ClipboardLink from "./ClipboardLink.js";
 import { dropHandlePromise, isOtherField, pasteStartsDocument } from "../earlyInput.js";
 import { hasCodeOutline, buildCodeOutline } from "../codeOutline.js";
-import { containsNul } from "../textEncoding.js";
+import { FileRefusal, checkFileToOpen, checkTextToOpen } from "../fileOpenChecks.js";
 import { countHiddenRuns } from "../hiddenChars.js";
 
 /**
@@ -35,68 +35,6 @@ function noAction() {}
 function isTextEntry(el) {
   if (!el) return false;
   return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable === true;
-}
-
-/**
- * How a dropped file is handled, decided before anything is read (INV-11,
- * INV-18, owner rulings AQ1, AQ9): over the size limit, "tooLarge"; else
- * the file type (FILE_TYPES, spec 5.4) of its extension (lower case), then
- * of its whole name, says "markdown" or "code"; a file of no listed type is
- * "notAllowed". Its content is checked after decoding (U+0000, AQ11).
- * @purity semi-pure-a
- * @param {string} fileName
- * @param {number} fileSize
- * @returns {"tooLarge"|"markdown"|"code"|"notAllowed"}
- */
-export function classifyDroppedFile(fileName, fileSize) {
-  if (fileSize > CONFIG.fileDrop.maxBytes) return "tooLarge";
-  const ext = fileName.includes(".")
-    ? fileName.slice(fileName.lastIndexOf(".")).toLowerCase()
-    : "";
-  const type = FILE_TYPE_BY_MATCH.get(ext) ?? FILE_TYPE_BY_MATCH.get(fileName);
-  return type ? type.open : "notAllowed";
-}
-
-/**
- * A file the open checks refuse (INV-18 (1)(4)(5)). A drop and a Reload
- * (the file read from disk again) run the same checks and show the same
- * alert: reason is its key in CONFIG.fileDrop.messages.
- */
-export class FileRefusal extends Error {
-  /**
-   * @purity pure
-   * @param {"tooLarge"|"notAllowed"|"binaryFile"} reason
-   */
-  constructor(reason) {
-    super(reason);
-    this.reason = reason;
-  }
-}
-
-/**
- * The open checks before a file is read (INV-11, INV-18 (1)-(4)): its size
- * and its type by name.
- * @purity semi-pure-a
- * @param {{name: string, size: number}} file
- * @returns {"markdown"|"code"} how it opens
- * @throws {FileRefusal} too large, or of no listed type
- */
-export function checkFileToOpen(file) {
-  const kind = classifyDroppedFile(file.name, file.size);
-  if (kind === "tooLarge" || kind === "notAllowed") throw new FileRefusal(kind);
-  return kind;
-}
-
-/**
- * The open check on the decoded text (INV-18 (5), owner ruling AQ11).
- * @purity pure
- * @param {string} text
- * @returns {string} the text
- * @throws {FileRefusal} the text holds U+0000
- */
-export function checkTextToOpen(text) {
-  if (containsNul(text)) throw new FileRefusal("binaryFile");
-  return text;
 }
 
 /**
@@ -736,9 +674,8 @@ export default class UIController {
       } else if (this.codeEdit) {
         // INV-89: decoded here; the open dialog asks when it is not UTF-8
         // or mixes line endings. Cancel: nothing changes. A text with
-        // U+0000 is refused before the dialog (INV-18).
+        // U+0000 is refused (FileRefusal) before the dialog (INV-18).
         codeDocument = await this.codeEdit.read(file);
-        if (codeDocument === "binary") throw new FileRefusal("binaryFile");
         if (!codeDocument) return;
       } else {
         text = checkTextToOpen(await file.text()); // no code document: shown as UTF-8
@@ -1390,13 +1327,17 @@ export default class UIController {
    * _showSessionBody for a document just opened (a dropped .md, a paste
    * that starts a document): when its full render is done and it is still
    * the document shown, its hidden characters are told (INV-101 (3)).
-   * Reload comes here too (the file read again); [Render] does not.
+   * Reload comes here too (the file read again), and a GitHub file opened
+   * or reloaded (owner ruling AQ19); [Render] does not.
    * @param {'light'|'dark'} theme
+   * @param {string|null} [openedMessage] - a toast shown first, above the
+   *   hidden characters toast (the GitHub Opened / Reloaded toast)
    * @purity non-pure
    */
-  async _showOpenedSessionBody(theme) {
+  async _showOpenedSessionBody(theme, openedMessage = null) {
     const session = this.documents.session;
     await this._showSessionBody(theme);
+    if (openedMessage) this._toast(openedMessage);
     if (this.documents.session === session) this._announceHiddenChars(session.getBodyText());
   }
 
@@ -1726,8 +1667,7 @@ export default class UIController {
     this.blockEdit.dispatch("documentReplaced");
     this.documents.openGitHub(result.text, result.hasBom, result.link);
     this.orchestrator.resetExternalImageConsent(); // INV-43
-    await this._showSessionBody(systemTheme());
-    this._toast(CONFIG.github.messages.opened(result.link.ref.label()));
+    await this._showOpenedSessionBody(systemTheme(), CONFIG.github.messages.opened(result.link.ref.label()));
   }
 
   /**
@@ -1745,8 +1685,7 @@ export default class UIController {
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
     this.blockEdit.dispatch("documentReplaced");
     this.documents.reloadGitHub(result.text, result.hasBom, result.link);
-    await this._showSessionBody(this.state.currentTheme);
-    this._toast(CONFIG.github.messages.reloaded);
+    await this._showOpenedSessionBody(this.state.currentTheme, CONFIG.github.messages.reloaded);
   }
 
   /**

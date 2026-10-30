@@ -129,7 +129,7 @@ describe("UIController.setupFileDrop", () => {
     return { event, file };
   }
 
-  it("AT-UI-74 routes .md files to loadMarkdown (INV-17, INV-18 (1))", async () => {
+  it("AT-UI-74 routes .md files to loadMarkdown (INV-17, INV-18 (3))", async () => {
     createController();
 
     const file = new File(["# Hello"], "test.md", { type: "text/markdown" });
@@ -174,7 +174,7 @@ describe("UIController.setupFileDrop", () => {
     expect(calledWith).toBeDefined();
   });
 
-  it("AT-UI-74 routes .py files to renderCodeView (INV-18 (2))", async () => {
+  it("AT-UI-74 routes .py files to renderCodeView (INV-18 (3))", async () => {
     createController();
 
     const { event } = createDropEvent("script.py");

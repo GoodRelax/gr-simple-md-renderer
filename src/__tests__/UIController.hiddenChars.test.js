@@ -136,6 +136,23 @@ describe("AT-HID-08 INV-101 (3): the toast at open, once; not on an edit or [Ren
     expect(toasts()).toEqual([found(1)]);
   });
 
+  it("AT-HID-08 INV-101 (3): another document opened while the first is drawn: the first gives no toast", async () => {
+    await start();
+    const loadMarkdown = app.orchestrator.loadMarkdown.bind(app.orchestrator);
+    let release;
+    const held = new Promise((resolve) => (release = resolve));
+    // the first drawing ends only when released
+    vi.spyOn(app.orchestrator, "loadMarkdown").mockImplementationOnce((...args) => loadMarkdown(...args).then((r) => held.then(() => r)));
+    document.dispatchEvent(dropEvent(new File([HIDDEN_MD], "hidden.md", { lastModified: 1000 })));
+    await settle();
+    expect(app.orchestrator.loadMarkdown).toHaveBeenCalledTimes(1);
+    await drop("# Plain\n", "plain.md");
+    release();
+    await settle();
+    expect(app.preview.querySelector("h1").textContent).toBe("Plain");
+    expect(toasts()).not.toContain(found(3));
+  });
+
   it("U+FEFF at the start of a pasted text is not counted; one further on is", async () => {
     await start();
     paste(`\ufeff# T\n\nplain\n`);

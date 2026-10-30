@@ -7,7 +7,12 @@ vi.mock("../js/utils.js", async () => {
 
 import { CONFIG } from "../js/config.js";
 import SourceFileRenderer from "../js/classes/SourceFileRenderer.js";
-import { isHiddenMark } from "../js/hiddenCharMarks.js";
+import { isHiddenMark, markHiddenChars } from "../js/hiddenCharMarks.js";
+import { Marked } from "marked";
+import hljs from "highlight.js/lib/common";
+import DOMPurify from "dompurify";
+import MarkdownRenderer from "../js/classes/MarkdownRenderer.js";
+import MarkdownBlockModel from "../js/classes/MarkdownBlockModel.js";
 import { setupEdit, flush } from "./helpers/editStack.js";
 import { tap, pointer, keydown } from "./helpers/editDom.js";
 
@@ -92,17 +97,23 @@ describe("AT-HID-07 INV-101 (4)(5): marks in the Markdown preview", () => {
     expect(marksIn(blockOf("Tw"))).toEqual([["ZWSP", ZWSP]]);
   });
 
-  it("code drawn before highlight.js had run keeps its marks when it is colored, with no element in what highlight.js reads", async () => {
+  it("AT-HID-07 INV-101 (4): code drawn before highlight.js had run keeps its marks when it is colored, with no element in what highlight.js reads", async () => {
     s = await setupEdit(null, { editMode: false });
     const hljs = s.markdownRenderer.hljs;
     s.markdownRenderer.hljs = null;
     await s.orchestrator.loadMarkdown(`\`\`\`js\nconst a${ZWSP} = 1;\n\`\`\`\n`, "light");
     const code = s.preview.querySelector("pre code");
     expect(marksIn(code)).toEqual([["ZWSP", ZWSP]]);
-    const read = vi.spyOn(hljs, "highlightElement");
+    const highlightElement = hljs.highlightElement.bind(hljs);
+    const elementsRead = [];
+    const read = vi.spyOn(hljs, "highlightElement").mockImplementation((el) => {
+      elementsRead.push(el.querySelectorAll("*").length); // the marks are out before the colors (5.21.4)
+      return highlightElement(el);
+    });
     s.markdownRenderer.useLibrary("hljs", hljs);
     s.markdownRenderer.highlightPending();
     expect(read).toHaveBeenCalledTimes(1);
+    expect(elementsRead).toEqual([0]);
     expect(code.classList.contains("hljs")).toBe(true);
     expect(code.textContent).toBe(`const a${ZWSP} = 1;\n`);
     expect(marksIn(code)).toEqual([["ZWSP", ZWSP]]);
@@ -112,6 +123,41 @@ describe("AT-HID-07 INV-101 (4)(5): marks in the Markdown preview", () => {
     s = await setupEdit(`\ufeffStart a\ufeffb.\n`, { editMode: false });
     expect(marksIn(s.preview)).toEqual([["BOM", "\ufeff"]]);
     expect(s.preview.querySelector("p").firstChild.data.startsWith("\ufeffStart")).toBe(true);
+  });
+
+  it("AT-HID-07 INV-101 (4): marking again keeps one mark per run (a code block is marked when colored, then with its block)", async () => {
+    s = await setupEdit(`\`\`\`js\nconst a${ZWSP} = 1;\n\`\`\`\n\nPara a${ZWSP}b.\n`, { editMode: false });
+    expect(s.preview.querySelector("pre code").classList.contains("hljs")).toBe(true);
+    expect(marksIn(s.preview.querySelector("pre code"))).toEqual([["ZWSP", ZWSP]]);
+    const para = blockOf("Para");
+    markHiddenChars(para);
+    expect(marksIn(para)).toEqual([["ZWSP", ZWSP]]);
+  });
+
+  it("AT-HID-07 INV-101 (4), 5.21.4: no mark in the source of a Mermaid or PlantUML diagram before it is drawn, nor in a diagram box", () => {
+    const preview = document.createElement("div");
+    document.body.appendChild(preview);
+    try {
+      const marked = new Marked();
+      const renderer = new MarkdownRenderer(preview, marked, hljs, DOMPurify);
+      const fence = (lang) => `\`\`\`${lang}\nA${ZWSP}B\n\`\`\``;
+      const md = ["mermaid", "plantuml", "puml", "js"].map(fence).join("\n\n");
+      renderer.renderBlocks(MarkdownBlockModel.fromBody(md, (src) => marked.lexer(src), 1));
+      for (const lang of ["mermaid", "plantuml", "puml"]) {
+        const code = preview.querySelector(`code.language-${lang}`);
+        expect(code.textContent, lang).toContain(ZWSP);
+        expect(marksIn(code), lang).toEqual([]);
+      }
+      expect(marksIn(preview.querySelector("code.language-js"))).toEqual([["ZWSP", ZWSP]]);
+      const box = document.createElement("div");
+      box.className = "mermaid";
+      box.textContent = `graph TD; A${ZWSP}-->B`;
+      preview.append(box);
+      renderer.markHiddenChars(box);
+      expect(marksIn(box)).toEqual([]);
+    } finally {
+      preview.remove();
+    }
   });
 });
 
@@ -147,6 +193,17 @@ describe("AT-HID-13 INV-101 (7), INV-63: a table cell opened for editing shows t
     expect(cellEl(1, 0).textContent).toContain(ZWSP);
     expect(marksIn(cellEl(1, 0))).toEqual([["ZWSP", ZWSP]]);
   });
+
+  it("AT-HID-13 INV-101 (4), INV-65: a table operation that draws the whole table again marks it", async () => {
+    s = await setupEdit(`| A | B${ZWSP}x |\n| --- | --- |\n| a | b |\n`);
+    const table = s.preview.querySelector("table");
+    expect(marksIn(cellEl(0, 1))).toEqual([["ZWSP", ZWSP]]);
+    tap(cellEl(1, 0));
+    s.bec.dispatch("tableOperationRequested", { op: { kind: "deleteRow" } }); // the only body row: no tbody is left
+    expect(s.preview.querySelector("table")).not.toBe(table); // drawn again, not changed row by row
+    expect(s.preview.querySelector("table").rows).toHaveLength(1);
+    expect(marksIn(cellEl(0, 1))).toEqual([["ZWSP", ZWSP]]);
+  });
 });
 
 describe("AT-HID-09 INV-101 (4): marks in the code view, every time its lines are drawn", () => {
@@ -181,7 +238,7 @@ describe("AT-HID-09 INV-101 (4): marks in the code view, every time its lines ar
   });
 
   it("CONFIG has the toast's words (5.2)", () => {
-    expect(CONFIG.messages.hiddenChars.found(1)).toBe("Hidden characters in 1 place. They are marked in the view.");
-    expect(CONFIG.messages.hiddenChars.found(4)).toBe("Hidden characters in 4 places. They are marked in the view.");
+    expect(CONFIG.messages.hiddenChars.found(1)).toBe("Hidden characters in 1 place. If it is in the text, it is marked in the view.");
+    expect(CONFIG.messages.hiddenChars.found(4)).toBe("Hidden characters in 4 places. Those in the text are marked in the view.");
   });
 });

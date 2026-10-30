@@ -40,7 +40,7 @@ test("AT-HID-07 INV-101 (3)(4)(5): a dropped .md shows one toast and a framed ma
   await page.goto("/");
   await dropFile(page, { name: "hidden.md", text: MD });
   await expect(page.locator("#preview h1")).toHaveText("Hidden");
-  await expect(page.locator("#toastContainer .toast")).toHaveText(["Hidden characters in 4 places. They are marked in the view."]);
+  await expect(page.locator("#toastContainer .toast")).toHaveText(["Hidden characters in 4 places. Those in the text are marked in the view."]);
   const preview = page.locator("#preview");
   await expect(preview.locator("span.grsmd-hidden-mark")).toHaveCount(4);
   const marks = await drawnMarks(preview);
@@ -77,7 +77,7 @@ test("AT-HID-09 / AT-HID-11 INV-101 (4)(7): the code view marks its runs; the co
   await recordToasts(page);
   await dropFile(page, { name: "hidden.js", text: `const a = 1;${ZWSP}\n// x ${RLO}y${PDF}\n` });
   await expect(page.locator("body")).toHaveClass(/\bview-code\b/);
-  await expect(page.locator("#toastContainer .toast")).toHaveText(["Hidden characters in 3 places. They are marked in the view."]);
+  await expect(page.locator("#toastContainer .toast")).toHaveText(["Hidden characters in 3 places. Those in the text are marked in the view."]);
   const body = page.locator("#codeViewBody");
   await expect(body.locator("span.grsmd-hidden-mark")).toHaveCount(3);
   expect((await drawnMarks(body)).map((m) => m.label)).toEqual(["ZWSP", "RLO", "PDF"]);
@@ -92,7 +92,7 @@ test("AT-HID-09 / AT-HID-11 INV-101 (4)(7): the code view marks its runs; the co
   await page.locator("body").press("e");
   await expect(page.locator("#codeViewBody span.grsmd-hidden-mark")).toHaveCount(3);
   const hiddenToasts = await page.evaluate(() => window.__toasts.filter((t) => t.startsWith("Hidden")));
-  expect(hiddenToasts).toEqual(["Hidden characters in 3 places. They are marked in the view."]); // at open only
+  expect(hiddenToasts).toEqual(["Hidden characters in 3 places. Those in the text are marked in the view."]); // at open only
 });
 
 test("AT-HID-12 5.21.4: the marks are printed; an emoji and a flag have none", async ({ page }) => {

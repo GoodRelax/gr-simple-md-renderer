@@ -177,8 +177,12 @@ export const CONFIG = {
     },
     hiddenChars: {
       // INV-101: the toast at open and on Reload, once, when there is at least one run
+      // Some places get no mark (diagram and math sources, link targets, HTML comments),
+      // so the text says only those in the text are marked (review L1).
       found: (count) =>
-        `Hidden characters in ${count} ${count === 1 ? "place" : "places"}. They are marked in the view.`,
+        count === 1
+          ? "Hidden characters in 1 place. If it is in the text, it is marked in the view."
+          : `Hidden characters in ${count} places. Those in the text are marked in the view.`,
     },
     externalImage: {
       // CON-12, INV-19: one fixed sentence; the hosts are on the placeholders

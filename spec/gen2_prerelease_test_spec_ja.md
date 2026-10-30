@@ -80,6 +80,8 @@
 
 > v2.33 の変更 (2026-10-30、開くファイルの確認と見えない文字の知らせ。beta3。v2.30〜v2.32 は GitHub の編集の枝が使う): 仕様の INV-18 (ファイルの種類の表だけで決める。U+0000 で断る)・INV-89 (8)・INV-101 (新)・INV-102 (新)・5.4・5.21 (新)・INV-70・INV-57 / INV-31 (ペンはタッチと同じ) の改め (オーナーの裁定 AQ1・AQ5・AQ6・AQ9〜AQ17) に合わせて、PRT-E03 (表に無い .xyz は断る)・E04 (文言)・Q07 (手順 5: ペン)・X19 (INV-70 の新しい字、プレビューの INV-101 の印) を改め、セクション AL (PRT-AL01〜AL06) を足した。前提条件 P-03 に試験のファイルを足した。AT に AT-FT・AT-HID・AT-GEN (新) を足し、AT-DBL-18 / 19 (ペン)・AT-CFG-10 / 12 / 13・AT-UI-74・AT-ICO を改め、PRT-R01 の手順 9 に AL を足した。AT-FT に 07〜16 の行、AT-HID に 13 (表のセル) とファイルを書き、AT.4 に hiddenChars.e2e.js を足した。調整役の裁定 (2026-10-30。Reload でも開くときと同じ確かめをし、見えない文字のトーストも出す。仕様の INV-18 (8)・INV-21・INV-89 (6)・INV-101 (3)・5.21.3) に合わせて、PRT-AL07 (新) を足し、PRT-AL04 の手順 5 を改め、AT-FT に 17〜23、AT-HID に 14 を足し、AT-HID-08・AT-DLC-08・AT-RLD-01・AT-UI-80・AT-UI-99 を改めた (コードビューの Reload は読んで確かめてから確認する)。PRT-L01 にヘルプのドロップの文の期待を足した。改めたケースと足したケースの判定は空欄 (未実施)。
 
+> v2.34 の変更 (2026-10-30、beta3 のレビュー (1 回目) の直し): 見えない文字のトーストの文言を、印の無い所 (図と数式の原文、リンクの先、HTML のコメント) があっても正しい文にした (仕様 5.2・5.21.3。レビュー L1): 2 か所以上は "Hidden characters in N places. Those in the text are marked in the view."、1 か所は "Hidden characters in 1 place. If it is in the text, it is marked in the view."。PRT-AL04・AL05・AL07 の期待をこの文にした。PRT-AL04 (M1): P-03 の `hidden-chars.md` に見えない文字の無い小さな表を足し、手順 3 はその表のセルに U+200B を入れる。手順 4 の期待を数 (8 places) で書き、手順 5 (Reload) は Chrome / Edge だけとした。PRT-AL07 (M2): `reload.md` を `# Reload`・空行・`Text.` の 3 行にし、手順 1 は段落 `Text.` を直す。PRT-AL03 (L12): 手順 3 の期待に 95 行・FT-95 (`LICENSE`) と、AQ9 の 96 から `.R` を除いたことを書いた。PRT-L01 (L7): 編集の始め方の期待を、マウスはダブルクリック、タッチとペンは [Edit] を押してからタップ (AQ4・AQ13) にした。PRT-X19 の印刷の参照を PRT-AL06 に、セクション AL の前書きの裁定に AQ15〜AQ17 を足した (L11)。AT.4 の fileDrop.e2e.js の行を「表にあるそれ以外の種類はコードビュー」にした (L13)。`CodeEditController.read` は U+0000 で `"binary"` を返さず、`fileOpenChecks.js` の `checkTextToOpen` の `FileRefusal` を投げる (L2)。AT-FT-13 の説明を合わせた。AT-GEN-02 に INV-102 (3) の検査 (`id`・`match`・`hljs` の形) を書いた。レビュー L3 で足した試験を、AT-HID-07 (付け直しても印は 1 つ、図の原文と図の箱に印が無い)・08 (描く間に別の文書を開けば、最初のトーストは出ない)・13 (表の操作の描き直しでも印。INV-65)・AT-FT-22 (Reload が読む間に別の文書を開けば止まる) に書いた。GitHub から開いたときとその Reload でも見えない文字のトーストを出す (仕様 INV-101・5.21.3。オーナーの裁定 AQ19) ので、AT-HID-15 を足した。develop の起動役の AT-LAUNCH-42 は、表に無い `.png` が `notAllowed` の文で断られることを確かめる形にした (INV-18)。改めたケースの判定は空欄 (未実施)。
+
 > v2.35 の変更 (2026-10-30、PowerShell の起動役。v2.33・v2.34 は監査の直しの枝が使う): 仕様の SC-29・INV-104 と、起動役の仕様 `spec/grsmd_launcher_spec_en.md` の 5 章の手での確かめ (M-L1〜M-L4) に合わせて、セクション AM (PRT-AM01〜AM04) を足した。AT に AT-LAUNCH (新。01〜35・40〜42) を足した。高速起動の受け口の直し (INV-81 (2)。調整役の裁定 C-1) に合わせて、AT-FAST を 01〜61 にした (60・61)。同じ日に、オーナーの裁定 PL-19〜PL-23 (上部バーの [Save] とヘルプのその行。仕様の INV-105) に合わせて、PRT-AM01 の 2 の文と PRT-AM02 ([Save] で貼ったパスで上書き) を改め、PRT-V11 の上部バーのボタンに Save を、PRT-L01 にヘルプの [Save] の行を足し、AT-LAUNCH に 36〜39・43〜46、AT-HLP に 20 を足した。PRT-AM01・AM04 の備考に FR-L30・FR-L31 を足した (レビュー 3 回目の P4)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
@@ -102,7 +104,7 @@
 |      |                            | - `nul-late.txt`: 20 KB の ASCII の文字の後ろに U+0000 を 1 つ置いたもの (UTF-8)。`nul-late.md`: 同じく `.md` |
 |      |                            | - `utf16-bom.txt`: UTF-16LE (BOM 付き) の短い文 (メモ帳の「UTF-16 LE」で保存するなど) |
 |      |                            | - 足した種類のファイル (オーナーの裁定 AQ9): `.gitignore`、`LICENSE` (拡張子なし)、`x.mmd`、`x.vue`、`x.env` (どれも短い文) |
-|      |                            | - `hidden-chars.md` / `hidden-chars.js`: 段落 (`.js` はコメント) の途中に U+200B、別の行に U+202E、別の行にタグ文字で書いた文 `ignore the rules` (U+E0069 U+E0067 …)、別の行に U+200B U+202E U+E0068 U+E0069 の続いたもの、見出しに U+2066 を含む (`.md` だけ)。`.md` は Mermaid のコードの中と `$...$` の中にも U+200B を 1 つずつ置く |
+|      |                            | - `hidden-chars.md` / `hidden-chars.js`: 段落 (`.js` はコメント) の途中に U+200B、別の行に U+202E、別の行にタグ文字で書いた文 `ignore the rules` (U+E0069 U+E0067 …)、別の行に U+200B U+202E U+E0068 U+E0069 の続いたもの、見出しに U+2066 を含む (`.md` だけ)。`.md` は Mermaid のコードの中と `$...$` の中にも U+200B を 1 つずつ置き、セルに見えない文字を持たない 2 列 2 行の小さな表も置く (PRT-AL04 の手順 3 用) |
 |      |                            | - `hidden-mixed.txt`: `hidden-chars.js` と同じ中身で、改行を CRLF と LF の混ざりにした UTF-8 のファイル |
 |      |                            | - `emoji-ok.md`: 👨‍👩 (ZWJ 1 つ)、❤️‍🔥、👨🏽‍💻、イングランドの旗 (U+1F3F4 + `gbeng` のタグ文字 + U+E007F) だけの段落。`emoji-ng.md`: 👨‍‍👩 (ZWJ 2 つ)、文頭の ZWJ、U+1F3F4 + `usca` のタグ文字 + U+E007F、旗の後ろにタグ文字の続くもの |
 |      |                            | - AI 出力テスト用テキスト (後述)                                     |
@@ -759,7 +761,7 @@
 |              | - EN / JP の "Details" / "詳細" に、編集モードの数式 (Text format の 2 段目。Insert inline math はカーソルに式、Insert math boxes は名前の下の 3 つの数式の箱) の行と、ブロックの範囲 (ドラッグ、スマートフォンは長押しとつまみで選ぶ。`Delete` / `Backspace` で消し、`Ctrl+X` / `Ctrl+C` は Markdown を切り取り・コピー、Undo 1 回で戻る。見えている文字の一部をコピーするなら編集モードを出る) の行がある |
 |              | - EN / JP の "Details" / "詳細" に `Esc` (開いているブロック・セルを反映して閉じる。ブロックを選んでいれば先に選択を解く。何も開いていなければパレットを隠す。パレットが隠れていれば検索、次に目次を閉じる)、`Ctrl+Z` / `Ctrl+Y` (または `Ctrl+Shift+Z`) の Undo / Redo (30 回まで。Mac は `Cmd+Z` / `Cmd+Shift+Z`。開いたブロックの中では Redo はいつも入力のやり直し、Undo もブロックに変更があれば入力の取り消し)、すき間の点線と `+` からの挿入 (タッチはタップ)、図の `Copy SVG` / `Copy PNG` (PC)、印刷 (Ctrl+P。文書だけをライトの色で) の行がある。`[?]` の行に「`Esc` で閉じる」(EN "`Esc` closes it") がある |
 |              | - EN / JP の "Details" / "詳細" に [Edit] / E の行がある (「See Editing」/「「編集」を参照」は無い) |
-|              | - EN / JP の "Details" / "詳細" の [Edit] / E の行の次に、編集の始め方の行がある: PC はブロックのダブルクリック、スマートフォン・タブレットは [Edit] を押してからブロックをタップ (オーナーの裁定 AQ4) |
+|              | - EN / JP の "Details" / "詳細" の [Edit] / E の行の次に、編集の始め方の行がある: マウスはプレビューのダブルクリック、タッチとペンは [Edit] を押してからブロックをタップ (オーナーの裁定 AQ4・AQ13) |
 |              | - EN / JP の "Details" / "詳細" の編集の始め方の行の次に、[Save] の行がある: Ctrl+S と同じ。GRSMD がファイルの場所を知っているときはパスをクリップボードに入れ、Ctrl+V でファイル名に貼る。起動役の名は無い (INV-105 (7)。オーナーの裁定 PL-23。2026-10-30 に足した。判定は空欄) |
 |              | - EN / JP の "Details" / "詳細" に Ctrl+S / Ctrl+Shift+S の行がある (Mac は Cmd) |
 |              | - EN "Privacy & Security" / JP "プライバシーとセキュリティ" に、ダウンロードのボタンが GitHub (github.com) を開き、押すまで何も送らない文がある |
@@ -3360,7 +3362,7 @@
 | **期待結果** | - 1 で、U+00A0・U+200B・行末の空白 2 つに薄い背景の印が付き、文字の幅と位置は変わらない |
 | | - 2 で、コードブロックの行末の空白には印が付かない |
 | | - 3 で、絵文字の字形が崩れず、折り返しと印の位置がずれない (打った後も、幅を変えた後も) |
-| | - 4 で、プレビューと印刷には INV-70 の背景の印が出ない。U+200B の前には INV-101 の枠の印 `⟪ZWSP⟫` が出る (印刷にも。PRT-AL04)。(3) の絵文字には枠の印が出ない |
+| | - 4 で、プレビューと印刷には INV-70 の背景の印が出ない。U+200B の前には INV-101 の枠の印 `⟪ZWSP⟫` が出る (印刷にも。PRT-AL06)。(3) の絵文字には枠の印が出ない |
 | | - 5 で、同じ語が二重に当たらず、二重に読まれない **[要検証: ページ内検索が `inert` の中を除くこと]**。除かない場合は既知の制約として記録する |
 | | - 6 で、印は出ず、打鍵が遅くならない |
 | | - 7 で、U+202E とタグ文字の `hi` に背景の印が付く。旗のタグ文字には付かず、旗の字形は崩れない (INV-70 の 2026-10-30 の改め) |
@@ -5405,7 +5407,7 @@ SC-28、INV-93〜INV-100、CON-16 (仕様 5.20)。GitHub の編集のヘルプ�
 
 ## セクション AL: 開くファイルの確認と見えない文字 (2026-10-30)
 
-INV-18、INV-89 (8)、INV-101、INV-102、仕様 5.4・5.21。オーナーの裁定 AQ1・AQ5・AQ6・AQ9〜AQ14 (2026-10-29)。Reload の確かめ (INV-18 (8)) は調整役の裁定 (2026-10-30)。試験のファイルは P-03。
+INV-18、INV-89 (8)、INV-101、INV-102、仕様 5.4・5.21。オーナーの裁定 AQ1・AQ5・AQ6・AQ9〜AQ14 (2026-10-29)・AQ15〜AQ17 (2026-10-30)。Reload の確かめ (INV-18 (8)) は調整役の裁定 (2026-10-30)。試験のファイルは P-03。
 
 ---
 
@@ -5455,6 +5457,7 @@ INV-18、INV-89 (8)、INV-101、INV-102、仕様 5.4・5.21。オーナーの裁
 |              | 3. 仕様 5.4 の生成した表の行の数と、表の最後の行の ID を見る |
 | **期待結果** | - 1 で、どれもコードビューに色なしで出る                  |
 |              | - 2 で、`x.vue` は XML、`x.env` は INI の色で出る         |
+|              | - 3 で、表は 95 行で、最後の行は FT-95 (`LICENSE`)。オーナーの裁定 AQ9 の 96 個から、決して当たらない `.R` を除いた (拡張子は小文字にしてから引く。`.r` が R になる。仕様 5.3) |
 |              | - 3 で、表は生成した表で、`npm test` の AT-GEN が通っている (仕様と原稿と `src/js/fileTypes.js` が一致する) |
 
 | 結果 | Pass / Fail / N/A |
@@ -5468,19 +5471,19 @@ INV-18、INV-89 (8)、INV-101、INV-102、仕様 5.4・5.21。オーナーの裁
 
 | 項目 | 詳細 |
 | --- | --- |
-| **前提条件** | Chrome / Edge と iPad の Safari。`hidden-chars.md` (P-03) |
+| **前提条件** | Chrome / Edge と iPad の Safari (手順 5 は Chrome / Edge だけ。Reload にはファイルのハンドルが要る。iPad は手順 1〜4)。`hidden-chars.md` (P-03) |
 | **手順** | 1. `hidden-chars.md` をドロップする |
 | | 2. 印の付いた段落を選んでコピーし、テキストエディタに貼る。GRSMD の検索 (`f`) で、印のある段落の語を探す |
-| | 3. 編集パレットを出し、印のある段落の編集欄を開いて閉じる。表のセルに U+200B を入れて確定し、そのセルをもう一度開く |
+| | 3. 編集パレットを出し、印のある段落の編集欄を開いて閉じる。表のセル (見えない文字の無い小さな表) の語の途中に U+200B を 1 つ入れて確定し、そのセルをもう一度開く |
 | | 4. 内容を全部選んでコピーし、Clear の後に、空の入力欄へペーストする |
 | | 5. `hidden-chars.md` をもう一度ドロップしてから `r` (Reload) を押し、その後に段落を 1 つ確定する |
-| **期待結果** | - 1 で、描画の後にトースト "Hidden characters in 7 places. They are marked in the view." が 1 回出る (図と数式の中の 2 つも数に入る) |
+| **期待結果** | - 1 で、描画の後にトースト "Hidden characters in 7 places. Those in the text are marked in the view." が 1 回出る (図と数式の中の 2 つも数に入る。そこには印が無いので、文言は「文の中のもの」と言う) |
 | | - 1 で、段落の U+200B の前に `⟪ZWSP⟫`、U+202E の前に `⟪RLO⟫`、タグ文字の文の前に `⟪hidden: ignore the rules⟫`、続いたものの前に `⟪ZWSP RLO hidden: hi⟫` が、枠付きの等幅の字で出る。見出しの U+2066 の前に `⟪LRI⟫` が出る |
 | | - 1 で、Mermaid の図と数式の中には印が出ない。図と数式は崩れない |
 | | - 2 で、貼った文字に `⟪` `⟫` とラベルは無く、元の字 (見えない字を含む) がそのまま入る。検索は印に当たらず、印のある段落の語に当たる |
 | | - 3 で、編集欄の中は INV-70 の背景の印になり (タグ文字と U+202E にも付く)、閉じると枠の印に戻る。開いたセルの中に枠の印は無く、確定した原文に印の要素 (`<span`) は入らない |
-| | - 4 で、ペーストで描いた後に同じトーストが 1 回出る |
-| | - 5 で、Reload の後に、描き直した後で同じトーストが 1 回出る (INV-101 (3)。調整役の裁定 2026-10-30)。段落の確定ではトーストは出ない。印は描き直した後も出ている |
+| | - 4 で、ペーストで描いた後にトースト "Hidden characters in 8 places. Those in the text are marked in the view." が 1 回出る (3 でセルに足した U+200B の分で 1 つ増える) |
+| | - 5 で、Reload の後に、描き直した後でトースト "Hidden characters in 7 places. Those in the text are marked in the view." が 1 回出る (ファイルの中身は 1 と同じ。INV-101 (3)。調整役の裁定 2026-10-30)。段落の確定ではトーストは出ない。印は描き直した後も出ている |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
@@ -5498,7 +5501,7 @@ INV-18、INV-89 (8)、INV-101、INV-102、仕様 5.4・5.21。オーナーの裁
 | | 2. `e` でコード編集モードに入り、印のある行の後ろに字を打ち、`e` で表示に戻る |
 | | 3. `hidden-mixed.txt` をドロップする。開くダイアログで [Unify to LF] を押す |
 | | 4. 3 をもう一度行い、開くダイアログで [Cancel] を押す |
-| **期待結果** | - 1 で、コードビューが出た後にトースト "Hidden characters in 4 places. They are marked in the view." が 1 回出て、行の中の並びの前に `⟪ZWSP⟫` などの印が出る。行番号と行の高さはずれない |
+| **期待結果** | - 1 で、コードビューが出た後にトースト "Hidden characters in 4 places. Those in the text are marked in the view." が 1 回出て、行の中の並びの前に `⟪ZWSP⟫` などの印が出る。行番号と行の高さはずれない |
 | | - 2 で、編集欄の中には枠の印が無い。表示に戻ると印が出る。トーストは出ない |
 | | - 3 で、先に開くダイアログが出て、ダイアログの中にトーストと印は無い。押した後、コードビューが出てからトーストが出る |
 | | - 4 で、トーストは出ず、表示は変わらない |
@@ -5535,8 +5538,8 @@ INV-18、INV-89 (8)、INV-101、INV-102、仕様 5.4・5.21。オーナーの裁
 
 | 項目 | 詳細 |
 | --- | --- |
-| **前提条件** | Chrome / Edge (Reload にはハンドルが要る)。作業用のフォルダに `reload.md` (`# Reload` の 1 行) と `reload.js` (`let a = 1;` の 1 行) を作る |
-| **手順** | 1. `reload.md` をドロップし、編集パレットを出して段落を 1 つ直す (未保存) |
+| **前提条件** | Chrome / Edge (Reload にはハンドルが要る)。作業用のフォルダに `reload.md` (`# Reload`、空行、`Text.` の 3 行) と `reload.js` (`let a = 1;` の 1 行) を作る |
+| **手順** | 1. `reload.md` をドロップし、編集パレットを出して段落 `Text.` を直す (未保存) |
 | | 2. テキストエディタで `reload.md` に U+0000 を 1 字足して保存し、GRSMD で `r` を押す |
 | | 3. `reload.md` を 5 MB を超える大きさにして保存し、`r` を押す |
 | | 4. `reload.md` を元の中身に戻し、行の途中に U+200B を足して保存し、`r` を押して未保存の確認で OK を押す |
@@ -5544,7 +5547,7 @@ INV-18、INV-89 (8)、INV-101、INV-102、仕様 5.4・5.21。オーナーの裁
 | **期待結果** | - 2 で、アラートに "GRSMD can only open text files." が表示される。未保存の確認は出ない |
 | | - 3 で、アラートに "This file is too big. The limit is 5 MB." が表示される |
 | | - 2・3 で、表示・直した段落・未保存の印 (タイトルの先頭) は変わらない |
-| | - 4 で、読み直した文書が描かれた後に、トースト "Hidden characters in 1 place. They are marked in the view." が 1 回出る |
+| | - 4 で、読み直した文書が描かれた後に、トースト "Hidden characters in 1 place. If it is in the text, it is marked in the view." が 1 回出る |
 | | - 5 で、アラートに "GRSMD can only open text files." が表示され、未保存の確認は出ない。コード編集モードが続き、打った字と未保存の印もそのまま |
 
 | 結果 | Pass / Fail / N/A |
@@ -5756,9 +5759,9 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-CEM | 11-h コード編集モードの状態機械 (3 つの出来事 × 2 つの状態のすべての交点、ガード `canEdit`、知らないガード・処理は誤り、仕様の図と表の一致) | 11-h、INV-85 | CodeEditController.stateMachine.test.js | (族の名前) |
 | AT-CCP | `CodeCommandPalette` (箱の名前とボタン、開閉とフォーカス、命令で閉じない、Esc・外の押下、無効、リスナー) | INV-92 (5) | CodeCommandPalette.test.js | 01〜07 |
 | AT-GH | GitHub 連携: URL の分解 (01: ブランチの `/`、% の符号、断る形)、相対パスの解決 (02: 画像・リンク・最上位・上へ出すぎ・直さない形)、PAT の形 (03。D12)、Base64 と UTF-8 の往復 (04: 日本語・BOM・CRLF・大きいもの、NUL と壊れた UTF-8)、`GitHubContentsClient` (05: URL・ヘッダー・固定のオリジン・PAT が URL と文に出ない・5.20.4 の各失敗の文 (403・`retry-after`・422・429・`x-ratelimit-reset`・409 の `conflict` の全文)・PUT の中身・409、PUT の通信の失敗と 200 の読めない応答の `pushUnknown` (L1))、`DocumentLifecycle` の連携 (06: 開く・残す・止める・push の間の拒否・成功と失敗、11-e の push の交点 (`pushRequested` / `pushFinished`、`pushing` の間の置き換えと保存。M2))、`GitHubController` の PAT の欄と Push (08: 欄の名前 D35、[Saved] が無い D34、目のボタンの切り替えと閉じる・開くときの戻し D28、入力でエラーの行が消える D37、Push のトーストの 6 秒と送った後の欄 D36)、キーのヒントの `[O] GitHub;` (08: PC だけ。D33)、ボタンと `o` と画面 (09: ボタンの切り替え、`o` の開く・無動作、INV-100 で出さない、画面の中のキーを渡さない、ドロップの 3 択)、GitHub の文書の相対パスの描画 (10: INV-99。書き換えた画像も同意まで読まずに保留する (INV-99 (1)、INV-19。L7))、UIController を通した結線 (11: 開く順 INV-94 (3) (保存中は断る)、Reload INV-97 (読み始めた後に文書が変わったら置き換えない)、ドロップの続ける・止める・やめる INV-98。L7)、パスの安全 (12: 区切りに空・`.`・`..` があれば送らない、PAT は `/repos/<owner>/<repo>/` の外へ出ない。CON-16 (4)。L2)、レビューの直し (13: 画面の中の主 + S は既定を止めて何もしない (INV-58。M3)、画面の `unsafePath` (INV-93 (5)。L2)、閉じた画面の PAT の欄を空にする (CON-16 (2)。L3)) | SC-28、INV-58、INV-93〜INV-100、CON-16、11-e | gitHub.test.js (01〜06、12)、GitHubController.test.js (08〜10、13)、UIController.gitHub.test.js (11) | 01〜06、08〜13 (07 は試作の偽の GitHub。本実装で消した) |
-| AT-FT | ファイルの種類の判定と開くときの確かめ (01: 表のどの行も、拡張子 (大文字を含む) か名前の全体で、行の開き方になる。02: 表に無い種類は `notAllowed` で、断る拡張子の一覧も中身の検査も無い (D29)。03: 5 MB を超えれば種類より先に `tooLarge`。04: `notAllowed` の文言、`BINARY_EXTENSIONS` が無いこと、`markdownExtensions` と `EXT_TO_HLJS` が `FILE_TYPES` から作られること、AQ9 で足した種類の色。05: `containsNul` が、読み解いた文字のどこか (先頭 8 KB より後ろも) の U+0000 を見つける。06: Shift_JIS と読んだ文字に U+0000 があるコードのファイルは、開くダイアログより前に `binaryFile` で断り、何も変わらない。07: 先頭 8 KB より後ろの U+0000 でも断る (表にある `.txt` でも)。08: BOM 付きの UTF-16 の文字に U+0000 があれば、ダイアログより前に断る。09: 開くダイアログで選び直した文字コードで読んだ文字に U+0000 があれば断り、何も変わらない。10: U+0000 を含む `.md` を断る。11: 表に無い種類 (`.png`・`.xyz`・名前 `README`) は、読む前に `notAllowed` で断る。12: `.markdown` は Markdown の表示、`LICENSE` と `.vue` はコードビュー (`.vue` は XML の色)。13: `CodeEditController.read` が、U+0000 のある文字にダイアログより前に `"binary"` を返し、ダイアログで選んだ文字コードの文字に U+0000 があっても `"binary"`、BOM 付きの UTF-16LE を UTF-16LE で読めば開ける。14〜16 は e2e (14: `.png`・`.xyz` は alert で断り初期画面のまま、15: `.markdown` は Markdown、`LICENSE` はコードビュー、16: Shift_JIS の `.py` と `.md` の U+0000 は開くダイアログより前に断り、初期画面のまま)。17〜21 は Reload の確かめ (INV-18 (8)。17: Markdown の Reload で 5 MB を超えたファイルは、中身を読まずに `tooLarge` で断る、18: 読む名前が表に無ければ `notAllowed` で断る、19: 読んだ文字に U+0000 があれば `binaryFile` で断り、直した後のファイルは読み直せる。17〜19 は、表示・本文・保存先・未保存の印を変えず、未保存の確認も `reloadFailed` も出さない、20: コードビューの Reload も 5 MB・名前・U+0000 で同じ alert を出し、コードの文書の文字・未保存の状態・ファイル情報を変えない、21: `MarkdownFileAccess.readFile` が中身を読む前に `check(file)` を呼び、投げたら読まない、22: コードビューの Reload はドロップと同じ順 (読んで確かめる → 未保存の確認 → コード編集モードを終える)。コード編集モードの間に 5 MB・名前・U+0000 で断る、読めない、確認で Cancel する、のどれでも、確認より前に止まるか何も変えず、コード編集モードと打った字と未保存の印が続く。OK なら確認の後にコード編集モードが終わる、23: `SourceFileRenderer.reload` は `readText` が null を返せば何も描かずに null)) | INV-11 (03・17)、INV-18 (17〜22 は (8))、INV-21 (17〜20・22・23)、INV-89 (8) (09・13)、INV-89 (6) (20・22)、INV-102 (04) | fileTypes.test.js (01〜03・05)、config.test.js (04)、UIController.codeEditor.test.js (06〜12)、CodeEditController.test.js (13)、fileDrop.e2e.js (14〜16)、UIController.reloadChecks.test.js (17〜20・22)、MarkdownFileAccess.test.js (21)、SourceFileRenderer.test.js (23) | 01〜23 |
-| AT-HID | 見えない文字の知らせ (01: 対象の字ごとの並びとラベル、02: 隣り合う字は 1 つの並び、名前を空白でつなぐ、03: ZWJ の例外 (絵文字と絵文字の間に 1 つ、U+FE0F と肌の色を挟んでよい) と、例外にならない ZWJ (2 つ続く、端、字の間)、04: 旗の例外 (`gbeng`・`gbsct`・`gbwls` と U+E007F) と、例外にならないタグ文字 (ほかの符号、U+E007F が無い、旗の後ろに続く)、05: タグ文字の文を ASCII に戻し、範囲の外は `?`、文は切らない、06: 文字の先頭の U+FEFF は数えない、07: プレビューの印 (中の空の `span`、`aria-hidden`、`data-label`、元の字はそのまま、図・数式・外部画像の代わりの表示の中と属性には付けない、部分描画 (確定・Undo・Redo) のたびに付く、highlight.js が後から色を付けても残る、本文の先頭の U+FEFF には付けない。e2e: 枠の印の幅、コピーにラベルが入らない)、08: トーストは開くたびに 1 回で文書を描いた後、編集・[Render] では出ない、ペーストで文書を始めたときと早い入力でも出る、絵文字と旗だけなら出ない、09: コードビューの印 (開く・編集した文字・色付けし直しの後も。行の数と文字は変わらない。e2e: 行の高さがそろう)、10: 開くダイアログが先で、Cancel と INV-21 の確認の Cancel ではトーストが出ない、11: コード編集モードの中には印が無く、表示に戻ると出る (e2e)、12: 印は印刷で隠さず、CSS の文字は ASCII、周りの字の色の枠、向きを変える文字から切り離す (`unicode-bidi: isolate`)、13: 表のセルの編集を開くと、そのセルの枠の印を外して WYSIWYG で開き (INV-70 の印だけ)、変えずに閉じても書き換えて閉じても印が戻る。原文に要素が入らない、14: Reload (Markdown とコードビュー) でも、読み直した文字の数でトーストが 1 回、描いた後に出る。隠れた字が無ければ出ない。INV-18 (8) で断った Reload では出ない (調整役の裁定 2026-10-30)) | INV-101、5.21、INV-63 (13)、INV-21 と INV-18 (8) (14) | hiddenChars.test.js (01〜06・12)、hiddenChars.render.test.js (07・09・13)、UIController.hiddenChars.test.js (08・10・14)、hiddenChars.e2e.js (07・09・11・12) | 01〜14 |
-| AT-GEN | ファイルの種類の表の生成器 `tools/fileTypes.mjs` (01: 原稿が生成器の検査を通る (行の数、`.md` と `.markdown` が Markdown の行)、02: 検査が、`id` か `match` の重複、欠けた欄・知らない欄、知らない `open`、当たらない拡張子 (大文字)、少なすぎる行の数を見つける、03: `src/js/fileTypes.js` が原稿から作ったものと 1 バイトも違わない (`--check` と同じ)、04: 仕様 5.4 の表が同じく 1 バイトも違わない、05: 仕様は印の行の間だけが変わり、改行の形を保ち、印が無い・2 つあると断る、06: モジュールの文字は ASCII で、行ごとに凍結した値) | INV-102 | fileTypes.test.js | 01〜06 |
+| AT-FT | ファイルの種類の判定と開くときの確かめ (01: 表のどの行も、拡張子 (大文字を含む) か名前の全体で、行の開き方になる。02: 表に無い種類は `notAllowed` で、断る拡張子の一覧も中身の検査も無い (D29)。03: 5 MB を超えれば種類より先に `tooLarge`。04: `notAllowed` の文言、`BINARY_EXTENSIONS` が無いこと、`markdownExtensions` と `EXT_TO_HLJS` が `FILE_TYPES` から作られること、AQ9 で足した種類の色。05: `containsNul` が、読み解いた文字のどこか (先頭 8 KB より後ろも) の U+0000 を見つける。06: Shift_JIS と読んだ文字に U+0000 があるコードのファイルは、開くダイアログより前に `binaryFile` で断り、何も変わらない。07: 先頭 8 KB より後ろの U+0000 でも断る (表にある `.txt` でも)。08: BOM 付きの UTF-16 の文字に U+0000 があれば、ダイアログより前に断る。09: 開くダイアログで選び直した文字コードで読んだ文字に U+0000 があれば断り、何も変わらない。10: U+0000 を含む `.md` を断る。11: 表に無い種類 (`.png`・`.xyz`・名前 `README`) は、読む前に `notAllowed` で断る。12: `.markdown` は Markdown の表示、`LICENSE` と `.vue` はコードビュー (`.vue` は XML の色)。13: `CodeEditController.read` が、U+0000 のある文字にダイアログより前に `FileRefusal("binaryFile")` を投げ (`fileOpenChecks.js` の `checkTextToOpen`)、ダイアログで選んだ文字コードの文字に U+0000 があっても投げ、BOM 付きの UTF-16LE を UTF-16LE で読めば開ける。14〜16 は e2e (14: `.png`・`.xyz` は alert で断り初期画面のまま、15: `.markdown` は Markdown、`LICENSE` はコードビュー、16: Shift_JIS の `.py` と `.md` の U+0000 は開くダイアログより前に断り、初期画面のまま)。17〜21 は Reload の確かめ (INV-18 (8)。17: Markdown の Reload で 5 MB を超えたファイルは、中身を読まずに `tooLarge` で断る、18: 読む名前が表に無ければ `notAllowed` で断る、19: 読んだ文字に U+0000 があれば `binaryFile` で断り、直した後のファイルは読み直せる。17〜19 は、表示・本文・保存先・未保存の印を変えず、未保存の確認も `reloadFailed` も出さない、20: コードビューの Reload も 5 MB・名前・U+0000 で同じ alert を出し、コードの文書の文字・未保存の状態・ファイル情報を変えない、21: `MarkdownFileAccess.readFile` が中身を読む前に `check(file)` を呼び、投げたら読まない、22: コードビューの Reload はドロップと同じ順 (読んで確かめる → 未保存の確認 → コード編集モードを終える)。コード編集モードの間に 5 MB・名前・U+0000 で断る、読めない、確認で Cancel する、のどれでも、確認より前に止まるか何も変えず、コード編集モードと打った字と未保存の印が続く。OK なら確認の後にコード編集モードが終わる。読む間に別の文書 (`.md`、または編集したコードのファイル) を開けば、Reload は止まり、確認もトーストも出ず、新しい文書はそのまま (INV-21)、23: `SourceFileRenderer.reload` は `readText` が null を返せば何も描かずに null)) | INV-11 (03・17)、INV-18 (17〜22 は (8))、INV-21 (17〜20・22・23)、INV-89 (8) (09・13)、INV-89 (6) (20・22)、INV-102 (04) | fileTypes.test.js (01〜03・05)、config.test.js (04)、UIController.codeEditor.test.js (06〜12)、CodeEditController.test.js (13)、fileDrop.e2e.js (14〜16)、UIController.reloadChecks.test.js (17〜20・22)、MarkdownFileAccess.test.js (21)、SourceFileRenderer.test.js (23) | 01〜23 |
+| AT-HID | 見えない文字の知らせ (01: 対象の字ごとの並びとラベル、02: 隣り合う字は 1 つの並び、名前を空白でつなぐ、03: ZWJ の例外 (絵文字と絵文字の間に 1 つ、U+FE0F と肌の色を挟んでよい) と、例外にならない ZWJ (2 つ続く、端、字の間)、04: 旗の例外 (`gbeng`・`gbsct`・`gbwls` と U+E007F) と、例外にならないタグ文字 (ほかの符号、U+E007F が無い、旗の後ろに続く)、05: タグ文字の文を ASCII に戻し、範囲の外は `?`、文は切らない、06: 文字の先頭の U+FEFF は数えない、07: プレビューの印 (中の空の `span`、`aria-hidden`、`data-label`、元の字はそのまま、図・数式・外部画像の代わりの表示の中と属性には付けない、部分描画 (確定・Undo・Redo) のたびに付く、highlight.js が後から色を付けても残る、付け直しても 1 つの並びに印は 1 つ (コードブロックは色付けのときとブロックの描画のときの 2 度付ける)、Mermaid・PlantUML (`plantuml`・`puml`) のコードの原文には描く前から付けず、図の箱 (`.mermaid`) の中にも付けない (コードブロックの `js` には付く)、本文の先頭の U+FEFF には付けない。e2e: 枠の印の幅、コピーにラベルが入らない)、08: トーストは開くたびに 1 回で文書を描いた後、編集・[Render] では出ない、ペーストで文書を始めたときと早い入力でも出る、絵文字と旗だけなら出ない、最初の文書を描く間に別の文書を開けば、最初の文書のトーストは出ない、09: コードビューの印 (開く・編集した文字・色付けし直しの後も。行の数と文字は変わらない。e2e: 行の高さがそろう)、10: 開くダイアログが先で、Cancel と INV-21 の確認の Cancel ではトーストが出ない、11: コード編集モードの中には印が無く、表示に戻ると出る (e2e)、12: 印は印刷で隠さず、CSS の文字は ASCII、周りの字の色の枠、向きを変える文字から切り離す (`unicode-bidi: isolate`)、13: 表のセルの編集を開くと、そのセルの枠の印を外して WYSIWYG で開き (INV-70 の印だけ)、変えずに閉じても書き換えて閉じても印が戻る。原文に要素が入らない。表の操作で表の全体を描き直しても印が付く (INV-65)、14: Reload (Markdown とコードビュー) でも、読み直した文字の数でトーストが 1 回、描いた後に出る。隠れた字が無ければ出ない。INV-18 (8) で断った Reload では出ない (調整役の裁定 2026-10-30)、15: GitHub から開いたときとその Reload でも、GitHub のトーストの次に出る。隠れた字が無ければ GitHub のトーストだけ (オーナーの裁定 AQ19)) | INV-101、5.21、INV-63・INV-65 (13)、INV-21 と INV-18 (8) (14)、INV-94・INV-97 (15) | hiddenChars.test.js (01〜06・12)、hiddenChars.render.test.js (07・09・13)、UIController.hiddenChars.test.js (08・10・14)、UIController.gitHub.test.js (15)、hiddenChars.e2e.js (07・09・11・12) | 01〜15 |
+| AT-GEN | ファイルの種類の表の生成器 `tools/fileTypes.mjs` (01: 原稿が生成器の検査を通る (行の数、`.md` と `.markdown` が Markdown の行)、02: 検査が、`id` か `match` の重複、欠けた欄・知らない欄、`FT-n` の形でない `id`、形の違う `match` (当たらない大文字の拡張子 `.R`、`.` を含む名前 `a.b`)、知らない `open`、形の違う `hljs` (小文字の英字と数字だけでない)、少なすぎる行の数、配列でない原稿を見つける (INV-102 (3))、03: `src/js/fileTypes.js` が原稿から作ったものと 1 バイトも違わない (`--check` と同じ)、04: 仕様 5.4 の表が同じく 1 バイトも違わない、05: 仕様は印の行の間だけが変わり、改行の形を保ち、印が無い・2 つあると断る、06: モジュールの文字は ASCII で、行ごとに凍結した値) | INV-102 | fileTypes.test.js | 01〜06 |
 | AT-LAUNCH | PowerShell の起動役 (SC-29): 起動役のファイル (01: ASCII だけ、02: ネットワークのコマンドが無い、03: ヘルプ、04: 差し込み口・塊の id・5 MB の上限がビルド・受け口・CONFIG と同じ)、写しの中身と名前 (05)、消すまで待つ (06・14)、消してよい時刻での掃除と警告 (07・17)、ワイルドカードを広げない (08)、大きさの線と空のファイル (09)、`-GrsmdPath` (10)、書く前に止まる誤り (11・12。5 秒より短い待ちを含む)、ブラウザが無い (13)、書けない (15)、`-NoStart` ではブラウザを探さない (16)、横に書くメモ (18・19・33)、git の外 (34)、写しの接頭辞は 1 か所 (35)、クリップボードに触れず [Save] の文を出す (43)、塊を読む規則 (20〜24)、受け口が塊を預かり外す (25〜29)、塊のフルパス (36)、ビルドの差し込み口 (30〜32)、[Save] がフルパスをクリップボードに入れる・保存の後は入れない・無効のとき (37〜39)・ダウンロードのときは押すたびに入れる (45)・クリップボードに書けなくても保存の画面は押下の中で開く (46)、e2e で開く (40: 数式と図、41: コードビュー、42: バイナリを断る、44: [Save]) | SC-29、INV-104、INV-105 | launcher.test.js (Windows PowerShell 5.1 と 7)、launchBlock.test.js、UIController.saveButton.test.js、e2e/launcher.e2e.js (Chromium) | 01〜46 |
 
 AT の ID の無い試験も `npm test` の全件に含まれる。2026-10-29 の時点で、それは次の 18 ファイルの 97 件 (`it.each` などは 1 件と数える。多くは名前か外側の `describe` に INV や仕様の節を書く): `BlockEditController.gap.test.js` (4)、`BlockEditController.test.js` (8)、`DocumentSession.test.js` (1)、`MarkdownBlockModel.planTableReplace.test.js` (3)、`MarkdownFileAccess.test.js` (4)、`MarkdownRenderer.blocks.test.js` (1)、`MarkdownRenderer.purifyConfig.test.js` (5。設定を 1 度だけ与えることの試験)、`MarkdownTextOps.test.js` (1)、`RendererOrchestrator.edit.test.js` (1)、`RendererOrchestrator.test.js` (14)、`SaveDocument.test.js` (4)、`UIController.editMode.test.js` (9)、`UIController.handleRender.test.js` (6)、`UIController.palette.test.js` (14)、`UIController.save.test.js` (1)、`preprocessInput.test.js` (12)、`stateTable.test.js` (4。ファイルの全部)、`staticChecks.test.js` (5。「style.css for in-place editing」の一部)。族に番号を足すまでは、ここに挙げて残す (監査の Medium 46、監査の直しのレビュー (1 回目) の L32。`SourceFileRenderer.test.js`・`utils.test.js`・`MarkdownRenderer.test.js`・`config.test.js` には番号を足した)。
@@ -5804,7 +5807,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | --- | --- | --- |
 | load.e2e.js | 起動 (CSP を持ち、エラーが無い)、Markdown・数式・コード・Mermaid の描画でエラーが無い (クライアントだけで描く。INV-05)、先頭に空行 41 行の文書が描画される (5.13。既知の制限: 直す前に落ちるのは Chromium だけ。WebKit は約 1 s で一致なしを返すので直す前でも通る。退行は AT-WRAP-20 と Chromium で見る。時間の検査は機械しだいになるので足さない) | PRT-A01、PRT-R01、PRT-T03 |
 | guards.e2e.js | 試験の土台の検査 (CSP の違反、`console.error`、外への要求を記録できること) | (e2e の全件の前提) |
-| fileDrop.e2e.js | `.md` のドロップは Markdown の表示 (先頭に空行 41 行のものも。5.13。load.e2e.js と同じ既知の制限: 直す前に落ちるのは Chromium だけ)、それ以外のテキストはコードビュー (コードビューでは [Edit] が有効。SC-27)。表に無い種類は `notAllowed` の alert で断り、`.markdown` は Markdown の表示、読み解いた文字に U+0000 があれば断る (INV-18。2026-10-30) | PRT-C01、PRT-E01、PRT-E03、PRT-AL01、PRT-AL02 |
+| fileDrop.e2e.js | `.md` のドロップは Markdown の表示 (先頭に空行 41 行のものも。5.13。load.e2e.js と同じ既知の制限: 直す前に落ちるのは Chromium だけ)、表にあるそれ以外の種類はコードビュー (コードビューでは [Edit] が有効。SC-27)。表に無い種類は `notAllowed` の alert で断り、`.markdown` は Markdown の表示、読み解いた文字に U+0000 があれば断る (INV-18。2026-10-30) | PRT-C01、PRT-E01、PRT-E03、PRT-AL01、PRT-AL02 |
 | hiddenChars.e2e.js | 見えない文字の知らせ (INV-101): `.md` のドロップで 1 回のトーストと並びの前の枠の印 (ラベルは CSS で描き、選んだ文字にラベルが入らない)、コードビューの印と行の高さ、コード編集モードの中に印が無く表示に戻ると出ること、印刷でも印が出て、絵文字と旗には印が無いこと (AT-HID-07・09・11・12) | PRT-AL04、PRT-AL05、PRT-AL06 |
 | externalConsent.e2e.js | 外部画像と PlantUML は、同意の前・拒否の後に通信しない (INV-01、INV-03、INV-19) | PRT-T02、PRT-M02 |
 | save.e2e.js | Save as のダウンロードと保存ダイアログ (偽の picker) | PRT-W06 (ダウンロード)。偽の picker の試験は、PRT-W05 / W16 などの Save as で選んだファイルへ書き込む経路と同じ (本物の保存ダイアログは自動にできないので、ダイアログそのものは PRT で確かめる) |

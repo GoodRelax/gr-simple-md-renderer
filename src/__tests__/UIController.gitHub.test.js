@@ -193,3 +193,30 @@ describe("AT-GH-11 a .md dropped on a GitHub document (INV-98)", () => {
     expect(app.ui.documents.gitHub).toBe(link);
   });
 });
+
+describe("AT-HID-15 INV-101 (3): a GitHub file opened or reloaded tells its hidden characters (owner ruling AQ19)", () => {
+  const ZWSP = String.fromCharCode(0x200b);
+  const HIDDEN_TEXT = `# Hid${ZWSP}den${LF}${LF}a${ZWSP}b${LF}`;
+  const toasts = () => showToast.mock.calls.map((call) => call[0]);
+
+  it("open: the Opened toast, then the hidden characters toast below it", async () => {
+    const { host } = await withGitHubDocument();
+    await host.openDocument(opened(HIDDEN_TEXT));
+    expect(toasts()).toEqual([G.messages.opened(REF.label()), CONFIG.messages.hiddenChars.found(2)]);
+  });
+
+  it("Reload: the Reloaded toast, then the hidden characters toast", async () => {
+    const { host } = await withGitHubDocument();
+    const id = app.ui.documents.session.documentId;
+    await host.reloadDocument(opened(HIDDEN_TEXT), id);
+    expect(toasts()).toEqual([G.messages.reloaded, CONFIG.messages.hiddenChars.found(2)]);
+  });
+
+  it("a file without hidden characters: only the GitHub toast", async () => {
+    const { host } = await withGitHubDocument();
+    await host.openDocument(opened(`# Plain${LF}`));
+    const id = app.ui.documents.session.documentId;
+    await host.reloadDocument(opened(`# Plain again${LF}`), id);
+    expect(toasts()).toEqual([G.messages.opened(REF.label()), G.messages.reloaded]);
+  });
+});

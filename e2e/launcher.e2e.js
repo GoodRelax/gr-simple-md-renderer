@@ -80,7 +80,7 @@ test("AT-LAUNCH-41 SC-L07: another text file opens in the code view", async ({ p
   await expect(page.locator("#preview")).toContainText("function hello()");
 });
 
-test("AT-LAUNCH-42 SC-L07: a binary file is refused by GRSMD with its message, as on a drop", async ({ page }) => {
+test("AT-LAUNCH-42 SC-L07, INV-18: a file of a type GRSMD does not open (.png) is refused with its message, as on a drop", async ({ page }) => {
   const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52]);
   const url = await launch("image.png", png);
   const messages = [];
@@ -89,7 +89,7 @@ test("AT-LAUNCH-42 SC-L07: a binary file is refused by GRSMD with its message, a
     dialog.accept();
   });
   await openCopy(page, url);
-  await expect.poll(() => messages).toEqual([CONFIG.fileDrop.messages.binaryFile]);
+  await expect.poll(() => messages).toEqual([CONFIG.fileDrop.messages.notAllowed]);
   await expect(page.locator("body")).not.toHaveClass(/\bview-(markdown|code)\b/);
   await expect(page.locator("#grsmd-launch-file")).toHaveCount(0);
 });

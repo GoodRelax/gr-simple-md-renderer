@@ -125,8 +125,9 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   to withdraw it) moves to Privacy & Security.
 - Touch editing, PlantUML and small fixes: on a phone or tablet, a double
   tap on the preview zooms as the browser does and no longer starts
-  editing; press `[Edit]`, then tap a block (a mouse double-click, or a
-  pen double tap, still opens the block). The help's Details and the fourth line of the start
+  editing; press `[Edit]`, then tap a block (a mouse double-click still
+  opens the block; a pen works as touch, also on a PC, owner ruling AQ13).
+  The help's Details and the fourth line of the start
   screen now say how to start editing. A PlantUML diagram shows
   "Loading diagram..." until the page has fully loaded; then one dialog
   asks for all the diagrams that waited, and only the allowed ones are
@@ -136,8 +137,45 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   bar of selected blocks, now scrolls the page as it does over the text
   (it did nothing). Ctrl+B / Ctrl+I (Mac: Cmd) in the Search box no longer
   formats the text of a block left open.
+- Opening files: only the file types in a fixed list open (the table in
+  spec section 5.4, generated from `spec/data/file-types.json`; owner
+  rulings AQ1, AQ5, AQ9, AQ12). `.md` and `.markdown` open in the Markdown
+  view (a `.markdown` file used to open in the code view), the other listed
+  types in the code view. Any other file is refused with an alert ("GRSMD
+  can't open this type of file. It opens only known text file types.") and
+  nothing changes; before, any file without a NUL byte in its first 8 KB
+  opened in the code view, and a list of binary extensions was refused.
+  New in the list: `.mmd`, `.puml`, `.plantuml`, `.bat`, `.cmd`, `.rst`,
+  `.adoc`, `.jsonl`, `.gitignore`, `.gitattributes`, `.editorconfig` and
+  `LICENSE` (no colors), `.vue` and `.svelte` (XML colors), `.env` and
+  `.properties` (INI colors). A file whose decoded text holds U+0000
+  anywhere is refused ("GRSMD can only open text files.") before the open
+  dialog or the unsaved question; so a UTF-16 file with a BOM opens, and a
+  NUL late in a file is found too (owner rulings AQ6, AQ11, AQ15).
+- Reload (`r` or the button) runs the same checks on the file it reads
+  again (type by name, 5 MB, U+0000), shows the same alert and changes
+  nothing. In the code view, Reload now reads and checks the file before
+  it asks about unsaved changes; on a refusal, a read error or Cancel, code
+  editing goes on with your text as it was.
 
 ### Added
+
+- Hidden characters: when a document opens (a dropped file, a paste that
+  starts a document, Reload, a file opened or reloaded from GitHub), a
+  toast says in how many places it holds characters that can hide text,
+  for example instructions for an AI: tag
+  characters (U+E0000 to U+E007F), zero-width characters (U+200B, U+200C,
+  U+200D, U+2060, and U+FEFF inside the text) and direction controls
+  (U+202A to U+202E, U+2066 to U+2069, U+200E, U+200F). The Markdown view
+  and the code view show a framed label before each place, such as `ZWSP`
+  or `RLO`, and for tag characters the hidden text itself (`hidden: ...`).
+  The labels are not part of the text: copy, search and saving do not see
+  them, and they are printed. Diagram and math sources, link targets and
+  HTML comments get no label, so the toast says only that those in the
+  text are marked. One ZWJ between two emoji and the England, Scotland and
+  Wales flags are not reported. The light marks of an open block or table
+  cell now cover tag characters and direction controls too (owner rulings
+  AQ6, AQ10, AQ14, AQ16, AQ17).
 
 - [Save] button in the top bar, right of [Edit]: saves as `Ctrl+S` does. The
   top bar's buttons are a little narrower to make room, and the help's
@@ -198,7 +236,8 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   encoding cannot hold some characters, GRSMD shows their line numbers and
   asks, before the save dialog, whether to save in UTF-8 instead; Cancel
   saves nothing (owner ruling NE-31). Where files cannot be written
-  (download), Save remembers the answer too. A UTF-16 file with a BOM opens whatever its extension. Shift_JIS and EUC-JP are written with a table built from the
+  (download), Save remembers the answer too. A UTF-16 file with a BOM of a
+  listed file type opens (see Opening files above). Shift_JIS and EUC-JP are written with a table built from the
   browser's own decoder, so no table is bundled. Save as offers the name
   with the extension the file was opened with and can change it; a name
   ending in `.md` is written in UTF-8 (a toast says so when you had chosen

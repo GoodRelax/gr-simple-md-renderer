@@ -19,7 +19,7 @@ import {
 } from "../../tools/fileTypes.mjs";
 import { FILE_TYPES } from "../js/fileTypes.js";
 import { CONFIG } from "../js/config.js";
-import { classifyDroppedFile } from "../js/classes/UIController.js";
+import { classifyDroppedFile } from "../js/fileOpenChecks.js";
 import { containsNul } from "../js/textEncoding.js";
 
 // The file types GRSMD opens (INV-18, INV-102; owner rulings AQ1, AQ5, AQ9,
