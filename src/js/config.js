@@ -74,6 +74,69 @@ export const CONFIG = {
     serverUrl: "https://www.plantuml.com/plantuml/svg/",
     darkTheme: "cyborg",
   },
+  // GitHub (SC-28): the only host a token is sent to is apiOrigin, a
+  // fixed value (never a host read from a URL or a response).
+  github: {
+    apiOrigin: "https://api.github.com",
+    apiVersion: "2026-03-10", // X-GitHub-Api-Version (checked 2026-10-26)
+    webOrigin: "https://github.com", // the URLs the Open GitHub dialog accepts
+    rawOrigin: "https://raw.githubusercontent.com", // relative images (gated as external)
+    maxBytes: 1024 * 1024, // Contents API returns the content as JSON up to 1 MB
+    timeoutMs: 30000,
+    extensions: [".md", ".markdown"],
+    tokenPrefix: "github_pat_", // fine-grained only (owner ruling D12)
+    authScheme: "Bearer", // Authorization: Bearer <token> (never in a URL)
+    pushedToastMs: 6000, // the "Pushed" toast stays longer than others (owner ruling D36)
+    labels: {
+      openButton: "Open<br />GitHub", // static markup of the button
+      openTitle: "Open a .md file from GitHub [O]",
+      pushButton: "Push to<br />GitHub",
+      pushTitle: (label) => `Push to GitHub: ${label}`,
+      defaultMessage: (path) => `Update ${path}`,
+      reloadTarget: (branch, path) => `${branch}  ${path}`,
+      visibilityPrivate: "PRIVATE repository: the commit is visible to those who can read the repository.",
+      visibilityPublic: "PUBLIC repository: everyone can see this commit. It stays in the history even if it is reverted later.",
+      visibilityUnknown: "Repository visibility unknown: treat the commit as public. It stays in the history even if it is reverted later.",
+      commitUnknown: "(not known)",
+      commit: (date, author, message, shortSha) => `${date}  ${author}  "${message}"  (${shortSha})`,
+      yes: "yes",
+      no: "no",
+      gitHubDetail: (text) => ` GitHub: "${text}".`,
+      retryIn: (seconds) => `in ${seconds} s`,
+      retryAfter: (time) => `after ${time}`,
+      retryLater: "later",
+      showToken: "Show the token", // the eye button (D28)
+      hideToken: "Hide the token",
+    },
+    messages: {
+      notGitHubUrl: "Paste the URL of a .md file on github.com (the address bar while the file is shown).",
+      rawUrl: "Raw URLs are not accepted. Paste the address bar URL of the file page on github.com.",
+      notMarkdown: "Only .md and .markdown files can be opened.",
+      tokenNotFineGrained: "Use a fine-grained personal access token (it starts with github_pat_).",
+      tokenRequired: "A fine-grained personal access token is required to push.",
+      messageRequired: "Enter a commit message.",
+      tooLarge: "The file is larger than 1 MB. GitHub files up to 1 MB can be opened.",
+      notFile: "The path is not a file.",
+      notText: "The file is not UTF-8 text.",
+      unauthorized: "GitHub refused the token (401). Check the token and its expiry.",
+      forbidden: (detail) => `GitHub refused the request (403). Check the token's permissions and the branch protection.${detail}`,
+      rateLimited: (when) => `GitHub's rate limit was reached. Try again ${when}.`,
+      notFound: "Not found (404). Check the repository, branch and path, and that the token can read the repository.",
+      conflict: (detail) => `Not pushed (409). The file on GitHub changed after it was opened, or the branch is protected.${detail} Save your work locally, open the file again, then drop your saved file to replace it.`,
+      invalid: (detail) => `Not pushed (422). GitHub could not accept the request.${detail}`,
+      failed: (status) => `GitHub request failed (${status}). Nothing was changed.`,
+      network: "Could not reach GitHub. Nothing was changed.",
+      pushUnknown: "GitHub's answer was not received. The push may have been applied: open the file again to check.",
+      unsafePath: 'A branch or path part cannot be empty, "." or "..".',
+      opened: (label) => `Opened from GitHub: ${label}`,
+      reloaded: "Reloaded from GitHub.",
+      pushed: (shortSha) => `Pushed to GitHub (${shortSha}).`,
+      unchanged: "No changes from the GitHub version.",
+      busy: "A GitHub request is in progress.",
+      lineEndingDiffers: (gitHub, dropped) => `Line endings differ (GitHub: ${gitHub}, dropped: ${dropped}). Every line will change in the commit.`,
+      bomDiffers: (gitHub, dropped) => `BOM differs (GitHub: ${gitHub}, dropped: ${dropped}).`,
+    },
+  },
   ui: {
     longPressDuration: 300,
     copyFeedbackDuration: 250,
@@ -412,6 +475,10 @@ export const CONFIG = {
     code:     "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
     // a Mac: the fold keys are Option+Left / Right (INV-92, NE-23)
     codeApple: "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Option+Left][Option+Right] Fold (JSON);",
+    // where GitHub editing is shown (a mouse or trackpad device; D33)
+    markdownGitHub:  "[I] Index; [F] Search; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
+    codeGitHub:      "[I] Index; [F] Search; [P] Commands; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
+    codeAppleGitHub: "[I] Index; [F] Search; [P] Commands; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Option+Left][Option+Right] Fold (JSON);",
   },
 };
 

@@ -38,12 +38,16 @@ import EditPalette from "./classes/EditPalette.js";
 import BlockEditController from "./classes/BlockEditController.js";
 import UIController from "./classes/UIController.js";
 import HelpLanguageSwitch from "./classes/HelpLanguageSwitch.js";
+import ModalController from "./classes/ModalController.js";
 import DocumentIndex from "./classes/DocumentIndex.js";
 import DocumentSearch from "./classes/DocumentSearch.js";
 import CodeFileDialog from "./classes/CodeFileDialog.js";
 import CodeEditController from "./classes/CodeEditController.js";
 import CodeEditor from "./classes/CodeEditor.js";
 import CodeCommandPalette from "./classes/CodeCommandPalette.js";
+import GitHubContentsClient from "./classes/GitHubContentsClient.js";
+import GitHubController from "./classes/GitHubController.js";
+import { resolveRelativeUrl } from "./gitHubUrl.js";
 
 // ========================================
 // Initialization
@@ -67,6 +71,7 @@ const elements = {
   clearBtn: document.getElementById("clearBtn"),
   helpBtn: document.getElementById("helpBtn"),
   helpModal: document.getElementById("helpModal"),
+  githubHelpModal: document.getElementById("githubHelpModal"),
   promptModal: document.getElementById("promptModal"),
   promptText: document.getElementById("promptText"),
   copyPromptBtn: document.getElementById("copyPromptBtn"),
@@ -146,8 +151,80 @@ const codeFileDialog = new CodeFileDialog(
   CONFIG.messages.codeEdit,
   CONFIG.codeEdit.sampleLines,
 );
+// GitHub (SC-28): a mouse or trackpad device only (D15, D17), and not
+// inside a frame (a <meta> CSP cannot forbid framing).
+const gitHubEnabled = window.matchMedia("(pointer: fine)").matches && window.top === window.self;
+const gitHubFetch = (url, init) => window.fetch(url, init);
+const gitHubClient = new GitHubContentsClient(gitHubFetch, CONFIG.github);
+// The browser keeps the token (owner ruling D25): after a request succeeds,
+// Credential Management asks it to save the token (Chrome and Edge). The
+// saved token comes back through the browser's autofill on the token field
+// (D34); elsewhere the token is pasted.
+const gitHubPasswordStore =
+  typeof window.PasswordCredential === "function" && navigator.credentials
+    ? { store: (id, password) => navigator.credentials.store(new window.PasswordCredential({ id, password })) }
+    : null;
+// relative images and links of a GitHub document resolve as GitHub shows them
+/** @purity semi-pure-b */
+markdownRenderer.setRelativeUrlResolver((value, kind) => {
+  const link = documents.gitHub;
+  return link ? resolveRelativeUrl(link.ref, value, kind, CONFIG.github) : null;
+});
+const byId = (id) => document.getElementById(id);
 const ui = new UIController(orchestrator, state, elements, scrollEngine, {
   documents,
+  createGitHub: (host) =>
+    new GitHubController(
+      {
+        button: byId("gitHubBtn"),
+        openDialog: byId("gitHubOpenDialog"),
+        pushDialog: byId("gitHubPushDialog"),
+        reloadDialog: byId("gitHubReloadDialog"),
+        dropDialog: byId("gitHubDropDialog"),
+        open: {
+          form: byId("gitHubOpenForm"),
+          url: byId("gitHubOpenUrl"),
+          fields: byId("gitHubOpenFields"),
+          repo: byId("gitHubOpenRepo"),
+          branch: byId("gitHubOpenBranch"),
+          path: byId("gitHubOpenPath"),
+          token: byId("gitHubOpenToken"),
+          error: byId("gitHubOpenError"),
+          submit: byId("gitHubOpenSubmit"),
+        },
+        push: {
+          form: byId("gitHubPushForm"),
+          visibility: byId("gitHubPushVisibility"),
+          repo: byId("gitHubPushRepo"),
+          branch: byId("gitHubPushBranch"),
+          path: byId("gitHubPushPath"),
+          message: byId("gitHubPushMessage"),
+          token: byId("gitHubPushToken"),
+          error: byId("gitHubPushError"),
+          submit: byId("gitHubPushSubmit"),
+        },
+        reload: {
+          form: byId("gitHubReloadForm"),
+          repo: byId("gitHubReloadRepo"),
+          target: byId("gitHubReloadTarget"),
+          token: byId("gitHubReloadToken"),
+          error: byId("gitHubReloadError"),
+          submit: byId("gitHubReloadSubmit"),
+        },
+        drop: {
+          editing: byId("gitHubDropEditing"),
+          lastCommit: byId("gitHubDropLastCommit"),
+          dropped: byId("gitHubDropDropped"),
+          notes: byId("gitHubDropNotes"),
+          keep: byId("gitHubDropKeep"),
+          stop: byId("gitHubDropStop"),
+          cancel: byId("gitHubDropCancel"),
+        },
+      },
+      gitHubClient,
+      host,
+      { ...CONFIG.github, enabled: gitHubEnabled, passwordStore: gitHubPasswordStore, isApple },
+    ),
   isApple,
   documentIndex,
   // The code editor (INV-85): colored by the code view's highlight.js
@@ -198,7 +275,19 @@ const ui = new UIController(orchestrator, state, elements, scrollEngine, {
 
 // Help: English | Japanese. The first language follows the browser's; the
 // choice is kept in memory only (SC-16).
-new HelpLanguageSwitch(elements.helpModal, navigator.language);
+const helpLanguage = new HelpLanguageSwitch(elements.helpModal, navigator.language);
+// How to edit and commit files on GitHub: opens over the help in the help's language.
+const githubHelpLanguage = new HelpLanguageSwitch(elements.githubHelpModal, navigator.language);
+// Shown only where GitHub editing is offered: a fine pointer, not in a frame (D15, D17).
+for (const button of elements.helpModal.querySelectorAll("[data-open-github-help]")) {
+  button.hidden = !gitHubEnabled;
+  /** @purity non-pure */
+  button.addEventListener("click", () => {
+    githubHelpLanguage.setLanguage(helpLanguage.language);
+    ModalController.show(elements.githubHelpModal, button);
+    elements.githubHelpModal.scrollTop = 0; // focusing the switch may scroll
+  });
+}
 
 // Diagram controllers: fine-pointer (mouse/trackpad) devices only; the pan
 // also needs no coarse pointer (INV-16, INV-16b)

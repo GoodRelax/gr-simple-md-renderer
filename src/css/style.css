@@ -67,6 +67,12 @@ body {
   justify-content: center;
 }
 
+/* The display above beats the browser's [hidden]: a hidden top-bar button
+   would still show ([Open GitHub] off a PC and in a frame, INV-100). */
+#controls button[hidden] {
+  display: none;
+}
+
 #editor {
   flex: 1;
   /* Full-width monospace (ruling 7, spec 5.14.13): a CJK character is two columns,
@@ -2215,5 +2221,339 @@ div.math-pending {
     border: none;
     outline: none;
     background: none;
+  }
+}
+
+/* ============================================================
+   GitHub (SC-28): [Open GitHub] / [Push to GitHub] and the dialogs
+   ============================================================ */
+#controls #gitHubBtn.gh-push {
+  background: #1f883d; /* Primer button-primary */
+  color: #fff;
+  border: 1px solid #1a7f37;
+  border-radius: 3px;
+}
+
+#controls #gitHubBtn.gh-push:disabled {
+  background: #94d3a2;
+  border-color: #94d3a2;
+  color: #fff;
+  cursor: default;
+}
+
+.dark #controls #gitHubBtn.gh-push {
+  background: #238636;
+  border-color: #2ea043;
+}
+
+.dark #controls #gitHubBtn.gh-push:disabled {
+  background: #1b3d26;
+  border-color: #1b3d26;
+  color: #8b949e;
+}
+
+.gh-dialog {
+  width: min(560px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid #888;
+  border-radius: 8px;
+  background: #fefefe;
+  color: #1f2328;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.gh-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.dark .gh-dialog {
+  background: #151b23;
+  color: #e6edf3;
+  border-color: #3d444d;
+}
+
+.gh-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 20px;
+  font-size: 14px;
+}
+
+.gh-form h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.gh-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.gh-row input {
+  font-family: monospace;
+  font-size: 13px;
+  padding: 4px 6px;
+  min-width: 0;
+}
+
+#gitHubOpenFields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#gitHubOpenFields[hidden] {
+  display: none;
+}
+
+.gh-row input[readonly] {
+  background: #f3f3f3;
+  color: inherit;
+  border: 1px solid #ccc;
+}
+
+.dark .gh-row input {
+  background: #0d1117;
+  color: #e6edf3;
+  border: 1px solid #3d444d;
+}
+
+.dark .gh-row input[readonly] {
+  background: #212830;
+}
+
+.gh-send,
+.gh-target {
+  margin: 0;
+  font-size: 12px;
+  color: #59636e;
+}
+
+.gh-target {
+  font-family: monospace;
+}
+
+.dark .gh-send,
+.dark .gh-target {
+  color: #9198a1;
+}
+
+.gh-visibility {
+  margin: 0;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.gh-visibility.gh-public {
+  color: #cf222e;
+}
+
+.dark .gh-visibility.gh-public {
+  color: #f85149;
+}
+
+.gh-error {
+  margin: 0;
+  font-size: 13px;
+  color: #cf222e;
+  white-space: pre-line;
+}
+
+.dark .gh-error {
+  color: #f85149;
+}
+
+.gh-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.gh-buttons-column {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.gh-buttons button {
+  padding: 4px 14px;
+  font-size: 13px;
+}
+
+.gh-form.gh-busy {
+  cursor: progress;
+}
+
+.gh-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.gh-facts dt {
+  font-weight: bold;
+}
+
+.gh-facts dd {
+  margin: 0;
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+
+.gh-token {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.gh-token input {
+  flex: 1;
+}
+
+/* the token label is long (GitHub's name, D35): it sits on its own line */
+.gh-row.gh-row-token {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+/* the eye button shows or hides the token (D28) */
+.gh-token .gh-reveal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  line-height: 0;
+}
+
+.gh-token .gh-reveal[aria-pressed="true"] {
+  background: #d0d7de;
+}
+
+.dark .gh-token .gh-reveal[aria-pressed="true"] {
+  background: #3d444d;
+}
+
+
+/* How to edit .md on GitHub: a full-screen layer over the help */
+.help-github-btn {
+  display: block;
+  width: 100%;
+  margin: -12px 0 24px;
+  padding: 8px 12px;
+  border: 1px solid #0969da;
+  border-radius: 6px;
+  background: transparent;
+  color: #0969da;
+  font: inherit;
+  font-weight: bold;
+  text-align: left;
+  cursor: pointer;
+}
+/* display: block above would show it; where GitHub editing is not offered, hidden wins */
+.help-github-btn[hidden] {
+  display: none;
+}
+
+#githubHelpModal .modal-content {
+  font-size: 75%;
+  margin: 0 auto;
+  min-height: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 760px;
+  border-radius: 0;
+}
+
+#githubHelpModal .close-btn {
+  font-size: 1.75em;
+}
+
+.gh-asof {
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  border-left: 4px solid #9a6700;
+  background: rgba(154, 103, 0, 0.08);
+}
+
+.gh-steps li {
+  margin-bottom: 24px;
+}
+
+/* Figures: drawn once as <symbol>, colored by custom properties that the
+   <use> clones inherit, so .dark only has to change the properties. */
+.ghf-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.ghf {
+  --ghf-bg: #fff;
+  --ghf-sub: #f6f8fa;
+  --ghf-line: #d1d9e0;
+  --ghf-fg: #1f2328;
+  --ghf-muted: #59636e;
+  --ghf-red: #cf222e;
+  --ghf-go: #1f883d;
+  --ghf-blue: #0969da;
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  margin: 8px 0 0;
+  font: 10px system-ui, sans-serif;
+  fill: var(--ghf-fg);
+}
+
+.ghf-frame { fill: var(--ghf-bg); stroke: var(--ghf-line); }
+.ghf-sub { fill: var(--ghf-sub); }
+.ghf-bar { fill: var(--ghf-line); }
+.ghf-btn { fill: var(--ghf-sub); stroke: var(--ghf-line); }
+.ghf-line { fill: none; stroke: var(--ghf-line); }
+.ghf-icon { fill: none; stroke: var(--ghf-muted); stroke-width: 1.2; }
+.ghf-radio { fill: var(--ghf-bg); stroke: var(--ghf-blue); stroke-width: 3; }
+.ghf-mono { font-family: monospace; fill: var(--ghf-muted); }
+.ghf-b { font-weight: 600; }
+.ghf-go { fill: var(--ghf-go); }
+.ghf-gotext { fill: #fff; font-weight: 600; }
+.ghf-dim { fill: var(--ghf-fg); opacity: 0.15; }
+.ghf-edit { fill: none; stroke: var(--ghf-blue); stroke-width: 1.5; }
+.ghf-ring { fill: none; stroke: var(--ghf-red); stroke-width: 2; }
+.ghf-mark { fill: var(--ghf-red); }
+.ghf-num { fill: #fff; font-weight: 700; text-anchor: middle; }
+.ghf-mid { text-anchor: middle; }
+.ghf-small { font-size: 8px; }
+.ghf-h { font-size: 11px; font-weight: 600; }
+.ghf-nav { fill: var(--ghf-blue); }
+.ghf-warn { fill: var(--ghf-red); opacity: 0.15; }
+.ghf-warntext { fill: var(--ghf-red); font-weight: 600; }
+.ghf-toast { fill: var(--ghf-fg); }
+.ghf-toasttext { fill: var(--ghf-bg); }
+
+@media screen {
+  .dark .help-github-btn {
+    border-color: #4493f8;
+    color: #4493f8;
+  }
+
+  .dark .gh-asof {
+    border-left-color: #d29922;
+    background: rgba(210, 153, 34, 0.12);
+  }
+
+  .dark .ghf {
+    --ghf-bg: #0d1117;
+    --ghf-sub: #151b23;
+    --ghf-line: #3d444d;
+    --ghf-fg: #f0f6fc;
+    --ghf-muted: #9198a1;
+    --ghf-red: #f85149;
+    --ghf-go: #238636;
+    --ghf-blue: #4493f8;
   }
 }

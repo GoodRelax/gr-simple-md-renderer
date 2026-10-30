@@ -246,3 +246,82 @@ test.describe("how to start editing (owner rulings AQ4, AQ13, INV-57, INV-29)", 
     }
   });
 });
+
+// How to edit and commit files on GitHub (FS-25, INV-103): a full-screen
+// layer over the help, opened from a button under the download box.
+const layer = (page) => page.locator("#githubHelpModal");
+const layerBody = (page, lang) => page.locator(`#githubHelpModal .help-body[lang="${lang}"]`);
+const entry = (page, lang) => body(page, lang).locator("[data-open-github-help]");
+
+test.describe("the GitHub help layer (FS-25, INV-103)", () => {
+  test.use({ locale: "en-US" });
+
+  test("AT-HLP-18 FS-25: the entry opens the layer in the help's language; Esc closes the layer (focus to the entry), then the help (focus to [?])", async ({ page }) => {
+    await page.goto("/");
+    await openHelp(page);
+    await expect(entry(page, "en")).toBeVisible();
+    await entry(page, "en").click();
+    await expect(layer(page)).toBeVisible();
+    await expect(layer(page).locator(".help-head h2")).toHaveText("How to Edit and Commit Files on GitHub");
+    await expect(layerBody(page, "en")).toBeVisible();
+    await expect(layerBody(page, "ja")).toBeHidden();
+    // every figure is drawn (its symbol resolves to a box with a size)
+    const sizes = await layerBody(page, "en").locator("svg.ghf").evaluateAll((svgs) =>
+      svgs.map((svg) => {
+        const box = svg.querySelector("use").getBBox();
+        return box.width > 0 && box.height > 0;
+      }),
+    );
+    expect(sizes).toHaveLength(6);
+    expect(sizes.every(Boolean)).toBe(true);
+    // the layer takes the keys: Tab stays in it, a one-key shortcut does nothing
+    const inLayer = () => page.evaluate(() => document.getElementById("githubHelpModal").contains(document.activeElement));
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press("Tab");
+      expect(await inLayer(), `Tab ${i + 1}`).toBe(true);
+    }
+    await page.keyboard.press("Escape");
+    await expect(layer(page)).toBeHidden();
+    await expect(help(page)).toBeVisible();
+    await expect(entry(page, "en")).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(help(page)).toBeHidden();
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe("helpBtn");
+
+    // the help switched to Japanese: the layer opens in Japanese, at the top
+    await openHelp(page);
+    await langButton(page, "ja").click();
+    await entry(page, "ja").click();
+    await expect(layerBody(page, "ja")).toBeVisible();
+    await expect(layerBody(page, "en")).toBeHidden();
+    await expect(page.locator('#githubHelpModal [data-help-lang="ja"]')).toHaveAttribute("aria-pressed", "true");
+    expect(await layer(page).evaluate((el) => el.scrollTop)).toBe(0);
+    await layer(page).locator(".close-btn").click();
+    await expect(layer(page)).toBeHidden();
+    await expect(help(page)).toBeVisible();
+  });
+
+  test("AT-HLP-19 FS-25, INV-100: in a frame the entry is not shown", async ({ page }) => {
+    await page.route("**/frame-host.html", (route) =>
+      route.fulfill({ contentType: "text/html", body: '<!doctype html><iframe src="/" width="1200" height="800"></iframe>' }),
+    );
+    await page.goto("/frame-host.html");
+    const app = page.frameLocator("iframe");
+    await app.locator("#helpBtn").click();
+    await expect(app.locator("#helpModal")).toBeVisible();
+    await expect(app.locator('#helpModal .help-body[lang="en"] [data-open-github-help]')).toBeHidden();
+  });
+});
+
+test.describe("the GitHub help layer on a touch device (FS-25, INV-100)", () => {
+  test.use({ locale: "en-US", hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+  test("AT-HLP-19 FS-25, INV-100: on a phone or iPad the entry is not shown in either language", async ({ page }) => {
+    await page.goto("/");
+    expect(await page.evaluate(() => window.matchMedia("(pointer: fine)").matches)).toBe(false);
+    await openHelp(page);
+    await expect(entry(page, "en")).toBeHidden();
+    await langButton(page, "ja").click();
+    await expect(entry(page, "ja")).toBeHidden();
+  });
+});
