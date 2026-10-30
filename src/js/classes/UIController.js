@@ -214,6 +214,8 @@ export default class UIController {
     const affordance = document.getElementById("affordanceText");
     // OS-06 as revised by SC-27: the code view is editable with a code document
     this.elements.editBtn.disabled = mode === "code" && !this.codeEdit;
+    // [Save] works where Ctrl+S does (INV-58, INV-105)
+    if (this.elements.saveBtn) this.elements.saveBtn.disabled = mode === "initial" || (mode === "code" && !this.codeEdit);
     if (mode !== "code") this.codeEdit?.close(); // the code document goes with the code view (SC-27)
     this._updateCodeTools(mode);
     this.documentSearch?.setMode(mode);
@@ -440,6 +442,61 @@ export default class UIController {
     this.elements.editBtn.addEventListener("click", () => {
       this.toggleEditPalette();
     });
+    const saveBtn = this.elements.saveBtn;
+    if (saveBtn) {
+      // the tooltip says Ctrl+V only when there is a path to paste (INV-105)
+      /** @purity non-pure */
+      const retitle = () => {
+        saveBtn.title = this._saveButtonTitle();
+      };
+      /** @purity non-pure */
+      saveBtn.addEventListener("click", () => {
+        // a save gives the document its file: the pointer may still be over the button
+        void this.saveFromButton().finally(retitle);
+      });
+      saveBtn.addEventListener("pointerenter", retitle);
+      saveBtn.addEventListener("focus", retitle);
+      retitle();
+    }
+  }
+
+  /**
+   * [Save] (INV-105): the same as Ctrl+S. When GRSMD knows the file's full
+   * path (the launcher opened it) and the save will ask where, the path
+   * goes to the clipboard first, inside the press, so that it can be pasted
+   * as the file name with Ctrl+V.
+   * @returns {Promise<void>}
+   * @purity non-pure
+   */
+  saveFromButton() {
+    if (this.orchestrator.isPreRenderState()) return Promise.resolve();
+    if (this.orchestrator.isCodeViewActive() && !this.codeEdit) return Promise.resolve();
+    const path = this._savePathToOffer();
+    if (path && !this._writeClipboardNow(path)) void this._writeClipboardLater(path);
+    return this.requestSave();
+  }
+
+  /**
+   * The path [Save] puts on the clipboard, or null (INV-105).
+   * @purity semi-pure-b
+   * @returns {string|null}
+   */
+  _savePathToOffer() {
+    if (this._isCodeDocumentShown()) return this.codeEdit.pathToOffer;
+    if (this.orchestrator.isPreRenderState() || this.orchestrator.isCodeViewActive()) return null;
+    return this.documents.pathToOffer;
+  }
+
+  /**
+   * The tooltip of [Save] (INV-105).
+   * @purity semi-pure-b
+   * @returns {string}
+   */
+  _saveButtonTitle() {
+    const labels = CONFIG.messages.saveButton;
+    const mod = this._isApple ? CONFIG.messages.palette.modifier.apple : CONFIG.messages.palette.modifier.other;
+    if (!this._savePathToOffer()) return labels.title(mod);
+    return this.documents.savesByDownload ? labels.titleWithPathDownload(mod) : labels.titleWithPath(mod);
   }
 
   /**
@@ -607,9 +664,11 @@ export default class UIController {
    * INV-89).
    * @param {File} file
    * @param {Promise|null} handlePromise - taken before the first await (CON-01)
+   * @param {string|null} [fullPath] - the file's full path, from the launcher
+   *   only (INV-105); kept with the document for [Save]
    * @purity non-pure
    */
-  async _handleDroppedFile(file, handlePromise) {
+  async _handleDroppedFile(file, handlePromise, fullPath = null) {
     let kind = classifyDroppedFile(file.name, file.size);
     if (kind === "tooLarge") {
       alert(CONFIG.fileDrop.messages.tooLarge);
@@ -658,7 +717,7 @@ export default class UIController {
     this.codeEdit?.close(); // the code document is replaced (SC-27)
     if (kind === "markdown") {
       this.blockEdit.dispatch("documentReplaced");
-      this.documents.openFile(text, hasBom, file.lastModified, file.name, fileHandle, keepGitHub);
+      this.documents.openFile(text, hasBom, file.lastModified, file.name, fileHandle, keepGitHub, fullPath);
       this.orchestrator.resetExternalImageConsent(); // INV-43
       await this._showSessionBody(systemTheme());
       return;
@@ -669,7 +728,7 @@ export default class UIController {
     this._setEditorText(""); // RTC2-07: clear editor before code view
     let rendering;
     if (codeDocument) {
-      this.codeEdit.opened(codeDocument, fileHandle);
+      this.codeEdit.opened(codeDocument, fileHandle, fullPath);
       rendering = this.orchestrator.renderCodeView(file, fileHandle, codeDocument.text);
     } else {
       rendering = this.orchestrator.renderCodeView(file, fileHandle);
@@ -695,13 +754,13 @@ export default class UIController {
    * The last drop or paste made before the core ran (INV-81 (4), boot.js):
    * handled as if it came now, with the same rules (earlyInput.js; the file
    * handle was asked for inside the drop, CON-01).
-   * @param {{kind: "drop", file: File, handlePromise: Promise|null}|{kind: "paste", text: string}} early
+   * @param {{kind: "drop", file: File, handlePromise: Promise|null, launchPath?: string|null}|{kind: "paste", text: string}} early
    * @returns {Promise<void>}
    * @purity non-pure
    */
   async receiveEarlyInput(early) {
     if (early.kind === "drop") {
-      await this._handleDroppedFile(early.file, early.handlePromise);
+      await this._handleDroppedFile(early.file, early.handlePromise, early.launchPath ?? null);
       return;
     }
     if (!this.orchestrator.isPreRenderState() || !pasteStartsDocument(this.elements.editor.value, early.text)) return;
