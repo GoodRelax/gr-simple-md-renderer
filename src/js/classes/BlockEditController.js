@@ -323,7 +323,7 @@ export default class BlockEditController {
     this.host = host;
     this.createOverlay = createOverlay;
     this._blockEditState = BROWSING;
-    this._editor = null; // { textarea, wrapper, blockId, blockType, original, savedNodes, overlay, gap, matched, scrolls, fitted }
+    this._editor = null; // { textarea, wrapper, blockId, blockType, original, savedNodes, overlay, gap, matched, scrolls, fitted, fittedWidth }
     this._lexers = null; // the orchestrator's text lexers, block lexing cached per text
     this._press = null; // the pointerdown being followed
     this._composing = false;
@@ -1346,7 +1346,7 @@ export default class BlockEditController {
     wrapper.replaceChildren(textarea);
     wrapper.classList.add("md-block-editing");
     const gap = target.kind === "gap" ? { afterBlockId: target.afterBlockId } : null;
-    this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes, overlay: null, gap, matched: textStyle !== null, scrolls: null, fitted: null };
+    this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes, overlay: null, gap, matched: textStyle !== null, scrolls: null, fitted: null, fittedWidth: null };
     this._gaps.hide();
     this._composing = false;
     this.editGeneration++;
@@ -1795,8 +1795,8 @@ export default class BlockEditController {
     // the view before this input: where it was at its last scroll (reading
     // it now would lay out the document once more, G10)
     const before = scrolls ? scrolls.last() : null;
-    const now = this._fitHeight(before !== null);
-    if (before !== null) this._keepViewAcrossInput(before, now);
+    const now = this._fitHeight(before);
+    if (now) this._keepViewAcrossInput(before, now);
   }
 
   /**
@@ -1806,17 +1806,25 @@ export default class BlockEditController {
    * insert, even past the caret (the iPad, beta2: to the start of the
    * block, and back at the next key), and Chromium's scroll anchoring moves
    * it a line at a hard break. A caret too far into a wrapping text to be
-   * measured keeps the browser's move. Laid out only after a move.
+   * measured keeps the browser's move, but for a view pulled back to the
+   * end. Laid out only after a move.
    * @purity non-pure
    * @param {number} before - the view's position before the input
-   * @param {number} now - its position after it
+   * @param {{at: number, pulled: boolean}} now - its position after it, and
+   *   whether the browser pulled it back to its end while the editor was
+   *   short (both read in the layout of the measure)
    */
   _keepViewAcrossInput(before, now) {
-    const moved = now - before;
+    const moved = now.at - before;
     if (Math.abs(moved) < 1) return;
     const { textarea } = this._editor;
     const lineTop = BlockCaretMap.caretOffsetIn(textarea, textarea.selectionEnd, CONFIG.edit.caretLineMaxChars);
-    if (lineTop === null) return;
+    if (lineTop === null) {
+      // the caret's line cannot be measured: only a view pulled back to the
+      // end is put back (ESF-1, ESF-8); another move is the browser's
+      if (now.pulled) this.scrollMemento.restore(before);
+      return;
+    }
     const style = getComputedStyle(textarea);
     const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * NORMAL_LINE_HEIGHT;
     // where the caret's line is on screen with the view back where it was
@@ -1826,7 +1834,7 @@ export default class BlockEditController {
     let target = before;
     if (top < shownTop) target += top - shownTop;
     else if (top + lineHeight > shownBottom) target += Math.min(top + lineHeight - shownBottom, top - shownTop);
-    if (Math.abs(target - now) >= 1) this.scrollMemento.restore(target);
+    if (Math.abs(target - now.at) >= 1) this.scrollMemento.restore(target);
   }
 
   /**
@@ -1876,30 +1884,44 @@ export default class BlockEditController {
   /**
    * INV-40: the editor is as tall as its content. An input that only added
    * text (or one during an IME composition, or no change) cannot make it
-   * shorter: the editor's own scrollHeight shows how much it grew, and the
-   * editor is not made shorter to be measured. Made short, WebKit can show
+   * shorter while its width stays: the editor's own scrollHeight shows how
+   * much it grew, and the editor is not made shorter to be measured. Made short, WebKit can show
    * the caret where it is in the short editor and move the view there (the
    * iPad, beta2: to the start of the block, at the first key). When the
    * editor opens (no caret yet), and after an input that took text away (a
-   * deletion, a replacement, an undo), the height is set to auto to be
-   * measured, as a shorter text can only be measured so
+   * deletion, a replacement, an undo), and when the editor got wider (an
+   * iPad turned, a window widened: fewer lines wrap), the height is set to
+   * auto to be measured, as a shorter text can only be measured so
    * (_keepViewAcrossInput puts back a view the browser moves then).
    * @purity non-pure
-   * @param {boolean} [readView] - also read the view's position
-   * @returns {number|null} the view's position, read in the layout of the
-   *   measure (before the new height), or null when not asked
+   * @param {number|null} [before] - the view's position before the input:
+   *   the view is then read too
+   * @returns {{at: number, pulled: boolean}|null} the view's position and
+   *   whether it was pulled back to its end from before, read in the layout
+   *   of the measure (before the new height), or null when not asked
    */
-  _fitHeight(readView = false) {
+  _fitHeight(before = null) {
     const editor = this._editor;
     const { textarea } = editor;
     const text = textarea.value;
     const prev = editor.fitted;
     const grew = prev !== null && (text === prev || this._composing || BlockEditController._onlyInserted(prev, text, textarea.selectionEnd));
     editor.fitted = text;
-    if (!grew) textarea.style.height = "auto";
     // box-sizing: border-box (style.css): the height includes the borders
-    const height = textarea.scrollHeight + textarea.offsetHeight - textarea.clientHeight;
-    const view = readView ? this.scrollMemento.save() : null;
+    const measure = () => textarea.scrollHeight + textarea.offsetHeight - textarea.clientHeight;
+    let height = grew ? measure() : null;
+    // read in that layout: a width that changed makes the editor measured short
+    if (height !== null && textarea.clientWidth !== editor.fittedWidth) height = null;
+    if (height === null) {
+      textarea.style.height = "auto";
+      height = measure();
+    }
+    editor.fittedWidth = textarea.clientWidth;
+    let view = null;
+    if (before !== null) {
+      const at = this.scrollMemento.save();
+      view = { at, pulled: at < before && this.scrollMemento.isPulledBackFrom(before) };
+    }
     textarea.style.height = `${height}px`;
     return view;
   }

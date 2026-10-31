@@ -304,4 +304,34 @@ describe("AT-BEC-TS INV-40 fitting the height and typing do not move the view", 
     const { ta } = open(isType("paragraph"));
     expect(movedByInput(ta, { seen: 120, now: 400, lineTop: null, editorTop: 100, shown: [0, 600] })).not.toHaveBeenCalled();
   });
+
+  it("AT-BEC-TS-19 a caret too far to be measured, and the view pulled back to the end while the editor was short: it goes back (ESF-1, ESF-8)", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    // jsdom: the view's end is 0, so 95 (above 120) is at the end
+    expect(movedByInput(ta, { seen: 120, now: 95, lineTop: null, editorTop: 100, shown: [0, 600] })).toHaveBeenCalledWith(120);
+  });
+
+  it("AT-BEC-TS-19 a caret too far to be measured, and the view above where it was but not at the end: the move stays", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    Object.defineProperty(s.preview, "scrollHeight", { value: 600, configurable: true });
+    Object.defineProperty(s.preview, "clientHeight", { value: 100, configurable: true });
+    expect(movedByInput(ta, { seen: 120, now: 95, lineTop: null, editorTop: 100, shown: [0, 600] })).not.toHaveBeenCalled();
+  });
+
+  it("AT-BEC-TS-20 the editor got wider (an iPad turned, a window widened): the next added letter measures it short, as fewer lines may wrap", async () => {
+    linesHigh();
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    let width = 300;
+    Object.defineProperty(ta, "clientWidth", { configurable: true, get: () => width });
+    typeAtCaret(ta, "x"); // the width is noted at this fit
+    const heights = heightsOf(ta);
+    typeAtCaret(ta, "y");
+    expect(heights).toEqual(["20px"]);
+    width = 500;
+    typeAtCaret(ta, "z");
+    expect(heights).toEqual(["20px", "auto", "20px"]);
+  });
 });

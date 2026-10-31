@@ -153,6 +153,7 @@ const DARK = [
   [".dark #controls button:hover:not(:disabled)", "background", "#262c36"],
   [".dark #controls button:active:not(:disabled)", "background", "#2a313c"],
   [".dark #controls button:disabled", "color", "#656c76"],
+  [".dark #controls button:focus-visible", "outline-color", "#1f6feb"],
   // R1 (owner rulings BI-1, BI-2): [Edit] while editing
   ["body.dark.edit-mode #controls #editBtn", "background", "#238636"],
   ["body.dark.edit-mode #controls #editBtn", "border-color", "#2ea043"],
@@ -189,6 +190,8 @@ const LIGHT = [
   ["#controls button:hover:not(:disabled)", "background", "#eff2f5"],
   ["#controls button:active:not(:disabled)", "background", "#e6eaef"],
   ["#controls button:disabled", "color", "#818b98"],
+  ["#controls button:focus-visible", "outline", "2px solid #0969da"],
+  ["#controls button:focus-visible", "outline-offset", "1px"],
   // R1 (owner rulings BI-1, BI-2): [Edit] while editing
   ["body.edit-mode #controls #editBtn", "background", "#1f883d"],
   ["body.edit-mode #controls #editBtn", "border-color", "#1a7f37"],
@@ -300,6 +303,13 @@ describe("theme colors in style.css (spec 5.8.1, 5.15.2)", () => {
     const help = declarations("#helpBtn");
     for (const property of ["border-radius", "border", "appearance", "background"]) expect(help[property], property).toBeUndefined();
     expect(declarations("#controls #gitHubBtn.gh-push")["border-radius"]).toBeUndefined();
+  });
+
+  it("AT-THM-22 table cells align to the top; the side alignment is the delimiter row's (owner ruling TVA1)", () => {
+    for (const selector of ["#preview th", "#preview td"]) {
+      expect(value(selector, "vertical-align"), selector).toBe("top");
+      expect(value(selector, "text-align"), selector).toBeUndefined();
+    }
   });
 
   it("AT-THM-05 inline code has a ground in both themes, rounded with side padding; no code inside pre", () => {

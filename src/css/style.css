@@ -401,10 +401,14 @@ blockquote {
   margin: 12px 0;
 }
 
+/* A short cell's text starts at the top, level with the first line of a
+   long cell beside it (owner ruling TVA1); the side alignment stays the
+   delimiter row's (marked's align attribute). */
 #preview th,
 #preview td {
   border: 1px solid #d1d9e0;
   padding: 6px 12px;
+  vertical-align: top;
 }
 
 .mermaid {

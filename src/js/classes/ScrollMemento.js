@@ -89,6 +89,23 @@ export default class ScrollMemento {
   }
 
   /**
+   * Whether the view is at its end and above pos: the browser pulled it back
+   * when the document got shorter. Read it while the layout is current (it
+   * then lays out nothing).
+   * @param {number} pos - a position save() returned
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
+  isPulledBackFrom(pos) {
+    const now = this.save();
+    if (now >= pos) return false;
+    const end = this.useDocumentScroll
+      ? document.documentElement.scrollHeight - window.innerHeight
+      : this.container.scrollHeight - this.container.clientHeight;
+    return now >= end - 1;
+  }
+
+  /**
    * INV-78: from now on, where the user last took the view. After a move
    * (MOVE_KEYS and USER_ACTS: not Shift, not a press outside the text), each
    * scroll of the view notes the reader's place (captureReadingAnchor), and
