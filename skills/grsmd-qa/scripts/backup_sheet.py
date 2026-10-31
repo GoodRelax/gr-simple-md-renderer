@@ -1,12 +1,12 @@
-"""Copy a Q&A sheet to old/<stem>_yyyymmdd_hhmm.md beside the sheet.
+"""Copy a GQA (a Q&A sheet) to old/<stem>_yyyymmdd_hhmm.md beside it.
 
-Run before the session edits the sheet, after the session has written it,
+Run before the session edits the GQA, after the session has written it,
 and after the user has updated it (before the session reads it). Skips the
 copy when the newest backup already has the same content. Warns when old/
 is not gitignored, since the backups are working copies and must not be
 published.
 
-  python <skill>/scripts/backup_sheet.py <sheet.md>
+  python <skill>/scripts/backup_sheet.py <gqa.md>
 """
 import datetime
 import filecmp
