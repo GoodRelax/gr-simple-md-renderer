@@ -752,7 +752,7 @@ graph TB
         end
     end
     PUML_SERVER["PlantUML Server<br/>(External, consent required)"]
-    GITHUB_API["GitHub API api.github.com<br/>(External, confirmed per request)"]
+    GITHUB_API["GitHub API api.github.com<br/>(External, not offered in the release: D40)"]
     LOCALFS["Local File System<br/>(user permission per file)"]
 
     UI -->|"delegates render"| ORCH
@@ -767,7 +767,7 @@ graph TB
     UI -->|"implements"| GHHOST
     GITHUB -->|"opens and pushes"| GHCLIENT
     GITHUB -->|"push state (11-e)"| LIFECYCLE
-    GHCLIENT -->|"sends after confirmation"| GITHUB_API
+    GHCLIENT -->|"sends after confirmation (not in the release: D40)"| GITHUB_API
     GHCLIENT -->|"returns"| GHLINK
     GHLINK -->|"has"| GHREF
     MD -->|"relative URLs of a GitHub document (INV-99)"| GHREF
