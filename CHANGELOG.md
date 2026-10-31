@@ -17,6 +17,13 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- License: GRSMD is now licensed under the Apache License 2.0 (it was
+  the MIT License). `LICENSE` holds the full text, and a new `NOTICE`
+  file names the copyright holder. The built file's notices comment now
+  starts with GRSMD's own copyright and license notice, the help's
+  **Licenses** section starts with one line on GRSMD's own license, and
+  the header and the MCBSMD prompt show the new license. The versions
+  published before this change remain under the MIT License.
 - Code View: the **Edit** button is no longer disabled (it starts code
   editing), `Ctrl+S` / `Ctrl+Shift+S` save the file instead of doing
   nothing, the second line of the file info adds the file's encoding and

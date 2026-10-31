@@ -228,8 +228,10 @@ export function buildVersion() {
 // missing text, or code bundled inside a dist that tools/third-party-extras.mjs
 // does not list (by its marks, the host's declared dependencies, or the record
 // of that prebuilt dist's version) fails the build. A text still pending fails
-// a release build and warns in any other. The comment and the list are HTML
-// text, not script, so the CSP hash does not change.
+// a release build and warns in any other. GRSMD's own notice heads the
+// comment, and its license text (the project's LICENSE) is in the comment
+// once. The comment and the list are HTML text, not script, so the CSP hash
+// does not change.
 /**
  * @returns {object}  the Vite plugin
  * @purity non-pure
@@ -285,7 +287,8 @@ export function thirdPartyNotices({ moreModules = () => [] } = {}) {
       if (error) this.error(error);
       if (warning) this.warn(warning);
       const { entries } = outcome;
-      const parts = { notices: formatNotices(entries), list: formatHelpList(entries) };
+      const ownLicense = fs.readText(join(projectDir, "LICENSE"));
+      const parts = { notices: formatNotices(entries, ownLicense), list: formatHelpList(entries) };
       for (const file of Object.values(bundle)) {
         if (file.type !== "asset" || !file.fileName.endsWith(".html")) continue;
         try {

@@ -284,28 +284,65 @@ const RULE = "=".repeat(72);
 const THIN = "-".repeat(72);
 
 /**
- * The text of the notices comment: a summary line per entry, then each
- * distinct text (a license file, a copyright header) once, under the titles
- * of all entries that carry it; an entry with several texts is under each.
- * Texts that differ only in white space (line wrapping, indentation) count
- * as one; the first entry's copy is shown.
+ * GRSMD's own notice, at the head of the notices comment (spec appendix A.2,
+ * owner ruling LIC-2): the copyright line and the boilerplate notice from the
+ * appendix of the Apache License 2.0.
+ */
+export const OWN_NOTICE = [
+  "GR Simple Markdown (GRSMD)",
+  "Copyright 2026 GoodRelax",
+  "",
+  'Licensed under the Apache License, Version 2.0 (the "License");',
+  "you may not use this file except in compliance with the License.",
+  "You may obtain a copy of the License at",
+  "",
+  "    http://www.apache.org/licenses/LICENSE-2.0",
+  "",
+  "Unless required by applicable law or agreed to in writing, software",
+  'distributed under the License is distributed on an "AS IS" BASIS,',
+  "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.",
+  "See the License for the specific language governing permissions and",
+  "limitations under the License.",
+].join("\n");
+
+/**
+ * The text of the notices comment: GRSMD's own notice, then a summary line
+ * per entry, then each distinct text (a license file, a copyright header)
+ * once, under the titles of all entries that carry it; an entry with several
+ * texts is under each. Texts that differ only in white space (line wrapping,
+ * indentation) count as one; the first entry's copy is shown. GRSMD's own
+ * license text (the project's LICENSE) is written once too: when an entry
+ * carries the same text, the own notice points to that entry's section;
+ * otherwise the full text follows the own notice.
  * @param {Array<{name: string, versions?: string[], license: string, note?: string, texts: string[]}>} entries
+ * @param {string} ownLicense  the project's LICENSE
  * @returns {string}
  * @purity pure
  */
-export function formatNotices(entries) {
+export function formatNotices(entries, ownLicense) {
+  if (typeof ownLicense !== "string" || !ownLicense.trim()) throw new Error("formatNotices needs the project's LICENSE text");
+  const keyOf = (text) => text.replace(/\s+/g, " ");
   const sorted = [...entries].sort((a, b) => titleOf(a).localeCompare(titleOf(b), "en"));
   const groups = new Map(); // white-space-free key -> {text, list}
   for (const entry of sorted) {
     for (const part of entry.texts) {
       const text = part.trim();
-      const key = text.replace(/\s+/g, " ");
+      const key = keyOf(text);
       const group = groups.get(key) ?? { text, list: [] };
       if (!group.list.includes(entry)) group.list.push(entry);
       groups.set(key, group);
     }
   }
+  const ownText = normalizeNewlines(ownLicense).trim();
+  const shared = groups.get(keyOf(ownText));
   const out = [
+    OWN_NOTICE,
+    "",
+    ...(shared
+      ? [`The full text of the License is below, in the section that starts with "${titleOf(shared.list[0])}".`]
+      : ["The full text of the License follows.", "", ownText]),
+    "",
+    "",
     "THIRD-PARTY SOFTWARE NOTICES",
     "",
     "GR Simple Markdown (GRSMD) includes the open source software listed below.",
