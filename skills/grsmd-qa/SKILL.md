@@ -273,7 +273,8 @@ once, when the GQA closes or when the user asks (see "Closing a GQA").
 `scripts/mark_changes.py` applies this table. The script compares a table
 row cell by cell with the old row of the same first cell (else with the most
 alike old row). In a changed `text` block, it pads the unchanged lines with
-three spaces and strips them again in the next round. It picks the language
+three spaces and strips them again in the next round; in a `text` block, a
+line that starts with MARK always counts as a mark. It picks the language
 of a note line from the answer fields (`回答:` means Japanese) and removes the
 note lines first in the next round. The script leaves blank lines, fences,
 table separator rows and empty answer fields unmarked; it cannot mark deleted

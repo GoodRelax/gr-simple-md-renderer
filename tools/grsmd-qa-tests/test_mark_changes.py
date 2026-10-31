@@ -135,12 +135,25 @@ class MarkChangesTest(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertIn(block, self.read(new))
 
-    def test_text_block_showing_a_mark_stays_as_written(self):
-        # A text block whose own text starts with a mark, in no marked shape, keeps it.
-        block = '```text\n' + MARK + ' legend\nroot\n```\n'
-        base_text = '# t\n\nintro\n\n' + block + '\n' + JA_ANSWER + '\n'
-        _, new, text = self.mark(base_text, base_text.replace('intro', 'intro changed'))
-        self.assertIn(block, text)
+    def test_tree_line_added_by_user_does_not_keep_old_marks(self):
+        # The user adds a tree line without the padding to a marked tree (N1).
+        _, _, marked = self.mark(BASE, NEW)
+        saved_text = marked.replace('   +- a\n', '   +- a\n+- d\n')
+        base, new, text = self.mark(saved_text, saved_text)
+        self.assertNotIn(MARK, text)
+        self.assertIn('```text\nroot\n+- a\n+- d\n+- c\n```', text)
+        self.assertEqual(self.run_script('--check', base, new)[0], 0)
+
+    def test_new_tree_loses_its_marks_next_round(self):
+        # A tree that is new as a whole has a MARK on every line and no padding.
+        base_text = '# t\n\nintro\n\n' + JA_ANSWER + '\n'
+        new_text = base_text.replace('intro\n', 'intro\n\n```text\nroot\n+- a\n```\n')
+        _, new, marked = self.mark(base_text, new_text)
+        self.assertIn(MARK + ' root', marked.split('\n'))
+        saved = self.write('saved.md', marked)
+        code, out = self.run_script(saved, new)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.read(new), new_text)
 
     def test_note_takes_fence_indent_in_a_list(self):
         base_text = ('# t\n\n1. Step one:\n\n   ```bash\n   run --old\n   ```\n\n'

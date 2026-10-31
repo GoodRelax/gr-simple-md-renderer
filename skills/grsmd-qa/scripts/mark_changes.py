@@ -185,29 +185,22 @@ def mark_segment(seg):
     return lead + OPEN + core + '*' + tail
 
 
-def marked_blocks(lines, kinds, blocks):
-    """Text blocks in the shape this script gives a marked block: every non-empty line
-    starts with MARK or three spaces, and at least one with MARK."""
-    shape = {}
-    for i, line in enumerate(lines):
-        if kinds[i] != 'code' or not line:
-            continue
-        has_mark, ok = shape.get(blocks[i], (False, True))
-        shape[blocks[i]] = (has_mark or line.startswith(MARK + ' '),
-                            ok and (line.startswith(MARK + ' ') or line.startswith('   ')))
-    return {b for b, (has_mark, ok) in shape.items() if has_mark and ok}
-
-
 def strip_all(lines, kinds, blocks):
     # A copy block stays byte for byte as written, a leading MARK included:
-    # the user copies it, and the script never marks inside it.
-    marked = marked_blocks(lines, kinds, blocks)
+    # the user copies it, and the script never marks inside it. In a text block
+    # the script owns the marks: a leading MARK is a mark, and a block with one
+    # also lost its three-space padding. A line the user added without the
+    # padding keeps its text.
+    marked = {blocks[i] for i, line in enumerate(lines)
+              if kinds[i] == 'code' and line.startswith(MARK + ' ')}
     out = []
     for i, line in enumerate(lines):
         kind = kinds[i]
-        if kind == 'code':
-            if blocks[i] in marked:
-                line = line[2:] if line.startswith(MARK + ' ') else line[3:]
+        if kind == 'code' and blocks[i] in marked:
+            if line.startswith(MARK + ' '):
+                line = line[2:]
+            elif line.startswith('   '):
+                line = line[3:]
         elif kind == 'mermaid':
             line = line.replace(MARK + ' ', '')
         elif kind == 'text' and OPEN in line:
