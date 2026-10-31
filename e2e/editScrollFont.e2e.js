@@ -436,3 +436,42 @@ for (const where of [
     await expect(editor).toHaveCount(0);
   });
 }
+
+// INV-40 (performance, logged only): in a code block of 5,000 lines, one key
+// that adds a letter (the editor is measured as it is) and one Backspace
+// (measured short), from the input to the layout read after it. Laying out
+// the editor's 200 KB is most of it, before the iPad fix (2026-10-31) too.
+const LONG_CODE = ["Intro.", "", "```", ...Array.from({ length: 5000 }, (_, n) => `value_${n} = compute(${n}) + offset; // line ${n}`), "```", "", "Outro."].join("\n");
+
+test("INV-40 (performance): a letter and a Backspace in a code block of 5,000 lines (logged)", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "measured in Chrome (INV-51)");
+  test.skip(process.env.GRSMD_PERF !== "1", "timing: GRSMD_PERF=1 only");
+  test.setTimeout(180000);
+  await page.goto("/");
+  await renderMarkdown(page, LONG_CODE);
+  await settled(page);
+  await scrollTextTo(page, "line 2500", 300);
+  const target = await renderedChar(page, "line 2500");
+  await page.mouse.dblclick(target.x, target.y);
+  const editor = page.locator("#preview textarea.md-block-editor");
+  await expect(editor).toBeFocused();
+  const times = await page.evaluate(async () => {
+    const ta = document.querySelector("#preview textarea.md-block-editor");
+    const added = [];
+    const taken = [];
+    for (let k = 0; k < 30; k++) {
+      await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+      const t0 = performance.now();
+      if (k % 2 === 0) ta.setRangeText("x", ta.selectionStart, ta.selectionStart, "end");
+      else ta.setRangeText("", ta.selectionStart - 1, ta.selectionStart, "end");
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+      document.querySelector("#preview").getBoundingClientRect();
+      (k % 2 === 0 ? added : taken).push(performance.now() - t0);
+    }
+    const median = (list) => [...list].sort((a, b) => a - b)[7];
+    return { added: median(added), taken: median(taken) };
+  });
+  console.log(`5,000 lines, one key: a letter ${times.added.toFixed(2)} ms, a Backspace ${times.taken.toFixed(2)} ms (medians of 15)`);
+  await page.keyboard.press("Escape");
+  await expect(editor).toHaveCount(0);
+});

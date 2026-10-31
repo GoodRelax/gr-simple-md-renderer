@@ -69,7 +69,7 @@ export default class ScrollMemento {
   /**
    * From now on, the position of the view after each of its scrolls, noted
    * when the browser reports the scroll: last() gives it without laying out
-   * the page (INV-40: a block editor's height is fitted at each key). stop()
+   * the page (INV-40: the view before an input of a block editor). stop()
    * removes the listener.
    * @returns {{last: () => number, stop: () => void}}
    * @purity non-pure
@@ -287,6 +287,19 @@ export default class ScrollMemento {
     if (!this.useDocumentScroll) return this.container.getBoundingClientRect().top;
     const bar = document.getElementById(STICKY_BAR_ID);
     return bar ? Math.max(0, bar.getBoundingClientRect().bottom) : 0;
+  }
+
+  /**
+   * The bottom of what is shown: the bottom of the container's client area,
+   * or, when the document scrolls (touch), the bottom of the visual viewport
+   * (above an on-screen keyboard; the layout viewport's where there is none).
+   * @returns {number}
+   * @purity semi-pure-b
+   */
+  shownBottom() {
+    if (!this.useDocumentScroll) return this.container.getBoundingClientRect().top + this.container.clientHeight;
+    const viewport = window.visualViewport;
+    return viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
   }
 
   /**

@@ -1215,10 +1215,10 @@ export default class UIController {
    * starts an empty document (INV-31); in the Markdown view outside edit
    * mode it enters edit mode and opens what was double-clicked (INV-57, 11-c
    * previewDoubleClicked). A touch or pen double tap does neither (owner
-   * rulings AQ3, AQ13: the pen is as touch): the browser's double-tap zoom
-   * stays, and touch or a pen enters edit mode with [Edit], then a tap opens
-   * a block (INV-29). The browser's dblclick carries no pointer type, so the
-   * last press on the preview decides.
+   * rulings AQ3, AQ13: the pen is as touch): the browser's default stays
+   * (zooming is by pinch, IPD1), and touch or a pen enters edit mode with
+   * [Edit], then a tap opens a block (INV-29). The browser's dblclick
+   * carries no pointer type, so the last press on the preview decides.
    * @purity non-pure
    */
   setupDoubleClickGestures() {

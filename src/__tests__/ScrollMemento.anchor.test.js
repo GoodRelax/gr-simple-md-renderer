@@ -833,4 +833,16 @@ describe("ScrollMemento: the last position seen, and a pull back to the end (INV
     expect(touch.isPulledBackFrom(2000)).toBe(true);
     delete document.documentElement.scrollHeight;
   });
+
+  it("AT-SM-44 shownBottom: the container's client bottom; when the document scrolls, the visual viewport's bottom (the layout viewport's without one)", () => {
+    c.getBoundingClientRect = () => ({ top: 40 });
+    Object.defineProperty(c, "clientHeight", { value: 300, configurable: true });
+    expect(memento.shownBottom()).toBe(340);
+    stubMatchMedia(true);
+    const touch = new ScrollMemento(c);
+    vi.stubGlobal("visualViewport", { offsetTop: 10, height: 400 });
+    expect(touch.shownBottom()).toBe(410); // above an on-screen keyboard
+    vi.stubGlobal("visualViewport", undefined);
+    expect(touch.shownBottom()).toBe(window.innerHeight);
+  });
 });

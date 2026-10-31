@@ -184,7 +184,10 @@ Version rule: `spec/grsmd_gen2_spec_ja.md` section 1.7.
 
 ## License
 
-MIT License
+Apache License 2.0. Copyright 2026 GoodRelax. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+The versions published before this change remain under the MIT License: every version on
+GitHub Pages before the release of 2026-11-01, the beta builds beta1 to beta3 included.
 
 GRSMD bundles open source software. Their copyright and license notices are
 in a comment at the end of the built `docs/index.html` (and of each release's
@@ -379,7 +382,9 @@ npm run test:e2e
 
 ## ライセンス
 
-MIT License
+Apache License 2.0。Copyright 2026 GoodRelax。[LICENSE](LICENSE) と [NOTICE](NOTICE) を見てください。
+
+この変更より前に公開した版（2026-11-01 の正式版より前に GitHub Pages に出した版。beta1〜beta3 を含む）は、MIT License のままです。
 
 GRSMD は、オープンソースのソフトウェアを同梱しています。その著作権とライセンスの表記は、ビルドした
 `docs/index.html`（とリリースの `GRSMD.html`）の最後のコメントにあり、ヘルプの「ライセンス」の章に一覧があります。

@@ -9,6 +9,7 @@ import { build } from "vite";
 import {
   ALLOWED_LICENSES,
   DEFAULT_EXTRAS,
+  OWN_NOTICE,
   POINTER_COMMENT,
   assertCommentSafe,
   checkDeclaredDependencies,
@@ -476,14 +477,29 @@ describe("AT-OSS-05 the notices comment and the help list", () => {
   ];
 
   it("lists every entry, then each text once under all entries that carry it (white space aside)", () => {
-    const text = formatNotices(entries);
-    expect(text).toMatch(/^THIRD-PARTY SOFTWARE NOTICES\n/);
+    const text = formatNotices(entries, "Own license");
+    expect(text).toMatch(/\n\n\nTHIRD-PARTY SOFTWARE NOTICES\n/);
     expect(text).toContain("  d3-a 3.0.1 (ISC)\n  d3-b 3.0.0 (ISC)\n  pako 1.0.10 (MIT AND Zlib) -- inside x\n  two 1.0.0, 2.0.0 (MIT)");
     const groups = text.split(`\n\n${"=".repeat(72)}\n`).slice(1);
     expect(groups).toEqual([
       `d3-a 3.0.1 (ISC)\nd3-b 3.0.0 (ISC)\npako 1.0.10 (MIT AND Zlib)\n${"-".repeat(72)}\nISC text`,
       `pako 1.0.10 (MIT AND Zlib)\ntwo 1.0.0, 2.0.0 (MIT)\n${"-".repeat(72)}\nZlib text`,
     ]);
+  });
+
+  it("starts with GRSMD's own notice and writes the own license text once (LIC-2)", () => {
+    // the project's LICENSE is the text of an entry: the own notice points to that section
+    const shared = formatNotices(entries, "Zlib\r\ntext\r\n");
+    expect(shared.startsWith(
+      `${OWN_NOTICE}\n\nThe full text of the License is below, in the section that starts with "pako 1.0.10 (MIT AND Zlib)".\n\n\nTHIRD-PARTY SOFTWARE NOTICES\n`,
+    )).toBe(true);
+    expect(shared.split("Zlib text")).toHaveLength(2);
+    // no entry carries it: the full text follows the own notice, with LF line ends
+    const alone = formatNotices(entries, "Own\r\nlicense\r\n");
+    expect(alone.startsWith(`${OWN_NOTICE}\n\nThe full text of the License follows.\n\nOwn\nlicense\n\n\nTHIRD-PARTY SOFTWARE NOTICES\n`)).toBe(true);
+    expect(OWN_NOTICE).toMatch(/^GR Simple Markdown \(GRSMD\)\nCopyright 2026 GoodRelax\n\nLicensed under the Apache License, Version 2\.0/);
+    expect(() => formatNotices(entries)).toThrow(/LICENSE/);
+    expect(() => formatNotices(entries, " ")).toThrow(/LICENSE/);
   });
 
   it("the help list is sorted, comma-separated and escaped", () => {

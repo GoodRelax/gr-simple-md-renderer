@@ -17,6 +17,13 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- License: GRSMD is now licensed under the Apache License 2.0 (it was
+  the MIT License). `LICENSE` holds the full text, and a new `NOTICE`
+  file names the copyright holder. The built file's notices comment now
+  starts with GRSMD's own copyright and license notice, the help's
+  **Licenses** section starts with one line on GRSMD's own license, and
+  the header and the MCBSMD prompt show the new license. The versions
+  published before this change remain under the MIT License.
 - Code View: the **Edit** button is no longer disabled (it starts code
   editing), `Ctrl+S` / `Ctrl+Shift+S` save the file instead of doing
   nothing, the second line of the file info adds the file's encoding and
@@ -124,8 +131,9 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   (shared by the pages of goodrelax.github.io in Chrome and Edge, and how
   to withdraw it) moves to Privacy & Security.
 - Touch editing, PlantUML and small fixes: on a phone or tablet, a double
-  tap on the preview zooms as the browser does and no longer starts
-  editing; press `[Edit]`, then tap a block (a mouse double-click still
+  tap on the preview no longer starts editing (to zoom, use a pinch; Safari
+  does not zoom on a double tap over the body text, owner ruling IPD1);
+  press `[Edit]`, then tap a block (a mouse double-click still
   opens the block; a pen works as touch, also on a PC, owner ruling AQ13).
   The help's Details and the fourth line of the start
   screen now say how to start editing. A PlantUML diagram shows
@@ -157,6 +165,15 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   nothing. In the code view, Reload now reads and checks the file before
   it asks about unsaved changes; on a refusal, a read error or Cancel, code
   editing goes on with your text as it was.
+- Top bar: every button but `[?]` has one shape in every browser, a
+  rounded rectangle (6px corners, a 1px frame) in the theme's colors, with
+  a blue focus ring. Before, each browser drew its own buttons (on an iPad,
+  Search and the Render buttons looked oval). While you edit (a Markdown
+  document or a code file, with the palette minimized too), `[Edit]` is
+  green with white text.
+- Tables: a short cell's text now starts at the top of its row, level with
+  the first line of a long cell beside it (it was centred up and down).
+  The side alignment still follows the table's delimiter row.
 
 ### Added
 
@@ -390,6 +407,17 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Fixed
 
+- Block editing on an iPad: after `[Edit]` and a tap, the first key no
+  longer throws the caret to the start of the block (it came back at the
+  next key). GRSMD no longer makes the editor one line high to measure it
+  while you only add text. When the browser moves the view as you type
+  (Safari at a line break in a long paragraph, by up to a few screens;
+  Chrome and Edge by a line), GRSMD puts it back and scrolls only as far as
+  the caret's line needs.
+- Code View on an iPad held upright: with a `.json` file, the file
+  information next to the title no longer breaks into one word per line and
+  stretches the top bar to a quarter of the screen. Each line stays on one
+  row, cut with an ellipsis.
 - Math in a document that opens while the page is still loading (a file
   dropped very early, or opened by the PowerShell launcher) is drawn again
   when the document also has a Mermaid diagram. Mermaid's tooltip, added at
