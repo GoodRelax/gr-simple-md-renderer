@@ -29,6 +29,8 @@ const CELL_ACTIONS = new Set(["openCell", "commitCell", "discardCell", "endTable
 // button of its bar (INV-74).
 const RANGE_MESSAGES = CONFIG.messages.blockRange;
 const RANGE_EVENTS = { delete: "blockRangeDeleteRequested", cut: "blockRangeCutRequested", copy: "blockRangeCopyRequested" };
+// INV-40: a line height of "normal" as a multiple of the font size (about what browsers use)
+const NORMAL_LINE_HEIGHT = 1.2;
 
 // Targets a tap never opens (INV-29). The list is kept as written in the
 // spec: user HTML may contain the same classes and roles, and they stay
@@ -321,7 +323,7 @@ export default class BlockEditController {
     this.host = host;
     this.createOverlay = createOverlay;
     this._blockEditState = BROWSING;
-    this._editor = null; // { textarea, wrapper, blockId, blockType, original, savedNodes, overlay, gap, matched, scrolls }
+    this._editor = null; // { textarea, wrapper, blockId, blockType, original, savedNodes, overlay, gap, matched, scrolls, fitted }
     this._lexers = null; // the orchestrator's text lexers, block lexing cached per text
     this._press = null; // the pointerdown being followed
     this._composing = false;
@@ -337,7 +339,7 @@ export default class BlockEditController {
     this._onInput = () => this._handleInput();
     this._onPaste = (e) => this._handlePaste(e);
     this._onCompositionStart = () => this._setComposing(true);
-    this._onCompositionEnd = () => this._setComposing(false);
+    this._onCompositionEnd = () => this._handleCompositionEnd();
     this._cells = new TableCellEditor(
       orchestrator,
       blockLocator,
@@ -1344,7 +1346,7 @@ export default class BlockEditController {
     wrapper.replaceChildren(textarea);
     wrapper.classList.add("md-block-editing");
     const gap = target.kind === "gap" ? { afterBlockId: target.afterBlockId } : null;
-    this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes, overlay: null, gap, matched: textStyle !== null, scrolls: null };
+    this._editor = { textarea, wrapper, blockId, blockType, original: raw, savedNodes, overlay: null, gap, matched: textStyle !== null, scrolls: null, fitted: null };
     this._gaps.hide();
     this._composing = false;
     this.editGeneration++;
@@ -1358,7 +1360,7 @@ export default class BlockEditController {
     textarea.addEventListener("paste", this._onPaste);
     textarea.addEventListener("compositionstart", this._onCompositionStart);
     textarea.addEventListener("compositionend", this._onCompositionEnd);
-    this._fitHeight(false); // the anchor below puts the scroll in place
+    this._fitHeight();
     this._attachOverlay(textarea, blockType);
     textarea.focus({ preventScroll: true });
     let kept = anchor;
@@ -1375,7 +1377,7 @@ export default class BlockEditController {
       if (line !== null) kept = { offsetTop: anchor.offsetTop + place.lineOffset - line };
     }
     this.scrollMemento.restoreAnchor(kept, wrapper);
-    // after the anchor: the view is where it stays while typing
+    // after the anchor: the view is where it stays while typing (INV-40)
     this._editor.scrolls = this.scrollMemento.noteScrolls();
     if (blockId !== null) this.orchestrator.retargetPendingAnchor(blockId);
     this.host.onEditStateChanged();
@@ -1780,8 +1782,51 @@ export default class BlockEditController {
    */
   _handleInput() {
     this.editGeneration++;
-    this._fitHeight();
+    this._fitKeepingView();
     this.host.onEditorInput();
+  }
+
+  /**
+   * INV-40: fit the height to the text the input left, and keep the view.
+   * @purity non-pure
+   */
+  _fitKeepingView() {
+    const { scrolls } = this._editor;
+    // the view before this input: where it was at its last scroll (reading
+    // it now would lay out the document once more, G10)
+    const before = scrolls ? scrolls.last() : null;
+    const now = this._fitHeight(before !== null);
+    if (before !== null) this._keepViewAcrossInput(before, now);
+  }
+
+  /**
+   * INV-40: the input moved the view: it goes back where it was before the
+   * input, and from there the least that shows the caret's line (none when
+   * the line is in view there). WebKit can move the view far off at an
+   * insert, even past the caret (the iPad, beta2: to the start of the
+   * block, and back at the next key), and Chromium's scroll anchoring moves
+   * it a line at a hard break. A caret too far into a wrapping text to be
+   * measured keeps the browser's move. Laid out only after a move.
+   * @purity non-pure
+   * @param {number} before - the view's position before the input
+   * @param {number} now - its position after it
+   */
+  _keepViewAcrossInput(before, now) {
+    const moved = now - before;
+    if (Math.abs(moved) < 1) return;
+    const { textarea } = this._editor;
+    const lineTop = BlockCaretMap.caretOffsetIn(textarea, textarea.selectionEnd, CONFIG.edit.caretLineMaxChars);
+    if (lineTop === null) return;
+    const style = getComputedStyle(textarea);
+    const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * NORMAL_LINE_HEIGHT;
+    // where the caret's line is on screen with the view back where it was
+    const top = textarea.getBoundingClientRect().top + lineTop + moved;
+    const shownTop = this.scrollMemento.shownTop();
+    const shownBottom = this.scrollMemento.shownBottom();
+    let target = before;
+    if (top < shownTop) target += top - shownTop;
+    else if (top + lineHeight > shownBottom) target += Math.min(top + lineHeight - shownBottom, top - shownTop);
+    if (Math.abs(target - now) >= 1) this.scrollMemento.restore(target);
   }
 
   /**
@@ -1817,26 +1862,59 @@ export default class BlockEditController {
   }
 
   /**
-   * INV-40: the editor is as tall as its content.
+   * The end of an IME composition: the composed text can be shorter than
+   * what was being composed, so the height is fitted to it in full (INV-40).
    * @purity non-pure
-   * @param {boolean} [keepScroll] - false when the editor opens (its anchor
-   *   puts the scroll in place after, and reading it first would lay out
-   *   the new editor once more)
    */
-  _fitHeight(keepScroll = true) {
-    const { textarea, scrolls } = this._editor;
-    // The editor is short for a moment while it is measured: near the end
-    // of the document the browser can pull the scroll back then (INV-40).
-    // The position before is the one noted at the last scroll: reading it
-    // now would lay out the whole document once more at each key.
-    const scroll = keepScroll && scrolls ? scrolls.last() : null;
-    textarea.style.height = "auto";
+  _handleCompositionEnd() {
+    this._setComposing(false);
+    if (!this._editor) return;
+    this._editor.fitted = null;
+    this._fitKeepingView();
+  }
+
+  /**
+   * INV-40: the editor is as tall as its content. An input that only added
+   * text (or one during an IME composition, or no change) cannot make it
+   * shorter: the editor's own scrollHeight shows how much it grew, and the
+   * editor is not made shorter to be measured. Made short, WebKit can show
+   * the caret where it is in the short editor and move the view there (the
+   * iPad, beta2: to the start of the block, at the first key). When the
+   * editor opens (no caret yet), and after an input that took text away (a
+   * deletion, a replacement, an undo), the height is set to auto to be
+   * measured, as a shorter text can only be measured so
+   * (_keepViewAcrossInput puts back a view the browser moves then).
+   * @purity non-pure
+   * @param {boolean} [readView] - also read the view's position
+   * @returns {number|null} the view's position, read in the layout of the
+   *   measure (before the new height), or null when not asked
+   */
+  _fitHeight(readView = false) {
+    const editor = this._editor;
+    const { textarea } = editor;
+    const text = textarea.value;
+    const prev = editor.fitted;
+    const grew = prev !== null && (text === prev || this._composing || BlockEditController._onlyInserted(prev, text, textarea.selectionEnd));
+    editor.fitted = text;
+    if (!grew) textarea.style.height = "auto";
     // box-sizing: border-box (style.css): the height includes the borders
     const height = textarea.scrollHeight + textarea.offsetHeight - textarea.clientHeight;
-    // read in the same layout; a scroll of the browser's own (to show the
-    // caret) is kept
-    const pulled = scroll !== null && this.scrollMemento.isPulledBackFrom(scroll);
+    const view = readView ? this.scrollMemento.save() : null;
     textarea.style.height = `${height}px`;
-    if (pulled) this.scrollMemento.restore(scroll);
+    return view;
+  }
+
+  /**
+   * after is before with text inserted just before end (the caret after
+   * typing or a paste), nothing taken away.
+   * @purity pure
+   * @param {string} before
+   * @param {string} after
+   * @param {number} end
+   * @returns {boolean}
+   */
+  static _onlyInserted(before, after, end) {
+    const start = end - (after.length - before.length);
+    return start >= 0 && start < end && after.slice(0, start) === before.slice(0, start) && after.slice(end) === before.slice(start);
   }
 }

@@ -24,7 +24,8 @@ import { pointer, keydown } from "./helpers/editDom.js";
 // INV-57: a mouse double click on the preview outside edit mode enters edit
 // mode and opens what was double-clicked (11-c previewDoubleClicked). A touch
 // or pen double tap does not (owner rulings AQ3, AQ13: the pen is as touch):
-// the browser's double-tap zoom stays; [Edit] and then a tap opens a block.
+// the browser's default stays (zooming is by pinch, IPD1); [Edit] and then a
+// tap opens a block.
 
 const DOC = "# Title\n\nHello [link](https://example.com/) word.\n\n| A | B |\n|---|---|\n| x | y |\n\n```mermaid\nflowchart TD\n  A --> B\n```\n";
 const isPara = (b) => b.type === "paragraph";

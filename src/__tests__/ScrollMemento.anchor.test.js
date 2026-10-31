@@ -771,7 +771,7 @@ describe("ScrollMemento user moves (INV-78)", () => {
   });
 });
 
-describe("ScrollMemento: the last position seen, and a pull back to the end (INV-40)", () => {
+describe("ScrollMemento: the last position seen (INV-40)", () => {
   let c;
   let memento;
 
@@ -809,28 +809,15 @@ describe("ScrollMemento: the last position seen, and a pull back to the end (INV
     expect(scrolls.last()).toBe(70);
   });
 
-  it("AT-SM-43 isPulledBackFrom: true only when the view is above pos and at its end", () => {
-    Object.defineProperty(c, "scrollHeight", { value: 600, configurable: true });
-    Object.defineProperty(c, "clientHeight", { value: 100, configurable: true });
-    const at = (pos) => vi.spyOn(memento, "save").mockReturnValue(pos);
-    at(500);
-    expect(memento.isPulledBackFrom(520)).toBe(true); // pulled back to the end (500)
-    at(499.5);
-    expect(memento.isPulledBackFrom(520)).toBe(true); // within 1 px of it
-    at(450);
-    expect(memento.isPulledBackFrom(520)).toBe(false); // above, but not at the end
-    at(530);
-    expect(memento.isPulledBackFrom(520)).toBe(false); // below: the browser showed the caret
-    at(520);
-    expect(memento.isPulledBackFrom(520)).toBe(false);
-  });
-
-  it("AT-SM-43 the document's end when the document scrolls (touch)", () => {
+  it("AT-SM-44 shownBottom: the container's client bottom; when the document scrolls, the visual viewport's bottom (the layout viewport's without one)", () => {
+    c.getBoundingClientRect = () => ({ top: 40 });
+    Object.defineProperty(c, "clientHeight", { value: 300, configurable: true });
+    expect(memento.shownBottom()).toBe(340);
     stubMatchMedia(true);
     const touch = new ScrollMemento(c);
-    Object.defineProperty(document.documentElement, "scrollHeight", { value: 2000, configurable: true });
-    vi.spyOn(touch, "save").mockReturnValue(2000 - window.innerHeight);
-    expect(touch.isPulledBackFrom(2000)).toBe(true);
-    delete document.documentElement.scrollHeight;
+    vi.stubGlobal("visualViewport", { offsetTop: 10, height: 400 });
+    expect(touch.shownBottom()).toBe(410); // above an on-screen keyboard
+    vi.stubGlobal("visualViewport", undefined);
+    expect(touch.shownBottom()).toBe(window.innerHeight);
   });
 });
