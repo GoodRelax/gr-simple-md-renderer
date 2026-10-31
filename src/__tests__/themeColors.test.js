@@ -146,6 +146,18 @@ const DARK = [
   [".dark #preview th.grsmd-cell-editing", "outline-color", "#1f6feb"],
   [".dark #preview td.grsmd-cell-raw", "background", "#bb800926"],
   [".dark #preview th.grsmd-cell-raw", "background", "#bb800926"],
+  // R6 (owner rulings BI-14 to BI-16): the top bar's buttons, [?] aside
+  [".dark #controls button", "background", "#212830"],
+  [".dark #controls button", "border-color", "#3d444d"],
+  [".dark #controls button", "color", "#f0f6fc"],
+  [".dark #controls button:hover:not(:disabled)", "background", "#262c36"],
+  [".dark #controls button:active:not(:disabled)", "background", "#2a313c"],
+  [".dark #controls button:disabled", "color", "#656c76"],
+  [".dark #controls button:focus-visible", "outline-color", "#1f6feb"],
+  // R1 (owner rulings BI-1, BI-2): [Edit] while editing
+  ["body.dark.edit-mode #controls #editBtn", "background", "#238636"],
+  ["body.dark.edit-mode #controls #editBtn", "border-color", "#2ea043"],
+  ["body.dark.edit-mode #controls #editBtn", "color", "#fff"],
 ];
 
 // Spec 5.8.1, light column: owner ruling 2026-10-21 (Primer light for the
@@ -171,6 +183,19 @@ const LIGHT = [
   [".grsmd-invisible", "background", "#fff8c5"],
   ["#preview td.grsmd-cell-editing", "outline", "2px solid #0969da"],
   ["#preview td.grsmd-cell-raw", "background", "#fff8c5"],
+  // R6 (owner rulings BI-14 to BI-16): the top bar's buttons, [?] aside
+  ["#controls button", "background", "#f6f8fa"],
+  ["#controls button", "border", "1px solid #d1d9e0"],
+  ["#controls button", "color", "#1f2328"],
+  ["#controls button:hover:not(:disabled)", "background", "#eff2f5"],
+  ["#controls button:active:not(:disabled)", "background", "#e6eaef"],
+  ["#controls button:disabled", "color", "#818b98"],
+  ["#controls button:focus-visible", "outline", "2px solid #0969da"],
+  ["#controls button:focus-visible", "outline-offset", "1px"],
+  // R1 (owner rulings BI-1, BI-2): [Edit] while editing
+  ["body.edit-mode #controls #editBtn", "background", "#1f883d"],
+  ["body.edit-mode #controls #editBtn", "border-color", "#1a7f37"],
+  ["body.edit-mode #controls #editBtn", "color", "#fff"],
 ];
 
 // Owner ruling 2026-10-21: the light top bar and the #editor grounds (both
@@ -267,6 +292,24 @@ describe("theme colors in style.css (spec 5.8.1, 5.15.2)", () => {
 
   it.each(PALETTE)("AT-THM-04 palette: %s { %s: %s }", (selector, property, expected) => {
     expect(value(selector, property)).toBe(expected);
+  });
+
+  it("AT-THM-21 R6: the top bar's buttons have one shape in every browser (6px corners, a 1px frame, no browser look); [?] keeps its own; [Push to GitHub] has no corner of its own", () => {
+    const buttons = declarations("#controls button");
+    expect(buttons["border-radius"]).toBe("6px");
+    expect(buttons.appearance).toBe("none");
+    expect(buttons["-webkit-appearance"]).toBe("none");
+    expect(buttons["font-family"]).toBe("inherit");
+    const help = declarations("#helpBtn");
+    for (const property of ["border-radius", "border", "appearance", "background"]) expect(help[property], property).toBeUndefined();
+    expect(declarations("#controls #gitHubBtn.gh-push")["border-radius"]).toBeUndefined();
+  });
+
+  it("AT-THM-22 table cells align to the top; the side alignment is the delimiter row's (owner ruling TVA1)", () => {
+    for (const selector of ["#preview th", "#preview td"]) {
+      expect(value(selector, "vertical-align"), selector).toBe("top");
+      expect(value(selector, "text-align"), selector).toBeUndefined();
+    }
   });
 
   it("AT-THM-05 inline code has a ground in both themes, rounded with side padding; no code inside pre", () => {

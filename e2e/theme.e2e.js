@@ -292,6 +292,39 @@ const pasteText = (page, text) =>
     document.body.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: data }));
   }, text);
 
+test("table cells: a short cell's text starts level with the first line of a long cell beside it; the side alignment is the delimiter row's (owner ruling TVA1)", async ({ page }) => {
+  await page.goto("/");
+  const long = "long words that wrap ".repeat(40).trim();
+  await renderMarkdown(page, ["| key | value | right |", "|---|:---:|---:|", `| short | ${long} | r |`].join("\n"));
+  const cells = await page.evaluate(() => {
+    const textTop = (cell) => {
+      const range = document.createRange();
+      range.selectNodeContents(cell);
+      return range.getClientRects()[0].top;
+    };
+    const [short, long, right] = document.querySelectorAll("#preview tbody td");
+    const head = document.querySelector("#preview thead th");
+    return {
+      shortTop: textTop(short),
+      longTop: textTop(long),
+      longHeight: long.getBoundingClientRect().height,
+      shortAlign: getComputedStyle(short).textAlign,
+      headAlign: getComputedStyle(head).textAlign,
+      longAlign: getComputedStyle(long).textAlign,
+      rightAlign: getComputedStyle(right).textAlign,
+    };
+  });
+  // the long cell wraps into several lines
+  expect(cells.longHeight).toBeGreaterThan(60);
+  expect(Math.abs(cells.shortTop - cells.longTop)).toBeLessThanOrEqual(1);
+  // the side alignment: the delimiter row's, as before (the align attribute
+  // reads -webkit-center / -webkit-right in some browsers)
+  expect(cells.longAlign).toMatch(/center$/);
+  expect(cells.rightAlign).toMatch(/right$/);
+  expect(cells.shortAlign).not.toMatch(/center$/);
+  expect(cells.headAlign).not.toBe("left");
+});
+
 test.describe("the OS color scheme is dark", () => {
   test.use({ colorScheme: "dark" });
 

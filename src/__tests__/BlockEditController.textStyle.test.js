@@ -149,48 +149,189 @@ describe("AT-BEC-TS INV-84 the caret where the block was pressed", () => {
   });
 });
 
-describe("AT-BEC-TS INV-40 fitting the height keeps the scroll", () => {
-  /** The view was last seen at seen (a scroll the browser reported); while the editor is measured it is at now. */
-  function scrolled(seen, now) {
+describe("AT-BEC-TS INV-40 fitting the height and typing do not move the view", () => {
+  /** The heights the editor is given, in order, from now on. */
+  function heightsOf(ta) {
+    const heights = [];
+    const style = ta.style;
+    const setProperty = style.setProperty.bind(style);
+    Object.defineProperty(style, "height", {
+      configurable: true,
+      get: () => style.getPropertyValue("height"),
+      set: (value) => {
+        heights.push(value);
+        setProperty("height", value);
+      },
+    });
+    return heights;
+  }
+
+  /** From now on, scrollHeight of a textarea is 20 px per line of its value. */
+  function linesHigh() {
+    Object.defineProperty(HTMLTextAreaElement.prototype, "scrollHeight", {
+      configurable: true,
+      get() {
+        return this.value.split("\n").length * 20;
+      },
+    });
+  }
+
+  /** Type text at the caret as the browser does: the caret ends after it. */
+  function typeAtCaret(ta, text) {
+    ta.setRangeText(text, ta.selectionStart, ta.selectionEnd, "end");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  afterEach(() => {
+    delete HTMLTextAreaElement.prototype.scrollHeight;
+  });
+
+  it("AT-BEC-TS-07 an input that only adds text never makes the editor shorter to measure it (the iPad, beta2)", async () => {
+    linesHigh();
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    const heights = heightsOf(ta);
+    typeAtCaret(ta, "x");
+    typeAtCaret(ta, "\nmore");
+    ta.setSelectionRange(0, 0);
+    typeAtCaret(ta, "first\n"); // at the start too
+    expect(heights).toEqual(["20px", "40px", "60px"]);
+  });
+
+  it("AT-BEC-TS-08 the view is read once per key, in the layout of the measure; an unmoved view is not put back", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    const steps = [];
+    Object.defineProperty(ta, "scrollHeight", { configurable: true, get: () => (steps.push("measure"), 20) });
+    vi.spyOn(s.scrollMemento, "save").mockImplementation(() => (steps.push("view"), 0));
+    const heights = heightsOf(ta);
+    const restore = vi.spyOn(s.scrollMemento, "restore");
+    const caret = vi.spyOn(BlockCaretMap, "caretOffsetIn");
+    typeAtCaret(ta, " more");
+    // the view before the input is the one noted at the last scroll (G10)
+    expect(steps).toEqual(["measure", "view"]);
+    expect(heights).toEqual(["20px"]);
+    expect(restore).not.toHaveBeenCalled();
+    expect(caret).not.toHaveBeenCalled(); // nothing more is laid out
+  });
+
+  it("AT-BEC-TS-09 an input that takes text away is measured short; during an IME composition the editor only grows, and its end fits it in full", async () => {
+    linesHigh();
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    typeAtCaret(ta, "\na\nb");
+    const heights = heightsOf(ta);
+    // a deletion (Backspace) and a replacement of a selection
+    ta.setRangeText("", ta.selectionStart - 2, ta.selectionStart, "end");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    ta.setSelectionRange(0, 3);
+    typeAtCaret(ta, "Z");
+    expect(heights).toEqual(["auto", "40px", "auto", "40px"]);
+    heights.length = 0;
+    ta.dispatchEvent(new Event("compositionstart"));
+    typeAtCaret(ta, "\nka");
+    ta.setRangeText("\u304b", ta.selectionStart - 2, ta.selectionStart, "end"); // the composed text replaces what was typed
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(heights).toEqual(["60px", "60px"]);
+    ta.dispatchEvent(new Event("compositionend"));
+    expect(heights).toEqual(["60px", "60px", "auto", "60px"]);
+  });
+
+  it("AT-BEC-TS-09 the same text again (a second fit after an edit put in) is not measured short", async () => {
+    linesHigh();
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    const heights = heightsOf(ta);
+    typeAtCaret(ta, "x");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(heights).toEqual(["20px", "20px"]);
+  });
+
+  /**
+   * The view was last seen at seen (a scroll the browser reported); the input
+   * leaves it at now. The caret's line is lineTop below the editor's top,
+   * which is at editorTop on screen; lines are 20 px; what is shown runs
+   * from shown[0] to shown[1].
+   */
+  function movedByInput(ta, { seen, now, lineTop, editorTop, shown }) {
     const save = vi.spyOn(s.scrollMemento, "save").mockReturnValue(seen);
     s.preview.dispatchEvent(new Event("scroll"));
     save.mockReturnValue(now);
-    return save;
-  }
-
-  it("AT-BEC-TS-07 a scroll the browser pulled back to the end while the editor was short is put back", async () => {
-    s = await setupEdit(DOC);
-    const { ta } = open(isType("paragraph"));
-    scrolled(120, 95); // jsdom: the end of the view is 0, so 95 is at the end
+    vi.spyOn(BlockCaretMap, "caretOffsetIn").mockReturnValue(lineTop);
+    const real = window.getComputedStyle.bind(window);
+    vi.spyOn(window, "getComputedStyle").mockImplementation((el) => (el === ta ? { lineHeight: "20px", fontSize: "16px" } : real(el)));
+    ta.getBoundingClientRect = () => ({ top: editorTop, bottom: editorTop + 400, left: 0, right: 100, width: 100, height: 400 });
+    vi.spyOn(s.scrollMemento, "shownTop").mockReturnValue(shown[0]);
+    vi.spyOn(s.scrollMemento, "shownBottom").mockReturnValue(shown[1]);
     const restore = vi.spyOn(s.scrollMemento, "restore").mockImplementation(() => {});
     ta.value += " more";
     ta.dispatchEvent(new Event("input", { bubbles: true }));
+    return restore;
+  }
+
+  it("AT-BEC-TS-16 the input moved the view, and the caret's line is in view where it was: it goes back there (WebKit, Chromium's anchoring)", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    // moved down 280: with the view back, the caret's line is at 100 + 50 + 280 = 430
+    const restore = movedByInput(ta, { seen: 120, now: 400, lineTop: 50, editorTop: 100, shown: [0, 600] });
+    expect(BlockCaretMap.caretOffsetIn).toHaveBeenCalledWith(ta, ta.selectionEnd, expect.any(Number));
     expect(restore).toHaveBeenCalledWith(120);
   });
 
-  it("AT-BEC-TS-08 an unmoved scroll is left alone, and the position is read once per key, after the measure", async () => {
+  it("AT-BEC-TS-17 the caret's line would end below what is shown where the view was: back, then the least that shows it", async () => {
     s = await setupEdit(DOC);
     const { ta } = open(isType("paragraph"));
-    const save = scrolled(120, 120);
-    save.mockClear();
-    const restore = vi.spyOn(s.scrollMemento, "restore").mockImplementation(() => {});
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-    expect(restore).not.toHaveBeenCalled();
-    // the position before is the one noted at the last scroll (no layout of
-    // the document before the measure, INV-40, G10)
-    expect(save).toHaveBeenCalledTimes(1);
+    // the line would end at 100 + 50 + 280 + 20 = 450, 10 below 440
+    expect(movedByInput(ta, { seen: 120, now: 400, lineTop: 50, editorTop: 100, shown: [0, 440] })).toHaveBeenCalledWith(130);
   });
 
-  it("AT-BEC-TS-09 a scroll of the browser's own is kept: down to show the caret, or up away from the end", async () => {
+  it("AT-BEC-TS-17 the caret's line would be above what is shown where the view was: back, then the least that shows it", async () => {
     s = await setupEdit(DOC);
     const { ta } = open(isType("paragraph"));
-    const restore = vi.spyOn(s.scrollMemento, "restore").mockImplementation(() => {});
-    scrolled(120, 150);
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    // moved up 280: the line would be at 100 + 50 - 280 = -130, 130 above 0
+    expect(movedByInput(ta, { seen: 400, now: 120, lineTop: 50, editorTop: 100, shown: [0, 600] })).toHaveBeenCalledWith(270);
+  });
+
+  it("AT-BEC-TS-17 the browser moved the view by just that least (a line at the bottom edge): nothing more", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    // moved down 18: the line would end at 370 + 50 + 18 + 20 = 458, 18 below 440
+    expect(movedByInput(ta, { seen: 120, now: 138, lineTop: 50, editorTop: 370, shown: [0, 440] })).not.toHaveBeenCalled();
+  });
+
+  it("AT-BEC-TS-18 a caret too far into a wrapping text to be measured: the move stays", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    expect(movedByInput(ta, { seen: 120, now: 400, lineTop: null, editorTop: 100, shown: [0, 600] })).not.toHaveBeenCalled();
+  });
+
+  it("AT-BEC-TS-19 a caret too far to be measured, and the view pulled back to the end while the editor was short: it goes back (ESF-1, ESF-8)", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    // jsdom: the view's end is 0, so 95 (above 120) is at the end
+    expect(movedByInput(ta, { seen: 120, now: 95, lineTop: null, editorTop: 100, shown: [0, 600] })).toHaveBeenCalledWith(120);
+  });
+
+  it("AT-BEC-TS-19 a caret too far to be measured, and the view above where it was but not at the end: the move stays", async () => {
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
     Object.defineProperty(s.preview, "scrollHeight", { value: 600, configurable: true });
     Object.defineProperty(s.preview, "clientHeight", { value: 100, configurable: true });
-    scrolled(120, 95); // the end is 500: not pulled back
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-    expect(restore).not.toHaveBeenCalled();
+    expect(movedByInput(ta, { seen: 120, now: 95, lineTop: null, editorTop: 100, shown: [0, 600] })).not.toHaveBeenCalled();
+  });
+
+  it("AT-BEC-TS-20 the editor got wider (an iPad turned, a window widened): the next added letter measures it short, as fewer lines may wrap", async () => {
+    linesHigh();
+    s = await setupEdit(DOC);
+    const { ta } = open(isType("paragraph"));
+    let width = 300;
+    Object.defineProperty(ta, "clientWidth", { configurable: true, get: () => width });
+    typeAtCaret(ta, "x"); // the width is noted at this fit
+    const heights = heightsOf(ta);
+    typeAtCaret(ta, "y");
+    expect(heights).toEqual(["20px"]);
+    width = 500;
+    typeAtCaret(ta, "z");
+    expect(heights).toEqual(["20px", "auto", "20px"]);
   });
 });
