@@ -142,13 +142,13 @@
 |              | - その下に "© 2026 GoodRelax. MIT License." が表示される                               |
 |              | - タイトルとコピーライトの幅がほぼ同じである                                           |
 |              | - textarea (Paste Markdown...) が表示されている                                        |
-|              | - ボタン群: Index, Search, Render Light, Render Dark, Re-load, New Tab, Edit, Clear, [?] が表示されている (Index と Search は無効) |
+|              | - ボタン群: Index, Find, Render Light, Render Dark, Re-load, New Tab, Edit, Clear, [?] が表示されている (Index と Find は無効) |
 |              | - OS のカラースキームが適用されている (ダークモード OS ならダーク背景)                 |
 
 | 結果 | Pass / Fail / N/A |
 | ---- | ----------------- |
 | 判定 |                   |
-| 備考 | 要求: FS-16 (初期画面の文)、INV-12 (OS の配色)、SC-25 / SC-26 (Index / Search は初期状態で無効)。自動では load.e2e.js、theme.e2e.js (INV-12)、AT-CFG-10 (初期画面の 4 行) |
+| 備考 | 要求: FS-16 (初期画面の文)、INV-12 (OS の配色)、SC-25 / SC-26 (Index / Find は初期状態で無効)。自動では load.e2e.js、theme.e2e.js (INV-12)、AT-CFG-10 (初期画面の 4 行) |
 
 ---
 
@@ -2286,7 +2286,7 @@
 | **前提条件** | iPhone (幅 375 px)、iPad、PC |
 | **手順** | 1. `sample-data-2.md` を表示し、上部バーを目視する |
 | | 2. [Edit] を押す |
-| **期待結果** | - 上部バーのボタン (Index、Search、Render Light、Render Dark、Re-load、New Tab、Edit、Save、Clear、[?]) が欠けずに表示される (2026-10-30 に Save を足し、ボタンの幅を狭めた。PL-19) |
+| **期待結果** | - 上部バーのボタン (Index、Find、Render Light、Render Dark、Re-load、New Tab、Edit、Save、Clear、[?]) が欠けずに表示される (2026-10-30 に Save を足し、ボタンの幅を狭めた。PL-19) |
 | | - 2 で、パレットが開く |
 
 | 結果 | Pass / Fail / N/A |
@@ -4834,7 +4834,7 @@ SC-27・INV-85〜INV-92、INV-80 (1)(5)(6)、FS-23、仕様 5.19。オーナー�
 |  | 6. コード編集モードのまま印刷プレビューを開く |
 |  | 7. パレットのグリップを長押しし、未保存のまま、もう一度長押しする |
 | **期待結果** | - 1 で、ビューが動かず、行番号付きの編集欄になり、カーソルは上端の行の頭にある。字と行の高さは表示と同じ |
-|  | - 2 で、パレットは 1 段に、グリップ・Save・Save as・Undo・Redo・Find の 6 つだけ (ほかのボタンは無い)。Undo と Redo は無効。名前は "Undo (Ctrl+Z)"・"Redo (Ctrl+Shift+Z)"・"Search (Ctrl+F)" (Mac は Cmd)。下に `<file name> - saved` |
+|  | - 2 で、パレットは 1 段に、グリップ・Save・Save as・Undo・Redo・Find の 6 つだけ (ほかのボタンは無い)。Undo と Redo は無効。名前は "Undo (Ctrl+Z)"・"Redo (Ctrl+Shift+Z)"・"Find (Ctrl+F)" (Mac は Cmd)。下に `<file name> - saved` |
 |  | - 3 で、折り返さず、横にスクロールできる。行番号が増える。タブのタイトルに `* `、パレットに `* unsaved` |
 |  | - 4 で、表示に戻り、打った文字が色付きで出て、ファイル情報の行数が増え、`* ` は残る。パレットは消える |
 |  | - 5 で、編集欄の地・字・行番号がダークの表示と同じ |
@@ -5124,7 +5124,7 @@ SC-27・INV-85〜INV-92、INV-80 (1)(5)(6)、FS-23、仕様 5.19。オーナー�
 | --- | --- |
 | **前提条件** | `foo` を何か所にも含む `.js` |
 | **手順** | 1. 表示で `f` を押し、`foo` を探す |
-|  | 2. [Edit] を押し、Ctrl+F (またはパレットの Search) で検索の箱を出す。`foo` を探し、↓ を押す |
+|  | 2. [Edit] を押し、Ctrl+F (またはパレットの Find) で検索の箱を出す。`foo` を探し、↓ を押す |
 |  | 3. 置換欄に `bar` と打ち、[Replace]、次に [All] を押す |
 |  | 4. 編集欄の外で Ctrl+Z を 2 回押す |
 |  | 5. [Index] も出し、編集欄の外にフォーカスを置いて Esc を 3 回押す |
@@ -5735,7 +5735,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
 | AT-ICO | `InvisibleCharOverlay` (20: 行の中の長い空白の並びで、行末の空白の判定が線形。21: 編集欄が写した字と余白を写す。22: タグ文字と向きを変える文字に印を付け、INV-101 (2) (b) の旗のタグ文字には付けない (2026-10-30)) | INV-70、INV-83 | InvisibleCharOverlay.test.js | 01〜22 |
-| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68、INV-85 (4) | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜41 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス。37: グリップのダブルクリックで最小化・復活し、編集欄のフォーカスと選択を保つ。38: ボタン・隙間のダブルクリックと非表示の間の `dblclick` では最小化しない。39〜41: コードのモード (`setMode`、1 段 6 列、Redo と Search。INV-85 (4)、NE-2)) |
+| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68、INV-85 (4) | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜41 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス。37: グリップのダブルクリックで最小化・復活し、編集欄のフォーカスと選択を保つ。38: ボタン・隙間のダブルクリックと非表示の間の `dblclick` では最小化しない。39〜41: コードのモード (`setMode`、1 段 6 列、Redo と Find。INV-85 (4)、NE-2)) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (15 の出来事 × 5 の状態、ガード、ポップオーバー。11: グリップのダブルクリックとダブルタップ (INV-68)。グリップ以外のどこを押しても組が切れる) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10・11 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
 | AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(e) ポップオーバーが開いていれば、検索の箱の中の最初の Esc はポップオーバーだけを閉じる、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く。20〜23: コード編集モード (`setCodeEditor`、編集欄の色、置換は編集欄の Undo 1 回、表示では置換しない)) | INV-80、INV-48、INV-88、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜23 |
@@ -5743,7 +5743,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
 | AT-SSM | 11-e 保存と push の処理の状態機械 (09: `pushing` の間は文書の置き換えを断り (INV-54)、Save / Save as を無視する) | 11-e、INV-54、INV-96 (4) | UIController.save.test.js | 01〜09 (01 と 02 は 1 つの試験) |
 | AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`。08: `readFile` は中身を読む前の確かめ `check` をそのまま渡す (INV-18 (8)))、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56、INV-79 | DocumentLifecycle.test.js | 01〜23 |
-| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン。14: Clear (確認、初期状態、OS の配色の `applySystemTheme`)、38: 何も保存しない。70: 大きな本文は確定のたびに `#editor` へ書かず、フォーカス・ドラッグ・保存・描画のときに書く、71: 空の `#editor` を空でない文書へ取り込む前の確認、72: コードビューの #fileInfo の文字、73: キーヒントをスクロール・指の移動・クリック・キーで消し、見張りを外す、74: ドロップしたファイルの振り分け (`.md`・`.markdown`、コードビュー、表に無いファイル (`notAllowed`)、読み解いた文字の U+0000 (ダイアログと確認の前)、5 MB。2026-10-30)) | INV-04 (38)、INV-12・INV-13 (14)、INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69、FS-03 (72)、FS-03・5.7 (73)、INV-11・INV-17・INV-18・INV-89 (8) (74)、INV-85〜INV-92 (34、75〜106) | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js、UIController.editorDeferredSync.test.js (70)、UIController.emptyEditorConfirm.test.js (71)、UIController.formatFileInfo.test.js (72)、UIController.showKeyHint.test.js (73)、UIController.setupFileDrop.test.js (74)、UIController.codeEdit.test.js (75〜83)、UIController.formatFileInfo.test.js (84)、UIController.codeEditor.test.js (85〜106) | 01〜106 (25 は欠番。41 は AT.1 の注。36a〜36j・37a は AT.1 の枝番。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)。34: コードの文書の部品が無い構成のコードビュー ([Edit] は無効)。75〜84: コードの文書の結線 (開くダイアログ・ファイル情報の文字コードと改行・未保存・Reload・保存中・Save as・`.md` の開き直し)。85〜98: コード編集モード (パレット・Undo・保存・Esc の順・折りたたみのキー (Mac)・`p`・目次・検索、98: Redo と Search のボタン)。99〜106: レビュー 1 回目の直し (99: Reload が確認の後 (コード編集モードが終わった後) に失敗したとき表示を描き直す、100: 打つ間の未保存の印、101: Mac のキーのヒント、102: UTF-16 の BOM の知らない拡張子、103: 押し続けた折りたたみのキーと IME、104: 編集欄の中の `e` / `p`、105: 主 + Shift + S、106: 打つのが止まったときの目次)。SC-27) |
+| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン。14: Clear (確認、初期状態、OS の配色の `applySystemTheme`)、38: 何も保存しない。70: 大きな本文は確定のたびに `#editor` へ書かず、フォーカス・ドラッグ・保存・描画のときに書く、71: 空の `#editor` を空でない文書へ取り込む前の確認、72: コードビューの #fileInfo の文字、73: キーヒントをスクロール・指の移動・クリック・キーで消し、見張りを外す、74: ドロップしたファイルの振り分け (`.md`・`.markdown`、コードビュー、表に無いファイル (`notAllowed`)、読み解いた文字の U+0000 (ダイアログと確認の前)、5 MB。2026-10-30)) | INV-04 (38)、INV-12・INV-13 (14)、INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69、FS-03 (72)、FS-03・5.7 (73)、INV-11・INV-17・INV-18・INV-89 (8) (74)、INV-85〜INV-92 (34、75〜106) | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js、UIController.editorDeferredSync.test.js (70)、UIController.emptyEditorConfirm.test.js (71)、UIController.formatFileInfo.test.js (72)、UIController.showKeyHint.test.js (73)、UIController.setupFileDrop.test.js (74)、UIController.codeEdit.test.js (75〜83)、UIController.formatFileInfo.test.js (84)、UIController.codeEditor.test.js (85〜106) | 01〜106 (25 は欠番。41 は AT.1 の注。36a〜36j・37a は AT.1 の枝番。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)。34: コードの文書の部品が無い構成のコードビュー ([Edit] は無効)。75〜84: コードの文書の結線 (開くダイアログ・ファイル情報の文字コードと改行・未保存・Reload・保存中・Save as・`.md` の開き直し)。85〜98: コード編集モード (パレット・Undo・保存・Esc の順・折りたたみのキー (Mac)・`p`・目次・検索、98: Redo と Find のボタン)。99〜106: レビュー 1 回目の直し (99: Reload が確認の後 (コード編集モードが終わった後) に失敗したとき表示を描き直す、100: 打つ間の未保存の印、101: Mac のキーのヒント、102: UTF-16 の BOM の知らない拡張子、103: 押し続けた折りたたみのキーと IME、104: 編集欄の中の `e` / `p`、105: 主 + Shift + S、106: 打つのが止まったときの目次)。SC-27) |
 | AT-KEY | 主の修飾キーのショートカット (02: コードビューの主 + S はコードのファイルを保存する (INV-90)。04 (G49): 検索の箱などの入力要素では、ブロック編集欄を開いたままでも主 + B / I を横取りせず、書式を付けない。08: Redo のキー。09: 1 文字のショートカットと修飾キーのガード (`c`・`l`・`d`・`r`・ArrowDown に Ctrl / Meta / Alt)) | INV-13 (09)、INV-14、INV-58〜60、INV-59 (a)、INV-80 (7)、INV-90 (02) | UIController.shortcuts.test.js、UIController.keyboard.test.js (09) | 01〜09 |
 | AT-DBL | 編集モードでないときのダブルクリック (裁定 AQ3: 08: タッチと空の pointerType のダブルタップでは編集を始めない、13: タッチのダブルタップの後のブラウザの dblclick では何も開かない、15: タッチの押下の後でもマウスのダブルクリックは開く (最後の押下で決める)、16: タッチで [Edit] の後のブロックのタップで開く、17: 初期状態で `#editor` が空のとき、タッチのダブルタップで空の文書を始めない。ペンはタッチと同じ (裁定 AQ13): 18: ペンのダブルタップで編集を始めず、[Edit] の後のペンのタップで開く、19: 初期状態でペンのダブルタップで空の文書を始めない) | INV-29 (16)、INV-31、INV-57 | UIController.doubleClick.test.js | 01〜19 |
 | AT-PAN | `DiagramPanController` (図のパンの終わり 01〜03、始まりは閾値を超えたとき (5px ちょうどでは始まらない。`utils.isPastActivation`) 04)。04 の閾値の決まりそのもの (INV-29・INV-68・INV-74 (2)・3.5 の図のパンに共通) は utils.test.js の `isPastActivation` の試験。05: パンを作るのは `pointer: fine` かつ `any-pointer: coarse` でないときだけ、ズームとコピーは `pointer: fine` のとき (`utils.diagramControllersFor`。`main.js` が使う) | INV-16 (05)、INV-16b (05)、FS-09、INV-29、INV-68、INV-74 | DiagramPanController.test.js、utils.test.js (`isPastActivation`、05) | 01〜05 |
