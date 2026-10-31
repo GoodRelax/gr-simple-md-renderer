@@ -241,7 +241,7 @@ describe("the short help and More details in src/index.html (AT-HLP-21, AT-HLP-2
   // "kuwashii tsukaikata" (More details; HT-3)
   const JA_ENTRY = "\u8a73\u3057\u3044\u4f7f\u3044\u65b9";
 
-  it("AT-HLP-21 HT-1, HT-4: the short help has 4 ways to start, 12 lines of buttons and keys with the entry to More details last, and 6 privacy lines", () => {
+  it("AT-HLP-21 HT-1, HT-4, D40: the short help has 4 ways to start, 11 lines of buttons and keys with the entry to More details last, and 5 privacy lines", () => {
     const modal = helpModal();
     for (const lang of ["en", "ja"]) {
       const section = (name) => body(modal, lang).querySelector(`[data-help-section="${name}"]`);
@@ -250,7 +250,6 @@ describe("the short help and More details in src/index.html (AT-HLP-21, AT-HLP-2
       expect(keys, lang).toEqual([
         "[Index] / I",
         "[Find] / F",
-        "[Open GitHub] / O",
         "[Render Light] / L, [Render Dark] / D".replace(", ", lang === "ja" ? "\u3001" : ", "),
         "[Reload] / R",
         "[New Tab] / N",
@@ -264,16 +263,15 @@ describe("the short help and More details in src/index.html (AT-HLP-21, AT-HLP-2
       const entry = section("details").lastElementChild;
       expect(entry.matches("button[type='button'][data-open-guide]"), lang).toBe(true);
       expect(text(entry), lang).toBe(lang === "en" ? "More Details" : JA_ENTRY);
-      expect(section("privacy").querySelectorAll("ul > li"), lang).toHaveLength(6);
+      expect(section("privacy").querySelectorAll("ul > li"), lang).toHaveLength(5);
       // the privacy lines name each place GRSMD may send to or open
-      for (const word of ["PlantUML", "api.github.com", "github.com", "DOMPurify", "CSP"]) {
+      for (const word of ["PlantUML", "github.com", "DOMPurify", "CSP"]) {
         expect(text(section("privacy")), `${lang} ${word}`).toContain(word);
       }
     }
     // the English lines the owner's ruling HT-4 settled
     const en = text(body(modal, "en"));
     expect(en).toContain("GRSMD sends what you edit outside only when you allow it.");
-    expect(en).toContain("When you press [Open], [Reload] or [Push] in its dialog, GRSMD talks to api.github.com.");
   });
 
   it("AT-HLP-21 HT-1: only Licenses is folded: a closed <details> with the heading as its summary, holding the list slot", () => {
@@ -315,84 +313,34 @@ describe("the short help and More details in src/index.html (AT-HLP-21, AT-HLP-2
   });
 });
 
-describe("the GitHub help layer in src/index.html (AT-HLP-15, AT-HLP-16)", () => {
+describe("no GitHub editing in the help (AT-HLP-26, D40)", () => {
+  const text = (el) => el.textContent.replace(/\s+/g, " ").trim();
   const doc = () => new DOMParser().parseFromString(INDEX_HTML, "text/html");
-  const layerBody = (d, lang) => d.querySelector(`#githubHelpModal .help-body[lang="${lang}"]`);
-  const text = (el) => el.textContent.replace(/\s+/g, " ");
-  // "GitHub no fairu wo henshuu shi komitto suru houhou" (GHH-9)
-  const JA_ENTRY = "GitHub\u306e\u30d5\u30a1\u30a4\u30eb\u3092\u7de8\u96c6\u3057\u30b3\u30df\u30c3\u30c8\u3059\u308b\u65b9\u6cd5";
 
-  it("AT-HLP-15 FS-25, GHH-9, D33, HT-3: each help body has one entry button under the download box; the short help and More details have the [Open GitHub] / O line", () => {
-    const modal = helpModal();
-    const entry = (lang) => [...body(modal, lang).querySelectorAll("[data-open-github-help]")];
-    expect(entry("en").map((el) => el.textContent.trim())).toEqual(["How to Edit and Commit Files on GitHub"]);
-    expect(entry("ja").map((el) => el.textContent.trim())).toEqual([JA_ENTRY]);
-    for (const lang of ["en", "ja"]) {
-      const button = entry(lang)[0];
-      expect(button.tagName).toBe("BUTTON");
-      expect(button.getAttribute("type")).toBe("button");
-      expect(button.previousElementSibling.classList.contains("help-download"), lang).toBe(true);
-      const short = [...body(modal, lang).querySelectorAll('[data-help-section="details"] li')].filter((li) =>
-        li.textContent.startsWith("[Open GitHub] / O :"),
-      );
-      expect(short, lang).toHaveLength(1);
-      const line = [...body(guideModal(), lang).querySelectorAll('[data-guide-section="details"] li')].filter((li) =>
-        li.textContent.startsWith("[Open GitHub] / O :"),
-      );
-      expect(line, lang).toHaveLength(1);
-      expect(line[0].textContent).toContain("[Push to GitHub]");
-      expect(line[0].textContent).toContain("Chrome / Edge");
-    }
+  it("AT-HLP-26 D40: the page has no GitHub help layer, no entry to it and no figures of it", () => {
+    const d = doc();
+    expect(d.getElementById("githubHelpModal")).toBeNull();
+    expect(d.querySelectorAll("[data-open-github-help], svg.ghf-defs, svg.ghf")).toHaveLength(0);
   });
 
-  it("AT-HLP-16 FS-25, INV-103: the layer has the title row, two bodies (English first) and the as-of line", () => {
+  it("AT-HLP-26 D40: neither the help nor More details names GitHub editing, in either language", () => {
     const d = doc();
-    const layer = d.getElementById("githubHelpModal");
-    expect(layer.classList.contains("modal")).toBe(true);
-    expect(layer.querySelector(".help-head h2").textContent).toBe("How to Edit and Commit Files on GitHub");
-    expect([...layer.querySelectorAll("[data-help-lang]")].map((el) => el.dataset.helpLang)).toEqual(["en", "ja"]);
-    expect(layer.querySelectorAll(".help-head .close-btn")).toHaveLength(1);
-    expect([...layer.querySelectorAll(".help-body")].map((el) => [el.lang, el.hidden])).toEqual([
-      ["en", false],
-      ["ja", true],
-    ]);
-    expect(text(layerBody(d, "en"))).toContain("Based on GitHub's screens as of October 2026.");
-    // "2026 nen 10 gatsu jiten" (as of October 2026; GHH-1)
-    expect(text(layerBody(d, "ja"))).toContain("2026 \u5e74 10 \u6708\u6642\u70b9");
-    // the same steps in each language
-    const steps = (lang) => layerBody(d, lang).querySelectorAll("ol.gh-steps > li").length;
-    expect(steps("en")).toBeGreaterThan(0);
-    expect(steps("ja")).toBe(steps("en"));
-    // the unchecked menu names are marked until the owner checks them (GHH-8)
-    expect(text(layerBody(d, "en"))).toContain("(TBD)");
-    expect(text(layerBody(d, "ja"))).toContain("\uff08\u4eee\uff09"); // "(kari)": provisional
-    // D34: there is no [Saved] button any more
-    expect(layer.textContent).not.toMatch(/\bSaved\b/);
-  });
-
-  it("AT-HLP-16 INV-103, GHH-5: the figures are inline SVG symbols drawn once, used by both languages, numbered 1 to 19 over all figures", () => {
-    const d = doc();
-    const layer = d.getElementById("githubHelpModal");
-    const symbols = new Map([...d.querySelectorAll("svg.ghf-defs > symbol")].map((s) => [s.id, s]));
-    expect(symbols.size).toBe(6);
-    const usesOf = (lang) => [...layerBody(d, lang).querySelectorAll("svg.ghf use")].map((u) => u.getAttribute("href").slice(1));
-    for (const lang of ["en", "ja"]) {
-      expect(new Set(usesOf(lang)), lang).toEqual(new Set(symbols.keys()));
-      for (const svg of layerBody(d, lang).querySelectorAll("svg.ghf")) {
-        expect(svg.getAttribute("role")).toBe("img");
-        expect(svg.getAttribute("aria-label")).toBeTruthy();
+    for (const id of ["helpModal", "guideModal"]) {
+      for (const lang of ["en", "ja"]) {
+        const words = text(d.getElementById(id).querySelector(`.help-body[lang="${lang}"]`));
+        for (const word of ["api.github.com", "[Open GitHub]", "[Push to GitHub]", "Push", "personal access token"]) {
+          expect(words, `${id} ${lang} ${word}`).not.toContain(word);
+        }
+        // "GitHub renkei" (GitHub editing)
+        expect(words, `${id} ${lang}`).not.toContain("GitHub \u9023\u643a");
+        expect(words, `${id} ${lang}`).not.toMatch(/GitHub editing|from GitHub/);
       }
     }
-    expect(usesOf("ja")).toEqual(usesOf("en"));
-    const numbers = [...d.querySelectorAll("svg.ghf-defs text.ghf-num")].map((t) => Number(t.textContent));
-    expect(numbers.sort((a, b) => a - b)).toEqual(Array.from({ length: 19 }, (_, i) => i + 1));
-    // no images, no other files and nothing fetched: the only link is the token page, opened by the user
-    expect(layer.querySelectorAll("img, image, iframe, object, embed, script, link")).toHaveLength(0);
-    expect(d.querySelectorAll("svg.ghf-defs image, svg.ghf-defs [href^='http']")).toHaveLength(0);
-    for (const a of layer.querySelectorAll("a[href]")) {
-      expect(a.getAttribute("href")).toBe("https://github.com/settings/personal-access-tokens");
-      expect(a.getAttribute("target")).toBe("_blank");
-      expect(a.getAttribute("rel")).toBe("noopener noreferrer");
-    }
+  });
+
+  it("AT-HLP-26 D40: the page's description promises no GitHub request", () => {
+    const description = doc().querySelector('meta[name="description"]').getAttribute("content");
+    expect(description).not.toMatch(/GitHub/);
+    expect(description).toContain("unless you explicitly allow PlantUML rendering or external images.");
   });
 });

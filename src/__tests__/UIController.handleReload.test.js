@@ -73,7 +73,6 @@ describe("AT-RLD-01 UIController.handleReload (FS-04, FS-20)", () => {
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
-      githubHelpModal: createMockModal(),
       guideModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),

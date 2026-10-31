@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.38
+**バージョン:** 2.39
 **日付:** 2026-10-31 (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -89,6 +89,8 @@
 > v2.37 の変更 (2026-10-31、GRSMD 自身のライセンスを Apache License 2.0 に変える。正式版 (11-01)。オーナーの裁定 LIC-1〜LIC-8、G1。v2.36 は iPad の直しの枝が使う): PRT-A01・PRT-A02 とプロンプトのケースの著作権の表記を "© 2026 GoodRelax. Apache-2.0." にした (LIC-6。PRT-A01 の「タイトルとコピーライトの幅がほぼ同じ」はこの表記で保つ)。PRT-AA01 の期待に、最後のコメントが GRSMD 自身の告知で始まり、Apache License 2.0 の全文を 1 回だけ持つことを足した。PRT-AA02 の期待に、章の頭の GRSMD 自身のライセンスの 1 文を足した。AT-OSS-05 に、GRSMD 自身の告知と `LICENSE` の文を 1 回だけ書くことの試験を足した。改めたケースの判定は空欄 (未実施)。
 
 > v2.38 の変更 (2026-10-31、ヘルプを短くする。2026-11-01 のリリース。v2.36・v2.37 は iPad の直しとライセンスの枝が使う): 仕様の SC-16・FS-10・CON-12・INV-75 (3)・INV-105 (7) (オーナーの裁定 HT-1〜HT-4) に合わせて、PRT-L01 の期待結果を短いヘルプの節と行に書き直し、前の細かい行の確かめを、新しい窓「More Details」/「詳しい使い方」の中へ移した。PRT-L09 (詳しい使い方の窓。iPad でヘルプが約 1 画面に入ること) を足した。PRT-AA02 はライセンスの章を開いてから読む。AT-HLP を 01〜25 にした (21: 短いヘルプの節と行と折りたたみ、22: 窓の HTML、23: 窓のキーと Esc の 2 段、24・25: e2e)。AT-HLP-12・14・15・20 は、細かい行を窓の中で確かめる。AT-HLP-11 は、折りたたみの見出し (`summary`) も Tab で回ることを確かめる。help.e2e.js に AT-HLP-24 (2 件)・25 を足し、notices.e2e.js の PRT-AA02 はライセンスの見出しを押してから一覧を読む。同じ日に、画面の名前 Search を Find にした (オーナーの裁定 HT-5): PRT の [Search] を [Find] に、キーのヒントを `[F] Find;` に、コードのパレットのボタンを Find にした。改めたケースの判定は空欄 (未実施)。
+
+> v2.39 の変更 (2026-10-31、GitHub 連携を正式版では出さない。オーナーの裁定 D40、方針の GQA の問 1 = a): 仕様の G-11・SC-28・CON-12・INV-20・INV-100・INV-103・FS-10・FS-24・FS-25・5.20 の改めに合わせて、セクション AK の PRT-AK01〜AK11 を N/A にし (正式版では GitHub 連携を出さない。コードは正式版の後に外す)、PRT-AK12 (正式版で、PC でも GitHub 連携が出ないこと) を足した。PRT-L01 の「Buttons and Keys」/「ボタンとキー」を 11 行、「Privacy & Security」/「プライバシーとセキュリティ」を 5 行にした (`[Open GitHub]` の行と GitHub 連携の行を外した)。AT-HLP-15〜19 (GitHub の編集のヘルプの層) を外し、AT-HLP-26 (ヘルプと詳しい使い方の窓に GitHub 連携が無い) を足した。AT-STA-21 (`CONFIG.github.offered` が偽で、`main.js` の判定を止める) を足した。AT-CSP-01 は `connect-src` が PlantUML のサーバーだけであることを見る。gitHub.e2e.js の GitHub 連携の試験は飛ばし (`test.describe.skip`)、PRT-AK12 の 4 件 (PC で出ない・`o` が効かない、キーのヒント、ヘルプと窓、CSP) を足した。help.e2e.js の AT-HLP-18・19 を外した。改めたケースの判定は空欄 (未実施)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -754,8 +756,8 @@
 |              | - 表示されるのは押した方の言語の本文だけ。節は EN / JP で同じ順 (ダウンロードの枠、概要、基本的な使い方、ボタンとキー、プライバシーとセキュリティ、サンプルデータ、ライセンス)。「Editing」/「編集」の章は無い (B5)。見出しに "(Japanese)" が無い (HT-1・HT-4) |
 |              | - EN "About GRSMD" / JP "概要" は 3 文で、新しい名前、"WYSIWYG Markdown editor" /「Markdown の WYSIWYG エディター」、許可したときだけ外へ送る文がある (HT-4) |
 |              | - EN "Basic Usage" / JP "基本的な使い方" に、表示を始める 4 つの方法 (貼る、`.md` か `.markdown` をドラッグ&ドロップ、ほかのテキストのファイルはコードビュー、上の [Paste Markdown...] の欄に貼る) と、スマートフォン・タブレットの貼り方の 1 文がある |
-|              | - EN "Buttons and Keys" / JP "ボタンとキー" は 12 行 ([Index]・[Find]・[Open GitHub]・[Render Light] と [Render Dark]・[Reload]・[New Tab]・[Edit]・[Save]・[Clear]・[?]・Esc・Ctrl+Z / Ctrl+Y)。キーは大文字のバッククォート表記。[Edit] の行に、マウスではプレビューのダブルクリックでも編集を始めることがある。[Save] の行は Ctrl+S と Ctrl+Shift+S (Save as)。最後に "More Details" /「詳しい使い方」のボタンがある (HT-3) |
-|              | - EN "Privacy & Security" / JP "プライバシーとセキュリティ" は 6 行で、PlantUML・外部の画像・GitHub 連携 (PC だけ。[Open]・[Reload]・[Push] を押したときだけ api.github.com)・ダウンロードのボタン (github.com を開く)・スクリプト (DOMPurify と CSP)・「リンクを貼る」(ブラウザがクリップボードの許可を求めることがある) を 1 文ずつ書く (CON-12) |
+|              | - EN "Buttons and Keys" / JP "ボタンとキー" は 11 行 ([Index]・[Find]・[Render Light] と [Render Dark]・[Reload]・[New Tab]・[Edit]・[Save]・[Clear]・[?]・Esc・Ctrl+Z / Ctrl+Y)。キーは大文字のバッククォート表記。[Edit] の行に、マウスではプレビューのダブルクリックでも編集を始めることがある。[Save] の行は Ctrl+S と Ctrl+Shift+S (Save as)。最後に "More Details" /「詳しい使い方」のボタンがある (HT-3) |
+|              | - EN "Privacy & Security" / JP "プライバシーとセキュリティ" は 5 行で、PlantUML・外部の画像・ダウンロードのボタン (github.com を開く)・スクリプト (DOMPurify と CSP)・「リンクを貼る」(ブラウザがクリップボードの許可を求めることがある) を 1 文ずつ書く (CON-12)。GitHub 連携の行と `[Open GitHub]` の行が無い (D40) |
 |              | - EN / JP の両方に Sample Data / サンプルデータのリンク (2 つ) があり、正常に動作する   |
 |              | - EN / JP の最後の節が Licenses / ライセンスで、見出しだけの閉じた形で出る。見出しを押すと開く (中身は PRT-AA02。HT-1) |
 |              | - "More Details" /「詳しい使い方」を押して窓を開き (PRT-L09)、窓の EN "Opening and pasting" / JP "開くときと貼るとき" に、決まった種類のほかは断る文と hljs common バンドルの注記、ペーストで始まる条件と 5 MB、20,480 文字を超えるコードブロックの注がある |
@@ -5223,7 +5225,9 @@ SC-27・INV-85〜INV-92、INV-80 (1)(5)(6)、FS-23、仕様 5.19。オーナー�
 
 ## セクション AK: GitHub 連携 (2026-10-29)
 
-SC-28、INV-93〜INV-100、CON-16 (仕様 5.20)。GitHub の編集のヘルプは FS-25・INV-103 (仕様 5.20.7。PRT-AK10・AK11)。オーナーが PC で行う。本物の GitHub での試し (PRT-AK01〜AK04、AK08、AK09) は、本実装の後、beta3 の手で行う試験で行う (裁定 D32)。捨ててよいリポジトリと、そのリポジトリだけの fine-grained の PAT (Contents: Read and write、期限は短く) をオーナーが用意し、オーナーが操作する。Claude は PAT を入れない。
+**2026-11-01 の正式版では GitHub 連携を出さない (オーナーの裁定 D40。2026-10-31)。** PRT-AK01〜AK11 は判定を N/A にする (beta3 の手の試験の結果は、方針の GQA の「決まったこと」にある)。正式版では PRT-AK12 だけを行う。
+
+SC-28、INV-93〜INV-100、CON-16 (仕様 5.20)。GitHub の編集のヘルプは FS-25・INV-103 (仕様 5.20.7。PRT-AK10・AK11。どちらも D40 で外した)。オーナーが PC で行う。本物の GitHub での試し (PRT-AK01〜AK04、AK08、AK09) は、本実装の後、beta3 の手で行う試験で行う (裁定 D32)。捨ててよいリポジトリと、そのリポジトリだけの fine-grained の PAT (Contents: Read and write、期限は短く) をオーナーが用意し、オーナーが操作する。Claude は PAT を入れない。
 
 ---
 
@@ -5418,7 +5422,7 @@ SC-28、INV-93〜INV-100、CON-16 (仕様 5.20)。GitHub の編集のヘルプ�
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: FS-25、INV-103、SC-28。ヘルプが先で、オーナーはヘルプだけを見て使う (使い勝手の試しを兼ねる。GHH-5)。自動では AT-HLP-15〜18 |
+| 備考 | 要求: FS-25、INV-103、SC-28。ヘルプが先で、オーナーはヘルプだけを見て使う (使い勝手の試しを兼ねる。GHH-5)。自動の試験 (AT-HLP-15〜18) は D40 で外した |
 
 ---
 
@@ -5435,7 +5439,28 @@ SC-28、INV-93〜INV-100、CON-16 (仕様 5.20)。GitHub の編集のヘルプ�
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: FS-25、INV-103 (3)、INV-100。自動では AT-HLP-19 |
+| 備考 | 要求: FS-25、INV-103 (3)、INV-100。自動の試験 (AT-HLP-19) は D40 で外した |
+
+---
+
+### PRT-AK12: 正式版では GitHub 連携を出さない
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC の Chrome と Edge (マウスかトラックパッド)。正式版のビルド (`docs/index.html`) |
+| **手順** | 1. GRSMD を開き、テキストを貼って表示する |
+|  | 2. プレビューをクリックしてから `o` を押す |
+|  | 3. [?] を押し、English と Japanese の両方で本文を見て、「More Details」/「詳しい使い方」も開いて見る |
+|  | 4. 開発者ツールで `<meta http-equiv="Content-Security-Policy">` の `connect-src` を見る |
+| **期待結果** | - 1 で、上部バーに [Open GitHub] が無く、キーのヒントに `[O] GitHub;` が無い |
+|  | - 2 で、何も起きない (画面が出ない) |
+|  | - 3 で、どちらの言語にも、`[Open GitHub]` の行・GitHub 連携の行・GitHub の編集のヘルプの入口が無い |
+|  | - 4 で、`connect-src` は PlantUML のサーバー (`https://www.plantuml.com`) だけで、`api.github.com` が無い |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: SC-28、INV-100、INV-103、INV-20、CON-12、FS-24「正式版 (D40)」。自動では gitHub.e2e.js (PRT-AK12 (1)〜(4))、AT-HLP-26、AT-STA-21、AT-CSP-01 |
 
 ---
 
@@ -5768,14 +5793,14 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-EIG | `ExternalImageGate` (01: 同意の前は外部画像を読まない、02: 同意は 1 回、取り消し、何も保存しない) | CON-12、INV-19、INV-01、INV-04 (02) | ExternalImageGate.test.js | 01〜02 |
 | AT-MMD | `MermaidRenderer.initializeMermaid` (ラベルの画像を落とす、init の指示で設定を変えられない、テーマの対応) | CON-12 | MermaidRenderer.test.js | 01 |
 | AT-DCC | `DiagramCopyController` (01: コピーのバーは足された図の入れ物だけに付ける。プレビュー全体を探し直さず、2 つ目のバーを付けない。02: 許した PlantUML の図の Copy SVG / PNG は、その図の `/svg/` と `/png/` を取りに行き、確認を出さない (INV-02 の唯一の例外)) | FS-09、INV-02 (02) | DiagramCopyController.observer.test.js | 01〜02 |
-| AT-CSP | CSP のビルドのプラグイン (script の hash、meta の置き場所、`<script src>` があればビルドを失敗させる、指示の値) | INV-20、INV-06、INV-07 | cspPlugin.test.js | 01 |
+| AT-CSP | CSP のビルドのプラグイン (script の hash、meta の置き場所、`<script src>` があればビルドを失敗させる、指示の値。`connect-src` は PlantUML のサーバーだけで、`api.github.com` が無い (D40)) | INV-20、INV-06、INV-07 | cspPlugin.test.js | 01 |
 | AT-CFG | `CONFIG.edit` と文言 (01: 合意した値。グリップのダブルタップの `paletteDoubleTapMs` (INV-68) はあり、プレビューのダブルタップの値は無い (AQ3)。05: `keyHints.markdown` と `keyHints.code` の `[E] Edit;`、`code` の `[I] Index;`・`[P] Commands;`・折りたたみのキー。SC-27。Mac の `keyHints.codeApple` は AT-UI-101。10: 初期画面の 4 行が同じ長さで、3 行目が表にある種類のファイル ("Drop a text/code file" と "known types"。INV-18)、4 行目が編集の始め方 ("touch or pen: [Edit], tap")。裁定 AQ4・AQ13。11: ファイルのドロップの設定 (5 MB と文言)、12: `EXT_TO_HLJS` (生成した `FILE_TYPES` から作る)、13: `BINARY_EXTENSIONS` が無く、`markdownExtensions` と `EXT_TO_HLJS` が `FILE_TYPES` から作られる (D29、AQ9。中の `it` は AT-FT-04)、14: `FILE_SYSTEM_HANDLE_SUPPORTED`) | 5.2、CON-06、INV-92 (4) (05)、FS-16 (10)、INV-11・INV-18・CON-08 (11)、INV-18・INV-102・5.3 (12)、INV-18・INV-102・5.4 (13)、INV-15 (14) | config.edit.test.js、UIController.editMode.test.js、config.test.js (09〜14) | 01〜14 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと。01・02 に上部バーのボタン (R6。フォーカスの輪を含む) と編集中の [Edit] (R1) の色、21: 上部バーのボタンの形 (角の丸み 6px、`appearance: none`。[?] は今のまま。R6)、22: 表のセルは縦の上寄せで、横の寄せは決めない (TVA1) | 5.8.1、5.15.2、5.1 | themeColors.test.js、hljsThemePlugin.test.js | 01〜22 |
-| AT-STA | `src/js` と `src/css` の静的な検査 (01: ストレージの API を使わない。03 (b): `src/index.html` の日本語のヘルプの外は ASCII。コードの編集の新しいファイルも対象で、`CodeDocument`・`textEncoding.js`・`indentText.js`・`jsonFold.js`・`codeOutline.js`・`CodeEditHistory` は Entity の検査 (05) の対象。20: 試験のファイル (`src/__tests__` と `e2e` の `.js`) も ASCII だけ (G5。レビュー 1 回目の L9、調整役の裁定 Q6)) | CON-06、CON-13、CON-14、CON-15、INV-04 (01)、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13、G5 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜20 |
+| AT-STA | `src/js` と `src/css` の静的な検査 (01: ストレージの API を使わない。03 (b): `src/index.html` の日本語のヘルプの外は ASCII。コードの編集の新しいファイルも対象で、`CodeDocument`・`textEncoding.js`・`indentText.js`・`jsonFold.js`・`codeOutline.js`・`CodeEditHistory` は Entity の検査 (05) の対象。20: 試験のファイル (`src/__tests__` と `e2e` の `.js`) も ASCII だけ (G5。レビュー 1 回目の L9、調整役の裁定 Q6)。21: `CONFIG.github.offered` が偽で、`main.js` の `gitHubEnabled` を止める (D40)) | CON-06、CON-13、CON-14、CON-15、INV-04 (01)、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13、G5、INV-100・D40 (21) | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜21 |
 | AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
 | AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ、14: 目次を出したままの確定・Undo の後の作り直しの時間。jsdom に大きな文書が残ると遅くなるので別のファイル) | INV-42、INV-48、INV-51、INV-74、INV-77 | performance.inplaceEdit.test.js、performance.index.test.js | 01〜14 |
-| AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11)、閉じ方によらず `onHide` を呼ぶ (AT-HLP-13。INV-89 のダイアログ) (`ModalController`)、「Details」/「詳細」の [Edit] の行の次の編集の始め方の行と初期画面の 4 行目 (AT-HLP-12。e2e の help.e2e.js。オーナーの裁定 AQ4)、「Details」/「詳細」のコードビューの行の 200 KB 以上のファイルの 1 文 (AT-HLP-14。英日。NE-32・NE-33)、GitHub の編集のヘルプ (FS-25・INV-103): 英日の入口のボタンと「Details」/「詳細」の `[Open GitHub]` / `O` の行 (AT-HLP-15。GHH-9・D33)、層の題名の行・英日の本文・時点の文・(TBD) と（仮）・[Saved] が無いこと、図は `<symbol>` 6 つを英日が `<use>` で使い、番号が全部の図で 1〜19、画像と外の資源が無く、外へのリンクはトークンのページだけ (AT-HLP-16。GHH-1・GHH-5・GHH-8・D34)、層がヘルプの上に開いている間は層だけがキーを受け、Esc の 1 回目で層 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる、下のモーダルを閉じても上が受ける (AT-HLP-17。`ModalController`)、入口で層がヘルプの言語で先頭から開き、図がすべて描かれ、Esc の 2 段 (AT-HLP-18。e2e)、フレームの中とタッチの端末では入口が出ない (AT-HLP-19。e2e。INV-100)、「Details」/「詳細」の [Save] の行 (英日。Ctrl+V があり、起動役の名が無い。AT-HLP-20。PL-23)。2026-10-31 (HT-1〜HT-4) から、12・14・15・20 の細かい行は詳しい使い方の窓 (`guideModal`) の中で確かめ、15 は短いヘルプの `[Open GitHub]` の行も見る。短いヘルプ: 基本的な使い方の 4 行、ボタンとキーの 12 行と最後の入口のボタン、プライバシーの 6 行と送り先の名、ライセンスだけが閉じた `<details>` で見出しが `<summary>` (AT-HLP-21)、窓の題名の行・英日の本文・3 つの節 (英日で同じ数の行)・前の細かい文・リンクと画像と図が無いこと (AT-HLP-22)、窓がヘルプの上に開いている間は窓だけがキーを受け、Esc の 1 回目で窓 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる (AT-HLP-23。`ModalController`)、入口で窓がヘルプの言語で先頭から開き、Esc の 2 段、タッチの端末でも入口が出て開く (AT-HLP-24。e2e)、ライセンスの見出しのクリックと Enter で開き、ヘルプは開いたまま (AT-HLP-25。e2e) | SC-16、FS-10、CON-03、CON-12、INV-89 (13)、INV-85・NE-32 (14)、5.1、5.11、INV-57 (12)、INV-29 (12)、FS-25・INV-103 (15〜19)、INV-100 (19)、INV-105 (20)、INV-75 (21・25)、HT-1・HT-3・HT-4 (21〜25) | HelpLanguageSwitch.test.js、ModalController.test.js、`e2e/help.e2e.js` (12・18・19・24・25) | 01〜25 |
+| AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11)、閉じ方によらず `onHide` を呼ぶ (AT-HLP-13。INV-89 のダイアログ) (`ModalController`)、「Details」/「詳細」の [Edit] の行の次の編集の始め方の行と初期画面の 4 行目 (AT-HLP-12。e2e の help.e2e.js。オーナーの裁定 AQ4)、「Details」/「詳細」のコードビューの行の 200 KB 以上のファイルの 1 文 (AT-HLP-14。英日。NE-32・NE-33)、「Details」/「詳細」の [Save] の行 (英日。Ctrl+V があり、起動役の名が無い。AT-HLP-20。PL-23)。2026-10-31 (HT-1〜HT-4) から、12・14・20 の細かい行は詳しい使い方の窓 (`guideModal`) の中で確かめる。15〜19 (GitHub の編集のヘルプの層) は D40 で外した (番号は使い回さない)。短いヘルプ: 基本的な使い方の 4 行、ボタンとキーの 11 行と最後の入口のボタン、プライバシーの 5 行と送り先の名、ライセンスだけが閉じた `<details>` で見出しが `<summary>` (AT-HLP-21)、窓の題名の行・英日の本文・3 つの節 (英日で同じ数の行)・前の細かい文・リンクと画像と図が無いこと (AT-HLP-22)、窓がヘルプの上に開いている間は窓だけがキーを受け、Esc の 1 回目で窓 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる (AT-HLP-23。`ModalController`)、入口で窓がヘルプの言語で先頭から開き、Esc の 2 段、タッチの端末でも入口が出て開く (AT-HLP-24。e2e)、ライセンスの見出しのクリックと Enter で開き、ヘルプは開いたまま (AT-HLP-25。e2e)、GitHub の編集のヘルプの層・入口・図が無く、ヘルプと窓の英日の本文に GitHub 連携の文が無く、meta の description が GitHub への送信を書かない (AT-HLP-26。D40。e2e の gitHub.e2e.js でも PC で見る) | SC-16、FS-10、CON-03、CON-12、INV-89 (13)、INV-85・NE-32 (14)、5.1、5.11、INV-57 (12)、INV-29 (12)、INV-105 (20)、INV-75 (21・25)、HT-1・HT-3・HT-4 (21〜25)、INV-103・D40 (26) | HelpLanguageSwitch.test.js、ModalController.test.js、`e2e/help.e2e.js` (12・24・25)、`e2e/gitHub.e2e.js` (26) | 01〜14、20〜26 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
 | AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド (30: 単一ファイルの並びでないものは失敗、38: 外部の import の検査はライブラリのコードも見る)、早い入力の受け継ぎ。25・26・47・48・52・56・57 はオーナーの裁定 AQ7 で改めた (PlantUML は 4 つのライブラリが決まるのを待つ。前の送り直し `"repeat"` は無い)。58: 11-g のガード `isShownWithout` の問い合わせ (数式・コードの色・Mermaid の枠) が、届く前の表示がある間は真で、ライブラリが動いた後は偽。文書が自分で書いた枠は数えない。59: コードビューの highlight.js の待ちが 2 つ重なっても、先に終わった方が待ちを消さない、60・61: 受け口の `arrive` は、読み込みの途中でページが足した要素 (mermaid のツールチップ) を飛ばして最初の `<script>` を候補にし、前の別の塊は代わりにしない | INV-81、INV-20、INV-06 (30)、INV-07 (38)、INV-02 (52・56・57)、INV-81 (2) (60・61) | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜61 |
 | AT-LSM | 起動とライブラリの状態機械 (仕様 11-g): ライブラリの表のすべての交点 (6 × 4 = 24、ガードの枝で 25。02)、ページの表のすべての交点 (6 × 4 = 24、2 つのガードの枝で 26。07。`earlyInputArrived` の行は受け口 `installBoot` で確かめる)、表の大きさ (01・06)、はじめの状態の 3 つの枝 (04)、仕様の 2 つの図と表の一致 (05・08)、answering に入るのが 1 回だけ (03・09)、開発サーバー (10)、解析の終わり (11)。描画の側の処理が投げても、ライブラリの表の処理は続き、ページは決まる (20。レビューの L3)、解析の後に作った LibraryLoader はすぐ `parsingEnded` を送る (21。L4)、中核は `earlyInputArrived` を受けない (22。L5)。PlantUML: 4 つのライブラリが決まる前は確認も送信も無く、決まったら描画の列の中で 1 回だけ確認し、確定の図は [Render]、読んでいる位置を保つ (12)、Cancel (13)、エンコーダーが動かない (14)、4 つが決まる前の Clear・別の文書 (15。レビュー 2 回目の N5)、始めから settled で送り直しが無い (16)、e2e で決まる前に確認が無く後に 1 回 (17)、KaTeX が最後に動き、その描き直しが answering の間に待ちの枠の段より先に動いても、確認は 1 回で全部の図に答える (18。OK で全部を送る。19: Cancel で全部が「not sent」)、全体の描画の途中で 4 つが決まっても、その描画と KaTeX の描き直しで確認は 1 回 (23。L1)、決まった時に編集欄が開いていた図は、閉じた時に [Render] (24。M2)、決まった時に待ちの枠が無くても answering から settled に移り、後の図は確認が 1 回出て送られる (25。レビュー 2 回目の N4) | INV-81 (2)(3)(4)、INV-02、INV-03 (13・19)、INV-23 (12・13・24)、オーナーの裁定 AQ2・AQ7、G6 (18・19・23) | LibraryLoader.stateMachine.test.js (01〜11、20〜22)、fastStartup.render.test.js (12〜16、18、19、23〜25)、`e2e/fastStartup.e2e.js` (17) | 01〜25 |
@@ -5868,7 +5893,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | codeEdit.e2e.js | コードのファイルの開き方と保存: Shift_JIS のファイルの開くダイアログ (文字コードと先頭の行) とファイル情報、CRLF と LF の混在の 3 つのボタンと [Keep as is]、UTF-8 の `.txt` はダイアログ無し、Shift_JIS のまま Save as (偽の保存のダイアログ) で同じバイト列。試験の名前に要求の ID | PRT-AJ01、PRT-AJ02、PRT-AJ09、PRT-AJ10 |
 | codeEditor.e2e.js | コード編集モード: `.json` で `e`・打つ・Tab・主 + Z・Ctrl+Shift+[、表示の Ctrl+← / → (未保存にならない)、`p` のコマンドパレット、目次の JSON のキー、編集中の [All] と主 + Z、Shift_JIS のファイルを `x.md` に Save as (UTF-8 とトーストと Markdown のビュー)、60 KB のファイルの 1 打鍵で層と行番号を書かず、止まった後に合わせる (INV-86)。試験の名前に要求の ID | PRT-AJ03、PRT-AJ05、PRT-AJ08、PRT-AJ11〜AJ15 |
 | paletteDoubleClick.e2e.js | パレットのグリップのダブルクリック (INV-68、PD1〜PD3): マウスのダブルクリックで最小化・復活し、グリップの位置・開いた編集欄のフォーカスと選択を保ち、文字を選ばず、ブロックを開かず本文を変えない。移動や長押しの後のクリックをブラウザがダブルクリックと数えても切り替えない。ボタンのダブルクリックでは最小化しない。touch: すばやい 2 回のタップで 1 回だけ切り替え、拡大しない (タップは pointerType touch で届く)。間をあけた 2 回では切り替えない | PRT-AI01、PRT-AI02 |
-| gitHub.e2e.js | GitHub 連携 (SC-28): `api.github.com` への要求は `page.route` の偽の GitHub が答え、本物の GitHub へは 1 件も出ない (外への要求の記録は 0 件)。PAT の欄の名前 `Fine-grained personal access token` が欄の上の行にある (D35)、[Saved] が無い (D34)、目のボタンで伏字と平文が切り替わり、閉じて開き直すと伏字に戻る (D28)、classic のトークンの赤い字が、欄の入力で消える (D37)、開く → 直す → push で `Pushed to GitHub (…)` が 5.9 s の後も出ていて、6.1 s では消える (D36。Playwright の時計 (`page.clock`) で進め、壁の時計では待たない。レビューの L6)、キーのヒントに `[O] GitHub;` (D33)、GitHub の画面の中の主 + S がブラウザの既定 (ページを保存) を止め、何も保存しない (INV-58、仕様 5.20.6。レビューの M3)、[Open GitHub] が PC で出て、フレームの中 (偽のページの iframe) では出ず `o` も効かず、タッチの端末 (`isMobile`) でも出ない (INV-100)。試験の名前は要求の ID (INV-・CON-・PRT-) で始める (レビューの L5)。全 7 件。develop 989a1b0 では 5 件とも落ちる。INV-100 の 2 件は、`#controls button[hidden]` の規則の無い CSS で落ちる (G12) | PRT-AK01、PRT-AK05、PRT-AK07 |
+| gitHub.e2e.js | **2026-10-31 (D40):** 下の GitHub 連携の 6 件は飛ばす (`test.describe.skip`。正式版では出さない)。タッチの端末で出ない 1 件は残す。PRT-AK12 の 4 件を足した: PC (`pointer: fine`) でも [Open GitHub] が出ず、`o` で 4 つの画面のどれも出ず、偽の GitHub にも外にも要求が無い (1)、キーのヒントに `[O] GitHub;` が無い (2)、英日のヘルプと詳しい使い方の窓に GitHub 連携の文が無い (3。AT-HLP-26)、CSP の `connect-src` が PlantUML のサーバーだけで、`api.github.com` への `fetch` をブラウザが断る (4。CSP の違反の記録を見るので `allowPageProblems`)。develop 4189957 では (1)〜(4) が落ちる。前の中身: GitHub 連携 (SC-28): `api.github.com` への要求は `page.route` の偽の GitHub が答え、本物の GitHub へは 1 件も出ない (外への要求の記録は 0 件)。PAT の欄の名前 `Fine-grained personal access token` が欄の上の行にある (D35)、[Saved] が無い (D34)、目のボタンで伏字と平文が切り替わり、閉じて開き直すと伏字に戻る (D28)、classic のトークンの赤い字が、欄の入力で消える (D37)、開く → 直す → push で `Pushed to GitHub (…)` が 5.9 s の後も出ていて、6.1 s では消える (D36。Playwright の時計 (`page.clock`) で進め、壁の時計では待たない。レビューの L6)、キーのヒントに `[O] GitHub;` (D33)、GitHub の画面の中の主 + S がブラウザの既定 (ページを保存) を止め、何も保存しない (INV-58、仕様 5.20.6。レビューの M3)、[Open GitHub] が PC で出て、フレームの中 (偽のページの iframe) では出ず `o` も効かず、タッチの端末 (`isMobile`) でも出ない (INV-100)。試験の名前は要求の ID (INV-・CON-・PRT-) で始める (レビューの L5)。全 7 件。develop 989a1b0 では 5 件とも落ちる。INV-100 の 2 件は、`#controls button[hidden]` の規則の無い CSS で落ちる (G12) | PRT-AK01、PRT-AK05、PRT-AK07、PRT-AK12 |
 
 ---
 
@@ -6122,17 +6147,18 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-AJ16      | コードの編集 | iPad とタッチ |      |
 | PRT-AJ17      | コードの編集 | 大きいファイルの時間 |      |
 | PRT-AJ18      | コードの編集 | 未保存の保護 |      |
-| PRT-AK01      | GitHub 連携 | 本物の GitHub で開く・直す・push |      |
-| PRT-AK02      | GitHub 連携 | 先に変わっていた (409) と下書き |      |
-| PRT-AK03      | GitHub 連携 | 非公開のリポジトリ |      |
-| PRT-AK04      | GitHub 連携 | 保護されたブランチ |      |
-| PRT-AK05      | GitHub 連携 | パスワードマネージャー |      |
-| PRT-AK06      | GitHub 連携 | file:// |      |
-| PRT-AK07      | GitHub 連携 | iPad では出さない |      |
-| PRT-AK08      | GitHub 連携 | 相対パスの画像とリンク |      |
-| PRT-AK09      | GitHub 連携 | ベータ版 |      |
-| PRT-AK10      | GitHub 連携 | ヘルプだけを見て使う |      |
-| PRT-AK11      | GitHub 連携 | iPad ではヘルプの入口も出さない |      |
+| PRT-AK01      | GitHub 連携 (N/A。D40) | 本物の GitHub で開く・直す・push |      |
+| PRT-AK02      | GitHub 連携 (N/A。D40) | 先に変わっていた (409) と下書き |      |
+| PRT-AK03      | GitHub 連携 (N/A。D40) | 非公開のリポジトリ |      |
+| PRT-AK04      | GitHub 連携 (N/A。D40) | 保護されたブランチ |      |
+| PRT-AK05      | GitHub 連携 (N/A。D40) | パスワードマネージャー |      |
+| PRT-AK06      | GitHub 連携 (N/A。D40) | file:// |      |
+| PRT-AK07      | GitHub 連携 (N/A。D40) | iPad では出さない |      |
+| PRT-AK08      | GitHub 連携 (N/A。D40) | 相対パスの画像とリンク |      |
+| PRT-AK09      | GitHub 連携 (N/A。D40) | ベータ版 |      |
+| PRT-AK10      | GitHub 連携 (N/A。D40) | ヘルプだけを見て使う |      |
+| PRT-AK11      | GitHub 連携 (N/A。D40) | iPad ではヘルプの入口も出さない |      |
+| PRT-AK12      | GitHub 連携 | 正式版では出さない (D40) |      |
 | PRT-AL01      | 開くファイルと見えない文字 | .markdown を Markdown として開く |      |
 | PRT-AL02      | 開くファイルと見えない文字 | U+0000 の拒否と BOM 付きの UTF-16 |      |
 | PRT-AL03      | 開くファイルと見えない文字 | 足した種類のファイル (AQ9) |      |

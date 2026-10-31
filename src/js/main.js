@@ -72,7 +72,6 @@ const elements = {
   clearBtn: document.getElementById("clearBtn"),
   helpBtn: document.getElementById("helpBtn"),
   helpModal: document.getElementById("helpModal"),
-  githubHelpModal: document.getElementById("githubHelpModal"),
   guideModal: document.getElementById("guideModal"),
   promptModal: document.getElementById("promptModal"),
   promptText: document.getElementById("promptText"),
@@ -153,9 +152,11 @@ const codeFileDialog = new CodeFileDialog(
   CONFIG.messages.codeEdit,
   CONFIG.codeEdit.sampleLines,
 );
-// GitHub (SC-28): a mouse or trackpad device only (D15, D17), and not
-// inside a frame (a <meta> CSP cannot forbid framing).
-const gitHubEnabled = window.matchMedia("(pointer: fine)").matches && window.top === window.self;
+// GitHub (SC-28): not offered in the release (D40); otherwise a mouse or
+// trackpad device only (D15, D17), and not inside a frame (a <meta> CSP
+// cannot forbid framing).
+const gitHubEnabled =
+  CONFIG.github.offered && window.matchMedia("(pointer: fine)").matches && window.top === window.self;
 const gitHubFetch = (url, init) => window.fetch(url, init);
 const gitHubClient = new GitHubContentsClient(gitHubFetch, CONFIG.github);
 // The browser keeps the token (owner ruling D25): after a request succeeds,
@@ -278,18 +279,6 @@ const ui = new UIController(orchestrator, state, elements, scrollEngine, {
 // Help: English | Japanese. The first language follows the browser's; the
 // choice is kept in memory only (SC-16).
 const helpLanguage = new HelpLanguageSwitch(elements.helpModal, navigator.language);
-// How to edit and commit files on GitHub: opens over the help in the help's language.
-const githubHelpLanguage = new HelpLanguageSwitch(elements.githubHelpModal, navigator.language);
-// Shown only where GitHub editing is offered: a fine pointer, not in a frame (D15, D17).
-for (const button of elements.helpModal.querySelectorAll("[data-open-github-help]")) {
-  button.hidden = !gitHubEnabled;
-  /** @purity non-pure */
-  button.addEventListener("click", () => {
-    githubHelpLanguage.setLanguage(helpLanguage.language);
-    ModalController.show(elements.githubHelpModal, button);
-    elements.githubHelpModal.scrollTop = 0; // focusing the switch may scroll
-  });
-}
 // More details: the detailed text the short help leaves out (HT-3). It opens
 // over the help in the help's language, everywhere.
 const guideLanguage = new HelpLanguageSwitch(elements.guideModal, navigator.language);

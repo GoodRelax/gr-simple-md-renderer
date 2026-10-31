@@ -5,7 +5,7 @@
 
     <meta
       name="description"
-      content="GR Simple Markdown (GRSMD, formerly GR Simple MD Renderer &amp; Viewer) is a free, privacy-first Markdown viewer and editor in your browser for Markdown, Math (LaTeX), Mermaid, and PlantUML, with in-place editing and dark mode. Renamed because it now edits documents, not just renders them. No data leaves your browser unless you explicitly allow PlantUML rendering, external images, or a GitHub open or push that you confirm."
+      content="GR Simple Markdown (GRSMD, formerly GR Simple MD Renderer &amp; Viewer) is a free, privacy-first Markdown viewer and editor in your browser for Markdown, Math (LaTeX), Mermaid, and PlantUML, with in-place editing and dark mode. Renamed because it now edits documents, not just renders them. No data leaves your browser unless you explicitly allow PlantUML rendering or external images."
     />
     <meta
       name="keywords"
@@ -67,9 +67,8 @@
     <!-- All rendering libraries (marked, mermaid, highlight.js, katex + fonts,
          marked-katex-extension, plantuml-encoder) are bundled into this file at
          build time. No runtime CDN fetch. The only external calls are the
-         optional PlantUML server, external images in the document, and the
-         GitHub API (api.github.com: open, reload and push of a GitHub .md file),
-         all of which require explicit user consent. A Content-Security-Policy
+         optional PlantUML server and external images in the document, both of
+         which require explicit user consent. A Content-Security-Policy
          <meta> is injected at build time (vite.config.js). -->
 
     <!-- The launch slot (INV-104): launcher/Open-Grsmd.ps1 replaces the next
@@ -270,8 +269,6 @@
             </p>
           </div>
 
-          <button type="button" class="help-github-btn" data-open-github-help>How to Edit and Commit Files on GitHub</button>
-
           <div class="modal-section" data-help-section="about">
             <h3>About GRSMD</h3>
             <p>
@@ -298,7 +295,6 @@
             <ul>
               <li><code>[Index]</code> / <code>I</code> : List of headings</li>
               <li><code>[Find]</code> / <code>F</code> : Find and replace text</li>
-              <li><code>[Open GitHub]</code> / <code>O</code> : Open a <code>.md</code> on GitHub (PC only)</li>
               <li><code>[Render Light]</code> / <code>L</code>, <code>[Render Dark]</code> / <code>D</code> : Show in light / dark mode</li>
               <li><code>[Reload]</code> / <code>R</code> : Read the file again</li>
               <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
@@ -317,7 +313,6 @@
             <ul>
               <li>PlantUML: If you allow it, GRSMD sends the text in a PlantUML block to the official PlantUML server when it draws the diagram.</li>
               <li>External images: If you allow it, GRSMD loads external images.</li>
-              <li>GitHub editing (PC only): When you press [Open], [Reload] or [Push] in its dialog, GRSMD talks to api.github.com.</li>
               <li>The Download button: When you press it, GRSMD opens github.com in a new tab.</li>
               <li>Scripts: GRSMD uses DOMPurify and CSP to block scripts in documents.</li>
               <li>Paste copied link: Your browser may ask you to allow clipboard access.</li>
@@ -372,8 +367,6 @@
             </p>
           </div>
 
-          <button type="button" class="help-github-btn" data-open-github-help>GitHubのファイルを編集しコミットする方法</button>
-
           <div class="modal-section" data-help-section="about">
             <h3>概要</h3>
             <p>
@@ -398,7 +391,6 @@
             <ul>
               <li><code>[Index]</code> / <code>I</code> : 見出しの一覧</li>
               <li><code>[Find]</code> / <code>F</code> : 文字を探す・置き換える</li>
-              <li><code>[Open GitHub]</code> / <code>O</code> : GitHub の <code>.md</code> を開く（PC だけ）</li>
               <li><code>[Render Light]</code> / <code>L</code>、<code>[Render Dark]</code> / <code>D</code> : ライトモード / ダークモードで表示する</li>
               <li><code>[Reload]</code> / <code>R</code> : ファイルを読み直す</li>
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブで GRSMD を開く</li>
@@ -417,7 +409,6 @@
             <ul>
               <li>PlantUML: あなたが送信を許可したら、GRSMD は、PlantUML を描くときに、PlantUML のブロックの中の文字列を PlantUML の公式サーバーへ送信します。</li>
               <li>外部の画像: あなたが読み込みを許可したら、GRSMD は外部の画像を読み込みます。</li>
-              <li>GitHub 連携（PC だけ）: あなたが画面の [Open]・[Reload]・[Push] を押したら、GRSMD は api.github.com と通信します。</li>
               <li>ダウンロードのボタン: あなたがダウンロードのボタンを押したら、GRSMD は github.com を新しいタブで開きます。</li>
               <li>スクリプト: GRSMD は、DOMPurify と CSP を使って、文書の中のスクリプトの実行を防ぎます。</li>
               <li>「リンクを貼る」: ブラウザがクリップボードの許可を求めることがあります。</li>
@@ -449,433 +440,6 @@
               </p>
               <p data-third-party-list></p>
             </details>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- How to edit .md on GitHub: a full-screen layer over the help. The
-         figures are drawn once as symbols and used by both languages. -->
-    <svg class="ghf-defs" aria-hidden="true">
-      <symbol id="ghf-tokens" viewBox="0 0 360 150">
-        <rect class="ghf-frame" x=".5" y=".5" width="359" height="149" rx="6"/>
-        <text x="12" y="20">Settings / <tspan class="ghf-b">Developer Settings</tspan></text>
-        <path class="ghf-line" d="M0 30h360"/>
-        <text x="14" y="50">GitHub Apps</text>
-        <text x="14" y="66">OAuth Apps</text>
-        <text class="ghf-b" x="14" y="82">Personal access tokens</text>
-        <rect class="ghf-sub" x="14" y="88" width="112" height="16" rx="3"/>
-        <rect class="ghf-nav" x="10" y="88" width="2.5" height="16"/>
-        <text x="22" y="99.5">Fine-grained tokens</text>
-        <rect class="ghf-ring" x="7" y="85" width="123" height="22" rx="5"/>
-        <text x="22" y="120">Tokens (classic)</text>
-        <text class="ghf-b" x="152" y="50">Fine-grained personal access tokens</text>
-        <path class="ghf-line" d="M152 58h200"/>
-        <text class="ghf-mid ghf-b" x="252" y="84">No fine-grained tokens created</text>
-        <rect class="ghf-go" x="200" y="96" width="104" height="20" rx="3"/>
-        <text class="ghf-gotext ghf-mid" x="252" y="110">Generate new token</text>
-        <rect class="ghf-ring" x="195" y="91" width="114" height="30" rx="6"/>
-        <circle class="ghf-mark" cx="140" cy="84" r="8"/><text class="ghf-num" x="140" y="87.5">1</text>
-        <circle class="ghf-mark" cx="320" cy="106" r="8"/><text class="ghf-num" x="320" y="109.5">2</text>
-      </symbol>
-      <symbol id="ghf-newtoken" viewBox="0 0 360 312">
-        <rect class="ghf-frame" x=".5" y=".5" width="359" height="311" rx="6"/>
-        <text class="ghf-b" x="12" y="22">New fine-grained personal access token</text>
-        <path class="ghf-line" d="M12 30h336"/>
-        <text class="ghf-b" x="12" y="48">Token name *</text>
-        <rect class="ghf-btn" x="12" y="53" width="200" height="18" rx="3"/>
-        <text x="18" y="66">grsmd</text>
-        <text class="ghf-b" x="12" y="88">Expiration</text>
-        <rect class="ghf-btn" x="12" y="93" width="96" height="18" rx="3"/>
-        <text x="18" y="106">30 days &#9662;</text>
-        <text class="ghf-h" x="12" y="132">Repository access</text>
-        <circle class="ghf-btn" cx="18" cy="145" r="4"/><text x="28" y="148">Public repositories</text>
-        <circle class="ghf-btn" cx="18" cy="160" r="4"/><text x="28" y="163">All repositories</text>
-        <circle class="ghf-radio" cx="18" cy="175" r="4"/><text class="ghf-b" x="28" y="178">Only select repositories</text>
-        <rect class="ghf-btn" x="28" y="184" width="112" height="16" rx="3"/>
-        <text x="34" y="196">Select repositories &#9662;</text>
-        <rect class="ghf-ring" x="9" y="167" width="140" height="37" rx="6"/>
-        <text class="ghf-h" x="12" y="222">Permissions</text>
-        <rect class="ghf-btn" x="12" y="228" width="336" height="48" rx="4"/>
-        <text class="ghf-b" x="20" y="243">Repositories 2</text>
-        <rect class="ghf-frame" x="246" y="232" width="96" height="16" rx="3"/>
-        <text x="252" y="244">+ Add permissions</text>
-        <rect class="ghf-ring" x="242" y="228" width="104" height="24" rx="6"/>
-        <path class="ghf-line" d="M12 253h336"/>
-        <text class="ghf-b" x="20" y="268">Contents</text>
-        <rect class="ghf-frame" x="214" y="257" width="128" height="16" rx="3"/>
-        <text x="220" y="269">Access: Read and write &#9662;</text>
-        <rect class="ghf-ring" x="210" y="254" width="136" height="22" rx="6"/>
-        <rect class="ghf-go" x="12" y="286" width="78" height="18" rx="3"/>
-        <text class="ghf-gotext ghf-mid" x="51" y="299">Generate token</text>
-        <rect class="ghf-btn" x="96" y="286" width="44" height="18" rx="3"/>
-        <text class="ghf-mid" x="118" y="299">Cancel</text>
-        <rect class="ghf-ring" x="7" y="281" width="88" height="28" rx="6"/>
-        <circle class="ghf-mark" cx="224" cy="62" r="8"/><text class="ghf-num" x="224" y="65.5">3</text>
-        <circle class="ghf-mark" cx="120" cy="102" r="8"/><text class="ghf-num" x="120" y="105.5">4</text>
-        <circle class="ghf-mark" cx="160" cy="176" r="8"/><text class="ghf-num" x="160" y="179.5">5</text>
-        <circle class="ghf-mark" cx="232" cy="240" r="8"/><text class="ghf-num" x="232" y="243.5">6</text>
-        <circle class="ghf-mark" cx="200" cy="265" r="8"/><text class="ghf-num" x="200" y="268.5">7</text>
-        <circle class="ghf-mark" cx="152" cy="295" r="8"/><text class="ghf-num" x="152" y="298.5">8</text>
-      </symbol>
-      <symbol id="ghf-file" viewBox="0 0 360 150">
-        <rect class="ghf-frame" x=".5" y=".5" width="359" height="149" rx="6"/>
-        <rect class="ghf-sub" x="8" y="8" width="344" height="18" rx="9"/>
-        <text class="ghf-mono" x="18" y="21">github.com/owner/repo/blob/my-edit/docs/a.md</text>
-        <rect class="ghf-ring" x="5" y="5" width="350" height="24" rx="12"/>
-        <text class="ghf-b" x="12" y="45">owner / repo</text>
-        <text x="12" y="62">Code<tspan dx="12">Issues</tspan><tspan dx="12">Pull requests</tspan><tspan dx="12">Actions</tspan></text>
-        <path class="ghf-line" d="M0 69h360"/>
-        <text x="12" y="87">&#8592; Files</text>
-        <rect class="ghf-btn" x="54" y="75" width="58" height="16" rx="3"/>
-        <text x="60" y="87">my-edit &#9662;</text>
-        <text x="120" y="87">repo / docs / <tspan class="ghf-b">a.md</tspan></text>
-        <rect class="ghf-sub" x="8" y="97" width="344" height="22" rx="4"/>
-        <text x="16" y="112">Preview<tspan dx="10">Code</tspan><tspan dx="10">Blame</tspan></text>
-        <rect class="ghf-btn" x="268" y="100" width="28" height="16" rx="3"/>
-        <text x="274" y="112">Raw</text>
-        <rect class="ghf-btn" x="302" y="100" width="40" height="16" rx="3"/>
-        <path class="ghf-icon" d="M309 113l1-4 6-6 3 3-6 6zM314 104l3 3"/>
-        <text x="327" y="112">&#9662;</text>
-        <g class="ghf-sub">
-          <rect x="16" y="126" width="120" height="8" rx="2"/>
-          <rect x="16" y="140" width="300" height="5" rx="2"/>
-        </g>
-        <circle class="ghf-mark" cx="346" cy="40" r="8"/><text class="ghf-num" x="346" y="43.5">11</text>
-      </symbol>
-      <symbol id="ghf-open" viewBox="0 0 360 214">
-        <rect class="ghf-frame" x=".5" y=".5" width="359" height="213" rx="6"/>
-        <path class="ghf-sub" d="M1 36V7a6 6 0 0 1 6-6h346a6 6 0 0 1 6 6v29z"/>
-        <text class="ghf-b" x="8" y="16">GR Simple</text>
-        <text class="ghf-b" x="8" y="28">Markdown</text>
-        <rect class="ghf-btn" x="150" y="8" width="30" height="20" rx="3"/><text class="ghf-mid" x="165" y="21">Index</text>
-        <rect class="ghf-btn" x="184" y="8" width="36" height="20" rx="3"/><text class="ghf-mid" x="202" y="21">Find</text>
-        <rect class="ghf-btn" x="224" y="5" width="42" height="26" rx="3"/>
-        <text class="ghf-mid" x="245" y="16">Open</text><text class="ghf-mid" x="245" y="27">GitHub</text>
-        <rect class="ghf-ring" x="219" y="2" width="52" height="32" rx="6"/>
-        <text x="278" y="21">...</text>
-        <rect class="ghf-btn" x="296" y="8" width="26" height="20" rx="3"/><text class="ghf-mid" x="309" y="21">Edit</text>
-        <circle class="ghf-btn" cx="342" cy="18" r="8"/><text class="ghf-mid" x="342" y="21.5">?</text>
-        <rect class="ghf-dim" x="1" y="37" width="358" height="176"/>
-        <rect class="ghf-frame" x="40" y="44" width="280" height="164" rx="6"/>
-        <text class="ghf-h" x="52" y="62">Open GitHub</text>
-        <text x="52" y="78">Fine-grained personal access token</text>
-        <rect class="ghf-btn" x="52" y="83" width="236" height="15" rx="3"/><text x="56" y="94">&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;</text>
-        <rect class="ghf-btn" x="292" y="83" width="16" height="15" rx="3"/><path class="ghf-icon" d="M295 90.5q5-5 10 0q-5 5-10 0z"/><circle class="ghf-icon" cx="300" cy="90.5" r="1.6"/>
-        <rect class="ghf-ring" x="49" y="80" width="242" height="21" rx="5"/>
-        <text x="52" y="117">URL</text>
-        <rect class="ghf-btn" x="112" y="106" width="196" height="15" rx="3"/>
-        <text class="ghf-small ghf-mono" x="116" y="116.5">https://github.com/owner/repo/blob/my...</text>
-        <rect class="ghf-ring" x="109" y="103" width="202" height="21" rx="5"/>
-        <text x="52" y="137">Repository</text>
-        <rect class="ghf-btn" x="112" y="126" width="196" height="15" rx="3"/><text x="116" y="137">owner/repo</text>
-        <text x="52" y="157">Branch</text>
-        <rect class="ghf-btn" x="112" y="146" width="196" height="15" rx="3"/><text x="116" y="157">my-edit</text>
-        <text x="52" y="177">Path</text>
-        <rect class="ghf-btn" x="112" y="166" width="196" height="15" rx="3"/><text x="116" y="177">docs/a.md</text>
-        <text class="ghf-small ghf-mono" x="52" y="198">Sends to api.github.com</text>
-        <rect class="ghf-btn" x="232" y="187" width="36" height="16" rx="3"/><text class="ghf-mid ghf-b" x="250" y="199">Open</text>
-        <rect class="ghf-btn" x="272" y="187" width="40" height="16" rx="3"/><text class="ghf-mid" x="292" y="199">Cancel</text>
-        <rect class="ghf-ring" x="228" y="183" width="44" height="24" rx="5"/>
-        <circle class="ghf-mark" cx="282" cy="44" r="8"/><text class="ghf-num" x="282" y="47.5">9</text>
-        <circle class="ghf-mark" cx="332" cy="90" r="8"/><text class="ghf-num" x="332" y="93.5">10</text>
-        <circle class="ghf-mark" cx="332" cy="113" r="8"/><text class="ghf-num" x="332" y="116.5">12</text>
-        <circle class="ghf-mark" cx="218" cy="195" r="8"/><text class="ghf-num" x="218" y="198.5">13</text>
-      </symbol>
-      <symbol id="ghf-save" viewBox="0 0 360 130">
-        <rect class="ghf-frame" x=".5" y=".5" width="359" height="129" rx="6"/>
-        <rect class="ghf-sub" x="8" y="8" width="344" height="18" rx="9"/>
-        <text class="ghf-mono" x="18" y="21">goodrelax.github.io/gr-simple-md-renderer/</text>
-        <path class="ghf-icon" d="M326 17a3 3 0 1 0 6 0a3 3 0 1 0-6 0M332 17h8m-3 0v3"/>
-        <g class="ghf-sub">
-          <rect x="16" y="40" width="110" height="8" rx="2"/>
-          <rect x="16" y="56" width="120" height="5" rx="2"/>
-          <rect x="16" y="68" width="100" height="5" rx="2"/>
-          <rect x="16" y="80" width="125" height="5" rx="2"/>
-        </g>
-        <rect class="ghf-frame" x="150" y="30" width="202" height="94" rx="6"/>
-        <text class="ghf-h" x="162" y="48">Save password?</text>
-        <text x="162" y="65">Username</text>
-        <rect class="ghf-btn" x="220" y="54" width="124" height="15" rx="3"/><text x="224" y="65">owner/repo</text>
-        <text x="162" y="85">Password</text>
-        <rect class="ghf-btn" x="220" y="74" width="124" height="15" rx="3"/><text x="224" y="85">&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;</text>
-        <rect class="ghf-nav" x="250" y="98" width="44" height="18" rx="3"/><text class="ghf-gotext ghf-mid" x="272" y="111">Save</text>
-        <rect class="ghf-btn" x="298" y="98" width="46" height="18" rx="3"/><text class="ghf-mid" x="321" y="111">Never</text>
-        <rect class="ghf-ring" x="245" y="93" width="54" height="28" rx="6"/>
-        <circle class="ghf-mark" cx="236" cy="107" r="8"/><text class="ghf-num" x="236" y="110.5">14</text>
-      </symbol>
-      <symbol id="ghf-push" viewBox="0 0 360 250">
-        <rect class="ghf-frame" x=".5" y=".5" width="359" height="249" rx="6"/>
-        <path class="ghf-sub" d="M1 36V7a6 6 0 0 1 6-6h346a6 6 0 0 1 6 6v29z"/>
-        <text class="ghf-b" x="8" y="16">GR Simple</text>
-        <text class="ghf-b" x="8" y="28">Markdown</text>
-        <rect class="ghf-btn" x="150" y="8" width="30" height="20" rx="3"/><text class="ghf-mid" x="165" y="21">Index</text>
-        <rect class="ghf-btn" x="184" y="8" width="36" height="20" rx="3"/><text class="ghf-mid" x="202" y="21">Find</text>
-        <rect class="ghf-go" x="224" y="5" width="42" height="26" rx="3"/>
-        <text class="ghf-gotext ghf-mid" x="245" y="16">Push to</text><text class="ghf-gotext ghf-mid" x="245" y="27">GitHub</text>
-        <rect class="ghf-ring" x="219" y="2" width="52" height="32" rx="6"/>
-        <text x="278" y="21">...</text>
-        <rect class="ghf-btn" x="296" y="8" width="26" height="20" rx="3"/><text class="ghf-mid" x="309" y="21">Edit</text>
-        <circle class="ghf-btn" cx="342" cy="18" r="8"/><text class="ghf-mid" x="342" y="21.5">?</text>
-        <rect class="ghf-dim" x="1" y="37" width="358" height="212"/>
-        <rect class="ghf-frame" x="40" y="44" width="280" height="172" rx="6"/>
-        <text class="ghf-h" x="52" y="62">Push to GitHub</text>
-        <rect class="ghf-warn" x="52" y="68" width="256" height="15" rx="3"/>
-        <text class="ghf-small ghf-warntext" x="56" y="78.5">PUBLIC repository: everyone can see this commit.</text>
-        <text x="52" y="98">Repository</text>
-        <rect class="ghf-btn" x="112" y="88" width="196" height="14" rx="3"/><text x="116" y="98">owner/repo</text>
-        <text x="52" y="116">Branch</text>
-        <rect class="ghf-btn" x="112" y="106" width="196" height="14" rx="3"/><text x="116" y="116">my-edit</text>
-        <text x="52" y="134">Path</text>
-        <rect class="ghf-btn" x="112" y="124" width="196" height="14" rx="3"/><text x="116" y="134">docs/a.md</text>
-        <text x="52" y="152">Message</text>
-        <rect class="ghf-btn" x="112" y="142" width="196" height="14" rx="3"/><text x="116" y="152">Update docs/a.md</text>
-        <rect class="ghf-ring" x="109" y="139" width="202" height="20" rx="5"/>
-        <text x="52" y="171">Fine-grained personal access token</text>
-        <rect class="ghf-btn" x="52" y="176" width="236" height="14" rx="3"/><text x="56" y="186.5">&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;</text>
-        <rect class="ghf-btn" x="292" y="176" width="16" height="14" rx="3"/><path class="ghf-icon" d="M295 183q5-5 10 0q-5 5-10 0z"/><circle class="ghf-icon" cx="300" cy="183" r="1.6"/>
-        <rect class="ghf-ring" x="49" y="173" width="242" height="20" rx="5"/>
-        <rect class="ghf-btn" x="232" y="196" width="36" height="15" rx="3"/><text class="ghf-mid ghf-b" x="250" y="207">Push</text>
-        <rect class="ghf-btn" x="272" y="196" width="40" height="15" rx="3"/><text class="ghf-mid" x="292" y="207">Cancel</text>
-        <rect class="ghf-ring" x="228" y="194" width="44" height="19" rx="5"/>
-        <rect class="ghf-toast" x="100" y="222" width="160" height="20" rx="10"/>
-        <text class="ghf-toasttext ghf-mid" x="180" y="235.5">Pushed to GitHub (abc1234).</text>
-        <circle class="ghf-mark" cx="282" cy="44" r="8"/><text class="ghf-num" x="282" y="47.5">15</text>
-        <circle class="ghf-mark" cx="332" cy="149" r="8"/><text class="ghf-num" x="332" y="152.5">16</text>
-        <circle class="ghf-mark" cx="332" cy="183" r="8"/><text class="ghf-num" x="332" y="186.5">17</text>
-        <circle class="ghf-mark" cx="218" cy="204" r="8"/><text class="ghf-num" x="218" y="207.5">18</text>
-        <circle class="ghf-mark" cx="272" cy="232" r="8"/><text class="ghf-num" x="272" y="235.5">19</text>
-      </symbol>
-    </svg>
-
-    <div id="githubHelpModal" class="modal gh-help">
-      <div class="modal-content">
-        <div class="help-head">
-          <h2>How to Edit and Commit Files on GitHub</h2>
-          <div class="help-lang" role="group" aria-label="Language">
-            <button type="button" data-help-lang="en" aria-pressed="true">English</button>
-            <button type="button" data-help-lang="ja" aria-pressed="false">Japanese</button>
-          </div>
-          <button type="button" class="close-btn" aria-label="Close">&times;</button>
-        </div>
-
-        <div class="help-body" lang="en">
-          <p class="gh-asof">
-            Based on GitHub's screens as of October 2026. GitHub may have
-            changed them since.
-          </p>
-          <p>
-            GRSMD opens a <code>.md</code> file on GitHub, lets you edit it, and
-            commits it to the same branch (push). It sends only to
-            <b>api.github.com</b>, and only when you press the button in its
-            dialog. Chrome or Edge on a PC (not on smartphones or iPad).
-          </p>
-
-          <div class="modal-section">
-            <h3>1. Make a token (first time only)</h3>
-            <ol class="gh-steps">
-              <li>
-                Sign in to GitHub and open
-                <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener noreferrer">Settings &gt; Developer settings &gt; Personal access tokens</a>.
-                Choose <b>Fine-grained tokens</b> (1) and press
-                <b>Generate new token</b> (2).
-                <svg class="ghf" viewBox="0 0 360 150" role="img" aria-label="GitHub's token page. 1: Fine-grained tokens. 2: Generate new token."><use href="#ghf-tokens"/></svg>
-              </li>
-              <li>
-                Fill in the form: (3) any name, e.g. grsmd. (4) A short
-                expiration. (5) <b>Only select repositories</b>, then choose
-                yours in Select repositories. (6) <b>Add permissions</b> and
-                check <b>Contents</b>. (7) Set it to
-                <b>Access: Read and write</b> (Metadata is added by itself).
-                (8) <b>Generate token</b>.
-                <svg class="ghf" viewBox="0 0 360 312" role="img" aria-label="The new token form. 3: Token name. 4: Expiration. 5: Only select repositories. 6: Add permissions. 7: Contents, Read and write. 8: Generate token."><use href="#ghf-newtoken"/></svg>
-              </li>
-              <li>
-                Copy the token (it starts with <code>github_pat_</code>).
-                GitHub shows it only once: paste it in GRSMD (next step)
-                before you copy anything else. Tokens (classic) cannot be used.
-              </li>
-            </ol>
-          </div>
-
-          <div class="modal-section">
-            <h3>2. Open the file (first time)</h3>
-            <ol class="gh-steps">
-              <li>
-                In GRSMD, press <b>Open GitHub</b> (9) (or the O key). Paste the
-                token in <b>Fine-grained personal access token</b> (10). The eye
-                button next to it shows the token, so you can check it.
-                <svg class="ghf" viewBox="0 0 360 214" role="img" aria-label="GRSMD's Open GitHub dialog. 9: the Open GitHub button. 10: Fine-grained personal access token. 12: URL. 13: Open."><use href="#ghf-open"/></svg>
-              </li>
-              <li>
-                On GitHub, open the <code>.md</code> file on the branch you
-                work on, and copy the address in the address bar (11).
-                <svg class="ghf" viewBox="0 0 360 150" role="img" aria-label="GitHub's file page. 11: the address bar."><use href="#ghf-file"/></svg>
-              </li>
-              <li>
-                Back in GRSMD, paste it in URL (12) and press <b>Open</b> (13).
-              </li>
-              <li>
-                Chrome asks to save the password: press <b>Save</b> (14). Edge
-                may save it without asking (&quot;Password saved&quot;). The
-                user name is the repository, e.g. <code>owner/repo</code>.
-                From the next time, you do not paste the token again.
-                <svg class="ghf" viewBox="0 0 360 130" role="img" aria-label="The browser's Save password bubble. 14: Save."><use href="#ghf-save"/></svg>
-              </li>
-            </ol>
-          </div>
-
-          <div class="modal-section">
-            <h3>3. Edit and push</h3>
-            <ol class="gh-steps">
-              <li>
-                Edit as usual. Ctrl+S (Mac: Cmd+S) saves to your PC only and sends nothing.
-              </li>
-              <li>
-                Press <b>Push to GitHub</b> (15). Check the message (16), click
-                the token field (17) and choose <code>owner/repo</code> from the
-                browser's list, then press <b>Push</b> (18). &quot;Pushed to GitHub&quot; (19) means the
-                commit is on GitHub.
-                <svg class="ghf" viewBox="0 0 360 250" role="img" aria-label="GRSMD's Push to GitHub dialog. 15: the Push to GitHub button. 16: Message. 17: Fine-grained personal access token. 18: Push. 19: the message after the push."><use href="#ghf-push"/></svg>
-              </li>
-              <li>
-                To bring the change into main, make a pull request on GitHub
-                and merge it there. GRSMD does not make pull requests.
-              </li>
-            </ol>
-          </div>
-
-          <div class="modal-section">
-            <h3>From the second time</h3>
-            <p>
-              Copy the <code>.md</code> address on GitHub. In GRSMD, press
-              <b>Open GitHub</b>, click the token field and choose the token from
-              the browser's list, paste the address in URL, and press
-              <b>Open</b>.
-            </p>
-          </div>
-
-          <div class="modal-section">
-            <h3>Delete a saved token</h3>
-            <p>
-              The saved token is under the site where you use GRSMD (e.g.
-              goodrelax.github.io), with the user name <code>owner/repo</code>.
-            </p>
-            <ul>
-              <li><b>Chrome:</b> open <code>chrome://password-manager</code> in the
-                address bar, or the menu <b>&#8942;</b> &gt; <b>Passwords and
-                autofill</b> &gt; <b>Google Password Manager</b> (TBD). Choose the site,
-                then delete the entry.</li>
-              <li><b>Edge:</b> open <code>edge://settings/autofill/passwords</code>
-                in the address bar, or the menu <b>&#8943;</b> &gt;
-                <b>Settings</b> &gt; <b>Passwords and autofill</b> (left) &gt;
-                <b>Microsoft Password Manager</b> (TBD). Choose the site, then
-                <b>Delete</b>. After 5 minutes without use, Edge locks the list
-                and may ask for your PIN first.</li>
-            </ul>
-          </div>
-
-          <div class="modal-section">
-            <h3>Notes</h3>
-            <ul>
-              <li>Work on a branch: make it on GitHub (the branch menu, e.g. <b>main &#9662;</b>), open the <code>.md</code> on it, push, and merge with a pull request.</li>
-              <li>A push to a public repository can be seen by everyone, and stays in the history even if you revert it.</li>
-              <li>GRSMD keeps neither the token nor the document. Only your browser keeps the token, if you save it.</li>
-              <li>Keep the token to the chosen repositories and Contents only: on goodrelax.github.io, the browser may offer it on other pages of the same site.</li>
-              <li>It pushes only to the branch you opened, and not to a protected branch. Files up to 1 MB.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="help-body" lang="ja" hidden>
-          <p class="gh-asof">
-            2026 年 10 月時点の GitHub の画面に基づく説明です。いまの GitHub の画面とは違うことがあります。
-          </p>
-          <p>
-            GRSMD は、GitHub にある <code>.md</code> のファイルを開いて直し、開いたのと同じブランチにコミット（push）できます。送り先は <b>api.github.com</b> だけで、確認の画面のボタンを押したときだけ送ります。PC の Chrome か Edge で使えます（スマートフォンと iPad では使えません）。
-          </p>
-
-          <div class="modal-section">
-            <h3>1. トークンを作る（最初の 1 回だけ）</h3>
-            <ol class="gh-steps">
-              <li>
-                GitHub にサインインして、<a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener noreferrer">Settings &gt; Developer settings &gt; Personal access tokens</a> を開きます。<b>Fine-grained tokens</b> を選び（1）、<b>Generate new token</b> を押します（2）。
-                <svg class="ghf" viewBox="0 0 360 150" role="img" aria-label="GitHub のトークンの画面。1: Fine-grained tokens。2: Generate new token。"><use href="#ghf-tokens"/></svg>
-              </li>
-              <li>
-                欄を埋めます。（3）名前は何でもよい（例: grsmd）。（4）期限は短く。（5）<b>Only select repositories</b> を選び、Select repositories で自分のリポジトリを選ぶ。（6）<b>Add permissions</b> で <b>Contents</b> にチェック。（7）<b>Access: Read and write</b> にする（Metadata は自動で付く）。（8）<b>Generate token</b> を押す。
-                <svg class="ghf" viewBox="0 0 360 312" role="img" aria-label="新しいトークンの画面。3: 名前。4: 期限。5: Only select repositories。6: Add permissions。7: Contents を Read and write。8: Generate token。"><use href="#ghf-newtoken"/></svg>
-              </li>
-              <li>
-                出てきたトークン（<code>github_pat_</code> で始まる）をコピーします。GitHub は 1 回しか見せません。ほかのものをコピーする前に、次の手順で GRSMD に貼ってください。Tokens (classic) は使えません。
-              </li>
-            </ol>
-          </div>
-
-          <div class="modal-section">
-            <h3>2. ファイルを開く（初回）</h3>
-            <ol class="gh-steps">
-              <li>
-                GRSMD で <b>Open GitHub</b> を押します（9）（O のキーでも可）。<b>Fine-grained personal access token</b> の欄にトークンを貼ります（10）。横の目のボタンを押すと、貼ったトークンを見て確かめられます。
-                <svg class="ghf" viewBox="0 0 360 214" role="img" aria-label="GRSMD の Open GitHub の画面。9: Open GitHub のボタン。10: Fine-grained personal access token。12: URL。13: Open。"><use href="#ghf-open"/></svg>
-              </li>
-              <li>
-                GitHub で、作業するブランチの <code>.md</code> のファイルを開き、アドレスバーのアドレスをコピーします（11）。
-                <svg class="ghf" viewBox="0 0 360 150" role="img" aria-label="GitHub のファイルの画面。11: アドレスバー。"><use href="#ghf-file"/></svg>
-              </li>
-              <li>
-                GRSMD に戻り、URL の欄に貼って（12）、<b>Open</b> を押します（13）。
-              </li>
-              <li>
-                Chrome が「パスワードを保存しますか」と聞くので、<b>保存</b>（英語の画面では Save）を押します（14）。Edge は、聞かずに保存することがあります（「パスワードを保存しました」）。ユーザー名はリポジトリ（例: <code>owner/repo</code>）です。次からは、トークンを貼らなくてすみます。
-                <svg class="ghf" viewBox="0 0 360 130" role="img" aria-label="ブラウザのパスワードの保存の吹き出し。14: 保存。"><use href="#ghf-save"/></svg>
-              </li>
-            </ol>
-          </div>
-
-          <div class="modal-section">
-            <h3>3. 直して push する</h3>
-            <ol class="gh-steps">
-              <li>
-                ふつうに直します。Ctrl+S（Mac は Cmd+S）は PC に保存するだけで、何も送りません。
-              </li>
-              <li>
-                <b>Push to GitHub</b> を押します（15）。メッセージを確かめ（16）、トークンの欄をクリックしてブラウザの候補から <code>owner/repo</code> を選び（17）、<b>Push</b> を押します（18）。「Pushed to GitHub」と出たら（19）、GitHub にコミットされています。
-                <svg class="ghf" viewBox="0 0 360 250" role="img" aria-label="GRSMD の Push to GitHub の画面。15: Push to GitHub のボタン。16: メッセージ。17: Fine-grained personal access token。18: Push。19: push の後の知らせ。"><use href="#ghf-push"/></svg>
-              </li>
-              <li>
-                main に取り込むときは、GitHub で pull request を作って、そこで merge します。GRSMD は pull request を作りません。
-              </li>
-            </ol>
-          </div>
-
-          <div class="modal-section">
-            <h3>2 回目から</h3>
-            <p>
-              GitHub で <code>.md</code> のアドレスをコピーします。GRSMD で <b>Open GitHub</b> を押し、トークンの欄をクリックしてブラウザの候補からトークンを選び、URL の欄にアドレスを貼って、<b>Open</b> を押します。
-            </p>
-          </div>
-
-          <div class="modal-section">
-            <h3>保存したトークンを消す</h3>
-            <p>
-              保存したトークンは、GRSMD を使ったサイト（例: goodrelax.github.io）の項目で、ユーザー名は <code>owner/repo</code> です。
-            </p>
-            <ul>
-              <li><b>Chrome:</b> アドレスバーに <code>chrome://password-manager</code> を入れて開きます。メニューからは、<b>&#8942;</b> →「パスワードと自動入力」→「Google パスワード マネージャー」（仮）。サイトを選び、項目を削除します。</li>
-              <li><b>Edge:</b> アドレスバーに <code>edge://settings/autofill/passwords</code> を入れて開きます。メニューからは、<b>&#8943;</b> →「設定」→ 左の欄の「パスワードとオートフィル」→「Microsoft パスワード マネージャー」。サイトを選び、[削除] を押します。5 分さわらないと鍵が掛かり、消す前に PIN などを求めることがあります。</li>
-            </ul>
-          </div>
-
-          <div class="modal-section">
-            <h3>注意</h3>
-            <ul>
-              <li>作業はブランチで行ってください。GitHub でブランチを作り（ブランチのメニュー。例: <b>main &#9662;</b>）、そのブランチの <code>.md</code> を開いて push し、pull request で merge します。</li>
-              <li>公開のリポジトリへの push は誰でも見られます。後で戻しても履歴に残ります。</li>
-              <li>GRSMD は、トークンも文書も保存しません。トークンを覚えるのは、保存したときのブラウザだけです。</li>
-              <li>トークンの範囲は、選んだリポジトリの Contents だけにしてください。goodrelax.github.io で使うと、同じサイトの他のページでも、ブラウザがトークンを候補に出すことがあります。</li>
-              <li>push できるのは開いたブランチだけで、保護されたブランチには push できません。1 MB までのファイルだけ扱えます。</li>
-            </ul>
           </div>
         </div>
       </div>
@@ -936,10 +500,9 @@
                 <code>Ctrl+Z</code> undoes). <code>Esc</code> in the box closes it. A slow regular expression (such as
                 nested repeats on a long line) can freeze the page: save before you replace with one.
               </li>
-              <li><code>[Open GitHub]</code> / <code>O</code> : Open a <code>.md</code> on GitHub. While it is open, the button is <code>[Push to GitHub]</code>. PC only (Chrome / Edge)</li>
               <li><code>[Render Light]</code> / <code>L</code> : Render / switch to light mode</li>
               <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
-              <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge). A file opened from GitHub is read again from GitHub, after a confirmation</li>
+              <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge).</li>
               <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
               <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette</li>
               <li>
@@ -1044,17 +607,6 @@
                 release. Nothing is sent until you press it.
               </li>
               <li>
-                GitHub editing (PC only) sends requests only to api.github.com, and
-                only when you press [Open], [Reload] or [Push] in its dialog, every
-                time. Open and Reload send the repository, branch and path, and your
-                fine-grained personal access token. Push sends the full text of the
-                document, the commit message and the token. The token is sent only in
-                a request header, and GRSMD keeps it only while the request runs.
-                After a request succeeds, GRSMD asks the browser to save the token;
-                the browser asks you, and you can delete it in the browser's password
-                settings.
-              </li>
-              <li>
                 The edit palette's Paste copied link reads the clipboard, so the
                 browser may ask you to allow it. When GRSMD is opened from
                 goodrelax.github.io, in Chrome and Edge, once you allow it, other
@@ -1097,10 +649,9 @@
               <li>
                 <code>[Find]</code> / <code>F</code> : Markdown の原文（コードビューではファイル）から文字を探します。<code>Aa</code> で大文字と小文字を区別し、<code>.*</code> で正規表現にします。検索欄の <code>&darr;</code> / <code>&uarr;</code> で次 / 前へ移ります。編集モードでは <code>Ctrl+F</code>（Mac は <code>Cmd+F</code>）でも開け、<code>Replace</code> / <code>All</code> で置き換えます（<code>Ctrl+Z</code> 1 回で戻ります）。検索欄の <code>Esc</code> で閉じます。時間のかかる正規表現（長い行に当てる、繰り返しの入れ子など）では、ページが固まることがあります。正規表現で置き換える前に保存してください。
               </li>
-              <li><code>[Open GitHub]</code> / <code>O</code> : GitHub の <code>.md</code> を開きます。開いている間、ボタンは <code>[Push to GitHub]</code> になります。PC だけ（Chrome / Edge）</li>
               <li><code>[Render Light]</code> / <code>L</code> : レンダリング/ライトモード切替</li>
               <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
-              <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード（Chrome / Edge）。GitHub から開いた文書は、確かめの画面の後に GitHub から読み直す</li>
+              <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード（Chrome / Edge）</li>
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
               <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
               <li>
@@ -1167,9 +718,6 @@
               </li>
               <li>
                 ダウンロードのボタンは、最新のリリースを取りに GitHub（github.com）を開きます。押すまでは何も送りません。
-              </li>
-              <li>
-                GitHub 連携（PC だけ）は、画面の [Open]・[Reload]・[Push] を押したときだけ、毎回、api.github.com にだけ送ります。Open と Reload は、リポジトリ・ブランチ・パスと、fine-grained personal access token を送ります。Push は、文書の本文の全部・コミットのメッセージ・トークンを送ります。トークンは要求のヘッダーにだけ載せ、GRSMD は送る間だけ持ちます。要求が成功すると、GRSMD はブラウザにトークンの保存を頼みます。保存するかはブラウザが尋ねます。消すときは、ブラウザのパスワードの設定から消します。
               </li>
               <li>
                 編集パレットの「リンクを貼る」はクリップボードを読むので、ブラウザが許可を求めることがあります。goodrelax.github.io で開いているとき、Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。

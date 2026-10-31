@@ -153,6 +153,14 @@ describe("AT-STA static checks of src/js", () => {
     expect(stripComments(read(resolve(jsDir, "main.js")))).toMatch(/new GitHubContentsClient\(gitHubFetch, CONFIG\.github\)/);
   });
 
+  it("AT-STA-21 D40: GitHub editing is not offered: CONFIG.github.offered is false and gates the controller's enabled in main.js", async () => {
+    const { CONFIG } = await import("../js/config.js");
+    expect(CONFIG.github.offered).toBe(false);
+    const main = stripComments(read(resolve(jsDir, "main.js")));
+    expect(main).toMatch(/const gitHubEnabled =\s*CONFIG\.github\.offered && /);
+    expect(main).toMatch(/enabled: gitHubEnabled/);
+  });
+
   it("AT-STA-03 every file is ASCII only (CON-06)", () => {
     for (const f of FILES) {
       const bytes = readFileSync(f);

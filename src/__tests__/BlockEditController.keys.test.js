@@ -48,7 +48,6 @@ beforeAll(() => {
     clearBtn: document.createElement("button"),
     helpBtn: document.createElement("button"),
     helpModal: modal(),
-    githubHelpModal: modal(),
     guideModal: modal(),
     promptModal: modal(),
     promptText: document.createElement("textarea"),

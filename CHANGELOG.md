@@ -178,9 +178,8 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 ### Added
 
 - Hidden characters: when a document opens (a dropped file, a paste that
-  starts a document, Reload, a file opened or reloaded from GitHub), a
-  toast says in how many places it holds characters that can hide text,
-  for example instructions for an AI: tag
+  starts a document, Reload), a toast says in how many places it holds
+  characters that can hide text, for example instructions for an AI: tag
   characters (U+E0000 to U+E007F), zero-width characters (U+200B, U+200C,
   U+200D, U+2060, and U+FEFF inside the text) and direction controls
   (U+202A to U+202E, U+2066 to U+2069, U+200E, U+200F). The Markdown view
@@ -211,17 +210,6 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   build has one launch slot (an HTML comment) in `<head>`, and the page
   reads the launch block that replaces it, then removes it (spec SC-29,
   INV-104; the launcher's own spec is `spec/grsmd_launcher_spec_en.md`).
-- GitHub editing (PC only: a mouse or trackpad, not in a frame): **Open
-  GitHub** (or `o`) opens a `.md` file from its github.com URL with your
-  fine-grained personal access token. Edit it as usual (`Ctrl+S` still
-  saves only to your PC), then **Push to GitHub** commits the whole text to
-  the same branch; pull requests and merges stay on GitHub. A dialog asks
-  before every request (Open, Reload, Push), and a push stops if the file
-  changed on GitHub since you opened it. After a request succeeds, GRSMD
-  asks the browser to save the token; next time, click the token field and
-  pick it. Relative images and links of the file point to GitHub (images
-  still wait for your click). The help has a page with pictures, "How to
-  Edit and Commit Files on GitHub", from making the token to the push.
 
 - Edit files other than `.md` in the code view: **Edit** (or `e`) turns
   the whole file into one editor, with colors and line numbers and no
@@ -395,16 +383,6 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   file, documents in step, tests that fail before the fix). The spec now
   names review rules by chapter and name instead of the old row numbers.
 
-### Security
-
-- The Content-Security-Policy's `connect-src` adds `https://api.github.com`
-  for GitHub editing (with the PlantUML server, the only places the page can
-  send to). Requests go there only when you press Open, Reload or Push in a
-  GitHub dialog. They carry your token in the `Authorization` header only;
-  GRSMD keeps it only while the request runs, and never in the URL, the
-  page's storage or the console. Only fine-grained tokens (`github_pat_`)
-  are accepted.
-
 ### Fixed
 
 - Block editing on an iPad: after `[Edit]` and a tap, the first key no
@@ -460,8 +438,6 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Known issues
 
-- GitHub editing has been tested only against a fake GitHub in the tests;
-  the owner tries it on the real GitHub in the beta (with a token).
 - Edit mode: the text selection callout of a phone or tablet (iPhone,
   iPad, Android) still shows over selected blocks; the bar shows below it.
   If Edge's mini menu shows anyway (for example after Ctrl+A), press Esc

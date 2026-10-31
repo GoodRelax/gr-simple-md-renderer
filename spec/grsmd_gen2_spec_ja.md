@@ -114,6 +114,8 @@
 
 **改訂:** 2026-10-31 — **[?] のヘルプを短くする (2026-11-01 のリリース。オーナーの裁定 HT-1〜HT-6、2026-10-31。「ヘルプ長すぎ」)。** HT-1「折りたたまない。 量を減らす。 細かいのは別文書にする。 ただし、ライセンスだけは折り畳む。」、HT-3 (別の文書は同じファイルの中の全画面の窓)、HT-4 (本体に残す文はオーナーが直した案)。[?] のヘルプの本文を、ダウンロード・概要 (3 文)・基本的な使い方 (4 つ + タッチの 1 文)・ボタンとキー (12 行と、最後に入口のボタン)・プライバシーとセキュリティ (送り先ごとに 1 文の 6 行)・サンプルデータ・ライセンスにする。細かい説明 (前の「Details」/「詳細」の全部、前の「Privacy & Security」/「プライバシーとセキュリティ」の全部、使い方の注) は、文を変えずに、新しい全画面の窓「More Details」/「詳しい使い方」(`guideModal`) へ移す。窓は GitHub の編集のヘルプの層 (FS-25) と同じ作りで、ヘルプの上に、ヘルプで選んでいる言語で開き、どの端末でも入口を出す。ライセンスの章だけを `<details>` で折りたたむ。`ModalController` の Tab の対象に `details > summary` を足す。これに合わせて **SC-16・CON-06・CON-12・INV-69・INV-75 (3)・INV-105 (7)・FS-10・5.1・5.11・5.19.13・5.20.7・付録 A.2・3 章の ModalController の行** を改める。画面に出る Search の名前を Find にする (上部バーのボタン、検索の箱の `aria-label`・`placeholder`、キーのヒント 6 種の `[F] Find;`、コードのパレットの `title` の "Find (主+F)"、ヘルプ、GitHub の編集のヘルプの図 2 枚、README。オーナーの裁定 HT-5「a」。コードの中の名前 (`searchBtn`・`DocumentSearch` など) は 2026-11-01 のリリースの後に別の枝で変える)。ボタンとキーの [Render Light] / [Render Dark] の行は「ライトモード / ダークモードで表示する」/ "Show in light / dark mode"、プライバシーの日本語の行は他動詞に目的語を書く (送信を・読み込みを・ダウンロードのボタンを。HT-6)。依存の追加はない (付録A 不変)。
 
+**改訂:** 2026-10-31 — **GitHub 連携を 2026-11-01 の正式版では出さない (オーナーの裁定 D40「もう要らない。理由:一般ユーザーが使うには難しすぎる。」、方針の GQA の問 1 = a: 正式版では画面から隠し、コードの削除は正式版の後に行う)。** `CONFIG.github.offered` (偽) を足し、`main.js` の `gitHubEnabled` をこれで止める: どの端末でも [Open GitHub] を出さず、`o` は何もせず、キーのヒントに `[O] GitHub;` を出さない (INV-100)。GitHub の編集のヘルプの層 (`githubHelpModal`)・その入口・図・CSS を外す (FS-25・INV-103・5.20.7 を外した)。[?] のヘルプの「Buttons and Keys」/「ボタンとキー」の `[Open GitHub]` / `O` の行 (12 行 → 11 行) と、「Privacy & Security」/「プライバシーとセキュリティ」の GitHub 連携の行 (6 行 → 5 行)、詳しい使い方の窓の `[Open GitHub]` の行・`[Reload]` の行の GitHub の文・GitHub 連携の開示、meta の description と head のコメントの GitHub の送信、README・CHANGELOG の GitHub 連携の文を外す。CSP の `connect-src` から `api.github.com` を外す (INV-20・CON-12)。これに合わせて **G-11・SC-28・CON-06・CON-12・INV-20・INV-100・INV-103・FS-10・FS-24・FS-25・5.1・5.11・5.19.7・5.20・付録の CONFIG** を改める。GitHub 連携のコード (SC-28 の部品、5.20.1〜5.20.6) は残し、正式版の後に別の枝で外す。依存の追加はない (付録A 不変)。
+
 ---
 
 ## 目次
@@ -265,7 +267,7 @@
 | G-08 | **テーマ**: OS自動検出付きのライト/ダークテーマをサポートする。                                                      |
 | G-09 | **ライブリロード**: FileSystemFileHandle 経由でファイルシステムからソースファイルをリロードする（Chrome/Edge 86+）。 |
 | G-10 | **その場編集**: 編集モードの間、プレビュー上でブロック単位に Markdown の原文を直し、明示的に保存できる。画面の切り替えや分割は行わない。 |
-| G-11 | **GitHub の .md の編集**: GitHub のリポジトリにある `.md` を開き、GRSMD の描画を見ながら直し、開いたのと同じブランチへ push できる。途中の保存は手元に置き、push は利用者が押したときだけ行う。 |
+| G-11 | **GitHub の .md の編集**: GitHub のリポジトリにある `.md` を開き、GRSMD の描画を見ながら直し、開いたのと同じブランチへ push できる。途中の保存は手元に置き、push は利用者が押したときだけ行う。**2026-10-31 に取りやめた (D40)。** 2026-11-01 の正式版では出さず、コードは正式版の後に外す。 |
 
 ### 1.4 解決方針
 
@@ -458,7 +460,7 @@ gr-simple-md-renderer/
 | SC-25 | 目次 (Index): 上部バーの [Index] ボタン (`indexBtn`) または `i` キーで、Markdown ビューの見出し (h1〜h6) の一覧を表示・非表示する。一覧はプレビューの右端に重ねて浮かせ、項目を押すとその見出しへ飛ぶ (INV-77) |
 | SC-26 | 検索と置換: 上部バーの [Find] ボタン (`searchBtn`)、`f`、編集モードでは主 + F で検索の箱を出す。Markdown の原文 (コードビューではファイルの文字) を、通常の文字または正規表現で探す。編集モードの間は、1 件ずつ、またはすべてを置き換えられる (INV-80) |
 | SC-27 | .md 以外のファイルの編集: コードビューで [Edit] (`editBtn`) または `e` で、ファイル全体を 1 つの編集欄にする (色付き、行番号付き、折り返さない。Undo / Redo は自前で 30 回まで。INV-85〜88)。文字コード・BOM・改行コードを読み取り、UTF-8 として読めないときと改行が混ざるときだけダイアログで確かめる (INV-89)。Save / Save as で、元の文字コード (または UTF-8) と改行で書き、Save as では拡張子を変えられる (`.md` にすると UTF-8 で書いて Markdown のビューで開き直す。INV-90)。目次は 10 の言語 (INV-91)、JSON は 1 段ずつ畳む・開く (キーとコマンドパレット。INV-92)。検索と置換は編集欄の文字にも効く (INV-80)。オーナーの裁定 NE-1〜NE-30 (2026-10-27〜29) |
-| SC-28 | GitHub 連携: 上部バーの [Open GitHub] (`gitHubBtn`)、`o` で「Open GitHub」の画面を出し、github.com の `.md` の URL から開く。GitHub の文書の間はボタンが [Push to GitHub] に変わり、確認の画面の後、同じブランチへコミットする (INV-93〜INV-100) |
+| SC-28 | GitHub 連携: 上部バーの [Open GitHub] (`gitHubBtn`)、`o` で「Open GitHub」の画面を出し、github.com の `.md` の URL から開く。GitHub の文書の間はボタンが [Push to GitHub] に変わり、確認の画面の後、同じブランチへコミットする (INV-93〜INV-100)。**2026-11-01 の正式版では出さない (D40。2026-10-31):** `CONFIG.github.offered` を偽にし、どの端末でも入口 (ボタン・`o`・キーのヒントの `[O] GitHub;`) を出さない (INV-100)。CSP の `connect-src` に `api.github.com` を入れない (INV-20)。ヘルプ・README・CHANGELOG に GitHub 連携を書かない。コードは正式版の後に別の枝で外す |
 | SC-29 | PowerShell の起動役: `launcher/Open-Grsmd.ps1 <ファイル>` で、利用者の PC の `GRSMD.html` の写しを開き、そのファイルをドロップと同じに開く。外への通信は無い。仕様は [grsmd_launcher_spec_en.md](grsmd_launcher_spec_en.md)、本体の側は INV-104 (2026-10-30。オーナーの裁定 PL-1〜PL-18) |
 
 #### スコープ外
@@ -494,13 +496,13 @@ gr-simple-md-renderer/
 | CON-03 | ユーザーデータ（ファイル内容、ファイル名、メタデータ）を localStorage、sessionStorage、Cookie、IndexedDB、Origin Private File System、Cache Storage に保存してはならない (CON-13 の編集内容も同じ 6 つ)。**注 (2026-10-29、SC-28):** GitHub の PAT は、利用者が選べばブラウザのパスワードマネージャーが覚える (ブラウザの機能)。GRSMD のスクリプトは、PAT も、GitHub の文書も、storage・Cookie・IndexedDB・OPFS・Cache Storage に書かない (D3・D13)                                                                        |
 | CON-04 | 既存のPlantUML同意ダイアログ（window.confirm）を削除またはバイパスしてはならない。注: 4 つのライブラリが全部 ready か failed になるまで確認を遅らせること (INV-81 (3)、11-g の `librariesSettled`) は、バイパスではない (その間は送らない)。確認で許して描いた図の [Copy SVG] / [Copy PNG] が確認なしに図を取り直すことは、INV-02 の例外として許す (オーナーの裁定 AQ7)。 |
 | CON-05 | 本番リリースは単一HTMLファイルでなければならない。マルチファイル構成は開発時（Viteソース）のみ許容され、リリース前に統合すること。                                                        |
-| CON-06 | すべてのソースコード、UIテキスト、コメント、インラインドキュメントはASCII英語のみとする。例外: [?]ヘルプモーダルと、その上に開く窓 (GitHub の編集のヘルプ、詳しい使い方) の日本語の本文（バイリンガル）。(PlantUML同意ダイアログの例外は、2026-10-23 に同意の文を ASCII の 1 文にしたため削除。オーナーの裁定 R14)            |
+| CON-06 | すべてのソースコード、UIテキスト、コメント、インラインドキュメントはASCII英語のみとする。例外: [?]ヘルプモーダルと、その上に開く詳しい使い方の窓の日本語の本文（バイリンガル）。(PlantUML同意ダイアログの例外は、2026-10-23 に同意の文を ASCII の 1 文にしたため削除。オーナーの裁定 R14)            |
 | CON-07 | 明示的な承認なしに新しいCDN依存を追加してはならない。                                                                                                                                     |
 | CON-08 | 受け入れ可能な最大ファイルサイズはMarkdownパス・コードビューパスの両方で5 MBとする。                                                                                                      |
 | CON-09 | JavaScript は ES6+ で書く。状態と振る舞いを持つものはクラスで書く (`classes/` に 1 ファイル 1 クラス)。状態を持たない関数の集まりは、モジュールの関数として書いてよい (`textTransforms.js`・`textSearch.js`・`utils.js` など。1.4、CON-15)。                                                                                                                                              |
 | CON-10 | バンドルしたライブラリ (npm依存) のバージョン変更は機能検証を必須とする。                                                                                                                 |
 | CON-11 | バックエンドを追加してはならない（サーバー処理、APIエンドポイント、Node.jsサーバー一切不可）。                                                                                            |
-| CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。**クリップボードの読み取り (INV-69) は外部との通信ではない。ただし「リンクを貼る」のボタンは、ブラウザの読み取りの許可 (`navigator.clipboard`) を使う。**既知の制約**: ブラウザは許可をサイト (オリジン `https://goodrelax.github.io`) ごとに記憶する。そのため Chrome / Edge では、GRSMD で一度許可すると、同じサイトの他のページ (gr-scheduler など) も、確認なしにクリップボードを読めるようになる。Safari / Firefox は、読むたびに確認を出し、許可を記憶しない見込み **[要検証: ブラウザごとの記憶のしかた]**。許可はブラウザのサイトの設定 (「クリップボード」) で取り消せる。Ctrl+V / Cmd+V の方式はこの許可を使わない。このため、許可の要らない Ctrl+V の方式を主とし (裁定 Q5)、ボタンは押したときだけ許可を使う。ヘルプ (日英) の「Privacy & Security」/「プライバシーとセキュリティ」の章には、利用者が取れる行動が分かるように 1 項目で短く書く (2026-10-23 に「編集」の章を消したので、この開示だけをこの章へ移した。調整役の裁定): ボタンはブラウザが許可を求めることがあること、Chrome / Edge ではその許可が goodrelax.github.io のすべてのページに及ぶこと、取り消すにはサイトの設定の「クリップボード」を変えること (オーナーの裁定 2026-10-22。2026-10-23)。この許可の説明は goodrelax.github.io で開いているときのものなので、ヘルプでは「goodrelax.github.io で開いているとき」と前置きする (ダウンロードした `GRSMD.html` を `file://` で開いたときは当てはまらない。2026-10-23)。** **ヘルプのダウンロードのボタン (SC-16) は、ページからの通信ではない。** 利用者が押したときに、新しいタブ (`target="_blank" rel="noopener noreferrer"`) で GitHub の最新のリリースの添付ファイルへ移るだけで、ページから `fetch` も先読みもしない (CSP の `connect-src` は変えない)。ヘルプ (日英) の「プライバシーとセキュリティ」に、押すと GitHub を開くこと、押すまでは何も送らないことを書く (調整役の裁定 D2・D7、2026-10-23)。**ブロックの範囲のカットとコピー (INV-74) は、クリップボードへ書くだけで読まない** (`copy` の事象の `clipboardData` に書く。読み取りの許可は使わない。2026-10-24)。 **例外 (2026-10-29): GitHub の API (`https://api.github.com`)。** SC-28 の開く・push・Reload は、利用者が確認の画面で押したときだけ、この 1 つのオリジンへ送る (毎回。『次から聞かない』は置かない)。送り先は CONFIG の固定の値で、URL や応答から読んだホストには送らない。開く・Reload で送るのはリポジトリ・ブランチ・パスと PAT だけで、本文を送るのは push だけ (push は本文の全部・コミットのメッセージ・PAT を送る)。PAT は要求のヘッダーにだけ載せ、GRSMD は送る間だけ持つ。要求が成功すると、GRSMD はブラウザに PAT の保存を頼む (保存するかはブラウザが利用者に聞く。CON-16 (2))。GitHub の文書の相対パスの画像 (`raw.githubusercontent.com`) は、今の外部画像と同じ同意を通す (INV-99)。 ヘルプ (日英) の「Privacy & Security」/「プライバシーとセキュリティ」に、この送信を 1 項目で書く (送るもの・送る先・押したときだけ毎回送ること・PAT の保存はブラウザに頼むこと)。About (日英)・meta の description・head のコメントも、GitHub 連携は確かめた後に `api.github.com` にだけ送ると書く (レビューの M1、調整役の裁定 2026-10-29。5.20.5)。 **ヘルプの書き場所 (2026-10-31。オーナーの裁定 HT-1・HT-3・HT-4):** この CON がヘルプの「Privacy & Security」/「プライバシーとセキュリティ」に書くと定める文は、詳しい使い方の窓 (`guideModal`) の同じ名の節に置く。[?] のヘルプの同じ名の節には、送り先ごとに 1 文 (PlantUML・外部の画像・GitHub 連携・ダウンロードのボタン・スクリプト・「リンクを貼る」の 6 行) だけを書く。 |
+| CON-12 | PlantUML以外の外部サーバー通信を追加してはならない（PlantUMLはユーザー同意が前提）。**例外 (2026-10-10): Markdown内の外部画像**も同意制とする。`![](https://...)` / 生の `<img src>` / `srcset` の外部URL (http(s)・`//host`・相対パス。相対パスもアプリの配信元へのリクエストになるため外部扱い) は、同意前は読み込まず、代替表示 (alt と ホスト名、クリックで同意ダイアログ) を出す。同意UIは PlantUML と同じ `window.confirm`。同意は PlantUML とは**別**で、メモリ上にのみ保持し (INV-04)、[Clear] または新しい `.md` ファイルのドロップで失効する ([Reload]・テーマ切替では維持)。`data:` / `blob:` は外部扱いしない。画像以外の外部参照 (`<video>`/`<audio>`/`<source>`/`<track>` の `src`・`srcset`、`poster`、`<input type=image>`、`background` 属性、style属性やSVGプレゼンテーション属性の `url()`・`image-set()` 等、SVG `<image>` の外部 `href`) は同意の対象とせず常に除去する。mermaid のラベル内 `<img>` も mermaid の `dompurifyConfig` で常に除去する (mermaid が計測のためラベルを直接DOMへ挿入するので同意制にできない。`%%{init}%%` で緩められないよう `secure` に追加)。**クリップボードの読み取り (INV-69) は外部との通信ではない。ただし「リンクを貼る」のボタンは、ブラウザの読み取りの許可 (`navigator.clipboard`) を使う。**既知の制約**: ブラウザは許可をサイト (オリジン `https://goodrelax.github.io`) ごとに記憶する。そのため Chrome / Edge では、GRSMD で一度許可すると、同じサイトの他のページ (gr-scheduler など) も、確認なしにクリップボードを読めるようになる。Safari / Firefox は、読むたびに確認を出し、許可を記憶しない見込み **[要検証: ブラウザごとの記憶のしかた]**。許可はブラウザのサイトの設定 (「クリップボード」) で取り消せる。Ctrl+V / Cmd+V の方式はこの許可を使わない。このため、許可の要らない Ctrl+V の方式を主とし (裁定 Q5)、ボタンは押したときだけ許可を使う。ヘルプ (日英) の「Privacy & Security」/「プライバシーとセキュリティ」の章には、利用者が取れる行動が分かるように 1 項目で短く書く (2026-10-23 に「編集」の章を消したので、この開示だけをこの章へ移した。調整役の裁定): ボタンはブラウザが許可を求めることがあること、Chrome / Edge ではその許可が goodrelax.github.io のすべてのページに及ぶこと、取り消すにはサイトの設定の「クリップボード」を変えること (オーナーの裁定 2026-10-22。2026-10-23)。この許可の説明は goodrelax.github.io で開いているときのものなので、ヘルプでは「goodrelax.github.io で開いているとき」と前置きする (ダウンロードした `GRSMD.html` を `file://` で開いたときは当てはまらない。2026-10-23)。** **ヘルプのダウンロードのボタン (SC-16) は、ページからの通信ではない。** 利用者が押したときに、新しいタブ (`target="_blank" rel="noopener noreferrer"`) で GitHub の最新のリリースの添付ファイルへ移るだけで、ページから `fetch` も先読みもしない (CSP の `connect-src` は変えない)。ヘルプ (日英) の「プライバシーとセキュリティ」に、押すと GitHub を開くこと、押すまでは何も送らないことを書く (調整役の裁定 D2・D7、2026-10-23)。**ブロックの範囲のカットとコピー (INV-74) は、クリップボードへ書くだけで読まない** (`copy` の事象の `clipboardData` に書く。読み取りの許可は使わない。2026-10-24)。 **GitHub の API (`https://api.github.com`) は送り先にしない (2026-10-31。D40):** 2026-10-29 に SC-28 のために例外として足したが、正式版では GitHub 連携を出さないので外した。ヘルプ (日英)・README・meta の description・head のコメントにも、GitHub への送信を書かない。 **ヘルプの書き場所 (2026-10-31。オーナーの裁定 HT-1・HT-3・HT-4):** この CON がヘルプの「Privacy & Security」/「プライバシーとセキュリティ」に書くと定める文は、詳しい使い方の窓 (`guideModal`) の同じ名の節に置く。[?] のヘルプの同じ名の節には、送り先ごとに 1 文 (PlantUML・外部の画像・ダウンロードのボタン・スクリプト・「リンクを貼る」の 5 行。GitHub 連携の行は D40 で外した) だけを書く。 |
 | CON-13 | 編集内容を自動保存してはならない。localStorage、sessionStorage、Cookie、IndexedDB、Origin Private File System、Cache Storage のいずれにも、編集内容・ファイル名・パレットの位置・パレットの最小化の状態を書いてはならない。保存はユーザーの明示操作 (SC-24) によるローカルファイルへの書き込み、またはダウンロードに限る。`document.title` にファイル名を入れてはならない (ブラウザの履歴に残るため。INV-50)。**注 (2026-10-29、SC-28):** GitHub の PAT は、利用者が選べばブラウザのパスワードマネージャーが覚える (ブラウザの機能)。GRSMD のスクリプトは、PAT も、GitHub の文書も、storage・Cookie・IndexedDB・OPFS・Cache Storage に書かない (D3・D13) |
 | CON-14 | 保存処理はネットワーク通信を行ってはならない。File System Access API の書き込み、または `blob:` URL によるダウンロードのみを用いる。**注 (2026-10-29):** push (SC-28) は保存ではない。Save / Save as は今のまま通信しない |
 | CON-15 | 製品コード (`src/js/`) のすべての関数とメソッドは、JSDoc のコメント内に `@purity` タグをちょうど 1 つ持つこと。値は `pure` / `semi-pure-a` / `semi-pure-b` / `non-pure` の 4 値とする (レビュー基準 `spec/grsmd_review_standards_ja.md` の「R7 純粋性の分類」と「R7 `@purity` タグ」)。既存コードにも適用する。数え方と検査の方法は 5.16 に定める |
@@ -587,7 +589,7 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-18  | イベント駆動 | ファイルがドロップされた場合、システムは、ファイルの種類を許す種類の表 (ホワイトリスト。5.4 の生成した表、INV-102) だけで決めること (オーナーの裁定 AQ1・AQ5・AQ9、2026-10-29)。(1) 大きさが 5 MB を超えれば INV-11 で断る。(2) 拡張子 (名前の最後の `.` から後ろを小文字にしたもの。`.` が無ければ無し) を表で引き、無ければ名前の全体 (大文字と小文字をそのまま) を表で引く。(3) 表の開き方が Markdown (`.md`・`.markdown`) なら Markdown プレビュー (INV-17)。コードならコードビューで、表の言語で色を付ける (言語が無い行と、束に無い言語は色なし。5.3)。(4) 表に無ければ、alert (`fileDrop.messages.notAllowed`) で断り、何も変えない。中身を見て種類を推し量る段 (先頭のバイトの NUL の検査) と、断る拡張子の一覧 (旧 `BINARY_EXTENSIONS`) は持たない (監査の D29)。(5) 読み解いた後の文字 (Markdown は 5.14.1 の読み方 (先頭 3 バイトの BOM の判定と `file.text()`) の文字、コードは INV-89 (1) で読んだ文字) のどこかに U+0000 があれば、alert (`fileDrop.messages.binaryFile`) で断り、何も変えない (オーナーの裁定 AQ6 (3)・AQ11。調べるのは文字の全体で、先頭の一部ではない (オーナーの裁定 AQ15、2026-10-30)。UTF-8 でも UTF-16 でも同じ決まり)。断るのは、開くダイアログ (INV-89) と INV-21 の確認より前。ダイアログで別の文字コードを選んだときは、読み直した文字にも同じく行い、INV-21 の確認より前に断る。確かめは `fileOpenChecks.js` の `checkTextToOpen` が行い (断るときは `FileRefusal` を投げる)、alert は UIController が 1 か所で出す (5.4)。(6) 表にある拡張子で中身が別のもの (拡張子の擬態) は、(5) に当たらなければ、そのまま表示を試みる。(7) ペーストはファイルではないので、(1)〜(5) を行わない (見えない文字の知らせ (INV-101) は行う)。(8) **Reload** (Markdown とコードビュー。ディスクからファイルを読み直す) でも、読んだファイルに (1)(2)(4)(5) を同じく行う (種類は読んだファイルの名前で引く。調整役の裁定 2026-10-30。AQ6 の「開くとき」は、ディスクからファイルを読むたびのこと)。断るときは同じ alert を出し、表示・文書・保存先・未保存の状態を変えない。種類が表にあれば、開き方 (Markdown かコード) が今の表示と違っても、今の表示のまま読み直す。仕様で Markdown のファイルを `.md` と書く所は `.markdown` も含み、「非 `.md`」はコードビューで開くファイルを言う。 |
 | INV-18b | 状態駆動     | コードビューでキーボードスクロール中は、`.code-line:hover` によるハイライトを一時的に無効化すること（ちらつき防止）。                                                                                                                                                                                                                                                                                                                                                        |
 | INV-19  | 状態駆動     | 外部画像の同意がない間、システムはMarkdown内の外部画像 (CON-12) をネットワークから取得してはならない。サニタイズ時に `src` / `srcset` を `data-external-src` / `data-external-srcset` へ退避し、代替表示 (`.external-image-placeholder`、alt とホスト名) を表示すること。ユーザーが代替表示をクリック (またはEnter/Space) し、確認ダイアログ (固定の 1 文 "Is it OK to get images from other sites?"。`messages.externalImage.consent`。ホスト名の一覧は示さない。オーナーの裁定 R14、2026-10-23) で同意した場合、システムは現在のプレビュー内の保留中の画像をすべて復元し、同意が有効な間は以後の描画で直ちに読み込むこと。キャンセル時は代替表示を維持すること。文書自身が書いた `data-external-*` 属性は無視 (除去) すること。同意は localStorage / sessionStorage / Cookie に保存してはならない (INV-04)。 |
-| INV-20  | 常時         | ビルド成果物 (単一HTML) は `<meta http-equiv="Content-Security-Policy">` を `<meta charset>` の直後 (全スクリプトより前) に持つこと。値: `default-src 'none'; script-src 'sha256-<実行するインラインスクリプトと、遅れて読むライブラリのデータ (INV-81 (5)) のハッシュ>'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: <PlantUMLサーバ> https:; font-src data:; connect-src <PlantUMLサーバ> <GitHub の API>; base-uri 'none'; form-action 'none'`。ハッシュは vite.config.js の `content-security-policy` プラグインが、viteSingleFile のインライン化と高速起動の並べ替え (INV-81) の後 (`generateBundle`) に計算して注入する。PlantUMLサーバのオリジンは `CONFIG.plantuml.serverUrl` から導く。GitHub の API のオリジン (`https://api.github.com`) は `CONFIG.github.apiOrigin` から導く (SC-28。D20。2026-10-29。ほかの指令 (`img-src`・`form-action 'none'` も) は変えない)。`<script src>` が残っている、またはインラインスクリプトが無い場合はビルドを失敗させる。JSON-LD などの実行されないスクリプトはハッシュ対象外。ただし `type="text/plain"` は、遅れて読むライブラリのデータ (`id="grsmd-lib-…"`) だけを許し、ハッシュに載せる (それ以外があればビルドを失敗させる。INV-81 (5))。開発サーバ (`npm run dev`) には適用しない (build only)。**制約:** `<meta>` のCSPは実行時に変更できないため、同意後の外部画像 (INV-19) を表示できるよう `img-src` に `https:` を含める。同意前に外部画像を読み込ませない役目は INV-19 のゲートが担い、CSPは スクリプト実行・fetch (PlantUML と GitHub の API 以外)・メディア・フォント・フレーム・`http:` 画像を遮断する多重防御である。`http:` の外部画像は同意後もCSPで遮断される。`frame-ancestors` は `<meta>` では無効なので含めない。 |
+| INV-20  | 常時         | ビルド成果物 (単一HTML) は `<meta http-equiv="Content-Security-Policy">` を `<meta charset>` の直後 (全スクリプトより前) に持つこと。値: `default-src 'none'; script-src 'sha256-<実行するインラインスクリプトと、遅れて読むライブラリのデータ (INV-81 (5)) のハッシュ>'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: <PlantUMLサーバ> https:; font-src data:; connect-src <PlantUMLサーバ>; base-uri 'none'; form-action 'none'`。ハッシュは vite.config.js の `content-security-policy` プラグインが、viteSingleFile のインライン化と高速起動の並べ替え (INV-81) の後 (`generateBundle`) に計算して注入する。PlantUMLサーバのオリジンは `CONFIG.plantuml.serverUrl` から導く。GitHub の API (`https://api.github.com`) は入れない (2026-10-29 に SC-28 のために足し、2026-10-31 に D40 で外した。ほかの指令は変えない)。`<script src>` が残っている、またはインラインスクリプトが無い場合はビルドを失敗させる。JSON-LD などの実行されないスクリプトはハッシュ対象外。ただし `type="text/plain"` は、遅れて読むライブラリのデータ (`id="grsmd-lib-…"`) だけを許し、ハッシュに載せる (それ以外があればビルドを失敗させる。INV-81 (5))。開発サーバ (`npm run dev`) には適用しない (build only)。**制約:** `<meta>` のCSPは実行時に変更できないため、同意後の外部画像 (INV-19) を表示できるよう `img-src` に `https:` を含める。同意前に外部画像を読み込ませない役目は INV-19 のゲートが担い、CSPは スクリプト実行・fetch (PlantUML 以外)・メディア・フォント・フレーム・`http:` 画像を遮断する多重防御である。`http:` の外部画像は同意後もCSPで遮断される。`frame-ancestors` は `<meta>` では無効なので含めない。 |
 | INV-21 | 状態駆動 + イベント駆動 | 未保存 (用語集の定義。開いているブロック編集欄とセルの未確定の変更を含む) の間に、Reload、Clear (ボタンまたは `c` キー)、`.md` または非 `.md` のファイルドロップ、のいずれかで文書が置き換えられようとした場合、システムは置き換える前に確認ダイアログ (`window.confirm`) を表示すること。キャンセルされた場合は、文書・ブロック編集欄・ビュー状態を変更しないこと。OK の場合は、開いているブロック編集欄を確定せずに破棄してから置き換えること。未保存でない場合は確認しないこと。ファイルドロップの処理は次の順とする: (1) 同期的に fileHandle の Promise と File を取る (CON-01。最初の `await` より前) → (2) サイズとバイナリの判定 (INV-11 / INV-18) と、`.md` ではファイルの内容の読み込み (非 `.md` は、コードの文書の部品 (`createCodeEdit`) があれば (2) で読んで文字コードを解き (INV-89)、読めなければ alert を出して何も変えずに終える。部品が無い構成では (5) のコードビューの描画で読み、読めなければ alert を出して初期状態に戻る。レビュー 3 回目の P1) → (3) 保存中なら拒否 (INV-54) → (4) 未保存なら確認 → (5) OK なら、確認の直後に同期的に編集欄を破棄し、`.md` のドロップでは、モデル・セッション・保存先を置き換え、外部画像の同意を失効させ (INV-43)、全体描画をキューに入れる。非 `.md` のドロップでは、モデル・セッション・保存先を無しにし、キューの中の部分描画とそのアンカーを捨て、コードビューを描画する (Markdown の全体描画はキューに入れない。INV-47)。Reload は、(a) 読み込みの開始時の文書 ID と保存先を記録して、内容の読み込み (`MarkdownFileAccess.readFile`) を先に完了し (読む前に名前と大きさ、読んだ後に U+0000 を、ドロップと同じく確かめる (INV-18 (8))。断る場合は、何も変えずにドロップと同じ alert を出して終える。読み込みに失敗した場合は、何も変えずにトースト `messages.edit.reloadFailed` を表示して終える。読み込みの間に文書 ID または保存先が変わっていた場合は、何も変えずにトースト `messages.edit.reloadCanceled` を表示して終える) → (b) 保存中なら拒否 (INV-54) → (c) 未保存なら確認 → (d) OK なら確認の直後に同期的に置き換え、全体描画をキューに入れる。Clear は、(b) 保存中なら拒否 → (c) 未保存なら確認 → (e) OK なら確認の直後に同期的に、編集欄を破棄し、モデル・セッション・保存先を無しにし、キューの中の部分描画とそのアンカーを捨て、プレレンダー状態に戻す (全体描画はキューに入れない。INV-13 / INV-47)。どの場合も、描画の完了を待ってから置き換えることはしない。**コードビュー (SC-27。2026-10-29):** コードの文書の未保存 (INV-85 (5)) も同じく確かめる。非 `.md` のドロップの (2) の読み込みでは INV-89 のダイアログを出すことがあり、Cancel なら何も変えない (確認もしない)。コードビューの Reload も、ドロップと同じ順にする: (a) 開いたときの文字コードで読み (INV-89 (6))、ドロップと同じ確かめを行う (INV-18 (8)) → (b) 保存中なら拒否 (INV-54) → (c) 未保存なら確認 → OK なら、確認の直後にコード編集モードを終え (表示は描かない。11-h の reloadStarted)、読んだ文字で描く。確かめで断る (alert)、読めない (トースト `reloadFailed`)、(b) で拒否する、(c) で Cancel する、読む間に別の文書を開いた、のどれでも、コード編集モード・文書・未保存の状態・表示を変えない (調整役の裁定 2026-10-30)。 |
 | INV-22 | 状態駆動 | 未保存 (INV-21 と同じ定義) の間にページを離れようとした場合、システムは `beforeunload` でブラウザの離脱確認を表示すること。未保存でない場合は表示しないこと。 |
 | INV-23 | イベント駆動 | 全体の描画でない描画 (部分描画: ブロックの確定・Undo・Redo・挿入・削除・置換、閉じた編集欄のブロックの描き直し。KaTeX が動いた後の描き直しが部分描画の段の中で起きた場合を含む) で PlantUML ブロックを描画する場合、システムは PlantUML サーバーへ自動では送信せず、プレースホルダ (`.plantuml-pending`、[Render] ボタン付き) を表示すること。4 つのライブラリが決まって待ちの図に答えた時 (11-g の `runWaitingPlantUml`) に編集欄が開いていて扱われなかった図も、その編集欄を閉じた時に同じプレースホルダにする (確認を出さない。11-g の `turnHeldPlantUmlToRender`)。ユーザーが [Render] を押し、INV-02 の確認ダイアログで同意した場合に限り送信すること。差し替えなかったブロックの PlantUML の描画結果は変更せず、再送信もしないこと (INV-42)。 |
@@ -659,8 +661,8 @@ EARS (Easy Approach to Requirements Syntax) 形式: `<トリガー>の場合、�
 | INV-97 | イベント駆動 | GitHub の文書の間に Reload ([Reload] / `r`) が押された場合、システムは、手元のファイルからは読まず、Reload の画面 (`gitHubReloadDialog`) で確かめてから、INV-94 と同じに GitHub から読み直すこと。読めたら INV-21 の Reload の順で置き換える (読み始めた後に文書が変わっていたら置き換えない)。手元の保存先は変えない |
 | INV-98 | イベント駆動 | GitHub の文書の間に `.md` がドロップされた場合、システムは、ファイルを読んだ後、未保存の確認の前に、3 択の画面 (`gitHubDropDialog`) を出すこと。画面には、編集中のファイル、GitHub の最後のコミット (開いたときに読んだもの。通信しない)、ドロップしたファイルの名前、改行コードと BOM が GitHub の版と違えばその旨を出す。(1) 「連携を続けたまま置き換える」: 本文をドロップしたファイルにし (Undo の対象にしない)、手元の保存先をそのファイルにし、GitHub の連携 (ファイルと `sha`) を残す。(2) 「連携を止めて開く」: 今のドロップと同じ。(3) 「やめる」: 何もしない。`.md` 以外のドロップは今のまま (連携は止まる) |
 | INV-99 | 状態駆動 | GitHub の文書を描く間、システムは、サニタイズの後、外部画像の同意の前に、相対パスを GitHub での見え方に直すこと (D21)。(1) `img` の `src` は `https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<repo の中のパス>`。この後、今の外部画像の同意を通す (INV-19)。(2) `a` の `href` は `https://github.com/<owner>/<repo>/blob/<branch>/<repo の中のパス>` (問い合わせと `#` は残す)。(3) `/` で始まるものはリポジトリの最上位から。上へ出すぎたものは最上位で止める。(4) `http(s):`・`mailto:` などの形・`//host`・`#…`・空は直さない。`srcset` は直さない。(5) GitHub の文書でないときは、今のまま (相対パスは外部扱い) |
-| INV-100 | 常時 | GitHub 連携は、主な入力がマウスかトラックパッド (`(pointer: fine)`) で、フレームの中でない (`window.top === window.self`) ときだけ出す (D15・D17。`<meta>` の CSP では `frame-ancestors` が効かないため)。出さないときは、[Open GitHub] を `hidden` にし、`o` は何もしない |
-| INV-103 | 常時 | GitHub の編集のヘルプの層 (`githubHelpModal`。FS-25・5.20.7) は、外へ何も送らず、DOMPurify と CSP (INV-20) に例外を足さないこと。(1) 図は単一ファイルの中のインライン SVG に限る: 隠した `<svg class="ghf-defs">` の `<symbol>` に 1 回だけ描き、英日の本文が `<use>` で使う。画像のファイル・`<img>`・外の資源・GitHub のロゴは使わない。(2) 外へのリンクは、トークンの一覧のページ (`https://github.com/settings/personal-access-tokens`。新しいタブ、`rel="noopener noreferrer"`) だけで、利用者が押したときだけ開く。(3) 入口のボタン (`[data-open-github-help]`) は、GitHub 連携を出すとき (INV-100 の判定。`main.js` の `gitHubEnabled`) だけ出し、出さないときは `hidden` にする (CSS の `display` で出し直さない)。(4) 層のために何も保存しない (INV-04) |
+| INV-100 | 常時 | GitHub 連携は、主な入力がマウスかトラックパッド (`(pointer: fine)`) で、フレームの中でない (`window.top === window.self`) ときだけ出す (D15・D17。`<meta>` の CSP では `frame-ancestors` が効かないため)。出さないときは、[Open GitHub] を `hidden` にし、`o` は何もしない。**2026-10-31 (D40):** `CONFIG.github.offered` が偽の間は、上の判定の前に、どの端末でも出さない (2026-11-01 の正式版は偽。キーのヒントにも `[O] GitHub;` を出さない) |
+| INV-103 | — | **2026-10-31 に外した (D40)。** GitHub の編集のヘルプの層 (`githubHelpModal`)・その入口 (`[data-open-github-help]`)・図 (`svg.ghf-defs`)・CSS を `src/index.html` と `src/css/style.css` から外した (FS-25・5.20.7)。番号は使い回さない |
 | INV-104 | イベント駆動 | 受け口 (`boot.js`) が動き始めたときに、`<head>` の子に起動の塊 (`<script type="text/plain" id="grsmd-launch-file" data-name="<名前の UTF-8 の Base64>" data-path="<フルパスの UTF-8 の Base64>">ファイルのバイト列の Base64</script>`。起動役が差し込み口の印と置き換えたもの。SC-29) があった場合、システムは次のとおりにすること。(1) 塊を読み、DOM から外す (読めても読めなくても)。`data-path` は [Save] のためのフルパス (INV-105)。無い・空なら、パスは分からないものとする (前の起動役)。(2) 読めたら、名前とバイト列から `File` を作り、中核より前のドロップ (ハンドル無し) として預かる (`earlyInputArrived`。INV-81 (4))。中核はドロップと同じに開く (INV-11・INV-17・INV-18・INV-21)。中核より前に利用者がドロップかペーストをしたら、そちらを預かる (最後の 1 件)。(3) Base64 でない・UTF-8 でない (名前・パス)・名前が空のときは何も預からず、コンソールに 1 行の警告 (`GRSMD: the launch file could not be read.`) を出す。(4) 塊は `<head>` の子で `type="text/plain"` のときだけ読む (文書の要素は代わりにならない。`grsmd-` で始まる id は文書から落とす。INV-81 (5))。(5) ビルドは `<head>` に差し込み口の印 `<!--grsmd-launch-slot-->` をちょうど 1 つ置き、そうでなければビルドを失敗させる。塊は実行されないので、CSP (INV-20) とビルドの `text/plain` の確かめは変えない (塊はビルドの後に起動役が入れる)。内容を storage に書かない (CON-03) |
 | INV-105 | イベント駆動 | 上部バーの [Save] (`saveBtn`。[Edit] の右) が押された場合、システムは主 + S と同じに保存すること (INV-26・INV-90。オーナーの裁定 PL-19〜PL-21、2026-10-30)。(1) **パスを渡す:** 開いている文書が起動役で開いたもの (起動の塊の `data-path` があった。INV-104) で、まだファイルのハンドルが無い (一度も保存していない) ときは、保存の前にそのファイルのフルパスをクリップボードに入れる。書き込みはボタンを押したその場で行う (`copy` の出来事。だめなら `navigator.clipboard.writeText`)。書けなくても保存は続ける。Markdown の文書とコードの文書 (SC-27) で同じ。(2) **保存:** そのあと主 + S と同じに保存する。ハンドルが無いので、保存の画面 (`showSaveFilePicker`。名前はファイル名) かダウンロードになる。利用者は画面のファイル名の欄に主 + V でフルパスを貼れば、元のファイルに上書きできる。(3) **保存の後:** 保存の画面で選んだファイルが文書の場所になり (ハンドルあり)、フルパスは捨てる。次の [Save] は画面を出さずに上書きし、クリップボードに触れない (PL-21)。**ダウンロードのとき:** ファイルに書く API の無いブラウザ (Firefox など) では保存はダウンロードになり (INV-26)、文書の場所は変わらない。そのため [Save] は押すたびにフルパスをクリップボードに入れてからダウンロードする (ブラウザが保存先を聞く設定なら、そこで貼れる)。Markdown の文書とコードの文書で同じ (手順の裁定 2026-10-30。レビュー 3 回目の P1)。ドロップ・貼り付け・GitHub で開いた文書では、パスは無く、クリップボードに触れない (ブラウザはページにフルパスを渡さない)。(4) **無効:** 初期状態と、コードの文書を扱う部品の無い構成のコードビュー (INV-85 (8)) では無効 (`disabled`)。(5) **ツールチップ:** `title` は、ボタンにポインタが乗ったとき・フォーカスが来たときに決める。パスを渡すときは `CONFIG.messages.saveButton.titleWithPath(mod)` (保存がダウンロードになるときは `titleWithPathDownload(mod)`: 「ダウンロードする。ブラウザが保存先を聞くなら、ファイル名に貼る」の文)、ほかは `title(mod)` (`Save (Ctrl+S)`。Mac は Cmd)。押して保存が済んだ後にも決め直す (ポインタがボタンに乗ったままでも合うように)。(6) クリップボードの他に外へ出さない。パスを storage に書かない (CON-03)。(7) **ヘルプ:** 詳しい使い方の窓 (`guideModal`。HT-3) の「Details」/「詳細」の、編集の始め方の行の次に [Save] の行を置く。[?] のヘルプの「Buttons and Keys」/「ボタンとキー」の [Save] の行は、`[Save] / Ctrl+S : Save (Ctrl+Shift+S: Save as)` / 同じ意味の短い行とする (HT-4)。英語は `[Save] : Same as Ctrl+S. When GRSMD knows where the file is, it puts that path on the clipboard: paste it with Ctrl+V as the file name`、日本語は同じ意味。起動役の名は出さない (オーナーの裁定 PL-23。PL-15 は保つ) |
 | INV-85 | 状態 / イベント駆動 | コードビューでコードの文書 (用語集) を表示している間に、[Edit] (`editBtn`) または `e` (入力要素の外) が押された場合、システムはファイル全体を 1 つの編集欄にし (コード編集モード)、コード編集モードの間にもう一度押されたら表示に戻すこと (オーナーの裁定 NE-1・NE-2・NE-4・NE-14、2026-10-27)。(1) **編集欄:** textarea を、highlight.js で色を付けた層 (`pre.code-edit-layer`) の上に重ねる (`#codeEditBody`。5.19.5)。依存は足さない (NE-1)。字・大きさ・行の高さ・上の余白は表示 (`#codeViewBody`) と同じ。左に行番号 (`.code-edit-gutter`) を出し、折り返さない (`wrap="off"`。横にスクロールする。NE-4)。編集欄は自分ではスクロールせず、文字の大きさまで伸び、ページがスクロールする。スペルチェック・自動の大文字・自動補完・自動修正はしない。`aria-label` は `CONFIG.messages.codeEdit.editorLabel` ("Code editor")。(2) **入る:** 表示の折りたたみ (INV-92 (2)) は捨て、コードの文書の文字で始める。カーソルは、見えている範囲の上端にある行の頭に置き、フォーカスを編集欄に移す (スクロールしない。ビューは動かない)。`e` の既定の動作は止める (フォーカスを移した編集欄に `e` が入らないように)。(3) **出る:** コード編集モードの間に [Edit] または `e` (編集欄の外。編集欄の中の `e` は文字) で表示に戻る。表示は編集した文字で同じ所に描き直し (ファイル名・大きさ・日時は保ち、行数は今の文字に従う)、コードの文書は編集した文字を持つ (未保存はそのまま)。Esc は編集欄から抜けるだけで、コード編集モードは終わらない (INV-87 (3))。Reload・別のファイルのドロップ・Clear・Markdown への切り替えでは、先にコード編集モードを終える (表示は描き直さない。Reload は読み直した文字で描き、読めなければ今の文書の文字を描き直す。11-h)。コード編集モードを終えると、開いている打つ手順を閉じる (INV-88 (1))。(4) **パレット:** コード編集モードの間は編集パレットを出し、グリップ・Save・Save as・Undo・Redo・Find だけを 1 段に並べる (ほかのボタンは隠す。Redo と Find のボタンはコード編集モードだけにある。NE-2。`EditPalette.setMode("code")`)。Undo / Redo は戻せる・やり直せる手順があるときだけ有効 (INV-88)。ただし打っている間は、文字を変えなかった打つ手順 (打って消して元に戻した) でも有効のままで、打つのが止まったとき (INV-86 (4)) に正しくなる。Find は検索の箱を出す (主 + F と同じ。INV-80)。状態の行は `<file name> * unsaved` / `<file name> - saved`。最小化 (INV-68) は Markdown と同じ。表示に戻ると、パレットを隠して Markdown のボタンに戻す。(5) **未保存:** コードの文書の文字が、最後に読み込んだ時点または保存した時点の文字と異なれば未保存 (用語集)。タブのタイトルの `* ` (INV-50)、離脱の確認 (INV-22)、置き換える前の確認 (INV-21) は Markdown と同じ。表示とコード編集モードを行き来しても未保存は変わらない。打っている間は 1 打鍵ごとに文字を比べない (INV-86 の性能): 長さが基準と違えば未保存、同じ長さなら比べるまで未保存として扱い、打つのが止まったとき (または未保存かを問うとき。INV-21・INV-22) に比べる。保存した時の文字に打ち戻すと、打つのが止まったときに印が消える。(6) **タッチ:** スマートフォンと iPad でも同じ (NE-14)。**[要検証]** iPad で色の層と字がずれたら、タッチの機械だけ編集中の色付けを止める (NE-14。実機で確かめていない。PRT-AJ16)。(7) **印刷:** 編集欄 (textarea) は出さず、色の層 (表示と同じ字) を出す。色付けを待っていれば印刷の前に済ませ、色なし (INV-86 (2)) の層には印刷の間だけ文字を入れる (`beforeprint` / `afterprint`)。(8) コードの文書を扱う部品 (`createCodeEdit`) の無い構成では、コードビューの [Edit] を無効にし、`e` は何もしない (前の OS-06 のまま)。(9) **大きいファイル:** 編集できる大きさの上限は読み込みの上限 (5 MB、CON-08) と同じ。ファイルの大きさ (今のファイルのバイト数: 読み込み・Reload では読んだバイト数、Save の後は書いたバイト数。ファイル情報の行に出す大きさと同じ。レビュー 3 回目の P4) が `CONFIG.codeEdit.slowEditBytes` (200 × 1024) 以上のファイルでコード編集モードに入ったとき、トースト `messages.codeEdit.slowEdit` ("This file is 200 KB or larger. Showing and editing it may take time."。オーナーの文「ファイルサイズが200kB以上あります。表示や編集に時間がかかります。」の英訳) を出す。文書ごとに 1 回 (同じ文書で出入りしても出さない。別のファイル・Reload の後はまた出す。Save で 200 KB 以上になり、まだ出していなければ、次にコード編集モードに入るときに出す) (オーナーの裁定 NE-32、質問票の問 19。5.19.5) |
@@ -3246,8 +3248,8 @@ Feature: ヘルプモーダル
     And 本文の先頭にダウンロードのボタン、短い説明 (3 文)、このファイルの版がある (1.7)
     And 本文の節は、ダウンロード・概要・基本的な使い方・ボタンとキー・プライバシーとセキュリティ・サンプルデータ・ライセンスの順である (オーナーの裁定 HT-1・HT-4)
     And 「Basic Usage」/「基本的な使い方」には、表示を始める 4 つの方法と、タッチの端末で貼る方法の 1 文がある
-    And 「Buttons and Keys」/「ボタンとキー」には、キーごとに 1 行の 12 行 ([Index]・[Find]・[Open GitHub]・[Render Light] と [Render Dark]・[Reload]・[New Tab]・[Edit]・[Save]・[Clear]・[?]・Esc・Ctrl+Z / Ctrl+Y) があり、その後に「More Details」/「詳しい使い方」のボタンがある (HT-3)
-    And 「Privacy & Security」/「プライバシーとセキュリティ」には、送り先ごとに 1 文の 6 行がある (CON-12)
+    And 「Buttons and Keys」/「ボタンとキー」には、キーごとに 1 行の 11 行 ([Index]・[Find]・[Render Light] と [Render Dark]・[Reload]・[New Tab]・[Edit]・[Save]・[Clear]・[?]・Esc・Ctrl+Z / Ctrl+Y) があり、その後に「More Details」/「詳しい使い方」のボタンがある (HT-3)
+    And 「Privacy & Security」/「プライバシーとセキュリティ」には、送り先ごとに 1 文の 5 行がある (CON-12。GitHub 連携の行は D40 で外した)
     And サンプルデータリンクが含まれる
     And 最後の章「Licenses」/「ライセンス」に、同梱する OSS の「名前 版 (ライセンス)」の一覧と、全文がこのファイルの最後のコメントにあることが書かれている (付録 A.2)
     And 「Licenses」/「ライセンス」の章だけを、見出しだけの閉じた形で表示する (HT-1)
@@ -4416,6 +4418,8 @@ Feature: .md 以外のファイルの編集
 
 ### FS-24: GitHub 連携
 
+**2026-11-01 の正式版では出さない (D40。2026-10-31)。** 「正式版」のシナリオのほかは、`CONFIG.github.offered` を真にしたときのもの (コードは正式版の後に外す)。
+
 ```gherkin
 Feature: GitHub の .md を直して push する
   GitHub の文書を直す人として
@@ -4457,43 +4461,17 @@ Feature: GitHub の .md を直して push する
   Scenario: タッチの端末
     Given iPad で GRSMD を開いている
     Then [Open GitHub] は出ず、o を押しても何も起きない
+
+  Scenario: 正式版 (D40)
+    Given PC のブラウザで、2026-11-01 の正式版の GRSMD を開いている
+    Then [Open GitHub] は出ず、o を押しても何も起きず、キーのヒントに [O] GitHub が無い
+    And ヘルプと詳しい使い方の窓に、GitHub 連携の行も、GitHub の編集のヘルプの入口も無い
+    And ページは api.github.com へ何も送れない (CSP の connect-src に無い)
 ```
 
-### FS-25: GitHub の編集のヘルプ
+### FS-25: GitHub の編集のヘルプ (2026-10-31 に外した。D40)
 
-```gherkin
-Feature: GitHub のファイルを編集しコミットする方法
-  英語が苦手な利用者として
-  GitHub の .md を GRSMD で直して push する手順を、絵で知りたい
-
-  Scenario: ヘルプから開く
-    Given PC のブラウザで、ヘルプモーダルが開いている
-    When ダウンロードの枠の下の "How to Edit and Commit Files on GitHub" /「GitHubのファイルを編集しコミットする方法」を押す
-    Then ヘルプの上に全画面の層が開き、ヘルプで選んでいる言語の本文だけが、先頭から表示される
-    And 層の先頭は題名の行で、英語の題名・"English" と "Japanese" のトグル・× がある。スクロールしても上に残る
-    And 本文の最初に、いつの GitHub の画面に基づくかが年と月まで書かれている (GHH-1)
-    And 手順の図では、押す所が番号の丸と赤い囲みで示され、番号は全部の図で作業の順に 1 から 19 まで続く (GHH-5)
-
-  Scenario: 図
-    Then 図はインラインの SVG で描かれ、画像のファイル・外への通信・GitHub のロゴを使わない
-    And 1 つの図は 1 回だけ定義され、英日の本文は同じ図を使う
-    And 図の中の文字は GitHub と GRSMD の画面の英語の表記のままで、説明は図の外に英日で書く
-    And ダークのテーマでは、図も暗い配色になる
-    And 図には、言語ごとの代わりの文 (aria-label) がある
-
-  Scenario: 閉じる
-    Given GitHub の編集のヘルプの層が開いている
-    When × か Esc を押す
-    Then 層だけが閉じてヘルプが見え、フォーカスは入口のボタンに戻る
-    When もう一度 Esc を押す
-    Then ヘルプが閉じて、フォーカスは [?] に戻る
-    And 層が開いている間、Tab は層の中を回り、アプリの 1 キーの操作は効かない (FS-10 と同じ)
-
-  Scenario: GitHub 連携の無い所では入口が無い
-    Given スマートフォンか iPad で開いているか、GRSMD がほかのページのフレームの中にある (INV-100)
-    When ヘルプモーダルを開く
-    Then 入口のボタンは、英日のどちらの本文にも表示されない
-```
+GitHub の編集のヘルプの層とその入口は、正式版で GitHub 連携を出さないので外した (INV-103)。
 
 ## 5. 実装仕様
 
@@ -4566,12 +4544,11 @@ Feature: GitHub のファイルを編集しコミットする方法
 | `searchPanel` | div | 検索の箱。`#sidePanels` の中の先頭 (目次の上)。`role="search"`、`aria-label="Find"`、初めは `hidden`。中に `searchInput` (`placeholder="Find"`、`aria-label="Find"`)、`searchCase` ("Aa"、`aria-pressed`、`title="Match case"`)、`searchRegex` (".*"、`aria-pressed`、`title="Regular expression"`)、`searchCount` (`aria-live="polite"`)、`searchPrev` (↑。`title="Previous (Up)"`、`aria-label="Previous"`)、`searchNext` (↓。`title="Next (Down)"`、`aria-label="Next"`)、`searchClose` (×。`title="Close (Esc)"`、`aria-label="Close"`)、`replaceRow` (コードビューでは `hidden`。`replaceInput` (`placeholder="Replace (edit mode)"`、`aria-label="Replace"`)、`replaceOneBtn` ("Replace")、`replaceAllBtn` ("All")。編集モードでないときは無効) |
 | `.search-hit` | クラス | 今の一致のブロック (コードビューでは行) の枠 (INV-80 (4))。印刷では出さない |
 | `indexPanel` | nav | 目次。`#sidePanels` の中。`aria-label="Index"`、初めは `hidden`。中身は `button.index-entry.index-h1`〜`index-h6`、または `p.index-empty` (INV-77) |
-| `gitHubBtn` | button | 上部バーの [Commands] (`commandsBtn`。コードビューでだけ見える) と [Render Light] の間 (Markdown 表示では [Find] の右に見える)。`Open<br />GitHub` / GitHub の文書の間は `Push to<br />GitHub` (class `gh-push`、緑)。INV-100 で出さないときは `hidden` (SC-28。2026-10-29 追加) |
+| `gitHubBtn` | button | 上部バーの [Commands] (`commandsBtn`。コードビューでだけ見える) と [Render Light] の間 (Markdown 表示では [Find] の右に見える)。`Open<br />GitHub` / GitHub の文書の間は `Push to<br />GitHub` (class `gh-push`、緑)。INV-100 で出さないときは `hidden` (SC-28。2026-10-29 追加)。2026-11-01 の正式版では、どの端末でも `hidden` (D40) |
 | `gitHubOpenDialog` | dialog | `<dialog>` の中の `<form>`: URL (`autocomplete="off"`)、リポジトリ (`name="username"`、`autocomplete="username"`、読むだけ)、ブランチ、パス、PAT (`type="password"`、`autocomplete="current-password"`。名前は欄の上の行の `Fine-grained personal access token`。D35。横に目のボタン。D28)、送る先の文、[Open] [Cancel] |
 | `gitHubPushDialog` | dialog | 公開か非公開かの 1 行、リポジトリ (username)、ブランチ・パス (読むだけ)、メッセージ、PAT、送る先の文、[Push] [Cancel] |
 | `gitHubReloadDialog` | dialog | リポジトリ (username)、ブランチとパス、PAT、送る先の文、[Reload] [Cancel] |
 | `gitHubDropDialog` | dialog | 編集中・最後のコミット・ドロップしたもの・改行コードと BOM の違い、3 つのボタン |
-| `githubHelpModal` | div | GitHub の編集のヘルプの層 (FS-25、INV-103、5.20.7)。`.modal.gh-help`。題名の行 (英語だけの題名 "How to Edit and Commit Files on GitHub"、English / Japanese のトグル、×) と英日の本文 (`.help-body[lang]`。層の `HelpLanguageSwitch`)。図は前に置いた隠した `<svg class="ghf-defs">` の `<symbol>` を `<use>` で使う。開くのは `helpModal` の英日の本文の入口のボタン (`[data-open-github-help]`、ダウンロードの枠の下) だけ |
 | `guideModal` | div | 詳しい使い方の窓 (FS-10、HT-3。2026-10-31)。`.modal`。題名の行 (英語だけの題名 "More Details"、English / Japanese のトグル、×) と英日の本文 (`.help-body[lang]`。窓の `HelpLanguageSwitch`)。本文の節は `data-guide-section` の usage・details・privacy。開くのは `helpModal` の英日の本文の「Buttons and Keys」/「ボタンとキー」の最後のボタン (`[data-open-guide]`) だけで、どの端末でも出す |
 | `.plantuml-pending` | div (クラス) | 未送信の PlantUML ブロックのプレースホルダ。[Render] ボタン付き (INV-23) |
 
@@ -4955,7 +4932,7 @@ JS が画面に出す文言 (トースト・確認・alert・図とプレビュ�
 
 **(コードの編集。2026-10-29 追記)** `CONFIG.codeEdit` の数値は SC-27 の値 (`highlightMaxChars` は 48 KB。NE-3 のとおり測って決めた。5.19.12)。Undo の回数は `CONFIG.edit.undoMaxSteps` (30) を共用する。`keyHints.code` に `[I] Index;`・`[P] Commands;`・`[E] Edit;` と折りたたみのキーを足した (Mac (INV-14 の判定式) では `keyHints.codeApple` を出し、折りたたみのキーを Option と書く。`showKeyHint` が選ぶ。レビュー 1 回目の L12)。開くダイアログと保存の問いの固定の文 (見出し・ボタンの名前) は `src/index.html` に置き (R15)、ファイルによって変わる部分 (文字コードの名前・見本・数・問い) だけを `messages.codeEdit` から入れる。
 
-`CONFIG.github` (SC-28。2026-10-29 追加): `apiOrigin` (`https://api.github.com`)、`apiVersion` (`2026-03-10`)、`webOrigin`、`rawOrigin`、`maxBytes` (1 MiB)、`timeoutMs` (30,000)、`extensions` (`.md`、`.markdown`)、`tokenPrefix` (`github_pat_`)、`authScheme`、`pushedToastMs` (6,000。D36)、`labels` (ボタン・画面の文。PAT の欄の名前 `Fine-grained personal access token` と目のボタンの `aria-label` を含む)、`messages` (5.20.4。試作の `noSavedToken` は消す。D34)。ビルドの CSP は `apiOrigin` から作る (INV-20)。
+`CONFIG.github` (SC-28。2026-10-29 追加): `offered` (偽。2026-11-01 の正式版では GitHub 連携を出さない。D40。2026-10-31 追加)、`apiOrigin` (`https://api.github.com`)、`apiVersion` (`2026-03-10`)、`webOrigin`、`rawOrigin`、`maxBytes` (1 MiB)、`timeoutMs` (30,000)、`extensions` (`.md`、`.markdown`)、`tokenPrefix` (`github_pat_`)、`authScheme`、`pushedToastMs` (6,000。D36)、`labels` (ボタン・画面の文。PAT の欄の名前 `Fine-grained personal access token` と目のボタンの `aria-label` を含む)、`messages` (5.20.4。試作の `noSavedToken` は消す。D34)。ビルドの CSP は `apiOrigin` から作る (INV-20)。
 
 ### 5.3 EXT_TO_HLJS マッピング
 
@@ -5930,7 +5907,7 @@ setupTouchPasteAssist() {
 | ArrowDown | 無動作                     | スムーススクロール↓            | スムーススクロール↓                     |
 | `i`       | 無動作                     | 目次の表示 / 非表示 (INV-77)   | 目次のある言語なら目次の表示 / 非表示 (INV-91)。ほかは無動作 ([Index] は無効) |
 | `f`       | 無動作                     | 検索の箱を出す (INV-80)        | 検索の箱を出す (置換の段はコード編集モードだけ。INV-80 (5)) |
-| `o` | 「Open GitHub」の画面を開く (INV-93) | 同じ。GitHub の文書の間は無動作 | 同じ (画面を開いてもコードの文書は残る。GitHub のファイルを読めて置き換えるときに、コードの文書を閉じる。未保存なら先に聞く。INV-21・INV-94 (3)) |
+| `o` | 「Open GitHub」の画面を開く (INV-93。正式版では何もしない。INV-100・D40) | 同じ。GitHub の文書の間は無動作 | 同じ (画面を開いてもコードの文書は残る。GitHub のファイルを読めて置き換えるときに、コードの文書を閉じる。未保存なら先に聞く。INV-21・INV-94 (3)) |
 | `p`       | 無動作                     | 無動作                         | コマンドパレットの表示 / 非表示 (JSON。ほかはトースト。INV-92 (5)) |
 | `l`       | `#editor` に文字があれば、それを新しい文書としてライトで描画 (5.14.1)。空なら無動作 | Markdownをライトでレンダリング | ライトテーマに切替 (CSS切替のみ、即時)  |
 | `d`       | `#editor` に文字があれば、それを新しい文書としてダークで描画 (5.14.1)。空なら無動作 | Markdownをダークでレンダリング | ダークテーマに切替 (CSS切替のみ、即時)  |
@@ -5943,13 +5920,13 @@ setupTouchPasteAssist() {
 
 注意: 修飾キー (Ctrl / Meta / Alt) が押されている場合、ショートカットハンドラをバイパスしてブラウザネイティブ動作を優先する (INV-14)。フォーカスが `#editor` などの入力欄にある間は、1 キーの操作はその欄の文字になる (INV-14。プレレンダーの列は、フォーカスが入力欄の外にあるとき)。ブロックの挿入の後、そのセルか原文の編集欄が開くまでの間 (`BlockEditController.isInsertPending()`) は、1 キーのショートカット (i, f, l, d, r, n, c, e) を受けない (打った文字がショートカットにならない。INV-52、オーナーの裁定 D5)。
 
-**モーダルを開いている間 (2026-10-23 追加):** ヘルプ (`helpModal`)、その上に開く GitHub の編集のヘルプの層 (`githubHelpModal`) と詳しい使い方の窓 (`guideModal`)、またはプロンプト (`promptModal`) を開いている間は、Ctrl / Meta / Alt を伴わないキーをアプリのショートカット (この表と下の編集機能の表の 1 キーの操作。`Esc` を含む) に渡さない。`Esc` はそのモーダルを閉じる (既定の動作も止める)。`Tab` / `Shift+Tab` は既定の動作を止め、モーダルの中の、隠れていない (`[hidden]` の中でない) リンク・ボタン・入力欄・`details` の見出し (`summary`。ヘルプの折りたたんだライセンス。HT-1) を順に回す (最後の次は最初。フォーカスがモーダルの外にあれば最初 (Shift なら最後) へ)。それ以外のキーは既定の動作を止めないので、Enter・Space はモーダルの中のボタンで働く。**フォーカス:** 開くとき (`ModalController.show(modal, opener)`)、押されている (`aria-pressed="true"`) ボタン (ヘルプの表示中の言語) へ、無ければ × へフォーカスを移す。閉じるとき (×・背景・Esc・コピーの後)、フォーカスがモーダルの中 (または無い) なら、開いたボタン (`opener`。UIController は [?] を渡す) へ戻す (レビューの M1、調整役の裁定 2026-10-23)。Ctrl / Meta / Alt を伴うキーは従来どおり (主 + S など)。`ModalController.setupModal` が document の capture の段で `keydown` を受け、伝播だけを止める (UIController の `keydown` は bubble の段なので届かない)。 **重なったモーダル (2026-10-30。FS-25):** モーダルの上にモーダルを開いたとき (ヘルプの上の GitHub の編集のヘルプの層と、詳しい使い方の窓 (HT-3。2026-10-31))、キーは一番上のモーダルだけが受ける。Esc の 1 回目で上の層が閉じてフォーカスは入口へ、2 回目でヘルプが閉じてフォーカスは [?] へ戻る。
+**モーダルを開いている間 (2026-10-23 追加):** ヘルプ (`helpModal`)、その上に開く詳しい使い方の窓 (`guideModal`)、またはプロンプト (`promptModal`) を開いている間は、Ctrl / Meta / Alt を伴わないキーをアプリのショートカット (この表と下の編集機能の表の 1 キーの操作。`Esc` を含む) に渡さない。`Esc` はそのモーダルを閉じる (既定の動作も止める)。`Tab` / `Shift+Tab` は既定の動作を止め、モーダルの中の、隠れていない (`[hidden]` の中でない) リンク・ボタン・入力欄・`details` の見出し (`summary`。ヘルプの折りたたんだライセンス。HT-1) を順に回す (最後の次は最初。フォーカスがモーダルの外にあれば最初 (Shift なら最後) へ)。それ以外のキーは既定の動作を止めないので、Enter・Space はモーダルの中のボタンで働く。**フォーカス:** 開くとき (`ModalController.show(modal, opener)`)、押されている (`aria-pressed="true"`) ボタン (ヘルプの表示中の言語) へ、無ければ × へフォーカスを移す。閉じるとき (×・背景・Esc・コピーの後)、フォーカスがモーダルの中 (または無い) なら、開いたボタン (`opener`。UIController は [?] を渡す) へ戻す (レビューの M1、調整役の裁定 2026-10-23)。Ctrl / Meta / Alt を伴うキーは従来どおり (主 + S など)。`ModalController.setupModal` が document の capture の段で `keydown` を受け、伝播だけを止める (UIController の `keydown` は bubble の段なので届かない)。 **重なったモーダル (2026-10-30。FS-25):** モーダルの上にモーダルを開いたとき (ヘルプの上の GitHub の編集のヘルプの層と、詳しい使い方の窓 (HT-3。2026-10-31))、キーは一番上のモーダルだけが受ける。Esc の 1 回目で上の層が閉じてフォーカスは入口へ、2 回目でヘルプが閉じてフォーカスは [?] へ戻る。
 
 **GitHub 連携のキー (SC-28。2026-10-29 追加):**
 
 - `r` の行に注: GitHub の文書の間は Reload の画面を出す (INV-97)。
 - 画面 (`<dialog>`) を開いている間は、1 キーの操作を渡さない。
-- キーのヒント (`CONFIG.keyHints`) に `[O] GitHub;` を足す。INV-100 で出すとき (PC) だけ。iPad では足さない (D33)。
+- キーのヒント (`CONFIG.keyHints`) に `[O] GitHub;` を足す。INV-100 で出すとき (PC) だけ。iPad では足さない (D33)。2026-11-01 の正式版では、どの端末でも足さない (D40)。
 
 **編集機能のキー (SC-22〜24。2026-10-10 追加):**
 
@@ -6735,7 +6712,7 @@ UIController は道を分けるだけ (ドロップ・Reload・保存・[Edit] /
 | Esc | 編集欄から抜ける (INV-87 (3)) | コマンドパレット → 検索 → 目次 (INV-80 (6)) | 同じ |
 | `e` | 文字 | 表示に戻る (INV-85 (3)) | コード編集モードに入る |
 | `p` | 文字 | コマンドパレット (INV-92 (5)) | 同じ |
-| `o` | 文字 | 「Open GitHub」の画面 (INV-93。INV-100 で出すときだけ。GitHub のファイルを読めて置き換えるときに、コードの文書を閉じる。未保存なら先に聞く。INV-21・INV-94 (3)) | 同じ |
+| `o` | 文字 | 「Open GitHub」の画面 (INV-93。INV-100 で出すときだけ。正式版では何もしない (D40)。GitHub のファイルを読めて置き換えるときに、コードの文書を閉じる。未保存なら先に聞く。INV-21・INV-94 (3)) | 同じ |
 | 主 + Z / 主 + Shift + Z / Ctrl+Y (Mac 以外) | 自前の Undo / Redo (押し続けても 1 回) | 自前の Undo / Redo (入力要素の中はブラウザ既定) | ブラウザ既定 |
 | Ctrl+Shift+[ / ] (Mac: Cmd+Option+[ / ]。Shift は無し) | JSON: 1 段畳む / 開く (`event.code`) | ブラウザ既定 | ブラウザ既定 |
 | Ctrl+← / → (Mac: Option+← / →) | ブラウザ既定 (1 語ずつ) | JSON: 1 段畳む / 開く (編集欄の文字) | JSON: 1 段畳む / 開く (見せ方) |
@@ -6868,6 +6845,8 @@ C の仲間の決まり:
 
 ### 5.20 GitHub 連携 (SC-28、INV-93〜INV-100。2026-10-29)
 
+**2026-11-01 の正式版では出さない (D40。2026-10-31)。** この節のコード (5.20.1〜5.20.6) は残し、`CONFIG.github.offered` を偽にして入口を止める (INV-100)。CSP の `connect-src` には `api.github.com` を入れない (INV-20)。ヘルプに書くこと (5.20.5) は、ヘルプから外した。コードと試験は正式版の後に別の枝で外す。
+
 #### 5.20.1 部品
 
 | 名前 | 層 | 役目 |
@@ -6918,6 +6897,8 @@ C の仲間の決まり:
 
 #### 5.20.5 ヘルプに書くこと (ヘルプのセッションへ渡す)
 
+**2026-10-31 (D40):** 下に書いたヘルプの行・開示・層は、どれもヘルプから外した (正式版では GitHub 連携を出さない)。下は記録として残す。
+
 - **2026-10-30:** 下の 2 つ (保存したトークンの消し方と使い方) は、GitHub の編集のヘルプの層 (5.20.7) に入れた。3 つ目のキーのヒントの `[O] GitHub;` は層ではなく本体の側 (`CONFIG.keyHints`)。ヘルプの「Details」/「詳細」には `[Open GitHub]` / `O` の行を足し、`[Reload]` / `R` の行に「GitHub から開いた文書は、確かめの画面の後に GitHub から読み直す」(INV-97) を足した (英日。レビュー (3 回目) の L6)。
 - 保存したトークンの消し方 (D30): Chrome と Edge それぞれ、設定の URL を開く方法とメニューを操作する方法を並べる。絵は付けない。Chrome は `chrome://password-manager`、Edge は `edge://settings/autofill/passwords` (左の欄「パスワードとオートフィル」→「Microsoft パスワード マネージャー」)。Edge は 5 分さわらないと鍵が掛かり、PIN などを求めることがある。
 - 保存したトークンの使い方 (D34): Token の欄をクリックし、ブラウザの候補から選ぶ。
@@ -6931,35 +6912,9 @@ C の仲間の決まり:
 - 送っている間の Esc では閉じない (結果は画面に出す)。
 - 画面を閉じるとき (Cancel・Esc・送った後) は、PAT の欄を空にし、目のボタンを伏字に戻す (CON-16 (2)。D28。レビューの L3)。
 
-#### 5.20.7 GitHub の編集のヘルプの層 (FS-25、INV-103。2026-10-30)
+#### 5.20.7 GitHub の編集のヘルプの層 (2026-10-31 に外した。D40)
 
-オーナーの裁定 GHH-1〜GHH-9 (2026-10-26〜29)。ヘルプを先に書き、オーナーはヘルプだけを見て GitHub 連携を使う (使い勝手の試しを兼ねる。GHH-5)。
-
-| 場所 | 中身 |
-| --- | --- |
-| `src/index.html` の [?] のヘルプ | 英日の本文の、ダウンロードの枠 (`.help-download`) のすぐ下に入口のボタン (`<button type="button" class="help-github-btn" data-open-github-help>`)。「Details」/「詳細」の [Find] の行の次に `[Open GitHub]` / `O` の行 (2026-10-31 から、この行は詳しい使い方の窓の「Details」/「詳細」にある。[?] のヘルプの「Buttons and Keys」/「ボタンとキー」には短い行 `[Open GitHub] / O : Open a .md on GitHub (PC only)` / 同じ意味。HT-3・HT-4) (開いている間はボタンが `[Push to GitHub]`、PC だけ (Chrome / Edge)。D33) |
-| `src/index.html` の図 | 隠した `<svg class="ghf-defs" aria-hidden="true">` に `<symbol>` 6 つ: `ghf-tokens` (トークンの一覧。1・2)、`ghf-newtoken` (新しいトークン。3〜8)、`ghf-open` (GRSMD の Open GitHub。9・10・12・13)、`ghf-file` (GitHub のファイルのページ。11)、`ghf-save` (ブラウザの保存の吹き出し。汎用の図。14。GHH-4)、`ghf-push` (GRSMD の Push to GitHub。15〜19) |
-| `src/index.html` の層 | `#githubHelpModal` (`.modal.gh-help`)。題名の行 (`.help-head`: 英語だけの題名、English / Japanese、×) と、英日の本文 (`.help-body[lang]`) |
-| `src/css/style.css` | 入口 (`.help-github-btn`。`[hidden]` では `display: none`)、層 (`#githubHelpModal`)、図の色 (`--ghf-*` の変数。ダークでは `.dark .ghf` で暗い色) |
-| `ModalController` | 開いているモーダルの積み重ね (`openModals`。`show` で積み、`hide` で外す)。キー (Esc・Tab・1 キーの止め) は一番上のモーダルだけが受ける (5.11) |
-| `UIController.setupModals` | `githubHelpModal` も `setupModal` する (× で閉じる) |
-| `main.js` | 層の `HelpLanguageSwitch` を 1 つ足す。入口は `hidden = !gitHubEnabled` (INV-100 の判定と同じ値)。押すと、層の言語をヘルプの言語にし、入口を opener にして開き、層を先頭までスクロールする |
-
-本文の構成 (英日とも同じ並び):
-
-| 節 | 中身 | 図の番号 |
-| --- | --- | --- |
-| 冒頭 | いつの GitHub の画面か (年と月まで。GHH-1)。送り先は `api.github.com` だけ。PC の Chrome か Edge だけ | なし |
-| 1. トークンを作る (最初の 1 回だけ) | Fine-grained tokens → Generate new token → 名前・期限・Only select repositories・Contents を Read and write → コピー (ほかをコピーする前に貼る) | 1〜8 |
-| 2. ファイルを開く (初回) | Open GitHub → トークンの欄に貼る → GitHub で作業用のブランチの .md の URL をコピー → URL に貼って Open → ブラウザで保存 (Edge は聞かずに保存することがある。ユーザー名は `owner/repo`。D31) | 9〜14 |
-| 3. 直して push する | ふつうに直す (Ctrl+S (Mac は Cmd+S) は手元に保存するだけ) → Push to GitHub → メッセージ → トークンの欄をクリックしてブラウザの候補から選ぶ (D34) → Push。main へは GitHub で PR と merge (D26) | 15〜19 |
-| 2 回目から | URL をコピー → Open GitHub → トークンの欄で候補を選ぶ → URL を貼る → Open | なし |
-| 保存したトークンを消す | Chrome と Edge。設定の URL を開く方法と、メニューの方法 (D30。絵なし)。確かめていないメニューの名前 (Chrome の英日、Edge の英語) には、英 "(TBD)"・日「（仮）」を付け、beta3 でオーナーが確かめたら外す (GHH-8) | なし |
-| 注意 | ブランチで作業する (ブランチの作り方は文だけ。GHH-2)、公開のリポジトリの push は残る、GRSMD は何も保存しない、トークンの範囲、保護されたブランチ、1 MB まで | なし |
-
-- トークンの欄の図は、本体の画面に合わせる: 欄の上の行に `Fine-grained personal access token`、横に目のボタン (D35・D28)。Open の画面ではトークンの欄が一番上 (D24)。
-- 図の番号は、全部の図で作業の順の通し番号 (段落が変わっても 1 に戻さない。番号の順に絵だけを見て作業するため。GHH-5)。本文の参照は (N) / （N）。
-- GitHub の画面を確かめ直したら、冒頭の月を書き換える (GHH-1)。保存の吹き出しの図は、実機で見た目が大きく違えば直す (GHH-4)。
+層・入口・図・CSS と、`main.js` の層の `HelpLanguageSwitch`・`UIController.setupModals` の層の行を外した (INV-103)。
 
 ### 5.21 見えない文字の知らせ (INV-101。2026-10-30)
 
