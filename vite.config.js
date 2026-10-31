@@ -311,10 +311,9 @@ export function thirdPartyNotices({ moreModules = () => [] } = {}) {
 // img-src allows https: because external images load after the user consents
 // (INV-19) and a <meta> CSP cannot change at runtime. The consent gate is
 // what keeps them from loading earlier; the CSP still blocks http: images,
-// media, frames, plugins, remote fonts and any fetch except to PlantUML and
-// the GitHub API (SC-28: each request after the user confirms it).
+// media, frames, plugins, remote fonts and any fetch except to PlantUML
+// (GitHub editing is not offered in the release, D40: no api.github.com).
 const PLANTUML_ORIGIN = new URL(CONFIG.plantuml.serverUrl).origin;
-const GITHUB_API_ORIGIN = new URL(CONFIG.github.apiOrigin).origin;
 const SCRIPT_TYPES = new Set(["", "module", "text/javascript", "application/javascript"]);
 
 export function buildCsp(scriptHashes) {
@@ -325,9 +324,8 @@ export function buildCsp(scriptHashes) {
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob: ${PLANTUML_ORIGIN} https:`,
     "font-src data:",
-    // DiagramCopyController fetches the PlantUML image to copy it;
-    // GitHubContentsClient reads and pushes the GitHub file.
-    `connect-src ${PLANTUML_ORIGIN} ${GITHUB_API_ORIGIN}`,
+    // DiagramCopyController fetches the PlantUML image to copy it.
+    `connect-src ${PLANTUML_ORIGIN}`,
     "base-uri 'none'",
     "form-action 'none'",
   ].join("; ");

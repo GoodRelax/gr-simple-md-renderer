@@ -72,7 +72,6 @@ describe("UIController.handleRender", () => {
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
-      githubHelpModal: createMockModal(),
       guideModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),

@@ -77,6 +77,9 @@ export const CONFIG = {
   // GitHub (SC-28): the only host a token is sent to is apiOrigin, a
   // fixed value (never a host read from a URL or a response).
   github: {
+    // D40: GitHub editing is not offered in the release; its code stays
+    // until a later branch removes it. False hides every entry to it.
+    offered: false,
     apiOrigin: "https://api.github.com",
     apiVersion: "2026-03-10", // X-GitHub-Api-Version (checked 2026-10-26)
     webOrigin: "https://github.com", // the URLs the Open GitHub dialog accepts

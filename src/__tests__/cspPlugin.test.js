@@ -60,8 +60,10 @@ describe("AT-CSP-01 content-security-policy build plugin (INV-20)", () => {
   it("has the expected directives", () => {
     const csp = buildCsp(["AAA="]);
     expect(csp).toContain("default-src 'none'");
-    // exactly the two origins (SC-28): nothing else can be fetched
-    expect(csp).toMatch(/(^|; )connect-src https:\/\/www\.plantuml\.com https:\/\/api\.github\.com(;|$)/);
+    // the PlantUML server only: GitHub editing is not offered (D40), so
+    // api.github.com cannot be fetched either
+    expect(csp).toMatch(/(^|; )connect-src https:\/\/www\.plantuml\.com(;|$)/);
+    expect(csp).not.toContain("api.github.com");
     expect(csp).toContain("img-src 'self' data: blob: https://www.plantuml.com https:");
     expect(csp).toContain("font-src data:");
     expect(csp).toContain("base-uri 'none'");

@@ -7,6 +7,11 @@ import { test, expect } from "./fixtures.js";
 // Every request to api.github.com is answered here by page.route with a fake
 // GitHub: nothing reaches the real GitHub (the externalRequests guard checks
 // that nothing else leaves the browser either).
+//
+// D40: GitHub editing is not offered in the release (CONFIG.github.offered is
+// false, and the CSP has no api.github.com), so the tests of the editing
+// itself are skipped until a later branch removes the code. The tests at the
+// end check that no entry to it is shown (PRT-AK12, AT-HLP-26).
 
 const TOKEN = "github_pat_11FAKE0000000000_e2eonly";
 const FILE_URL = "https://github.com/GoodRelax/sample/blob/main/docs/sample.md";
@@ -68,7 +73,8 @@ async function openFromGitHub(page) {
   await expect(page.locator("#gitHubBtn")).toHaveClass(/\bgh-push\b/);
 }
 
-test.describe("GitHub editing (SC-28)", () => {
+// Skipped while GitHub editing is not offered (D40).
+test.describe.skip("GitHub editing (SC-28)", () => {
   test("CON-16 (2), INV-93 (0): the token field: GitHub's name, the eye button, no [Saved] (D35, D28, D34)", async ({ page }) => {
     await fakeGitHub(page);
     await page.goto("/");
@@ -197,5 +203,74 @@ test.describe("GitHub editing on a touch device (SC-28)", () => {
     expect(await page.evaluate(() => window.matchMedia("(pointer: fine)").matches)).toBe(false);
     await expect(page.locator("#renderLight")).toBeVisible();
     await expect(page.locator("#gitHubBtn")).toBeHidden();
+  });
+});
+
+test.describe("GitHub editing is not offered in the release (D40)", () => {
+  test("PRT-AK12 (1) D40: on a PC [Open GitHub] is hidden, o opens nothing, and nothing goes to api.github.com", async ({ page, externalRequests }) => {
+    const seen = await fakeGitHub(page);
+    await page.goto("/");
+    expect(await page.evaluate(() => window.matchMedia("(pointer: fine)").matches)).toBe(true);
+    await expect(page.locator("#renderLight")).toBeVisible();
+    await expect(page.locator("#gitHubBtn")).toBeHidden();
+    await page.locator("#renderLight").focus();
+    await page.keyboard.press("o");
+    for (const id of ["gitHubOpenDialog", "gitHubPushDialog", "gitHubReloadDialog", "gitHubDropDialog"]) {
+      await expect(page.locator(`#${id}`), id).toBeHidden();
+    }
+    expect(seen).toEqual([]);
+    expect(externalRequests).toEqual([]);
+  });
+
+  test("PRT-AK12 (2) D40, 5.11: the key hint on a PC lists no [O] GitHub", async ({ page }) => {
+    await page.goto("/");
+    await page.locator("#editor").evaluate((editor) => {
+      editor.value = "# Hint\n";
+      editor.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await page.locator("#renderLight").click();
+    await expect(page.locator("#keyHint")).toContainText("[F] Find; [L] Light;");
+    await expect(page.locator("#keyHint")).not.toContainText("GitHub");
+  });
+
+  test("PRT-AK12 (3), AT-HLP-26 D40: on a PC the help and More details show no GitHub editing", async ({ page }) => {
+    await page.goto("/");
+    expect(await page.locator("#githubHelpModal, [data-open-github-help]").count()).toBe(0);
+    await page.locator("#helpBtn").click();
+    for (const lang of ["en", "ja"]) {
+      await page.locator(`#helpModal [data-help-lang="${lang}"]`).click();
+      const help = page.locator(`#helpModal .help-body[lang="${lang}"]`);
+      await expect(help).toBeVisible();
+      await help.locator("[data-open-guide]").click();
+      const guide = page.locator(`#guideModal .help-body[lang="${lang}"]`);
+      await expect(guide).toBeVisible();
+      for (const box of [help, guide]) {
+        await expect(box).not.toContainText("api.github.com");
+        await expect(box).not.toContainText("[Open GitHub]");
+        await expect(box).not.toContainText("Push to GitHub");
+      }
+      await page.keyboard.press("Escape"); // closes More details, the help stays
+      await expect(page.locator("#guideModal")).toBeHidden();
+    }
+  });
+});
+
+test.describe("the CSP without api.github.com (D40)", () => {
+  test.use({ allowPageProblems: true });
+
+  test("PRT-AK12 (4) D40, CON-12: the page's CSP lets it fetch from the PlantUML server only", async ({ page, pageProblems }) => {
+    await page.goto("/");
+    const csp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute("content");
+    expect(csp).toMatch(/(^|; )connect-src https:\/\/www\.plantuml\.com(;|$)/);
+    expect(csp).not.toContain("api.github.com");
+    // the browser refuses a fetch to api.github.com before any test route sees it
+    const refused = await page.evaluate(() =>
+      fetch("https://api.github.com/zen").then(
+        () => false,
+        () => true,
+      ),
+    );
+    expect(refused).toBe(true);
+    await expect.poll(() => pageProblems.some((p) => p.startsWith("csp: connect-src blocked https://api.github.com"))).toBe(true);
   });
 });

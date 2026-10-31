@@ -12,7 +12,7 @@ const returnFocus = new WeakMap();
 const hideListeners = new WeakMap();
 
 // The open modals, the last one on top. Only the top one takes the keys, so
-// Esc closes the GitHub help and leaves the help under it open.
+// Esc closes More details and leaves the help under it open.
 const openModals = [];
 
 export default class ModalController {
