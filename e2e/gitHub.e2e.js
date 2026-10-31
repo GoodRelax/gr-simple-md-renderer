@@ -185,7 +185,7 @@ test.describe("GitHub editing (SC-28)", () => {
       editor.dispatchEvent(new Event("input", { bubbles: true }));
     });
     await page.locator("#renderLight").click();
-    await expect(page.locator("#keyHint")).toContainText("[F] Search; [O] GitHub; [L] Light;");
+    await expect(page.locator("#keyHint")).toContainText("[F] Find; [O] GitHub; [L] Light;");
   });
 });
 

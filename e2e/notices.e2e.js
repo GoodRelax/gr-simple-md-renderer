@@ -48,7 +48,9 @@ for (const lang of ["en", "ja"]) {
     const section = page.locator(`#helpModal .help-body[lang="${lang}"] [data-help-section="licenses"]`);
     await expect(section).toBeVisible();
     await expect(section.locator("h3")).toHaveText(lang === "en" ? "Licenses" : "\u30e9\u30a4\u30bb\u30f3\u30b9");
+    await section.locator("summary").click(); // Licenses is folded (HT-1)
     const list = section.locator("[data-third-party-list]");
+    await expect(list).toBeVisible();
     await expect(list).toContainText(`mermaid ${installed("mermaid")} (MIT)`);
     await expect(list).toContainText(`dompurify ${installed("dompurify")} (Apache-2.0)`);
     await expect(list).toContainText("KaTeX fonts");

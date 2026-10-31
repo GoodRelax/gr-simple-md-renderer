@@ -163,7 +163,9 @@ describe("ModalController keys and focus (AT-HLP-07..11)", () => {
     const help = setup(realModal("helpModal"));
     new HelpLanguageSwitch(help, "en-US");
     ModalController.show(help, helpBtn);
-    const shown = [...help.querySelectorAll("button, a[href]")].filter((el) => !el.closest("[hidden]"));
+    const shown = [...help.querySelectorAll("button, a[href], details > summary")].filter((el) => !el.closest("[hidden]"));
+    // the folded Licenses' heading takes the focus too (HT-1), last in the English body
+    expect(shown.at(-1).tagName).toBe("SUMMARY");
     // English, Japanese, close, then the English body's links
     expect(shown.slice(0, 3).map((el) => el.dataset.helpLang ?? el.className)).toEqual(["en", "ja", "close-btn"]);
     const visited = [];
@@ -251,6 +253,33 @@ describe("ModalController keys and focus (AT-HLP-07..11)", () => {
     expect(seen).toEqual([]);
     press(document.activeElement, "Escape");
     expect(ModalController.isOpen(layer)).toBe(false);
+    expect(ModalController.isOpen(help)).toBe(true);
+    expect(document.activeElement).toBe(entry);
+    press(document.activeElement, "Escape");
+    expect(ModalController.isOpen(help)).toBe(false);
+    expect(document.activeElement).toBe(helpBtn);
+  });
+
+  it("AT-HLP-23 HT-3: More details over the help takes the keys; Esc closes it first (focus to its entry), then the help (focus to [?])", () => {
+    const helpBtn = pageButton("helpBtn");
+    const help = setup(realModal("helpModal"));
+    const guide = setup(realModal("guideModal"));
+    new HelpLanguageSwitch(help, "ja");
+    new HelpLanguageSwitch(guide, "ja");
+    ModalController.show(help, helpBtn);
+    const entry = help.querySelector('.help-body[lang="ja"] [data-open-guide]');
+    entry.focus();
+    ModalController.show(guide, entry);
+    expect(document.activeElement).toBe(guide.querySelector('[data-help-lang="ja"]'));
+    for (let i = 0; i < 5; i++) {
+      tab();
+      expect(guide.contains(document.activeElement)).toBe(true);
+    }
+    const seen = appListener();
+    press(document.activeElement, "e");
+    expect(seen).toEqual([]);
+    press(document.activeElement, "Escape");
+    expect(ModalController.isOpen(guide)).toBe(false);
     expect(ModalController.isOpen(help)).toBe(true);
     expect(document.activeElement).toBe(entry);
     press(document.activeElement, "Escape");

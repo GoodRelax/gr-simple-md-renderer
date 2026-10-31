@@ -1,7 +1,8 @@
 // Elements that take the focus by Tab. Those under [hidden] (the help's
-// other language) are left out when the list is made.
+// other language) are left out when the list is made. The summary of a
+// <details> (the help's folded Licenses) opens and closes it.
 const FOCUSABLE =
-  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), details > summary, [tabindex]:not([tabindex="-1"])';
 
 // The element to give the focus back to when a modal closes (5.11).
 const returnFocus = new WeakMap();

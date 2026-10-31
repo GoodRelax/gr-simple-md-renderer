@@ -217,9 +217,9 @@ describe("AT-GH-08 the key hint lists [O] GitHub where GitHub editing is shown (
     return app.elements.keyHint.textContent;
   }
 
-  it("a PC: [O] GitHub; after [F] Search; (the code view: after [P] Commands;) in both views", () => {
-    expect(hintText(true, "markdown")).toContain("[F] Search; [O] GitHub; [L] Light;");
-    expect(hintText(true, "code")).toContain("[F] Search; [P] Commands; [O] GitHub; [L] Light;");
+  it("a PC: [O] GitHub; after [F] Find; (the code view: after [P] Commands;) in both views", () => {
+    expect(hintText(true, "markdown")).toContain("[F] Find; [O] GitHub; [L] Light;");
+    expect(hintText(true, "code")).toContain("[F] Find; [P] Commands; [O] GitHub; [L] Light;");
     expect(hintText(true, "code")).toContain("[Ctrl+Left][Ctrl+Right] Fold (JSON);");
   });
 

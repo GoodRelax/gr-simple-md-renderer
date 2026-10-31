@@ -2441,7 +2441,8 @@ div.math-pending {
 
 
 /* How to edit .md on GitHub: a full-screen layer over the help */
-.help-github-btn {
+.help-github-btn,
+.help-guide-btn {
   display: block;
   width: 100%;
   margin: -12px 0 24px;
@@ -2460,7 +2461,23 @@ div.math-pending {
   display: none;
 }
 
-#githubHelpModal .modal-content {
+/* More details (HT-3): the entry under the short Buttons and Keys */
+.help-guide-btn {
+  margin: 8px 0 0;
+}
+
+/* The help's folded Licenses (HT-1): the heading is the summary */
+.help-fold > summary {
+  cursor: pointer;
+}
+
+.help-fold > summary h3 {
+  display: inline-block;
+  margin: 0 0 8px;
+}
+
+#githubHelpModal .modal-content,
+#guideModal .modal-content {
   font-size: 75%;
   margin: 0 auto;
   min-height: 100%;
@@ -2470,7 +2487,8 @@ div.math-pending {
   border-radius: 0;
 }
 
-#githubHelpModal .close-btn {
+#githubHelpModal .close-btn,
+#guideModal .close-btn {
   font-size: 1.75em;
 }
 
@@ -2537,7 +2555,8 @@ div.math-pending {
 .ghf-toasttext { fill: var(--ghf-bg); }
 
 @media screen {
-  .dark .help-github-btn {
+  .dark .help-github-btn,
+  .dark .help-guide-btn {
     border-color: #4493f8;
     color: #4493f8;
   }

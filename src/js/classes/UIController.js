@@ -2172,6 +2172,8 @@ export default class UIController {
     ModalController.setupModal(this.elements.helpModal, [helpCloseBtn]);
     const githubHelp = this.elements.githubHelpModal;
     ModalController.setupModal(githubHelp, [githubHelp.querySelector(".close-btn")]);
+    const guide = this.elements.guideModal;
+    ModalController.setupModal(guide, [guide.querySelector(".close-btn")]);
     ModalController.setupModal(this.elements.promptModal, [
       promptCloseBtn,
     ]);

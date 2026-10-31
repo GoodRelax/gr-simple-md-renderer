@@ -73,6 +73,7 @@ const elements = {
   helpBtn: document.getElementById("helpBtn"),
   helpModal: document.getElementById("helpModal"),
   githubHelpModal: document.getElementById("githubHelpModal"),
+  guideModal: document.getElementById("guideModal"),
   promptModal: document.getElementById("promptModal"),
   promptText: document.getElementById("promptText"),
   copyPromptBtn: document.getElementById("copyPromptBtn"),
@@ -287,6 +288,17 @@ for (const button of elements.helpModal.querySelectorAll("[data-open-github-help
     githubHelpLanguage.setLanguage(helpLanguage.language);
     ModalController.show(elements.githubHelpModal, button);
     elements.githubHelpModal.scrollTop = 0; // focusing the switch may scroll
+  });
+}
+// More details: the detailed text the short help leaves out (HT-3). It opens
+// over the help in the help's language, everywhere.
+const guideLanguage = new HelpLanguageSwitch(elements.guideModal, navigator.language);
+for (const button of elements.helpModal.querySelectorAll("[data-open-guide]")) {
+  /** @purity non-pure */
+  button.addEventListener("click", () => {
+    guideLanguage.setLanguage(helpLanguage.language);
+    ModalController.show(elements.guideModal, button);
+    elements.guideModal.scrollTop = 0; // focusing the switch may scroll
   });
 }
 

@@ -93,7 +93,7 @@
 
       <div id="controls">
         <button id="indexBtn" aria-expanded="false" aria-controls="indexPanel" disabled>Index</button>
-        <button id="searchBtn" aria-expanded="false" aria-controls="searchPanel" disabled>Search</button>
+        <button id="searchBtn" aria-expanded="false" aria-controls="searchPanel" disabled>Find</button>
         <button id="commandsBtn" aria-expanded="false" aria-controls="codeCommandPalette" disabled>Commands</button>
         <button id="gitHubBtn" hidden>Open<br />GitHub</button>
         <button id="renderLight">Render<br />Light</button>
@@ -111,9 +111,9 @@
     <div id="keyHint"></div>
     <div id="preview"></div>
     <div id="sidePanels">
-      <div id="searchPanel" role="search" aria-label="Search" hidden>
+      <div id="searchPanel" role="search" aria-label="Find" hidden>
         <div class="search-row">
-          <input id="searchInput" type="text" placeholder="Search" aria-label="Search" spellcheck="false" autocomplete="off" />
+          <input id="searchInput" type="text" placeholder="Find" aria-label="Find" spellcheck="false" autocomplete="off" />
           <button type="button" id="searchCase" aria-pressed="false" title="Match case">Aa</button>
           <button type="button" id="searchRegex" aria-pressed="false" title="Regular expression">.*</button>
           <span id="searchCount" aria-live="polite"></span>
@@ -275,195 +275,52 @@
           <div class="modal-section" data-help-section="about">
             <h3>About GRSMD</h3>
             <p>
-              GR Simple Markdown (GRSMD) is a lightweight, privacy-first Markdown
-              viewer and editor that runs entirely in your browser.<br />
-              It supports Markdown, math (LaTeX), Mermaid diagrams, and PlantUML &mdash; no
-              backend, no data sent anywhere without your explicit consent (GitHub
-              editing sends only to api.github.com, after you confirm each request).
-              Formerly "GR Simple MD Renderer &amp; Viewer".
+              GR Simple Markdown (GRSMD) is a WYSIWYG Markdown editor that runs only in
+              your browser. It shows Markdown, math, Mermaid and PlantUML. GRSMD sends what
+              you edit outside only when you allow it.
             </p>
           </div>
 
           <div class="modal-section" data-help-section="usage">
             <h3>Basic Usage</h3>
-            <p>Any of the following triggers an automatic preview:</p>
+            <p>Any of the following starts the preview:</p>
             <ol>
-              <li>Paste text anywhere on the page (Ctrl+V / Cmd+V)</li>
-              <li>Drop a <code>.md</code> or <code>.markdown</code> file anywhere on the page</li>
-              <li>
-                Drop a text file of another known type (<code>.py</code>, <code>.js</code>,
-                <code>.json</code>, <code>.txt</code>, etc.) for Code View. Files of other
-                types are refused.<br />
-                <small>Note: Syntax highlighting uses the highlight.js common bundle.
-                Some languages (e.g. Dockerfile, Scala, PowerShell) may not be highlighted.</small>
-              </li>
-              <li>
-                Paste text directly into the <code>[Paste Markdown...]</code> box
-                at the top
-              </li>
+              <li>Paste text on the page (Ctrl+V / Cmd+V)</li>
+              <li>Drag and drop a <code>.md</code> or <code>.markdown</code> file onto the page</li>
+              <li>Drag and drop another text file (<code>.py</code>, <code>.json</code>, <code>.txt</code>, etc.) to open it in Code View</li>
+              <li>Paste into the <code>[Paste Markdown...]</code> box at the top</li>
             </ol>
-            <p>
-              Pasting starts a preview only on the start screen, with the top box
-              empty. While a document is shown, press <code>[Clear]</code> first.
-              A dropped file can be up to 5 MB.
-            </p>
-            <p>
-              On a phone or tablet, tap the empty page, then press and hold the
-              top box to paste.
-            </p>
-            <p>
-              <small>Note: In the Markdown view (paste, drop, Render or editing), a code block
-              longer than 20,480 characters (about 20 KB) is shown without syntax highlighting.</small>
-            </p>
+            <p>On a phone or tablet, tap the empty page, then press and hold the top box to paste.</p>
           </div>
 
           <div class="modal-section" data-help-section="details">
-            <h3>Details</h3>
+            <h3>Buttons and Keys</h3>
             <ul>
-              <li><code>[Index]</code> / <code>I</code> : Show or hide the list of headings. Click a heading to jump to it. In the code view it lists classes and functions (Python, JS / TS, JSON, YAML, C, C++, C#, Java, Go)</li>
-              <li>
-                Code view: <code>[Edit]</code> / <code>E</code> edits the whole file. <code>Tab</code> / <code>Shift+Tab</code>
-                indent, <code>Enter</code> keeps the indent, <code>Esc</code> leaves the text box. Save keeps the encoding, BOM and
-                line endings (a file not in UTF-8 asks which encoding to save in; characters it cannot hold: it asks to save in UTF-8); Save as can change the extension (a <code>.md</code> name is saved in UTF-8 and opens as Markdown).
-                A file that is not UTF-8, or mixes line endings, asks how to read it. A file of 200 KB or more may take time to show and edit (a toast says so when you start editing). JSON: <code>Ctrl+&larr;</code> /
-                <code>Ctrl+&rarr;</code> (Mac: <code>Option</code>; in the text box <code>Ctrl+Shift+[</code> / <code>]</code>, Mac
-                <code>Cmd+Option+[</code> / <code>]</code>) or <code>[Commands]</code> / <code>P</code> fold one level onto one line / unfold it
-              </li>
-              <li>
-                <code>[Search]</code> / <code>F</code> : Find text in the Markdown source (code view: the file).
-                <code>Aa</code> matches case, <code>.*</code> takes a regular expression. <code>&darr;</code> /
-                <code>&uarr;</code> in the box go to the next / previous match. In edit mode, <code>Ctrl+F</code>
-                (Mac: <code>Cmd+F</code>) opens it too, and <code>Replace</code> / <code>All</code> replace (one
-                <code>Ctrl+Z</code> undoes). <code>Esc</code> in the box closes it. A slow regular expression (such as
-                nested repeats on a long line) can freeze the page: save before you replace with one.
-              </li>
-              <li><code>[Open GitHub]</code> / <code>O</code> : Open a <code>.md</code> on GitHub. While it is open, the button is <code>[Push to GitHub]</code>. PC only (Chrome / Edge)</li>
-              <li><code>[Render Light]</code> / <code>L</code> : Render / switch to light mode</li>
-              <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
-              <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge). A file opened from GitHub is read again from GitHub, after a confirmation</li>
+              <li><code>[Index]</code> / <code>I</code> : List of headings</li>
+              <li><code>[Find]</code> / <code>F</code> : Find and replace text</li>
+              <li><code>[Open GitHub]</code> / <code>O</code> : Open a <code>.md</code> on GitHub (PC only)</li>
+              <li><code>[Render Light]</code> / <code>L</code>, <code>[Render Dark]</code> / <code>D</code> : Show in light / dark mode</li>
+              <li><code>[Reload]</code> / <code>R</code> : Read the file again</li>
               <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
-              <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette</li>
-              <li>
-                With a mouse, double-click the preview to enter edit mode and open that block. With touch or a
-                pen, press <code>[Edit]</code>, then tap a block.
-              </li>
-              <li>
-                <code>[Save]</code> : Same as <code>Ctrl+S</code>. When GRSMD knows where the file is, it puts that
-                path on the clipboard: paste it with <code>Ctrl+V</code> as the file name
-              </li>
-              <li>
-                <code>Esc</code> : Apply the open block or cell and close it.
-                With blocks selected, clear the selection first. With nothing open, hide
-                the edit palette. With the edit palette hidden, hide Search, then the Index.
-                Code view: in the text box, Esc only leaves it; outside, it hides [Commands], Search, then the Index.
-              </li>
-              <li>
-                <code>Ctrl+Z</code> / <code>Ctrl+Y</code> (or <code>Ctrl+Shift+Z</code>) : Undo / Redo
-                while the edit palette is shown, up to 30 times (Mac: <code>Cmd+Z</code> /
-                <code>Cmd+Shift+Z</code>). In an open block, Redo is always for your typing,
-                and Undo too once the block has a change. Code view: the editor's own Undo / Redo, in the text box too.
-              </li>
-              <li>
-                Edit mode: point between two blocks, above the first one or below the last
-                one (on a phone, tap there) to show a dashed line with <code>+</code>. Click it
-                to add a new block there.
-              </li>
-              <li>
-                Edit mode: in an open block, the second row of the edit palette's Text format
-                adds math. Insert inline math puts a formula at the cursor. Insert math boxes
-                adds three math boxes (Maxwell, Einstein, Schroedinger), each under its name.
-              </li>
-              <li>
-                Edit mode: double-click the edit palette's grip (<code>::</code>; on a phone or
-                tablet, double tap it) or press and hold it to shrink the palette to the grip.
-                Do it again to bring the palette back.
-              </li>
-              <li>
-                Edit mode: drag over the text of some blocks (on a phone, long press and move
-                the handles) to select those blocks whole; a bar shows under the selection.
-                <code>Delete</code> / <code>Backspace</code> delete them, <code>Ctrl+X</code>
-                cuts and <code>Ctrl+C</code> copies their Markdown (Mac: <code>Cmd</code>; a
-                menu's Copy copies it too). One Undo brings deleted blocks back. To copy only some of the text you see, leave
-                edit mode first.
-              </li>
-              <li><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code> : Save / Save as (Mac: <code>Cmd</code>)</li>
+              <li><code>[Edit]</code> / <code>E</code> : Show the edit palette. With a mouse, a double-click on the preview also starts editing</li>
+              <li><code>[Save]</code> / <code>Ctrl+S</code> : Save (<code>Ctrl+Shift+S</code>: Save as)</li>
               <li><code>[Clear]</code> / <code>C</code> : Clear and reset</li>
-              <li><code>[?]</code> : Show this help (<code>Esc</code> closes it)</li>
-              <li>
-                <code>[?]</code> (long press) : Display a prompt template for
-                generating clean Markdown with AI.
-              </li>
-              <li>
-                <code>Up</code> / <code>Down</code> arrow keys: Smooth scroll (Markdown &amp; Code View)
-              </li>
-              <li>
-                Zoom (PC): Ctrl + mouse wheel over a diagram. Double-click to
-                reset. Mac pinch also works.
-              </li>
-              <li>Pan (PC): Click and drag inside a diagram.</li>
-              <li>
-                <code>Copy SVG</code> / <code>Copy PNG</code> above a diagram (PC):
-                copy the diagram to the clipboard.
-              </li>
-              <li>
-                Print (<code>Ctrl+P</code>, Mac: <code>Cmd+P</code>): prints the
-                document only, in light colors. The top bar and the palette are
-                not printed.
-              </li>
+              <li><code>[?]</code> : This help. A long press shows a prompt for AI</li>
+              <li><code>Esc</code> : Close the open block</li>
+              <li><code>Ctrl+Z</code> / <code>Ctrl+Y</code> : Undo / Redo</li>
             </ul>
+            <button type="button" class="help-guide-btn" data-open-guide>More Details</button>
           </div>
 
           <div class="modal-section" data-help-section="privacy">
             <h3>Privacy &amp; Security</h3>
             <ul>
-              <li>
-                PlantUML is an exception to client-side-only operation. This
-                tool shows a confirmation dialog before sending any PlantUML data
-                to the official server, every time it renders the document (a
-                diagram you changed while editing: when you press its [Render]
-                button). Only the diagrams you allowed in the dialog are sent;
-                Copy SVG / PNG of such a diagram fetches it again without asking.
-                While the page is still loading, a diagram shows "Loading
-                diagram..." and the dialog comes when loading is done.
-              </li>
-              <li>
-                External images (<code>![](https://...)</code>,
-                <code>&lt;img src="https://..."&gt;</code>) are not loaded until you
-                click a placeholder and confirm. Loading them tells the image
-                servers your IP address and that the document was opened. The
-                consent lasts until <code>[Clear]</code> or a new file drop, and is
-                never stored. Other remote references (video, audio, CSS
-                <code>url()</code>, <code>&lt;style&gt;</code>) are removed.
-              </li>
-              <li>
-                HTML embedded in Markdown is sanitized with DOMPurify (scripts and
-                event handlers are removed). A Content-Security-Policy also blocks
-                any script other than this app's own.
-              </li>
-              <li>
-                The Download button opens GitHub (github.com) to get the latest
-                release. Nothing is sent until you press it.
-              </li>
-              <li>
-                GitHub editing (PC only) sends requests only to api.github.com, and
-                only when you press [Open], [Reload] or [Push] in its dialog, every
-                time. Open and Reload send the repository, branch and path, and your
-                fine-grained personal access token. Push sends the full text of the
-                document, the commit message and the token. The token is sent only in
-                a request header, and GRSMD keeps it only while the request runs.
-                After a request succeeds, GRSMD asks the browser to save the token;
-                the browser asks you, and you can delete it in the browser's password
-                settings.
-              </li>
-              <li>
-                The edit palette's Paste copied link reads the clipboard, so the
-                browser may ask you to allow it. When GRSMD is opened from
-                goodrelax.github.io, in Chrome and Edge, once you allow it, other
-                pages on goodrelax.github.io can also read your clipboard without
-                asking. To withdraw it, open the site settings for
-                goodrelax.github.io (the icon at the left of the address bar) and set
-                Clipboard to Ask or Block.
-              </li>
+              <li>PlantUML: If you allow it, GRSMD sends the text in a PlantUML block to the official PlantUML server when it draws the diagram.</li>
+              <li>External images: If you allow it, GRSMD loads external images.</li>
+              <li>GitHub editing (PC only): When you press [Open], [Reload] or [Push] in its dialog, GRSMD talks to api.github.com.</li>
+              <li>The Download button: When you press it, GRSMD opens github.com in a new tab.</li>
+              <li>Scripts: GRSMD uses DOMPurify and CSP to block scripts in documents.</li>
+              <li>Paste copied link: Your browser may ask you to allow clipboard access.</li>
             </ul>
           </div>
 
@@ -484,13 +341,15 @@
           </div>
 
           <div class="modal-section" data-help-section="licenses">
-            <h3>Licenses</h3>
-            <p>
-              GRSMD includes the open source software below. Their copyright and
-              license notices are in full in a comment at the end of this HTML
-              file: view the page source, or open the file in a text editor.
-            </p>
-            <p data-third-party-list></p>
+            <details class="help-fold">
+              <summary><h3>Licenses</h3></summary>
+              <p>
+                GRSMD includes the open source software below. Their copyright and
+                license notices are in full in a comment at the end of this HTML
+                file: view the page source, or open the file in a text editor.
+              </p>
+              <p data-third-party-list></p>
+            </details>
           </div>
         </div>
 
@@ -517,130 +376,50 @@
           <div class="modal-section" data-help-section="about">
             <h3>概要</h3>
             <p>
-              GR Simple Markdown（GRSMD）は、すべての処理をブラウザ内で完結させる、軽量・プライバシー優先の Markdown のビューワー兼エディターです。<br />
-              Markdown、数式（LaTeX）、Mermaid ダイアグラム、PlantUML に対応し、明示的な同意なしにデータが外部へ送信されることはありません（GitHub 連携は、要求のたびに確かめた後、api.github.com にだけ送ります）。旧名は「GR Simple MD Renderer &amp; Viewer」です。
+              GR Simple Markdown（GRSMD）は、ブラウザの中だけで動く Markdown の WYSIWYG エディターです。Markdown・数式・Mermaid・PlantUML を表示します。GRSMD は、あなたが許可したときのみ、編集中の内容を外部に送信します。
             </p>
           </div>
 
           <div class="modal-section" data-help-section="usage">
             <h3>基本的な使い方</h3>
-            <p>以下のいずれかにより自動的にプレビュー表示されます。</p>
+            <p>次のどれかで表示が始まります。</p>
             <ol>
-              <li>ページ上のどこかにテキストをペースト（Ctrl+V / Cmd+V）</li>
-              <li>
-                <code>.md</code> か <code>.markdown</code> のファイルをページ上のどこかにドラッグ＆ドロップ
-              </li>
-              <li>
-                ほかの決まった種類のテキスト系ファイル（<code>.py</code>、<code>.js</code>、<code>.json</code>、<code>.txt</code> 等）をドロップするとコードビューで表示。ほかの種類のファイルは断ります。<br />
-                <small>※ シンタックスハイライトは highlight.js common バンドルを使用。
-                一部の言語（Dockerfile, Scala, PowerShell 等）はハイライトされない場合があります。</small>
-              </li>
-              <li>
-                上部の <code>[Paste Markdown...]</code> ボックスに直接テキストをペースト
-              </li>
+              <li>ページにテキストを貼る（Ctrl+V / Cmd+V）</li>
+              <li><code>.md</code> か <code>.markdown</code> のファイルをページにドラッグ&amp;ドロップする</li>
+              <li>ほかのテキストのファイル（<code>.py</code>、<code>.json</code>、<code>.txt</code> など）をドラッグ&amp;ドロップすると、コードビューで開く</li>
+              <li>上の <code>[Paste Markdown...]</code> の欄に貼る</li>
             </ol>
-            <p>
-              ペーストでプレビューが始まるのは、最初の画面で、上部のボックスが空のときだけです。文書を表示しているときは、先に <code>[Clear]</code> を押します。ドロップできるファイルは 5 MB までです。
-            </p>
-            <p>
-              スマートフォンやタブレットでは、何も表示していない画面をタップし、上部のボックスを長押ししてペーストします。
-            </p>
-            <p>
-              <small>※ Markdown の表示（ペースト・ドロップ・Render・その場の編集）では、20,480 文字（約 20 KB）を超えるコードブロックは、シンタックスハイライトをせずに表示します。</small>
-            </p>
+            <p>スマートフォンやタブレットでは、空の画面をタップしてから、上の欄を長押しして貼ります。</p>
           </div>
 
           <div class="modal-section" data-help-section="details">
-            <h3>詳細</h3>
+            <h3>ボタンとキー</h3>
             <ul>
-              <li><code>[Index]</code> / <code>I</code> : 見出しの一覧（目次）の表示・非表示。見出しを押すと、そこへ飛びます。コードビューでは、クラスや関数の一覧（Python、JS / TS、JSON、YAML、C、C++、C#、Java、Go）</li>
-              <li>
-                コードビュー: <code>[Edit]</code> / <code>E</code> でファイル全体を編集します。<code>Tab</code> / <code>Shift+Tab</code> で字下げ、
-                <code>Enter</code> は字下げを引き継ぎ、<code>Esc</code> で入力欄から抜けます。Save は文字コード・BOM・改行を保ち（UTF-8 でなければ保存の文字コードを聞き、書けない字があれば UTF-8 で保存するか聞きます）、Save as では拡張子を変えられます
-                （<code>.md</code> の名前は UTF-8 で保存し、Markdown で開き直します）。UTF-8 でないファイルや改行が混ざったファイルは、開くときに読み方を聞きます。200 KB 以上のファイルは、表示や編集に時間がかかります（編集を始めるときにトーストで知らせます）。
-                JSON: <code>Ctrl+&larr;</code> / <code>Ctrl+&rarr;</code>（Mac は <code>Option</code>。入力欄の中では <code>Ctrl+Shift+[</code> / <code>]</code>、Mac は
-                <code>Cmd+Option+[</code> / <code>]</code>）か <code>[Commands]</code> / <code>P</code> で、1 段ずつ 1 行にまとめる / 開く
-              </li>
-              <li>
-                <code>[Search]</code> / <code>F</code> : Markdown の原文（コードビューではファイル）から文字を探します。<code>Aa</code> で大文字と小文字を区別し、<code>.*</code> で正規表現にします。検索欄の <code>&darr;</code> / <code>&uarr;</code> で次 / 前へ移ります。編集モードでは <code>Ctrl+F</code>（Mac は <code>Cmd+F</code>）でも開け、<code>Replace</code> / <code>All</code> で置き換えます（<code>Ctrl+Z</code> 1 回で戻ります）。検索欄の <code>Esc</code> で閉じます。時間のかかる正規表現（長い行に当てる、繰り返しの入れ子など）では、ページが固まることがあります。正規表現で置き換える前に保存してください。
-              </li>
-              <li><code>[Open GitHub]</code> / <code>O</code> : GitHub の <code>.md</code> を開きます。開いている間、ボタンは <code>[Push to GitHub]</code> になります。PC だけ（Chrome / Edge）</li>
-              <li><code>[Render Light]</code> / <code>L</code> : レンダリング/ライトモード切替</li>
-              <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
-              <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード（Chrome / Edge）。GitHub から開いた文書は、確かめの画面の後に GitHub から読み直す</li>
-              <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
-              <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
-              <li>
-                マウスでは、プレビューをダブルクリックすると、編集モードに入り、そのブロックを開きます。タッチやペンでは、<code>[Edit]</code> を押してからブロックをタップします。
-              </li>
-              <li>
-                <code>[Save]</code> : <code>Ctrl+S</code> と同じ。GRSMD がファイルの場所を知っているときは、そのパスをクリップボードに入れます。保存の画面のファイル名の欄に <code>Ctrl+V</code> で貼ります
-              </li>
-              <li>
-                <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。ブロックを選んでいれば、まず選択を解きます。何も開いていなければ、編集パレットを隠します。編集パレットも出ていなければ、検索、目次の順に隠します。コードビューの入力欄の中では入力欄から抜けるだけで、外では [Commands]、検索、目次の順に隠します。
-              </li>
-              <li>
-                <code>Ctrl+Z</code> / <code>Ctrl+Y</code>（または <code>Ctrl+Shift+Z</code>）: 編集パレットを表示している間の Undo / Redo（30 回まで。Mac は <code>Cmd+Z</code> / <code>Cmd+Shift+Z</code>）。開いたブロックの中では、Redo はいつも入力のやり直しです。Undo も、ブロックに変更があれば入力の取り消しです。コードビューの編集では、入力欄の中も自前の Undo / Redo です。
-              </li>
-              <li>
-                編集モードで、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下にマウスを置く（スマートフォンではタップする）と、点線と <code>+</code> が出ます。押すと、そこに新しいブロックを入れます。
-              </li>
-              <li>
-                編集モードで、ブロックを開いているとき、編集パレットの Text format の 2 段目で数式を入れられます。Insert inline math は、カーソルの位置に式を入れます。Insert math boxes は、3 つの数式の箱（Maxwell、Einstein、Schroedinger）を、それぞれの名前の下に入れます。
-              </li>
-              <li>
-                編集モードで、編集パレットのグリップ（<code>::</code>）をダブルクリック（スマートフォンやタブレットではダブルタップ）するか長押しすると、パレットはグリップだけになります。もう一度で元に戻ります。
-              </li>
-              <li>
-                編集モードで、ブロックの文字をドラッグで選ぶ（スマートフォンでは長押ししてつまみを動かす）と、選択がかかったブロックが丸ごと選ばれ、選択の下に帯が出ます。<code>Delete</code> / <code>Backspace</code> で削除、<code>Ctrl+X</code> でカット、<code>Ctrl+C</code> でその Markdown をコピー（Mac は <code>Cmd</code>。メニューのコピーも同じ）。消したブロックは Undo 1 回で戻ります。見えている文字の一部だけをコピーするときは、編集モードを抜けてから選びます。
-              </li>
-              <li><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code> : Save / Save as（Mac は <code>Cmd</code>）</li>
-              <li><code>[Clear]</code> / <code>C</code> : 初期化</li>
-              <li><code>[?]</code> : 本ヘルプを表示（<code>Esc</code> で閉じる）</li>
-              <li>
-                <code>[?]</code> 長押し :
-                AIに綺麗なMarkdownを生成させるためのプロンプトテンプレートを表示。
-              </li>
-              <li>
-                上下矢印キー: スムーズスクロール（Markdownプレビュー・コードビュー共通）
-              </li>
-              <li>
-                図の拡大 (PC): Ctrl +
-                マウスホイール。ダブルクリックでリセット。Macピンチも可。
-              </li>
-              <li>図の表示位置を移動 (PC): 図の上でクリック＆ドラッグ。</li>
-              <li>
-                図の上の <code>Copy SVG</code> / <code>Copy PNG</code>（PC）: 図をクリップボードにコピーします。
-              </li>
-              <li>
-                印刷（<code>Ctrl+P</code>、Mac は <code>Cmd+P</code>）: 文書だけを、ライトの色で印刷します。上部のバーとパレットは印刷しません。
-              </li>
+              <li><code>[Index]</code> / <code>I</code> : 見出しの一覧</li>
+              <li><code>[Find]</code> / <code>F</code> : 文字を探す・置き換える</li>
+              <li><code>[Open GitHub]</code> / <code>O</code> : GitHub の <code>.md</code> を開く（PC だけ）</li>
+              <li><code>[Render Light]</code> / <code>L</code>、<code>[Render Dark]</code> / <code>D</code> : ライトモード / ダークモードで表示する</li>
+              <li><code>[Reload]</code> / <code>R</code> : ファイルを読み直す</li>
+              <li><code>[New Tab]</code> / <code>N</code> : 新しいタブで GRSMD を開く</li>
+              <li><code>[Edit]</code> / <code>E</code> : 編集パレットを出す。マウスでは、プレビューのダブルクリックでも編集を始める</li>
+              <li><code>[Save]</code> / <code>Ctrl+S</code> : 保存する（<code>Ctrl+Shift+S</code> で名前を付けて保存）</li>
+              <li><code>[Clear]</code> / <code>C</code> : 初期化する</li>
+              <li><code>[?]</code> : このヘルプ。長押しで AI 向けのプロンプト</li>
+              <li><code>Esc</code> : 開いているブロックを閉じる</li>
+              <li><code>Ctrl+Z</code> / <code>Ctrl+Y</code> : 元に戻す / やり直す</li>
             </ul>
+            <button type="button" class="help-guide-btn" data-open-guide>詳しい使い方</button>
           </div>
 
           <div class="modal-section" data-help-section="privacy">
             <h3>プライバシーとセキュリティ</h3>
             <ul>
-              <li>
-                PlantUML:
-                クライアントサイド動作の例外。公式サーバーにPlantUMLデータを送信する前に、文書を描くたびに確認ダイアログを表示します (編集で変えた図は、その [Render] を押したとき)。送るのは、ダイアログで許した図だけです。許した図の Copy SVG / PNG は、確認なしにその図をもう一度取りに行きます。ページの読み込みの途中は、図の所に「Loading diagram...」と出し、読み込みが終わってから確認します。
-              </li>
-              <li>
-                外部画像 (<code>![](https://...)</code>、<code>&lt;img src="https://..."&gt;</code>):
-                プレースホルダーをクリックして確認するまで読み込みません。読み込むと、画像サーバーにIPアドレスと文書を開いたことが伝わります。同意は <code>[Clear]</code> または新しいファイルのドロップまで有効で、保存はしません。その他の外部参照 (動画・音声・CSSの <code>url()</code>・<code>&lt;style&gt;</code>) は除去します。
-              </li>
-              <li>
-                Markdown内のHTMLはDOMPurifyでサニタイズします (スクリプトとイベント属性を除去)。さらにContent-Security-Policyで、本アプリ以外のスクリプトの実行を禁止します。
-              </li>
-              <li>
-                ダウンロードのボタンは、最新のリリースを取りに GitHub（github.com）を開きます。押すまでは何も送りません。
-              </li>
-              <li>
-                GitHub 連携（PC だけ）は、画面の [Open]・[Reload]・[Push] を押したときだけ、毎回、api.github.com にだけ送ります。Open と Reload は、リポジトリ・ブランチ・パスと、fine-grained personal access token を送ります。Push は、文書の本文の全部・コミットのメッセージ・トークンを送ります。トークンは要求のヘッダーにだけ載せ、GRSMD は送る間だけ持ちます。要求が成功すると、GRSMD はブラウザにトークンの保存を頼みます。保存するかはブラウザが尋ねます。消すときは、ブラウザのパスワードの設定から消します。
-              </li>
-              <li>
-                編集パレットの「リンクを貼る」はクリップボードを読むので、ブラウザが許可を求めることがあります。goodrelax.github.io で開いているとき、Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。
-              </li>
+              <li>PlantUML: あなたが送信を許可したら、GRSMD は、PlantUML を描くときに、PlantUML のブロックの中の文字列を PlantUML の公式サーバーへ送信します。</li>
+              <li>外部の画像: あなたが読み込みを許可したら、GRSMD は外部の画像を読み込みます。</li>
+              <li>GitHub 連携（PC だけ）: あなたが画面の [Open]・[Reload]・[Push] を押したら、GRSMD は api.github.com と通信します。</li>
+              <li>ダウンロードのボタン: あなたがダウンロードのボタンを押したら、GRSMD は github.com を新しいタブで開きます。</li>
+              <li>スクリプト: GRSMD は、DOMPurify と CSP を使って、文書の中のスクリプトの実行を防ぎます。</li>
+              <li>「リンクを貼る」: ブラウザがクリップボードの許可を求めることがあります。</li>
             </ul>
           </div>
 
@@ -661,11 +440,13 @@
           </div>
 
           <div class="modal-section" data-help-section="licenses">
-            <h3>ライセンス</h3>
-            <p>
-              GRSMD は、次のオープンソースのソフトウェアを含みます。著作権とライセンスの全文は、この HTML ファイルの最後のコメントにあります。ページのソースを表示するか、ファイルをテキストエディターで開くと読めます。
-            </p>
-            <p data-third-party-list></p>
+            <details class="help-fold">
+              <summary><h3>ライセンス</h3></summary>
+              <p>
+                GRSMD は、次のオープンソースのソフトウェアを含みます。著作権とライセンスの全文は、この HTML ファイルの最後のコメントにあります。ページのソースを表示するか、ファイルをテキストエディターで開くと読めます。
+              </p>
+              <p data-third-party-list></p>
+            </details>
           </div>
         </div>
       </div>
@@ -766,7 +547,7 @@
         <text class="ghf-b" x="8" y="16">GR Simple</text>
         <text class="ghf-b" x="8" y="28">Markdown</text>
         <rect class="ghf-btn" x="150" y="8" width="30" height="20" rx="3"/><text class="ghf-mid" x="165" y="21">Index</text>
-        <rect class="ghf-btn" x="184" y="8" width="36" height="20" rx="3"/><text class="ghf-mid" x="202" y="21">Search</text>
+        <rect class="ghf-btn" x="184" y="8" width="36" height="20" rx="3"/><text class="ghf-mid" x="202" y="21">Find</text>
         <rect class="ghf-btn" x="224" y="5" width="42" height="26" rx="3"/>
         <text class="ghf-mid" x="245" y="16">Open</text><text class="ghf-mid" x="245" y="27">GitHub</text>
         <rect class="ghf-ring" x="219" y="2" width="52" height="32" rx="6"/>
@@ -827,7 +608,7 @@
         <text class="ghf-b" x="8" y="16">GR Simple</text>
         <text class="ghf-b" x="8" y="28">Markdown</text>
         <rect class="ghf-btn" x="150" y="8" width="30" height="20" rx="3"/><text class="ghf-mid" x="165" y="21">Index</text>
-        <rect class="ghf-btn" x="184" y="8" width="36" height="20" rx="3"/><text class="ghf-mid" x="202" y="21">Search</text>
+        <rect class="ghf-btn" x="184" y="8" width="36" height="20" rx="3"/><text class="ghf-mid" x="202" y="21">Find</text>
         <rect class="ghf-go" x="224" y="5" width="42" height="26" rx="3"/>
         <text class="ghf-gotext ghf-mid" x="245" y="16">Push to</text><text class="ghf-gotext ghf-mid" x="245" y="27">GitHub</text>
         <rect class="ghf-ring" x="219" y="2" width="52" height="32" rx="6"/>
@@ -1092,6 +873,305 @@
               <li>GRSMD は、トークンも文書も保存しません。トークンを覚えるのは、保存したときのブラウザだけです。</li>
               <li>トークンの範囲は、選んだリポジトリの Contents だけにしてください。goodrelax.github.io で使うと、同じサイトの他のページでも、ブラウザがトークンを候補に出すことがあります。</li>
               <li>push できるのは開いたブランチだけで、保護されたブランチには push できません。1 MB までのファイルだけ扱えます。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- More details: a full-screen layer over the help (HT-3). It holds the
+         detailed text that the short help leaves out. -->
+    <div id="guideModal" class="modal">
+      <div class="modal-content">
+        <div class="help-head">
+          <h2>More Details</h2>
+          <div class="help-lang" role="group" aria-label="Language">
+            <button type="button" data-help-lang="en" aria-pressed="true">English</button>
+            <button type="button" data-help-lang="ja" aria-pressed="false">Japanese</button>
+          </div>
+          <button type="button" class="close-btn" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="help-body" lang="en">
+          <div class="modal-section" data-guide-section="usage">
+            <h3>Opening and pasting</h3>
+            <ul>
+              <li>
+                Drop a text file of another known type (<code>.py</code>, <code>.js</code>,
+                <code>.json</code>, <code>.txt</code>, etc.) for Code View. Files of other
+                types are refused. Syntax highlighting uses the highlight.js common bundle.
+                Some languages (e.g. Dockerfile, Scala, PowerShell) may not be highlighted.
+              </li>
+              <li>
+                Pasting starts a preview only on the start screen, with the top box
+                empty. While a document is shown, press <code>[Clear]</code> first.
+                A dropped file can be up to 5 MB.
+              </li>
+              <li>
+                In the Markdown view (paste, drop, Render or editing), a code block
+                longer than 20,480 characters (about 20 KB) is shown without syntax highlighting.
+              </li>
+            </ul>
+          </div>
+
+          <div class="modal-section" data-guide-section="details">
+            <h3>Details</h3>
+            <ul>
+              <li><code>[Index]</code> / <code>I</code> : Show or hide the list of headings. Click a heading to jump to it. In the code view it lists classes and functions (Python, JS / TS, JSON, YAML, C, C++, C#, Java, Go)</li>
+              <li>
+                Code view: <code>[Edit]</code> / <code>E</code> edits the whole file. <code>Tab</code> / <code>Shift+Tab</code>
+                indent, <code>Enter</code> keeps the indent, <code>Esc</code> leaves the text box. Save keeps the encoding, BOM and
+                line endings (a file not in UTF-8 asks which encoding to save in; characters it cannot hold: it asks to save in UTF-8); Save as can change the extension (a <code>.md</code> name is saved in UTF-8 and opens as Markdown).
+                A file that is not UTF-8, or mixes line endings, asks how to read it. A file of 200 KB or more may take time to show and edit (a toast says so when you start editing). JSON: <code>Ctrl+&larr;</code> /
+                <code>Ctrl+&rarr;</code> (Mac: <code>Option</code>; in the text box <code>Ctrl+Shift+[</code> / <code>]</code>, Mac
+                <code>Cmd+Option+[</code> / <code>]</code>) or <code>[Commands]</code> / <code>P</code> fold one level onto one line / unfold it
+              </li>
+              <li>
+                <code>[Find]</code> / <code>F</code> : Find text in the Markdown source (code view: the file).
+                <code>Aa</code> matches case, <code>.*</code> takes a regular expression. <code>&darr;</code> /
+                <code>&uarr;</code> in the box go to the next / previous match. In edit mode, <code>Ctrl+F</code>
+                (Mac: <code>Cmd+F</code>) opens it too, and <code>Replace</code> / <code>All</code> replace (one
+                <code>Ctrl+Z</code> undoes). <code>Esc</code> in the box closes it. A slow regular expression (such as
+                nested repeats on a long line) can freeze the page: save before you replace with one.
+              </li>
+              <li><code>[Open GitHub]</code> / <code>O</code> : Open a <code>.md</code> on GitHub. While it is open, the button is <code>[Push to GitHub]</code>. PC only (Chrome / Edge)</li>
+              <li><code>[Render Light]</code> / <code>L</code> : Render / switch to light mode</li>
+              <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
+              <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge). A file opened from GitHub is read again from GitHub, after a confirmation</li>
+              <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
+              <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette</li>
+              <li>
+                With a mouse, double-click the preview to enter edit mode and open that block. With touch or a
+                pen, press <code>[Edit]</code>, then tap a block.
+              </li>
+              <li>
+                <code>[Save]</code> : Same as <code>Ctrl+S</code>. When GRSMD knows where the file is, it puts that
+                path on the clipboard: paste it with <code>Ctrl+V</code> as the file name
+              </li>
+              <li>
+                <code>Esc</code> : Apply the open block or cell and close it.
+                With blocks selected, clear the selection first. With nothing open, hide
+                the edit palette. With the edit palette hidden, hide Find, then the Index.
+                Code view: in the text box, Esc only leaves it; outside, it hides [Commands], Find, then the Index.
+              </li>
+              <li>
+                <code>Ctrl+Z</code> / <code>Ctrl+Y</code> (or <code>Ctrl+Shift+Z</code>) : Undo / Redo
+                while the edit palette is shown, up to 30 times (Mac: <code>Cmd+Z</code> /
+                <code>Cmd+Shift+Z</code>). In an open block, Redo is always for your typing,
+                and Undo too once the block has a change. Code view: the editor's own Undo / Redo, in the text box too.
+              </li>
+              <li>
+                Edit mode: point between two blocks, above the first one or below the last
+                one (on a phone, tap there) to show a dashed line with <code>+</code>. Click it
+                to add a new block there.
+              </li>
+              <li>
+                Edit mode: in an open block, the second row of the edit palette's Text format
+                adds math. Insert inline math puts a formula at the cursor. Insert math boxes
+                adds three math boxes (Maxwell, Einstein, Schroedinger), each under its name.
+              </li>
+              <li>
+                Edit mode: double-click the edit palette's grip (<code>::</code>; on a phone or
+                tablet, double tap it) or press and hold it to shrink the palette to the grip.
+                Do it again to bring the palette back.
+              </li>
+              <li>
+                Edit mode: drag over the text of some blocks (on a phone, long press and move
+                the handles) to select those blocks whole; a bar shows under the selection.
+                <code>Delete</code> / <code>Backspace</code> delete them, <code>Ctrl+X</code>
+                cuts and <code>Ctrl+C</code> copies their Markdown (Mac: <code>Cmd</code>; a
+                menu's Copy copies it too). One Undo brings deleted blocks back. To copy only some of the text you see, leave
+                edit mode first.
+              </li>
+              <li><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code> : Save / Save as (Mac: <code>Cmd</code>)</li>
+              <li><code>[Clear]</code> / <code>C</code> : Clear and reset</li>
+              <li><code>[?]</code> : Show this help (<code>Esc</code> closes it)</li>
+              <li>
+                <code>[?]</code> (long press) : Display a prompt template for
+                generating clean Markdown with AI.
+              </li>
+              <li>
+                <code>Up</code> / <code>Down</code> arrow keys: Smooth scroll (Markdown &amp; Code View)
+              </li>
+              <li>
+                Zoom (PC): Ctrl + mouse wheel over a diagram. Double-click to
+                reset. Mac pinch also works.
+              </li>
+              <li>Pan (PC): Click and drag inside a diagram.</li>
+              <li>
+                <code>Copy SVG</code> / <code>Copy PNG</code> above a diagram (PC):
+                copy the diagram to the clipboard.
+              </li>
+              <li>
+                Print (<code>Ctrl+P</code>, Mac: <code>Cmd+P</code>): prints the
+                document only, in light colors. The top bar and the palette are
+                not printed.
+              </li>
+            </ul>
+          </div>
+
+          <div class="modal-section" data-guide-section="privacy">
+            <h3>Privacy &amp; Security</h3>
+            <ul>
+              <li>
+                PlantUML is an exception to client-side-only operation. This
+                tool shows a confirmation dialog before sending any PlantUML data
+                to the official server, every time it renders the document (a
+                diagram you changed while editing: when you press its [Render]
+                button). Only the diagrams you allowed in the dialog are sent;
+                Copy SVG / PNG of such a diagram fetches it again without asking.
+                While the page is still loading, a diagram shows "Loading
+                diagram..." and the dialog comes when loading is done.
+              </li>
+              <li>
+                External images (<code>![](https://...)</code>,
+                <code>&lt;img src="https://..."&gt;</code>) are not loaded until you
+                click a placeholder and confirm. Loading them tells the image
+                servers your IP address and that the document was opened. The
+                consent lasts until <code>[Clear]</code> or a new file drop, and is
+                never stored. Other remote references (video, audio, CSS
+                <code>url()</code>, <code>&lt;style&gt;</code>) are removed.
+              </li>
+              <li>
+                HTML embedded in Markdown is sanitized with DOMPurify (scripts and
+                event handlers are removed). A Content-Security-Policy also blocks
+                any script other than this app's own.
+              </li>
+              <li>
+                The Download button opens GitHub (github.com) to get the latest
+                release. Nothing is sent until you press it.
+              </li>
+              <li>
+                GitHub editing (PC only) sends requests only to api.github.com, and
+                only when you press [Open], [Reload] or [Push] in its dialog, every
+                time. Open and Reload send the repository, branch and path, and your
+                fine-grained personal access token. Push sends the full text of the
+                document, the commit message and the token. The token is sent only in
+                a request header, and GRSMD keeps it only while the request runs.
+                After a request succeeds, GRSMD asks the browser to save the token;
+                the browser asks you, and you can delete it in the browser's password
+                settings.
+              </li>
+              <li>
+                The edit palette's Paste copied link reads the clipboard, so the
+                browser may ask you to allow it. When GRSMD is opened from
+                goodrelax.github.io, in Chrome and Edge, once you allow it, other
+                pages on goodrelax.github.io can also read your clipboard without
+                asking. To withdraw it, open the site settings for
+                goodrelax.github.io (the icon at the left of the address bar) and set
+                Clipboard to Ask or Block.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="help-body" lang="ja" hidden>
+          <div class="modal-section" data-guide-section="usage">
+            <h3>開くときと貼るとき</h3>
+            <ul>
+              <li>
+                ほかの決まった種類のテキスト系ファイル（<code>.py</code>、<code>.js</code>、<code>.json</code>、<code>.txt</code> 等）をドロップするとコードビューで表示。ほかの種類のファイルは断ります。シンタックスハイライトは highlight.js common バンドルを使用。一部の言語（Dockerfile, Scala, PowerShell 等）はハイライトされない場合があります。
+              </li>
+              <li>
+                ペーストでプレビューが始まるのは、最初の画面で、上部のボックスが空のときだけです。文書を表示しているときは、先に <code>[Clear]</code> を押します。ドロップできるファイルは 5 MB までです。
+              </li>
+              <li>
+                Markdown の表示（ペースト・ドロップ・Render・その場の編集）では、20,480 文字（約 20 KB）を超えるコードブロックは、シンタックスハイライトをせずに表示します。
+              </li>
+            </ul>
+          </div>
+
+          <div class="modal-section" data-guide-section="details">
+            <h3>詳細</h3>
+            <ul>
+              <li><code>[Index]</code> / <code>I</code> : 見出しの一覧（目次）の表示・非表示。見出しを押すと、そこへ飛びます。コードビューでは、クラスや関数の一覧（Python、JS / TS、JSON、YAML、C、C++、C#、Java、Go）</li>
+              <li>
+                コードビュー: <code>[Edit]</code> / <code>E</code> でファイル全体を編集します。<code>Tab</code> / <code>Shift+Tab</code> で字下げ、
+                <code>Enter</code> は字下げを引き継ぎ、<code>Esc</code> で入力欄から抜けます。Save は文字コード・BOM・改行を保ち（UTF-8 でなければ保存の文字コードを聞き、書けない字があれば UTF-8 で保存するか聞きます）、Save as では拡張子を変えられます
+                （<code>.md</code> の名前は UTF-8 で保存し、Markdown で開き直します）。UTF-8 でないファイルや改行が混ざったファイルは、開くときに読み方を聞きます。200 KB 以上のファイルは、表示や編集に時間がかかります（編集を始めるときにトーストで知らせます）。
+                JSON: <code>Ctrl+&larr;</code> / <code>Ctrl+&rarr;</code>（Mac は <code>Option</code>。入力欄の中では <code>Ctrl+Shift+[</code> / <code>]</code>、Mac は
+                <code>Cmd+Option+[</code> / <code>]</code>）か <code>[Commands]</code> / <code>P</code> で、1 段ずつ 1 行にまとめる / 開く
+              </li>
+              <li>
+                <code>[Find]</code> / <code>F</code> : Markdown の原文（コードビューではファイル）から文字を探します。<code>Aa</code> で大文字と小文字を区別し、<code>.*</code> で正規表現にします。検索欄の <code>&darr;</code> / <code>&uarr;</code> で次 / 前へ移ります。編集モードでは <code>Ctrl+F</code>（Mac は <code>Cmd+F</code>）でも開け、<code>Replace</code> / <code>All</code> で置き換えます（<code>Ctrl+Z</code> 1 回で戻ります）。検索欄の <code>Esc</code> で閉じます。時間のかかる正規表現（長い行に当てる、繰り返しの入れ子など）では、ページが固まることがあります。正規表現で置き換える前に保存してください。
+              </li>
+              <li><code>[Open GitHub]</code> / <code>O</code> : GitHub の <code>.md</code> を開きます。開いている間、ボタンは <code>[Push to GitHub]</code> になります。PC だけ（Chrome / Edge）</li>
+              <li><code>[Render Light]</code> / <code>L</code> : レンダリング/ライトモード切替</li>
+              <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
+              <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード（Chrome / Edge）。GitHub から開いた文書は、確かめの画面の後に GitHub から読み直す</li>
+              <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
+              <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
+              <li>
+                マウスでは、プレビューをダブルクリックすると、編集モードに入り、そのブロックを開きます。タッチやペンでは、<code>[Edit]</code> を押してからブロックをタップします。
+              </li>
+              <li>
+                <code>[Save]</code> : <code>Ctrl+S</code> と同じ。GRSMD がファイルの場所を知っているときは、そのパスをクリップボードに入れます。保存の画面のファイル名の欄に <code>Ctrl+V</code> で貼ります
+              </li>
+              <li>
+                <code>Esc</code> : 開いているブロックやセルを、反映して閉じます。ブロックを選んでいれば、まず選択を解きます。何も開いていなければ、編集パレットを隠します。編集パレットも出ていなければ、検索、目次の順に隠します。コードビューの入力欄の中では入力欄から抜けるだけで、外では [Commands]、検索、目次の順に隠します。
+              </li>
+              <li>
+                <code>Ctrl+Z</code> / <code>Ctrl+Y</code>（または <code>Ctrl+Shift+Z</code>）: 編集パレットを表示している間の Undo / Redo（30 回まで。Mac は <code>Cmd+Z</code> / <code>Cmd+Shift+Z</code>）。開いたブロックの中では、Redo はいつも入力のやり直しです。Undo も、ブロックに変更があれば入力の取り消しです。コードビューの編集では、入力欄の中も自前の Undo / Redo です。
+              </li>
+              <li>
+                編集モードで、ブロックとブロックのすき間、最初のブロックの上、最後のブロックの下にマウスを置く（スマートフォンではタップする）と、点線と <code>+</code> が出ます。押すと、そこに新しいブロックを入れます。
+              </li>
+              <li>
+                編集モードで、ブロックを開いているとき、編集パレットの Text format の 2 段目で数式を入れられます。Insert inline math は、カーソルの位置に式を入れます。Insert math boxes は、3 つの数式の箱（Maxwell、Einstein、Schroedinger）を、それぞれの名前の下に入れます。
+              </li>
+              <li>
+                編集モードで、編集パレットのグリップ（<code>::</code>）をダブルクリック（スマートフォンやタブレットではダブルタップ）するか長押しすると、パレットはグリップだけになります。もう一度で元に戻ります。
+              </li>
+              <li>
+                編集モードで、ブロックの文字をドラッグで選ぶ（スマートフォンでは長押ししてつまみを動かす）と、選択がかかったブロックが丸ごと選ばれ、選択の下に帯が出ます。<code>Delete</code> / <code>Backspace</code> で削除、<code>Ctrl+X</code> でカット、<code>Ctrl+C</code> でその Markdown をコピー（Mac は <code>Cmd</code>。メニューのコピーも同じ）。消したブロックは Undo 1 回で戻ります。見えている文字の一部だけをコピーするときは、編集モードを抜けてから選びます。
+              </li>
+              <li><code>Ctrl+S</code> / <code>Ctrl+Shift+S</code> : Save / Save as（Mac は <code>Cmd</code>）</li>
+              <li><code>[Clear]</code> / <code>C</code> : 初期化</li>
+              <li><code>[?]</code> : 本ヘルプを表示（<code>Esc</code> で閉じる）</li>
+              <li>
+                <code>[?]</code> 長押し :
+                AIに綺麗なMarkdownを生成させるためのプロンプトテンプレートを表示。
+              </li>
+              <li>
+                上下矢印キー: スムーズスクロール（Markdownプレビュー・コードビュー共通）
+              </li>
+              <li>
+                図の拡大 (PC): Ctrl +
+                マウスホイール。ダブルクリックでリセット。Macピンチも可。
+              </li>
+              <li>図の表示位置を移動 (PC): 図の上でクリック＆ドラッグ。</li>
+              <li>
+                図の上の <code>Copy SVG</code> / <code>Copy PNG</code>（PC）: 図をクリップボードにコピーします。
+              </li>
+              <li>
+                印刷（<code>Ctrl+P</code>、Mac は <code>Cmd+P</code>）: 文書だけを、ライトの色で印刷します。上部のバーとパレットは印刷しません。
+              </li>
+            </ul>
+          </div>
+
+          <div class="modal-section" data-guide-section="privacy">
+            <h3>プライバシーとセキュリティ</h3>
+            <ul>
+              <li>
+                PlantUML:
+                クライアントサイド動作の例外。公式サーバーにPlantUMLデータを送信する前に、文書を描くたびに確認ダイアログを表示します (編集で変えた図は、その [Render] を押したとき)。送るのは、ダイアログで許した図だけです。許した図の Copy SVG / PNG は、確認なしにその図をもう一度取りに行きます。ページの読み込みの途中は、図の所に「Loading diagram...」と出し、読み込みが終わってから確認します。
+              </li>
+              <li>
+                外部画像 (<code>![](https://...)</code>、<code>&lt;img src="https://..."&gt;</code>):
+                プレースホルダーをクリックして確認するまで読み込みません。読み込むと、画像サーバーにIPアドレスと文書を開いたことが伝わります。同意は <code>[Clear]</code> または新しいファイルのドロップまで有効で、保存はしません。その他の外部参照 (動画・音声・CSSの <code>url()</code>・<code>&lt;style&gt;</code>) は除去します。
+              </li>
+              <li>
+                Markdown内のHTMLはDOMPurifyでサニタイズします (スクリプトとイベント属性を除去)。さらにContent-Security-Policyで、本アプリ以外のスクリプトの実行を禁止します。
+              </li>
+              <li>
+                ダウンロードのボタンは、最新のリリースを取りに GitHub（github.com）を開きます。押すまでは何も送りません。
+              </li>
+              <li>
+                GitHub 連携（PC だけ）は、画面の [Open]・[Reload]・[Push] を押したときだけ、毎回、api.github.com にだけ送ります。Open と Reload は、リポジトリ・ブランチ・パスと、fine-grained personal access token を送ります。Push は、文書の本文の全部・コミットのメッセージ・トークンを送ります。トークンは要求のヘッダーにだけ載せ、GRSMD は送る間だけ持ちます。要求が成功すると、GRSMD はブラウザにトークンの保存を頼みます。保存するかはブラウザが尋ねます。消すときは、ブラウザのパスワードの設定から消します。
+              </li>
+              <li>
+                編集パレットの「リンクを貼る」はクリップボードを読むので、ブラウザが許可を求めることがあります。goodrelax.github.io で開いているとき、Chrome と Edge では、一度許可すると、goodrelax.github.io の他のページも確認なしにクリップボードを読めるようになります。取り消すには、アドレスバーの左のアイコンからサイトの設定を開き、「クリップボード」を「確認する」か「ブロック」にします。
+              </li>
             </ul>
           </div>
         </div>
