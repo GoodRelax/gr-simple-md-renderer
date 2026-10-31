@@ -351,7 +351,7 @@ export const CONFIG = {
       tableOptions: "Align column", // the button and its popover (R6)
       undo: (mod) => `Undo (${mod}+Z)`,
       redo: (mod) => `Redo (${mod}+Shift+Z)`, // the code editor's palette only (NE-2)
-      search: (mod) => `Search (${mod}+F)`, // the code editor's palette only (NE-2)
+      search: (mod) => `Find (${mod}+F)`, // the code editor's palette only (NE-2)
       mermaidMenu: "Mermaid samples",
       flowchart: "Flowchart",
       sequence: "Sequence diagram",
@@ -487,14 +487,14 @@ export const CONFIG = {
   },
   // Keyboard hint text per view mode
   keyHints: {
-    markdown: "[I] Index; [F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
-    code:     "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
+    markdown: "[I] Index; [F] Find; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
+    code:     "[I] Index; [F] Find; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
     // a Mac: the fold keys are Option+Left / Right (INV-92, NE-23)
-    codeApple: "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Option+Left][Option+Right] Fold (JSON);",
+    codeApple: "[I] Index; [F] Find; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Option+Left][Option+Right] Fold (JSON);",
     // where GitHub editing is shown (a mouse or trackpad device; D33)
-    markdownGitHub:  "[I] Index; [F] Search; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
-    codeGitHub:      "[I] Index; [F] Search; [P] Commands; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
-    codeAppleGitHub: "[I] Index; [F] Search; [P] Commands; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Option+Left][Option+Right] Fold (JSON);",
+    markdownGitHub:  "[I] Index; [F] Find; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down;",
+    codeGitHub:      "[I] Index; [F] Find; [P] Commands; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
+    codeAppleGitHub: "[I] Index; [F] Find; [P] Commands; [O] GitHub; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Option+Left][Option+Right] Fold (JSON);",
   },
 };
 

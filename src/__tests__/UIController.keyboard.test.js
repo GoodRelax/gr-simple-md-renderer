@@ -77,6 +77,7 @@ describe("AT-KEY-09 UIController.setupKeyboard (modifier guard, INV-14)", () => 
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
       githubHelpModal: createMockModal(),
+      guideModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),
       copyPromptBtn: document.createElement("button"),

@@ -21,6 +21,14 @@ function helpModal() {
 }
 
 const body = (modal, lang) => modal.querySelector(`.help-body[lang="${lang}"]`);
+
+/** The real #guideModal (More details, HT-3) of src/index.html, attached. */
+function guideModal() {
+  const doc = new DOMParser().parseFromString(INDEX_HTML, "text/html");
+  const modal = document.importNode(doc.getElementById("guideModal"), true);
+  document.body.appendChild(modal);
+  return modal;
+}
 const button = (modal, lang) => modal.querySelector(`[data-help-lang="${lang}"]`);
 
 afterEach(() => {
@@ -197,8 +205,8 @@ describe("help markup in src/index.html (AT-HLP-05, AT-HLP-06, AT-HLP-14)", () =
     expect(doc.querySelector('meta[name="viewport"]')).toBeNull();
   });
 
-  it("AT-HLP-14 INV-85, NE-32: the code view item of Details says, in both languages, that a file of 200 KB or more takes time to show and edit", () => {
-    const modal = helpModal();
+  it("AT-HLP-14 INV-85, NE-32, HT-3: the code view item of More details says, in both languages, that a file of 200 KB or more takes time to show and edit", () => {
+    const modal = guideModal();
     const codeItem = (lang) => [...body(modal, lang).querySelectorAll("li")].find((li) => li.textContent.includes("Cmd+Option+["));
     const en = codeItem("en").textContent.replace(/\s+/g, " ");
     expect(en).toContain("A file of 200 KB or more may take time to show and edit (a toast says so when you start editing).");
@@ -208,10 +216,10 @@ describe("help markup in src/index.html (AT-HLP-05, AT-HLP-06, AT-HLP-14)", () =
     expect(ja).toContain("\u6642\u9593\u304c\u304b\u304b\u308a\u307e\u3059");
   });
 
-  it("AT-HLP-20 INV-105, PL-19, PL-23: Details has the [Save] line after the start of editing, with Ctrl+V and no word of the launcher (PL-15)", () => {
-    const modal = helpModal();
+  it("AT-HLP-20 INV-105, PL-19, PL-23, HT-3: More details has the [Save] line after the start of editing, with Ctrl+V and no word of the launcher (PL-15)", () => {
+    const modal = guideModal();
     for (const lang of ["en", "ja"]) {
-      const items = [...body(modal, lang).querySelectorAll('[data-help-section="details"] li')];
+      const items = [...body(modal, lang).querySelectorAll('[data-guide-section="details"] li')];
       const at = items.findIndex((li) => li.textContent.trim().startsWith("[Save]"));
       expect(at, lang).toBeGreaterThan(0);
       expect(items[at - 1].textContent, lang).toContain("[Edit]"); // the start of editing stays right after [Edit] (the help scenario of SC-16)
@@ -228,6 +236,85 @@ describe("help markup in src/index.html (AT-HLP-05, AT-HLP-06, AT-HLP-14)", () =
   });
 });
 
+describe("the short help and More details in src/index.html (AT-HLP-21, AT-HLP-22)", () => {
+  const text = (el) => el.textContent.replace(/\s+/g, " ").trim();
+  // "kuwashii tsukaikata" (More details; HT-3)
+  const JA_ENTRY = "\u8a73\u3057\u3044\u4f7f\u3044\u65b9";
+
+  it("AT-HLP-21 HT-1, HT-4: the short help has 4 ways to start, 12 lines of buttons and keys with the entry to More details last, and 6 privacy lines", () => {
+    const modal = helpModal();
+    for (const lang of ["en", "ja"]) {
+      const section = (name) => body(modal, lang).querySelector(`[data-help-section="${name}"]`);
+      expect(section("usage").querySelectorAll("ol > li"), lang).toHaveLength(4);
+      const keys = [...section("details").querySelectorAll("ul > li")].map((li) => text(li).split(" : ")[0]);
+      expect(keys, lang).toEqual([
+        "[Index] / I",
+        "[Find] / F",
+        "[Open GitHub] / O",
+        "[Render Light] / L, [Render Dark] / D".replace(", ", lang === "ja" ? "\u3001" : ", "),
+        "[Reload] / R",
+        "[New Tab] / N",
+        "[Edit] / E",
+        "[Save] / Ctrl+S",
+        "[Clear] / C",
+        "[?]",
+        "Esc",
+        "Ctrl+Z / Ctrl+Y",
+      ]);
+      const entry = section("details").lastElementChild;
+      expect(entry.matches("button[type='button'][data-open-guide]"), lang).toBe(true);
+      expect(text(entry), lang).toBe(lang === "en" ? "More Details" : JA_ENTRY);
+      expect(section("privacy").querySelectorAll("ul > li"), lang).toHaveLength(6);
+      // the privacy lines name each place GRSMD may send to or open
+      for (const word of ["PlantUML", "api.github.com", "github.com", "DOMPurify", "CSP"]) {
+        expect(text(section("privacy")), `${lang} ${word}`).toContain(word);
+      }
+    }
+    // the English lines the owner's ruling HT-4 settled
+    const en = text(body(modal, "en"));
+    expect(en).toContain("GRSMD sends what you edit outside only when you allow it.");
+    expect(en).toContain("When you press [Open], [Reload] or [Push] in its dialog, GRSMD talks to api.github.com.");
+  });
+
+  it("AT-HLP-21 HT-1: only Licenses is folded: a closed <details> with the heading as its summary, holding the list slot", () => {
+    const modal = helpModal();
+    expect(modal.querySelectorAll("details")).toHaveLength(2);
+    for (const lang of ["en", "ja"]) {
+      const fold = body(modal, lang).querySelector('[data-help-section="licenses"] > details.help-fold');
+      expect(fold, lang).not.toBeNull();
+      expect(fold.open, lang).toBe(false);
+      expect(fold.querySelector(":scope > summary > h3"), lang).not.toBeNull();
+      expect(fold.querySelectorAll("[data-third-party-list]"), lang).toHaveLength(1);
+    }
+  });
+
+  it("AT-HLP-22 HT-3: More details is a layer with the title row and two bodies holding the same sections, moved from the help", () => {
+    const guide = guideModal();
+    expect(guide.classList.contains("modal")).toBe(true);
+    expect(guide.querySelector(".help-head h2").textContent).toBe("More Details");
+    expect([...guide.querySelectorAll("[data-help-lang]")].map((el) => el.dataset.helpLang)).toEqual(["en", "ja"]);
+    expect(guide.querySelectorAll(".help-head .close-btn")).toHaveLength(1);
+    expect([...guide.querySelectorAll(".help-body")].map((el) => [el.lang, el.hidden])).toEqual([
+      ["en", false],
+      ["ja", true],
+    ]);
+    const sections = (lang) => [...body(guide, lang).querySelectorAll(":scope > [data-guide-section]")];
+    expect(sections("en").map((el) => el.dataset.guideSection)).toEqual(["usage", "details", "privacy"]);
+    expect(sections("ja").map((el) => el.dataset.guideSection)).toEqual(["usage", "details", "privacy"]);
+    for (const [i, el] of sections("en").entries()) {
+      expect(sections("ja")[i].querySelectorAll("li").length, el.dataset.guideSection).toBe(el.querySelectorAll("li").length);
+    }
+    // the detailed text keeps what the spec asks the help to say (5.19.13, CON-12, INV-02)
+    const en = text(body(guide, "en"));
+    expect(en).toContain("Copy SVG / PNG of such a diagram fetches it again without asking.");
+    expect(en).toContain("To withdraw it, open the site settings for goodrelax.github.io");
+    expect(en).toContain("A dropped file can be up to 5 MB.");
+    expect(en).toContain("save before you replace with one.");
+    // nothing to fetch and no links: the layer is text only
+    expect(guide.querySelectorAll("a, img, svg, iframe, object, embed, script, link")).toHaveLength(0);
+  });
+});
+
 describe("the GitHub help layer in src/index.html (AT-HLP-15, AT-HLP-16)", () => {
   const doc = () => new DOMParser().parseFromString(INDEX_HTML, "text/html");
   const layerBody = (d, lang) => d.querySelector(`#githubHelpModal .help-body[lang="${lang}"]`);
@@ -235,7 +322,7 @@ describe("the GitHub help layer in src/index.html (AT-HLP-15, AT-HLP-16)", () =>
   // "GitHub no fairu wo henshuu shi komitto suru houhou" (GHH-9)
   const JA_ENTRY = "GitHub\u306e\u30d5\u30a1\u30a4\u30eb\u3092\u7de8\u96c6\u3057\u30b3\u30df\u30c3\u30c8\u3059\u308b\u65b9\u6cd5";
 
-  it("AT-HLP-15 FS-25, GHH-9, D33: each help body has one entry button under the download box, and Details has the [Open GitHub] / O line", () => {
+  it("AT-HLP-15 FS-25, GHH-9, D33, HT-3: each help body has one entry button under the download box; the short help and More details have the [Open GitHub] / O line", () => {
     const modal = helpModal();
     const entry = (lang) => [...body(modal, lang).querySelectorAll("[data-open-github-help]")];
     expect(entry("en").map((el) => el.textContent.trim())).toEqual(["How to Edit and Commit Files on GitHub"]);
@@ -245,7 +332,11 @@ describe("the GitHub help layer in src/index.html (AT-HLP-15, AT-HLP-16)", () =>
       expect(button.tagName).toBe("BUTTON");
       expect(button.getAttribute("type")).toBe("button");
       expect(button.previousElementSibling.classList.contains("help-download"), lang).toBe(true);
-      const line = [...body(modal, lang).querySelectorAll('[data-help-section="details"] li')].filter((li) =>
+      const short = [...body(modal, lang).querySelectorAll('[data-help-section="details"] li')].filter((li) =>
+        li.textContent.startsWith("[Open GitHub] / O :"),
+      );
+      expect(short, lang).toHaveLength(1);
+      const line = [...body(guideModal(), lang).querySelectorAll('[data-guide-section="details"] li')].filter((li) =>
         li.textContent.startsWith("[Open GitHub] / O :"),
       );
       expect(line, lang).toHaveLength(1);

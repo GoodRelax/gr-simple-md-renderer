@@ -1037,7 +1037,7 @@ describe("EditPalette code mode (SC-27, INV-85)", () => {
     palette.setMode("code");
     const redo = root.querySelector("#paletteRedo");
     const search = root.querySelector("#paletteSearch");
-    expect([redo.title, redo.getAttribute("aria-label"), search.title, redo.tabIndex]).toEqual(["Redo (Ctrl+Shift+Z)", "Redo (Ctrl+Shift+Z)", "Search (Ctrl+F)", -1]);
+    expect([redo.title, redo.getAttribute("aria-label"), search.title, redo.tabIndex]).toEqual(["Redo (Ctrl+Shift+Z)", "Redo (Ctrl+Shift+Z)", "Find (Ctrl+F)", -1]);
     palette.setButtonStates({ undo: true });
     expect([redo.getAttribute("aria-disabled"), search.getAttribute("aria-disabled")]).toEqual(["true", "false"]);
     press(redo);
@@ -1053,6 +1053,6 @@ describe("EditPalette code mode (SC-27, INV-85)", () => {
     palette = new EditPalette(host, { isApple: true });
     ({ root } = paletteElements());
     palette.setMode("code");
-    expect([root.querySelector("#paletteRedo").title, root.querySelector("#paletteSearch").title]).toEqual(["Redo (Cmd+Shift+Z)", "Search (Cmd+F)"]);
+    expect([root.querySelector("#paletteRedo").title, root.querySelector("#paletteSearch").title]).toEqual(["Redo (Cmd+Shift+Z)", "Find (Cmd+F)"]);
   });
 });

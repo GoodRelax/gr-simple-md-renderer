@@ -53,6 +53,7 @@ export function createUiElements({ attach = false } = {}) {
     helpBtn: make("button", "helpBtn"),
     helpModal: modal(),
     githubHelpModal: modal(),
+    guideModal: modal(),
     promptModal: modal(),
     promptText: make("textarea", "promptText"),
     copyPromptBtn: make("button", "copyPromptBtn"),

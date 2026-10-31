@@ -11,6 +11,11 @@ const help = (page) => page.locator("#helpModal");
 const body = (page, lang) => page.locator(`#helpModal .help-body[lang="${lang}"]`);
 const langButton = (page, lang) => page.locator(`#helpModal [data-help-lang="${lang}"]`);
 
+// More details (HT-3): the detailed text, in a layer over the help.
+const guide = (page) => page.locator("#guideModal");
+const guideBody = (page, lang) => page.locator(`#guideModal .help-body[lang="${lang}"]`);
+const guideEntry = (page, lang) => body(page, lang).locator("[data-open-guide]");
+
 async function openHelp(page) {
   await page.locator("#helpBtn").click();
   await expect(help(page)).toBeVisible();
@@ -213,15 +218,16 @@ test.describe("the help's title row and text size (B4, B6)", () => {
 });
 
 test.describe("the clipboard permission note (CON-12, INV-69)", () => {
-  test("is in Privacy & Security in both languages, and the Editing chapter is gone", async ({ page }) => {
+  test("is in Privacy & Security of More details in both languages, and the Editing chapter is gone (HT-3)", async ({ page }) => {
     await page.goto("/");
     await openHelp(page);
+    await guideEntry(page, "en").click();
     for (const [lang, words] of [["en", "Clipboard to Ask or Block"], ["ja", "\u300c\u30af\u30ea\u30c3\u30d7\u30dc\u30fc\u30c9\u300d\u3092\u300c\u78ba\u8a8d\u3059\u308b\u300d\u304b\u300c\u30d6\u30ed\u30c3\u30af\u300d"]]) {
-      if (lang === "ja") await langButton(page, "ja").click();
-      const privacy = body(page, lang).locator('[data-help-section="privacy"]');
+      if (lang === "ja") await page.locator('#guideModal [data-help-lang="ja"]').click();
+      const privacy = guideBody(page, lang).locator('[data-guide-section="privacy"]');
       await expect(privacy).toContainText("goodrelax.github.io");
       await expect(privacy).toContainText(words);
-      await expect(body(page, lang).locator('[data-help-section="editing"]')).toHaveCount(0);
+      await expect(page.locator('[data-help-section="editing"], [data-guide-section="editing"]')).toHaveCount(0);
     }
   });
 });
@@ -232,18 +238,76 @@ test.describe("how to start editing (owner rulings AQ4, AQ13, INV-57, INV-29)", 
     ja: "\u30de\u30a6\u30b9\u3067\u306f\u3001\u30d7\u30ec\u30d3\u30e5\u30fc\u3092\u30c0\u30d6\u30eb\u30af\u30ea\u30c3\u30af\u3059\u308b\u3068\u3001\u7de8\u96c6\u30e2\u30fc\u30c9\u306b\u5165\u308a\u3001\u305d\u306e\u30d6\u30ed\u30c3\u30af\u3092\u958b\u304d\u307e\u3059\u3002\u30bf\u30c3\u30c1\u3084\u30da\u30f3\u3067\u306f\u3001[Edit] \u3092\u62bc\u3057\u3066\u304b\u3089\u30d6\u30ed\u30c3\u30af\u3092\u30bf\u30c3\u30d7\u3057\u307e\u3059\u3002",
   };
 
-  test("AT-HLP-12 FS-10, INV-29, INV-57 (AQ4, AQ13: the pen is as touch): Details has the line right after the [Edit] row in both languages; the start screen has its 4th step", async ({ page }) => {
+  test("AT-HLP-12 FS-10, INV-29, INV-57 (AQ4, AQ13: the pen is as touch), HT-3: More details has the line right after the [Edit] row in both languages; the short [Edit] row names the double-click; the start screen has its 4th step", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("#affordanceText")).toContainText("4. Double-click a block     ->  Edit  (touch or pen: [Edit], tap)");
     await openHelp(page);
+    await expect(body(page, "en").locator('[data-help-section="details"] > ul > li', { hasText: "[Edit] / E" })).toContainText(
+      "With a mouse, a double-click on the preview also starts editing",
+    );
+    await guideEntry(page, "en").click();
     for (const lang of ["en", "ja"]) {
-      if (lang === "ja") await langButton(page, "ja").click();
-      const rows = body(page, lang).locator('[data-help-section="details"] > ul > li');
+      if (lang === "ja") await page.locator('#guideModal [data-help-lang="ja"]').click();
+      const rows = guideBody(page, lang).locator('[data-guide-section="details"] > ul > li');
       const texts = (await rows.allInnerTexts()).map((t) => t.replace(/\s+/g, " ").trim());
       const at = texts.findIndex((t) => t.startsWith("[Edit] / E"));
       expect(at, lang).toBeGreaterThanOrEqual(0);
       expect(texts[at + 1], lang).toBe(LINES[lang]);
     }
+  });
+});
+
+test.describe("the short help and More details (HT-1, HT-3)", () => {
+  test.use({ locale: "en-US" });
+
+  test("AT-HLP-24 HT-3: the entry opens More details in the help's language; Esc closes it (focus to the entry), then the help (focus to [?])", async ({ page }) => {
+    await page.goto("/");
+    await openHelp(page);
+    await guideEntry(page, "en").click();
+    await expect(guide(page)).toBeVisible();
+    await expect(guide(page).locator(".help-head h2")).toHaveText("More Details");
+    await expect(guideBody(page, "en")).toBeVisible();
+    await expect(guideBody(page, "ja")).toBeHidden();
+    const inGuide = () => page.evaluate(() => document.getElementById("guideModal").contains(document.activeElement));
+    for (let i = 0; i < 4; i++) {
+      await page.keyboard.press("Tab");
+      expect(await inGuide(), `Tab ${i + 1}`).toBe(true);
+    }
+    await page.keyboard.press("Escape");
+    await expect(guide(page)).toBeHidden();
+    await expect(help(page)).toBeVisible();
+    await expect(guideEntry(page, "en")).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(help(page)).toBeHidden();
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe("helpBtn");
+
+    // the help switched to Japanese: More details opens in Japanese, at the top
+    await openHelp(page);
+    await langButton(page, "ja").click();
+    await guideEntry(page, "ja").click();
+    await expect(guideBody(page, "ja")).toBeVisible();
+    await expect(page.locator('#guideModal [data-help-lang="ja"]')).toHaveAttribute("aria-pressed", "true");
+    expect(await guide(page).evaluate((el) => el.scrollTop)).toBe(0);
+    await guide(page).locator(".close-btn").click();
+    await expect(guide(page)).toBeHidden();
+    await expect(help(page)).toBeVisible();
+  });
+
+  test("AT-HLP-25 HT-1: Licenses is folded; its heading opens it with a click and with Enter", async ({ page }) => {
+    await page.goto("/");
+    await openHelp(page);
+    const fold = body(page, "en").locator('[data-help-section="licenses"] details');
+    const list = fold.locator("[data-third-party-list]");
+    await expect(list).toBeHidden();
+    await fold.locator("summary").click();
+    await expect(list).toBeVisible();
+    await expect(list).toContainText("marked");
+    await fold.locator("summary").click();
+    await expect(list).toBeHidden();
+    await fold.locator("summary").focus();
+    await page.keyboard.press("Enter");
+    await expect(list).toBeVisible();
+    await expect(help(page)).toBeVisible(); // Enter on the heading leaves the help open
   });
 });
 
@@ -323,5 +387,13 @@ test.describe("the GitHub help layer on a touch device (FS-25, INV-100)", () => 
     await expect(entry(page, "en")).toBeHidden();
     await langButton(page, "ja").click();
     await expect(entry(page, "ja")).toBeHidden();
+  });
+
+  test("AT-HLP-24 HT-3: on a phone or iPad the entry to More details is shown and opens it", async ({ page }) => {
+    await page.goto("/");
+    await openHelp(page);
+    await expect(guideEntry(page, "en")).toBeVisible();
+    await guideEntry(page, "en").click();
+    await expect(guideBody(page, "en")).toBeVisible();
   });
 });

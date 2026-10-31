@@ -81,6 +81,7 @@ describe("UIController.setupFileDrop", () => {
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
       githubHelpModal: createMockModal(),
+      guideModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),
       copyPromptBtn: document.createElement("button"),

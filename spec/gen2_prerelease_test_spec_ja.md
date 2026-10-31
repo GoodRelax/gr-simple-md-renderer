@@ -1,6 +1,6 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.37
+**バージョン:** 2.38
 **日付:** 2026-10-31 (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
@@ -88,6 +88,8 @@
 
 > v2.37 の変更 (2026-10-31、GRSMD 自身のライセンスを Apache License 2.0 に変える。正式版 (11-01)。オーナーの裁定 LIC-1〜LIC-8、G1。v2.36 は iPad の直しの枝が使う): PRT-A01・PRT-A02 とプロンプトのケースの著作権の表記を "© 2026 GoodRelax. Apache-2.0." にした (LIC-6。PRT-A01 の「タイトルとコピーライトの幅がほぼ同じ」はこの表記で保つ)。PRT-AA01 の期待に、最後のコメントが GRSMD 自身の告知で始まり、Apache License 2.0 の全文を 1 回だけ持つことを足した。PRT-AA02 の期待に、章の頭の GRSMD 自身のライセンスの 1 文を足した。AT-OSS-05 に、GRSMD 自身の告知と `LICENSE` の文を 1 回だけ書くことの試験を足した。改めたケースの判定は空欄 (未実施)。
 
+> v2.38 の変更 (2026-10-31、ヘルプを短くする。2026-11-01 のリリース。v2.36・v2.37 は iPad の直しとライセンスの枝が使う): 仕様の SC-16・FS-10・CON-12・INV-75 (3)・INV-105 (7) (オーナーの裁定 HT-1〜HT-4) に合わせて、PRT-L01 の期待結果を短いヘルプの節と行に書き直し、前の細かい行の確かめを、新しい窓「More Details」/「詳しい使い方」の中へ移した。PRT-L09 (詳しい使い方の窓。iPad でヘルプが約 1 画面に入ること) を足した。PRT-AA02 はライセンスの章を開いてから読む。AT-HLP を 01〜25 にした (21: 短いヘルプの節と行と折りたたみ、22: 窓の HTML、23: 窓のキーと Esc の 2 段、24・25: e2e)。AT-HLP-12・14・15・20 は、細かい行を窓の中で確かめる。AT-HLP-11 は、折りたたみの見出し (`summary`) も Tab で回ることを確かめる。help.e2e.js に AT-HLP-24 (2 件)・25 を足し、notices.e2e.js の PRT-AA02 はライセンスの見出しを押してから一覧を読む。同じ日に、画面の名前 Search を Find にした (オーナーの裁定 HT-5): PRT の [Search] を [Find] に、キーのヒントを `[F] Find;` に、コードのパレットのボタンを Find にした。改めたケースの判定は空欄 (未実施)。
+
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
 ---
@@ -144,13 +146,13 @@
 |              | - その下に "© 2026 GoodRelax. Apache-2.0." が表示される                               |
 |              | - タイトルとコピーライトの幅がほぼ同じである                                           |
 |              | - textarea (Paste Markdown...) が表示されている                                        |
-|              | - ボタン群: Index, Search, Render Light, Render Dark, Re-load, New Tab, Edit, Clear, [?] が表示されている (Index と Search は無効) |
+|              | - ボタン群: Index, Find, Render Light, Render Dark, Re-load, New Tab, Edit, Clear, [?] が表示されている (Index と Find は無効) |
 |              | - OS のカラースキームが適用されている (ダークモード OS ならダーク背景)                 |
 
 | 結果 | Pass / Fail / N/A |
 | ---- | ----------------- |
 | 判定 |                   |
-| 備考 | 要求: FS-16 (初期画面の文)、INV-12 (OS の配色)、SC-25 / SC-26 (Index / Search は初期状態で無効)。自動では load.e2e.js、theme.e2e.js (INV-12)、AT-CFG-10 (初期画面の 4 行) |
+| 備考 | 要求: FS-16 (初期画面の文)、INV-12 (OS の配色)、SC-25 / SC-26 (Index / Find は初期状態で無効)。自動では load.e2e.js、theme.e2e.js (INV-12)、AT-CFG-10 (初期画面の 4 行) |
 
 ---
 
@@ -333,7 +335,7 @@
 |              | - #fileInfo が 2 行形式である (1行目: name\|lines\|size, 2行目: Updated\|文字コード\|改行。例 `UTF-8  \|  LF`。INV-89 (5)) |
 |              | - editor textarea が非表示になる                                         |
 |              | - エディター背景色が寒色系になる                                         |
-|              | - キーヒントが表示される (`[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;` と `[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);`。`CONFIG.keyHints.code`。Mac では 2 行目の終わりが `[Option+Left][Option+Right] Fold (JSON);` (`CONFIG.keyHints.codeApple`)) |
+|              | - キーヒントが表示される (`[I] Index; [F] Find; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;` と `[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);`。`CONFIG.keyHints.code`。Mac では 2 行目の終わりが `[Option+Left][Option+Right] Fold (JSON);` (`CONFIG.keyHints.codeApple`)) |
 |              | - [Edit] が有効 (押すとコード編集モード。PRT-AJ03) |
 
 | 結果 | Pass / Fail / N/A |
@@ -704,7 +706,7 @@
 |              | 3. 何もせず 5 秒待つ                                                |
 |              | 4. `.json` を D&D する (Windows と Mac で) |
 | **期待結果** | - キーヒントが画面上部 (top: 60px 付近) に表示される                |
-|              | - 1行目: `[I] Index; [F] Search; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;` (Markdown 表示のとき。文字列は `CONFIG.keyHints.markdown` の正本に合わせる) |
+|              | - 1行目: `[I] Index; [F] Find; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;` (Markdown 表示のとき。文字列は `CONFIG.keyHints.markdown` の正本に合わせる) |
 |              | - 2行目: `[Up][Down] Scroll Up/Down;`                               |
 |              | - 5 秒後にフェードアウトする                                        |
 |              | - 4 で、2 行目の終わりが `[Ctrl+Left][Ctrl+Right] Fold (JSON);`。Mac では `[Option+Left][Option+Right] Fold (JSON);` (`CONFIG.keyHints.code` / `codeApple`。INV-92 (4)、NE-23) |
@@ -749,35 +751,33 @@
 |              | 2. 題名の行の "English" を押し、英語 (EN) の各セクションを確認                          |
 |              | 3. "Japanese" を押し、日本語 (JP) の各セクションを確認                                  |
 | **期待結果** | - モーダルが表示される。題名は "GR Simple Markdown"。題名の行に "English" / "Japanese" のトグルと × がある |
-|              | - 表示されるのは押した方の言語の本文だけ。節は EN / JP で同じ順 (ダウンロードの枠、概要、基本的な使い方、詳細、プライバシーとセキュリティ、サンプルデータ、ライセンス)。「Editing」/「編集」の章は無い (B5)。見出しに "(Japanese)" が無い |
-|              | - EN "About GRSMD" / JP "概要" に新しい名前、"viewer and editor" / 「ビューワー兼エディター」、旧名の 1 文がある |
-|              | - EN "Basic Usage" セクションに hljs common バンドルの注記がある                        |
-|              | - EN / JP の "Basic Usage" / "基本的な使い方" のドロップの項目は、`.md` と `.markdown` は Markdown、ほかは決まった種類 (仕様 5.4 の表) のテキスト系ファイルだけがコードビューで開き、ほかの種類は断ると書く (INV-18。「どんなテキストファイルでも」とは書かない) |
-|              | - EN "Details" セクションのショートカットキーが大文字バッククォート表記                 |
-|              | (例: `` `L` ``, `` `D` ``, `` `R` ``。矢印キーは `` `Up` `` / `` `Down` `` arrow keys)  |
-|              | - EN Reload の説明が "Reload the current file from disk (Chrome / Edge)" である         |
-|              | - JP "基本的な使い方" セクションにも同じ hljs 注記がある                                |
-|              | - JP "基本的な使い方" に「上部の [Paste Markdown...] ボックスに直接ペースト」項目がある |
-|              | - JP "詳細" セクションも同じバッククォート表記 (矢印キーは「上下矢印キー」で、バッククォート表記なし) |
-|              | - JP Reload の説明が "現在のファイルをディスクからリロード（Chrome / Edge）" である      |
-|              | - EN / JP の "Basic Usage" / "基本的な使い方" に、スマートフォン・タブレットのペースト (画面をタップし、上部のボックスを長押し) の文がある |
-|              | - EN / JP の "Details" / "詳細" の最初に、`[Index]` / `I` (見出しの一覧の表示・非表示。押すとそこへ飛ぶ) と `[Search]` / `F` (Markdown の原文、コードビューではファイルを探す。`Aa`、`.*`、箱の中の ↓ / ↑、編集モードの `Ctrl+F` (Mac は `Cmd+F`)、`Replace` / `All` と `Ctrl+Z` 1 回の戻し、箱の中の `Esc`、時間のかかる正規表現の注意) の行がある |
-|              | - EN / JP の "Details" / "詳細" に、編集モードの数式 (Text format の 2 段目。Insert inline math はカーソルに式、Insert math boxes は名前の下の 3 つの数式の箱) の行と、ブロックの範囲 (ドラッグ、スマートフォンは長押しとつまみで選ぶ。`Delete` / `Backspace` で消し、`Ctrl+X` / `Ctrl+C` は Markdown を切り取り・コピー、Undo 1 回で戻る。見えている文字の一部をコピーするなら編集モードを出る) の行がある |
-|              | - EN / JP の "Details" / "詳細" に `Esc` (開いているブロック・セルを反映して閉じる。ブロックを選んでいれば先に選択を解く。何も開いていなければパレットを隠す。パレットが隠れていれば検索、次に目次を閉じる)、`Ctrl+Z` / `Ctrl+Y` (または `Ctrl+Shift+Z`) の Undo / Redo (30 回まで。Mac は `Cmd+Z` / `Cmd+Shift+Z`。開いたブロックの中では Redo はいつも入力のやり直し、Undo もブロックに変更があれば入力の取り消し)、すき間の点線と `+` からの挿入 (タッチはタップ)、図の `Copy SVG` / `Copy PNG` (PC)、印刷 (Ctrl+P。文書だけをライトの色で) の行がある。`[?]` の行に「`Esc` で閉じる」(EN "`Esc` closes it") がある |
-|              | - EN / JP の "Details" / "詳細" に [Edit] / E の行がある (「See Editing」/「「編集」を参照」は無い) |
-|              | - EN / JP の "Details" / "詳細" の [Edit] / E の行の次に、編集の始め方の行がある: マウスはプレビューのダブルクリック、タッチとペンは [Edit] を押してからブロックをタップ (オーナーの裁定 AQ4・AQ13) |
-|              | - EN / JP の "Details" / "詳細" の編集の始め方の行の次に、[Save] の行がある: Ctrl+S と同じ。GRSMD がファイルの場所を知っているときはパスをクリップボードに入れ、Ctrl+V でファイル名に貼る。起動役の名は無い (INV-105 (7)。オーナーの裁定 PL-23。2026-10-30 に足した。判定は空欄) |
-|              | - EN / JP の "Details" / "詳細" に Ctrl+S / Ctrl+Shift+S の行がある (Mac は Cmd) |
-|              | - EN "Privacy & Security" / JP "プライバシーとセキュリティ" に、ダウンロードのボタンが GitHub (github.com) を開き、押すまで何も送らない文がある |
-|              | - EN "Privacy & Security" / JP "プライバシーとセキュリティ" に、「リンクを貼る」(Paste copied link) がクリップボードを読み、goodrelax.github.io で開いているとき Chrome / Edge では許可が同じサイトの他のページにも及ぶこと、その取り消し方 (サイトの設定の「クリップボード」) の 1 項目がある (CON-12 の注、INV-69。「編集」の章から移した) |
+|              | - 表示されるのは押した方の言語の本文だけ。節は EN / JP で同じ順 (ダウンロードの枠、概要、基本的な使い方、ボタンとキー、プライバシーとセキュリティ、サンプルデータ、ライセンス)。「Editing」/「編集」の章は無い (B5)。見出しに "(Japanese)" が無い (HT-1・HT-4) |
+|              | - EN "About GRSMD" / JP "概要" は 3 文で、新しい名前、"WYSIWYG Markdown editor" /「Markdown の WYSIWYG エディター」、許可したときだけ外へ送る文がある (HT-4) |
+|              | - EN "Basic Usage" / JP "基本的な使い方" に、表示を始める 4 つの方法 (貼る、`.md` か `.markdown` をドラッグ&ドロップ、ほかのテキストのファイルはコードビュー、上の [Paste Markdown...] の欄に貼る) と、スマートフォン・タブレットの貼り方の 1 文がある |
+|              | - EN "Buttons and Keys" / JP "ボタンとキー" は 12 行 ([Index]・[Find]・[Open GitHub]・[Render Light] と [Render Dark]・[Reload]・[New Tab]・[Edit]・[Save]・[Clear]・[?]・Esc・Ctrl+Z / Ctrl+Y)。キーは大文字のバッククォート表記。[Edit] の行に、マウスではプレビューのダブルクリックでも編集を始めることがある。[Save] の行は Ctrl+S と Ctrl+Shift+S (Save as)。最後に "More Details" /「詳しい使い方」のボタンがある (HT-3) |
+|              | - EN "Privacy & Security" / JP "プライバシーとセキュリティ" は 6 行で、PlantUML・外部の画像・GitHub 連携 (PC だけ。[Open]・[Reload]・[Push] を押したときだけ api.github.com)・ダウンロードのボタン (github.com を開く)・スクリプト (DOMPurify と CSP)・「リンクを貼る」(ブラウザがクリップボードの許可を求めることがある) を 1 文ずつ書く (CON-12) |
 |              | - EN / JP の両方に Sample Data / サンプルデータのリンク (2 つ) があり、正常に動作する   |
-|              | - EN / JP の最後の節が Licenses / ライセンス (中身は PRT-AA02) |
+|              | - EN / JP の最後の節が Licenses / ライセンスで、見出しだけの閉じた形で出る。見出しを押すと開く (中身は PRT-AA02。HT-1) |
+|              | - "More Details" /「詳しい使い方」を押して窓を開き (PRT-L09)、窓の EN "Opening and pasting" / JP "開くときと貼るとき" に、決まった種類のほかは断る文と hljs common バンドルの注記、ペーストで始まる条件と 5 MB、20,480 文字を超えるコードブロックの注がある |
+|              | - 窓の EN "Details" セクションのショートカットキーが大文字バッククォート表記                 |
+|              | (例: `` `L` ``, `` `D` ``, `` `R` ``。矢印キーは `` `Up` `` / `` `Down` `` arrow keys)  |
+|              | - 窓の EN Reload の説明が "Reload the current file from disk (Chrome / Edge)" である         |
+|              | - 窓の JP "詳細" セクションも同じバッククォート表記 (矢印キーは「上下矢印キー」で、バッククォート表記なし) |
+|              | - 窓の JP Reload の説明が "現在のファイルをディスクからリロード（Chrome / Edge）" である      |
+|              | - 窓の EN / JP の "Details" / "詳細" の最初に、`[Index]` / `I` (見出しの一覧の表示・非表示。押すとそこへ飛ぶ) と `[Find]` / `F` (Markdown の原文、コードビューではファイルを探す。`Aa`、`.*`、箱の中の ↓ / ↑、編集モードの `Ctrl+F` (Mac は `Cmd+F`)、`Replace` / `All` と `Ctrl+Z` 1 回の戻し、箱の中の `Esc`、時間のかかる正規表現の注意) の行がある |
+|              | - 窓の EN / JP の "Details" / "詳細" に、編集モードの数式 (Text format の 2 段目。Insert inline math はカーソルに式、Insert math boxes は名前の下の 3 つの数式の箱) の行と、ブロックの範囲 (ドラッグ、スマートフォンは長押しとつまみで選ぶ。`Delete` / `Backspace` で消し、`Ctrl+X` / `Ctrl+C` は Markdown を切り取り・コピー、Undo 1 回で戻る。見えている文字の一部をコピーするなら編集モードを出る) の行がある |
+|              | - 窓の EN / JP の "Details" / "詳細" に `Esc` (開いているブロック・セルを反映して閉じる。ブロックを選んでいれば先に選択を解く。何も開いていなければパレットを隠す。パレットが隠れていれば検索、次に目次を閉じる)、`Ctrl+Z` / `Ctrl+Y` (または `Ctrl+Shift+Z`) の Undo / Redo (30 回まで。Mac は `Cmd+Z` / `Cmd+Shift+Z`。開いたブロックの中では Redo はいつも入力のやり直し、Undo もブロックに変更があれば入力の取り消し)、すき間の点線と `+` からの挿入 (タッチはタップ)、図の `Copy SVG` / `Copy PNG` (PC)、印刷 (Ctrl+P。文書だけをライトの色で) の行がある。`[?]` の行に「`Esc` で閉じる」(EN "`Esc` closes it") がある |
+|              | - 窓の EN / JP の "Details" / "詳細" に [Edit] / E の行がある (「See Editing」/「「編集」を参照」は無い) |
+|              | - 窓の EN / JP の "Details" / "詳細" の [Edit] / E の行の次に、編集の始め方の行がある: マウスはプレビューのダブルクリック、タッチとペンは [Edit] を押してからブロックをタップ (オーナーの裁定 AQ4・AQ13) |
+|              | - 窓の EN / JP の "Details" / "詳細" の編集の始め方の行の次に、[Save] の行がある: Ctrl+S と同じ。GRSMD がファイルの場所を知っているときはパスをクリップボードに入れ、Ctrl+V でファイル名に貼る。起動役の名は無い (INV-105 (7)。オーナーの裁定 PL-23。2026-10-30 に足した。判定は空欄) |
+|              | - 窓の EN / JP の "Details" / "詳細" に Ctrl+S / Ctrl+Shift+S の行がある (Mac は Cmd) |
+|              | - 窓の EN "Privacy & Security" / JP "プライバシーとセキュリティ" に、ダウンロードのボタンが GitHub (github.com) を開き、押すまで何も送らない文がある |
+|              | - 窓の EN "Privacy & Security" / JP "プライバシーとセキュリティ" に、「リンクを貼る」(Paste copied link) がクリップボードを読み、goodrelax.github.io で開いているとき Chrome / Edge では許可が同じサイトの他のページにも及ぶこと、その取り消し方 (サイトの設定の「クリップボード」) の 1 項目がある (CON-12 の注、INV-69。「編集」の章から移した) |
 |              | - × ボタン (キーボードで Tab で移り、Enter で押せる)、背景のクリック、Esc のどれでもモーダルが閉じる |
-
 | 結果 | Pass / Fail / N/A |
 | ---- | ----------------- |
 | 判定 |                   |
-| 備考 | 「Editing」/「編集」の章はオーナーの裁定 B5 (2026-10-23) で消した。キーの行は「Details」/「詳細」に置く (調整役の裁定)。編集の始め方の 1 行はオーナーの裁定 AQ4 (2026-10-29) で足した。仕様 5.11 の注。自動では help.e2e.js と AT-HLP-05 が節の並びと数を確かめる |
+| 備考 | 「Editing」/「編集」の章はオーナーの裁定 B5 (2026-10-23) で消した。2026-10-31 にヘルプを短くし、細かい行は詳しい使い方の窓へ移した (オーナーの裁定 HT-1〜HT-4)。編集の始め方の 1 行はオーナーの裁定 AQ4 (2026-10-29) で足した。仕様 5.11 の注。自動では help.e2e.js と AT-HLP-05 が節の並びと数を確かめる |
 
 ---
 
@@ -918,6 +918,28 @@
 | --- | --- |
 | 判定 | |
 | 備考 | 要求: SC-16、FS-10 (オーナーの裁定 B6)。自動では help.e2e.js (PRT-L08。計算された `font-size`) |
+
+---
+
+### PRT-L09: 詳しい使い方の窓 (HT-1・HT-3)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC (Chrome / Edge) と iPad (Safari)。ライトとダークの両方 |
+| **手順** | 1. iPad を縦に持ち、[?] でヘルプを開き、下までスクロールする |
+|  | 2. "Buttons and Keys" /「ボタンとキー」の最後の "More Details" /「詳しい使い方」を押す |
+|  | 3. 窓の中を下までスクロールし、"English" / "Japanese" を切り替える |
+|  | 4. PC で Esc を 2 回押す。iPad では × を押し、次にヘルプの × を押す |
+| **期待結果** | - 1 で、ヘルプは iPad の縦で約 1 画面 (ダウンロードの枠からライセンスの見出しまで) に入る |
+|  | - 2 で、ヘルプの上に全画面の窓が、ヘルプで選んでいる言語で、先頭から開く。題名は "More Details"。題名の行に "English" / "Japanese" と × がある |
+|  | - 3 で、窓の本文は "Opening and pasting" /「開くときと貼るとき」、"Details" /「詳細」、"Privacy & Security" /「プライバシーとセキュリティ」の 3 つの節で、題名の行は上に残る。ダークでも読める |
+|  | - 4 で、1 回目に窓が閉じてヘルプが見え (フォーカスは入口のボタン)、2 回目にヘルプが閉じる (フォーカスは [?]) |
+|  | - 窓を開いている間、外への通信が無い (開発者ツールの Network) |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: SC-16、FS-10「詳しい使い方を開く」「スマートフォンと iPad でも詳しい使い方を開ける」(オーナーの裁定 HT-1・HT-3)。自動では AT-HLP-22〜24 |
 
 ---
 
@@ -2270,7 +2292,7 @@
 | **前提条件** | iPhone (幅 375 px)、iPad、PC |
 | **手順** | 1. `sample-data-2.md` を表示し、上部バーを目視する |
 | | 2. [Edit] を押す |
-| **期待結果** | - 上部バーのボタン (Index、Search、Commands、Render Light、Render Dark、Re-load、New Tab、Edit、Save、Clear、[?]) が欠けずに表示される (2026-10-30 に Save を足し、ボタンの幅を狭めた。PL-19)。iPad は縦と横の両方で見る ([?] が右端で切れない。オーナーの裁定 IPD2) |
+| **期待結果** | - 上部バーのボタン (Index、Find、Commands、Render Light、Render Dark、Re-load、New Tab、Edit、Save、Clear、[?]) が欠けずに表示される (2026-10-30 に Save を足し、ボタンの幅を狭めた。PL-19)。iPad は縦と横の両方で見る ([?] が右端で切れない。オーナーの裁定 IPD2) |
 | | - 1 で、[?] を除くボタンは、どれも同じ形 (角の丸い四角。角の丸み 6px、枠 1px) で、長円のボタンが無い。PC と iPad で同じ形 (R6。オーナーの裁定 BI-14〜BI-16) |
 | | - 1 を `Render Dark` の後にも見る。ボタンはダークの地と字になる |
 | | - 2 で、パレットが開き、[Edit] が緑の地に白い字になる。パレットを最小化しても緑のまま。もう一度 [Edit] を押してパレットを閉じると、元の色に戻る (R1。オーナーの裁定 BI-1・BI-2) |
@@ -3887,7 +3909,7 @@
 | 項目 | 詳細 |
 | --- | --- |
 | **前提条件** | ビルドしたファイルを開く |
-| **手順** | 1. [?] でヘルプを開き、最後まで読む |
+| **手順** | 1. [?] でヘルプを開き、最後の「Licenses」/「ライセンス」の見出しを押して開く (章は閉じた形で出る。HT-1) |
 |  | 2. English / Japanese を切り替える |
 | **期待結果** | - 最後の節が「Licenses」(英) /「ライセンス」(日) で、その最初の段落が GRSMD 自身のライセンス (Apache License 2.0、© 2026 GoodRelax) を書く。次の段落が、全文がこの HTML ファイルの最後のコメントにあることと、その読み方 (ページのソースを表示する、テキストエディターで開く) を書いている |
 |  | - その下に「名前 版 (ライセンス)」の一覧がコンマで並ぶ (英と日で同じ一覧)。リンクは無い |
@@ -3895,7 +3917,7 @@
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: 付録 A.2、SC-16。自動では notices.e2e.js、help.e2e.js、AT-HLP-05 |
+| 備考 | 要求: 付録 A.2、SC-16、INV-75 (3)。自動では notices.e2e.js、help.e2e.js (AT-HLP-25)、AT-HLP-05・AT-HLP-21 |
 
 ---
 
@@ -4243,7 +4265,7 @@
 | **前提条件** | ダーク、印刷プレビュー、iPhone / iPad |
 | **手順** | 1. ダークで検索する |
 |  | 2. 検索を出したまま印刷プレビュー |
-|  | 3. iPhone / iPad で [Search] を押して探す |
+|  | 3. iPhone / iPad で [Find] を押して探す |
 | **期待結果** | - 色が 5.8.1 のとおり |
 |  | - 印刷に箱・枠・色付けが出ない |
 |  | - タッチでも使え、一致が上部バーに隠れない |
@@ -4657,7 +4679,7 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | 項目 | 詳細 |
 | --- | --- |
 | **前提条件** | 長い文書。Markdown ビュー |
-| **手順** | 1. [Index] と [Search] を開き、本文の上に重なった所を見る |
+| **手順** | 1. [Index] と [Find] を開き、本文の上に重なった所を見る |
 |  | 2. ダークの配色で 1 を行う |
 | **期待結果** | - 1・2 で、目次と検索の箱の裏の本文がうっすら見えるが、前 (25% 透け) より見えにくく、目次の字が読みやすい |
 |  | - DevTools で、地はライト `rgba(255, 255, 255, 0.85)`、ダーク `rgba(21, 27, 35, 0.85)` |
@@ -4676,7 +4698,7 @@ INV-83・INV-84、INV-40 (仕様 2026-10-28 の改訂)。オーナーの指摘 (
 | 項目 | 詳細 |
 | --- | --- |
 | **前提条件** | PC の Chrome / Edge。`sample-data-2.md` を D&D し (PlantUML は Cancel)、`d` でダークにした |
-| **手順** | 1. [Index] と [Search] を開き、語を探して枠と色付けを出す。[Edit] でパレットを出し、段落を開く |
+| **手順** | 1. [Index] と [Find] を開き、語を探して枠と色付けを出す。[Edit] でパレットを出し、段落を開く |
 | | 2. そのまま印刷のプレビュー (Ctrl+P) を開く。閉じて、段落を外側のクリックで確定し、マウスをブロックのすき間に置いて点線を出したまま、もう一度 Ctrl+P を押す |
 | | 3. 閉じて、段落 A と B をドラッグで選び (ブロックの範囲)、もう一度印刷のプレビューを開く |
 | | 4. 閉じて、`c` で Clear し、`.py` を D&D してコードビューにし、印刷のプレビューを開く |
@@ -4815,14 +4837,14 @@ SC-27・INV-85〜INV-92、INV-80 (1)(5)(6)、FS-23、仕様 5.19。オーナー�
 | --- | --- |
 | **前提条件** | 100 行以上の `.py` をドロップしてコードビュー。50 行目あたりが画面の上端にある |
 | **手順** | 1. [Edit] を押す |
-|  | 2. パレットを見る。Undo・Redo・Search のボタンにマウスを置いて名前を見る |
+|  | 2. パレットを見る。Undo・Redo・Find のボタンにマウスを置いて名前を見る |
 |  | 3. 1 行打ち、長い行を打って横にはみ出させる |
 |  | 4. ページの余白を押してから `e` を押す |
 |  | 5. ダークの配色で 1〜4 を行う |
 |  | 6. コード編集モードのまま印刷プレビューを開く |
 |  | 7. パレットのグリップを長押しし、未保存のまま、もう一度長押しする |
 | **期待結果** | - 1 で、ビューが動かず、行番号付きの編集欄になり、カーソルは上端の行の頭にある。字と行の高さは表示と同じ |
-|  | - 2 で、パレットは 1 段に、グリップ・Save・Save as・Undo・Redo・Search の 6 つだけ (ほかのボタンは無い)。Undo と Redo は無効。名前は "Undo (Ctrl+Z)"・"Redo (Ctrl+Shift+Z)"・"Search (Ctrl+F)" (Mac は Cmd)。下に `<file name> - saved` |
+|  | - 2 で、パレットは 1 段に、グリップ・Save・Save as・Undo・Redo・Find の 6 つだけ (ほかのボタンは無い)。Undo と Redo は無効。名前は "Undo (Ctrl+Z)"・"Redo (Ctrl+Shift+Z)"・"Find (Ctrl+F)" (Mac は Cmd)。下に `<file name> - saved` |
 |  | - 3 で、折り返さず、横にスクロールできる。行番号が増える。タブのタイトルに `* `、パレットに `* unsaved` |
 |  | - 4 で、表示に戻り、打った文字が色付きで出て、ファイル情報の行数が増え、`* ` は残る。パレットは消える |
 |  | - 5 で、編集欄の地・字・行番号がダークの表示と同じ |
@@ -5112,7 +5134,7 @@ SC-27・INV-85〜INV-92、INV-80 (1)(5)(6)、FS-23、仕様 5.19。オーナー�
 | --- | --- |
 | **前提条件** | `foo` を何か所にも含む `.js` |
 | **手順** | 1. 表示で `f` を押し、`foo` を探す |
-|  | 2. [Edit] を押し、Ctrl+F (またはパレットの Search) で検索の箱を出す。`foo` を探し、↓ を押す |
+|  | 2. [Edit] を押し、Ctrl+F (またはパレットの Find) で検索の箱を出す。`foo` を探し、↓ を押す |
 |  | 3. 置換欄に `bar` と打ち、[Replace]、次に [All] を押す |
 |  | 4. 編集欄の外で Ctrl+Z を 2 回押す |
 |  | 5. [Index] も出し、編集欄の外にフォーカスを置いて Esc を 3 回押す |
@@ -5685,7 +5707,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | 要求の ID | .md 以外のファイルの編集 (SC-27) の試験は、`describe` か `it` (e2e は `test`) の名前に要求の ID (INV-85〜92 など) を書く (レビュー基準 R6 Gherkin。レビュー 1 回目の L8)。試験のファイルは英語・ASCII (レビュー基準 G5。AT-STA-20) |
 | 時間の試験 | AT-PERF のうち時間を測るもの (02〜07、09、10、12、14) とメモリを測るもの (11、13) は、環境変数 `GRSMD_PERF=1` のときだけ動く (`describe.runIf`。ふだんはスキップと数える)。計算量の上限を数えるもの (01、08) は常に動く。AT-HB の大きなブロックの試験 (`MarkdownTextOps.insertHardBreak.test.js` の AT-HB-14〜19 と、字句解析の上限の AT-HB-26〜28) は、常に字句解析の回数を確かめ、時間は `GRSMD_PERF=1` のときだけ確かめる。**例外 (正規表現の計算量、ReDoS):** AT-WRAP-20 / 21、AT-FR-65〜67、AT-HB-62 / 63、AT-INS-20 / 21、AT-ICO-20、AT-BM-35 / 36、AT-RUN-03、AT-MR-15 / 16 は、時間の上限 (1,000 ms) を常に確かめる。直した後は数 ms で、上限まで 60 倍以上あり、負荷の高い機械でも揺れない (調整役の裁定 2026-10-25)。直す前は 4.4 s〜数時間で、上限との差は小さいもので約 4 倍 (AT-HB-62・AT-ICO-20 の 4.4 s)。4 倍より速い機械では、この 2 つは直す前でも通りうる (直す前に落ちることは、記録した機械で確かめた。調整役の裁定 Q5)。**コードの編集 (2026-10-29):** AT-JFO-13・AT-COL-18・AT-ENC-27 は結果を常に確かめ、時間 (5,000 ms) は `GRSMD_PERF=1` のときだけ確かめる (レビュー 1 回目の L7、2 回目の N3)。AT-CED-24・33〜36、AT-CEH-15〜17、AT-IND-15、AT-IDX-14 は時間ではなく、1 打鍵・1 回の操作の処理の回数 (全体の文字の処理、値の入れ替え、書いた部分の長さ、作った要素) を数える (常に動く) |
 | スキップ | vitest のスキップは次に限る: 上の時間の試験 (`GRSMD_PERF=1` でないとき)、`MarkdownRenderer.test.js` の「parse error path」の試験 (`it.runIf(path === "render")`。描画の経路ごとに繰り返す試験のうち、`render` 以外の経路の分は常にスキップ)、`textWidth.test.js` の幅 0 の範囲表と Unicode の照合 (`it.skipIf`。Node の Unicode の版が 16.0 でないとき)。e2e のスキップは次に限る: (1) 時間の試験 (`GRSMD_PERF=1` でないとき、および Chromium 以外のブラウザ): `tableCell.e2e.js`、`blockRange.e2e.js` (Ctrl+A の後のフレームと Delete の時間、ドラッグで選択を広げる 1 フレームの 4 ms (INV-74 (性能) (a)) の 2 つ)、`search.e2e.js`、`fastStartup.e2e.js` (PRT-AE04 / AE07 の起動の時間)、`uiFixes.e2e.js` (1 MB のマウスの移動。M3)、`editScrollFont.e2e.js` (大きなブロックを開く時間と 1 キーの時間の 2 つ)。(2) Chromium だけで動くもの (Chromium 以外): `crossUnit.e2e.js` の N1 (本物のタッチの列は Chromium の CDP だけで作れる)、`uiFixes.e2e.js` の IME の変換中の Esc (CDP で IME を動かす) と Pixel 7 の上部バーの試験 (Chromium の端末の設定) |
-| e2e | Playwright (`npm run test:e2e` = `build:e2e` で `output/e2e/` にビルドし、`playwright test`。`playwright.config.js` の projects は Chromium と WebKit。Firefox は `npm run test:e2e:firefox` で選んだときだけ動く)。初めて動かす前に、ブラウザを `npx playwright install chromium webkit` で取得する (外部からのダウンロード。`e2e/README.md`)。置き場は `e2e/`。e2e の試験の名前は、確かめる要求の ID (INV / FS) を持つ (レビュー基準 R6「テストの名前」)。AT の ID は、AT の族の一部を e2e で確かめるときに持つ: AT-GAP-03 / 04 (`uiFixes.e2e.js`)、AT-RNG-53 (`blockRange.e2e.js`)、AT-LSM-17 (`fastStartup.e2e.js`)、AT-HLP-12 (`help.e2e.js`)。前からの e2e には、名前に INV / FS の ID の無いものが残る (2026-10-29 の時点で 179 件のうち 93 件。PRT の ID や監査の項目を書くものを含む)。それらと PRT との対応は AT.4 の表で引く (PRT の本文に e2e のファイル名を書いていないものもある) |
+| e2e | Playwright (`npm run test:e2e` = `build:e2e` で `output/e2e/` にビルドし、`playwright test`。`playwright.config.js` の projects は Chromium と WebKit。Firefox は `npm run test:e2e:firefox` で選んだときだけ動く)。初めて動かす前に、ブラウザを `npx playwright install chromium webkit` で取得する (外部からのダウンロード。`e2e/README.md`)。置き場は `e2e/`。e2e の試験の名前は、確かめる要求の ID (INV / FS) を持つ (レビュー基準 R6「テストの名前」)。AT の ID は、AT の族の一部を e2e で確かめるときに持つ: AT-GAP-03 / 04 (`uiFixes.e2e.js`)、AT-RNG-53 (`blockRange.e2e.js`)、AT-LSM-17 (`fastStartup.e2e.js`)、AT-HLP-12・18・19・24・25 (`help.e2e.js`)。前からの e2e には、名前に INV / FS の ID の無いものが残る (2026-10-29 の時点で 179 件のうち 93 件。PRT の ID や監査の項目を書くものを含む)。それらと PRT との対応は AT.4 の表で引く (PRT の本文に e2e のファイル名を書いていないものもある) |
 
 ### AT.2 族の一覧
 
@@ -5725,7 +5747,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
 | AT-ICO | `InvisibleCharOverlay` (20: 行の中の長い空白の並びで、行末の空白の判定が線形。21: 編集欄が写した字と余白を写す。22: タグ文字と向きを変える文字に印を付け、INV-101 (2) (b) の旗のタグ文字には付けない (2026-10-30)) | INV-70、INV-83 | InvisibleCharOverlay.test.js | 01〜22 |
-| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68、INV-85 (4) | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜41 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス。37: グリップのダブルクリックで最小化・復活し、編集欄のフォーカスと選択を保つ。38: ボタン・隙間のダブルクリックと非表示の間の `dblclick` では最小化しない。39〜41: コードのモード (`setMode`、1 段 6 列、Redo と Search。INV-85 (4)、NE-2)) |
+| AT-PAL | `EditPalette` (表示、ジェスチャ、配置、キーボードを扱わないこと) | INV-32〜37、INV-53、INV-68、INV-85 (4) | EditPalette.test.js、EditPalette.noKeyboard.test.js、staticChecks.test.js | 01〜41 (21・22・29 は欠番。36: Text format の 2 段と、2 段目の行内の数式・数式ボックス。37: グリップのダブルクリックで最小化・復活し、編集欄のフォーカスと選択を保つ。38: ボタン・隙間のダブルクリックと非表示の間の `dblclick` では最小化しない。39〜41: コードのモード (`setMode`、1 段 6 列、Redo と Find。INV-85 (4)、NE-2)) |
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (15 の出来事 × 5 の状態、ガード、ポップオーバー。11: グリップのダブルクリックとダブルタップ (INV-68)。グリップ以外のどこを押しても組が切れる) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10・11 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
 | AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(e) ポップオーバーが開いていれば、検索の箱の中の最初の Esc はポップオーバーだけを閉じる、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く。20〜23: コード編集モード (`setCodeEditor`、編集欄の色、置換は編集欄の Undo 1 回、表示では置換しない)) | INV-80、INV-48、INV-88、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜23 |
@@ -5733,7 +5755,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
 | AT-SSM | 11-e 保存と push の処理の状態機械 (09: `pushing` の間は文書の置き換えを断り (INV-54)、Save / Save as を無視する) | 11-e、INV-54、INV-96 (4) | UIController.save.test.js | 01〜09 (01 と 02 は 1 つの試験) |
 | AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`。08: `readFile` は中身を読む前の確かめ `check` をそのまま渡す (INV-18 (8)))、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56、INV-79 | DocumentLifecycle.test.js | 01〜23 |
-| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン。14: Clear (確認、初期状態、OS の配色の `applySystemTheme`)、38: 何も保存しない。70: 大きな本文は確定のたびに `#editor` へ書かず、フォーカス・ドラッグ・保存・描画のときに書く、71: 空の `#editor` を空でない文書へ取り込む前の確認、72: コードビューの #fileInfo の文字、73: キーヒントをスクロール・指の移動・クリック・キーで消し、見張りを外す、74: ドロップしたファイルの振り分け (`.md`・`.markdown`、コードビュー、表に無いファイル (`notAllowed`)、読み解いた文字の U+0000 (ダイアログと確認の前)、5 MB。2026-10-30)) | INV-04 (38)、INV-12・INV-13 (14)、INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69、FS-03 (72)、FS-03・5.7 (73)、INV-11・INV-17・INV-18・INV-89 (8) (74)、INV-85〜INV-92 (34、75〜106) | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js、UIController.editorDeferredSync.test.js (70)、UIController.emptyEditorConfirm.test.js (71)、UIController.formatFileInfo.test.js (72)、UIController.showKeyHint.test.js (73)、UIController.setupFileDrop.test.js (74)、UIController.codeEdit.test.js (75〜83)、UIController.formatFileInfo.test.js (84)、UIController.codeEditor.test.js (85〜106) | 01〜106 (25 は欠番。41 は AT.1 の注。36a〜36j・37a は AT.1 の枝番。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)。34: コードの文書の部品が無い構成のコードビュー ([Edit] は無効)。75〜84: コードの文書の結線 (開くダイアログ・ファイル情報の文字コードと改行・未保存・Reload・保存中・Save as・`.md` の開き直し)。85〜98: コード編集モード (パレット・Undo・保存・Esc の順・折りたたみのキー (Mac)・`p`・目次・検索、98: Redo と Search のボタン)。99〜106: レビュー 1 回目の直し (99: Reload が確認の後 (コード編集モードが終わった後) に失敗したとき表示を描き直す、100: 打つ間の未保存の印、101: Mac のキーのヒント、102: UTF-16 の BOM の知らない拡張子、103: 押し続けた折りたたみのキーと IME、104: 編集欄の中の `e` / `p`、105: 主 + Shift + S、106: 打つのが止まったときの目次)。SC-27) |
+| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン。14: Clear (確認、初期状態、OS の配色の `applySystemTheme`)、38: 何も保存しない。70: 大きな本文は確定のたびに `#editor` へ書かず、フォーカス・ドラッグ・保存・描画のときに書く、71: 空の `#editor` を空でない文書へ取り込む前の確認、72: コードビューの #fileInfo の文字、73: キーヒントをスクロール・指の移動・クリック・キーで消し、見張りを外す、74: ドロップしたファイルの振り分け (`.md`・`.markdown`、コードビュー、表に無いファイル (`notAllowed`)、読み解いた文字の U+0000 (ダイアログと確認の前)、5 MB。2026-10-30)) | INV-04 (38)、INV-12・INV-13 (14)、INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69、FS-03 (72)、FS-03・5.7 (73)、INV-11・INV-17・INV-18・INV-89 (8) (74)、INV-85〜INV-92 (34、75〜106) | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js、UIController.editorDeferredSync.test.js (70)、UIController.emptyEditorConfirm.test.js (71)、UIController.formatFileInfo.test.js (72)、UIController.showKeyHint.test.js (73)、UIController.setupFileDrop.test.js (74)、UIController.codeEdit.test.js (75〜83)、UIController.formatFileInfo.test.js (84)、UIController.codeEditor.test.js (85〜106) | 01〜106 (25 は欠番。41 は AT.1 の注。36a〜36j・37a は AT.1 の枝番。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)。34: コードの文書の部品が無い構成のコードビュー ([Edit] は無効)。75〜84: コードの文書の結線 (開くダイアログ・ファイル情報の文字コードと改行・未保存・Reload・保存中・Save as・`.md` の開き直し)。85〜98: コード編集モード (パレット・Undo・保存・Esc の順・折りたたみのキー (Mac)・`p`・目次・検索、98: Redo と Find のボタン)。99〜106: レビュー 1 回目の直し (99: Reload が確認の後 (コード編集モードが終わった後) に失敗したとき表示を描き直す、100: 打つ間の未保存の印、101: Mac のキーのヒント、102: UTF-16 の BOM の知らない拡張子、103: 押し続けた折りたたみのキーと IME、104: 編集欄の中の `e` / `p`、105: 主 + Shift + S、106: 打つのが止まったときの目次)。SC-27) |
 | AT-KEY | 主の修飾キーのショートカット (02: コードビューの主 + S はコードのファイルを保存する (INV-90)。04 (G49): 検索の箱などの入力要素では、ブロック編集欄を開いたままでも主 + B / I を横取りせず、書式を付けない。08: Redo のキー。09: 1 文字のショートカットと修飾キーのガード (`c`・`l`・`d`・`r`・ArrowDown に Ctrl / Meta / Alt)) | INV-13 (09)、INV-14、INV-58〜60、INV-59 (a)、INV-80 (7)、INV-90 (02) | UIController.shortcuts.test.js、UIController.keyboard.test.js (09) | 01〜09 |
 | AT-DBL | 編集モードでないときのダブルクリック (裁定 AQ3: 08: タッチと空の pointerType のダブルタップでは編集を始めない、13: タッチのダブルタップの後のブラウザの dblclick では何も開かない、15: タッチの押下の後でもマウスのダブルクリックは開く (最後の押下で決める)、16: タッチで [Edit] の後のブロックのタップで開く、17: 初期状態で `#editor` が空のとき、タッチのダブルタップで空の文書を始めない。ペンはタッチと同じ (裁定 AQ13): 18: ペンのダブルタップで編集を始めず、[Edit] の後のペンのタップで開く、19: 初期状態でペンのダブルタップで空の文書を始めない) | INV-29 (16)、INV-31、INV-57 | UIController.doubleClick.test.js | 01〜19 |
 | AT-PAN | `DiagramPanController` (図のパンの終わり 01〜03、始まりは閾値を超えたとき (5px ちょうどでは始まらない。`utils.isPastActivation`) 04)。04 の閾値の決まりそのもの (INV-29・INV-68・INV-74 (2)・3.5 の図のパンに共通) は utils.test.js の `isPastActivation` の試験。05: パンを作るのは `pointer: fine` かつ `any-pointer: coarse` でないときだけ、ズームとコピーは `pointer: fine` のとき (`utils.diagramControllersFor`。`main.js` が使う) | INV-16 (05)、INV-16b (05)、FS-09、INV-29、INV-68、INV-74 | DiagramPanController.test.js、utils.test.js (`isPastActivation`、05) | 01〜05 |
@@ -5753,7 +5775,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-STA | `src/js` と `src/css` の静的な検査 (01: ストレージの API を使わない。03 (b): `src/index.html` の日本語のヘルプの外は ASCII。コードの編集の新しいファイルも対象で、`CodeDocument`・`textEncoding.js`・`indentText.js`・`jsonFold.js`・`codeOutline.js`・`CodeEditHistory` は Entity の検査 (05) の対象。20: 試験のファイル (`src/__tests__` と `e2e` の `.js`) も ASCII だけ (G5。レビュー 1 回目の L9、調整役の裁定 Q6)) | CON-06、CON-13、CON-14、CON-15、INV-04 (01)、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13、G5 | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜20 |
 | AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
 | AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ、14: 目次を出したままの確定・Undo の後の作り直しの時間。jsdom に大きな文書が残ると遅くなるので別のファイル) | INV-42、INV-48、INV-51、INV-74、INV-77 | performance.inplaceEdit.test.js、performance.index.test.js | 01〜14 |
-| AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11)、閉じ方によらず `onHide` を呼ぶ (AT-HLP-13。INV-89 のダイアログ) (`ModalController`)、「Details」/「詳細」の [Edit] の行の次の編集の始め方の行と初期画面の 4 行目 (AT-HLP-12。e2e の help.e2e.js。オーナーの裁定 AQ4)、「Details」/「詳細」のコードビューの行の 200 KB 以上のファイルの 1 文 (AT-HLP-14。英日。NE-32・NE-33)、GitHub の編集のヘルプ (FS-25・INV-103): 英日の入口のボタンと「Details」/「詳細」の `[Open GitHub]` / `O` の行 (AT-HLP-15。GHH-9・D33)、層の題名の行・英日の本文・時点の文・(TBD) と（仮）・[Saved] が無いこと、図は `<symbol>` 6 つを英日が `<use>` で使い、番号が全部の図で 1〜19、画像と外の資源が無く、外へのリンクはトークンのページだけ (AT-HLP-16。GHH-1・GHH-5・GHH-8・D34)、層がヘルプの上に開いている間は層だけがキーを受け、Esc の 1 回目で層 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる、下のモーダルを閉じても上が受ける (AT-HLP-17。`ModalController`)、入口で層がヘルプの言語で先頭から開き、図がすべて描かれ、Esc の 2 段 (AT-HLP-18。e2e)、フレームの中とタッチの端末では入口が出ない (AT-HLP-19。e2e。INV-100)、「Details」/「詳細」の [Save] の行 (英日。Ctrl+V があり、起動役の名が無い。AT-HLP-20。PL-23) | SC-16、FS-10、CON-03、CON-12、INV-89 (13)、INV-85・NE-32 (14)、5.1、5.11、INV-57 (12)、INV-29 (12)、FS-25・INV-103 (15〜19)、INV-100 (19)、INV-105 (20) | HelpLanguageSwitch.test.js、ModalController.test.js、`e2e/help.e2e.js` (12・18・19) | 01〜20 |
+| AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11)、閉じ方によらず `onHide` を呼ぶ (AT-HLP-13。INV-89 のダイアログ) (`ModalController`)、「Details」/「詳細」の [Edit] の行の次の編集の始め方の行と初期画面の 4 行目 (AT-HLP-12。e2e の help.e2e.js。オーナーの裁定 AQ4)、「Details」/「詳細」のコードビューの行の 200 KB 以上のファイルの 1 文 (AT-HLP-14。英日。NE-32・NE-33)、GitHub の編集のヘルプ (FS-25・INV-103): 英日の入口のボタンと「Details」/「詳細」の `[Open GitHub]` / `O` の行 (AT-HLP-15。GHH-9・D33)、層の題名の行・英日の本文・時点の文・(TBD) と（仮）・[Saved] が無いこと、図は `<symbol>` 6 つを英日が `<use>` で使い、番号が全部の図で 1〜19、画像と外の資源が無く、外へのリンクはトークンのページだけ (AT-HLP-16。GHH-1・GHH-5・GHH-8・D34)、層がヘルプの上に開いている間は層だけがキーを受け、Esc の 1 回目で層 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる、下のモーダルを閉じても上が受ける (AT-HLP-17。`ModalController`)、入口で層がヘルプの言語で先頭から開き、図がすべて描かれ、Esc の 2 段 (AT-HLP-18。e2e)、フレームの中とタッチの端末では入口が出ない (AT-HLP-19。e2e。INV-100)、「Details」/「詳細」の [Save] の行 (英日。Ctrl+V があり、起動役の名が無い。AT-HLP-20。PL-23)。2026-10-31 (HT-1〜HT-4) から、12・14・15・20 の細かい行は詳しい使い方の窓 (`guideModal`) の中で確かめ、15 は短いヘルプの `[Open GitHub]` の行も見る。短いヘルプ: 基本的な使い方の 4 行、ボタンとキーの 12 行と最後の入口のボタン、プライバシーの 6 行と送り先の名、ライセンスだけが閉じた `<details>` で見出しが `<summary>` (AT-HLP-21)、窓の題名の行・英日の本文・3 つの節 (英日で同じ数の行)・前の細かい文・リンクと画像と図が無いこと (AT-HLP-22)、窓がヘルプの上に開いている間は窓だけがキーを受け、Esc の 1 回目で窓 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる (AT-HLP-23。`ModalController`)、入口で窓がヘルプの言語で先頭から開き、Esc の 2 段、タッチの端末でも入口が出て開く (AT-HLP-24。e2e)、ライセンスの見出しのクリックと Enter で開き、ヘルプは開いたまま (AT-HLP-25。e2e) | SC-16、FS-10、CON-03、CON-12、INV-89 (13)、INV-85・NE-32 (14)、5.1、5.11、INV-57 (12)、INV-29 (12)、FS-25・INV-103 (15〜19)、INV-100 (19)、INV-105 (20)、INV-75 (21・25)、HT-1・HT-3・HT-4 (21〜25) | HelpLanguageSwitch.test.js、ModalController.test.js、`e2e/help.e2e.js` (12・18・19・24・25) | 01〜25 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |
 | AT-FAST | 高速起動: ライブラリの読み込み (`LibraryLoader`)、受け口 (`boot.js`)、届く前の表示と描き直し、待つレンダラー、配布ファイルの並びと CSP、実際のビルド (30: 単一ファイルの並びでないものは失敗、38: 外部の import の検査はライブラリのコードも見る)、早い入力の受け継ぎ。25・26・47・48・52・56・57 はオーナーの裁定 AQ7 で改めた (PlantUML は 4 つのライブラリが決まるのを待つ。前の送り直し `"repeat"` は無い)。58: 11-g のガード `isShownWithout` の問い合わせ (数式・コードの色・Mermaid の枠) が、届く前の表示がある間は真で、ライブラリが動いた後は偽。文書が自分で書いた枠は数えない。59: コードビューの highlight.js の待ちが 2 つ重なっても、先に終わった方が待ちを消さない、60・61: 受け口の `arrive` は、読み込みの途中でページが足した要素 (mermaid のツールチップ) を飛ばして最初の `<script>` を候補にし、前の別の塊は代わりにしない | INV-81、INV-20、INV-06 (30)、INV-07 (38)、INV-02 (52・56・57)、INV-81 (2) (60・61) | LibraryLoader.test.js、fastStartup.render.test.js、fastStartup.build.test.js、UIController.earlyInput.test.js | 01〜61 |
 | AT-LSM | 起動とライブラリの状態機械 (仕様 11-g): ライブラリの表のすべての交点 (6 × 4 = 24、ガードの枝で 25。02)、ページの表のすべての交点 (6 × 4 = 24、2 つのガードの枝で 26。07。`earlyInputArrived` の行は受け口 `installBoot` で確かめる)、表の大きさ (01・06)、はじめの状態の 3 つの枝 (04)、仕様の 2 つの図と表の一致 (05・08)、answering に入るのが 1 回だけ (03・09)、開発サーバー (10)、解析の終わり (11)。描画の側の処理が投げても、ライブラリの表の処理は続き、ページは決まる (20。レビューの L3)、解析の後に作った LibraryLoader はすぐ `parsingEnded` を送る (21。L4)、中核は `earlyInputArrived` を受けない (22。L5)。PlantUML: 4 つのライブラリが決まる前は確認も送信も無く、決まったら描画の列の中で 1 回だけ確認し、確定の図は [Render]、読んでいる位置を保つ (12)、Cancel (13)、エンコーダーが動かない (14)、4 つが決まる前の Clear・別の文書 (15。レビュー 2 回目の N5)、始めから settled で送り直しが無い (16)、e2e で決まる前に確認が無く後に 1 回 (17)、KaTeX が最後に動き、その描き直しが answering の間に待ちの枠の段より先に動いても、確認は 1 回で全部の図に答える (18。OK で全部を送る。19: Cancel で全部が「not sent」)、全体の描画の途中で 4 つが決まっても、その描画と KaTeX の描き直しで確認は 1 回 (23。L1)、決まった時に編集欄が開いていた図は、閉じた時に [Render] (24。M2)、決まった時に待ちの枠が無くても answering から settled に移り、後の図は確認が 1 回出て送られる (25。レビュー 2 回目の N4) | INV-81 (2)(3)(4)、INV-02、INV-03 (13・19)、INV-23 (12・13・24)、オーナーの裁定 AQ2・AQ7、G6 (18・19・23) | LibraryLoader.stateMachine.test.js (01〜11、20〜22)、fastStartup.render.test.js (12〜16、18、19、23〜25)、`e2e/fastStartup.e2e.js` (17) | 01〜25 |
@@ -5832,7 +5854,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | insertBlock.e2e.js | Insert table / Mermaid の挿入: 空の文書、行の境目で割る位置 (上・下・中・リスト・引用・下線の見出し)、断る場所とトースト (リストの中の表、字下げのコード、引用の中のコード、同意を Cancel にした PlantUML を含む)、行内の書式をまたぐ境目、`\` の改行、割った行の行末の空白、押した直後の打鍵がショートカットにならない、Undo で表だけが消える、挿入の後の最小のスクロール | PRT-V15〜V19 |
 | math.e2e.js | パレットの数式: Text format の 2 段の並び、行内の数式がカーソルに入り Esc で KaTeX が描く、読めないときのトースト、数式ボックスの 3 つの式 (エラー無く描け、何も開かない)・Undo 1 回と Redo、数式のブロックの中で断る | PRT-V21 |
 | toast.e2e.js | 幅 375 px で、トーストが画面の中で折り返す (長いファイル名も折る) | (5.12、オーナーの裁定 R11) |
-| help.e2e.js | ヘルプ: ブラウザの言語 (`en-US` / `ja-JP`) で最初の言語が決まる、トグルで片方だけになり閉じて開いても保つ、ダウンロードのリンクの属性、版が "Development build" と UTC の時刻、開いている間の 1 キーが裏に効かず Esc で閉じる (パレットを出しておき、Esc の後も出たままであること。プロンプトのモーダルも)、開くとフォーカスが中へ移り、Tab / Shift+Tab が中を回り、閉じると [?] へ戻る、トグルと × をキーボードだけで押せる、外への要求が無い、題名の行がスクロールしても上に残る、ヘルプの文字が 12px、クリップボードの許可の開示が日英のプライバシーの章にあり編集の章が無い、何も保存しない (INV-04)、「詳細」の [Edit] の行の次に編集の始め方の行が日英にあり、初期画面に 4 行目がある (AT-HLP-12。オーナーの裁定 AQ4)、GitHub の編集のヘルプの層が入口からヘルプの言語で開き、図がすべて描かれ、Esc の 1 回目で層 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる (AT-HLP-18)、フレームの中 (偽のページの `iframe`) とタッチの端末 (`isMobile`) では入口が出ない (AT-HLP-19。INV-100) | PRT-A01、PRT-L01、PRT-L03、PRT-L05、PRT-L07、PRT-L08、PRT-AK10、PRT-AK11 |
+| help.e2e.js | ヘルプ: ブラウザの言語 (`en-US` / `ja-JP`) で最初の言語が決まる、トグルで片方だけになり閉じて開いても保つ、ダウンロードのリンクの属性、版が "Development build" と UTC の時刻、開いている間の 1 キーが裏に効かず Esc で閉じる (パレットを出しておき、Esc の後も出たままであること。プロンプトのモーダルも)、開くとフォーカスが中へ移り、Tab / Shift+Tab が中を回り、閉じると [?] へ戻る、トグルと × をキーボードだけで押せる、外への要求が無い、題名の行がスクロールしても上に残る、ヘルプの文字が 12px、クリップボードの許可の開示が日英のプライバシーの章にあり編集の章が無い、何も保存しない (INV-04)、「詳細」の [Edit] の行の次に編集の始め方の行が日英にあり、初期画面に 4 行目がある (AT-HLP-12。オーナーの裁定 AQ4)、GitHub の編集のヘルプの層が入口からヘルプの言語で開き、図がすべて描かれ、Esc の 1 回目で層 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる (AT-HLP-18)、フレームの中 (偽のページの `iframe`) とタッチの端末 (`isMobile`) では入口が出ない (AT-HLP-19。INV-100)、詳しい使い方の窓が入口からヘルプの言語で開き、Esc の 2 段で閉じ、タッチの端末でも入口が出る (AT-HLP-24。HT-3)、ライセンスの見出しで章が開く (AT-HLP-25。HT-1)。クリップボードの許可の開示と「詳細」の編集の始め方の行は、詳しい使い方の窓の中で確かめる | PRT-A01、PRT-L01、PRT-L03、PRT-L05、PRT-L07、PRT-L08、PRT-L09、PRT-AK10、PRT-AK11 |
 | crossUnit.e2e.js | 単位をまたぐ動き: 変更のあるセルの移動でポップオーバーが開いたまま (K-1)、外部画像の入った HTML の貼り付けと画像のあるセルの編集で通信しない (S-2)、色のセルを残したままの Render Dark、図のコードを開いた後のボタンなしの移動でスクロールしない (U20)、文書の class にアプリの CSS が当たらない・帯のカーソル・数式の大きさ (N2 / N3 / M04)、[?] の長押し (N1。Chromium だけ)、スマートフォンの配置 (N6)、編集モードの出入りでブロックが動かず、つまみが表の真上にある (P1) | PRT-X04、PRT-X08、PRT-X11、PRT-U10、PRT-U20、PRT-Q01、PRT-M04、PRT-V11 (N6) |
 | index.e2e.js | 目次: 右端に浮き 15% 透け、目次自体がスクロールし、押した見出しが上端の 8 px 下、開いたまま、`i`。図を描き終える前の押下が描き終えた後も保たれる (INV-78)。テーマの切り替えの間のホイール 100 px は読んでいる位置に留まり、Shift と本文の外の押下では元の位置に戻る (INV-78)。リサイズで置き直し、開いてもフォーカスは [Index]、Tab / Enter / Space (INV-77 (6)(7))。確定で、目次の見えている項目を同じ所に保ち、変わらない項目を作り直さない (INV-77 (2))。編集欄の確定と Esc の順。ダークの地、印刷に出ない、Clear で無効。試験の名前に要求の ID | PRT-AB01〜AB05、PRT-AB07 |
 | search.e2e.js | 検索と置換: `f` と入力ごとの検索、↓ / ↑、Enter は何もしない、箱の中の Esc、正規表現と不正な式、大きい表の正しい行と右端の列、置換 (編集モードだけ、Replace / All、トースト、Ctrl+Z 1 回、置換欄の Enter)、Esc の順 (パレット → 検索 → 目次)、コードビュー、印刷。時間の試験 (GRSMD_PERF=1。1 MB の 1 キーと ↓ が 4 ms 以下、All が 300 ms 以内)。試験の名前に要求の ID | PRT-AD01〜AD03、AD05、AD08、AD10、AD11 |

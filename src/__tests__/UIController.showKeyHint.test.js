@@ -73,6 +73,7 @@ describe("AT-UI-73 UIController.showKeyHint dismiss on scroll (FS-03, spec 5.7)"
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
       githubHelpModal: createMockModal(),
+      guideModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),
       copyPromptBtn: document.createElement("button"),

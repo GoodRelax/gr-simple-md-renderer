@@ -63,6 +63,7 @@ describe("AT-UI-72 UIController._formatFileInfo (FS-03)", () => {
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
       githubHelpModal: createMockModal(),
+      guideModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),
       copyPromptBtn: document.createElement("button"),

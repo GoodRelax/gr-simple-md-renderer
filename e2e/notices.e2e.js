@@ -54,11 +54,14 @@ for (const lang of ["en", "ja"]) {
     const section = page.locator(`#helpModal .help-body[lang="${lang}"] [data-help-section="licenses"]`);
     await expect(section).toBeVisible();
     await expect(section.locator("h3")).toHaveText(lang === "en" ? "Licenses" : "\u30e9\u30a4\u30bb\u30f3\u30b9");
+    await section.locator("summary").click(); // Licenses is folded (HT-1)
     // GRSMD's own license first, before the third-party list (LIC-2)
+    await expect(section.locator("p").first()).toBeVisible();
     await expect(section.locator("p").first()).toContainText("GRSMD");
     await expect(section.locator("p").first()).toContainText("Apache License 2.0");
     await expect(page.locator("#copyright")).toHaveText("\u00a9 2026 GoodRelax. Apache-2.0.");
     const list = section.locator("[data-third-party-list]");
+    await expect(list).toBeVisible();
     await expect(list).toContainText(`mermaid ${installed("mermaid")} (MIT)`);
     await expect(list).toContainText(`dompurify ${installed("dompurify")} (Apache-2.0)`);
     await expect(list).toContainText("KaTeX fonts");

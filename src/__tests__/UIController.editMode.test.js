@@ -570,7 +570,7 @@ describe("AT-CFG-04 / 05 text and key hints", () => {
     expect(CONFIG.keyHints.markdown.split("[E] Edit;").length - 1).toBe(1);
     expect(CONFIG.keyHints.code.split("[E] Edit;").length - 1).toBe(1);
     expect(CONFIG.keyHints.code).toBe(
-      "[I] Index; [F] Search; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
+      "[I] Index; [F] Find; [P] Commands; [L] Light; [D] Dark; [R] Reload; [N] New Tab; [C] Clear; [E] Edit;\n[Up][Down] Scroll Up/Down; [Ctrl+Left][Ctrl+Right] Fold (JSON);",
     );
   });
 });

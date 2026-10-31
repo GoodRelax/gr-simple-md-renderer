@@ -70,7 +70,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Button | Key | Action |
    |---|---|---|
    | Index | `I` | Show / hide the headings (h1 to h6) at the right edge; press one to bring it to the top of the view. In Code View: the classes and functions of a file in a language listed above |
-   | Search | `F` | Find text in the Markdown source (in Code View: the file) (`Aa` match case, `.*` regular expression; `Down` / `Up` in the box: next / previous). In edit mode `Ctrl+F` opens it too, and Replace / All replace (one Undo) |
+   | Find | `F` | Find text in the Markdown source (in Code View: the file) (`Aa` match case, `.*` regular expression; `Down` / `Up` in the box: next / previous). In edit mode `Ctrl+F` opens it too, and Replace / All replace (one Undo) |
    | Commands | `P` | In Code View of a JSON file: buttons to fold / unfold one level |
    | Open GitHub | `O` | PC only: open a `.md` file on GitHub by its URL. While it is open, the button becomes [Push to GitHub] and commits your changes to the same branch |
    | Render Light | `L` | Render / switch to the light theme |
@@ -84,7 +84,7 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | | `Ctrl+S` / `Ctrl+Shift+S` | Save / Save as while a Markdown document or a Code View file is shown (a file that is not UTF-8 asks for the encoding to save in; if that encoding cannot hold some characters, it shows their line numbers and asks whether to save in UTF-8) |
    | | `Tab` / `Shift+Tab` | In the Code View editor: indent / outdent the selected lines (`Esc` leaves the editor) |
    | | `Ctrl+Left` / `Ctrl+Right` | In Code View of a JSON file: fold / unfold one level (in the editor: `Ctrl+Shift+[` / `Ctrl+Shift+]`) |
-   | | `Esc` | Apply the open block or cell and close it; with blocks selected, clear the selection; with nothing open, hide the edit palette; then Search (in the search box: close it at once); then the Index. In the Code View editor: leave the editor; outside it: the Commands box, then Search, then the Index (edit mode stays) |
+   | | `Esc` | Apply the open block or cell and close it; with blocks selected, clear the selection; with nothing open, hide the edit palette; then Find (in the search box: close it at once); then the Index. In the Code View editor: leave the editor; outside it: the Commands box, then Find, then the Index (edit mode stays) |
    | | `Delete` / `Backspace` | In edit mode, delete the selected blocks, also with `Shift` (one Undo brings them back) |
    | | `Ctrl+X` / `Ctrl+C` | In edit mode with blocks selected, cut / copy their Markdown whole (a menu's Copy copies it too) |
    | | `Ctrl+Z` | Undo while the edit palette is shown, up to 30 changes (in a block you have changed, the browser undoes your typing). Editing in Code View: GRSMD's own Undo, also in the editor (a step ends when you stop typing for 1 s or move the caret) |
@@ -268,7 +268,7 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | ボタン | キー | 動作 |
    |---|---|---|
    | Index | `I` | 見出し（h1〜h6）の目次を右端に出す / 消す。押した見出しを見えている範囲の上端へ。コードビューでは、上に挙げた言語のファイルのクラスや関数 |
-   | Search | `F` | Markdown の原文（コードビューではファイル）から文字を探す（`Aa` で大文字と小文字を区別、`.*` で正規表現。検索欄の `↓` / `↑` で次 / 前）。編集モードでは `Ctrl+F` でも開け、Replace / All で置き換える（Undo 1 回で戻る） |
+   | Find | `F` | Markdown の原文（コードビューではファイル）から文字を探す（`Aa` で大文字と小文字を区別、`.*` で正規表現。検索欄の `↓` / `↑` で次 / 前）。編集モードでは `Ctrl+F` でも開け、Replace / All で置き換える（Undo 1 回で戻る） |
    | Commands | `P` | コードビューの JSON のファイルで、1 段畳む / 開くボタンを出す |
    | Open GitHub | `O` | PC だけ: GitHub の `.md` を URL で開く。開いている間、ボタンは [Push to GitHub] になり、直した文書を同じブランチへコミットする |
    | Render Light | `L` | レンダリング / ライトテーマに切替 |
