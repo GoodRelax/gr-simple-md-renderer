@@ -246,11 +246,11 @@ once, when the GQA closes or when the user asks (see "Closing a GQA").
    only) and leaves that line unmarked.
 6. **Check.**
    `python <skill>/scripts/mark_changes.py --check <base backup> <gqa.md>`
-   must print 0 findings (a stale mark or an unmarked change counts as a
-   finding). Then the session reads the decisions table against the new
-   ruling rows and confirms three things: every settled question has lost its
-   answer field, the digest stands at the top, and the GQA says nothing about
-   `old/`.
+   must print 0 findings (a stale mark, an unmarked change, or a stale or
+   missing note line counts as a finding). Then the session reads the
+   decisions table against the new ruling rows and confirms three things:
+   every settled question has lost its answer field, the digest stands at the
+   top, and the GQA says nothing about `old/`.
 7. **Back up the session's version:** the session runs the backup script
    again, so the next round can diff against exactly what the user received.
 8. **Tell the user in a few lines** in chat (a SUB tells its BOSS): the full
@@ -267,7 +267,7 @@ once, when the GQA closes or when the user asks (see "Closing a GQA").
 | A table cell | the same, in every changed cell of the row |
 | A heading | `### MARK *Question 5-2. ...*` |
 | A `text` block (a tree) | MARK at the start of each changed line (no italics); three spaces on the unchanged lines keep the columns |
-| Another code block (`bash`, `powershell`, no language ...) | one note line right before the opening fence: `MARK *下のコードブロックの 2・5 行目が変わった。*` (in an English GQA: `MARK *Changed in the code block below: lines 2, 5.*`); the block itself stays as written |
+| Another code block (`bash`, `powershell`, no language ...) | one note line right before the opening fence: `MARK *下のコードブロックの 2・5 行目が変わった。*` (in an English GQA: `MARK *Changed in the code block below: lines 2, 5.*`); the note line takes the fence's indent, and the script never edits the block itself, a leading MARK included |
 | Mermaid | MARK before the changed label text (no italics) |
 
 `scripts/mark_changes.py` applies this table. The script compares a table

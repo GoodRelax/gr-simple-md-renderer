@@ -17,8 +17,9 @@ marks what changed since your last save.
 - The emoji U+1F504 and *italics* mark what changed since the previous round.
   The first version of a GQA carries no marks. Press `f` in GRSMD and search
   for the emoji to jump between the changes.
-- Above a changed code block, one note line names the changed lines; the
-  block itself stays as written, so you can copy a command from it.
+- A changed tree (a `text` block) carries the emoji on each changed line.
+  Above any other changed code block, one note line names the changed lines;
+  that block stays as written, so you can copy a command from it.
 - Put ★ on anything you want to stress.
 - Press Re-load in GRSMD after the session has rewritten the GQA.
 
@@ -55,7 +56,7 @@ with answer fields". The session writes the GQA and tells you where it is.
 |---|---|
 | `SKILL.md` | The method the session follows: the rules, GQA layout, rounds, change marks, trees |
 | `scripts/backup_sheet.py` | Copies a GQA to `old/<name>_yyyymmdd_hhmm.md` beside it (before and after each edit) |
-| `scripts/mark_changes.py` | Marks what changed since your last save: strips every mark, diffs against that version, marks each changed line, table cell and Mermaid label, and writes a note line above each changed code block; `--check` reports stale marks and unmarked changes |
+| `scripts/mark_changes.py` | Marks what changed since your last save: strips every mark, diffs against that version, marks each changed line, table cell, Mermaid label and tree line (in a `text` block), and writes a note line above each other changed code block; `--check` reports stale marks, unmarked changes and stale or missing note lines |
 | `grsmd-qa.zip` | This folder as one file, for download (without the zip itself) |
 | `scripts/tree_align.py` | Prints a two-language tree in columns aligned by display width |
 

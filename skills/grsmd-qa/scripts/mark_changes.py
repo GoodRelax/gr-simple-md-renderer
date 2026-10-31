@@ -10,8 +10,9 @@ marks each changed line (each changed cell in a table) as SKILL.md says:
   text block (a tree):        MARK at the start of each changed line and
                               three spaces on the other lines of that block
   other code block:           one note line right before the opening fence
-                              (MARK *the changed line numbers*); the block
-                              itself stays as written, so the user can copy it
+                              (MARK *the changed line numbers*, with the
+                              fence's indent); the script never edits the
+                              block itself, so the user can copy it
   Mermaid block:              MARK before each changed label
 
 Blank lines, fences, table separator rows and empty answer fields are
@@ -23,11 +24,13 @@ the only lines the script adds; the next run removes them first.
       re-mark gqa.md against user_saved.md (the backup taken after the
       user said they saved) and write gqa.md
   python <skill>/scripts/mark_changes.py --check <user_saved.md> <gqa.md>
-      report stale marks and unmarked changes; exit 1 if there are any
+      report stale marks, unmarked changes and stale or missing note
+      lines; exit 1 if there are any
   python <skill>/scripts/mark_changes.py --strip <gqa.md>
-      remove every mark (the first version has none)
+      remove every mark and note line (the first version has none)
   python <skill>/scripts/mark_changes.py --check --strip <gqa.md>
-      report any mark in gqa.md (for the first version); exit 1 if any
+      report any mark or note line in gqa.md (for the first version);
+      exit 1 if any
 """
 import difflib
 import re
@@ -66,11 +69,28 @@ def write_sheet(path, lines, ends, bom):
         f.write((b'\xef\xbb\xbf' if bom else b'') + data)
 
 
+def is_note(lines, i):
+    return bool(NOTE_LINE.match(lines[i].strip())) and i + 1 < len(lines) and bool(FENCE.match(lines[i + 1]))
+
+
 def drop_notes(lines, ends):
-    """Lines and endings without the note lines an earlier run put before a fence."""
-    keep = [i for i, line in enumerate(lines)
-            if not (NOTE_LINE.match(line.rstrip()) and i + 1 < len(lines) and FENCE.match(lines[i + 1]))]
-    return [lines[i] for i in keep], [ends[i] for i in keep if i < len(ends)]
+    """Lines and endings without the note lines an earlier run put before a fence,
+    the notes found ({index of its fence in the kept lines: note line}) and the
+    original index of each kept line."""
+    kept, kept_ends, found, origin = [], [], {}, []
+    pending = None
+    for i, line in enumerate(lines):
+        if is_note(lines, i):
+            pending = line
+            continue
+        if pending is not None:
+            found[len(kept)] = pending
+            pending = None
+        kept.append(line)
+        origin.append(i)
+        if i < len(ends):
+            kept_ends.append(ends[i])
+    return kept, kept_ends, found, origin
 
 
 def add_notes(lines, ends, notes):
@@ -86,11 +106,12 @@ def add_notes(lines, ends, notes):
     return out_lines, out_ends
 
 
-def note(numbers, japanese):
+def note(numbers, japanese, indent):
+    """The note line; it takes the fence's indent, so a block in a list stays in the list."""
     if japanese:
-        return OPEN + NOTE_JA % '\u30fb'.join(str(n) for n in numbers) + '*'
+        return indent + OPEN + NOTE_JA % '\u30fb'.join(str(n) for n in numbers) + '*'
     word = 'line' if len(numbers) == 1 else 'lines'
-    return OPEN + NOTE_EN % (word + ' ' + ', '.join(str(n) for n in numbers)) + '*'
+    return indent + OPEN + NOTE_EN % (word + ' ' + ', '.join(str(n) for n in numbers)) + '*'
 
 
 def classify(lines):
@@ -164,18 +185,29 @@ def mark_segment(seg):
     return lead + OPEN + core + '*' + tail
 
 
+def marked_blocks(lines, kinds, blocks):
+    """Text blocks in the shape this script gives a marked block: every non-empty line
+    starts with MARK or three spaces, and at least one with MARK."""
+    shape = {}
+    for i, line in enumerate(lines):
+        if kinds[i] != 'code' or not line:
+            continue
+        has_mark, ok = shape.get(blocks[i], (False, True))
+        shape[blocks[i]] = (has_mark or line.startswith(MARK + ' '),
+                            ok and (line.startswith(MARK + ' ') or line.startswith('   ')))
+    return {b for b, (has_mark, ok) in shape.items() if has_mark and ok}
+
+
 def strip_all(lines, kinds, blocks):
-    # A copy block can still hold line marks from an earlier version of this script.
-    marked_blocks = {blocks[i] for i, line in enumerate(lines)
-                     if kinds[i] in ('code', 'copy') and line.startswith(MARK + ' ')}
+    # A copy block stays byte for byte as written, a leading MARK included:
+    # the user copies it, and the script never marks inside it.
+    marked = marked_blocks(lines, kinds, blocks)
     out = []
     for i, line in enumerate(lines):
         kind = kinds[i]
-        if kind in ('code', 'copy'):
-            if line.startswith(MARK + ' '):
-                line = line[2:]
-            elif blocks[i] in marked_blocks and line.startswith('   '):
-                line = line[3:]
+        if kind == 'code':
+            if blocks[i] in marked:
+                line = line[2:] if line.startswith(MARK + ' ') else line[3:]
         elif kind == 'mermaid':
             line = line.replace(MARK + ' ', '')
         elif kind == 'text' and OPEN in line:
@@ -311,11 +343,15 @@ def remark(base_lines, new_lines):
             out[j] = prefix + mark_segment(body)
             counts['lines'] += 1
     japanese = any(JAPANESE.match(line) for line in new)
-    notes = {start: note(numbers, japanese) for start, numbers in changed_copy_lines.items()}
+    notes = {}
+    for start, numbers in changed_copy_lines.items():
+        fence = new[start]
+        notes[start] = note(numbers, japanese, fence[:len(fence) - len(fence.lstrip())])
     return out, notes, counts, warnings
 
 
-def check(expected, actual):
+def check(expected, actual, origin):
+    """Compare line by line; origin maps an index in actual to its line in the file."""
     findings = []
     for n in range(max(len(expected), len(actual))):
         want = expected[n] if n < len(expected) else ''
@@ -328,7 +364,25 @@ def check(expected, actual):
             what = 'unmarked change'
         else:
             what = 'marks differ from the diff'
-        findings.append('line %d: %s: %s' % (n + 1, what, have.strip()[:60]))
+        number = origin[n] + 1 if n < len(origin) else len(origin) + 1
+        findings.append('line %d: %s: %s' % (number, what, have.strip()[:60]))
+    return findings
+
+
+def check_notes(expected, found, origin):
+    """Compare the note lines before each fence: missing, stale or wrong ones."""
+    findings = []
+    for start in sorted(set(expected) | set(found)):
+        want, have = expected.get(start), found.get(start)
+        if want == have:
+            continue
+        if have is None:
+            what = 'missing note line'
+        elif want is None:
+            what = 'stale note line (the block did not change)'
+        else:
+            what = 'note line differs from the diff'
+        findings.append('line %d: %s: %s' % (origin[start], what, (have or want).strip()[:60]))
     return findings
 
 
@@ -345,16 +399,12 @@ def main(argv):
         return 2
     sheet = paths[-1]
     raw_lines, raw_ends, bom = read_sheet(sheet)
-    lines, ends = drop_notes(raw_lines, raw_ends)
+    lines, ends, found, origin = drop_notes(raw_lines, raw_ends)
     if do_strip:
         kinds, blocks = classify(lines)
         stripped = strip_all(lines, kinds, blocks)
         if do_check:
-            findings = ['line %d: note line: %s' % (n + 1, line.strip()[:60])
-                        for n, line in enumerate(raw_lines)
-                        if NOTE_LINE.match(line.rstrip()) and n + 1 < len(raw_lines) and FENCE.match(raw_lines[n + 1])]
-            if not findings:
-                findings = check(stripped, lines)
+            findings = check_notes({}, found, origin) + check(stripped, lines, origin)
             for f in findings:
                 print('FINDING ' + f)
             print('%s check: %d findings' % ('NG' if findings else 'OK', len(findings)))
@@ -363,17 +413,18 @@ def main(argv):
         print('OK stripped every mark: %s' % sheet)
         return 0
     base_lines, base_ends, _ = read_sheet(paths[0])
-    base, _ = drop_notes(base_lines, base_ends)
+    base = drop_notes(base_lines, base_ends)[0]
     marked, notes, counts, warnings = remark(base, lines)
-    expected, expected_ends = add_notes(marked, ends, notes)
     for w in warnings:
         print('WARN ' + w)
     if do_check:
-        findings = check(expected, raw_lines)
+        # Notes and lines are compared apart, so one stale note cannot shift every later line.
+        findings = check_notes(notes, found, origin) + check(marked, lines, origin)
         for f in findings:
             print('FINDING ' + f)
         print('%s check: %d findings' % ('NG' if findings else 'OK', len(findings)))
         return 1 if findings else 0
+    expected, expected_ends = add_notes(marked, ends, notes)
     write_sheet(sheet, expected, expected_ends, bom)
     print('OK marked %d lines (%d table cells, %d code block notes): %s'
           % (counts['lines'], counts['cells'], len(notes), sheet))
