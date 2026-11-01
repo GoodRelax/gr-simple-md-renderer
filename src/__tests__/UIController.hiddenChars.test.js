@@ -26,7 +26,7 @@ import { keydown } from "./helpers/editDom.js";
 
 // INV-101 (3)(6), spec 5.21.3: the toast at open. It comes once per
 // opening and per Reload (the file read from disk again), after the
-// document shows; not on an edit, [Render], a refused Reload or a Cancel
+// document shows; not on an edit, [Light] / [Dark], a refused Reload or a Cancel
 // of the open dialog or of the unsaved question.
 
 const ZWSP = "\u200b";
@@ -71,7 +71,7 @@ function paste(text) {
   document.dispatchEvent(e);
 }
 
-describe("AT-HID-08 INV-101 (3): the toast at open, once; not on an edit or [Render]", () => {
+describe("AT-HID-08 INV-101 (3): the toast at open, once; not on an edit or [Light] / [Dark]", () => {
   it("a dropped .md: one toast with the number of places, after the preview is drawn; an edit gives none", async () => {
     await start();
     let shownWhenToasted = null;
@@ -111,7 +111,7 @@ describe("AT-HID-08 INV-101 (3): the toast at open, once; not on an edit or [Ren
     expect(viewWhenToasted).toBe(true);
   });
 
-  it("a paste that starts a document gives the toast; [Render] of text typed into #editor does not", async () => {
+  it("a paste that starts a document gives the toast; [Light] / [Dark] of text typed into #editor does not", async () => {
     await start();
     paste(HIDDEN_MD);
     await settle();

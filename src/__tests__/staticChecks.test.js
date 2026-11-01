@@ -130,7 +130,7 @@ const ENTITY_FILES = [
   "hiddenChars.js",
 ];
 
-describe("AT-STA static checks of src/js", () => {
+describe("AT-STA static checks of src/js and src/index.html", () => {
   it("covers the new files", () => {
     const names = FILES.map(rel);
     for (const f of NEW_FILES) expect(names, f).toContain(f);
@@ -187,6 +187,13 @@ describe("AT-STA static checks of src/js", () => {
     expect(rest.length).toBeLessThan(html.length);
     const lines = rest.split("\n").filter((line) => /[^\x00-\x7f]/.test(line));
     expect(lines, "non-ASCII lines outside the Japanese help").toEqual([]);
+  });
+
+  it("AT-STA-22 the top bar's theme buttons read Light and Dark (SC-08, owner ruling 2026-11-01)", () => {
+    const html = readFileSync(resolve(here, "../index.html"), "utf8");
+    expect(html).toContain('<button id="renderLight">Light</button>');
+    expect(html).toContain('<button id="renderDark">Dark</button>');
+    expect(html).not.toMatch(/Render(<br\s*\/?>|\s|&nbsp;)+(Light|Dark)/);
   });
 
   it("AT-STA-04 no inline event handler in HTML strings, no setAttribute('on...') (INV-20)", () => {

@@ -95,7 +95,7 @@ export async function dropFile(page, { name, text, type = "" }) {
 }
 
 /**
- * Put Markdown into the editor and press [Render Light].
+ * Put Markdown into the editor and press [Light].
  * @param {import("@playwright/test").Page} page
  * @param {string} markdown
  */

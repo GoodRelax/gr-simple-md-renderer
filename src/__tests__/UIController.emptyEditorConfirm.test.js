@@ -80,10 +80,10 @@ const confirmCalls = () => confirmSpy.mock.calls.filter(([message]) => message =
 
 // Each path takes the (empty) #editor into the document.
 const PATHS = [
-  ["l (Render Light) in the markdown view", async () => {
+  ["l (Light) in the markdown view", async () => {
     keydown(document.body, "l");
   }],
-  ["[Render Dark] in the markdown view", async () => {
+  ["[Dark] in the markdown view", async () => {
     await app.ui.handleRender("dark");
   }],
   ["a block tap with unrendered #editor changes (INV-45)", async () => {

@@ -129,7 +129,7 @@ describe("AT-UI-70 INV-47 a large body is not written into #editor on every comm
     expect(app.elements.editor.value).toBe(COMMITTED);
   });
 
-  it("Render (l) with a stale #editor keeps the committed body (the model is read, not the old #editor text)", async () => {
+  it("[Light] (l) with a stale #editor keeps the committed body (the model is read, not the old #editor text)", async () => {
     await withDocument();
     commit("Hello", "Hello changed.");
     keydown(document.body, "Escape");

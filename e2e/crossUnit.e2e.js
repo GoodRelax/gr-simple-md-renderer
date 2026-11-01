@@ -72,7 +72,7 @@ test("T-3 (11) S-2: HTML with an external image pasted into a cell is text; an i
   // the fixture fails the test if any request went out
 });
 
-test("T-3 (6): a cell colored and left changed, then [Render Dark]: committed, and the color shows in its dark pair", async ({ page }) => {
+test("T-3 (6): a cell colored and left changed, then [Dark]: committed, and the color shows in its dark pair", async ({ page }) => {
   await openEditMode(page, ["| A | B |", "| --- | --- |", "| word | y |", ""].join("\n"));
   await cell(page, 1, 0).click();
   await cell(page, 1, 0).evaluate((td) => {

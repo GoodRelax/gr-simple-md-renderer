@@ -17,6 +17,10 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ### Changed
 
+- Top bar: the **Render Light** and **Render Dark** buttons are now
+  **Light** and **Dark**, on one line, so the two buttons are narrower.
+  The keys (`L` / `D`) and what the buttons do stay the same. The help
+  and the README use the new names.
 - License: GRSMD is now licensed under the Apache License 2.0 (it was
   the MIT License). `LICENSE` holds the full text, and a new `NOTICE`
   file names the copyright holder. The built file's notices comment now
