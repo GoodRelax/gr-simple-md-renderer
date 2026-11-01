@@ -230,6 +230,31 @@ describe("SaveDocument / SaveDocumentAs (UseCase)", () => {
     expect(out.location).toBe(req.location);
   });
 
+  it("AT-SAVE-21 (INV-108) Save as: the save dialog's AbortError -> canceled with a download offer of this save's file text (BOM and CRLF kept)", async () => {
+    const { access, saveAs } = setup();
+    const session = DocumentSession.fromFileText("# Doc\r\n", true, 1000, 9);
+    const req = request({ session, bodyText: "# New\n", permissionOrPicker: Promise.reject(domError("AbortError")) });
+    const out = await saveAs.execute(req);
+    expect(out).toMatchObject({ status: "canceled", message: null, session, location: req.location });
+    expect(out.downloadOffer.fileName).toBe("doc.md");
+    expect(access.downloads).toEqual([]); // only when the offer is taken
+    out.downloadOffer.start();
+    expect(access.downloads).toEqual([{ name: "doc.md", text: `${BOM}# New\r\n` }]);
+  });
+
+  it("AT-SAVE-22 (INV-108) Save without a file: the offer has the default name; the overwrite No and the permission's AbortError offer nothing", async () => {
+    const { save } = setup({ lastModified: 1500 });
+    const noFile = await save.execute(request({ handle: null, permissionOrPicker: Promise.reject(domError("AbortError")) }));
+    expect(noFile.status).toBe("canceled");
+    expect(noFile.downloadOffer.fileName).toBe(CONFIG.edit.defaultFileName);
+    const no = await save.execute(request({ confirmer: { confirmOverwrite: vi.fn().mockResolvedValue(false) } }));
+    expect(no.status).toBe("canceled");
+    expect(no).not.toHaveProperty("downloadOffer");
+    const permission = await save.execute(request({ permissionOrPicker: Promise.reject(domError("AbortError")) }));
+    expect(permission).toMatchObject({ status: "failed", message: M.saveFailed });
+    expect(permission).not.toHaveProperty("downloadOffer");
+  });
+
   it("AT-SAVE-20 after a successful save, the next save sees no external change", async () => {
     const access = fakeFileAccess({ lastModified: 1000, writtenLastModified: 2000 });
     const save = new SaveDocument(access, M, CONFIG.edit.defaultFileName);

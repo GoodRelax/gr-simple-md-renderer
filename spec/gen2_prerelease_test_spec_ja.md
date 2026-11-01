@@ -1,7 +1,7 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.39
-**日付:** 2026-10-31 (v2.0: 2026-03-07)
+**バージョン:** 2.42
+**日付:** 2026-11-01 (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
 **自動テスト:** `npm test` (vitest) と `npm run test:e2e` (Playwright) の全件。件数は実施のときに記入する: vitest \_\_\_\_ 件 (スキップ \_\_\_\_ 件)、e2e \_\_\_\_ 件 (スキップ \_\_\_\_ 件)。ID の一覧は「自動テスト (AT) の一覧」の章
@@ -91,6 +91,8 @@
 > v2.38 の変更 (2026-10-31、ヘルプを短くする。2026-11-01 のリリース。v2.36・v2.37 は iPad の直しとライセンスの枝が使う): 仕様の SC-16・FS-10・CON-12・INV-75 (3)・INV-105 (7) (オーナーの裁定 HT-1〜HT-4) に合わせて、PRT-L01 の期待結果を短いヘルプの節と行に書き直し、前の細かい行の確かめを、新しい窓「More Details」/「詳しい使い方」の中へ移した。PRT-L09 (詳しい使い方の窓。iPad でヘルプが約 1 画面に入ること) を足した。PRT-AA02 はライセンスの章を開いてから読む。AT-HLP を 01〜25 にした (21: 短いヘルプの節と行と折りたたみ、22: 窓の HTML、23: 窓のキーと Esc の 2 段、24・25: e2e)。AT-HLP-12・14・15・20 は、細かい行を窓の中で確かめる。AT-HLP-11 は、折りたたみの見出し (`summary`) も Tab で回ることを確かめる。help.e2e.js に AT-HLP-24 (2 件)・25 を足し、notices.e2e.js の PRT-AA02 はライセンスの見出しを押してから一覧を読む。同じ日に、画面の名前 Search を Find にした (オーナーの裁定 HT-5): PRT の [Search] を [Find] に、キーのヒントを `[F] Find;` に、コードのパレットのボタンを Find にした。改めたケースの判定は空欄 (未実施)。
 
 > v2.39 の変更 (2026-10-31、GitHub 連携を正式版では出さない。オーナーの裁定 D40、方針の GQA の問 1 = a): 仕様の G-11・SC-28・CON-12・INV-20・INV-100・INV-103・FS-10・FS-24・FS-25・5.20 の改めに合わせて、セクション AK の PRT-AK01〜AK11 を N/A にし (正式版では GitHub 連携を出さない。コードは正式版の後に外す)、PRT-AK12 (正式版で、PC でも GitHub 連携が出ないこと) を足した。PRT-L01 の「Buttons and Keys」/「ボタンとキー」を 11 行、「Privacy & Security」/「プライバシーとセキュリティ」を 5 行にした (`[Open GitHub]` の行と GitHub 連携の行を外した)。AT-HLP-15〜19 (GitHub の編集のヘルプの層) を外し、AT-HLP-26 (ヘルプと詳しい使い方の窓に GitHub 連携が無い) を足した。AT-STA-21 (`CONFIG.github.offered` が偽で、`main.js` の判定を止める) を足した。AT-CSP-01 は `connect-src` が PlantUML のサーバーだけであることを見る。gitHub.e2e.js の GitHub 連携の試験は飛ばし (`test.describe.skip`)、PRT-AK12 の 4 件 (PC で出ない・`o` が効かない、キーのヒント、ヘルプと窓、CSP) を足した。help.e2e.js の AT-HLP-18・19 を外した。改めたケースの判定は空欄 (未実施)。
+
+> v2.42 の変更 (2026-11-01、保存のダイアログの `AbortError` のトーストと保存のログ。正式版。R5、BI-21・BI-25、オーナーの裁定 R-1 = a): 仕様の INV-108 (新)・INV-109 (新)・INV-25・FS-19・5.12・5.14.7・5.19.6 の手順 10 に合わせて、PRT-W02 の手順 2 の期待結果を改め (保存のダイアログのキャンセルでも "Not saved." と [Download] のトーストが出る)、PRT-W24 (Edge 156 の Save as と [Download]) と PRT-W25 (保存のログ) を足した。JGQA2 (正式版の確かめ) は、PRT-W24・W25 を最初に行う (オーナーの裁定 問 7-7)。AT に AT-STR (新。01〜08) を足し、AT-FA を 01〜16 (12〜16: ログの行)、AT-SAVE を 01〜22 (21・22: `downloadOffer`)、AT-DLC を 01〜24 (20 を改め、24: 上書きの No)、AT-CEC を 01〜53 (15 を改め、51〜53)、AT-UI を 01〜109 (65 を改め、107〜109)、AT-UTL を 01〜08 (`showActionToast`)、AT-CFG を 01〜15 にした。e2e の save.e2e.js に INV-108・INV-109 の 3 件を足した (偽の保存のダイアログ)。追加・改訂したケースの判定は空欄 (未実施)。**レビュー 1 回目の直し (同日):** PRT-W24・W25 の手順と期待結果を、表の枠のまま Given / When / Then で書き直し (指摘 11、調整役の裁定)、PRT-W24 に置き換えの確認の答え方を足した (指摘 9)。2 回目の直し: PRT-W24 の前提に Chrome を足して Chrome の取り消しを別の When / Then にし、備考に書く動作を When へ移し、PRT-W25 の行を BOSS に渡す動作を備考へ移した (N4)。AT-STR を 01〜09、AT-FA を 01〜19、AT-CEC を 01〜55、AT-UI を 01〜110 にし、AT-UI の行の要求とファイルの列を直した (指摘 8)。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -1301,6 +1303,7 @@
 |              | 9. 上記全操作中と、セクション U〜AL (U / V / W / X / Y / Z / AA / AB / AC / AD / AE / AF / AG / AH / AI / AJ / AK / AL) を実施した後にコンソールを確認 |
 | **期待結果** | - JavaScript エラーが表示されない          |
 |              | - CSP 違反が表示されない                   |
+|              | - 保存の段の `GRSMD save:` の行 (Info。INV-109) は、`fail` の行も含めて、エラーに数えない |
 
 | 結果 | Pass / Fail / N/A |
 | ---- | ----------------- |
@@ -2555,12 +2558,12 @@
 | **手順** | 1. Save → 権限の確認で拒否する |
 | | 2. Save as → 保存ダイアログでキャンセルする |
 | **期待結果** | - 1 で、エラーのトースト ("Save not allowed. Your changes are kept.") が出て、内容は保たれ、`* ` は残る |
-| | - 2 で、トーストは出ず、内容は保たれ、`* ` は残る |
+| | - 2 で、トースト "Not saved." に [Download] のボタンが付いて出る (2026-11-01 から。INV-108)。内容は保たれ、`* ` は残る。[Download] は押さない (PRT-W24 で押す) |
 
 | 結果 | Pass / Fail / N/A |
 | --- | --- |
 | 判定 | |
-| 備考 | 要求: INV-25 |
+| 備考 | 要求: INV-25、INV-108 |
 
 ---
 
@@ -2932,6 +2935,62 @@
 | --- | --- |
 | 判定 | |
 | 備考 | 要求: 5.14.1 (裁定 T33)。1 は main からの動作の変更で、2 が回避方法である |
+
+---
+
+### PRT-W24: Edge で Save as が書けなかったときの [Download] (2026-11-01)
+
+手順と期待結果は Gherkin の Given / When / Then で書く (調整役の裁定、レビュー 1 回目の指摘 11)。表の枠は、ほかの PRT と同じにする。
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Given 試験者が Edge 156 (オーナーの PC。R5 の起きた版) で、公開のページ (または PRT の対象のビルド) を開いた |
+| | And 試験者が開発者ツールのコンソールを開いた |
+| | And 試験者が `.md` の複製を D&D して、1 文字を直した (タイトルは `* ` を持つ) |
+| | And 試験者が Chrome でも同じページを開き、`.md` の複製を D&D して、1 文字を直した |
+| **手順** | When 試験者が Edge で Save as を押し、保存のダイアログで名前を変えずに [保存] を押す |
+| | And 置き換えの確認が出たら、試験者が [はい] を押す (確認が出たか、出なかったかを備考に書く) |
+| | And 試験者が保存したフォルダをエクスプローラーで見る |
+| **期待結果** | Then 次のどちらか 1 つが起きる。(a) GRSMD はトースト "Saved: <名前>" を出し、タイトルの `* ` を消し、フォルダのファイルは直しを含む (R5 は起きなかった)。(b) GRSMD はトースト "Not saved." に [Download] のボタンを添えて出し、タイトルは `* ` を保ち、フォルダのファイルは前のまま (R5 が起きた) |
+| **手順** | When 試験者が (a) か (b) を備考に書く |
+| | And (b) の場合、試験者がトーストの [Download] を 10 秒の間に押す |
+| | And 試験者がダウンロードしたファイルを外のエディタで開く |
+| **期待結果** | Then GRSMD はダウンロードを始め、トースト "Downloading: <名前>. It's still not saved." を出す |
+| | And タイトルは `* ` を保つ |
+| | And ファイルは直しを含み、元のファイルと同じ改行コードと BOM を持つ |
+| **手順** | When 試験者が Edge でもう一度 Save as を押し、保存のダイアログで [キャンセル] を押す |
+| **期待結果** | Then GRSMD はトースト "Not saved." と [Download] を出す (本当の取り消しでも出る。INV-108) |
+| **手順** | When 試験者が Chrome で Save as を押し、保存のダイアログで [キャンセル] を押す |
+| **期待結果** | Then GRSMD はトースト "Not saved." と [Download] を出し、タイトルは `* ` を保つ |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-108、INV-25、INV-26、R5 (BI-21〜BI-23)。JGQA2 の最初に行う (問 7-7)。(a) なら [Download] の手順は N/A。コンソールの行は PRT-W25 で見る。自動では AT-SAVE-21・22、AT-DLC-20、AT-UI-65・107・110、AT-UTL-08、save.e2e.js (偽の保存のダイアログ) |
+
+---
+
+### PRT-W25: 保存のログ (2026-11-01)
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | Given 試験者が PRT-W24 と同じページを開き、開発者ツールのコンソールの表示の段に Info を含めた |
+| **手順** | When 試験者が PRT-W24 の最初の Save as の後に、コンソールの `GRSMD save:` で始まる行を見る |
+| **期待結果** | Then (b) の場合、コンソールは `GRSMD save: picker fail AbortError "<message>" <ms> ms id=yes startIn=<yes/no> type=.md Edg/156.… build=<日付>` の 1 行を持つ |
+| | And (a) の場合、コンソールは `picker ok`・`createWritable ok`・`write ok`・`close ok` の 4 行を持つ |
+| **手順** | When 試験者が `.md` を D&D して直し、Save を押し、権限の確認で許す |
+| **期待結果** | Then コンソールは `permission ok`・`createWritable ok`・`write ok`・`close ok` の行を持ち、どの行も `id=- startIn=- type=.md` を持つ |
+| **手順** | When 試験者が `.py` を D&D し、[Edit] で直して、Save as で保存する |
+| **期待結果** | Then コンソールは `picker`・`createWritable`・`write`・`close` の行を持ち、どの行も `type=.py` を持つ |
+| **手順** | When 試験者が開発者ツールの Application で、このページの Local Storage・Session Storage・IndexedDB・Cookies を見る |
+| **期待結果** | Then GRSMD の値は、どこにも無い |
+| | And どの行も、ファイルの名前・フォルダのパス・文書の中身を持たず、英語・ASCII である (パスの文字を含む message は `<hidden>`) |
+| | And 画面 (プレビュー・トースト・上部の欄) は、ログを持たない |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-109、CON-13、CON-14、R5・R10 (BI-25)。JGQA2 の最初に PRT-W24 と共に行う (問 7-7)。試験者は、ここまでの `GRSMD save:` の行を写して、R5 の解析のために BOSS に渡す。自動では AT-STR-01〜09、AT-FA-12〜19、AT-CEC-55、save.e2e.js |
 
 ---
 
@@ -5776,16 +5835,17 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-PSM | 11-d パレットのジェスチャの状態機械 (15 の出来事 × 5 の状態、ガード、ポップオーバー。11: グリップのダブルクリックとダブルタップ (INV-68)。グリップ以外のどこを押しても組が切れる) | 11-d | EditPalette.stateMachine.test.js | (族の名前) と 10・11 |
 | AT-PDS | 11-f パレットの表示とポップオーバーの状態機械 (11 の出来事 × 6 の状態) | 11-f | EditPalette.displayStateMachine.test.js | (族の名前) と 10 |
 | AT-SRCH | 01〜05: `textSearch.js` (01: 通常の文字の記号を正規表現として扱わない。02: フラグ (`m`、[Aa])、不正な式で SyntaxError。03: 空の一致を数えて進む、上限、渡した式を変えない。04: 正規表現の置換を、1 件 (`replaceOne`) とすべて (`replaceAll`) で `String.replace` と比べる (群が 1 つの `$10`、名前付きの群の無い `$<x>`、`` $` ``・`$'`、群 11 個など)。1 件の置換は `^`・後読みが前後の文字を見る。05: `replaceOne` / `replaceAll` (通常の文字は `$` を展開しない、件数。正規表現の件数は 10,000 件を超えても数える))。13: `occurrences` / `countOccurrences` (重ならない出現の位置、空の文字は 0)。06〜10: `DocumentSearch` (06: 入力ごとに探し、止めたら最初へ行く。正規表現は止めたときだけ。不正な式。07: ↓ / ↑ / ボタン、端で回る、選んでいないときの ↑ は最後、押し続けは 1 フレームに 1 回、Enter は何もしない。08: ブロックの枠、原文の n 番目の色付け (大きい表の行)、`scrollTargetTo` で見えている高さの 1/4 の所へ、セルをまたぐ一致は表の行へ。09: 置換は編集モードだけ、`beforeReplace` が偽なら何もしない、Replace は置き換えた文字の後ろへ、All はトースト。10: setMode (初期で閉じて無効、コードビューは置換の段を隠して行を探す)、箱の中の Esc、何も保存しない)。11: `RendererOrchestrator.replaceBody` (Undo / Redo 1 回、変わらないブロックは ID を保つ、同じ本文は何も記録しない)。12: UIController の結線 ((a) `f`、(b) 主 + F は編集モードだけ (ブロック編集欄の中から)、(c) Esc の順、(e) ポップオーバーが開いていれば、検索の箱の中の最初の Esc はポップオーバーだけを閉じる、(d) 置換の前の確定 (`searchReplaceRequested`)・Undo 1 回・検索欄の主 + Z はブラウザ・編集モードに従う置換の可否)。14〜17: `DocumentSearch` (14: 文書が変わっても正規表現を自分からは走らせず、件数の所に "Down: search again"、↓ で探す。通常の文字は探し直す。同じ文字なら何もしない。15: 不正な式は確定と置換の押下の後も `invalid`。16: IME の変換中の ↓ / ↑ / Esc は何もしない。17: Replace の後、描き直しの前に閉じたか条件を変えたら動かず、枠も付けない。18: src/index.html の [↑] / [↓] / [×] の title と aria-label (Enter を書かない)。19: 確定の後の正規表現の Replace は、refresh が走らせなくても、自分で探して置き換え、次へ行く。20〜23: コード編集モード (`setCodeEditor`、編集欄の色、置換は編集欄の Undo 1 回、表示では置換しない)) | INV-80、INV-48、INV-88、5.1、5.11 | textSearch.test.js、DocumentSearch.test.js、RendererOrchestrator.replace.test.js、UIController.search.test.js | 01〜23 |
-| AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル。10: コードのファイルの種類 (空の配列なら出さない)。11: バイト列と種類のダウンロード) | INV-24〜26、INV-79、INV-90、CON-14 | MarkdownFileAccess.test.js | 01〜11 |
-| AT-SAVE | `SaveDocument` / `SaveDocumentAs` | INV-24〜26、INV-33、INV-39 | SaveDocument.test.js | 01〜20 |
+| AT-FA | `MarkdownFileAccess` (09: 保存のダイアログの `id` と `startIn`、覚えるファイル。10: コードのファイルの種類 (空の配列なら出さない)。11: バイト列と種類のダウンロード。12〜16: 保存のログ (12: Save as の 4 行と押下からの時間、`startIn`、13: 保存のダイアログの `AbortError` と同期の例外、14: 上書きの権限の行 (`granted`・ほかの状態・例外、`requestPermission` の無いハンドル)、15: 書き込みの失敗の段と、message の名前・パスの置き換え、16: 既定は `console.info` だけで、ストレージと画面に何も残さない、17: ログが投げても、トレースを作れなくても、保存は成功する、18: 新しい開始が、書かずに終わった保存のトレースを置き換える、19: ログから除く名前と、悪い引数は今までどおり reject (15 に close の段の失敗の行も足した)。レビュー 1 回目の指摘 1・3・4・7) | INV-24〜26、INV-79、INV-90、INV-109、CON-13、CON-14 | MarkdownFileAccess.test.js | 01〜19 |
+| AT-STR | `SaveTrace` (保存のログの行。01: R5 の例の行、ok の行、権限の状態、02: 保存のダイアログを使わない上書きの `-`、name と message の無いエラー、03: user agent からのブラウザの名と版 (Edge・Chrome・Opera・Firefox・Safari・iOS の Chrome・Android の Edge)、04: ヘルプの版の日付、05: 拡張子だけの種類、06: message の名前・パス・制御文字・`"`・ASCII の外の字・200 字、07: 後で足した選んだファイルの名前、08: 既定の書き出しは `console.info`、09: 行を作るか出す間の例外は捨て、`silent()` は何も書かない。06 は、空白・引用符を含むパス・UNC・`file:`・相対のパス・`~` を含む message が `<hidden>` になることも見る) | INV-109 | SaveTrace.test.js | 01〜09 |
+| AT-SAVE | `SaveDocument` / `SaveDocumentAs` (21: 保存のダイアログの `AbortError` の `downloadOffer` (その保存の `toFileText`、BOM と CRLF を保つ)、22: 保存先の無い Save の既定の名前、上書きの No と権限の `AbortError` には付けない) | INV-24〜26、INV-33、INV-39、INV-108 | SaveDocument.test.js | 01〜22 |
 | AT-SSM | 11-e 保存と push の処理の状態機械 (09: `pushing` の間は文書の置き換えを断り (INV-54)、Save / Save as を無視する) | 11-e、INV-54、INV-96 (4) | UIController.save.test.js | 01〜09 (01 と 02 は 1 つの試験) |
-| AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`。08: `readFile` は中身を読む前の確かめ `check` をそのまま渡す (INV-18 (8)))、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56、INV-79 | DocumentLifecycle.test.js | 01〜23 |
-| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン。14: Clear (確認、初期状態、OS の配色の `applySystemTheme`)、38: 何も保存しない。70: 大きな本文は確定のたびに `#editor` へ書かず、フォーカス・ドラッグ・保存・描画のときに書く、71: 空の `#editor` を空でない文書へ取り込む前の確認、72: コードビューの #fileInfo の文字、73: キーヒントをスクロール・指の移動・クリック・キーで消し、見張りを外す、74: ドロップしたファイルの振り分け (`.md`・`.markdown`、コードビュー、表に無いファイル (`notAllowed`)、読み解いた文字の U+0000 (ダイアログと確認の前)、5 MB。2026-10-30)) | INV-04 (38)、INV-12・INV-13 (14)、INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69、FS-03 (72)、FS-03・5.7 (73)、INV-11・INV-17・INV-18・INV-89 (8) (74)、INV-85〜INV-92 (34、75〜106) | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js、UIController.editorDeferredSync.test.js (70)、UIController.emptyEditorConfirm.test.js (71)、UIController.formatFileInfo.test.js (72)、UIController.showKeyHint.test.js (73)、UIController.setupFileDrop.test.js (74)、UIController.codeEdit.test.js (75〜83)、UIController.formatFileInfo.test.js (84)、UIController.codeEditor.test.js (85〜106) | 01〜106 (25 は欠番。41 は AT.1 の注。36a〜36j・37a は AT.1 の枝番。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)。34: コードの文書の部品が無い構成のコードビュー ([Edit] は無効)。75〜84: コードの文書の結線 (開くダイアログ・ファイル情報の文字コードと改行・未保存・Reload・保存中・Save as・`.md` の開き直し)。85〜98: コード編集モード (パレット・Undo・保存・Esc の順・折りたたみのキー (Mac)・`p`・目次・検索、98: Redo と Find のボタン)。99〜106: レビュー 1 回目の直し (99: Reload が確認の後 (コード編集モードが終わった後) に失敗したとき表示を描き直す、100: 打つ間の未保存の印、101: Mac のキーのヒント、102: UTF-16 の BOM の知らない拡張子、103: 押し続けた折りたたみのキーと IME、104: 編集欄の中の `e` / `p`、105: 主 + Shift + S、106: 打つのが止まったときの目次)。SC-27) |
+| AT-DLC | `DocumentLifecycle` (23: ドロップした `.md` を次の保存のダイアログのために覚える (INV-79)。UI を介さない。5.14.11 の行、文書 ID、Reload の読み込みと読む間の変化 (`reloadTarget` / `readFile` / `isStale`。08: `readFile` は中身を読む前の確かめ `check` をそのまま渡す (INV-18 (8)))、保存の順と結果) | 5.14.11、11-e、INV-33、INV-54、INV-55、INV-56、INV-79、INV-108 (20・24。20: `downloadOffer` を結果に渡す、24: 上書きの No は渡さない) | DocumentLifecycle.test.js | 01〜24 |
+| AT-UI | `UIController` (結線、未保存、文書の置き換えの順序、同期、パレットのボタン、リンクのボタン。14: Clear (確認、初期状態、OS の配色の `applySystemTheme`)、38: 何も保存しない。70: 大きな本文は確定のたびに `#editor` へ書かず、フォーカス・ドラッグ・保存・描画のときに書く、71: 空の `#editor` を空でない文書へ取り込む前の確認、72: コードビューの #fileInfo の文字、73: キーヒントをスクロール・指の移動・クリック・キーで消し、見張りを外す、74: ドロップしたファイルの振り分け (`.md`・`.markdown`、コードビュー、表に無いファイル (`notAllowed`)、読み解いた文字の U+0000 (ダイアログと確認の前)、5 MB。2026-10-30)) | INV-04 (38)、INV-12・INV-13 (14)、INV-21、INV-22、INV-31、INV-33、INV-45、INV-47、INV-50、INV-52、INV-54〜56、INV-69、FS-03 (72)、FS-03・5.7 (73)、INV-11・INV-17・INV-18・INV-89 (8) (74)、INV-85〜INV-92 (34、75〜106)、INV-108 (65、107〜110) | UIController.document.test.js、UIController.crossUnit.test.js、UIController.editMode.test.js、UIController.save.test.js (65、107、108、110 など)、UIController.palette.test.js、UIController.link.test.js、UIController.handleRender.test.js、UIController.setupFileDrop.test.js、UIController.math.test.js、UIController.editorDeferredSync.test.js (70)、UIController.emptyEditorConfirm.test.js (71)、UIController.formatFileInfo.test.js (72)、UIController.showKeyHint.test.js (73)、UIController.setupFileDrop.test.js (74)、UIController.codeEdit.test.js (75〜83、109)、UIController.formatFileInfo.test.js (84)、UIController.codeEditor.test.js (85〜106) | 01〜110 (25 は欠番。41 は AT.1 の注。36a〜36j・37a は AT.1 の枝番。68: 行内の数式のボタン (大きなブロックでは無効で、位置を字句解析しない)、69: 数式ボックスのボタン (6 ブロック、何も開かない、Undo 1 回と Redo、最後に開いたブロック、空の文書の空のブロックと、すき間の編集欄)。34: コードの文書の部品が無い構成のコードビュー ([Edit] は無効)。75〜84: コードの文書の結線 (開くダイアログ・ファイル情報の文字コードと改行・未保存・Reload・保存中・Save as・`.md` の開き直し)。85〜98: コード編集モード (パレット・Undo・保存・Esc の順・折りたたみのキー (Mac)・`p`・目次・検索、98: Redo と Find のボタン)。99〜106: レビュー 1 回目の直し (99: Reload が確認の後 (コード編集モードが終わった後) に失敗したとき表示を描き直す、100: 打つ間の未保存の印、101: Mac のキーのヒント、102: UTF-16 の BOM の知らない拡張子、103: 押し続けた折りたたみのキーと IME、104: 編集欄の中の `e` / `p`、105: 主 + Shift + S、106: 打つのが止まったときの目次)。SC-27。65・107〜109: 保存のダイアログの `AbortError` (65: "Not saved." と [Download] のトースト、107: [Download] でダウンロードして `downloadStarted`、未保存のまま、108: 上書きの No では何も出さない、109: コードの文書、110: トーストの中の押下は、開いたブロックを確定しない。INV-108) |
 | AT-KEY | 主の修飾キーのショートカット (02: コードビューの主 + S はコードのファイルを保存する (INV-90)。04 (G49): 検索の箱などの入力要素では、ブロック編集欄を開いたままでも主 + B / I を横取りせず、書式を付けない。08: Redo のキー。09: 1 文字のショートカットと修飾キーのガード (`c`・`l`・`d`・`r`・ArrowDown に Ctrl / Meta / Alt)) | INV-13 (09)、INV-14、INV-58〜60、INV-59 (a)、INV-80 (7)、INV-90 (02) | UIController.shortcuts.test.js、UIController.keyboard.test.js (09) | 01〜09 |
 | AT-DBL | 編集モードでないときのダブルクリック (裁定 AQ3: 08: タッチと空の pointerType のダブルタップでは編集を始めない、13: タッチのダブルタップの後のブラウザの dblclick では何も開かない、15: タッチの押下の後でもマウスのダブルクリックは開く (最後の押下で決める)、16: タッチで [Edit] の後のブロックのタップで開く、17: 初期状態で `#editor` が空のとき、タッチのダブルタップで空の文書を始めない。ペンはタッチと同じ (裁定 AQ13): 18: ペンのダブルタップで編集を始めず、[Edit] の後のペンのタップで開く、19: 初期状態でペンのダブルタップで空の文書を始めない) | INV-29 (16)、INV-31、INV-57 | UIController.doubleClick.test.js | 01〜19 |
 | AT-PAN | `DiagramPanController` (図のパンの終わり 01〜03、始まりは閾値を超えたとき (5px ちょうどでは始まらない。`utils.isPastActivation`) 04)。04 の閾値の決まりそのもの (INV-29・INV-68・INV-74 (2)・3.5 の図のパンに共通) は utils.test.js の `isPastActivation` の試験。05: パンを作るのは `pointer: fine` かつ `any-pointer: coarse` でないときだけ、ズームとコピーは `pointer: fine` のとき (`utils.diagramControllersFor`。`main.js` が使う) | INV-16 (05)、INV-16b (05)、FS-09、INV-29、INV-68、INV-74 | DiagramPanController.test.js、utils.test.js (`isPastActivation`、05) | 01〜05 |
 | AT-SFR | `SourceFileRenderer` (01・07: コードビューの Reload。02: コンストラクタ、03: `destroy` (Clear)、04: 色付け (束に無い言語と表に無い拡張子は plaintext)、05: 外からの import が無い、06: 色付けの HTML を行に分ける。08〜13: 読んだ文字の受け取り、`readText`、`showText`、`retarget`、`highlightText`、編集欄の上に色付けし直さない。14: 表示の行を最後の行から外す (WebKit の 2 乗の時間。レビュー 1 回目の M1)) | INV-15 (01・07)、FS-04 (07)、FS-03・5.5 (02・06)、FS-07・INV-13 (03)、FS-03・INV-05・5.3 (04)、INV-07 (05)、INV-86・INV-89・INV-90 (08〜14) | SourceFileRenderer.test.js | 01〜14 |
-| AT-UTL | `utils.js` の関数 (01: `escapeHtml`、02: `formatDateTime`、03: `formatTime`、04: `applyTheme`、05: `systemTheme`、06: `isApplePlatform`、07: `isTypingTarget`)。`isPastActivation` は AT-PAN-04 | FS-01・FS-03 (01)、FS-03・5.9 (02)、5.12 (03)、FS-06 (04・05)、INV-12 (05)、INV-14 (06・07)、INV-74 (1) (07) | utils.test.js | 01〜07 |
+| AT-UTL | `utils.js` の関数 (01: `escapeHtml`、02: `formatDateTime`、03: `formatTime`、04: `applyTheme`、05: `systemTheme`、06: `isApplePlatform`、07: `isTypingTarget`、08: `showActionToast` (ボタンは 1 回動いてトーストを消す、時間で消える、`.toast-action` は押下を受ける) と `isInActionToast`)。`isPastActivation` は AT-PAN-04 | FS-01・FS-03 (01)、FS-03・5.9 (02)、5.12 (03)、FS-06 (04・05)、INV-12 (05)、INV-14 (06・07)、INV-74 (1) (07)、INV-108・5.12 (08) | utils.test.js | 01〜08 |
 | AT-RLD | `UIController.handleReload` (各ビューの Reload、保存先が無いときのトースト、読み込みの失敗) | FS-04、FS-20、INV-55 | UIController.handleReload.test.js | 01 |
 | AT-TPA | タッチのペーストの助け: 初期状態で `#editor` が空のときだけ、プレビューの押下で `#editor` にフォーカスを移す | FS-16 | UIController.touchPasteAssist.test.js | 01 |
 | AT-SSE | `SmoothScrollEngine` (01: コンストラクタ、02: `startScroll`、03: `stopScroll`、04: `destroy`、05: スクロール中の class (ホバーを止める)、06: `_loop`) | FS-05、INV-18b (05) | SmoothScrollEngine.test.js | 01〜06 |
@@ -5794,7 +5854,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-MMD | `MermaidRenderer.initializeMermaid` (ラベルの画像を落とす、init の指示で設定を変えられない、テーマの対応) | CON-12 | MermaidRenderer.test.js | 01 |
 | AT-DCC | `DiagramCopyController` (01: コピーのバーは足された図の入れ物だけに付ける。プレビュー全体を探し直さず、2 つ目のバーを付けない。02: 許した PlantUML の図の Copy SVG / PNG は、その図の `/svg/` と `/png/` を取りに行き、確認を出さない (INV-02 の唯一の例外)) | FS-09、INV-02 (02) | DiagramCopyController.observer.test.js | 01〜02 |
 | AT-CSP | CSP のビルドのプラグイン (script の hash、meta の置き場所、`<script src>` があればビルドを失敗させる、指示の値。`connect-src` は PlantUML のサーバーだけで、`api.github.com` が無い (D40)) | INV-20、INV-06、INV-07 | cspPlugin.test.js | 01 |
-| AT-CFG | `CONFIG.edit` と文言 (01: 合意した値。グリップのダブルタップの `paletteDoubleTapMs` (INV-68) はあり、プレビューのダブルタップの値は無い (AQ3)。05: `keyHints.markdown` と `keyHints.code` の `[E] Edit;`、`code` の `[I] Index;`・`[P] Commands;`・折りたたみのキー。SC-27。Mac の `keyHints.codeApple` は AT-UI-101。10: 初期画面の 4 行が同じ長さで、3 行目が表にある種類のファイル ("Drop a text/code file" と "known types"。INV-18)、4 行目が編集の始め方 ("touch or pen: [Edit], tap")。裁定 AQ4・AQ13。11: ファイルのドロップの設定 (5 MB と文言)、12: `EXT_TO_HLJS` (生成した `FILE_TYPES` から作る)、13: `BINARY_EXTENSIONS` が無く、`markdownExtensions` と `EXT_TO_HLJS` が `FILE_TYPES` から作られる (D29、AQ9。中の `it` は AT-FT-04)、14: `FILE_SYSTEM_HANDLE_SUPPORTED`) | 5.2、CON-06、INV-92 (4) (05)、FS-16 (10)、INV-11・INV-18・CON-08 (11)、INV-18・INV-102・5.3 (12)、INV-18・INV-102・5.4 (13)、INV-15 (14) | config.edit.test.js、UIController.editMode.test.js、config.test.js (09〜14) | 01〜14 |
+| AT-CFG | `CONFIG.edit` と文言 (01: 合意した値。グリップのダブルタップの `paletteDoubleTapMs` (INV-68) はあり、プレビューのダブルタップの値は無い (AQ3)。05: `keyHints.markdown` と `keyHints.code` の `[E] Edit;`、`code` の `[I] Index;`・`[P] Commands;`・折りたたみのキー。SC-27。Mac の `keyHints.codeApple` は AT-UI-101。10: 初期画面の 4 行が同じ長さで、3 行目が表にある種類のファイル ("Drop a text/code file" と "known types"。INV-18)、4 行目が編集の始め方 ("touch or pen: [Edit], tap")。裁定 AQ4・AQ13。11: ファイルのドロップの設定 (5 MB と文言)、12: `EXT_TO_HLJS` (生成した `FILE_TYPES` から作る)、13: `BINARY_EXTENSIONS` が無く、`markdownExtensions` と `EXT_TO_HLJS` が `FILE_TYPES` から作られる (D29、AQ9。中の `it` は AT-FT-04)、14: `FILE_SYSTEM_HANDLE_SUPPORTED`、15: INV-108 のトーストの文言と出す時間) | 5.2、CON-06、INV-92 (4) (05)、FS-16 (10)、INV-11・INV-18・CON-08 (11)、INV-18・INV-102・5.3 (12)、INV-18・INV-102・5.4 (13)、INV-15 (14)、INV-108 (15) | config.edit.test.js、UIController.editMode.test.js、config.test.js (09〜14) | 01〜15 |
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと。01・02 に上部バーのボタン (R6。フォーカスの輪を含む) と編集中の [Edit] (R1) の色、21: 上部バーのボタンの形 (角の丸み 6px、`appearance: none`。[?] は今のまま。R6)、22: 表のセルは縦の上寄せで、横の寄せは決めない (TVA1) | 5.8.1、5.15.2、5.1 | themeColors.test.js、hljsThemePlugin.test.js | 01〜22 |
 | AT-STA | `src/js` と `src/css` の静的な検査 (01: ストレージの API を使わない。03 (b): `src/index.html` の日本語のヘルプの外は ASCII。コードの編集の新しいファイルも対象で、`CodeDocument`・`textEncoding.js`・`indentText.js`・`jsonFold.js`・`codeOutline.js`・`CodeEditHistory` は Entity の検査 (05) の対象。20: 試験のファイル (`src/__tests__` と `e2e` の `.js`) も ASCII だけ (G5。レビュー 1 回目の L9、調整役の裁定 Q6)。21: `CONFIG.github.offered` が偽で、`main.js` の `gitHubEnabled` を止める (D40)) | CON-06、CON-13、CON-14、CON-15、INV-04 (01)、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13、G5、INV-100・D40 (21) | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜21 |
@@ -5813,7 +5873,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-CEH | `CodeEditHistory` (1 s の区切り、カーソルの移動、操作、Redo、30 回、差分、時計を渡す (12)。13: 文字を変えなかった打つ手順は止まった後に Undo が無効。14: Undo は手順を始める直前の選択。15: 1 打鍵で文字を比べない。16: 変わった部分を渡された操作は文字を比べず、Undo / Redo は差分を編集欄の `edit` で書き戻す (5 MB で、全体の文字の処理を数える)。17: `textChange` のブロックの比べは 1 字ずつの比べと同じ結果で、5 MB で字の読みが少ない (N1)) | INV-88 | CodeEditHistory.test.js | 01〜17 |
 | AT-CDOC | `CodeDocument` (LF と基準、`keep`、`toBytes`、BOM、書けない行、`withSaved`・`withReloaded`、`singleLineEnding`) | INV-89、INV-90 | CodeDocument.test.js | 01〜11 |
 | AT-CFD | `CodeFileDialog` (開くダイアログの部分・選び直し・閉じ方、保存の問い、`textContent`。08: UTF-8 で保存するかの問い (NE-31)) | INV-89、INV-90 (2)(3)、INV-19 | CodeFileDialog.test.js | 01〜08 |
-| AT-CEC | `CodeEditController` (01〜09: 読む・ダイアログ・Reload。10〜25: 保存 (権限・上書き・保存のダイアログ・ダウンロード・文字コードの問いと覚え方・書けない文字・二重の保存・`.md` の開き直し)。26〜34: コード編集モードと折りたたみ (32: 編集欄の折りたたみの後の検索・目次は、打つのが止まったとき。N1)。35〜37: NE-30 と、書けない文字を保存のダイアログの前に調べる。38: Save as で言語が変わると表示を描き直す。39: ダウンロードでも答えを覚える。40: Save as の名前は開いたときの拡張子。41: 表示で開く 1 段は文書ごとに 1 回推し量る。42: 打つ間は未保存を比べない。43: Save as で言語が変わると編集欄もすぐ色付けする。44: UTF-8 のファイルを `.md` にしても UTF-8 のトーストは出ない。45: 保存のダイアログの種類 (拡張子の規則)。46: 保存の後の Undo。21・36・37・47・48: 書けない文字は保存の前に UTF-8 で保存するかを聞き、[Save in UTF-8] で同じ保存を UTF-8 で続ける (NE-31)。49: 200 KB 以上のファイルで編集を始めるとトースト、文書ごとに 1 回 (NE-32)。50: その大きさは今のファイルの大きさで、Save で 200 KB 以上になったら次に入るときに出す (NE-32、レビュー 3 回目の P4)) | INV-85、INV-88〜INV-90、INV-92 | CodeEditController.test.js | 01〜50 |
+| AT-CEC | `CodeEditController` (01〜09: 読む・ダイアログ・Reload。10〜25: 保存 (権限・上書き・保存のダイアログ・ダウンロード・文字コードの問いと覚え方・書けない文字・二重の保存・`.md` の開き直し)。26〜34: コード編集モードと折りたたみ (32: 編集欄の折りたたみの後の検索・目次は、打つのが止まったとき。N1)。35〜37: NE-30 と、書けない文字を保存のダイアログの前に調べる。38: Save as で言語が変わると表示を描き直す。39: ダウンロードでも答えを覚える。40: Save as の名前は開いたときの拡張子。41: 表示で開く 1 段は文書ごとに 1 回推し量る。42: 打つ間は未保存を比べない。43: Save as で言語が変わると編集欄もすぐ色付けする。44: UTF-8 のファイルを `.md` にしても UTF-8 のトーストは出ない。45: 保存のダイアログの種類 (拡張子の規則)。46: 保存の後の Undo。21・36・37・47・48: 書けない文字は保存の前に UTF-8 で保存するかを聞き、[Save in UTF-8] で同じ保存を UTF-8 で続ける (NE-31)。49: 200 KB 以上のファイルで編集を始めるとトースト、文書ごとに 1 回 (NE-32)。50: その大きさは今のファイルの大きさで、Save で 200 KB 以上になったら次に入るときに出す (NE-32、レビュー 3 回目の P4)) | INV-85、INV-88〜INV-90、INV-92、INV-108 (15・51〜53。15: 名前の無い拡張子の取り消しは `offerDownload`、51: 選んだ文字コードのバイト列を押したときだけダウンロードし、答えを覚えない、52: 書き込みの `AbortError` は `saveFailed`、53: 上書きの権限の `AbortError` も `saveFailed`、54: 保存先の無い Save の `AbortError` も `offerDownload`)、INV-109 (55: 本物の MarkdownFileAccess を通した Save as の 4 行、`type=.py`、名前なし) | CodeEditController.test.js | 01〜55 |
 | AT-CED | `CodeEditor` (DOM、色付けの間と色なし、行番号、キー (Tab・Enter・Esc・IME・折りたたみのキー・Mac)、自前の Undo、選択と行の位置、色の層の範囲。24: 5 MB の 1 打鍵の処理を数える。25: Undo の選択。26: 押し続けた Undo / Redo。27: Mac の折りたたみのキーに Shift は無し。28: 文字を変えなかった打つ手順で Undo が無効。29: textarea が自分でスクロールしたら広げる。30: 表示の行を最後の行から外す。31: 始めのカーソル。32: 押し続けた折りたたみのキー。33: 5 MB の文字で Tab・Shift+Tab・Undo・Redo は値の全体を入れ替えず、全体の文字の処理をせず、触れる行だけを `setRangeText` で書く。34: `setText` (置換・折りたたみ) は変わった部分だけを書き、比べはブロックで。35: 操作で足した行の場所と、その Undo で戻す場所。36: 打ってすぐの操作は、打つ手順を操作の前の選択で閉じる (N1)) | INV-85〜INV-88、INV-92 (4) | CodeEditor.test.js | 01〜36 |
 | AT-CEM | 11-h コード編集モードの状態機械 (3 つの出来事 × 2 つの状態のすべての交点、ガード `canEdit`、知らないガード・処理は誤り、仕様の図と表の一致) | 11-h、INV-85 | CodeEditController.stateMachine.test.js | (族の名前) |
 | AT-CCP | `CodeCommandPalette` (箱の名前とボタン、開閉とフォーカス、命令で閉じない、Esc・外の押下、無効、リスナー) | INV-92 (5) | CodeCommandPalette.test.js | 01〜07 |
@@ -5869,7 +5929,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | fileDrop.e2e.js | `.md` のドロップは Markdown の表示 (先頭に空行 41 行のものも。5.13。load.e2e.js と同じ既知の制限: 直す前に落ちるのは Chromium だけ)、表にあるそれ以外の種類はコードビュー (コードビューでは [Edit] が有効。SC-27)。表に無い種類は `notAllowed` の alert で断り、`.markdown` は Markdown の表示、読み解いた文字に U+0000 があれば断る (INV-18。2026-10-30) | PRT-C01、PRT-E01、PRT-E03、PRT-AL01、PRT-AL02 |
 | hiddenChars.e2e.js | 見えない文字の知らせ (INV-101): `.md` のドロップで 1 回のトーストと並びの前の枠の印 (ラベルは CSS で描き、選んだ文字にラベルが入らない)、コードビューの印と行の高さ、コード編集モードの中に印が無く表示に戻ると出ること、印刷でも印が出て、絵文字と旗には印が無いこと (AT-HID-07・09・11・12) | PRT-AL04、PRT-AL05、PRT-AL06 |
 | externalConsent.e2e.js | 外部画像と PlantUML は、同意の前・拒否の後に通信しない (INV-01、INV-03、INV-19) | PRT-T02、PRT-M02 |
-| save.e2e.js | Save as のダウンロードと保存ダイアログ (偽の picker) | PRT-W06 (ダウンロード)。偽の picker の試験は、PRT-W05 / W16 などの Save as で選んだファイルへ書き込む経路と同じ (本物の保存ダイアログは自動にできないので、ダイアログそのものは PRT で確かめる) |
+| save.e2e.js | Save as のダウンロードと保存ダイアログ (偽の picker)。INV-108: 保存のダイアログの `AbortError` で "Not saved." と [Download] が出て、本当の押下でダウンロードする。INV-109: 保存の段ごとの 4 行 (`info`、名前・中身なし、画面とストレージに無い) と、`AbortError` の失敗の行 | PRT-W06 (ダウンロード)、PRT-W24・W25 (偽の保存のダイアログ。本物の Edge の失敗は PRT で見る)。偽の picker の試験は、PRT-W05 / W16 などの Save as で選んだファイルへ書き込む経路と同じ (本物の保存ダイアログは自動にできないので、ダイアログそのものは PRT で確かめる) |
 | theme.e2e.js | 配色 (ライト・ダーク・コードビュー) と印刷の色、印刷に出ないもの。OS の配色 (`colorScheme` のダークとライト): 最初の表示と、ライトで描いた後の Clear (INV-12)、初期状態の `.md` のドロップとペースト (INV-08) | PRT-X16、PRT-X19、PRT-V13、PRT-A01、PRT-B01、PRT-C01、PRT-H01 |
 | uiFixes.e2e.js | UI の直し: Esc で反映して Ctrl+Z / Redo、ポップオーバー → ブロック → パレットの Esc の順 (D9)、編集欄の中の Redo はブラウザ (M5)、IME の変換中の Esc (Chromium)、Undo / Redo の単位、表の原文の Enter / Shift+Enter、文字色、すき間からの挿入 (マウスとタッチ)、点線の上のホイールでスクロールし、図の上の Ctrl+ホイールはズームのまま (AT-GAP-03 / 04、裁定 AQ8)、Pixel 7 の上部バーの上ではすき間が反応しない (M1、Chromium)、1 MB でマウスの移動 1 回の処理 (M3。`GRSMD_PERF=1`、Chromium) | PRT-Y01、Y03 (M5 の部分)、Y05〜Y08、PRT-U05 |
 | blockRange.e2e.js | ブロックの範囲: マウスのドラッグで枠と帯 (選択の下)、[削除] / Delete / Backspace、Undo / Redo、Ctrl+C / Ctrl+X と帯の [カット] / [コピー] の原文 (Chromium は本物のクリップボードも)、✓、表・コード・リスト・図を含む範囲、Ctrl+A と Delete (INV-49)、Esc の順、すき間の「+」を出さない、編集モードの外ではブラウザのまま、`#editor` の未描画の変更 (INV-45)、帯の上下の位置 (下に場所の無い段落で必ず上)、ブラウザの `copy` の事象 (メニュー・吹き出しのコピー) も原文、Shift+Delete、タッチのタップ、1 MB の Ctrl+A の後のフレーム (50 ms) と全部の削除の時間 (300 ms)、1 MB でマウスのドラッグが選択を広げる 1 フレームが 4 ms 以内 (INV-74 (性能) (a)、INV-73) (時間の試験はどれも `GRSMD_PERF=1`、Chromium)、帯の上のホイールでプレビューがスクロールし、帯と枠が付いていく (AT-RNG-53。INV-74 (2))。テストの名は確かめる INV-74 の細目を持つ | PRT-Z01〜Z07 |
@@ -6043,6 +6103,8 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-W21      | 保存と保護 | Reload の失敗と読み込み中の変化 |      |
 | PRT-W22      | 保存と保護 | 上部の入力欄の未描画の変更の保護と保存 |      |
 | PRT-W23      | 保存と保護 | Markdown 表示中にラッパー付きの文字列へ貼り替える |      |
+| PRT-W24      | 保存と保護 | Edge で Save as が書けなかったときの [Download] |      |
+| PRT-W25      | 保存と保護 | 保存のログ |      |
 | PRT-X01      | UI 改善 | セルを開く・移る |      |
 | PRT-X02      | UI 改善 | 原文で開くセル |      |
 | PRT-X03      | UI 改善 | Esc と Undo の単位 |      |

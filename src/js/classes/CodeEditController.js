@@ -75,7 +75,9 @@ function isMarkdownName(name) {
  * the editor the text itself, as one undo step.
  *
  * CodeEditHost (the port it calls back, UIController):
- *   toast(message), confirmOverwrite(reason) -> Promise<boolean> (INV-39),
+ *   toast(message), offerDownload({fileName, start()}) (the toast
+ *   with [Download] when the save dialog ended with AbortError, INV-108),
+ *   confirmOverwrite(reason) -> Promise<boolean> (INV-39),
  *   codeFileSaved(file, fileHandle, languageChanged) (the file info follows
  *   the written file; languageChanged: Save as gave a name of another language),
  *   reopenAsMarkdown(file, fileHandle) -> Promise (NE-19),
@@ -650,7 +652,8 @@ export default class CodeEditController {
    * the save dialog for Save as.
    * Save's answer to the encoding question is remembered once the file is
    * written in it, or its download started (NE-24, L20): a save stopped or
-   * canceled asks again.
+   * canceled asks again. A save dialog that ends with AbortError offers the
+   * encoded bytes as a download (INV-108); that download remembers nothing.
    * @purity non-pure
    * @param {object} w
    * @param {boolean} w.isSaveAs
@@ -691,13 +694,24 @@ export default class CodeEditController {
     }
     let fileHandle = this._fileHandle;
     const offered = this._offeredName(name);
-    const started = inPlace ? access.startPermissionRequest(fileHandle) : access.startSavePicker(offered, this._pickerTypes(offered));
+    // the document's own name is kept out of the save log too (INV-109 (4))
+    const started = inPlace ? access.startPermissionRequest(fileHandle) : access.startSavePicker(offered, this._pickerTypes(offered), [name]);
     let lastModified;
     try {
       if (inPlace) {
         if (!(await this._mayOverwrite(started, fileHandle, doc.lastModified))) return null;
       } else {
-        fileHandle = await started;
+        try {
+          fileHandle = await started;
+        } catch (error) {
+          if (error?.name !== "AbortError") throw error;
+          // INV-108: a cancel and a save the browser did not write (Edge, R5) both end so
+          const { bytes } = encoded;
+          /** @purity non-pure */
+          const start = () => access.startDownload(name, bytes, CONFIG.codeEdit.downloadMimeType);
+          this._host.offerDownload({ fileName: name, start });
+          return null;
+        }
         if (isMarkdownName(fileHandle.name) && encoded.encoding !== "utf-8") {
           encoded = this._encode(doc, text, "utf-8", fileHandle.name);
           if (encoded.unencodableLines) return this._unencodable(encoded); // a lone surrogate
@@ -705,7 +719,7 @@ export default class CodeEditController {
       }
       lastModified = await access.writeFile(fileHandle, encoded.bytes);
     } catch (error) {
-      if (error?.name !== "AbortError" || inPlace) this._host.toast(this._failureMessage(error));
+      this._host.toast(this._failureMessage(error));
       return null;
     }
     const { bytes, encoding } = encoded;

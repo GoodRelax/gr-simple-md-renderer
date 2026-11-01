@@ -7,6 +7,7 @@ vi.mock("../js/utils.js", async () => {
     applyTheme: vi.fn(),
     applySystemTheme: vi.fn(),
     showToast: vi.fn(),
+    showActionToast: vi.fn(),
     waitForDOMStability: vi.fn().mockResolvedValue(true),
   };
 });
@@ -18,7 +19,7 @@ vi.mock("../js/classes/ModalController.js", () => ({
   default: { setupModal: vi.fn(), show: vi.fn(), hide: vi.fn() },
 }));
 
-import { showToast } from "../js/utils.js";
+import { showToast, showActionToast } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
 import { saveOperationStateMachine } from "../js/classes/DocumentLifecycle.js";
 import { setupApp, dropEvent, settle, BASE_TITLE } from "./helpers/appStack.js";
@@ -39,6 +40,7 @@ beforeEach(() => {
   confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
   vi.spyOn(window, "alert").mockImplementation(() => {});
   showToast.mockClear();
+  showActionToast.mockClear();
 });
 
 afterEach(() => {
@@ -292,7 +294,7 @@ describe("AT-UI-27 / 28 / 29 / 06 / 39 save results", () => {
     if (stillDirty) expect(app.ui.documents.session).toBe(baseline);
   });
 
-  it("AT-UI-65 a canceled save dialog shows no toast and stays unsaved", async () => {
+  it("AT-UI-65 a save dialog that ends with AbortError shows the toast with [Download] (INV-108) and stays unsaved", async () => {
     const picker = Promise.reject(domError("AbortError"));
     picker.catch(() => {});
     await withDocument({ picker });
@@ -300,6 +302,66 @@ describe("AT-UI-27 / 28 / 29 / 06 / 39 save results", () => {
     pointer(document.body, "pointerdown");
     await app.ui.requestSaveAs();
     expect(showToast).not.toHaveBeenCalled();
+    expect(showActionToast).toHaveBeenCalledTimes(1);
+    expect(showActionToast).toHaveBeenCalledWith(M.saveAborted, M.saveAbortedDownload, expect.any(Function), CONFIG.edit.saveAbortedToastMs);
+    expect(access.downloads).toEqual([]);
+    expect(isDirtyTitle()).toBe(true);
+  });
+
+  it("AT-UI-107 (INV-108) [Download] downloads the document as the save would have written it, says so, and leaves it unsaved", async () => {
+    const picker = Promise.reject(domError("AbortError"));
+    picker.catch(() => {});
+    await withDocument({ picker });
+    openChanged();
+    pointer(document.body, "pointerdown");
+    await app.ui.requestSaveAs();
+    const download = showActionToast.mock.calls[0][2];
+    download();
+    expect(access.downloads).toHaveLength(1);
+    expect(access.downloads[0].name).toBe("doc.md");
+    expect(access.downloads[0].text).toContain("Changed A.");
+    expect(showToast).toHaveBeenCalledWith(M.downloadStarted("doc.md"), TOAST_MS);
+    expect(isDirtyTitle()).toBe(true);
+    expect(app.ui.documents.saveOperationState).toBe("idle");
+  });
+
+  it("AT-UI-110 (INV-108 (4)) a mouse press on [Download] keeps the open block editor, its focus and its selection; a press elsewhere commits", async () => {
+    await withDocument();
+    const ta = openChanged();
+    ta.focus();
+    ta.setSelectionRange(2, 5);
+    const container = document.createElement("div");
+    container.id = "toastContainer";
+    document.body.append(container);
+    const { showActionToast: realActionToast } = await vi.importActual("../js/utils.js");
+    const action = vi.fn();
+    realActionToast(M.saveAborted, M.saveAbortedDownload, action, CONFIG.edit.saveAbortedToastMs);
+    const button = container.querySelector(".toast-action button");
+    pointer(button, "pointerdown");
+    const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+    button.dispatchEvent(press);
+    pointer(button, "pointerup");
+    expect(press.defaultPrevented).toBe(true); // the browser moves neither the focus nor the selection
+    button.click();
+    expect(action).toHaveBeenCalledTimes(1);
+    expect(app.blockEditor()).toBe(ta);
+    expect(app.ui.blockEdit.isEditing()).toBe(true);
+    expect(document.activeElement).toBe(ta);
+    expect([ta.selectionStart, ta.selectionEnd]).toEqual([2, 5]);
+    container.remove();
+    pointer(document.body, "pointerdown");
+    pointer(document.body, "pointerup");
+    expect(app.ui.blockEdit.isEditing()).toBe(false);
+  });
+
+  it("AT-UI-108 (INV-108) the overwrite question answered No: no toast at all", async () => {
+    confirmSpy.mockReturnValue(false);
+    await withDocument({ lastModified: 5000 });
+    openChanged();
+    pointer(document.body, "pointerdown");
+    await app.ui.requestSave();
+    expect(showToast).not.toHaveBeenCalled();
+    expect(showActionToast).not.toHaveBeenCalled();
     expect(isDirtyTitle()).toBe(true);
   });
 });

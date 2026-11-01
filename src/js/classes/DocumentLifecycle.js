@@ -388,7 +388,8 @@ export default class DocumentLifecycle {
    * the document the save started from (INV-54); a failure leaves it unsaved.
    * @purity non-pure
    * @param {object} outcome - SaveOutcome
-   * @returns {{applied: boolean, message: string|null}|null} null when the state has no cell for it
+   * @returns {{applied: boolean, message: string|null, downloadOffer?: object}|null} null when
+   *   the state has no cell for it; downloadOffer: the save dialog ended with AbortError (INV-108)
    */
   finishSave(outcome) {
     const event = SAVE_EVENT_BY_STATUS[outcome.status] ?? "writeFailed";
@@ -402,7 +403,7 @@ export default class DocumentLifecycle {
       applied = true;
     }
     const message = event !== "saveCanceled" && outcome.message ? outcome.message : null;
-    return { applied, message };
+    return outcome.downloadOffer ? { applied, message, downloadOffer: outcome.downloadOffer } : { applied, message };
   }
 
   /**

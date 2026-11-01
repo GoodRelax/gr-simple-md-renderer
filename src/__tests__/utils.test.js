@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform, isTypingTarget, isPastActivation, diagramControllersFor } from "../js/utils.js";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform, isTypingTarget, isPastActivation, diagramControllersFor, showActionToast, isInActionToast } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
 
 describe("AT-PAN-04 isPastActivation (INV-29, INV-68, INV-74 (2), 3.5 diagram pan: the one rule of a tap versus a drag)", () => {
@@ -164,5 +164,66 @@ describe("AT-UTL-07 isTypingTarget (INV-14; also INV-74 (1): one check for both,
     expect(isTypingTarget(select)).toBe(false); // as INV-14 lists them
     expect(isTypingTarget(null)).toBe(false);
     box.remove();
+  });
+});
+
+describe("AT-UTL-08 showActionToast (INV-108)", () => {
+  it("shows the text and one button; the button runs the action once and removes the toast; the time removes it too", () => {
+    vi.useFakeTimers();
+    try {
+      const container = document.createElement("div");
+      container.id = "toastContainer";
+      document.body.appendChild(container);
+      const action = vi.fn();
+      showActionToast("Not saved.", "Download", action, 10000);
+      const toast = container.querySelector(".toast.toast-action");
+      expect(toast.querySelector("span").textContent).toBe("Not saved.");
+      const button = toast.querySelector("button.toast-action-btn");
+      expect(button.type).toBe("button");
+      expect(button.textContent).toBe("Download");
+      // a mouse press keeps the selection and the focus (INV-108 (4)); the click still runs the action
+      const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+      button.dispatchEvent(press);
+      expect(press.defaultPrevented).toBe(true);
+      expect(action).not.toHaveBeenCalled();
+      button.click();
+      expect(action).toHaveBeenCalledTimes(1);
+      expect(container.children).toHaveLength(0);
+      showActionToast("Not saved.", "Download", action, 10000);
+      vi.advanceTimersByTime(9999);
+      expect(container.children).toHaveLength(1);
+      vi.advanceTimersByTime(1);
+      expect(container.children).toHaveLength(0);
+      expect(action).toHaveBeenCalledTimes(1);
+      container.remove();
+      expect(() => showActionToast("x", "y", action, 10)).not.toThrow(); // no container: nothing
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("isInActionToast: true for the toast with a button and what is inside it (text nodes too); false elsewhere", () => {
+    const toast = document.createElement("div");
+    toast.className = "toast toast-action";
+    toast.innerHTML = "<span>Not saved.</span><button>Download</button>";
+    const plain = document.createElement("div");
+    plain.className = "toast";
+    document.body.append(toast, plain);
+    expect(isInActionToast(toast)).toBe(true);
+    expect(isInActionToast(toast.querySelector("button"))).toBe(true);
+    expect(isInActionToast(toast.querySelector("span").firstChild)).toBe(true);
+    expect(isInActionToast(plain)).toBe(false);
+    expect(isInActionToast(document.body)).toBe(false);
+    expect(isInActionToast(null)).toBe(false);
+    toast.remove();
+    plain.remove();
+  });
+
+  it("style.css lets the toast with a button take the press (the container passes presses through)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve, dirname } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../css/style.css"), "utf8");
+    expect(css).toMatch(/\.toast-action\s*\{[^}]*pointer-events:\s*auto/);
   });
 });

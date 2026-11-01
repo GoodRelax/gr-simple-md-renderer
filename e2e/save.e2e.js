@@ -97,3 +97,91 @@ test("Save as writes through showSaveFilePicker (fake picker)", async ({ page })
   expect(saves[0].closed).toBe(true);
   expect(saves[0].chunks.join("")).toBe(NOTE.text);
 });
+
+/**
+ * A fake save dialog for INV-108 / INV-109: "abort" rejects as Edge 156
+ * does after [Save] (R5), "write" returns an in-memory file named
+ * "secret-name.md". The blobs the page downloads are kept for reading.
+ */
+function fakeSaveDialog(pickerMode) {
+  window.__e2eBlobs = [];
+  const create = URL.createObjectURL.bind(URL);
+  URL.createObjectURL = (blob) => {
+    window.__e2eBlobs.push(blob);
+    return create(blob);
+  };
+  window.showSaveFilePicker = async () => {
+    if (pickerMode === "abort") throw new DOMException("The user aborted a request.", "AbortError");
+    return {
+      kind: "file",
+      name: "secret-name.md",
+      async requestPermission() {
+        return "granted";
+      },
+      async createWritable() {
+        return { async write() {}, async close() {}, async abort() {} };
+      },
+      async getFile() {
+        return new File([""], "secret-name.md", { lastModified: Date.now() });
+      },
+    };
+  };
+}
+
+test("INV-108 a save dialog that ends with AbortError shows Not saved. with [Download]; [Download] downloads the document", async ({ page }) => {
+  await page.addInitScript(fakeSaveDialog, "abort");
+  await openNoteWithPalette(page);
+
+  await page.locator("#paletteSaveAs").click();
+  const toast = page.locator("#toastContainer .toast-action");
+  await expect(toast).toContainText("Not saved.");
+  const button = toast.getByRole("button", { name: "Download" });
+  await expect(button).toBeVisible();
+  expect(await page.evaluate(() => window.__e2eBlobs.length)).toBe(0);
+
+  const downloadPromise = page.waitForEvent("download");
+  await button.click(); // a real click: the toast takes the press (pointer-events)
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("note.md");
+  await expect(page.locator("#toastContainer")).toContainText("Downloading: note.md. It's still not saved.");
+  await expect(toast).toHaveCount(0);
+  const saved = await page.evaluate(async () => ({ count: window.__e2eBlobs.length, text: await window.__e2eBlobs[0]?.text() }));
+  expect(saved).toEqual({ count: 1, text: NOTE.text });
+});
+
+test("INV-109 each save step writes one line on the console; no names, paths or text", async ({ page }) => {
+  const lines = [];
+  page.on("console", (msg) => {
+    if (msg.text().startsWith("GRSMD save: ")) lines.push({ type: msg.type(), text: msg.text() });
+  });
+  await page.addInitScript(fakeSaveDialog, "write");
+  await openNoteWithPalette(page);
+
+  await page.locator("#paletteSaveAs").click();
+  await expect(page.locator("#toastContainer")).toContainText("Saved: secret-name.md");
+  await expect.poll(() => lines.length).toBe(4);
+  const shape = /^GRSMD save: (picker|createWritable|write|close) ok \d+ ms id=yes startIn=(yes|no) type=\.md \S+ build=\d{4}-\d{2}-\d{2}$/;
+  expect(lines.map((l) => l.text.split(" ")[2])).toEqual(["picker", "createWritable", "write", "close"]);
+  for (const line of lines) {
+    expect(line.type).toBe("info");
+    expect(line.text).toMatch(shape);
+    expect(line.text).not.toMatch(/secret|note|Body/);
+  }
+  // nothing on the page, nothing stored
+  await expect(page.locator("body")).not.toContainText("GRSMD save:");
+  expect(await page.evaluate(() => localStorage.length + sessionStorage.length)).toBe(0);
+});
+
+test("INV-109 the save dialog's AbortError writes the fail line (R5)", async ({ page }) => {
+  const lines = [];
+  page.on("console", (msg) => {
+    if (msg.text().startsWith("GRSMD save: ")) lines.push(msg.text());
+  });
+  await page.addInitScript(fakeSaveDialog, "abort");
+  await openNoteWithPalette(page);
+
+  await page.locator("#paletteSaveAs").click();
+  await expect(page.locator("#toastContainer .toast-action")).toContainText("Not saved.");
+  await expect.poll(() => lines.length).toBe(1);
+  expect(lines[0]).toMatch(/^GRSMD save: picker fail AbortError "The user aborted a request\." \d+ ms id=yes startIn=(yes|no) type=\.md \S+ build=\d{4}-\d{2}-\d{2}$/);
+});

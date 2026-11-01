@@ -7,6 +7,7 @@ vi.mock("../js/utils.js", async () => {
     applyTheme: vi.fn(),
     applySystemTheme: vi.fn(),
     showToast: vi.fn(),
+    showActionToast: vi.fn(),
     waitForDOMStability: vi.fn().mockResolvedValue(true),
   };
 });
@@ -18,11 +19,11 @@ vi.mock("../js/classes/ModalController.js", () => ({
   default: { setupModal: vi.fn(), show: vi.fn(), hide: vi.fn() },
 }));
 
-import { showToast } from "../js/utils.js";
+import { showToast, showActionToast } from "../js/utils.js";
 import { CONFIG } from "../js/config.js";
 import { encodeText } from "../js/textEncoding.js";
 import { setupApp, dropEvent, settle, BASE_TITLE } from "./helpers/appStack.js";
-import { fakeFileAccess, fakeFileHandle, deferred } from "./helpers/fakeFs.js";
+import { fakeFileAccess, fakeFileHandle, deferred, domError } from "./helpers/fakeFs.js";
 
 // AT-UI-75..: UIController routes the code view to the code document
 // (SC-27): opening (INV-89), file info, unsaved, Reload, Save (INV-90, NE-19).
@@ -36,6 +37,7 @@ let dialog;
 
 beforeEach(() => {
   showToast.mockClear();
+  showActionToast.mockClear();
   dialog = { askOpen: vi.fn(async () => null), askSaveEncoding: vi.fn(async () => null) };
 });
 
@@ -151,6 +153,22 @@ describe("UIController and the code document (SC-27; INV-85 (5), INV-89, INV-90,
     expect(bodyView()).toBe("view-code");
     permission.resolve("granted");
     await saving;
+  });
+
+  it("AT-UI-109 (INV-108) Save as of a code file: the save dialog's AbortError shows the toast with [Download]; [Download] downloads the bytes; still unsaved", async () => {
+    await start({ get picker() { return Promise.reject(domError("AbortError")); } });
+    await drop("a\n", "a.py");
+    app.codeEdit.updateText("bb\n");
+    app.ui._refreshDirtyMark();
+    await app.ui.requestSaveAs();
+    expect(showActionToast).toHaveBeenCalledWith(CONFIG.messages.edit.saveAborted, CONFIG.messages.edit.saveAbortedDownload, expect.any(Function), CONFIG.edit.saveAbortedToastMs);
+    expect(access.downloads).toEqual([]);
+    showActionToast.mock.calls[0][2]();
+    expect(access.downloads.map((d) => d.name)).toEqual(["a.py"]);
+    expect([...access.downloads[0].text]).toEqual([...new TextEncoder().encode("bb\n")]);
+    expect(access.downloadTypes).toEqual([CONFIG.codeEdit.downloadMimeType]);
+    expect(showToast).toHaveBeenCalledWith(CONFIG.messages.edit.downloadStarted("a.py"), CONFIG.codeView.toastDurationMs);
+    expect(document.title).toBe(CONFIG.edit.titleUnsavedPrefix + BASE_TITLE);
   });
 
   it("AT-UI-82 Save as with another code name: the file info shows the written file; the title is clean", async () => {

@@ -62,6 +62,52 @@ export function showToast(msg, durationMs) {
 }
 
 /**
+ * A toast with one button (INV-108). Pressing the button runs onAction
+ * (inside that press, a new user activation) and removes the toast. A mouse
+ * press on the button keeps the selection and the focus where they are (an
+ * open block editor, a block range; INV-108 (4)), as the range bar does.
+ * @param {string} msg
+ * @param {string} actionLabel
+ * @param {() => void} onAction
+ * @param {number} durationMs
+ * @purity non-pure
+ */
+export function showActionToast(msg, actionLabel, onAction, durationMs) {
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+  const toast = document.createElement("div");
+  toast.className = "toast toast-action";
+  const text = document.createElement("span");
+  text.textContent = msg;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "toast-action-btn";
+  button.textContent = actionLabel;
+  /** @purity non-pure */
+  button.addEventListener("mousedown", (e) => e.preventDefault()); // the click still comes
+  /** @purity non-pure */
+  button.addEventListener("click", () => {
+    toast.remove();
+    onAction();
+  });
+  toast.append(text, button);
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), durationMs);
+}
+
+/**
+ * True when the node is inside a toast with a button: a press there is not
+ * a press outside an open block editor or a block range (INV-108 (4)).
+ * @param {Node|null} node
+ * @returns {boolean}
+ * @purity semi-pure-b
+ */
+export function isInActionToast(node) {
+  const el = node?.nodeType === 1 ? node : node?.parentElement;
+  return Boolean(el?.closest?.(".toast-action"));
+}
+
+/**
  * Apply or remove the 'dark' class on document.body.
  * @param {'light'|'dark'} theme
  * @purity non-pure
