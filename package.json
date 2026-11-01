@@ -1,15 +1,22 @@
 {
   "name": "gr-simple-md-renderer",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:release": "vite build --mode release",
+    "build:beta": "vite build --outDir ../output/beta --emptyOutDir && node tools/buildBeta.mjs output/beta/index.html docs/grsmd-beta.html",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:e2e": "vite build --outDir ../output/e2e --emptyOutDir && node tools/buildBeta.mjs output/e2e/index.html output/e2e/grsmd-beta.html",
+    "test:e2e": "npm run build:e2e && playwright test",
+    "test:e2e:firefox": "npm run build:e2e && playwright test --config playwright.firefox.config.js"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "jsdom": "^28.1.0",
     "vite": "^8.3.4",
     "vite-plugin-singlefile": "^2.3.3",

@@ -3,23 +3,33 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock utils.js to avoid DOM side-effects during import
 vi.mock("../js/utils.js", () => ({
   applyTheme: vi.fn(),
-  showToast: vi.fn(),
   waitForDOMStability: vi.fn().mockResolvedValue(true),
 }));
 
 import RendererOrchestrator from "../js/classes/RendererOrchestrator.js";
 import ApplicationState from "../js/classes/ApplicationState.js";
-import { applyTheme, showToast, waitForDOMStability } from "../js/utils.js";
+import { applyTheme, waitForDOMStability } from "../js/utils.js";
+import { makeLexer } from "./helpers/samples.js";
+
+const lexer = makeLexer();
 
 function createOrchestrator() {
   const state = new ApplicationState();
   const markdownRenderer = {
+    lex: (src) => lexer(src),
     render: vi.fn().mockResolvedValue(undefined),
+    renderBlocks: vi.fn(),
+    replaceBlocks: vi.fn().mockReturnValue([]),
+    getBlockElement: vi.fn().mockReturnValue(null),
     resetExternalImageConsent: vi.fn(),
   };
   const mermaidRenderer = { render: vi.fn().mockResolvedValue(undefined) };
   const plantumlRenderer = { render: vi.fn().mockResolvedValue(undefined) };
-  const scrollManager = { save: vi.fn().mockReturnValue(0), restore: vi.fn() };
+  const scrollManager = {
+    save: vi.fn().mockReturnValue(0),
+    restore: vi.fn(),
+    watchUserMoves: vi.fn(() => ({ place: () => null, stop: vi.fn() })),
+  };
   const preview = document.createElement("div");
   const mockMetadata = {
     fileName: "test.py",
@@ -95,13 +105,13 @@ describe("RendererOrchestrator", () => {
   });
 
   describe("external image consent scope", () => {
-    it("is revoked when a new file is loaded (fileHandle given)", async () => {
+    it("resetExternalImageConsent() revokes it (UIController calls it for a dropped .md, INV-43)", () => {
       const { orchestrator, markdownRenderer } = createOrchestrator();
-      await orchestrator.loadMarkdown("# a", "light", null);
+      orchestrator.resetExternalImageConsent();
       expect(markdownRenderer.resetExternalImageConsent).toHaveBeenCalledOnce();
     });
 
-    it("is kept on reload / first render without a fileHandle", async () => {
+    it("is kept by loadMarkdown and reRender", async () => {
       const { orchestrator, markdownRenderer } = createOrchestrator();
       await orchestrator.loadMarkdown("# a", "light");
       await orchestrator.reRender("dark");
@@ -121,7 +131,8 @@ describe("RendererOrchestrator", () => {
 
       expect(state.currentTheme).toBe("dark");
       expect(applyTheme).toHaveBeenCalledWith("dark");
-      expect(markdownRenderer.render).toHaveBeenCalledWith("# Hello");
+      // Full renders draw by block (spec 5.14.4).
+      expect(markdownRenderer.renderBlocks.mock.calls[0][0].toBody()).toBe("# Hello");
     });
 
     it("calls renderAll which invokes all three renderers", async () => {
@@ -133,7 +144,7 @@ describe("RendererOrchestrator", () => {
 
       await orchestrator.reRender("light");
 
-      expect(markdownRenderer.render).toHaveBeenCalledOnce();
+      expect(markdownRenderer.renderBlocks).toHaveBeenCalledOnce();
       expect(mermaidRenderer.render).toHaveBeenCalledOnce();
       expect(plantumlRenderer.render).toHaveBeenCalledOnce();
     });
@@ -156,7 +167,8 @@ describe("RendererOrchestrator", () => {
 
       await orchestrator.reloadCodeView("light");
 
-      expect(sourceFileRenderer.reload).toHaveBeenCalledWith("light");
+      // the second argument tells whether this code view is still the one to show (INV-81 (3))
+      expect(sourceFileRenderer.reload).toHaveBeenCalledWith("light", expect.any(Function));
       expect(sourceFileRenderer.reload).toHaveBeenCalledOnce();
     });
 
@@ -165,6 +177,30 @@ describe("RendererOrchestrator", () => {
       orchestrator._viewState = "code";
       const result = await orchestrator.reloadCodeView("dark");
       expect(result).toEqual(expect.objectContaining({ fileName: "test.py" }));
+    });
+  });
+
+  describe("code document pass-through (INV-89, INV-90)", () => {
+    it("AT-ORC-29 renderCodeView passes the decoded text; reloadCodeView passes the reader", async () => {
+      const { orchestrator, sourceFileRenderer } = createOrchestrator();
+      const file = new File(["x"], "a.txt");
+      await orchestrator.renderCodeView(file, null, "decoded");
+      expect(sourceFileRenderer.render).toHaveBeenCalledWith(file, null, "dark", expect.any(Function), "decoded");
+      const readText = async () => "t";
+      await orchestrator.reloadCodeView("light", readText);
+      expect(sourceFileRenderer.reload).toHaveBeenCalledWith("light", expect.any(Function), readText);
+    });
+
+    it("AT-ORC-30 showCodeText and retargetCodeView give the renderer's metadata", () => {
+      const { orchestrator, sourceFileRenderer } = createOrchestrator();
+      sourceFileRenderer.showText = vi.fn(() => ({ lineCount: 3 }));
+      sourceFileRenderer.retarget = vi.fn(() => ({ fileName: "b.py" }));
+      expect(orchestrator.showCodeText("a\nb\nc")).toEqual({ lineCount: 3 });
+      expect(sourceFileRenderer.showText).toHaveBeenCalledWith("a\nb\nc");
+      const file = new File(["x"], "b.py");
+      const handle = {};
+      expect(orchestrator.retargetCodeView(file, handle)).toEqual({ fileName: "b.py" });
+      expect(sourceFileRenderer.retarget).toHaveBeenCalledWith(file, handle);
     });
   });
 
@@ -181,136 +217,60 @@ describe("RendererOrchestrator", () => {
       await orchestrator.loadMarkdown("# Test", "dark");
       expect(applyTheme).toHaveBeenCalledWith("dark");
     });
-
-    it("stores fileHandle for reload support", async () => {
-      const { orchestrator } = createOrchestrator();
-      const fakeHandle = { getFile: vi.fn() };
-      await orchestrator.loadMarkdown("# Test", "light", fakeHandle);
-      expect(orchestrator._mdFileHandle).toBe(fakeHandle);
-    });
-
-    it("preserves existing fileHandle when called without fileHandle arg (sentinel)", async () => {
-      const { orchestrator } = createOrchestrator();
-      const fakeHandle = { getFile: vi.fn() };
-      await orchestrator.loadMarkdown("# First", "light", fakeHandle);
-      expect(orchestrator._mdFileHandle).toBe(fakeHandle);
-
-      // Call without fileHandle — should preserve existing handle
-      await orchestrator.loadMarkdown("# Second", "dark");
-      expect(orchestrator._mdFileHandle).toBe(fakeHandle);
-    });
-
-    it("clears fileHandle when null is passed explicitly", async () => {
-      const { orchestrator } = createOrchestrator();
-      const fakeHandle = { getFile: vi.fn() };
-      await orchestrator.loadMarkdown("# First", "light", fakeHandle);
-
-      // Pass null explicitly — should clear handle
-      await orchestrator.loadMarkdown("# Second", "dark", null);
-      expect(orchestrator._mdFileHandle).toBeNull();
-    });
   });
 
-  describe("readMarkdownFile()", () => {
-    it("returns null and shows toast when no fileHandle", async () => {
-      const { orchestrator } = createOrchestrator();
+  describe("full renders of an older generation are skipped (5.14.4)", () => {
+    it("two full renders queued back to back draw once, and PlantUML asks once", async () => {
+      const { orchestrator, state, markdownRenderer, plantumlRenderer } = createOrchestrator();
       orchestrator._viewState = "markdown";
-
-      const result = await orchestrator.readMarkdownFile();
-
-      expect(result).toBeNull();
-      expect(showToast).toHaveBeenCalled();
-    });
-
-    it("returns raw text string when fileHandle exists (no render)", async () => {
-      const { orchestrator, markdownRenderer } = createOrchestrator();
-      orchestrator._viewState = "markdown";
-
-      const fakeFile = { text: vi.fn().mockResolvedValue("# Reloaded") };
-      const fakeHandle = { getFile: vi.fn().mockResolvedValue(fakeFile) };
-      orchestrator._mdFileHandle = fakeHandle;
-
-      const result = await orchestrator.readMarkdownFile();
-
-      expect(result).toBe("# Reloaded");
-      expect(fakeHandle.getFile).toHaveBeenCalled();
-      expect(fakeFile.text).toHaveBeenCalled();
-      // readMarkdownFile does NOT render or apply theme
-      expect(applyTheme).not.toHaveBeenCalled();
-      expect(markdownRenderer.render).not.toHaveBeenCalled();
+      state.markdownText = "# a";
+      const first = orchestrator.renderAll();
+      const second = orchestrator.renderAll();
+      await Promise.all([first, second]);
+      expect(markdownRenderer.renderBlocks).toHaveBeenCalledTimes(1);
+      expect(plantumlRenderer.render).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("clear() resets fileHandle", () => {
-    it("resets _mdFileHandle to null", async () => {
+  describe("AT-ORC-24 the file handle moved to DocumentLocation (INV-55)", () => {
+    it("has no _mdFileHandle and no readMarkdownFile; loadMarkdown takes (text, theme) only", () => {
       const { orchestrator } = createOrchestrator();
-      const fakeHandle = { getFile: vi.fn() };
-      await orchestrator.loadMarkdown("# Test", "light", fakeHandle);
-      expect(orchestrator._mdFileHandle).toBe(fakeHandle);
-
-      orchestrator.clear();
-      expect(orchestrator._mdFileHandle).toBeNull();
+      expect("_mdFileHandle" in orchestrator).toBe(false);
+      expect(orchestrator.readMarkdownFile).toBeUndefined();
+      expect(RendererOrchestrator.prototype.loadMarkdown.length).toBe(2);
     });
   });
-});
 
-// Separate describe for 2-message toast split (requires dynamic import to mock config)
-describe("readMarkdownFile toast messages", () => {
-  beforeEach(() => {
-    vi.resetModules();
-  });
+  describe("full render and the user's scrolling (INV-78)", () => {
+    it("AT-ORC-28 the view goes back to where the user last moved it while the render ran, else to where it was; the watch ends (INV-09, INV-78)", async () => {
+      const { orchestrator, scrollManager, mermaidRenderer } = createOrchestrator();
+      scrollManager.save.mockReturnValue(120);
+      scrollManager.restoreReadingAnchor = vi.fn();
+      let place = null;
+      const stop = vi.fn();
+      scrollManager.watchUserMoves.mockImplementation(() => ({ place: () => place, stop }));
 
-  async function createWithFSHSupported(supported) {
-    const actualConfig = await vi.importActual("../js/config.js");
+      await orchestrator.loadMarkdown("# a", "light");
+      expect(scrollManager.restore).toHaveBeenCalledWith(120);
+      expect(scrollManager.restoreReadingAnchor).not.toHaveBeenCalled();
+      expect(stop).toHaveBeenCalledTimes(1);
 
-    vi.doMock("../js/utils.js", () => ({
-      applyTheme: vi.fn(),
-      showToast: vi.fn(),
-      waitForDOMStability: vi.fn().mockResolvedValue(true),
-    }));
-    vi.doMock("../js/config.js", () => ({
-      CONFIG: actualConfig.CONFIG,
-      FILE_SYSTEM_HANDLE_SUPPORTED: supported,
-    }));
+      scrollManager.restore.mockClear();
+      const moved = { element: document.createElement("p"), anchor: { offsetTop: 30 } };
+      mermaidRenderer.render.mockImplementation(async () => {
+        place = moved; // e.g. a wheel turn or an Index entry while the diagrams are drawn
+      });
+      await orchestrator.reRender("light");
+      expect(scrollManager.restore).not.toHaveBeenCalled();
+      expect(scrollManager.restoreReadingAnchor).toHaveBeenCalledWith(moved);
+      expect(stop).toHaveBeenCalledTimes(2);
 
-    const { default: Orch } = await import("../js/classes/RendererOrchestrator.js");
-    const { showToast: toast } = await import("../js/utils.js");
-    const cfg = actualConfig.CONFIG;
-
-    const state = { setMarkdownText: vi.fn(), setTheme: vi.fn(), markdownText: "", currentTheme: "light" };
-    const orch = new Orch(
-      state,
-      { render: vi.fn() },
-      { render: vi.fn() },
-      { render: vi.fn() },
-      { save: vi.fn(), restore: vi.fn() },
-      document.createElement("div"),
-      { render: vi.fn(), reload: vi.fn(), destroy: vi.fn() },
-    );
-    return { orch, toast, cfg };
-  }
-
-  it("shows reloadNoFileMsg when FILE_SYSTEM_HANDLE_SUPPORTED=true and no handle", async () => {
-    const { orch, toast, cfg } = await createWithFSHSupported(true);
-    orch._viewState = "markdown";
-
-    await orch.readMarkdownFile();
-
-    expect(toast).toHaveBeenCalledWith(
-      cfg.codeView.reloadNoFileMsg,
-      cfg.codeView.toastDurationMs,
-    );
-  });
-
-  it("shows reloadUnavailableMsg when FILE_SYSTEM_HANDLE_SUPPORTED=false and no handle", async () => {
-    const { orch, toast, cfg } = await createWithFSHSupported(false);
-    orch._viewState = "markdown";
-
-    await orch.readMarkdownFile();
-
-    expect(toast).toHaveBeenCalledWith(
-      cfg.codeView.reloadUnavailableMsg,
-      cfg.codeView.toastDurationMs,
-    );
+      // a render that fails still ends the watch
+      mermaidRenderer.render.mockRejectedValue(new Error("boom"));
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      await orchestrator.reRender("light");
+      expect(stop).toHaveBeenCalledTimes(3);
+      consoleError.mockRestore();
+    });
   });
 });

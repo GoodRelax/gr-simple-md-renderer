@@ -1,5 +1,6 @@
 export default class DiagramRenderer {
-  async render(theme, skipRendering) {
+  /** @purity pure */
+  async render(theme, root) {
     throw new Error("DiagramRenderer.render() must be implemented");
   }
 }

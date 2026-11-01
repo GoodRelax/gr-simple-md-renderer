@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
-describe("FS-16: Touch paste assist via editor.focus()", () => {
+describe("AT-TPA-01 FS-16: Touch paste assist via editor.focus()", () => {
   let UIController;
   let mockOrchestrator;
   let mockScrollEngine;
@@ -10,7 +11,9 @@ describe("FS-16: Touch paste assist via editor.focus()", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("../js/utils.js", () => ({
+    vi.doMock("../js/utils.js", async () => ({
+      ...(await vi.importActual("../js/utils.js")),
+      showToast: vi.fn(),
       applyTheme: vi.fn(),
       applySystemTheme: vi.fn(),
       systemTheme: vi.fn().mockReturnValue("light"),
@@ -66,9 +69,11 @@ describe("FS-16: Touch paste assist via editor.focus()", () => {
       renderDarkBtn: document.createElement("button"),
       reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
+      editBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
+      guideModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),
       copyPromptBtn: document.createElement("button"),
@@ -79,12 +84,7 @@ describe("FS-16: Touch paste assist via editor.focus()", () => {
       setTheme: vi.fn(),
       setMarkdownText: vi.fn(),
     };
-    return new UIController(
-      mockOrchestrator,
-      mockState,
-      mockElements,
-      mockScrollEngine,
-    );
+    return new UIController(withEditMethods(mockOrchestrator), mockState, mockElements, mockScrollEngine, fakeEditServices());
   }
 
   it("clicking preview in pre-render state focuses editor", () => {

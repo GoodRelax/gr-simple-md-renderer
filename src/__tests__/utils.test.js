@@ -1,7 +1,33 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme } from "../js/utils.js";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { escapeHtml, formatDateTime, formatTime, applyTheme, systemTheme, applySystemTheme, isApplePlatform, isTypingTarget, isPastActivation, diagramControllersFor, showActionToast, isInActionToast } from "../js/utils.js";
+import { CONFIG } from "../js/config.js";
 
-describe("escapeHtml", () => {
+describe("AT-PAN-04 isPastActivation (INV-29, INV-68, INV-74 (2), 3.5 diagram pan: the one rule of a tap versus a drag)", () => {
+  it("is past only beyond activationThresholdPx (Euclidean); exactly the threshold is not", () => {
+    expect(CONFIG.pan.activationThresholdPx).toBe(5);
+    const from = { x: 10, y: 20 };
+    expect(isPastActivation(from, { x: 10, y: 20 })).toBe(false);
+    expect(isPastActivation(from, { x: 15, y: 20 })).toBe(false); // exactly 5 px
+    expect(isPastActivation(from, { x: 13, y: 24 })).toBe(false); // 3-4-5
+    expect(isPastActivation(from, { x: 7, y: 16 })).toBe(false); // the other way
+    expect(isPastActivation(from, { x: 15.01, y: 20 })).toBe(true);
+    expect(isPastActivation(from, { x: 13, y: 25 })).toBe(true);
+    expect(isPastActivation(from, { x: 10, y: 14 })).toBe(true);
+  });
+});
+
+describe("AT-PAN-05 INV-16, INV-16b: which diagram controllers main.js makes for the pointers", () => {
+  it.each([
+    [{ fine: true, anyCoarse: false }, { zoomAndCopy: true, pan: true }], // a PC: mouse or trackpad only
+    [{ fine: true, anyCoarse: true }, { zoomAndCopy: true, pan: false }], // a PC with a touch screen
+    [{ fine: false, anyCoarse: true }, { zoomAndCopy: false, pan: false }], // a phone or a tablet
+    [{ fine: false, anyCoarse: false }, { zoomAndCopy: false, pan: false }], // no pointer
+  ])("%j -> %j", (pointers, expected) => {
+    expect(diagramControllersFor(pointers)).toEqual(expected);
+  });
+});
+
+describe("AT-UTL-01 FS-01, FS-03: escapeHtml", () => {
   it("escapes < and >", () => {
     expect(escapeHtml("<div>")).toBe("&lt;div&gt;");
   });
@@ -33,7 +59,7 @@ describe("escapeHtml", () => {
   });
 });
 
-describe("formatDateTime", () => {
+describe("AT-UTL-02 FS-03, spec 5.9: formatDateTime", () => {
   it("formats epoch 0 as 1970-01-01 in local time", () => {
     const result = formatDateTime(0);
     // Should match YYYY-MM-DD HH:MM:SS pattern
@@ -48,7 +74,7 @@ describe("formatDateTime", () => {
   });
 });
 
-describe("formatTime", () => {
+describe("AT-UTL-03 spec 5.12: formatTime", () => {
   it("formats a Date object as HH:MM:SS", () => {
     const date = new Date(2024, 0, 1, 9, 5, 3);
     expect(formatTime(date)).toBe("09:05:03");
@@ -65,7 +91,7 @@ describe("formatTime", () => {
   });
 });
 
-describe("applyTheme", () => {
+describe("AT-UTL-04 FS-06: applyTheme", () => {
   beforeEach(() => {
     document.body.className = "";
   });
@@ -87,7 +113,7 @@ describe("applyTheme", () => {
   });
 });
 
-describe("systemTheme", () => {
+describe("AT-UTL-05 INV-12, FS-06: systemTheme", () => {
   it("returns 'light' or 'dark'", () => {
     // jsdom does not implement matchMedia; provide a stub
     window.matchMedia = (query) => ({
@@ -98,5 +124,106 @@ describe("systemTheme", () => {
     });
     const result = systemTheme();
     expect(["light", "dark"]).toContain(result);
+  });
+});
+
+describe("AT-UTL-06 isApplePlatform (INV-14: Cmd is the primary modifier)", () => {
+  it.each([
+    [{ userAgentData: { platform: "macOS" } }, true],
+    [{ userAgentData: { platform: "Windows" }, platform: "MacIntel" }, false], // userAgentData wins
+    [{ userAgentData: { platform: "" }, platform: "MacIntel" }, true], // empty: fall back to platform
+    [{ platform: "MacIntel" }, true],
+    [{ platform: "iPhone" }, true],
+    [{ platform: "iPad" }, true],
+    [{ platform: "Win32" }, false],
+    [{ platform: "Linux x86_64" }, false],
+    [{}, false],
+    [undefined, false],
+  ])("%j -> %s", (nav, expected) => {
+    expect(isApplePlatform(nav)).toBe(expected);
+  });
+});
+
+describe("AT-UTL-07 isTypingTarget (INV-14; also INV-74 (1): one check for both, review L5)", () => {
+  it("an input, a textarea, a contenteditable element and the inside of a toolbar take the keys; the rest do not", () => {
+    const make = (html) => {
+      const box = document.createElement("div");
+      box.innerHTML = html;
+      document.body.appendChild(box);
+      return box;
+    };
+    const box = make('<input><textarea></textarea><div contenteditable="true">x</div><div role="toolbar"><button>b</button></div><button>c</button><select><option>o</option></select>');
+    const [input, textarea, editable, toolbar, button, select] = box.children;
+    expect(isTypingTarget(input)).toBe(true);
+    expect(isTypingTarget(textarea)).toBe(true);
+    // jsdom has no isContentEditable: set it as a browser does
+    Object.defineProperty(editable, "isContentEditable", { value: true });
+    expect(isTypingTarget(editable)).toBe(true);
+    expect(isTypingTarget(toolbar.firstChild)).toBe(true);
+    expect(isTypingTarget(button)).toBe(false);
+    expect(isTypingTarget(select)).toBe(false); // as INV-14 lists them
+    expect(isTypingTarget(null)).toBe(false);
+    box.remove();
+  });
+});
+
+describe("AT-UTL-08 showActionToast (INV-108)", () => {
+  it("shows the text and one button; the button runs the action once and removes the toast; the time removes it too", () => {
+    vi.useFakeTimers();
+    try {
+      const container = document.createElement("div");
+      container.id = "toastContainer";
+      document.body.appendChild(container);
+      const action = vi.fn();
+      showActionToast("Not saved.", "Download", action, 10000);
+      const toast = container.querySelector(".toast.toast-action");
+      expect(toast.querySelector("span").textContent).toBe("Not saved.");
+      const button = toast.querySelector("button.toast-action-btn");
+      expect(button.type).toBe("button");
+      expect(button.textContent).toBe("Download");
+      // a mouse press keeps the selection and the focus (INV-108 (4)); the click still runs the action
+      const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+      button.dispatchEvent(press);
+      expect(press.defaultPrevented).toBe(true);
+      expect(action).not.toHaveBeenCalled();
+      button.click();
+      expect(action).toHaveBeenCalledTimes(1);
+      expect(container.children).toHaveLength(0);
+      showActionToast("Not saved.", "Download", action, 10000);
+      vi.advanceTimersByTime(9999);
+      expect(container.children).toHaveLength(1);
+      vi.advanceTimersByTime(1);
+      expect(container.children).toHaveLength(0);
+      expect(action).toHaveBeenCalledTimes(1);
+      container.remove();
+      expect(() => showActionToast("x", "y", action, 10)).not.toThrow(); // no container: nothing
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("isInActionToast: true for the toast with a button and what is inside it (text nodes too); false elsewhere", () => {
+    const toast = document.createElement("div");
+    toast.className = "toast toast-action";
+    toast.innerHTML = "<span>Not saved.</span><button>Download</button>";
+    const plain = document.createElement("div");
+    plain.className = "toast";
+    document.body.append(toast, plain);
+    expect(isInActionToast(toast)).toBe(true);
+    expect(isInActionToast(toast.querySelector("button"))).toBe(true);
+    expect(isInActionToast(toast.querySelector("span").firstChild)).toBe(true);
+    expect(isInActionToast(plain)).toBe(false);
+    expect(isInActionToast(document.body)).toBe(false);
+    expect(isInActionToast(null)).toBe(false);
+    toast.remove();
+    plain.remove();
+  });
+
+  it("style.css lets the toast with a button take the press (the container passes presses through)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve, dirname } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../css/style.css"), "utf8");
+    expect(css).toMatch(/\.toast-action\s*\{[^}]*pointer-events:\s*auto/);
   });
 });

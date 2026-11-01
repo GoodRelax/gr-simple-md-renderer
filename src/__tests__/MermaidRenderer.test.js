@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import MermaidRenderer from "../js/classes/MermaidRenderer.js";
 
-describe("MermaidRenderer.initializeMermaid", () => {
+describe("AT-MMD-01 MermaidRenderer.initializeMermaid (CON-12)", () => {
   function initConfig(theme = "light") {
     const mermaid = { initialize: vi.fn(), run: vi.fn() };
     new MermaidRenderer(document.createElement("div"), mermaid).initializeMermaid(theme);

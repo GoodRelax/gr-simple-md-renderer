@@ -8,6 +8,7 @@ import { CONFIG } from "./config.js";
  * Escape HTML special characters to prevent injection in innerHTML.
  * @param {string} str
  * @returns {string}
+ * @purity pure
  */
 export function escapeHtml(str) {
   return str
@@ -22,6 +23,7 @@ export function escapeHtml(str) {
  * Format a timestamp (milliseconds since epoch) as 'YYYY-MM-DD HH:MM:SS'.
  * @param {number} ms
  * @returns {string}
+ * @purity semi-pure-a
  */
 export function formatDateTime(ms) {
   const d = new Date(ms);
@@ -36,6 +38,7 @@ export function formatDateTime(ms) {
  * Format a Date object as 'HH:MM:SS'.
  * @param {Date} date
  * @returns {string}
+ * @purity semi-pure-a
  */
 export function formatTime(date) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -46,6 +49,7 @@ export function formatTime(date) {
  * Show a transient toast message at the top-center of the viewport.
  * @param {string} msg
  * @param {number} durationMs
+ * @purity non-pure
  */
 export function showToast(msg, durationMs) {
   const container = document.getElementById("toastContainer");
@@ -58,8 +62,55 @@ export function showToast(msg, durationMs) {
 }
 
 /**
+ * A toast with one button (INV-108). Pressing the button runs onAction
+ * (inside that press, a new user activation) and removes the toast. A mouse
+ * press on the button keeps the selection and the focus where they are (an
+ * open block editor, a block range; INV-108 (4)), as the range bar does.
+ * @param {string} msg
+ * @param {string} actionLabel
+ * @param {() => void} onAction
+ * @param {number} durationMs
+ * @purity non-pure
+ */
+export function showActionToast(msg, actionLabel, onAction, durationMs) {
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+  const toast = document.createElement("div");
+  toast.className = "toast toast-action";
+  const text = document.createElement("span");
+  text.textContent = msg;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "toast-action-btn";
+  button.textContent = actionLabel;
+  /** @purity non-pure */
+  button.addEventListener("mousedown", (e) => e.preventDefault()); // the click still comes
+  /** @purity non-pure */
+  button.addEventListener("click", () => {
+    toast.remove();
+    onAction();
+  });
+  toast.append(text, button);
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), durationMs);
+}
+
+/**
+ * True when the node is inside a toast with a button: a press there is not
+ * a press outside an open block editor or a block range (INV-108 (4)).
+ * @param {Node|null} node
+ * @returns {boolean}
+ * @purity semi-pure-b
+ */
+export function isInActionToast(node) {
+  const el = node?.nodeType === 1 ? node : node?.parentElement;
+  return Boolean(el?.closest?.(".toast-action"));
+}
+
+/**
  * Apply or remove the 'dark' class on document.body.
  * @param {'light'|'dark'} theme
+ * @purity non-pure
  */
 export function applyTheme(theme) {
   if (theme === "dark") {
@@ -72,6 +123,7 @@ export function applyTheme(theme) {
 /**
  * Read OS/browser color-scheme preference and apply it.
  * @returns {'light'|'dark'}
+ * @purity semi-pure-b
  */
 export function systemTheme() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -81,6 +133,7 @@ export function systemTheme() {
 
 /**
  * Apply the OS/browser color-scheme preference.
+ * @purity non-pure
  */
 export function applySystemTheme() {
   applyTheme(systemTheme());
@@ -91,23 +144,28 @@ export function applySystemTheme() {
  * @param {HTMLElement} element
  * @param {number} timeout
  * @returns {Promise<boolean>}
+ * @purity non-pure
  */
 export async function waitForDOMStability(
   element,
   timeout = CONFIG.rendering.stabilityTimeout,
 ) {
+  /** @purity non-pure */
   return new Promise((resolve) => {
     let resizeTimer;
     let timeoutTimer;
 
+    /** @purity non-pure */
     const resizeObserver = new ResizeObserver(() => {
       clearTimeout(resizeTimer);
+      /** @purity non-pure */
       resizeTimer = setTimeout(() => {
         cleanup();
         resolve(true);
       }, CONFIG.rendering.stabilityDebounce);
     });
 
+    /** @purity non-pure */
     const cleanup = () => {
       resizeObserver.disconnect();
       clearTimeout(resizeTimer);
@@ -116,6 +174,7 @@ export async function waitForDOMStability(
 
     resizeObserver.observe(element);
 
+    /** @purity non-pure */
     timeoutTimer = setTimeout(() => {
       cleanup();
       console.warn(
@@ -129,9 +188,22 @@ export async function waitForDOMStability(
 }
 
 /**
+ * All elements matching selector under one root or a list of roots.
+ * @param {ParentNode|ParentNode[]} roots
+ * @param {string} selector
+ * @returns {Element[]}
+ * @purity semi-pure-b
+ */
+export function queryAllIn(roots, selector) {
+  const list = Array.isArray(roots) ? roots : [roots];
+  return list.flatMap((root) => [...root.querySelectorAll(selector)]);
+}
+
+/**
  * Replace a code block element (and its pre parent if present) with newElement.
  * @param {HTMLElement} block
  * @param {HTMLElement} newElement
+ * @purity non-pure
  */
 export function replaceCodeBlock(block, newElement) {
   const pre = block.parentElement;
@@ -140,4 +212,106 @@ export function replaceCodeBlock(block, newElement) {
   } else {
     block.replaceWith(newElement);
   }
+}
+
+/**
+ * The platform whose primary shortcut modifier is Cmd (INV-14): macOS, iOS
+ * and iPadOS.
+ * @purity pure
+ * @param {{userAgentData?: {platform?: string}, platform?: string}} nav - navigator
+ * @returns {boolean}
+ */
+export function isApplePlatform(nav) {
+  const platform = nav?.userAgentData?.platform;
+  if (platform) return platform === "macOS";
+  return /Mac|iPhone|iPad/.test(nav?.platform ?? "");
+}
+
+/**
+ * INV-14 (2): the letter of a primary-modifier shortcut (INV-58 to INV-60),
+ * or null. The primary modifier is Cmd alone on Apple platforms and Ctrl
+ * alone elsewhere; Alt (also AltGr, which arrives as Ctrl+Alt) and IME
+ * composition are never shortcuts. The letter is event.key in lower case;
+ * only when that is not a Latin letter (Russian and other layouts) is
+ * event.code (KeyS ...) used. A repeat still has its letter: the caller
+ * stops its default and runs nothing (owner ruling, 2026-10-21).
+ * @purity pure
+ * @param {{key: string, code?: string, ctrlKey: boolean, metaKey: boolean,
+ *   altKey: boolean, isComposing?: boolean, keyCode?: number}} e
+ * @param {boolean} isApple
+ * @returns {string|null} "a" to "z"
+ */
+export function shortcutLetter(e, isApple) {
+  const primary = isApple ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
+  if (!primary || e.altKey || e.isComposing || e.keyCode === 229) return null;
+  const key = typeof e.key === "string" ? e.key.toLowerCase() : "";
+  if (/^[a-z]$/.test(key)) return key;
+  const m = /^Key([A-Z])$/.exec(e.code ?? "");
+  return m ? m[1].toLowerCase() : null;
+}
+
+/**
+ * Run cb in the next animation frame (a short timer where there is none,
+ * e.g. jsdom). Returns the id for cancelFrame: never 0 (frame and timer ids
+ * start at 1), so 0 can stand for "none asked for".
+ * @purity non-pure
+ * @param {() => void} cb
+ * @returns {number}
+ */
+export function nextFrame(cb) {
+  return typeof requestAnimationFrame === "function" ? requestAnimationFrame(cb) : setTimeout(cb, 16);
+}
+
+/**
+ * INV-14: a key typed into an input, a textarea (the block editor included),
+ * a contenteditable element or a role="toolbar" (the edit palette) is not a
+ * document shortcut. The role is checked as written (ruling T2). The same
+ * focus keeps a block range (INV-74 (1)) from being made.
+ * @purity semi-pure-b
+ * @param {Element|null} el - the focused element
+ * @returns {boolean}
+ */
+export function isTypingTarget(el) {
+  if (!el) return false;
+  if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") return true;
+  if (el.isContentEditable) return true;
+  return typeof el.closest === "function" && el.closest('[role="toolbar"]') !== null;
+}
+
+/**
+ * A press became a drag: the point is more than
+ * CONFIG.pan.activationThresholdPx (Euclidean) from where the press started;
+ * exactly the threshold is not past it. The one rule of a tap versus a drag
+ * (opening a block INV-29, the palette's grip INV-68, the release of a block
+ * range drag INV-74 (2), the diagram pan). Whether a move that went past and
+ * came back still counts is the caller's to decide.
+ * @purity pure
+ * @param {{x: number, y: number}} from - where the press started
+ * @param {{x: number, y: number}} to - where the pointer is now
+ * @returns {boolean}
+ */
+export function isPastActivation(from, to) {
+  return Math.hypot(to.x - from.x, to.y - from.y) > CONFIG.pan.activationThresholdPx;
+}
+
+/**
+ * The diagram controllers to make for the device's pointers: zoom and copy
+ * where the main pointer is fine (INV-16); pan only where, in addition, no
+ * pointer is coarse (INV-16b: a PC without a touch screen).
+ * @purity pure
+ * @param {{fine: boolean, anyCoarse: boolean}} pointers - "(pointer: fine)"
+ *   and "(any-pointer: coarse)" matched
+ * @returns {{zoomAndCopy: boolean, pan: boolean}}
+ */
+export function diagramControllersFor({ fine, anyCoarse }) {
+  return { zoomAndCopy: fine, pan: fine && !anyCoarse };
+}
+
+/**
+ * @purity non-pure
+ * @param {number} id - from nextFrame
+ */
+export function cancelFrame(id) {
+  if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(id);
+  else clearTimeout(id);
 }

@@ -39,7 +39,10 @@ const CSS_URL = /url\(\s*(['"]?)\s*([^'")\s]*)/gi;
 // smuggle a URL through; any declaration that uses them is dropped.
 const CSS_SUSPICIOUS = /\\|image-set\(|\bimage\(|cross-fade\(|\bsrc\(|@import/i;
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @purity pure
+ */
 function isLocalUrl(value) {
   return LOCAL_URL.test(value);
 }
@@ -49,6 +52,7 @@ function isLocalUrl(value) {
  * splits it), which only errs toward treating the value as external.
  * @param {string} srcset
  * @returns {string[]}
+ * @purity pure
  */
 function srcsetUrls(srcset) {
   return srcset
@@ -57,7 +61,10 @@ function srcsetUrls(srcset) {
     .filter(Boolean);
 }
 
-/** @param {string} value */
+/**
+ * @param {string} value
+ * @purity pure
+ */
 function hasRemoteCssRef(value) {
   if (CSS_SUSPICIOUS.test(value)) return true;
   for (const match of value.matchAll(CSS_URL)) {
@@ -70,6 +77,7 @@ function hasRemoteCssRef(value) {
 /**
  * @param {string} url
  * @returns {string} host name for display, or the raw value if unparsable
+ * @purity semi-pure-a
  */
 function hostOf(url) {
   try {
@@ -92,19 +100,24 @@ function hostOf(url) {
  *   memory only (INV-04), and revoked on Clear or when a new file is dropped.
  */
 export default class ExternalImageGate {
-  /** @param {HTMLElement} preview */
+  /**
+   * @param {HTMLElement} preview
+   * @purity non-pure
+   */
   constructor(preview) {
     this.preview = preview;
     this._granted = false;
-    /** @type {WeakMap<HTMLElement, {img: HTMLImageElement, hosts: string[]}>} */
+    /** @type {WeakMap<HTMLElement, {img: HTMLImageElement}>} */
     this._held = new WeakMap();
 
+    /** @purity non-pure */
     preview.addEventListener("click", (e) => {
       if (!this._placeholderFrom(e.target)) return;
       // The image may sit inside a link (badges): do not follow it.
       e.preventDefault();
       this.requestConsent();
     });
+    /** @purity non-pure */
     preview.addEventListener("keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
       if (!this._placeholderFrom(e.target)) return;
@@ -115,7 +128,10 @@ export default class ExternalImageGate {
 
   // ---- Queries ----
 
-  /** @returns {boolean} */
+  /**
+   * @returns {boolean}
+   * @purity semi-pure-b
+   */
   isGranted() {
     return this._granted;
   }
@@ -127,6 +143,7 @@ export default class ExternalImageGate {
    * sanitized fragment, before it is inserted into the live document, so no
    * request can start from the attributes it removes.
    * @param {Element} node
+   * @purity non-pure
    */
   neutralize(node) {
     if (node.nodeType !== 1) return;
@@ -166,13 +183,17 @@ export default class ExternalImageGate {
   }
 
   /**
-   * Show placeholders for the pending images in the preview, or load them
-   * right away if consent is active. Call after the sanitized HTML is set.
+   * Show placeholders for the pending images under root (the whole preview by
+   * default), or load them right away if consent is active. Call after the
+   * sanitized HTML is set. A partial render passes the replaced block (INV-43).
+   * @purity non-pure
+   * @param {ParentNode} [root]
    */
-  apply() {
-    const pending = this.preview.querySelectorAll(
+  apply(root = this.preview) {
+    const pending = root.querySelectorAll(
       `img[${PENDING_SRC}], img[${PENDING_SRCSET}]`,
     );
+    /** @purity non-pure */
     pending.forEach((img) => {
       if (this._granted) {
         this._restoreImage(img);
@@ -186,6 +207,7 @@ export default class ExternalImageGate {
    * Ask once for all external images in the current preview. On OK, keep
    * consent for later renders and load the pending images.
    * @returns {boolean} true if consent was given
+   * @purity non-pure
    */
   requestConsent() {
     const placeholders = [
@@ -193,14 +215,11 @@ export default class ExternalImageGate {
     ];
     if (placeholders.length === 0) return false;
 
-    const hosts = [
-      ...new Set(placeholders.flatMap((p) => this._held.get(p)?.hosts ?? [])),
-    ];
-    if (!window.confirm(this._consentMessage(placeholders.length, hosts))) {
-      return false;
-    }
+    // One fixed sentence (R14); the placeholders name the hosts.
+    if (!window.confirm(CONFIG.messages.externalImage.consent)) return false;
 
     this._granted = true;
+    /** @purity non-pure */
     placeholders.forEach((placeholder) => {
       const entry = this._held.get(placeholder);
       if (!entry) return;
@@ -210,7 +229,10 @@ export default class ExternalImageGate {
     return true;
   }
 
-  /** Forget consent (Clear, or a different document was loaded). */
+  /**
+   * Forget consent (Clear, or a different document was loaded).
+   * @purity non-pure
+   */
   revoke() {
     this._granted = false;
   }
@@ -221,6 +243,7 @@ export default class ExternalImageGate {
    * @param {Element} img
    * @param {string} name - "src" | "srcset"
    * @param {string} pendingName
+   * @purity non-pure
    */
   _holdAttribute(img, name, pendingName) {
     const value = img.getAttribute(name);
@@ -231,7 +254,10 @@ export default class ExternalImageGate {
     img.removeAttribute(name);
   }
 
-  /** @param {HTMLImageElement} img */
+  /**
+   * @param {HTMLImageElement} img
+   * @purity non-pure
+   */
   _restoreImage(img) {
     const srcset = img.getAttribute(PENDING_SRCSET);
     if (srcset !== null) {
@@ -248,6 +274,7 @@ export default class ExternalImageGate {
   /**
    * @param {HTMLImageElement} img
    * @returns {HTMLSpanElement}
+   * @purity non-pure
    */
   _createPlaceholder(img) {
     const urls = [];
@@ -270,33 +297,14 @@ export default class ExternalImageGate {
     );
     placeholder.title = CONFIG.messages.externalImage.placeholderTitle;
 
-    this._held.set(placeholder, { img, hosts });
+    this._held.set(placeholder, { img });
     return placeholder;
-  }
-
-  /**
-   * @param {number} count
-   * @param {string[]} hosts
-   * @returns {string}
-   */
-  _consentMessage(count, hosts) {
-    const max = CONFIG.externalImage.maxHostsInDialog;
-    const shown = hosts.slice(0, max).map((h) => `  ${h}`);
-    if (hosts.length > max) shown.push(`  ... and ${hosts.length - max} more`);
-    return (
-      `Security & Privacy Warning\n\n` +
-      `This document has ${count} external image(s) from:\n` +
-      `${shown.join("\n")}\n\n` +
-      `Loading them sends your IP address to these servers and tells them ` +
-      `that this document was opened.\n\n` +
-      `[OK]: load external images (until [Clear] or a new file drop)\n\n` +
-      `[Cancel]: keep the placeholders`
-    );
   }
 
   /**
    * @param {EventTarget|null} target
    * @returns {HTMLElement|null}
+   * @purity semi-pure-b
    */
   _placeholderFrom(target) {
     if (!(target instanceof Element)) return null;

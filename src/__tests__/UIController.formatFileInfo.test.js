@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
-describe("UIController._formatFileInfo", () => {
+describe("AT-UI-72 UIController._formatFileInfo (FS-03)", () => {
   let UIController;
 
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("../js/utils.js", () => ({
+    vi.doMock("../js/utils.js", async () => ({
+      ...(await vi.importActual("../js/utils.js")),
+      showToast: vi.fn(),
       applyTheme: vi.fn(),
       applySystemTheme: vi.fn(),
       systemTheme: vi.fn().mockReturnValue("light"),
@@ -55,9 +58,11 @@ describe("UIController._formatFileInfo", () => {
       renderDarkBtn: document.createElement("button"),
       reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
+      editBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
+      guideModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),
       copyPromptBtn: document.createElement("button"),
@@ -67,12 +72,7 @@ describe("UIController._formatFileInfo", () => {
       stopScroll: vi.fn(),
       destroy: vi.fn(),
     };
-    return new UIController(
-      mockOrchestrator,
-      mockState,
-      mockElements,
-      mockScrollEngine,
-    );
+    return new UIController(withEditMethods(mockOrchestrator), mockState, mockElements, mockScrollEngine, fakeEditServices());
   }
 
   it("returns empty string when metadata is null", () => {
@@ -132,6 +132,18 @@ describe("UIController._formatFileInfo", () => {
       updatedAtStr: "2026-01-01 00:00:00",
     });
     expect(result).toContain("42 lines");
+  });
+
+  it.each([
+    [{ encoding: "utf-8", bom: false, lineEndingMode: "\n" }, "UTF-8  |  LF"],
+    [{ encoding: "utf-8", bom: true, lineEndingMode: "\r\n" }, "UTF-8 BOM  |  CRLF"],
+    [{ encoding: "shift_jis", bom: false, lineEndingMode: "\r" }, "Shift_JIS  |  CR"],
+    [{ encoding: "utf-16le", bom: true, lineEndingMode: "keep" }, "UTF-16LE BOM  |  Mixed (kept)"],
+    [{ encoding: "euc-jp", bom: false, lineEndingMode: "\n" }, "EUC-JP  |  LF"],
+  ])("AT-UI-84 a code document: the second line adds the encoding and the line endings (INV-89) %#", (codeInfo, tail) => {
+    const ctrl = createController();
+    const result = ctrl._formatFileInfo({ fileName: "a.txt", fileSize: 1024, lineCount: 3, updatedAtStr: "2026-01-01 00:00:00", ...codeInfo });
+    expect(result).toBe(`a.txt  |  3 lines  |  1.00 KB\nUpdated: 2026-01-01 00:00:00  |  ${tail}`);
   });
 
   it("formats file size in KB with two decimal places", () => {

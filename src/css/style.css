@@ -25,7 +25,8 @@ body {
 
 #title {
   font-weight: bold;
-  font-size: 14px;
+  /* about the copyright line's width with the name "GR Simple Markdown" (PRT-A01) */
+  font-size: 17px;
   font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
   font-stretch: condensed;
   line-height: 1.2;
@@ -51,24 +52,72 @@ body {
 #controls {
   display: flex;
   align-self: stretch;
-  gap: 8px;
+  /* narrower than before, so that [Save] fits (owner ruling PL-19) */
+  gap: 6px;
   flex-shrink: 0;
 }
 
+/* R6 (owner rulings BI-14 to BI-16): every button of the top bar ([?]
+   aside) has the same shape in every browser, a rounded rectangle with a
+   1px frame; the browser's own button look is off. */
 #controls button {
   white-space: normal;
   text-align: center;
   line-height: 1.3;
-  padding: 2px 8px;
+  padding: 2px 6px;
+  font-family: inherit;
   font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  border: 1px solid #d1d9e0;
+  border-radius: 6px;
+  background: #f6f8fa;
+  color: #1f2328;
+  cursor: pointer;
+}
+
+#controls button:hover:not(:disabled) {
+  background: #eff2f5;
+}
+
+#controls button:active:not(:disabled) {
+  background: #e6eaef;
+}
+
+#controls button:disabled {
+  color: #818b98;
+  cursor: default;
+}
+
+#controls button:focus-visible {
+  outline: 2px solid #0969da;
+  outline-offset: 1px;
+}
+
+/* R1 (owner rulings BI-1, BI-2): [Edit] is green while editing: the
+   Markdown edit mode or the code edit mode, the palette minimized too
+   (EditPalette puts edit-mode on body while it is shown) */
+body.edit-mode #controls #editBtn {
+  background: #1f883d;
+  border-color: #1a7f37;
+  color: #fff;
+}
+
+/* The display above beats the browser's [hidden]: a hidden top-bar button
+   would still show ([Open GitHub] off a PC and in a frame, INV-100). */
+#controls button[hidden] {
+  display: none;
 }
 
 #editor {
   flex: 1;
-  font-family: monospace;
+  /* Full-width monospace (ruling 7, spec 5.14.13): a CJK character is two columns,
+     so the aligned table pipes line up (INV-61, PRT-X07). System fonts only. */
+  font-family: "BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace;
   font-size: 14px;
   padding: 4px 8px;
   border: 1px solid #ccc;
@@ -99,6 +148,225 @@ body {
   padding: 20px;
   position: relative;
   background-color: #fff;
+  color: #1f2328;
+}
+
+#preview a {
+  color: #0969da;
+}
+
+/* Inline code: a ground in both themes (Primer bgColor-neutral-muted); no code anywhere inside pre */
+#preview code:not(pre code) {
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  background: #818b981f;
+}
+
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark #preview code:not(pre code) {
+    background: #656c7633;
+  }
+}
+
+/* Code highlighting (spec 5.8.1, owner ruling 2026-10-22): the highlight.js
+   classes grouped as in its github.css, colored with Primer 11.10.0
+   prettylights-syntax-*. No highlight.js theme CSS is bundled. Not limited
+   to #preview, so the code view (#codeViewBody) gets the same colors. */
+.hljs {
+  color: #1f2328;
+}
+
+/* prettylights-syntax-keyword */
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+  color: #cf222e;
+}
+
+/* prettylights-syntax-entity */
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  color: #6639ba;
+}
+
+/* prettylights-syntax-constant */
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: #0550ae;
+}
+
+/* prettylights-syntax-string */
+.hljs-regexp,
+.hljs-string,
+.hljs-meta .hljs-string {
+  color: #0a3069;
+}
+
+/* prettylights-syntax-variable */
+.hljs-built_in,
+.hljs-symbol {
+  color: #953800;
+}
+
+/* prettylights-syntax-comment */
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+  color: #59636e;
+}
+
+/* prettylights-syntax-entity-tag */
+.hljs-name,
+.hljs-quote,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+  color: #0550ae;
+}
+
+/* prettylights-syntax-storage-modifier-import */
+.hljs-subst {
+  color: #1f2328;
+}
+
+/* prettylights-syntax-markup-heading */
+.hljs-section {
+  color: #0550ae;
+  font-weight: bold;
+}
+
+/* prettylights-syntax-markup-list */
+.hljs-bullet {
+  color: #3b2300;
+}
+
+/* prettylights-syntax-markup-italic */
+.hljs-emphasis {
+  color: #1f2328;
+  font-style: italic;
+}
+
+/* prettylights-syntax-markup-bold */
+.hljs-strong {
+  color: #1f2328;
+  font-weight: bold;
+}
+
+/* prettylights-syntax-markup-inserted */
+.hljs-addition {
+  color: #116329;
+  background-color: #dafbe1;
+}
+
+/* prettylights-syntax-markup-deleted */
+.hljs-deletion {
+  color: #82071e;
+  background-color: #ffebe9;
+}
+
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  body.dark .hljs {
+    color: #f0f6fc;
+  }
+
+  body.dark .hljs-doctag,
+  body.dark .hljs-keyword,
+  body.dark .hljs-meta .hljs-keyword,
+  body.dark .hljs-template-tag,
+  body.dark .hljs-template-variable,
+  body.dark .hljs-type,
+  body.dark .hljs-variable.language_ {
+    color: #ff7b72;
+  }
+
+  body.dark .hljs-title,
+  body.dark .hljs-title.class_,
+  body.dark .hljs-title.class_.inherited__,
+  body.dark .hljs-title.function_ {
+    color: #d2a8ff;
+  }
+
+  body.dark .hljs-attr,
+  body.dark .hljs-attribute,
+  body.dark .hljs-literal,
+  body.dark .hljs-meta,
+  body.dark .hljs-number,
+  body.dark .hljs-operator,
+  body.dark .hljs-variable,
+  body.dark .hljs-selector-attr,
+  body.dark .hljs-selector-class,
+  body.dark .hljs-selector-id {
+    color: #79c0ff;
+  }
+
+  body.dark .hljs-regexp,
+  body.dark .hljs-string,
+  body.dark .hljs-meta .hljs-string {
+    color: #a5d6ff;
+  }
+
+  body.dark .hljs-built_in,
+  body.dark .hljs-symbol {
+    color: #ffa657;
+  }
+
+  body.dark .hljs-comment,
+  body.dark .hljs-code,
+  body.dark .hljs-formula {
+    color: #9198a1;
+  }
+
+  body.dark .hljs-name,
+  body.dark .hljs-quote,
+  body.dark .hljs-selector-tag,
+  body.dark .hljs-selector-pseudo {
+    color: #7ee787;
+  }
+
+  body.dark .hljs-subst {
+    color: #f0f6fc;
+  }
+
+  body.dark .hljs-section {
+    color: #1f6feb;
+  }
+
+  body.dark .hljs-bullet {
+    color: #f2cc60;
+  }
+
+  body.dark .hljs-emphasis {
+    color: #f0f6fc;
+  }
+
+  body.dark .hljs-strong {
+    color: #f0f6fc;
+  }
+
+  body.dark .hljs-addition {
+    color: #aff5b4;
+    background-color: #033a16;
+  }
+
+  body.dark .hljs-deletion {
+    color: #ffdcd7;
+    background-color: #67060c;
+  }
 }
 
 /* Code view: remove padding so code body fills the area */
@@ -107,17 +375,25 @@ body.view-code #preview {
 }
 
 pre {
-  background: #f4f4f4;
-  padding: 12px;
+  background: #f6f8fa;
+  padding: 16px; /* as GitHub (owner ruling 2026-10-22) */
   border-radius: 4px;
   overflow-x: auto;
 }
 
 blockquote {
-  border-left: 4px solid #ccc;
+  border-left: 4px solid #d1d9e0;
   margin: 0;
   padding-left: 16px;
-  color: #666;
+  color: #59636e;
+}
+
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark blockquote {
+    color: #9198a1;
+    border-left-color: #3d444d;
+  }
 }
 
 #preview table {
@@ -125,10 +401,14 @@ blockquote {
   margin: 12px 0;
 }
 
+/* A short cell's text starts at the top, level with the first line of a
+   long cell beside it (owner ruling TVA1); the side alignment stays the
+   delimiter row's (marked's align attribute). */
 #preview th,
 #preview td {
-  border: 1px solid #ccc;
+  border: 1px solid #d1d9e0;
   padding: 6px 12px;
+  vertical-align: top;
 }
 
 .mermaid {
@@ -136,6 +416,7 @@ blockquote {
   justify-content: flex-start;
   margin: 16px 0;
   position: relative;
+  background: transparent;
 }
 
 .mermaid > svg {
@@ -168,10 +449,13 @@ blockquote {
   user-select: none;
 }
 
-.dark .diagram-copy-btn {
-  background: rgba(50, 50, 50, 0.9);
-  border-color: #666;
-  color: #eee;
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark .diagram-copy-btn {
+    background: #212830;
+    border-color: #3d444d;
+    color: #f0f6fc;
+  }
 }
 
 @media (pointer: fine) {
@@ -218,6 +502,25 @@ blockquote {
 
   #editor {
     display: none;
+  }
+
+  /* Transient screen messages are not printed; !important beats the inline
+     display that UIController.showKeyHint sets. */
+  #keyHint,
+  #toastContainer,
+  #sidePanels {
+    display: none !important;
+  }
+
+  /* Search's marks are not printed (INV-80 (8)) */
+  .search-hit {
+    outline: none !important;
+  }
+
+  ::highlight(grsmd-search),
+  ::highlight(grsmd-search-current) {
+    background-color: transparent;
+    color: inherit;
   }
 
   #preview {
@@ -283,6 +586,11 @@ blockquote {
   font-weight: bold;
   cursor: pointer;
   line-height: 1;
+  /* a <button>: drop the browser's button look */
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
 }
 
 .close-btn:hover,
@@ -307,6 +615,105 @@ blockquote {
   padding-left: 20px;
 }
 
+.modal-section h4 {
+  margin: 12px 0 0;
+}
+
+/* Help: all its text at 75% of the page's (B6); sizes inside are in em */
+#helpModal .modal-content {
+  font-size: 75%;
+}
+
+#helpModal .close-btn {
+  font-size: 1.75em;
+}
+
+/* Help: title row with the language switch (HelpLanguageSwitch). It stays
+   at the top while the help scrolls (B4): .modal is the scroller. */
+.help-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -8px 0 8px;
+  padding: 8px 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: inherit;
+}
+
+/* on a narrow screen only the title wraps; the switch and the close button stay on its line */
+.help-head h2 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.help-head .help-lang,
+.help-head .close-btn {
+  flex-shrink: 0;
+}
+
+.help-head .close-btn {
+  float: none;
+}
+
+.help-lang {
+  display: inline-flex;
+  border: 1px solid #999;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 0.8125em;
+}
+
+.help-lang button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.help-lang button + button {
+  border-left: 1px solid #999;
+}
+
+.help-lang button[aria-pressed="true"] {
+  background: #0969da;
+  color: #fff;
+}
+
+/* Help: download box at the top of each body (R2, R3) */
+.help-download {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  background: rgba(9, 105, 218, 0.06);
+}
+
+.help-download p {
+  margin: 8px 0 0;
+}
+
+.help-download-btn {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: #0969da;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.help-version {
+  font-size: 0.75em;
+  color: #59636e;
+  font-family: monospace;
+}
+
 #promptText {
   width: 100%;
   height: 200px;
@@ -328,81 +735,189 @@ blockquote {
   font-weight: bold;
 }
 
-body.dark {
-  background: #222;
-  color: #ddd;
+/* The code file dialogs (INV-89, INV-90): open (encoding, line endings) and
+   the save encoding question. */
+.code-file-modal .modal-content {
+  max-width: 560px;
 }
 
-.dark #topbar {
-  background: #333;
-  border-bottom: 1px solid #444;
+.code-file-name {
+  font-family: monospace;
+  color: #59636e;
+  overflow-wrap: anywhere;
 }
 
-.dark #preview {
-  background-color: #222;
+.code-file-modal .code-file-preview {
+  margin: 8px 0;
+  padding: 8px;
+  max-height: 8.5em;
+  overflow: auto;
+  white-space: pre;
+  font-family: monospace;
+  font-size: 12px;
+  background: #f4f4f4;
+  border: 1px solid #ccc;
+  color: #333;
 }
 
-.dark #editor {
-  background: #444;
-  color: #fff;
-  border-color: #666;
+.code-file-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
 }
 
-.dark pre {
-  background: #333;
-  border: 1px solid #555;
+.code-file-buttons button {
+  padding: 6px 14px;
+  cursor: pointer;
 }
 
-.dark #copyright a {
-  color: #66b3ff;
+.code-file-buttons button[hidden],
+.code-file-modal [hidden] {
+  display: none;
 }
 
-.dark .modal-content {
-  background-color: #333;
-  color: #eee;
-  border: 1px solid #555;
+/* Dark theme: GitHub (Primer) dark colors (spec 5.8.1). Screen only: print
+   keeps the light colors (owner ruling 2026-10-22). */
+@media screen {
+  body.dark {
+    background: #0d1117;
+    color: #f0f6fc;
+  }
+
+  .dark #topbar {
+    background: #151b23;
+    border-bottom: 1px solid #3d444d;
+  }
+
+  .dark #controls button {
+    border-color: #3d444d;
+    background: #212830;
+    color: #f0f6fc;
+  }
+
+  .dark #controls button:hover:not(:disabled) {
+    background: #262c36;
+  }
+
+  .dark #controls button:active:not(:disabled) {
+    background: #2a313c;
+  }
+
+  .dark #controls button:disabled {
+    color: #656c76;
+  }
+
+  .dark #controls button:focus-visible {
+    outline-color: #1f6feb;
+  }
+
+  body.dark.edit-mode #controls #editBtn {
+    background: #238636;
+    border-color: #2ea043;
+    color: #fff;
+  }
+
+  .dark #preview {
+    background-color: #0d1117;
+    color: #f0f6fc;
+  }
+
+  .dark #editor {
+    background: #444;
+    color: #f0f6fc;
+    border-color: #3d444d;
+  }
+
+  .dark pre {
+    background: #151b23;
+    border: 1px solid #3d444d;
+  }
+
+  .dark #preview a,
+  .dark #copyright a {
+    color: #4493f8;
+  }
+
+  .dark .modal-content {
+    background-color: #151b23;
+    color: #f0f6fc;
+    border: 1px solid #3d444d;
+  }
+
+  .dark .close-btn {
+    color: #9198a1;
+  }
+
+  .dark .close-btn:hover {
+    color: #f0f6fc;
+  }
+
+  .dark .modal-section h3 {
+    border-bottom-color: #3d444d;
+  }
+
+  .dark .help-lang,
+  .dark .help-lang button + button {
+    border-color: #3d444d;
+  }
+
+  .dark .help-lang button[aria-pressed="true"],
+  .dark .help-download-btn {
+    background: #1f6feb;
+    color: #fff;
+  }
+
+  .dark .help-download {
+    border-color: #3d444d;
+    background: rgba(31, 111, 235, 0.12);
+  }
+
+  .dark .help-version {
+    color: #9198a1;
+  }
+
+  .dark #promptText {
+    background: #0d1117;
+    border: 1px solid #3d444d;
+    color: #f0f6fc;
+  }
+
+  .dark .code-file-modal .code-file-preview {
+    background: #0d1117;
+    border: 1px solid #3d444d;
+    color: #f0f6fc;
+  }
+
+  .dark .code-file-name {
+    color: #9198a1;
+  }
+
+  .dark .plantuml-error {
+    background-color: #f851491a;
+    color: #f85149;
+    border-color: #da3633;
+  }
+
+  .dark .external-image-placeholder {
+    background-color: #151b23;
+    color: #9198a1;
+    border-color: #656c76;
+  }
+
+  .dark #preview th,
+  .dark #preview td {
+    border-color: #3d444d;
+  }
+
+  .dark .katex {
+    color: inherit;
+  }
 }
 
-.dark .close-btn {
-  color: #ddd;
-}
-
-.dark .close-btn:hover {
-  color: #fff;
-}
-
-.dark .modal-section h3 {
-  border-bottom-color: #555;
-}
-
-.dark #promptText {
-  background: #444;
-  border: 1px solid #666;
-  color: #fff;
-}
-
-.dark .plantuml-error {
-  background-color: #2d1f1f;
-  color: #ff8787;
-  border-color: #ff6b6b;
-}
-
-.dark .external-image-placeholder {
-  background-color: #2b2b2b;
-  color: #ced4da;
-  border-color: #868e96;
-}
-
-.dark #preview th,
-.dark #preview td {
-  border-color: #555;
-}
-
-.dark .katex {
-  color: inherit;
-}
-
-.katex {
+/* #preview: more specific than KaTeX's own .katex rule (font: 1.21em ...),
+   which the build puts after this file (PRT-M04) */
+#preview .katex {
   font-size: 1.5em;
 }
 
@@ -421,8 +936,11 @@ body.dark {
   -webkit-user-select: none;
 }
 
-.dark #affordanceText {
-  color: #888;
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark #affordanceText {
+    color: #9198a1;
+  }
 }
 
 /* ============================================================
@@ -434,7 +952,9 @@ body.dark {
   font-family: monospace;
   font-size: 12px;
   padding: 4px 8px;
-  white-space: pre-line;
+  /* one row per line, cut with an ellipsis: a narrow bar (an iPad held
+     upright, beta2) keeps its height instead of wrapping the words */
+  white-space: pre;
   overflow: hidden;
   text-overflow: ellipsis;
   color: #333;
@@ -444,9 +964,9 @@ body.dark {
 }
 
 .dark #fileInfo {
-  background: #333;
-  color: #ccc;
-  border-color: #555;
+  background: #151b23;
+  color: #9198a1;
+  border-color: #3d444d;
 }
 
 body.view-code #fileInfo {
@@ -456,7 +976,7 @@ body.view-code #fileInfo {
 
 body.view-code.dark #fileInfo {
   background: #1A1E2E;
-  border-color: #3a3e5e;
+  border-color: #3d444d;
 }
 
 /* ============================================================
@@ -468,7 +988,7 @@ body.view-code.dark #fileInfo {
   top: 60px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(40, 40, 40, 0.8);
   color: #eeeeee;
   font-family: monospace;
   font-size: 12px;
@@ -481,8 +1001,188 @@ body.view-code.dark #fileInfo {
   white-space: pre;
 }
 
-body:not(.dark) #keyHint {
-  background: rgba(40, 40, 40, 0.8);
+body.dark #keyHint {
+  background: #3d444d;
+  color: #ffffff;
+}
+
+/* ============================================================
+   Index (DocumentIndex): a column of floating panels over the
+   preview at its right edge; 75 % opaque so the text behind shows
+   through (owner rulings 2026-10-25, INV-77). sidePanels.js sets
+   the column's top, right and max-height.
+   ============================================================ */
+#sidePanels {
+  position: fixed;
+  z-index: 350; /* over the preview's layers and the toasts; under the palette and the modals */
+  width: min(360px, calc(100vw - 16px));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none; /* only the panels take presses */
+}
+
+#searchPanel,
+#indexPanel {
+  pointer-events: auto;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.85); /* 15% shows through (INV-77) */
+  color: #1f2328;
+  border: 1px solid #d1d9e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#indexPanel {
+  min-height: 0; /* shrinks in the column, then scrolls itself */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 0;
+}
+
+#searchPanel {
+  flex: none;
+  padding: 4px;
+}
+
+#searchPanel[hidden],
+#indexPanel[hidden],
+#replaceRow[hidden] {
+  display: none;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.search-row + .search-row {
+  margin-top: 4px;
+}
+
+.search-row input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  padding: 2px 4px;
+}
+
+.search-row button {
+  font-size: 12px;
+  padding: 1px 5px;
+}
+
+#searchCase[aria-pressed="true"],
+#searchRegex[aria-pressed="true"] {
+  background: #0969da;
+  color: #fff;
+}
+
+#searchCount {
+  min-width: 4em;
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* The block or code line of the current match, and its text (INV-80) */
+.search-hit {
+  outline: 2px solid #bf8700;
+  outline-offset: 2px;
+}
+
+::highlight(grsmd-search) {
+  background-color: #ffd33d;
+  color: #1f2328;
+}
+
+::highlight(grsmd-search-current) {
+  background-color: #ffa657;
+  color: #1f2328;
+}
+
+.index-entry {
+  display: block;
+  width: 100%;
+  padding: 3px 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.index-entry:hover,
+.index-entry:focus-visible {
+  background: rgba(9, 105, 218, 0.15);
+}
+
+.index-h1 {
+  font-weight: bold;
+}
+
+.index-h2 {
+  padding-left: 28px;
+}
+
+.index-h3 {
+  padding-left: 44px;
+}
+
+.index-h4 {
+  padding-left: 60px;
+}
+
+.index-h5 {
+  padding-left: 76px;
+}
+
+.index-h6 {
+  padding-left: 92px;
+}
+
+.index-h3,
+.index-h4,
+.index-h5,
+.index-h6 {
+  font-size: 13px;
+}
+
+.index-empty {
+  margin: 4px 12px;
+  font-size: 14px;
+}
+
+@media screen {
+  body.dark #searchPanel,
+  body.dark #indexPanel {
+    background: rgba(21, 27, 35, 0.85);
+    color: #f0f6fc;
+    border-color: #3d444d;
+  }
+
+  body.dark .index-entry:hover,
+  body.dark .index-entry:focus-visible {
+    background: rgba(56, 139, 253, 0.25);
+  }
+
+  body.dark .search-hit {
+    outline-color: #d29922;
+  }
+
+  body.dark ::highlight(grsmd-search) {
+    background-color: #9e6a03;
+    color: #f0f6fc;
+  }
+
+  body.dark ::highlight(grsmd-search-current) {
+    background-color: #bd561d;
+    color: #f0f6fc;
+  }
 }
 
 /* ============================================================
@@ -494,16 +1194,11 @@ body:not(.dark) #keyHint {
   font-size: 13px;
   line-height: 1.6;
   white-space: pre;
-  background: #1e1e1e;
-  color: #d4d4d4;
+  background: #ffffff;
+  color: #1f2328;
   padding: 8px 0 36px 0;
   min-height: 100%;
   tab-size: 4;
-}
-
-body:not(.dark) #codeViewBody {
-  background: #ffffff;
-  color: #1e1e1e;
 }
 
 .code-line {
@@ -513,10 +1208,6 @@ body:not(.dark) #codeViewBody {
 }
 
 .code-line:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-body:not(.dark) .code-line:hover {
   background: rgba(0, 0, 0, 0.03);
 }
 
@@ -531,14 +1222,222 @@ body:not(.dark) .code-line:hover {
   width: 4em;
   text-align: right;
   margin-right: 1.5em;
-  color: #5a5a5a;
+  color: #59636e;
   user-select: none;
   -webkit-user-select: none;
   flex-shrink: 0;
 }
 
-body:not(.dark) .code-line::before {
-  color: #aaaaaa;
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  body.dark #codeViewBody {
+    background: #0d1117;
+    color: #f0f6fc;
+  }
+
+  body.dark .code-line:hover {
+    background: #151b23;
+  }
+
+  body.dark .code-line::before {
+    color: #9198a1;
+  }
+}
+
+/* ============================================================
+   Code editor (SC-27, INV-85, INV-86): the textarea lies over the
+   highlighted layer, with the same font, line height, padding and
+   tab size, so the colored text shows through its transparent text.
+   No wrapping; the textarea is as large as its text and never scrolls
+   itself (#preview scrolls, as in the view). The first line is where
+   the view's first line is (the same top padding and line height).
+   While typing (.code-edit-typing) the textarea's text shows and the
+   layer, written again when typing stops, is hidden (G10).
+   ============================================================ */
+#codeEditBody {
+  display: flex;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 4;
+  background: #ffffff;
+  color: #1f2328;
+}
+
+.code-edit-gutter {
+  flex: none;
+  box-sizing: border-box;
+  min-width: 5.5em;
+  padding: 8px 1.5em 36px 0;
+  text-align: right;
+  white-space: pre;
+  color: #59636e;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.code-edit-stack {
+  position: relative;
+  flex: 1 0 auto;
+  /* room for the lines typed since the layer was written (1.6em: the line height) */
+  padding-bottom: calc(var(--code-extra-lines, 0) * 1.6em);
+}
+
+/* Plain (over CONFIG.codeEdit.highlightMaxChars): the layer is empty, the
+   number of lines gives the height (the line height and the paddings) */
+.code-edit-plain .code-edit-stack {
+  min-height: calc(var(--code-lines, 0) * 1.6em + 44px);
+}
+
+/* #codeEditBody: over the pre rules of the Markdown view (light and dark) */
+#codeEditBody .code-edit-layer,
+#codeEditBody .code-edit-input {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px 16px 36px 0;
+  border: 0;
+  border-radius: 0;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: normal;
+  tab-size: inherit;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+#codeEditBody .code-edit-layer {
+  overflow: visible;
+  background: transparent;
+  color: inherit;
+}
+
+.code-edit-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  resize: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: #1f2328;
+}
+
+.code-edit-input::selection {
+  background: rgba(9, 105, 218, 0.3);
+}
+
+/* Plain, or typed since the layer was written (INV-86): the textarea's
+   own text shows; the layer is hidden on the screen. */
+.code-edit-plain .code-edit-input,
+.code-edit-typing .code-edit-input {
+  color: inherit;
+}
+
+@media screen {
+  #codeEditBody.code-edit-plain .code-edit-layer,
+  #codeEditBody.code-edit-typing .code-edit-layer {
+    visibility: hidden;
+  }
+
+  body.dark #codeEditBody {
+    background: #0d1117;
+    color: #f0f6fc;
+  }
+
+  body.dark .code-edit-gutter {
+    color: #9198a1;
+  }
+
+  body.dark .code-edit-input {
+    caret-color: #f0f6fc;
+  }
+
+  body.dark .code-edit-input::selection {
+    background: rgba(56, 139, 253, 0.4);
+  }
+}
+
+/* Print shows the text as the view does: the layer, not the textarea */
+@media print {
+  .code-edit-input {
+    display: none;
+  }
+}
+
+/* ============================================================
+   The code view's command palette (INV-92, NE-13): [Commands] shows
+   in the code view only; the box floats under it.
+   ============================================================ */
+body:not(.view-code) #commandsBtn {
+  display: none;
+}
+
+#codeCommandPalette {
+  position: fixed;
+  z-index: 360; /* over the side panels; under the palette and the modals */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  box-sizing: border-box;
+  background: #f6f8fa;
+  color: #1f2328;
+  border: 1px solid #d1d9e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#codeCommandPalette[hidden] {
+  display: none;
+}
+
+.code-command {
+  padding: 4px 10px;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  color: inherit;
+  background: #ffffff;
+  border: 1px solid #d1d9e0;
+  border-radius: 4px;
+}
+
+.code-command:hover,
+.code-command:focus-visible {
+  background: rgba(9, 105, 218, 0.15);
+}
+
+@media screen {
+  body.dark #codeCommandPalette {
+    background: #151b23;
+    color: #f0f6fc;
+    border-color: #3d444d;
+  }
+
+  body.dark .code-command {
+    background: #0d1117;
+    border-color: #3d444d;
+  }
+
+  body.dark .code-command:hover,
+  body.dark .code-command:focus-visible {
+    background: rgba(56, 139, 253, 0.25);
+  }
+}
+
+@media print {
+  #codeCommandPalette {
+    display: none !important;
+  }
 }
 
 /* ============================================================
@@ -574,15 +1473,1108 @@ body.view-code.dark #editor {
   align-items: center;
   gap: 6px;
   pointer-events: none;
+  /* With left: 50% the shrink-to-fit width would stop at half the screen;
+     size to the longest toast instead, but never wider than the screen. */
+  width: max-content;
+  max-width: calc(100vw - 32px);
 }
 
+/* A long toast wraps instead of running off both sides of a phone screen
+   (R11); a long file name breaks anywhere. */
 .toast {
+  box-sizing: border-box;
+  max-width: calc(100vw - 32px);
   background: rgba(50, 50, 50, 0.92);
   color: #ffffff;
   font-family: monospace;
   font-size: 13px;
   padding: 8px 18px;
   border-radius: 4px;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.dark .toast {
+  background: #3d444d;
+  color: #ffffff;
+}
+
+/* INV-108: a toast with a button takes clicks (the container does not). */
+.toast-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+.toast-action-btn {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+/* ========================================
+   In-place Markdown editing (SC-22 to SC-24)
+   body.edit-mode is set while the edit palette is shown (EditPalette).
+   ======================================== */
+
+/* Block editor (INV-40: as tall as its content, no inner scroll bar).
+   INV-83: no padding and no border, so its text starts where the rendered
+   text did; the frame is an outline, which takes no room. A paragraph,
+   heading, list, quote or code block sets its text style, margins (and a
+   code block its padding) from the rendered block (BlockEditController);
+   the monospace below is for the other types. */
+.md-block-editor {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 4px 0;
+  padding: 0;
+  font-family: "BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace; /* as #editor (INV-61) */
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1f2328;
+  background: #fffdf5;
+  border: 0;
+  border-radius: 0;
+  outline: 1px solid #0969da;
+  outline-offset: 2px;
+  resize: none;
+  overflow-y: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: break-word; /* as the marks layer (INV-70) */
+  tab-size: 8;
+}
+
+.md-block-editor:focus {
+  outline: 2px solid #0969da;
+  outline-offset: 2px;
+}
+
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark .md-block-editor {
+    color: #f0f6fc;
+    background: #010409;
+    outline-color: #1f6feb;
+  }
+
+  .dark .md-block-editor:focus {
+    outline-color: #1f6feb;
+  }
+}
+
+/* Invisible character marks (INV-70): a layer right behind the block
+   editor with the same text box (font, size, padding, border width,
+   wrapping; the text style the editor takes from its block (INV-83) is
+   copied by InvisibleCharOverlay); its text is transparent, only the marks
+   show through the editor, whose own background is then transparent. */
+.md-block-editing {
+  position: relative;
+}
+
+.md-invisible-overlay {
+  position: absolute;
+  z-index: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: transparent;
+  background: #fffdf5;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  tab-size: 8;
+  /* what the textarea's own style sets, not inherited from #preview */
+  font-weight: normal;
+  font-style: normal;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-indent: 0;
+  text-transform: none;
+  text-align: start;
+  pointer-events: none;
+  user-select: none;
+}
+
+.dark .md-invisible-overlay {
+  background: #010409;
+}
+
+.md-block-editor.md-block-editor-overlaid {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+/* The mark: a background only, so the width does not change; the shadow
+   shows a zero-width character too. */
+.grsmd-invisible {
+  background: #fff8c5;
+  box-shadow: 0 0 0 1px #fff8c5;
+}
+
+.dark .grsmd-invisible {
+  background: #bb800926;
+  box-shadow: 0 0 0 1px #bb800926;
+}
+
+/* Hidden character marks (INV-101, spec 5.21.4): an empty element right
+   before each run in the preview and the code view; the label is generated
+   content, so copy, search and a cell's text never see it. A frame in the
+   color of the text around it, in both themes; printed too (not in the
+   print rules that hide things). The brackets are U+27EA and U+27EB. The
+   mark is isolated, so a direction override in the text around it does
+   not turn its label around. */
+.grsmd-hidden-mark {
+  unicode-bidi: isolate;
+  direction: ltr;
+}
+
+.grsmd-hidden-mark::before {
+  content: "\27EA" attr(data-label) "\27EB";
+  display: inline;
+  margin: 0 1px;
+  padding: 0 2px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: transparent;
+  color: currentColor;
+  font-family: monospace;
+  font-size: 0.75em;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  white-space: pre-wrap;
+  user-select: none;
+}
+
+/* Table cells (INV-62, 7.1): the "Markdown" tab of a table block (shown in
+   edit mode only; on touch it is always there, there is no hover), the
+   open cell, and a cell opened as its text. The classes are for the look
+   only: the renderer and TableCellEditor know the elements by reference. */
+#preview > .md-block.md-block-table {
+  position: relative;
+}
+
+/* Only the tab the renderer adds (a child of the table block's wrapper):
+   a document's own class="grsmd-table-tab" is shown as written. */
+#preview > .md-block-table > .grsmd-table-tab {
+  display: none;
+}
+
+/* The tab sits in the gap right above the table (16 px tall: the gap after
+   a paragraph; after another table it is 12 px and the tab covers the last
+   4 px of it). Edit mode changes no layout: WebKit lays out everything
+   after a block that gets shorter, which a strip above every table made
+   cost about 150 ms on each exit from edit mode (owner ruling 2026-10-23). */
+body.edit-mode #preview > .md-block-table > .grsmd-table-tab {
+  display: block;
+  position: absolute;
+  top: -16px;
+  right: 0;
+  z-index: 2;
+  box-sizing: border-box;
+  height: 16px;
+  padding: 0 6px;
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  line-height: 14px;
+  color: #59636e;
+  background: #f6f8fa;
+  border: 1px solid #d1d9e0;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body.dark.edit-mode #preview > .md-block-table > .grsmd-table-tab {
+  color: #9198a1;
+  background: #151b23;
+  border-color: #3d444d;
+}
+
+#preview td.grsmd-cell-editing,
+#preview th.grsmd-cell-editing {
+  white-space: pre-wrap;
+  outline: 2px solid #0969da;
+  outline-offset: -2px;
+  cursor: text;
+}
+
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark #preview td.grsmd-cell-editing,
+  .dark #preview th.grsmd-cell-editing {
+    outline-color: #1f6feb;
+  }
+}
+
+#preview td.grsmd-cell-raw,
+#preview th.grsmd-cell-raw {
+  font-family: "BIZ UDGothic", "MS Gothic", "Osaka-Mono", "Noto Sans Mono CJK JP", monospace; /* as the block editor */
+  background: #fff8c5;
+}
+
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark #preview td.grsmd-cell-raw,
+  .dark #preview th.grsmd-cell-raw {
+    background: #bb800926;
+  }
+}
+
+/* Text colors (INV-66): the source holds the light value of
+   CONFIG.edit.textColors; the dark theme shows its pair. */
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  body.dark #preview span[style*="#CF222E" i] {
+    color: #F85149 !important;
+  }
+
+  body.dark #preview span[style*="#0550AE" i] {
+    color: #58A6FF !important;
+  }
+
+  body.dark #preview span[style*="#1A7F37" i] {
+    color: #3FB950 !important;
+  }
+}
+
+/* In edit mode a block shows where a click opens it */
+body.edit-mode #preview > .md-block:hover {
+  outline: 1px dashed #c4c7cb;
+  outline-offset: 2px;
+  cursor: text;
+}
+
+body.edit-mode #preview > .md-block.md-block-editing:hover {
+  outline: none;
+  cursor: auto;
+}
+
+body.dark.edit-mode #preview > .md-block:hover {
+  outline-color: #656c76;
+}
+
+/* Blocks that show nothing (reference definitions, comments): a band in
+   edit mode only; the title attribute names the kind on hover (INV-41).
+   Only the renderer's wrappers (children of #preview) are meant. */
+#preview > .md-block-hidden {
+  display: none;
+}
+
+body.edit-mode #preview > .md-block-hidden {
+  display: block;
+  min-height: 8px;
+  margin: 6px 0;
+  border: 1px dashed #c4c7cb;
+  border-radius: 4px;
+  background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0, 0, 0, 0.04) 4px, rgba(0, 0, 0, 0.04) 8px);
+  cursor: pointer;
+}
+
+/* the band opens on a click: its cursor wins over the block hover rule */
+body.edit-mode #preview > .md-block.md-block-hidden:not(.md-block-editing):hover {
+  cursor: pointer;
+}
+
+body.edit-mode #preview > .md-block-hidden.md-block-editing {
+  border: none;
+  background: none;
+  cursor: auto;
+}
+
+body.dark.edit-mode #preview > .md-block-hidden {
+  border-color: #656c76;
+  background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255, 255, 255, 0.05) 4px, rgba(255, 255, 255, 0.05) 8px);
+}
+
+body.dark.edit-mode #preview > .md-block-hidden.md-block-editing {
+  border: none;
+  background: none;
+}
+
+/* The line between blocks where a new block goes in (INV-73, owner ruling
+   B1): edit mode only, on the body (position: fixed) over the gap. The
+   dashed line is at --grsmd-gap-line from its top; the "+" sits on it. */
+.grsmd-gap-insert {
+  position: fixed;
+  z-index: 200; /* over the preview; under the toasts, the palette and the modals */
+  box-sizing: border-box;
+  cursor: pointer;
+  --grsmd-gap-line: 50%;
+}
+
+.grsmd-gap-insert[hidden] {
+  display: none;
+}
+
+.grsmd-gap-insert::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--grsmd-gap-line);
+  border-top: 2px dashed #0969da;
+  transform: translateY(-1px);
+}
+
+.grsmd-gap-insert-plus {
+  position: absolute;
+  left: -2px;
+  top: var(--grsmd-gap-line);
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0969da;
+  color: #ffffff;
+  font: bold 14px/18px sans-serif;
+  text-align: center;
+  user-select: none;
+}
+
+body.dark .grsmd-gap-insert::before {
+  border-top-color: #4493f8;
+}
+
+body.dark .grsmd-gap-insert-plus {
+  background: #1f6feb;
+}
+
+/* A block range (INV-74, owner ruling D1): the blocks the selection
+   touches get a frame in the edit color; it wins over the hover outline. */
+body.edit-mode #preview > .md-block.md-block-range {
+  outline: 2px solid #0969da;
+  outline-offset: 2px;
+}
+
+body.dark.edit-mode #preview > .md-block.md-block-range {
+  outline-color: #4493f8;
+}
+
+/* The bar of a block range (INV-74): Delete, Cut, Copy right under the
+   selection's last line; on the body (position: fixed), as the gap line */
+.grsmd-block-range-bar {
+  position: fixed;
+  z-index: 300; /* over the gap line; under the palette, the toasts and the modals */
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #f6f7f8;
+  border: 1px solid #d9dbde;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.grsmd-block-range-bar[hidden] {
+  display: none;
+}
+
+.grsmd-block-range-btn {
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2328;
+  background: transparent;
+  border: 1px solid #c4c7cb;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.grsmd-block-range-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.grsmd-block-range-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* the check of a copy (D11): the edit color for a moment */
+.grsmd-block-range-btn.is-copied {
+  color: #0969da;
+}
+
+body.dark .grsmd-block-range-bar {
+  background: #151b23;
+  border-color: #3d444d;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+body.dark .grsmd-block-range-btn {
+  color: #f0f6fc;
+  background: #212830;
+  border-color: #3d444d;
+}
+
+body.dark .grsmd-block-range-btn:hover {
+  background: #262c36;
+}
+
+body.dark .grsmd-block-range-btn.is-copied {
+  color: #4493f8;
+}
+
+/* The editor opened in a gap (INV-73): only the editor shows */
+#preview > .md-block-gap {
+  display: block;
+}
+
+/* The empty first block of an empty document (INV-49): edit mode only */
+#preview > .md-block-empty {
+  display: none;
+}
+
+body.edit-mode #preview > .md-block-empty {
+  display: block;
+  min-height: 1.6em;
+  border: 1px dashed #c4c7cb;
+  border-radius: 4px;
+  cursor: text;
+}
+
+body.edit-mode #preview > .md-block-empty.md-block-editing {
+  border: none;
+}
+
+body.dark.edit-mode #preview > .md-block-empty {
+  border-color: #656c76;
+}
+
+body.dark.edit-mode #preview > .md-block-empty.md-block-editing {
+  border: none;
+}
+
+/* PlantUML block that has not been sent (INV-23) */
+.plantuml-pending {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px dashed #868e96;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  color: #495057;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.plantuml-pending button {
+  font-size: 12px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+/* Dark, screen only: print keeps the light colors (spec 5.8.1) */
+@media screen {
+  .dark .plantuml-pending {
+    background-color: #151b23;
+    color: #9198a1;
+    border-color: #656c76;
+  }
+}
+
+/* Before a library has run (INV-81): a Mermaid box (and a PlantUML box
+   after the consent) says it is loading, and a formula shows its TeX source
+   (owner ruling 2026-10-25) */
+.mermaid.mermaid-loading,
+.plantuml-loading {
+  border: 2px dashed #868e96;
+  padding: 12px;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  color: #495057;
+  font-family: monospace;
+  font-size: 13px;
+  cursor: default;
+}
+
+/* nothing to copy yet: the bar keeps its room and shows once it is drawn */
+.diagram-copy-bar:has(+ .mermaid-loading) {
+  visibility: hidden;
+}
+
+.math-pending {
+  border: 1px dashed #868e96;
+  border-radius: 3px;
+  padding: 0 3px;
+  color: #495057;
+  font-family: monospace;
+}
+
+div.math-pending {
+  margin: 8px 0;
+  padding: 8px 12px;
+  white-space: pre-wrap;
+}
+
+@media screen {
+  .dark .mermaid.mermaid-loading,
+  .dark .plantuml-loading,
+  .dark .math-pending {
+    background-color: #151b23;
+    color: #9198a1;
+    border-color: #656c76;
+  }
+}
+
+/* Edit palette (spec 5.15.1, colors 5.15.2) */
+.edit-palette {
+  position: fixed;
+  z-index: 400;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: #f6f7f8;
+  border: 1px solid #d9dbde;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.edit-palette,
+.edit-palette-popover {
+  -webkit-touch-callout: none; /* INV-68: no callout on a touch long press */
+}
+
+.edit-palette[hidden],
+.edit-palette-popover[hidden] {
+  display: none;
+}
+
+/* 7 columns x 2 rows, no separators (5.15.1) */
+.edit-palette-row {
+  display: grid;
+  grid-template-columns: repeat(7, 28px);
+  align-items: center;
+  gap: 4px;
+}
+
+/* The code editor's palette (INV-85, NE-2): grip, Save, Save as, Undo, Redo
+   and Search in one row */
+.edit-palette-btn[hidden] {
+  display: none;
+}
+
+.edit-palette.edit-palette-code .edit-palette-row {
+  grid-template-columns: repeat(6, 28px);
+}
+
+.edit-palette.edit-palette-code .edit-palette-row + .edit-palette-row {
+  display: none;
+}
+
+.edit-palette-btn {
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: #1f2328;
+  background: transparent;
+  border: 1px solid #c4c7cb;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.edit-palette-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.edit-palette-btn svg.edit-palette-submenu {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 5px;
+  height: 5px;
+}
+
+.edit-palette-btn:hover:not([aria-disabled="true"]):not([aria-pressed="true"]) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.edit-palette-btn[aria-pressed="true"] {
+  background: #0969da;
+  color: #ffffff;
+}
+
+/* aria-disabled, not :disabled: a disabled palette button still moves the palette (INV-35) */
+.edit-palette-btn[aria-disabled="true"] {
+  color: #b5b8bc;
+  border-color: #e1e3e6;
+  cursor: move;
+}
+
+.edit-palette-popover .edit-palette-btn[aria-disabled="true"] {
+  cursor: default;
+}
+
+/* Text color swatches (5.15.2): the light values of CONFIG.edit.textColors */
+.edit-palette-swatch-red:not([aria-disabled="true"]) {
+  color: #CF222E;
+}
+
+.edit-palette-swatch-blue:not([aria-disabled="true"]) {
+  color: #0550AE;
+}
+
+.edit-palette-swatch-green:not([aria-disabled="true"]) {
+  color: #1A7F37;
+}
+
+.edit-palette-grip {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2328;
+  cursor: move;
+}
+
+.edit-palette-grip svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Minimized (INV-68, 11-f): the grip only; a dot while unsaved */
+.edit-palette.edit-palette-minimized .edit-palette-row:first-child {
+  grid-template-columns: 28px;
+}
+
+.edit-palette.edit-palette-minimized .edit-palette-row > :not(.edit-palette-grip),
+.edit-palette.edit-palette-minimized .edit-palette-row + .edit-palette-row,
+.edit-palette.edit-palette-minimized .edit-palette-status {
+  display: none;
+}
+
+.edit-palette.edit-palette-minimized.edit-palette-unsaved .edit-palette-grip::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0969da;
+}
+
+.edit-palette-status {
+  max-width: 220px; /* the 7-column grid: 7 x 28 px + 6 x 4 px */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: monospace;
+  font-size: 11px;
+  color: #57606a;
+}
+
+.edit-palette-popover {
+  position: fixed;
+  z-index: 401;
+  box-sizing: border-box;
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: #f6f7f8;
+  border: 1px solid #d9dbde;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Text format: its rows, one under the other (the formats, then the math) */
+.edit-palette-popover-rows {
+  flex-direction: column;
+}
+
+.edit-palette-popover-row {
+  display: flex;
+  gap: 4px;
+}
+
+.dark .edit-palette,
+.dark .edit-palette-popover {
+  background: #151b23;
+  border-color: #3d444d;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.dark .edit-palette-btn {
+  color: #f0f6fc;
+  background: #212830;
+  border-color: #3d444d;
+}
+
+.dark .edit-palette-btn:hover:not([aria-disabled="true"]):not([aria-pressed="true"]) {
+  background: #262c36;
+}
+
+.dark .edit-palette-btn[aria-pressed="true"] {
+  background: #1f6feb;
+  color: #ffffff;
+}
+
+.dark .edit-palette-btn[aria-disabled="true"] {
+  color: #656c76;
+  border-color: #3d444db3;
+  background: transparent;
+}
+
+.dark .edit-palette-grip {
+  color: #f0f6fc;
+}
+
+.dark .edit-palette-swatch-red:not([aria-disabled="true"]) {
+  color: #F85149;
+}
+
+.dark .edit-palette-swatch-blue:not([aria-disabled="true"]) {
+  color: #58A6FF;
+}
+
+.dark .edit-palette-swatch-green:not([aria-disabled="true"]) {
+  color: #3FB950;
+}
+
+.dark .edit-palette.edit-palette-minimized.edit-palette-unsaved .edit-palette-grip::after {
+  background: #1f6feb;
+}
+
+.dark .edit-palette-status {
+  color: #9198a1;
+}
+
+/* Touch: larger buttons are a PRT-V09 decision (spec 5.15.1); 28 px for now. */
+
+@media print {
+  .edit-palette,
+  .edit-palette-popover,
+  .grsmd-gap-insert,
+  .grsmd-block-range-bar,
+  #preview > .md-block-hidden,
+  #preview > .md-block-empty,
+  .md-invisible-overlay,
+  #preview > .md-block-table > .grsmd-table-tab {
+    display: none !important;
+  }
+
+  /* INV-53: no cell frame and no marks in print; no block range frame (INV-74) */
+  #preview td.grsmd-cell-editing,
+  #preview th.grsmd-cell-editing,
+  body.edit-mode #preview > .md-block.md-block-range {
+    outline: none;
+  }
+
+  #preview td.grsmd-cell-raw,
+  #preview th.grsmd-cell-raw,
+  .grsmd-invisible {
+    /* the mark only: in a cell the span wraps the character (INV-70) */
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  .md-block-editor,
+  .md-block-editor:focus {
+    border: none;
+    outline: none;
+    background: none;
+  }
+}
+
+/* ============================================================
+   GitHub (SC-28): [Open GitHub] / [Push to GitHub] and the dialogs
+   ============================================================ */
+#controls #gitHubBtn.gh-push {
+  background: #1f883d; /* Primer button-primary */
+  color: #fff;
+  border: 1px solid #1a7f37;
+}
+
+#controls #gitHubBtn.gh-push:disabled {
+  background: #94d3a2;
+  border-color: #94d3a2;
+  color: #fff;
+  cursor: default;
+}
+
+.dark #controls #gitHubBtn.gh-push {
+  background: #238636;
+  border-color: #2ea043;
+}
+
+.dark #controls #gitHubBtn.gh-push:disabled {
+  background: #1b3d26;
+  border-color: #1b3d26;
+  color: #8b949e;
+}
+
+.gh-dialog {
+  width: min(560px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid #888;
+  border-radius: 8px;
+  background: #fefefe;
+  color: #1f2328;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.gh-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.dark .gh-dialog {
+  background: #151b23;
+  color: #e6edf3;
+  border-color: #3d444d;
+}
+
+.gh-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 20px;
+  font-size: 14px;
+}
+
+.gh-form h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.gh-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.gh-row input {
+  font-family: monospace;
+  font-size: 13px;
+  padding: 4px 6px;
+  min-width: 0;
+}
+
+#gitHubOpenFields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#gitHubOpenFields[hidden] {
+  display: none;
+}
+
+.gh-row input[readonly] {
+  background: #f3f3f3;
+  color: inherit;
+  border: 1px solid #ccc;
+}
+
+.dark .gh-row input {
+  background: #0d1117;
+  color: #e6edf3;
+  border: 1px solid #3d444d;
+}
+
+.dark .gh-row input[readonly] {
+  background: #212830;
+}
+
+.gh-send,
+.gh-target {
+  margin: 0;
+  font-size: 12px;
+  color: #59636e;
+}
+
+.gh-target {
+  font-family: monospace;
+}
+
+.dark .gh-send,
+.dark .gh-target {
+  color: #9198a1;
+}
+
+.gh-visibility {
+  margin: 0;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.gh-visibility.gh-public {
+  color: #cf222e;
+}
+
+.dark .gh-visibility.gh-public {
+  color: #f85149;
+}
+
+.gh-error {
+  margin: 0;
+  font-size: 13px;
+  color: #cf222e;
+  white-space: pre-line;
+}
+
+.dark .gh-error {
+  color: #f85149;
+}
+
+.gh-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.gh-buttons-column {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.gh-buttons button {
+  padding: 4px 14px;
+  font-size: 13px;
+}
+
+.gh-form.gh-busy {
+  cursor: progress;
+}
+
+.gh-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.gh-facts dt {
+  font-weight: bold;
+}
+
+.gh-facts dd {
+  margin: 0;
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+
+.gh-token {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.gh-token input {
+  flex: 1;
+}
+
+/* the token label is long (GitHub's name, D35): it sits on its own line */
+.gh-row.gh-row-token {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+/* the eye button shows or hides the token (D28) */
+.gh-token .gh-reveal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  line-height: 0;
+}
+
+.gh-token .gh-reveal[aria-pressed="true"] {
+  background: #d0d7de;
+}
+
+.dark .gh-token .gh-reveal[aria-pressed="true"] {
+  background: #3d444d;
+}
+
+
+/* More details (HT-3): the entry under the short Buttons and Keys */
+.help-guide-btn {
+  display: block;
+  width: 100%;
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border: 1px solid #0969da;
+  border-radius: 6px;
+  background: transparent;
+  color: #0969da;
+  font: inherit;
+  font-weight: bold;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The help's folded Licenses (HT-1): the heading is the summary */
+.help-fold > summary {
+  cursor: pointer;
+}
+
+.help-fold > summary h3 {
+  display: inline-block;
+  margin: 0 0 8px;
+}
+
+/* More details: a full-screen layer over the help */
+#guideModal .modal-content {
+  font-size: 75%;
+  margin: 0 auto;
+  min-height: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 760px;
+  border-radius: 0;
+}
+
+#guideModal .close-btn {
+  font-size: 1.75em;
+}
+
+@media screen {
+  .dark .help-guide-btn {
+    border-color: #4493f8;
+    color: #4493f8;
+  }
 }

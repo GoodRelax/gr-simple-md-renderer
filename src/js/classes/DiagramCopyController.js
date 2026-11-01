@@ -1,31 +1,63 @@
 import { CONFIG } from "../config.js";
 
+const DIAGRAM_SELECTOR = ".mermaid, .plantuml-wrapper";
+const D = CONFIG.messages.diagram; // button labels and feedback
+
 export default class DiagramCopyController {
-  /** @param {HTMLElement} preview */
+  /**
+   * @param {HTMLElement} preview
+   * @purity non-pure
+   */
   constructor(preview) {
     this.preview = preview;
-    this.observer = new MutationObserver(() => this.attachBars());
+    // Only the added nodes are searched: a scan of the whole preview on every
+    // change of a large document (a commit, highlighting) costs ~10 ms.
+    this.observer = new MutationObserver((records) => this.attachBarsIn(records));
     this.observer.observe(this.preview, { childList: true, subtree: true });
   }
 
-  attachBars() {
-    this.preview
-      .querySelectorAll(".mermaid, .plantuml-wrapper")
-      .forEach((container) => {
-        const prev = container.previousElementSibling;
-        if (prev && prev.classList.contains("diagram-copy-bar")) return;
-        this.attachBar(container);
-      });
+  /**
+   * Attach bars to the diagram containers among and inside the added nodes.
+   * @purity non-pure
+   * @param {MutationRecord[]} records
+   */
+  attachBarsIn(records) {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE || !node.isConnected) continue;
+        if (node.matches(DIAGRAM_SELECTOR)) this._attachOnce(node);
+        node.querySelectorAll(DIAGRAM_SELECTOR).forEach((container) => this._attachOnce(container));
+      }
+    }
   }
 
-  /** @param {HTMLElement} container */
+  /**
+   * @purity non-pure
+   * @param {HTMLElement} container
+   */
+  _attachOnce(container) {
+    const prev = container.previousElementSibling;
+    if (prev && prev.classList.contains("diagram-copy-bar")) return;
+    this.attachBar(container);
+  }
+
+  /** @purity non-pure */
+  attachBars() {
+    this.preview.querySelectorAll(DIAGRAM_SELECTOR).forEach((container) => this._attachOnce(container));
+  }
+
+  /**
+   * @param {HTMLElement} container
+   * @purity non-pure
+   */
   attachBar(container) {
     const bar = document.createElement("div");
     bar.className = "diagram-copy-bar";
 
     const svgBtn = document.createElement("button");
     svgBtn.className = "diagram-copy-btn";
-    svgBtn.textContent = "Copy SVG";
+    svgBtn.textContent = D.copySvg;
+    /** @purity non-pure */
     svgBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       this.copyAsSvg(container, svgBtn);
@@ -33,7 +65,8 @@ export default class DiagramCopyController {
 
     const pngBtn = document.createElement("button");
     pngBtn.className = "diagram-copy-btn";
-    pngBtn.textContent = "Copy PNG";
+    pngBtn.textContent = D.copyPng;
+    /** @purity non-pure */
     pngBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       this.copyAsPng(container, pngBtn);
@@ -47,6 +80,7 @@ export default class DiagramCopyController {
   /**
    * @param {SVGSVGElement} svg
    * @returns {SVGSVGElement}
+   * @purity semi-pure-b
    */
   inlineSvgStyles(svg) {
     const clone = svg.cloneNode(true);
@@ -57,8 +91,10 @@ export default class DiagramCopyController {
       "font-family", "font-size", "font-weight", "font-style",
       "text-anchor", "dominant-baseline", "opacity", "visibility",
     ];
+    /** @purity non-pure */
     origEls.forEach((orig, i) => {
       const s = getComputedStyle(orig);
+      /** @purity non-pure */
       props.forEach((p) => {
         const v = s.getPropertyValue(p);
         if (v) cloneEls[i].setAttribute(p, v);
@@ -70,11 +106,13 @@ export default class DiagramCopyController {
   /**
    * @param {SVGSVGElement} svgClone
    * @param {SVGSVGElement} svgOrig
+   * @purity non-pure
    */
   convertForeignObjects(svgClone, svgOrig) {
     const origFOs = [...svgOrig.querySelectorAll("foreignObject")];
     const cloneFOs = [...svgClone.querySelectorAll("foreignObject")];
 
+    /** @purity non-pure */
     origFOs.forEach((origFO, i) => {
       const cloneFO = cloneFOs[i];
       if (!cloneFO) return;
@@ -110,6 +148,7 @@ export default class DiagramCopyController {
         const totalH = (lines.length - 1) * lineH;
         textEl.setAttribute("x", String(x + w / 2));
         textEl.setAttribute("y", String(y + h / 2 - totalH / 2));
+        /** @purity non-pure */
         lines.forEach((line, j) => {
           const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
           tspan.setAttribute("x", String(x + w / 2));
@@ -126,6 +165,7 @@ export default class DiagramCopyController {
   /**
    * @param {SVGSVGElement} svg
    * @returns {SVGSVGElement}
+   * @purity semi-pure-b
    */
   prepareSvg(svg) {
     const clone = this.inlineSvgStyles(svg);
@@ -138,12 +178,17 @@ export default class DiagramCopyController {
     return clone;
   }
 
-  /** @param {HTMLButtonElement} btn @param {string} msg @param {string} reset @param {number} [ms] */
+  /**
+   * @param {HTMLButtonElement} btn @param {string} msg @param {string} reset @param {number} [ms]
+   * @purity non-pure
+   */
   showFeedback(btn, msg, reset, ms = CONFIG.ui.copyFeedbackDuration) {
     btn.textContent = msg;
+    /** @purity non-pure */
     setTimeout(() => { btn.textContent = reset; }, ms);
   }
 
+  /** @purity non-pure */
   async copyAsSvg(container, btn) {
     try {
       let blob;
@@ -159,13 +204,14 @@ export default class DiagramCopyController {
         blob = new Blob([svgText], { type: "image/svg+xml" });
       }
       await navigator.clipboard.write([new ClipboardItem({ "image/svg+xml": blob })]);
-      this.showFeedback(btn, "Copied!", "Copy SVG");
+      this.showFeedback(btn, D.copied, D.copySvg);
     } catch (err) {
       console.error("SVG copy failed:", err);
-      this.showFeedback(btn, "Failed", "Copy SVG", CONFIG.ui.copyFeedbackDuration * 4);
+      this.showFeedback(btn, D.copyFailed, D.copySvg, CONFIG.ui.copyFeedbackDuration * 4);
     }
   }
 
+  /** @purity non-pure */
   async copyAsPng(container, btn) {
     try {
       let pngBlob;
@@ -179,6 +225,7 @@ export default class DiagramCopyController {
         const w = parseFloat(prepared.getAttribute("width")) * scale;
         const h = parseFloat(prepared.getAttribute("height")) * scale;
         const img = new Image();
+        /** @purity non-pure */
         await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
         URL.revokeObjectURL(url);
         const canvas = document.createElement("canvas");
@@ -195,10 +242,10 @@ export default class DiagramCopyController {
         pngBlob = await (await fetch(pngUrl)).blob();
       }
       await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
-      this.showFeedback(btn, "Copied!", "Copy PNG");
+      this.showFeedback(btn, D.copied, D.copyPng);
     } catch (err) {
       console.error("PNG copy failed:", err);
-      this.showFeedback(btn, "Failed", "Copy PNG", CONFIG.ui.copyFeedbackDuration * 4);
+      this.showFeedback(btn, D.copyFailed, D.copyPng, CONFIG.ui.copyFeedbackDuration * 4);
     }
   }
 }

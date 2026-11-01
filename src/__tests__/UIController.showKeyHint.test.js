@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fakeEditServices, withEditMethods } from "./helpers/uiMocks.js";
 
-describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
+describe("AT-UI-73 UIController.showKeyHint dismiss on scroll (FS-03, spec 5.7)", () => {
   let UIController;
   let mockOrchestrator;
   let mockScrollEngine;
@@ -9,7 +10,9 @@ describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("../js/utils.js", () => ({
+    vi.doMock("../js/utils.js", async () => ({
+      ...(await vi.importActual("../js/utils.js")),
+      showToast: vi.fn(),
       applyTheme: vi.fn(),
       applySystemTheme: vi.fn(),
       systemTheme: vi.fn().mockReturnValue("light"),
@@ -65,9 +68,11 @@ describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
       renderDarkBtn: document.createElement("button"),
       reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
+      editBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
+      guideModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),
       copyPromptBtn: document.createElement("button"),
@@ -77,12 +82,7 @@ describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
       setTheme: vi.fn(),
       setMarkdownText: vi.fn(),
     };
-    return new UIController(
-      mockOrchestrator,
-      mockState,
-      mockElements,
-      mockScrollEngine,
-    );
+    return new UIController(withEditMethods(mockOrchestrator), mockState, mockElements, mockScrollEngine, fakeEditServices());
   }
 
   it("dismisses keyHint on preview scroll (PC)", () => {
@@ -116,6 +116,29 @@ describe("UIController.showKeyHint dismiss on scroll (FS-16 fix)", () => {
     document.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
     expect(mockElements.keyHint.style.opacity).toBe("0");
+  });
+
+  it("PRT-D01 the click that shows the hint (a button's handler) does not dismiss it; the next click does", () => {
+    const ctrl = createController();
+    const button = document.createElement("button");
+    document.body.appendChild(button);
+    button.addEventListener("click", () => ctrl.showKeyHint("markdown"));
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(mockElements.keyHint.style.opacity).toBe("1");
+    document.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(mockElements.keyHint.style.opacity).toBe("0");
+    button.remove();
+  });
+
+  it("PRT-D01 a key handled on an element that shows the hint does not dismiss it; the next key does", () => {
+    const ctrl = createController();
+    document.body.appendChild(mockElements.editor);
+    mockElements.editor.addEventListener("keydown", () => ctrl.showKeyHint("markdown"));
+    mockElements.editor.dispatchEvent(new KeyboardEvent("keydown", { key: "x", bubbles: true }));
+    expect(mockElements.keyHint.style.opacity).toBe("1");
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+    expect(mockElements.keyHint.style.opacity).toBe("0");
+    mockElements.editor.remove();
   });
 
   it("dismisses keyHint on keydown", () => {

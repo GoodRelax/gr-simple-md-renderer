@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import ApplicationState from "../js/classes/ApplicationState.js";
 
-describe("ApplicationState", () => {
-  describe("initial state", () => {
+describe("AT-APS ApplicationState (spec 3.2; FS-01 the text, FS-06 the theme)", () => {
+  describe("AT-APS-01 FS-01, FS-06 initial state", () => {
     it("currentTheme defaults to 'light'", () => {
       const state = new ApplicationState();
       expect(state.currentTheme).toBe("light");
@@ -14,7 +14,7 @@ describe("ApplicationState", () => {
     });
   });
 
-  describe("setTheme()", () => {
+  describe("AT-APS-02 FS-06 setTheme()", () => {
     it("changes currentTheme to 'dark'", () => {
       const state = new ApplicationState();
       state.setTheme("dark");
@@ -35,7 +35,7 @@ describe("ApplicationState", () => {
     });
   });
 
-  describe("setMarkdownText()", () => {
+  describe("AT-APS-03 FS-01 setMarkdownText()", () => {
     it("stores the given markdown text", () => {
       const state = new ApplicationState();
       state.setMarkdownText("# Hello World");

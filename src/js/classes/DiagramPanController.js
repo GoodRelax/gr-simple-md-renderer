@@ -1,14 +1,19 @@
-import { CONFIG } from "../config.js";
+import { isPastActivation } from "../utils.js";
 
 export default class DiagramPanController {
-  /** @param {HTMLElement} preview */
+  /**
+   * @param {HTMLElement} preview
+   * @purity non-pure
+   */
   constructor(preview) {
     this.preview = preview;
     this.panState = null;
     this.setupListeners();
   }
 
+  /** @purity non-pure */
   setupListeners() {
+    /** @purity non-pure */
     this.preview.addEventListener("mousedown", (e) => {
       if (e.button !== 0) return;
       const container = this.findScrollContainerAt(e.target);
@@ -24,14 +29,20 @@ export default class DiagramPanController {
       };
     });
 
+    /** @purity non-pure */
     document.addEventListener("mousemove", (e) => {
       const s = this.panState;
       if (!s) return;
+      // No button held: the press ended without a mouseup reaching here
+      // (WebKit sends none when the pressed element left the DOM, as when a
+      // click on a diagram opens its code, PRT-U20). A move does not pan.
+      if ((e.buttons & 1) === 0) {
+        this.endPan();
+        return;
+      }
       if (!s.active) {
-        const dx = e.clientX - s.startX;
-        const dy = e.clientY - s.startY;
-        const t = CONFIG.pan.activationThresholdPx;
-        if (dx * dx + dy * dy < t * t) return;
+        // past the threshold, the rule that tells a tap from a drag elsewhere too (exactly 5 px does not pan)
+        if (!isPastActivation({ x: s.startX, y: s.startY }, { x: e.clientX, y: e.clientY })) return;
         s.active = true;
         this.setCursor(s.container, true);
       }
@@ -47,18 +58,30 @@ export default class DiagramPanController {
       s.lastY = e.clientY;
     });
 
-    document.addEventListener("mouseup", () => {
-      if (!this.panState) return;
-      if (this.panState.active) {
-        this.setCursor(this.panState.container, false);
-      }
-      this.panState = null;
-    });
+    // The pointer events end it too: they come where a mouseup may not.
+    /** @purity non-pure */
+    const end = () => this.endPan();
+    document.addEventListener("mouseup", end);
+    document.addEventListener("pointerup", end);
+    document.addEventListener("pointercancel", end);
+  }
+
+  /**
+   * End the pan, if there is one, and put the cursor back.
+   * @purity non-pure
+   */
+  endPan() {
+    if (!this.panState) return;
+    if (this.panState.active) {
+      this.setCursor(this.panState.container, false);
+    }
+    this.panState = null;
   }
 
   /**
    * @param {HTMLElement} container
    * @param {boolean} active
+   * @purity non-pure
    */
   setCursor(container, active) {
     const cursor = active ? "grabbing" : "";
@@ -69,6 +92,7 @@ export default class DiagramPanController {
   /**
    * @param {EventTarget} target
    * @returns {HTMLElement|null}
+   * @purity semi-pure-b
    */
   findScrollContainerAt(target) {
     return (

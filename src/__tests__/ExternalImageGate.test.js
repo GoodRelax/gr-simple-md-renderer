@@ -4,6 +4,7 @@ import markedKatex from "marked-katex-extension";
 import hljs from "highlight.js/lib/common";
 import DOMPurify from "dompurify";
 import MarkdownRenderer from "../js/classes/MarkdownRenderer.js";
+import { CONFIG } from "../js/config.js";
 
 const PNG_DATA =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
@@ -14,7 +15,7 @@ function createMarked() {
   return marked;
 }
 
-describe("External images (CON-12, INV-19)", () => {
+describe("AT-EIG External images (CON-12, INV-19, INV-01)", () => {
   let preview;
   let renderer;
 
@@ -33,7 +34,7 @@ describe("External images (CON-12, INV-19)", () => {
     preview.querySelectorAll(".external-image-placeholder");
   const liveImages = () => preview.querySelectorAll("img");
 
-  describe("before consent", () => {
+  describe("AT-EIG-01 before consent", () => {
     it.each([
       ["Markdown https", "![logo](https://example.com/a.png)"],
       ["Markdown http", "![logo](http://example.com/a.png)"],
@@ -151,20 +152,22 @@ describe("External images (CON-12, INV-19)", () => {
     });
   });
 
-  describe("consent", () => {
-    it("asks once, naming the hosts, and loads all pending images on OK", async () => {
+  describe("AT-EIG-02 consent", () => {
+    it("asks once with the fixed sentence (no host list, R14) and loads all pending images on OK", async () => {
       const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
       await renderer.render(
         "![a](https://one.example/a.png) ![b](https://two.example/b.png)",
       );
       expect(confirm).not.toHaveBeenCalled(); // never asked on render
+      // the placeholders still name their hosts
+      expect(placeholders()[0].textContent).toContain("one.example");
+      expect(placeholders()[1].textContent).toContain("two.example");
 
       placeholders()[0].click();
 
       expect(confirm).toHaveBeenCalledOnce();
-      const message = confirm.mock.calls[0][0];
-      expect(message).toContain("one.example");
-      expect(message).toContain("two.example");
+      expect(confirm).toHaveBeenCalledWith("Is it OK to get images from other sites?");
+      expect(confirm.mock.calls[0][0]).toBe(CONFIG.messages.externalImage.consent);
       expect(placeholders().length).toBe(0);
       const srcs = [...liveImages()].map((img) => img.getAttribute("src"));
       expect(srcs).toEqual(["https://one.example/a.png", "https://two.example/b.png"]);

@@ -1,14 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fakeEditServices, withEditMethods, trackGlobalListeners } from "./helpers/uiMocks.js";
 
-describe("UIController.setupKeyboard (modifier guard)", () => {
+describe("AT-KEY-09 UIController.setupKeyboard (modifier guard, INV-14)", () => {
   let UIController;
   let mockOrchestrator;
   let mockScrollEngine;
+  let disposeListeners = () => {};
 
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("../js/utils.js", () => ({
+    vi.doMock("../js/utils.js", async () => ({
+      ...(await vi.importActual("../js/utils.js")),
+      showToast: vi.fn(),
       applyTheme: vi.fn(),
       applySystemTheme: vi.fn(),
       systemTheme: vi.fn().mockReturnValue("light"),
@@ -44,6 +48,10 @@ describe("UIController.setupKeyboard (modifier guard)", () => {
   });
 
   afterEach(() => {
+    // One controller per test: a document keydown listener left from an
+    // earlier test would take the key first (INV-14 (1): defaultPrevented).
+    disposeListeners();
+    disposeListeners = () => {};
     vi.restoreAllMocks();
   });
 
@@ -64,9 +72,11 @@ describe("UIController.setupKeyboard (modifier guard)", () => {
       renderDarkBtn: document.createElement("button"),
       reloadBtn: document.createElement("button"),
       newTabBtn: document.createElement("button"),
+      editBtn: document.createElement("button"),
       clearBtn: document.createElement("button"),
       helpBtn: document.createElement("button"),
       helpModal: createMockModal(),
+      guideModal: createMockModal(),
       promptModal: createMockModal(),
       promptText: document.createElement("textarea"),
       copyPromptBtn: document.createElement("button"),
@@ -75,12 +85,11 @@ describe("UIController.setupKeyboard (modifier guard)", () => {
       setTheme: vi.fn(),
       setMarkdownText: vi.fn(),
     };
-    return new UIController(
-      mockOrchestrator,
-      mockState,
-      mockElements,
-      mockScrollEngine,
+    const { result, dispose } = trackGlobalListeners(
+      () => new UIController(withEditMethods(mockOrchestrator), mockState, mockElements, mockScrollEngine, fakeEditServices()),
     );
+    disposeListeners = dispose;
+    return result;
   }
 
   function dispatchKey(key, modifiers = {}) {
@@ -93,7 +102,7 @@ describe("UIController.setupKeyboard (modifier guard)", () => {
     document.dispatchEvent(event);
   }
 
-  it("bare 'c' key triggers doClear", () => {
+  it("bare 'c' key triggers doClear (INV-13)", () => {
     const ctrl = createController();
     const clearSpy = vi.spyOn(ctrl, "doClear");
     clearSpy.mockClear();
