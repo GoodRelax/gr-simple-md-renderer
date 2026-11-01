@@ -63,7 +63,7 @@
         }
       }
     </script>
-
+
 
     <!-- All rendering libraries (marked, mermaid, highlight.js, katex + fonts,
          marked-katex-extension, plantuml-encoder) are bundled into this file at
@@ -98,8 +98,8 @@
         <button id="searchBtn" aria-expanded="false" aria-controls="searchPanel" disabled>Find</button>
         <button id="commandsBtn" aria-expanded="false" aria-controls="codeCommandPalette" disabled>Commands</button>
         <button id="gitHubBtn" hidden>Open<br />GitHub</button>
-        <button id="renderLight">Render<br />Light</button>
-        <button id="renderDark">Render<br />Dark</button>
+        <button id="renderLight">Light</button>
+        <button id="renderDark">Dark</button>
         <button id="reloadBtn">Re-<br />load</button>
         <button id="newTabBtn">New<br />Tab</button>
         <button id="editBtn">Edit</button>
@@ -268,7 +268,7 @@
             </p>
             <p class="help-version" data-build-version>
               <span data-build-kind="dev">Development build</span>
-              <time datetime="2026-11-01T04:30:25Z">2026-11-01T04:30:25Z</time> (UTC)
+              <time datetime="2026-11-01T07:24:54Z">2026-11-01T07:24:54Z</time> (UTC)
             </p>
           </div>
 
@@ -298,7 +298,7 @@
             <ul>
               <li><code>[Index]</code> / <code>I</code> : List of headings</li>
               <li><code>[Find]</code> / <code>F</code> : Find and replace text</li>
-              <li><code>[Render Light]</code> / <code>L</code>, <code>[Render Dark]</code> / <code>D</code> : Show in light / dark mode</li>
+              <li><code>[Light]</code> / <code>L</code>, <code>[Dark]</code> / <code>D</code> : Show in light / dark mode</li>
               <li><code>[Reload]</code> / <code>R</code> : Read the file again</li>
               <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
               <li><code>[Edit]</code> / <code>E</code> : Show the edit palette. With a mouse, a double-click on the preview also starts editing</li>
@@ -366,7 +366,7 @@
             </p>
             <p class="help-version" data-build-version>
               <span data-build-kind="dev">開発版</span>
-              <time datetime="2026-11-01T04:30:25Z">2026-11-01T04:30:25Z</time>（UTC）
+              <time datetime="2026-11-01T07:24:54Z">2026-11-01T07:24:54Z</time>（UTC）
             </p>
           </div>
 
@@ -394,7 +394,7 @@
             <ul>
               <li><code>[Index]</code> / <code>I</code> : 見出しの一覧</li>
               <li><code>[Find]</code> / <code>F</code> : 文字を探す・置き換える</li>
-              <li><code>[Render Light]</code> / <code>L</code>、<code>[Render Dark]</code> / <code>D</code> : ライトモード / ダークモードで表示する</li>
+              <li><code>[Light]</code> / <code>L</code>、<code>[Dark]</code> / <code>D</code> : ライトモード / ダークモードで表示する</li>
               <li><code>[Reload]</code> / <code>R</code> : ファイルを読み直す</li>
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブで GRSMD を開く</li>
               <li><code>[Edit]</code> / <code>E</code> : 編集パレットを出す。マウスでは、プレビューのダブルクリックでも編集を始める</li>
@@ -477,7 +477,7 @@
                 A dropped file can be up to 5 MB.
               </li>
               <li>
-                In the Markdown view (paste, drop, Render or editing), a code block
+                In the Markdown view (paste, drop, [Light] / [Dark] or editing), a code block
                 longer than 20,480 characters (about 20 KB) is shown without syntax highlighting.
               </li>
             </ul>
@@ -503,8 +503,8 @@
                 <code>Ctrl+Z</code> undoes). <code>Esc</code> in the box closes it. A slow regular expression (such as
                 nested repeats on a long line) can freeze the page: save before you replace with one.
               </li>
-              <li><code>[Render Light]</code> / <code>L</code> : Render / switch to light mode</li>
-              <li><code>[Render Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
+              <li><code>[Light]</code> / <code>L</code> : Render / switch to light mode</li>
+              <li><code>[Dark]</code> / <code>D</code> : Render / switch to dark mode</li>
               <li><code>[Reload]</code> / <code>R</code> : Reload the current file from disk (Chrome / Edge)</li>
               <li><code>[New Tab]</code> / <code>N</code> : Open GRSMD in a new tab</li>
               <li><code>[Edit]</code> / <code>E</code> : Show or hide the edit palette</li>
@@ -633,7 +633,7 @@
                 ペーストでプレビューが始まるのは、最初の画面で、上部のボックスが空のときだけです。文書を表示しているときは、先に <code>[Clear]</code> を押します。ドロップできるファイルは 5 MB までです。
               </li>
               <li>
-                Markdown の表示（ペースト・ドロップ・Render・その場の編集）では、20,480 文字（約 20 KB）を超えるコードブロックは、シンタックスハイライトをせずに表示します。
+                Markdown の表示（ペースト・ドロップ・[Light] / [Dark]・その場の編集）では、20,480 文字（約 20 KB）を超えるコードブロックは、シンタックスハイライトをせずに表示します。
               </li>
             </ul>
           </div>
@@ -652,8 +652,8 @@
               <li>
                 <code>[Find]</code> / <code>F</code> : Markdown の原文（コードビューではファイル）から文字を探します。<code>Aa</code> で大文字と小文字を区別し、<code>.*</code> で正規表現にします。検索欄の <code>&darr;</code> / <code>&uarr;</code> で次 / 前へ移ります。編集モードでは <code>Ctrl+F</code>（Mac は <code>Cmd+F</code>）でも開け、<code>Replace</code> / <code>All</code> で置き換えます（<code>Ctrl+Z</code> 1 回で戻ります）。検索欄の <code>Esc</code> で閉じます。時間のかかる正規表現（長い行に当てる、繰り返しの入れ子など）では、ページが固まることがあります。正規表現で置き換える前に保存してください。
               </li>
-              <li><code>[Render Light]</code> / <code>L</code> : レンダリング/ライトモード切替</li>
-              <li><code>[Render Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
+              <li><code>[Light]</code> / <code>L</code> : レンダリング/ライトモード切替</li>
+              <li><code>[Dark]</code> / <code>D</code> : レンダリング/ダークモード切替</li>
               <li><code>[Reload]</code> / <code>R</code> : 現在のファイルをディスクからリロード（Chrome / Edge）</li>
               <li><code>[New Tab]</code> / <code>N</code> : 新しいタブでGRSMDを開く</li>
               <li><code>[Edit]</code> / <code>E</code> : 編集パレットの表示・非表示</li>
@@ -792,7 +792,7 @@
         </div>
       </div>
     </div>
-
+
   <script>(function(){var e=`grsmd-`,t=`${e}lib-`;Object.freeze([`mermaid`,`hljs`,`katex`,`plantuml`]);var n=typeof DataTransferItem<`u`&&typeof DataTransferItem.prototype.getAsFileSystemHandle==`function`;function r(e,t){return(e?.tagName===`TEXTAREA`||e?.tagName===`INPUT`)&&e!==t}function i(e,t){return e.trim()===``&&!!t&&t.trim()!==``}function a(e,t){return t&&typeof e?.getAsFileSystemHandle==`function`?Promise.resolve(e.getAsFileSystemHandle()).catch(()=>null):null}var o=`${e}launch-file`;function s(e,t){return e?.tagName===`SCRIPT`&&e.type===`text/plain`&&e.id===o&&e.parentNode===t}function c(e){try{let t=l(e.getAttribute(`data-name`)??``);if(t===``)return null;let n=e.getAttribute(`data-path`);return{name:t,path:n===null?null:l(n)||null,bytes:u(e.textContent??``)}}catch{return null}}function l(e){return new TextDecoder(`utf-8`,{fatal:!0}).decode(u(e))}function u(e){let t=atob(e),n=new Uint8Array(t.length);for(let e=0;e<t.length;e++)n[e]=t.charCodeAt(e);return n}function d(e,n){return e?.tagName===`SCRIPT`&&e.type===`text/plain`&&e.id===`${t}${n}`}function f(e){let t=e;for(;t&&t.tagName!==`SCRIPT`;)t=t.previousElementSibling;return t}function p(e){let t=e.document,o={arrived:new Set,data:new Map,provided:new Map,shared:{},onArrive:null,early:null,arrive(t,n){let r=f(n);d(r,t)&&o.data.set(t,r),e.performance.mark(`grsmd-arrived-${t}`),o.arrived.add(t),o.onArrive&&o.onArrive(t)},provide(e,t){o.provided.set(e,t)},takeEarlyInput(){t.removeEventListener(`dragover`,s),t.removeEventListener(`drop`,c),t.removeEventListener(`paste`,l);let e=o.early;return o.early=null,e}};function s(e){e.preventDefault()}function c(e){e.preventDefault();let t=e.dataTransfer?.files?.[0];if(!t)return;let r=a(e.dataTransfer.items?.[0],n);o.early={kind:`drop`,file:t,handlePromise:r}}function l(e){let n=t.getElementById(`editor`);if(r(e.target,n))return;let a=e.clipboardData?.getData(`text/plain`)??``;i(n?.value??``,a)&&(e.preventDefault(),o.early={kind:`paste`,text:a})}t.addEventListener(`dragover`,s),t.addEventListener(`drop`,c),t.addEventListener(`paste`,l),m(e,o),e.__grsmdBoot=o}function m(e,t){let n=e.document,r=n.getElementById(o);if(!s(r,n.head))return;let i=c(r);r.remove(),i?t.early={kind:`drop`,file:new e.File([i.bytes],i.name),handlePromise:null,launchPath:i.path}:console.warn(`GRSMD: the launch file could not be read.`)}p(window)})();</script>
 <script>(()=>{"use strict";
 (function(){let e=document.createElement(`link`).relList;if(e&&e.supports&&e.supports(`modulepreload`))return;for(let e of document.querySelectorAll(`link[rel="modulepreload"]`))n(e);new MutationObserver(e=>{for(let t of e)if(t.type===`childList`)for(let e of t.addedNodes)e.tagName===`LINK`&&e.rel===`modulepreload`&&n(e)}).observe(document,{childList:!0,subtree:!0});function t(e){let t={};return e.integrity&&(t.integrity=e.integrity),e.referrerPolicy&&(t.referrerPolicy=e.referrerPolicy),t.credentials=e.crossOrigin===`use-credentials`?`include`:e.crossOrigin===`anonymous`?`omit`:`same-origin`,t}function n(e){if(e.ep)return;e.ep=!0;let n=t(e);fetch(e.href,n)}})();function e(){return{async:!1,breaks:!1,extensions:null,gfm:!0,hooks:null,pedantic:!1,renderer:null,silent:!1,tokenizer:null,walkTokens:null}}var t=e();function n(e){t=e}var r={exec:()=>null};function i(e){let t=[];return n=>{let r=Math.max(0,Math.min(3,n-1)),i=t[r];return i||(i=e(r),t[r]=i),i}}function a(e,t=``){let n=typeof e==`string`?e:e.source,r={replace:(e,t)=>{let i=typeof t==`string`?t:t.source;return i=i.replace(s.caret,`$1`),n=n.replace(e,i),r},getRegex:()=>new RegExp(n,t)};return r}var o=((e=``)=>{try{return!!RegExp(`(?<=1)(?<!1)`+e)}catch{return!1}})(),s={codeRemoveIndent:/^(?: {0,3}\t| {1,4})/gm,outputLinkReplace:/\\([\[\]])/g,indentCodeCompensation:/^(\s+)(?:```)/,beginningSpace:/^\s+/,endingHash:/#$/,startingSpaceChar:/^ /,endingSpaceChar:/ $/,endingSpaceTabChar:/[ \t]$/,nonSpaceChar:/[^ ]/,newLineCharGlobal:/\n/g,tabCharGlobal:/\t/g,leadingSpaceTab:/^[ \t]+/,multipleSpaceGlobal:/\s+/g,blankLine:/^[ \t]*$/,doubleBlankLine:/\n[ \t]*\n[ \t]*$/,blockquoteStart:/^ {0,3}>/,blockquoteSetextReplace:/\n {0,3}((?:=+|-+) *)(?=\n|$)/g,blockquoteSetextReplace2:/^ {0,3}>[ \t]?/gm,listReplaceNesting:/^ {1,4}(?=( {4})*[^ ])/g,listIsTask:/^\[[ xX]\] +\S/,listReplaceTask:/^\[[ xX]\] +/,listTaskCheckbox:/\[[ xX]\]/,anyLine:/\n.*\n/,hrefBrackets:/^<(.*)>$/,tableDelimiter:/[:|]/,tableAlignChars:/^\||\| *$/g,tableRowBlankLine:/\n[ \t]*$/,tableAlignRight:/^ *-+: *$/,tableAlignCenter:/^ *:-+: *$/,tableAlignLeft:/^ *:-+ *$/,startATag:/^<a /i,endATag:/^<\/a>/i,startPreScriptTag:/^<(pre|code|kbd|script)(\s|>)/i,endPreScriptTag:/^<\/(pre|code|kbd|script)(\s|>)/i,startAngleBracket:/^</,endAngleBracket:/>$/,pedanticHrefTitle:/^([^'"]*[^\s])\s+(['"])(.*)\2/,unicodeAlphaNumeric:/[\p{L}\p{N}]/u,numericCharacterReference:/&#(?:(\d{1,7})|[Xx]([A-Fa-f0-9]{1,6}));/g,escapeTest:/[&<>"']/,escapeReplace:/[&<>"']/g,escapeTestNoEncode:/[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/,escapeReplaceNoEncode:/[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/g,caret:/(^|[^\[])\^/g,percentDecode:/%25/g,findPipe:/\|/g,splitPipe:/ \|/,slashPipe:/\\\|/g,carriageReturn:/\r\n|\r/g,spaceLine:/^ +$/gm,notSpaceStart:/^\S*/,endingNewline:/\n$/,listItemRegex:e=>RegExp(`^( {0,3}${e})((?:[	 ][^\\n]*)?(?:\\n|$))`),nextBulletRegex:i(e=>RegExp(`^ {0,${e}}(?:[*+-]|\\d{1,9}[.)])((?:[ 	][^\\n]*)?(?:\\n|$))`)),hrRegex:i(e=>RegExp(`^ {0,${e}}((?:-[ 	]*){3,}|(?:_[ 	]*){3,}|(?:\\*[ 	]*){3,})(?:\\n+|$)`)),fencesBeginRegex:i(e=>RegExp(`^ {0,${e}}(?:\`\`\`|~~~)`)),headingBeginRegex:i(e=>RegExp(`^ {0,${e}}#`)),htmlBeginRegex:i(e=>RegExp(`^ {0,${e}}(?:</?(?:${S})(?: +|$|/?>)|<(?:script|pre|style|textarea|!--))`,`i`)),blockquoteBeginRegex:i(e=>RegExp(`^ {0,${e}}>`))},c=/^(?:[ \t]*(?:\n|$))+/,l=/^((?: {4}| {0,3}\t)[^\n]+(?:\n(?:[ \t]*(?:\n|$))*)?)+/,u=/^ {0,3}(`{3,}(?=[^`\n]*(?:\n|$))|~{3,})([^\n]*)(?:\n|$)(?:|([\s\S]*?)(?:\n|$))(?: {0,3}\1[~`]* *(?=\n|$)|$)/,d=/^ {0,3}((?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/,f=/^ {0,3}(#{1,6})(?=\s|$)(.*)(?:\n+|$)/,p=/ {0,3}(?:[*+-]|\d{1,9}[.)])/,m=/^(?!bull |blockCode|fences|blockquote|heading|html|table)((?:.|\n(?!\s*?\n|bull |fences|blockquote|heading|hr|html|table))+?)\n {0,3}(=+|-+) *(?:\n+|$)/,h=a(m).replace(/bull/g,p).replace(/blockCode/g,/(?: {4}| {0,3}\t)/).replace(/fences/g,/ {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g,/ {0,3}>/).replace(/heading/g,/ {0,3}#{1,6}(?:\s|$)/).replace(/hr/g,/ {0,3}(?:(?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/).replace(/html/g,/ {0,3}<[^\n>]+>\n/).replace(/\|table/g,``).getRegex(),g=a(m).replace(/bull/g,p).replace(/blockCode/g,/(?: {4}| {0,3}\t)/).replace(/fences/g,/ {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g,/ {0,3}>/).replace(/heading/g,/ {0,3}#{1,6}(?:\s|$)/).replace(/hr/g,/ {0,3}(?:(?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/).replace(/html/g,/ {0,3}<[^\n>]+>\n/).replace(/table/g,/ {0,3}\|?(?:[:\- ]*\|)+[\:\- ]*\n/).getRegex(),_=/^([^\n]+(?:\n(?!hr|heading|lheading|blockquote|fences|list|html|table|[ \t]+\n)[^\n]+)*)/,v=/^[^\n]+/,y=/(?!\s*\])(?:\\[\s\S]|[^\[\]\\])+/,b=a(/^ {0,3}\[(label)\]: *(?:\n[ \t]*)?([^<\s][^\s]*|<.*?>)(?:(?: +(?:\n[ \t]*)?| *\n[ \t]*)(title))? *(?:\n+|$)/).replace(`label`,y).replace(`title`,/(?:"(?:\\"?|[^"\\])*"|'[^'\n]*(?:\n[^'\n]+)*\n?'|\([^()]*\))/).getRegex(),x=a(/^(bull)([ \t][^\n]*?)?(?:\n|$)/).replace(/bull/g,p).getRegex(),S=`address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul`,C=/\x3C!--(?:-?>|[\s\S]*?(?:-->|$))/,ee=a(`^ {0,3}(?:<(script|pre|style|textarea)[\\s>][\\s\\S]*?(?:</\\1>[^\\n]*\\n*|$)|comment[^\\n]*(\\n+|$)|<\\?[\\s\\S]*?(?:\\?>[^\\n]*\\n*|$)|<![A-Z][\\s\\S]*?(?:>[^\\n]*\\n*|$)|<!\\[CDATA\\[[\\s\\S]*?(?:\\]\\]>[^\\n]*\\n*|$)|</?(tag)(?: +|\\n|/?>)[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$)|<(?!script|pre|style|textarea)([a-z][a-z0-9-]*)(?:attribute)*? */?>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$)|</(?!script|pre|style|textarea)[a-z][a-z0-9-]*\\s*>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$))`,`i`).replace(`comment`,C).replace(`tag`,S).replace(`attribute`,/ +[a-zA-Z:_][\w.:-]*(?: *= *"[^"\n]*"| *= *'[^'\n]*'| *= *[^\s"'=<>`]+)?/).getRegex(),w=e=>a(_).replace(`hr`,d).replace(`heading`,` {0,3}#{1,6}(?:\\s|$)`).replace(`|lheading`,``).replace(`|table`,``).replace(`blockquote`,` {0,3}>`).replace(`fences`," {0,3}(?:`{3,}(?=[^`\\n]*(?:\\n|$))|~~~)[^\\n]*(?:\\n|$)").replace(`list`,e).replace(`html`,`</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)`).replace(`tag`,S).getRegex(),te=w(/ {0,3}(?:[*+-]|1[.)])[ \t]+[^ \t\n]/),ne=w(/ {0,3}(?:[*+-]|\d{1,9}[.)])(?:[ \t]|\n|$)/),re={blockquote:a(/^( {0,3}> ?(paragraph|[^\n]*)(?:\n|$))+/).replace(`paragraph`,ne).getRegex(),code:l,def:b,fences:u,heading:f,hr:d,html:ee,lheading:h,list:x,newline:c,paragraph:te,table:r,text:v},ie=a(`^ *([^\\n ].*)\\n {0,3}((?:\\| *)?:?-+:? *(?:\\| *:?-+:? *)*(?:\\| *)?)(?:\\n((?:(?! *\\n|hr|heading|blockquote|code|fences|list|html).*(?:\\n|$))*)\\n*|$)`).replace(`hr`,d).replace(`heading`,` {0,3}#{1,6}(?:\\s|$)`).replace(`blockquote`,` {0,3}>`).replace(`code`,`(?: {4}| {0,3}	)[^\\n]`).replace(`fences`," {0,3}(?:`{3,}(?=[^`\\n]*(?:\\n|$))|~~~)[^\\n]*(?:\\n|$)").replace(`list`,` {0,3}(?:[*+-]|1[.)])[ \\t]`).replace(`html`,`</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)`).replace(`tag`,S).getRegex(),ae={...re,lheading:g,table:ie,paragraph:a(_).replace(`hr`,d).replace(`heading`,` {0,3}#{1,6}(?:\\s|$)`).replace(`|lheading`,``).replace(`table`,ie).replace(`blockquote`,` {0,3}>`).replace(`fences`," {0,3}(?:`{3,}(?=[^`\\n]*(?:\\n|$))|~~~)[^\\n]*(?:\\n|$)").replace(`list`,` {0,3}(?:[*+-]|1[.)])[ \\t]+[^ \\t\\n]`).replace(`html`,`</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)`).replace(`tag`,S).getRegex()},oe={...re,html:a(`^ *(?:comment *(?:\\n|\\s*$)|<(tag)[\\s\\S]+?</\\1> *(?:\\n{2,}|\\s*$)|<tag(?:"[^"]*"|'[^']*'|\\s[^'"/>\\s]*)*?/?> *(?:\\n{2,}|\\s*$))`).replace(`comment`,C).replace(/tag/g,`(?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\\b)\\w+(?!:|[^\\w\\s@]*@)\\b`).getRegex(),def:/^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +(["(][^\n]+[")]))? *(?:\n+|$)/,heading:/^(#{1,6})(.*)(?:\n+|$)/,fences:r,lheading:/^(.+?)\n {0,3}(=+|-+) *(?:\n+|$)/,paragraph:a(_).replace(`hr`,d).replace(`heading`,` *#{1,6} *[^
