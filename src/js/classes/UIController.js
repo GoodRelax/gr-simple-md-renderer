@@ -39,7 +39,7 @@ function isTextEntry(el) {
 }
 
 /**
- * What [Render] / l / d does in each view (Sect 5.8, spec 5.14.1):
+ * What [Light] / [Dark] / l / d does in each view (Sect 5.8, spec 5.14.1):
  * "theme" (code view: CSS only), "editorIntoDocument" (markdown view: the
  * same document, line endings normalized, no wrapper split, ruling T33) or
  * "newDocument" (initial state: normalize, then split the wrapper).
@@ -1313,7 +1313,7 @@ export default class UIController {
    * @param {string} rawText
    * @param {'light'|'dark'} theme
    * @param {boolean} [opened] - a paste opened it (INV-101: the hidden
-   *   characters are told; not for [Render] of #editor)
+   *   characters are told; not for [Light] / [Dark] of #editor)
    * @purity non-pure
    */
   async _startPastedDocument(rawText, theme, opened = false) {
@@ -1329,7 +1329,7 @@ export default class UIController {
    * that starts a document): when its full render is done and it is still
    * the document shown, its hidden characters are told (INV-101 (3)).
    * Reload comes here too (the file read again), and a GitHub file opened
-   * or reloaded (owner ruling AQ19); [Render] does not.
+   * or reloaded (owner ruling AQ19); [Light] / [Dark] does not.
    * @param {'light'|'dark'} theme
    * @param {string|null} [openedMessage] - a toast shown first, above the
    *   hidden characters toast (the GitHub Opened / Reloaded toast)

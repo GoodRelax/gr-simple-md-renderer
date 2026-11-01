@@ -309,8 +309,8 @@ describe("PRT-D01 the key hint stays after a button click that renders", () => {
   const hintShown = () => app.elements.keyHint.style.display === "block" && app.elements.keyHint.style.opacity === "1";
 
   it.each([
-    ["[Render Light] in the initial state", "renderLightBtn", false],
-    ["[Render Dark] in the markdown view", "renderDarkBtn", true],
+    ["[Light] in the initial state", "renderLightBtn", false],
+    ["[Dark] in the markdown view", "renderDarkBtn", true],
     ["[Edit] in the initial state with #editor text (U30)", "editBtn", false],
   ])("%s: the hint is shown and the same click does not hide it; a later click does", async (_name, button, withDoc) => {
     if (withDoc) await withDocument();
@@ -366,7 +366,7 @@ describe("AT-UI-42 the editor stays open while the focus is on the body", () => 
   it.each([
     ["l", () => keydown(document.body, "l")],
     ["d", () => keydown(document.body, "d")],
-    ["[Render] click()", () => app.elements.renderDarkBtn.click()],
+    ["[Dark] click()", () => app.elements.renderDarkBtn.click()],
   ])("%s: commits A, then renders, no confirm", async (_name, act) => {
     await withDocument();
     const ta = openChanged();
@@ -430,7 +430,7 @@ describe("AT-UI-43 focus moving into #editor commits the open editor", () => {
     expect(document.title.startsWith(CONFIG.edit.titleUnsavedPrefix)).toBe(true);
   }
 
-  it("(a) Render then includes XYZ", async () => {
+  it("(a) [Light] then includes XYZ", async () => {
     await focusEditorAndType();
     await app.ui.handleRender("light");
     expect(app.orchestrator.getBody()).toContain("XYZ");
@@ -520,7 +520,7 @@ describe("AT-BSM stimuli from the UI (Q-d2)", () => {
     expect(state()).toBe(next);
   });
 
-  it("AT-BSM-14 (a) a mouse press on [Render] commits first, then the full render includes it", async () => {
+  it("AT-BSM-14 (a) a mouse press on [Light] commits first, then the full render includes it", async () => {
     await withDocument();
     openChanged();
     pointer(app.elements.renderLightBtn, "pointerdown");
@@ -539,7 +539,7 @@ describe("AT-BSM stimuli from the UI (Q-d2)", () => {
     expect(app.preview.textContent).toContain("Changed A.");
   });
 
-  it("AT-BSM-14 (c) [Render] focused and pressed by keyboard (click() without pointer events)", async () => {
+  it("AT-BSM-14 (c) [Dark] focused and pressed by keyboard (click() without pointer events)", async () => {
     await withDocument();
     openChanged();
     app.elements.renderDarkBtn.focus();

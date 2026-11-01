@@ -450,7 +450,7 @@ describe("AT-UI replacing the document (INV-21, INV-43, INV-55)", () => {
 });
 
 describe("AT-UI rendering from #editor and pasting (INV-45, 5.14.1, T33)", () => {
-  it("AT-UI-16 markdown view [Render Dark]: commits the open editor first, no confirm, same session; the mark drops in the handler", async () => {
+  it("AT-UI-16 markdown view [Dark]: commits the open editor first, no confirm, same session; the mark drops in the handler", async () => {
     app = await setupApp();
     await dropMd(DOC);
     const session = app.ui.documents.session;
@@ -513,7 +513,7 @@ describe("AT-UI rendering from #editor and pasting (INV-45, 5.14.1, T33)", () =>
     expect(load).not.toHaveBeenCalled();
   });
 
-  it("AT-UI-32 initial [Render]: normalize -> split -> new pasted session, no save target (untitled.md)", async () => {
+  it("AT-UI-32 initial [Light]: normalize -> split -> new pasted session, no save target (untitled.md)", async () => {
     app = await setupApp();
     app.elements.editor.value = "```markdown\r\n# R\r\n```";
     app.elements.renderLightBtn.click();

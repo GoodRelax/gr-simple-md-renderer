@@ -250,7 +250,7 @@ describe("the short help and More details in src/index.html (AT-HLP-21, AT-HLP-2
       expect(keys, lang).toEqual([
         "[Index] / I",
         "[Find] / F",
-        "[Render Light] / L, [Render Dark] / D".replace(", ", lang === "ja" ? "\u3001" : ", "),
+        "[Light] / L, [Dark] / D".replace(", ", lang === "ja" ? "\u3001" : ", "),
         "[Reload] / R",
         "[New Tab] / N",
         "[Edit] / E",

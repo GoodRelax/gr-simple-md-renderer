@@ -71,8 +71,8 @@ To use it locally, download [`docs/index.html`](docs/index.html) and open it in 
    | Index | `I` | Show / hide the headings (h1 to h6) at the right edge; press one to bring it to the top of the view. In Code View: the classes and functions of a file in a language listed above |
    | Find | `F` | Find text in the Markdown source (in Code View: the file) (`Aa` match case, `.*` regular expression; `Down` / `Up` in the box: next / previous). In edit mode `Ctrl+F` opens it too, and Replace / All replace (one Undo) |
    | Commands | `P` | In Code View of a JSON file: buttons to fold / unfold one level |
-   | Render Light | `L` | Render / switch to the light theme |
-   | Render Dark | `D` | Render / switch to the dark theme |
+   | Light | `L` | Render / switch to the light theme |
+   | Dark | `D` | Render / switch to the dark theme |
    | Reload | `R` | Reload the current file from disk |
    | New Tab | `N` | Open GRSMD in a new tab |
    | Edit | `E` | Show / hide the edit palette; click (tap) a block to edit its Markdown in place. In Code View: edit the whole file |
@@ -266,8 +266,8 @@ Mermaid・PlantUML・数式・シンタックスハイライトに対応した�
    | Index | `I` | 見出し（h1〜h6）の目次を右端に出す / 消す。押した見出しを見えている範囲の上端へ。コードビューでは、上に挙げた言語のファイルのクラスや関数 |
    | Find | `F` | Markdown の原文（コードビューではファイル）から文字を探す（`Aa` で大文字と小文字を区別、`.*` で正規表現。検索欄の `↓` / `↑` で次 / 前）。編集モードでは `Ctrl+F` でも開け、Replace / All で置き換える（Undo 1 回で戻る） |
    | Commands | `P` | コードビューの JSON のファイルで、1 段畳む / 開くボタンを出す |
-   | Render Light | `L` | レンダリング / ライトテーマに切替 |
-   | Render Dark | `D` | レンダリング / ダークテーマに切替 |
+   | Light | `L` | レンダリング / ライトテーマに切替 |
+   | Dark | `D` | レンダリング / ダークテーマに切替 |
    | Reload | `R` | 表示中のファイルをディスクからリロード |
    | New Tab | `N` | 新しいタブで GRSMD を開く |
    | Edit | `E` | 編集パレットの表示 / 非表示。ブロックをクリック（タップ）すると、その場で Markdown を編集。コードビューでは、ファイル全体を編集 |
