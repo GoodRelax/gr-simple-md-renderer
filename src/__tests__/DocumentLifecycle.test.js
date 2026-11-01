@@ -313,15 +313,28 @@ describe("AT-DLC save (11-e, INV-33, INV-54)", () => {
     expect(documents.saveOperationState).toBe("idle");
   });
 
-  it("AT-DLC-20 canceled: no message, nothing applied", async () => {
+  it("AT-DLC-20 canceled: no message, nothing applied; the save dialog's AbortError passes the download offer on (INV-108)", async () => {
     const picker = Promise.reject(domError("AbortError"));
     picker.catch(() => {});
     const { access, documents } = setup({ picker });
     documents.startPasted("# P\n");
     const steps = fakeSteps(access.calls);
     await documents.save("saveAsRequested", steps);
-    expect(steps.onFinished).toHaveBeenCalledWith({ applied: false, message: null });
+    expect(steps.onFinished).toHaveBeenCalledWith({ applied: false, message: null, downloadOffer: { fileName: NAME, start: expect.any(Function) } });
     expect(documents.saveOperationState).toBe("idle");
+    expect(access.downloads).toEqual([]);
+    steps.onFinished.mock.calls[0][0].downloadOffer.start();
+    expect(access.downloads).toEqual([{ name: NAME, text: "# Saved\n" }]);
+  });
+
+  it("AT-DLC-24 (INV-108) the overwrite question answered No: canceled without a download offer", async () => {
+    const { access, documents } = setup({ lastModified: 5000 });
+    documents.openFile("# A\n", false, 1000, "doc.md", fakeFileHandle({ name: "doc.md" }));
+    const steps = fakeSteps(access.calls);
+    steps.confirmer.confirmOverwrite.mockResolvedValue(false);
+    await documents.save("saveRequested", steps);
+    expect(steps.confirmer.confirmOverwrite).toHaveBeenCalledTimes(1);
+    expect(steps.onFinished).toHaveBeenCalledWith({ applied: false, message: null });
   });
 
   it.each(["saved", "downloadStarted", "failed", "canceled"])("AT-DLC-21 finishSave(%s) in idle: null, nothing changes", (status) => {

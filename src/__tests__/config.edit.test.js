@@ -87,6 +87,15 @@ describe("CONFIG.edit text colors and invisible marks (INV-66, INV-70, 5.14.14)"
   });
 });
 
+describe("AT-CFG-15 (INV-108) the toast of a save dialog that ended with AbortError", () => {
+  it("holds the agreed English ASCII text and a toast long enough to press", () => {
+    expect(CONFIG.messages.edit.saveAborted).toBe("Not saved.");
+    expect(CONFIG.messages.edit.saveAbortedDownload).toBe("Download");
+    expect(CONFIG.edit.saveAbortedToastMs).toBe(10000);
+    expect(CONFIG.edit.saveAbortedToastMs).toBeGreaterThan(CONFIG.codeView.toastDurationMs);
+  });
+});
+
 describe("the dark text colors in style.css (INV-66, 5.14.14)", () => {
   const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../css/style.css"), "utf8");
   it.each(Object.entries(CONFIG.edit.textColors))("AT-CFG-08 %s: the light value shows as its dark pair", (_name, { light, dark }) => {

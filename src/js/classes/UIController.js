@@ -1,5 +1,5 @@
 import { CONFIG, FILE_SYSTEM_HANDLE_SUPPORTED } from "../config.js";
-import { applyTheme, applySystemTheme, systemTheme, showToast, nextFrame, shortcutLetter, isTypingTarget } from "../utils.js";
+import { applyTheme, applySystemTheme, systemTheme, showToast, showActionToast, isInActionToast, nextFrame, shortcutLetter, isTypingTarget } from "../utils.js";
 import { splitMarkdownWrapper, normalizeLineEndings, hasUtf8Bom } from "../textTransforms.js";
 import ModalController from "./ModalController.js";
 import MarkdownTextOps from "./MarkdownTextOps.js";
@@ -1629,6 +1629,23 @@ export default class UIController {
   }
 
   /**
+   * INV-108: the save dialog ended with AbortError (a cancel, or a save the
+   * browser did not write). The toast offers the same file as a download;
+   * its button press starts the download (INV-26: still unsaved).
+   * @purity non-pure
+   * @param {{fileName: string, start: () => void}} offer
+   */
+  _offerDownload(offer) {
+    const messages = CONFIG.messages.edit;
+    /** @purity non-pure */
+    const download = () => {
+      offer.start();
+      this._toast(messages.downloadStarted(offer.fileName));
+    };
+    showActionToast(messages.saveAborted, messages.saveAbortedDownload, download, CONFIG.edit.saveAbortedToastMs);
+  }
+
+  /**
    * GitHubHost (SC-28): what GitHubController asks of the document.
    * @purity non-pure
    * @returns {object}
@@ -1720,7 +1737,8 @@ export default class UIController {
         this._endClipboardWait(); // Esc, Clear, the code view (11-c hidePalette)
         this.orchestrator.keepReadingPosition(() => this.palette.hide());
       },
-      isPaletteNode: (node) => this.palette.contains(node),
+      // INV-108 (4): a press on the toast with [Download] is not outside either
+      isPaletteNode: (node) => this.palette.contains(node) || isInActionToast(node),
       isEditorChangedSinceRender: () => this._editorChangedSinceRender,
       renderFromEditor: () => this._renderFromEditorFirst(),
       // typing: the button states once per frame (INV-51)
@@ -1992,6 +2010,7 @@ export default class UIController {
   _codeEditHost() {
     return {
       toast: (message) => this._toast(message),
+      offerDownload: (offer) => this._offerDownload(offer), // INV-108
       confirmOverwrite: (reason) => this.confirmOverwrite(reason),
       /** @purity non-pure */
       codeFileSaved: (file, fileHandle, languageChanged) => {
@@ -2097,6 +2116,7 @@ export default class UIController {
       onFinished: (result) => {
         if (result.applied) this._refreshDirtyMark();
         if (result.message) this._toast(result.message);
+        if (result.downloadOffer) this._offerDownload(result.downloadOffer); // INV-108
       },
     };
   }

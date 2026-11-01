@@ -9,8 +9,11 @@ import DocumentLocation from "./DocumentLocation.js";
  * permissionOrPicker is the save-dialog promise, already started by the
  * caller inside the press handler (INV-33).
  *
- * SaveOutcome: { status, documentId, session, location, message }, where
- * status is "saved" | "downloadStarted" | "canceled" | "failed".
+ * SaveOutcome: { status, documentId, session, location, message,
+ * downloadOffer? }, where status is "saved" | "downloadStarted" | "canceled"
+ * | "failed". downloadOffer ({ fileName, start() }, INV-108) is set only
+ * when the save dialog ended with AbortError: start() downloads the file
+ * text of this save instead (call it inside a press, INV-33).
  */
 export default class SaveDocumentAs {
   /**
@@ -43,7 +46,15 @@ export default class SaveDocumentAs {
     try {
       handle = await request.permissionOrPicker;
     } catch (error) {
-      if (error?.name === "AbortError") return this.outcome(request, "canceled", null);
+      if (error?.name === "AbortError") {
+        // INV-108: a cancel and a save the browser did not write (Edge, R5)
+        // both end so; the caller offers the download either way
+        const text = request.session.toFileText(request.bodyText);
+        /** @purity non-pure */
+        const start = () => this.fileAccess.startDownload(name, text);
+        const downloadOffer = { fileName: name, start };
+        return { ...this.outcome(request, "canceled", null), downloadOffer };
+      }
       return this.outcome(request, "failed", this.failureMessage(error));
     }
 

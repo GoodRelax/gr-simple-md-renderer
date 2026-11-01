@@ -1501,6 +1501,25 @@ body.view-code.dark #editor {
   color: #ffffff;
 }
 
+/* INV-108: a toast with a button takes clicks (the container does not). */
+.toast-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+.toast-action-btn {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
 /* ========================================
    In-place Markdown editing (SC-22 to SC-24)
    body.edit-mode is set while the edit palette is shown (EditPalette).

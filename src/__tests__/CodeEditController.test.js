@@ -5,6 +5,7 @@ import { CONFIG } from "../js/config.js";
 import { encodeText } from "../js/textEncoding.js";
 import FileRefusal from "../js/classes/FileRefusal.js";
 import { fakeFileAccess, fakeFileHandle, domError, deferred } from "./helpers/fakeFs.js";
+import MarkdownFileAccess from "../js/classes/MarkdownFileAccess.js";
 
 // AT-CEC: the code document while the code view is shown (SC-27): opening
 // with the dialog (INV-89), Reload, Save / Save as (INV-90, NE-24, NE-19).
@@ -28,6 +29,7 @@ beforeEach(() => {
   dialog = { askOpen: vi.fn(async () => null), askSaveEncoding: vi.fn(async () => null), askSaveUtf8: vi.fn(async () => false) };
   host = {
     toast: vi.fn(),
+    offerDownload: vi.fn(),
     confirmOverwrite: vi.fn(async () => true),
     codeFileSaved: vi.fn(),
     reopenAsMarkdown: vi.fn(async () => {}),
@@ -218,7 +220,7 @@ describe("CodeEditController: Save (INV-90)", () => {
     expect(access.writes.map((w) => w.handle)).toEqual([picked, picked]);
   });
 
-  it("AT-CEC-15 Save as of a name without an extension offers all files only; a canceled dialog writes nothing and says nothing", async () => {
+  it("AT-CEC-15 Save as of a name without an extension offers all files only; a canceled dialog writes nothing and offers the download (INV-108)", async () => {
     access = fakeFileAccess({ get picker() { return Promise.reject(domError("AbortError")); } });
     ctrl = new CodeEditController(access, dialog, host);
     await open(utf8("all:\n"), { name: "Makefile" });
@@ -226,6 +228,8 @@ describe("CodeEditController: Save (INV-90)", () => {
     expect(access.pickerTypes).toEqual([[]]);
     expect(access.writes).toEqual([]);
     expect(host.toast).not.toHaveBeenCalled();
+    expect(host.offerDownload).toHaveBeenCalledTimes(1);
+    expect(host.offerDownload.mock.calls[0][0].fileName).toBe("Makefile");
   });
 
   it("AT-CEC-16 Save without a file handle opens the save dialog", async () => {
@@ -767,5 +771,81 @@ describe("CodeEditController: a .md name is written in UTF-8 (INV-90 (6); NE-30)
     expect(host.codeFileSaved.mock.calls[0][2]).toBe(true);
     await ctrl.save();
     expect(host.codeFileSaved.mock.calls[1][2]).toBe(false);
+  });
+});
+
+describe("CodeEditController: the save dialog ended with AbortError (INV-108)", () => {
+  it("AT-CEC-51 (INV-108) Save as: the offer downloads the encoded bytes under the file's name, only when pressed; nothing is remembered; still unsaved", async () => {
+    dialog.askOpen.mockResolvedValue({ encoding: "shift_jis", lineEndingMode: "\r\n" });
+    access = fakeFileAccess({ get picker() { return Promise.reject(domError("AbortError")); } });
+    ctrl = new CodeEditController(access, dialog, host);
+    await open(sjis(`${A}\r\n`), { name: "a.txt" });
+    ctrl.updateText(`${A}${A}\n`);
+    dialog.askSaveEncoding.mockResolvedValue("original");
+    await ctrl.saveAs();
+    expect(host.toast).not.toHaveBeenCalled();
+    expect(access.downloads).toEqual([]); // the toast's button starts it
+    const offer = host.offerDownload.mock.calls[0][0];
+    expect(offer.fileName).toBe("a.txt");
+    offer.start();
+    expect(access.calls.at(-1)).toBe("startDownload:a.txt");
+    expect(bytesOf(access.downloads[0].text)).toEqual(bytesOf(sjis(`${A}${A}\r\n`)));
+    expect(access.downloadTypes).toEqual(["application/octet-stream"]);
+    expect(ctrl.isDirty()).toBe(true);
+    // nothing remembered: Save asks the encoding question again
+    dialog.askSaveEncoding.mockClear();
+    await ctrl.save();
+    expect(dialog.askSaveEncoding).toHaveBeenCalledTimes(1);
+  });
+
+  it("AT-CEC-52 (INV-108) an AbortError from the write (not the dialog) is a failure: the toast saveFailed, no offer", async () => {
+    access = fakeFileAccess({ writeError: domError("AbortError") });
+    ctrl = new CodeEditController(access, dialog, host);
+    await open(utf8("a\n"));
+    ctrl.updateText("b\n");
+    await ctrl.saveAs();
+    expect(host.toast).toHaveBeenCalledWith(m.edit.saveFailed);
+    expect(host.offerDownload).not.toHaveBeenCalled();
+    expect(ctrl.isDirty()).toBe(true);
+  });
+
+  it("AT-CEC-53 (INV-108) Save in place: a permission request that ends with AbortError is a failure, no offer", async () => {
+    access = fakeFileAccess({ permission: Promise.reject(domError("AbortError")) });
+    ctrl = new CodeEditController(access, dialog, host);
+    await open(utf8("a\n"));
+    ctrl.updateText("b\n");
+    await ctrl.save();
+    expect(host.toast).toHaveBeenCalledWith(m.edit.saveFailed);
+    expect(host.offerDownload).not.toHaveBeenCalled();
+  });
+});
+
+describe("CodeEditController: review 1 of the save fixes (INV-108, INV-109)", () => {
+  it("AT-CEC-54 (INV-108) Save without a file handle: the save dialog's AbortError offers the download too", async () => {
+    access = fakeFileAccess({ get picker() { return Promise.reject(domError("AbortError")); } });
+    ctrl = new CodeEditController(access, dialog, host);
+    await open(utf8("a\n"), { handle: null });
+    ctrl.updateText("b\n");
+    await ctrl.save();
+    expect(access.calls[0]).toBe("startSavePicker:a.py");
+    expect(host.toast).not.toHaveBeenCalled();
+    expect(host.offerDownload).toHaveBeenCalledTimes(1);
+    const offer = host.offerDownload.mock.calls[0][0];
+    expect(offer.fileName).toBe("a.py");
+    offer.start();
+    expect(bytesOf(access.downloads[0].text)).toEqual(bytesOf(utf8("b\n")));
+    expect(ctrl.isDirty()).toBe(true);
+  });
+
+  it("AT-CEC-55 (INV-109) Save as through the real file access logs picker, createWritable, write and close with type=.py; no file name", async () => {
+    const lines = [];
+    const picked = fakeFileHandle({ name: "picked.py" });
+    const real = new MarkdownFileAccess({ showSaveFilePicker: async () => picked }, () => ({ now: () => 0, log: (line) => lines.push(line), userAgent: "", buildDate: "2026-11-01" }));
+    ctrl = new CodeEditController(real, dialog, host);
+    await open(utf8("a\n"), { name: "secret.py", handle: null });
+    ctrl.updateText("b\n");
+    await ctrl.saveAs();
+    expect(host.toast).toHaveBeenCalledWith(m.edit.saved("picked.py"));
+    expect(lines).toEqual(["picker", "createWritable", "write", "close"].map((step) => `GRSMD save: ${step} ok 0 ms id=yes startIn=no type=.py unknown build=2026-11-01`));
   });
 });

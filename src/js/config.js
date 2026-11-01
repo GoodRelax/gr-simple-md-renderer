@@ -288,6 +288,10 @@ export const CONFIG = {
       saveDenied: "Save not allowed. Your changes are kept.",
       saveNotFound: "Couldn't find the file. Use Save as.",
       saveActivationLost: "Save couldn't start. Press Save again.",
+      // INV-108: the save dialog ended with AbortError (a cancel, or a save
+      // the browser did not write); the toast offers a download
+      saveAborted: "Not saved.",
+      saveAbortedDownload: "Download",
       editorRenderedFirst: "Updated from the top box. Try again.", // INV-45: the pressed action did not run
       blockSplitFailed: "You'll edit this document as one block.",
       emptyEditorConfirm:
@@ -422,6 +426,7 @@ export const CONFIG = {
     // INV-79: the save dialog's id; the browser remembers its last folder
     // by this id (the app stores nothing)
     savePickerId: "grsmd-markdown",
+    saveAbortedToastMs: 10000, // INV-108: the toast with [Download] stays this long
     commitBudgetMs: 300, // performance target for 1 MB (INV-51), used by tests
     // A longer body is not written into the visible #editor on every commit,
     // undo or insert (laying out 1 MB of textarea text takes ~0.5 s in Chrome).

@@ -272,3 +272,193 @@ describe("MarkdownFileAccess for code files (INV-90)", () => {
     expect([...new Uint8Array(await blobs[0].arrayBuffer())]).toEqual([0x93, 0xfa, 0x0a]);
   });
 });
+
+/** A fake trace environment: a clock the test moves and the lines logged. */
+function traceEnv(userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.4314.58") {
+  const env = { t: 1000, lines: [] };
+  env.make = () => ({ now: () => env.t, log: (line) => env.lines.push(line), userAgent, buildDate: "2026-11-01" });
+  return env;
+}
+
+describe("MarkdownFileAccess: the save log (INV-109)", () => {
+  const TAIL = "Edg/156.0.4314.58 build=2026-11-01";
+
+  it("AT-FA-12 Save as: one line each for the save dialog, createWritable, write and close, timed from the press; ids and types without names", async () => {
+    const env = traceEnv();
+    const handle = fakeFileHandle({ name: "secret-notes.md" });
+    const picker = vi.fn(() => {
+      env.t += 400;
+      return Promise.resolve(handle);
+    });
+    const access = new MarkdownFileAccess({ showSaveFilePicker: picker }, env.make);
+    const chosen = await access.startSavePicker("secret-notes.md");
+    env.t += 12.4;
+    await access.writeFile(chosen, "# A\n");
+    expect(env.lines).toEqual([
+      `GRSMD save: picker ok 400 ms id=yes startIn=no type=.md ${TAIL}`,
+      `GRSMD save: createWritable ok 412 ms id=yes startIn=no type=.md ${TAIL}`,
+      `GRSMD save: write ok 412 ms id=yes startIn=no type=.md ${TAIL}`,
+      `GRSMD save: close ok 412 ms id=yes startIn=no type=.md ${TAIL}`,
+    ]);
+    // the next save dialog starts in that file's folder (INV-79): startIn=yes
+    await access.startSavePicker("x.md");
+    expect(env.lines.at(-1)).toBe(`GRSMD save: picker ok 400 ms id=yes startIn=yes type=.md ${TAIL}`);
+  });
+
+  it("AT-FA-13 the save dialog's AbortError: one fail line with the name and the message (the R5 example)", async () => {
+    const env = traceEnv();
+    const picker = () => {
+      env.t += 412;
+      return Promise.reject(domError("AbortError", "The user aborted a request."));
+    };
+    const access = new MarkdownFileAccess({ showSaveFilePicker: picker }, env.make);
+    await expect(access.startSavePicker("notes.md")).rejects.toMatchObject({ name: "AbortError" });
+    expect(env.lines).toEqual([`GRSMD save: picker fail AbortError "The user aborted a request." 412 ms id=yes startIn=no type=.md ${TAIL}`]);
+    // a synchronous throw logs the same way
+    const throwing = new MarkdownFileAccess({ showSaveFilePicker: () => { throw domError("SecurityError", "Must be handling a user gesture"); } }, env.make);
+    await expect(throwing.startSavePicker("notes.md", [])).rejects.toMatchObject({ name: "SecurityError" });
+    expect(env.lines.at(-1)).toBe(`GRSMD save: picker fail SecurityError "Must be handling a user gesture" 0 ms id=yes startIn=no type=none ${TAIL}`);
+  });
+
+  it("AT-FA-14 Save in place: the permission line (granted, another state, an error); no save dialog: id and startIn are -", async () => {
+    const env = traceEnv();
+    const access = new MarkdownFileAccess(window, env.make);
+    const granted = fakeFileHandle({ name: "a.py" });
+    await access.startPermissionRequest(granted);
+    await access.writeFile(granted, "x");
+    expect(env.lines).toEqual([
+      `GRSMD save: permission ok 0 ms id=- startIn=- type=.py ${TAIL}`,
+      `GRSMD save: createWritable ok 0 ms id=- startIn=- type=.py ${TAIL}`,
+      `GRSMD save: write ok 0 ms id=- startIn=- type=.py ${TAIL}`,
+      `GRSMD save: close ok 0 ms id=- startIn=- type=.py ${TAIL}`,
+    ]);
+    env.lines.length = 0;
+    await access.startPermissionRequest(fakeFileHandle({ name: "Makefile", permission: "denied" }));
+    const refused = Object.assign(new Error("denied"), { name: "NotAllowedError" }); // fakeFileHandle rejects an Error
+    await expect(access.startPermissionRequest(fakeFileHandle({ permission: refused }))).rejects.toBe(refused);
+    expect(env.lines).toEqual([
+      `GRSMD save: permission fail state=denied 0 ms id=- startIn=- type=none ${TAIL}`,
+      `GRSMD save: permission fail NotAllowedError "denied" 0 ms id=- startIn=- type=.md ${TAIL}`,
+    ]);
+    // no requestPermission (an older handle): no line
+    env.lines.length = 0;
+    await access.startPermissionRequest({ name: "a.md" });
+    expect(env.lines).toEqual([]);
+  });
+
+  it("AT-FA-15 a failed write logs the step that failed; the file names and paths in a message are replaced", async () => {
+    const env = traceEnv();
+    const handle = fakeFileHandle({ name: "diary.md", writeError: domError("InvalidStateError", "diary.md at C:\\Users\\me\\diary.md changed") });
+    const access = new MarkdownFileAccess({ showSaveFilePicker: () => Promise.resolve(handle) }, env.make);
+    await access.startSavePicker("untitled.md");
+    await expect(access.writeFile(handle, "x")).rejects.toMatchObject({ name: "InvalidStateError" });
+    expect(env.lines.map((l) => l.split(" ms ")[0])).toEqual([
+      "GRSMD save: picker ok 0",
+      "GRSMD save: createWritable ok 0",
+      `GRSMD save: write fail InvalidStateError "<hidden>" 0`, // a path in the message: hidden (INV-109 (4))
+    ]);
+    // the close step fails after the write: its own line
+    const closing = {
+      name: "c.md",
+      createWritable: async () => ({ write: async () => {}, close: async () => { throw domError("InvalidStateError", "c.md was closed"); }, abort: async () => {} }),
+    };
+    await access.startPermissionRequest(closing);
+    await expect(access.writeFile(closing, "x")).rejects.toMatchObject({ name: "InvalidStateError" });
+    expect(env.lines.slice(-3).map((l) => l.split(" ms ")[0])).toEqual([
+      "GRSMD save: createWritable ok 0",
+      "GRSMD save: write ok 0",
+      `GRSMD save: close fail InvalidStateError "<name> was closed" 0`,
+    ]);
+    const broken = { name: "b.md", createWritable: () => Promise.reject(domError("NoModificationAllowedError", "locked")) };
+    await expect(access.writeFile(broken, "x")).rejects.toBeTruthy();
+    expect(env.lines.at(-1)).toBe(`GRSMD save: createWritable fail NoModificationAllowedError "locked" 0 ms id=- startIn=- type=.md ${TAIL}`);
+    for (const line of env.lines) {
+      expect(line).not.toMatch(/diary|untitled|Users|me\\/);
+      expect(line).toMatch(/^[\x20-\x7e]+$/);
+    }
+  });
+
+  it("AT-FA-16 the log goes to the console only: console.info by default; nothing stored, nothing in the page", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const storedBefore = localStorage.length + sessionStorage.length;
+    const bodyBefore = document.body.innerHTML;
+    const handle = fakeFileHandle({ name: "a.md" });
+    const access = new MarkdownFileAccess({ showSaveFilePicker: () => Promise.resolve(handle) });
+    await access.writeFile(await access.startSavePicker("a.md"), "# A\n");
+    expect(info).toHaveBeenCalledTimes(4);
+    expect(info.mock.calls.every(([line]) => line.startsWith("GRSMD save: "))).toBe(true);
+    expect(info.mock.calls[0][0]).toMatch(/ build=unknown$/); // the tests have no stamped help
+    expect(localStorage.length + sessionStorage.length).toBe(storedBefore);
+    expect(document.body.innerHTML).toBe(bodyBefore);
+  });
+});
+
+describe("MarkdownFileAccess: the save log never changes the save (INV-109 (5)(6), review 1)", () => {
+  it("AT-FA-17 (INV-109 (6)) a console that throws, or a trace that cannot be made: the save dialog, the permission and the write still succeed", async () => {
+    for (const make of [
+      () => ({ now: () => 0, log: () => { throw new Error("console replaced"); }, userAgent: "", buildDate: "x" }),
+      () => { throw new Error("no environment"); },
+    ]) {
+      const handle = fakeFileHandle({ name: "a.md", lastModified: 1000 });
+      const access = new MarkdownFileAccess({ showSaveFilePicker: () => Promise.resolve(handle) }, make);
+      const chosen = await access.startSavePicker("a.md");
+      expect(chosen).toBe(handle);
+      await expect(access.writeFile(chosen, "# A\n")).resolves.toBe(2000);
+      expect(handle.state.written).toEqual(["# A\n"]);
+      await expect(access.startPermissionRequest(handle)).resolves.toBe("granted");
+      await expect(access.writeFile(handle, "# B\n")).resolves.toBe(3000);
+    }
+  });
+
+  it("AT-FA-17 (INV-109 (6)) Save as through the real file access is saved while the console throws", async () => {
+    const { default: SaveDocumentAs } = await import("../js/classes/SaveDocumentAs.js");
+    const { default: DocumentSession } = await import("../js/classes/DocumentSession.js");
+    const { default: DocumentLocation } = await import("../js/classes/DocumentLocation.js");
+    const handle = fakeFileHandle({ name: "chosen.md" });
+    const make = () => ({ now: () => 0, log: () => { throw new Error("console replaced"); }, userAgent: "", buildDate: "x" });
+    const access = new MarkdownFileAccess({ showSaveFilePicker: () => Promise.resolve(handle) }, make);
+    const saveAs = new SaveDocumentAs(access, CONFIG.messages.edit, CONFIG.edit.defaultFileName);
+    const out = await saveAs.execute({
+      session: DocumentSession.fromPastedText("# P\n", 1),
+      location: new DocumentLocation(CONFIG.edit.defaultFileName, null),
+      bodyText: "# P\n",
+      permissionOrPicker: access.startSavePicker(CONFIG.edit.defaultFileName),
+      confirmer: { confirmOverwrite: async () => true },
+    });
+    expect(out.status).toBe("saved");
+    expect(handle.state.written).toEqual(["# P\n"]);
+  });
+
+  it("AT-FA-18 (INV-109 (5)) a new start replaces the trace a save left on the handle (no write: the overwrite No, a denied permission)", async () => {
+    const env = traceEnv();
+    const access = new MarkdownFileAccess(window, env.make);
+    const handle = fakeFileHandle({ name: "a.md" });
+    await access.startPermissionRequest(handle); // t = 1000; the save ends without a write
+    env.t = 1500;
+    await access.startPermissionRequest(handle); // the next save starts here
+    env.t = 1600;
+    await access.writeFile(handle, "x");
+    expect(env.lines.slice(-3).map((l) => l.split(" id=")[0])).toEqual([
+      "GRSMD save: createWritable ok 100 ms",
+      "GRSMD save: write ok 100 ms",
+      "GRSMD save: close ok 100 ms",
+    ]);
+  });
+
+  it("AT-FA-19 (INV-109 (4)) the save dialog's other names stay out of the log; bad arguments still reject, not throw (review 1, finding 4)", async () => {
+    const env = traceEnv();
+    const picker = () => Promise.reject(domError("AbortError", "a.py and a.txt are open"));
+    const access = new MarkdownFileAccess({ showSaveFilePicker: picker }, env.make);
+    await expect(access.startSavePicker("a.txt", [], ["a.py"])).rejects.toMatchObject({ name: "AbortError" });
+    expect(env.lines.at(-1)).toContain('picker fail AbortError "<name> and <name> are open"');
+    let started;
+    expect(() => {
+      started = access.startSavePicker("a.md", null);
+    }).not.toThrow();
+    await expect(started).rejects.toBeInstanceOf(TypeError);
+    expect(() => {
+      started = access.startPermissionRequest(null);
+    }).not.toThrow();
+    await expect(started).rejects.toBeInstanceOf(TypeError);
+  });
+});
