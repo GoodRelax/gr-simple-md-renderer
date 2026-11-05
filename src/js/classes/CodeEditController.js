@@ -453,7 +453,7 @@ export default class CodeEditController {
    */
   _editorHost() {
     return {
-      highlight: (text) => this._highlight(text, this.language()),
+      highlight: (text, language) => this._highlight(text, language ?? this.language()),
       canFold: () => this.isJson(),
       onFold: (direction) => this.fold(direction),
       /** @purity non-pure */

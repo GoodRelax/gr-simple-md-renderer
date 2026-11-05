@@ -267,53 +267,211 @@ test("INV-87 (1), INV-88 (N1): Tab, Shift+Tab, Undo and Redo in a 300 KB file wr
   expect(result).toEqual({ same: true, valueWrites: 0, parts: [[d, l], [l, d], [d, l], [l, d], [d, l]], inputs: 0 });
 });
 
-test("INV-86 (M1): typing in a 40 KB file (colored) writes neither the layer nor the gutter on a key; when typing stops both follow and the textarea is unscrolled and as large as its text", async ({ page }) => {
+/**
+ * Watch each input event of the editor: right after the app's handler, the
+ * look of the editor (the layer shown, the textarea's text transparent,
+ * the layer's text the textarea's) and the DOM writes that handler made on
+ * the layer and the gutter. The capture phase drops the records of the
+ * pause; the bubble phase takes the key's: those still queued and those
+ * delivered in between (after a listener of a key's own input event the
+ * microtasks run, so the observer's callback gets them first).
+ * @param {import("@playwright/test").Page} page
+ */
+async function watchKeys(page) {
+  await page.evaluate(() => {
+    const ta = document.querySelector("#codeEditBody textarea");
+    const layer = document.querySelector("#codeEditBody .code-edit-layer");
+    const gutter = document.querySelector("#codeEditBody .code-edit-gutter");
+    window.__unwatch?.(); // the editor of an earlier edit mode
+    let delivered = [];
+    const observer = new MutationObserver((records) => delivered.push(...records));
+    observer.observe(layer, { childList: true, characterData: true, subtree: true });
+    observer.observe(gutter, { childList: true, characterData: true, subtree: true });
+    window.__keys = [];
+    const skip = () => {
+      observer.takeRecords();
+      delivered = [];
+    };
+    const look = () => {
+      const records = [...delivered, ...observer.takeRecords()];
+      delivered = [];
+      // the places written: a block of lines, or the layer's <code> for blocks added or removed
+      const places = new Set(records.map((r) => (r.target.nodeType === 1 ? r.target : r.target.parentElement).closest(".code-edit-block") ?? r.target));
+      window.__keys.push({
+        layerShown: getComputedStyle(layer).visibility === "visible",
+        textTransparent: getComputedStyle(ta).color === "rgba(0, 0, 0, 0)",
+        layerHoldsText: layer.textContent === ta.value + "\n",
+        gutterWrites: records.filter((r) => gutter.contains(r.target)).length,
+        placesWritten: [...places].filter((el) => layer.contains(el)).length,
+      });
+    };
+    // a line of the layer as HTML (a block holds lines, each closed at its line feed):
+    // the line at a 0-based index, or the first line whose text holds a needle
+    const layerLines = () => [...layer.querySelectorAll(".code-edit-block")].flatMap((block) => block.innerHTML.split("\n").slice(0, -1));
+    const textOf = (html) => new DOMParser().parseFromString(html, "text/html").body.textContent;
+    window.__layerLineAt = (index) => layerLines()[index] ?? null;
+    window.__layerLine = (needle) => layerLines().find((html) => textOf(html).includes(needle)) ?? null;
+    window.addEventListener("input", skip, { capture: true });
+    window.addEventListener("input", look);
+    window.__unwatch = () => {
+      window.removeEventListener("input", skip, { capture: true });
+      window.removeEventListener("input", look);
+      observer.disconnect();
+    };
+  });
+}
+
+test("INV-86 (BI-26): typing in a 40 KB file (colored), dark and light: on every key the layer stays shown, the textarea's text stays transparent and the layer holds the text (the typed text colored at once); a key writes one or two lines of the layer and never the gutter; when typing stops the gutter follows and the textarea is unscrolled and as large as its text", async ({ page }) => {
   await page.goto("/");
   const line = "const value = 1234567890; // a line of a big file\n";
   await drop(page, "big.js", line.repeat(Math.ceil((40 * 1024) / line.length)));
+  for (const theme of ["dark", "light"]) {
+    if (theme === "light") await page.keyboard.press("l");
+    if (theme === "dark") await expect(page.locator("body")).toHaveClass(/\bdark\b/);
+    else await expect(page.locator("body")).not.toHaveClass(/\bdark\b/);
+    await page.keyboard.press("e");
+    await expect(editor(page)).toBeFocused();
+    await watchKeys(page);
+    await page.evaluate(() => {
+      const ta = document.querySelector("#codeEditBody textarea");
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    });
+    // keys within one pause and keys each after a pause: the flicker came at each key after a pause
+    const [name, digit] = theme === "dark" ? ["z", "5"] : ["w", "7"];
+    await page.keyboard.type(`const ${name} = ${digit};`, { delay: 0 });
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Enter");
+    await page.keyboard.type("let y", { delay: 300 });
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Backspace");
+    const keys = await page.evaluate(() => window.__keys);
+    expect(keys).toHaveLength(21); // 12 + 2 Enter + 5 + 2 Backspace
+    for (const key of keys) {
+      expect(key).toEqual({ layerShown: true, textTransparent: true, layerHoldsText: true, gutterWrites: 0, placesWritten: key.placesWritten });
+      expect(key.placesWritten).toBeGreaterThanOrEqual(1);
+      expect(key.placesWritten).toBeLessThanOrEqual(2);
+    }
+    // the typed line is colored (highlight.js tokens)
+    const typed = await page.evaluate((needle) => window.__layerLine(needle), `const ${name} = ${digit};`);
+    expect(typed).toContain('<span class="hljs-keyword">const</span>');
+    expect(typed).toContain(`<span class="hljs-number">${digit}</span>`);
+    await expect(page.locator("#codeEditBody")).not.toHaveClass(/code-edit-typing/);
+    // after the pause: the gutter has the new lines
+    const lines = await editor(page).evaluate((ta) => ta.value.split("\n").length);
+    await expect.poll(() => page.evaluate(() => document.querySelector("#codeEditBody .code-edit-gutter").textContent.split("\n").length)).toBe(lines);
+    const after = await editor(page).evaluate((ta) => {
+      // the layer's blocks (block boxes) give each line its height, the last empty line too
+      const layer = document.querySelector("#codeEditBody .code-edit-layer");
+      const lineHeight = parseFloat(getComputedStyle(layer).lineHeight);
+      const lines = ta.value.split("\n").length;
+      return {
+        unscrolled: ta.scrollTop === 0 && ta.scrollLeft === 0,
+        fits: ta.scrollHeight <= ta.clientHeight + 1,
+        // a line is laid out in 1/64 px steps (20.796875 px for 20.8 px)
+        layerHeight: Math.abs(layer.getBoundingClientRect().height - (lines * lineHeight + 8 + 36)) <= 1 + lines / 64,
+      };
+    });
+    expect(after).toEqual({ unscrolled: true, fits: true, layerHeight: true });
+    await page.keyboard.press("Enter"); // the next round types on a line of its own
+    await page.keyboard.press("Escape"); // the focus leaves the textarea
+    await page.keyboard.press("e"); // edit mode ends: the view again
+    await expect(page.locator("#codeEditBody")).toHaveCount(0);
+  }
+});
+
+test("INV-86 (c) (BI-26): IME composition in a colored file: the composition's text shows on the layer at once, underlined (a CSS highlight), its line colored whole; the layer stays shown; the underline goes when it is committed", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "IME composition is driven through the Chromium DevTools protocol");
+  await page.goto("/");
+  await drop(page, "data.json", JSON_TEXT);
   await page.keyboard.press("e");
   await expect(editor(page)).toBeFocused();
-  // count the DOM writes of the layer and the gutter; a write seen while the
-  // typing class is still on came from a key (the pause writes and takes the
-  // class off in one task), so a pause that fires between two keys of a
-  // loaded machine does not count (no timing in the check)
   await page.evaluate(() => {
-    window.__writes = 0;
-    window.__keyWrites = 0;
-    window.__inputs = [];
-    const root = document.querySelector("#codeEditBody");
-    const observer = new MutationObserver((records) => {
-      window.__writes += records.length;
-      if (root.classList.contains("code-edit-typing")) window.__keyWrites += records.length;
+    const ta = document.querySelector("#codeEditBody textarea");
+    const at = ta.value.indexOf("2");
+    ta.setSelectionRange(at, at);
+  });
+  await watchKeys(page);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Input.imeSetComposition", { text: "\u3042", selectionStart: 1, selectionEnd: 1 });
+  await cdp.send("Input.imeSetComposition", { text: "\u3042\u3044", selectionStart: 2, selectionEnd: 2 });
+  const underlined = () => page.evaluate(() => CSS.highlights.get("grsmd-code-composing")?.values().next().value?.toString() ?? null);
+  await expect.poll(underlined).toBe("\u3042\u3044");
+  // the line holding the composition is colored as one line (its key keeps its color)
+  const line = () => page.evaluate(() => window.__layerLine("\u3042\u30442"));
+  expect(await line()).toContain('<span class="hljs-attr">');
+  await cdp.send("Input.insertText", { text: "\u3042\u3044" });
+  await expect(editor(page)).toHaveValue(JSON_TEXT.replace("2", "\u3042\u30442"));
+  await expect.poll(underlined).toBeNull();
+  const keys = await page.evaluate(() => window.__keys);
+  expect(keys.length).toBeGreaterThanOrEqual(2);
+  for (const key of keys) expect([key.layerShown, key.textTransparent, key.layerHoldsText, key.gutterWrites]).toEqual([true, true, true, 0]);
+  expect(await line()).toContain('<span class="hljs-attr">');
+});
+
+for (const [name, text] of [
+  ["page.html", "<!doctype html>\n<script>\nconst a = 1;\nlet b = 2;\n</script>\n<style>\nbody { color: red; }\np { margin: 0; }\n</style>\n"],
+  ["comp.vue", "<template>\n  <p>x</p>\n</template>\n<script>\nconst a = 1;\nlet b = 2;\n</script>\n<style>\nbody { color: red; }\np { margin: 0; }\n</style>\n"],
+  ["comp.svelte", "<script>\nconst a = 1;\nlet b = 2;\n</script>\n<p>x</p>\n<style>\nbody { color: red; }\np { margin: 0; }\n</style>\n"],
+]) {
+  test(`INV-86 (b) (BI-26): ${name}: typing in the <script> and the <style> (highlight.js sub-languages over lines) keeps the line colored on every key, each key after a pause`, async ({ page }) => {
+    await page.goto("/");
+    await drop(page, name, text);
+    await page.keyboard.press("e");
+    await expect(editor(page)).toBeFocused();
+    await watchKeys(page);
+    // after each key's own handler: the typed line still has highlight.js tokens
+    await page.evaluate(() => {
+      window.__colored = [];
+      window.__line = -1;
+      window.addEventListener("input", () => window.__colored.push(/class="hljs-/.test(window.__layerLineAt(window.__line) ?? "")));
     });
-    for (const el of document.querySelectorAll("#codeEditBody .code-edit-gutter, #codeEditBody .code-edit-layer")) {
-      observer.observe(el, { childList: true, characterData: true, subtree: true });
+    for (const [after, typed, token] of [
+      ["let b", "c", "hljs-keyword"],
+      ["body { color", "x", "hljs-selector-tag"],
+    ]) {
+      await editor(page).evaluate((ta, at) => {
+        const end = ta.value.indexOf(at) + at.length;
+        ta.setSelectionRange(end, end);
+        window.__line = ta.value.slice(0, end).split("\n").length - 1;
+      }, after);
+      await page.keyboard.type(typed.repeat(3), { delay: 300 });
+      const line = await page.evaluate((needle) => window.__layerLine(needle), after + typed.repeat(3));
+      expect(line).toContain(`class="${token}"`);
     }
-    window.__observer = observer;
-    const ta = document.querySelector("#codeEditBody textarea");
-    // after the app's own input handler: the typing look is on at each key
-    ta.addEventListener("input", () => window.__inputs.push(root.classList.contains("code-edit-typing")));
-    ta.setSelectionRange(ta.value.length, ta.value.length);
+    const look = await page.evaluate(() => ({ keys: window.__keys, colored: window.__colored }));
+    expect(look.colored).toEqual(Array(6).fill(true));
+    for (const key of look.keys) expect([key.layerShown, key.textTransparent, key.layerHoldsText, key.gutterWrites]).toEqual([true, true, true, 0]);
   });
-  // within one pause: every key comes before highlightPauseMs (0.2 s) after the last
-  await page.keyboard.type("x = 1;", { delay: 0 });
-  await page.keyboard.press("Enter");
-  await page.keyboard.press("Enter");
-  await page.keyboard.type("y = 2;", { delay: 0 });
-  const during = await page.evaluate(() => ({ keyWrites: window.__keyWrites, inputs: window.__inputs }));
-  expect(during).toEqual({ keyWrites: 0, inputs: Array(14).fill(true) });
-  // after the pause: the gutter has the two new lines
-  await expect(page.locator("#codeEditBody")).not.toHaveClass(/code-edit-typing/);
-  const after = await page.evaluate(() => {
+}
+
+test("INV-86 (b) (BI-26): a one-line JSON of 20 KB (over typedColorMaxChars): each key writes its characters, Enter and Backspace over a line feed too, into the line's colored text in its own handler (colored on the screen at once, never plain), each key after a pause; the pause colors it again", async ({ page }) => {
+  await page.goto("/");
+  const items = Array.from({ length: 1000 }, (_, i) => `{"id":${i},"name":"item${i}"}`);
+  await drop(page, "min.json", `[${items.join(",")}]`);
+  await page.keyboard.press("e");
+  await expect(editor(page)).toBeFocused();
+  await watchKeys(page);
+  await page.evaluate(() => {
     const ta = document.querySelector("#codeEditBody textarea");
-    const gutter = document.querySelector("#codeEditBody .code-edit-gutter").textContent;
-    return {
-      writes: window.__writes > 0,
-      lastNumber: Number(gutter.slice(gutter.lastIndexOf("\n") + 1)),
-      lines: ta.value.split("\n").length,
-      unscrolled: ta.scrollTop === 0 && ta.scrollLeft === 0,
-      fits: ta.scrollHeight <= ta.clientHeight + 1,
-    };
+    const at = ta.value.indexOf('"item500"') + 5;
+    ta.setSelectionRange(at, at);
+    window.__colored = [];
+    // right after the key's own handler: the names still colored, the typed letters among them
+    window.addEventListener("input", () => {
+      const layer = document.querySelector("#codeEditBody .code-edit-layer");
+      window.__colored.push(layer.querySelectorAll(".hljs-string").length >= 1000);
+    });
   });
-  expect(after).toEqual({ writes: true, lastNumber: after.lines, lines: after.lines, unscrolled: true, fits: true });
+  await page.keyboard.type("abc", { delay: 300 });
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(300);
+  await page.keyboard.press("Backspace");
+  await page.waitForTimeout(300);
+  await expect(editor(page)).toHaveValue(/"itemabc500"/);
+  expect(await page.evaluate(() => window.__colored)).toEqual(Array(5).fill(true));
+  const keys = await page.evaluate(() => window.__keys);
+  expect(keys).toHaveLength(5);
+  for (const key of keys) expect(key).toEqual({ layerShown: true, textTransparent: true, layerHoldsText: true, gutterWrites: 0, placesWritten: 1 });
+  // after the pause: the typed name colored as one string
+  await expect.poll(() => page.evaluate(() => [...document.querySelectorAll("#codeEditBody .hljs-string")].some((el) => el.textContent === '"itemabc500"'))).toBe(true);
 });

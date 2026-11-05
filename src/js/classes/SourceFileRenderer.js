@@ -29,6 +29,44 @@ export function releaseCodeView(previewEl) {
   body.remove();
 }
 
+// the pieces of highlight.js output that matter for cutting it into lines
+const LINE_CUT = /<span[^>]*>|<\/span>|\n/g;
+
+/**
+ * Highlighted HTML (highlight.js output: spans and escaped text) cut into
+ * lines: each line closes the spans still open at its end and opens again
+ * those open at its start, so one line can be shown or written alone (the
+ * code view's lines and the code editor's layer, INV-86).
+ * @purity pure
+ * @param {string} html
+ * @returns {{lines: string[], carried: string[]}} carried: the tags open at each line's start
+ */
+export function splitHighlightedLines(html) {
+  const lines = [];
+  const carried = [];
+  const open = [];
+  let opened = "";
+  let line = "";
+  let last = 0;
+  for (const cut of html.matchAll(LINE_CUT)) {
+    line += html.slice(last, cut.index);
+    last = cut.index + cut[0].length;
+    if (cut[0] === "\n") {
+      lines.push(line + "</span>".repeat(open.length));
+      carried.push(opened);
+      opened = open.join("");
+      line = opened;
+    } else {
+      if (cut[0] === "</span>") open.pop();
+      else open.push(cut[0]);
+      line += cut[0];
+    }
+  }
+  lines.push(line + html.slice(last) + "</span>".repeat(open.length));
+  carried.push(opened);
+  return { lines, carried };
+}
+
 /**
  * Renders non-.md files with syntax highlighting and line numbers.
  * Owns: code body only. UI chrome (fileInfo, keyHint) is managed by UIController.
@@ -344,32 +382,7 @@ export default class SourceFileRenderer {
    * @purity pure
    */
   _splitHighlightedLines(html) {
-    const rawLines = html.split("\n");
-    const result = [];
-    let openSpans = []; // stack of open <span ...> strings
-
-    for (const rawLine of rawLines) {
-      // Prepend any spans still open from the previous line
-      const prefix = openSpans.join("");
-
-      // Update the open-span stack for this line
-      const tagRe = /<span[^>]*>|<\/span>/g;
-      let m;
-      while ((m = tagRe.exec(rawLine)) !== null) {
-        if (m[0].startsWith("</")) {
-          openSpans.pop();
-        } else {
-          openSpans.push(m[0]);
-        }
-      }
-
-      // Close all currently open spans at end of line
-      const suffix = openSpans.map(() => "</span>").join("");
-
-      result.push(prefix + rawLine + suffix);
-    }
-
-    return result;
+    return splitHighlightedLines(html).lines;
   }
 
   /**
