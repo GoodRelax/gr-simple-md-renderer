@@ -663,10 +663,10 @@ describe("CodeEditController: edit mode (INV-85, INV-88) and the JSON fold (INV-
     ctrl = new CodeEditController(access, dialog, host, { createEditor: (h) => new CodeEditor(preview, h), highlight, now: () => 0 });
     await open(utf8("x = 1\n"), { name: "notes.txt" });
     ctrl.toggleEdit();
-    expect(preview.querySelector(".code-edit-layer code").innerHTML).toBe("x = 1\n\n");
+    expect(preview.querySelector(".code-edit-layer code").innerHTML).toBe('<span class="code-edit-block">x = 1\n\n</span>');
     await ctrl.saveAs();
     expect(highlight).toHaveBeenLastCalledWith("x = 1\n", "python");
-    expect(preview.querySelector(".code-edit-layer code").innerHTML).toBe('<span class="py">x = 1\n</span>\n');
+    expect(preview.querySelector(".code-edit-layer code").innerHTML).toBe('<span class="code-edit-block"><span class="py">x = 1</span>\n<span class="py"></span>\n</span>');
   });
 
   it("AT-CEC-46 INV-88 (5): the Undo history stays after a Save; an Undo then makes the document unsaved again", async () => {

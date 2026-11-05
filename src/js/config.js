@@ -400,6 +400,17 @@ export const CONFIG = {
     // recolor when typing stops, measured back to back in WebKit, takes about 43 ms (JS) and
     // 90 ms to the next frame at 48 KB; at 96 KB it took 83 to 186 ms (JS), over 100 ms
     highlightMaxChars: 48 * 1024,
+    // INV-86 (b) (BI-26): the lines an edit touched, up to this many characters in all, are
+    // colored in the key's own handler; in longer lines the characters, line feeds too, go into
+    // their colored text (no highlight.js; the pause colors them) (spec 5.19.12)
+    typedColorMaxChars: 2 * 1024,
+    // INV-86 (a): lines a block of the layer holds. WebKit takes time growing with the
+    // siblings to change one element (about 9 ms among 16,000), so the layer holds blocks,
+    // not one element a line (spec 5.19.12)
+    layerBlockLines: 64,
+    // INV-86 (b): a line inside one of these highlight.js scopes (open at its start) keeps
+    // that scope's color while typed; inside any other span it is colored by highlight.js
+    textScopeClasses: ["hljs-comment", "hljs-string", "hljs-quote", "hljs-doctag", "hljs-regexp", "hljs-meta-string"],
     undoPauseMs: 1000, // INV-88: a typing step ends after this long without typing
     defaultIndent: "    ", // INV-87: the indent unit when the file shows none
     sampleLines: 5, // INV-89: lines shown in the open dialog's preview

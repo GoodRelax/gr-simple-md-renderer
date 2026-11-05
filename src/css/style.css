@@ -1251,8 +1251,10 @@ body.dark #keyHint {
    No wrapping; the textarea is as large as its text and never scrolls
    itself (#preview scrolls, as in the view). The first line is where
    the view's first line is (the same top padding and line height).
-   While typing (.code-edit-typing) the textarea's text shows and the
-   layer, written again when typing stops, is hidden (G10).
+   A key writes again the layer's blocks of lines it touched,
+   so the layer stays shown while typing (BI-26). Only when the layer cannot
+   follow (.code-edit-typing: the text grew over the plain limit) does the
+   textarea's text show and the layer hide until typing stops.
    ============================================================ */
 #codeEditBody {
   display: flex;
@@ -1316,6 +1318,12 @@ body.dark #keyHint {
   color: inherit;
 }
 
+/* A block of lines (INV-86 (a)): a block box, so WebKit lays out only the
+   block a key writes (inline blocks: about 12 ms a key among 32,000 spans) */
+.code-edit-block {
+  display: block;
+}
+
 .code-edit-input {
   position: absolute;
   top: 0;
@@ -1334,7 +1342,13 @@ body.dark #keyHint {
   background: rgba(9, 105, 218, 0.3);
 }
 
-/* Plain, or typed since the layer was written (INV-86): the textarea's
+/* The IME composition's text on the layer (a CSS highlight): the
+   textarea's own mark is transparent with its text (INV-86 (c)) */
+::highlight(grsmd-code-composing) {
+  text-decoration: underline;
+}
+
+/* Plain, or the layer could not follow an edit (INV-86): the textarea's
    own text shows; the layer is hidden on the screen. */
 .code-edit-plain .code-edit-input,
 .code-edit-typing .code-edit-input {

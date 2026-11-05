@@ -17,6 +17,8 @@ const MAX_MARKS = 100;
 /** The names of the CSS highlights (style.css ::highlight): the other places, and the current one. */
 const HIGHLIGHT = "grsmd-search";
 const HIGHLIGHT_CURRENT = "grsmd-search-current";
+/** Both names, for the code editor (it takes the marks away from text it writes into, INV-86 (b)). */
+export const SEARCH_HIGHLIGHTS = Object.freeze([HIGHLIGHT, HIGHLIGHT_CURRENT]);
 /** Typing moves the view to the first match when it stops for this long (G10: a key costs little). */
 export const TYPING_PAUSE_MS = 150;
 /** A regular expression is searched when typing stops for this long (owner ruling S13). */
@@ -449,9 +451,11 @@ export default class DocumentSearch {
     editor.select(match.index, end);
     const range = editor.rangeOf(match.index, end);
     if (range && typeof Highlight === "function") CSS.highlights.set(HIGHLIGHT_CURRENT, new Highlight(range));
-    // sideways: the colored piece holding the match (a long line)
+    // sideways: the colored piece holding the match (a long line), not a block of lines
     const piece = range?.startContainer.parentElement;
-    if (piece?.tagName === "SPAN") piece.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    if (piece?.tagName === "SPAN" && !piece.classList.contains("code-edit-block")) {
+      piece.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    }
     const place = editor.placeOf(match.index);
     if (!place) return;
     const shown = window.innerHeight - this.scrollMemento.shownTop();
