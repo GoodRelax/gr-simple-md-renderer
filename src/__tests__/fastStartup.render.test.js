@@ -276,7 +276,7 @@ describe("rendering with libraries that run on demand (INV-81 (3), spec 5.17.3)"
     const model = { links: {}, getBlocks: () => [block] };
     markdownRenderer.renderBlocks(model);
     expect(count(preview, `.${MATH_PENDING_CLASS}`)).toBe(1);
-    markdownRenderer.markWrittenInPlace(block, {});
+    markdownRenderer.markWrittenInPlace(block, model.links);
     markdownRenderer.useLibrary("katex", katex);
     const replaced = markdownRenderer.replaceBlocks(model, model);
     expect(replaced).toHaveLength(1);

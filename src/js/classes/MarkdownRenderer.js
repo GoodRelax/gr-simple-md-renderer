@@ -30,19 +30,30 @@ const NO_HIDDEN_MARKS =
   "code.language-mermaid, code.language-plantuml, code.language-puml, .mermaid, .plantuml-loading, " +
   ".plantuml-pending, .plantuml-wrapper, .plantuml-error, .katex, .math-pending, svg, .external-image-placeholder";
 
+// A model's links object -> its number in the HTML cache keys (never reused).
+const LINKS_IDS = new WeakMap();
+let nextLinksId = 1;
+
 /**
- * A stable text for the reference link definitions of a model; part of the
- * HTML cache key, so a changed definition re-renders the blocks (INV-42).
- * @purity pure
- * @param {object} links
+ * The number of a model's reference link definitions, given on first sight;
+ * part of the HTML cache key, so a changed definition re-renders the blocks
+ * (INV-42). links is always MarkdownBlockModel.links: it never changes
+ * (freezeLinks) and stays the same object while the definitions do
+ * (sameLinks), so the number stands for them. Every block carries it in its
+ * key: a whole definition there costs memory of blocks x definition length
+ * (spec 5.14.3).
+ * @purity non-pure
+ * @param {object} [links] - MarkdownBlockModel.links; none means no definitions
  * @returns {string}
  */
-function linksSignature(links) {
-  return JSON.stringify(
-    Object.keys(links || {})
-      .sort()
-      .map((k) => [k, links[k]?.href ?? "", links[k]?.title ?? ""]),
-  );
+function assignLinksId(links) {
+  if (!links) return "#0";
+  let id = LINKS_IDS.get(links);
+  if (id === undefined) {
+    id = nextLinksId++;
+    LINKS_IDS.set(links, id);
+  }
+  return `#${id}`;
 }
 
 export default class MarkdownRenderer {
@@ -290,7 +301,7 @@ export default class MarkdownRenderer {
   renderBlocks(model) {
     this._forgetBlocks();
     this._bodyStartsWithBom = model.toBody?.().charCodeAt(0) === 0xfeff; // a model made in a test may have no body
-    const signature = linksSignature(model.links);
+    const signature = assignLinksId(model.links);
     const elements = model
       .getBlocks()
       .map((block) => this._createWrapper(block, this._cachedHtml(block, model.links, signature)));
@@ -318,7 +329,7 @@ export default class MarkdownRenderer {
   replaceBlocks(renderedModel, currentModel, keepBlockId = null) {
     void renderedModel; // the wrappers on screen are tracked by id
     this._bodyStartsWithBom = currentModel.toBody?.().charCodeAt(0) === 0xfeff;
-    const signature = linksSignature(currentModel.links);
+    const signature = assignLinksId(currentModel.links);
     const replaced = [];
     const order = [];
     const keep = new Set();
@@ -537,7 +548,7 @@ export default class MarkdownRenderer {
     if (count > this._mathCountAtWrite) this._mathPendingWritten.add(block.id);
     this._mathCountAtWrite = count;
     if (!this._wrapperById.has(block.id)) return;
-    this._writtenKeys.set(block.id, `${block.raw}\u0000${linksSignature(links)}`);
+    this._writtenKeys.set(block.id, `${block.raw}\u0000${assignLinksId(links)}`);
     this._staleIds.delete(block.id);
   }
 
@@ -550,7 +561,7 @@ export default class MarkdownRenderer {
    * @returns {string}
    */
   cachedBlockHtml(block, links) {
-    return this._cachedHtml(block, links, linksSignature(links));
+    return this._cachedHtml(block, links, assignLinksId(links));
   }
 
   /**
