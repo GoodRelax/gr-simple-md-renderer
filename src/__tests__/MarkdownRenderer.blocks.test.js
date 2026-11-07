@@ -160,6 +160,114 @@ describe("MarkdownRenderer.renderBlocks / replaceBlocks (real marked, DOMPurify,
     expect(a2.querySelector("a").getAttribute("href")).toBe("https://example.com/y");
   });
 
+  it("AT-MR-24 the same definitions keep the cache: an edit elsewhere, and an Undo, keep the links object, and only the changed block is made", () => {
+    const m1 = model("[a]: https://example.com/a\n\nsee [a]\n\nB\n\nC\n");
+    renderer.renderBlocks(m1);
+    const made = vi.spyOn(renderer, "blockHtml");
+    const m2 = m1.withBody("[a]: https://example.com/a\n\nsee [a]\n\nB edited\n\nC\n", lexer, MAX).model;
+    expect(m2.links).toBe(m1.links); // sameLinks: the same object for the same definitions
+    renderer.replaceBlocks(m1, m2);
+    expect(made.mock.calls.map(([raw]) => raw)).toEqual(["B edited"]);
+    made.mockClear();
+    const undone = m1.withNextBlockId(m2.getNextBlockId()); // an Undo (RendererOrchestrator._restoreModel)
+    expect(undone.links).toBe(m1.links);
+    renderer.replaceBlocks(m2, undone);
+    expect(made.mock.calls.map(([raw]) => raw)).toEqual(["B"]);
+  });
+
+  it("AT-MR-25 a definition's content changed (href, title; the same length too): the cache misses, every block is made again and no old HTML is shown; going back shows the first link again", () => {
+    const body = (href, title) => `[a]: ${href} "${title}"\n\nsee [a]\n`;
+    const href = () => preview.querySelector("a").getAttribute("href");
+    const m1 = model(body("https://example.com/1", "one"));
+    renderer.renderBlocks(m1);
+    const made = vi.spyOn(renderer, "blockHtml");
+    const m2 = m1.withBody(body("https://example.com/2", "one"), lexer, MAX).model;
+    expect(m2.links).not.toBe(m1.links);
+    renderer.replaceBlocks(m1, m2);
+    expect(made).toHaveBeenCalledTimes(2); // the definition's block changed too, and the paragraph
+    expect(href()).toBe("https://example.com/2");
+    const m3 = m2.withBody(body("https://example.com/2", "two"), lexer, MAX).model;
+    renderer.replaceBlocks(m2, m3);
+    expect(preview.querySelector("a").getAttribute("title")).toBe("two");
+    const m4 = m3.withBody(body("https://example.com/1", "one"), lexer, MAX).model;
+    renderer.replaceBlocks(m3, m4);
+    expect([href(), preview.querySelector("a").getAttribute("title")]).toEqual(["https://example.com/1", "one"]);
+  });
+
+  it("AT-MR-26 a block's cache key does not grow with the definitions: its length is the same for a definition of 10 and of 450,000 characters", () => {
+    const longestKey = (definition) => {
+      const m = model(`[fig]: data:image/gif;base64,${definition}\n\nFirst ![x][fig]\n\nSecond\n`);
+      renderer.renderBlocks(m);
+      const keys = [...renderer._htmlCache.keys()];
+      expect(keys).toHaveLength(3);
+      return Math.max(...keys.filter((key) => !key.startsWith("[fig]:")).map((key) => key.length));
+    };
+    const short = longestKey("A".repeat(10));
+    const long = longestKey("A".repeat(450000));
+    expect(Math.abs(long - short)).toBeLessThanOrEqual(3); // the number's digits at most
+    expect(long).toBeLessThan("First ![x][fig]\n".length + 32);
+  });
+
+  it("AT-MR-27 a definition removed: the model gets another links object, the cache misses, and the block that used it loses its link", () => {
+    const m1 = model("[a]: https://example.com/a\n\n[b]: https://example.com/b\n\nsee [a] and [b]\n");
+    renderer.renderBlocks(m1);
+    expect(preview.querySelectorAll("a")).toHaveLength(2);
+    const made = vi.spyOn(renderer, "blockHtml");
+    const m2 = m1.withBody("[b]: https://example.com/b\n\nsee [a] and [b]\n", lexer, MAX).model;
+    expect(m2.links).not.toBe(m1.links);
+    expect(Object.keys(m2.links)).toEqual(["b"]);
+    renderer.replaceBlocks(m1, m2);
+    expect(made.mock.calls.map(([raw]) => raw)).toContain("see [a] and [b]\n");
+    expect([...preview.querySelectorAll("a")].map((a) => a.getAttribute("href"))).toEqual(["https://example.com/b"]);
+    expect(preview.textContent).toContain("[a]");
+  });
+
+  it("AT-MR-28 a block written in place stays for the same definitions, and is made again for other definitions over the same text", () => {
+    const body = (href, tail = "After") => `[a]: ${href}\n\n| [x][a] |\n| --- |\n| 1 |\n\n${tail}\n`;
+    const m1 = model(body("https://example.com/1"));
+    renderer.renderBlocks(m1);
+    const table = m1.getBlocks().find((b) => b.type === "table");
+    const wrapper = renderer.getBlockElement(table.id);
+    const made = vi.spyOn(renderer, "blockHtml");
+    renderer.markWrittenInPlace(table, m1.links);
+    const same = m1.withBody(body("https://example.com/1", "Later"), lexer, MAX).model;
+    expect(same.links).toBe(m1.links);
+    renderer.replaceBlocks(m1, same);
+    expect(made.mock.calls.map(([raw]) => raw)).not.toContain(table.raw);
+    expect(renderer.getBlockElement(table.id)).toBe(wrapper);
+    const other = same.withBody(body("https://example.com/2", "Later"), lexer, MAX).model;
+    const kept = other.getBlocks().find((b) => b.type === "table");
+    expect([kept.id, kept.raw]).toEqual([table.id, table.raw]);
+    renderer.replaceBlocks(same, other);
+    expect(made.mock.calls.map(([raw]) => raw)).toContain(table.raw);
+    expect(preview.querySelector("a").getAttribute("href")).toBe("https://example.com/2");
+  });
+
+  it("AT-MR-29 no links count as no definitions: the block is drawn once and the cache holds it", () => {
+    const block = { id: 1, raw: "see [a]\n" };
+    expect(renderer.cachedBlockHtml(block, undefined)).toContain("see [a]");
+    const made = vi.spyOn(renderer, "blockHtml");
+    expect(renderer.cachedBlockHtml(block, undefined)).toContain("see [a]");
+    expect(made).not.toHaveBeenCalled();
+  });
+
+  it("AT-MR-30 a table's two paths keep the links object, so a table change makes only the table", () => {
+    const check = (body) => {
+      const m1 = model(body("1"));
+      renderer.renderBlocks(m1);
+      const table = m1.getBlocks().find((b) => b.type === "table");
+      const made = vi.spyOn(renderer, "blockHtml");
+      const plan = m1.planTableReplace(table.id, "| x |\n| --- |\n| 2 |", lexer, MAX);
+      expect(plan.keptId).toBe(true);
+      expect(plan.model.links).toBe(m1.links);
+      renderer.replaceBlocks(m1, plan.model);
+      expect(made).toHaveBeenCalledTimes(1);
+      made.mockRestore();
+    };
+    check((cell) => `[a]: https://example.com/a\n\nIntro [a]\n\n| x |\n| --- |\n| ${cell} |\n\nAfter\n`); // _localTableModel
+    check((cell) => `[a]: https://example.com/a\n\nIntro [a]\n| x |\n| --- |\n| ${cell} |\n\nAfter\n`); // no blank line before it: the whole body
+  });
+
   it("AT-MR-08 the cache keeps only keys of the current model; renderBlocks rebuilds it from empty", () => {
     const m1 = model("A\n\nB\n\nC\n");
     renderer.renderBlocks(m1);
