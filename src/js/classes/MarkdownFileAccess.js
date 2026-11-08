@@ -39,7 +39,7 @@ export default class MarkdownFileAccess {
 
   /**
    * True when the browser can write a chosen file in place (Chrome / Edge).
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @returns {boolean}
    */
   canWriteInPlace() {
@@ -122,7 +122,7 @@ export default class MarkdownFileAccess {
    * text (File.text() drops the BOM) and lastModified. check(file) runs
    * before anything is read (the open checks by name and size, INV-18 (1)
    * (4)); what it throws rejects the read.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {object} fileHandle
    * @param {(file: File) => void} [check]
    * @returns {Promise<{bytesHead: Uint8Array, text: string, lastModified: number}>}
@@ -136,7 +136,7 @@ export default class MarkdownFileAccess {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {object} fileHandle
    * @returns {Promise<number>} lastModified of the file on disk (NotFoundError passes through)
    */

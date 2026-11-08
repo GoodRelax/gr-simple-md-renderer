@@ -5,7 +5,7 @@ import { markHiddenChars, firstTextNode } from "../hiddenCharMarks.js";
 /**
  * The highlight.js language of a file name (EXT_TO_HLJS: its extension, or
  * the whole name for Dockerfile and the like); null when it has none.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {string} fileName
  * @returns {string|null}
  */
@@ -221,7 +221,7 @@ export default class SourceFileRenderer {
    * @param {string} text
    * @param {string|null} language - a highlight.js language id
    * @returns {string|null}
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   highlightText(text, language) {
     if (!language || !this._hljs?.getLanguage(language)) return null;
@@ -236,7 +236,7 @@ export default class SourceFileRenderer {
    * Whether the code view waits for highlight.js or shows code plain for
    * want of it (spec 11-g isShownWithout).
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   isWaitingForHljs() {
     return !this._hljs && (this._hljsWaits > 0 || this._shown !== null);
@@ -338,7 +338,7 @@ export default class SourceFileRenderer {
    * @param {string} text
    * @param {File} file
    * @returns {{ html: string, lineCount: number, language: string }}
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   _buildCodeBody(text, file) {
     // Resolve highlight.js language ID

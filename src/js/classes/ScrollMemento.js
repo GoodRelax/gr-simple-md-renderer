@@ -28,7 +28,7 @@ export default class ScrollMemento {
 
   /**
    * @returns {number}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   save() {
     return this.useDocumentScroll
@@ -94,7 +94,7 @@ export default class ScrollMemento {
    * then lays out nothing).
    * @param {number} pos - a position save() returned
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   isPulledBackFrom(pos) {
     const now = this.save();
@@ -145,7 +145,7 @@ export default class ScrollMemento {
    * scroll key outside a text field, a press on the scroll bar.
    * @param {Event} e
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isMove(e) {
     if (e.type === "keydown") return MOVE_KEYS.has(e.key) && !isTypingTarget(e.target);
@@ -158,7 +158,7 @@ export default class ScrollMemento {
    * "outside" for the block editor (INV-30), and a move of the view (INV-78).
    * @param {PointerEvent|MouseEvent} e
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   isScrollbarPress(e) {
     const el = e.target;
@@ -183,7 +183,7 @@ export default class ScrollMemento {
    * Where the element's top is in the viewport now (INV-46).
    * @param {Element|null} element
    * @returns {{offsetTop: number}|null}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   captureAnchor(element) {
     if (!element) return null;
@@ -199,7 +199,7 @@ export default class ScrollMemento {
    * .md-block-empty): it is not there on the other side of the change.
    * null when no child can be the place.
    * @returns {{element: Element, anchor: {offsetTop: number}}|null}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   captureReadingAnchor() {
     const index = this._placeIndex(this.shownTop());
@@ -220,7 +220,7 @@ export default class ScrollMemento {
    * @param {number} top - a top on screen (an anchor's offsetTop)
    * @returns {{element: Element, anchor: {offsetTop: number}, edge: string}|null}
    *   edge "top" or "bottom": which edge of element offsetTop is
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   capturePlaceAt(top) {
     const index = this._placeIndex(top);
@@ -247,7 +247,7 @@ export default class ScrollMemento {
    * or it is gone or no longer shown.
    * @param {{element: Element, anchor: {offsetTop: number}, edge?: string}|null} saved
    * @returns {number}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   movedBy(saved) {
     if (!saved || !saved.element.isConnected || saved.element.getClientRects().length === 0) return 0;
@@ -270,7 +270,7 @@ export default class ScrollMemento {
    * The right edge of what is shown: the left of the container's scroll bar,
    * or, when the document scrolls, the left of the page's.
    * @returns {number}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   shownRight() {
     if (this.useDocumentScroll) return document.documentElement.clientWidth;
@@ -281,7 +281,7 @@ export default class ScrollMemento {
    * The top of what is shown: the container's top, or, when the document
    * scrolls (touch), the bottom of the sticky top bar (0 without one).
    * @returns {number}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   shownTop() {
     if (!this.useDocumentScroll) return this.container.getBoundingClientRect().top;
@@ -294,7 +294,7 @@ export default class ScrollMemento {
    * or, when the document scrolls (touch), the bottom of the visual viewport
    * (above an on-screen keyboard; the layout viewport's where there is none).
    * @returns {number}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   shownBottom() {
     if (!this.useDocumentScroll) return this.container.getBoundingClientRect().top + this.container.clientHeight;
@@ -311,7 +311,7 @@ export default class ScrollMemento {
    * most once, and the last scan reads a child once more at most.
    * @param {number} top
    * @returns {number}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _placeIndex(top) {
     const children = this.container.children;
@@ -337,7 +337,7 @@ export default class ScrollMemento {
    * @param {Element} block
    * @param {number} top
    * @returns {Element|null}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   static _childAt(block, top) {
     const children = block.children;
@@ -361,7 +361,7 @@ export default class ScrollMemento {
    * @param {number} end
    * @param {boolean} [inFlow]
    * @returns {number}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   static _placeFrom(children, i, end, inFlow = false) {
     while (i < end && !(inFlow ? ScrollMemento._inFlow(children[i]) : ScrollMemento._canBePlace(children[i]))) i++;
@@ -374,7 +374,7 @@ export default class ScrollMemento {
    * stand for where the content is.
    * @param {Element} child
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   static _inFlow(child) {
     if (child.getClientRects().length === 0) return false;
@@ -387,7 +387,7 @@ export default class ScrollMemento {
    * and is not a block only edit mode shows.
    * @param {Element} child
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   static _canBePlace(child) {
     if (child.classList.contains("md-block-hidden") || child.classList.contains("md-block-empty")) return false;
@@ -491,7 +491,7 @@ export default class ScrollMemento {
    * there already holds the zoom) rounded up, and one more for the whole
    * number scrollY reads, within the bounds.
    * @returns {number}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   static _scrollSearchSpan() {
     const scale = window.visualViewport?.scale || 1;

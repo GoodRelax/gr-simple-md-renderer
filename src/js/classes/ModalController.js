@@ -61,7 +61,7 @@ export default class ModalController {
    * The modal's controls that Tab can reach, in document order.
    * @param {HTMLElement} modal
    * @returns {HTMLElement[]}
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   static focusables(modal) {
     return [...modal.querySelectorAll(FOCUSABLE)].filter((el) => !el.closest("[hidden]"));
@@ -85,7 +85,7 @@ export default class ModalController {
   /**
    * @param {HTMLElement} modal
    * @returns {boolean}
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   static isOpen(modal) {
     return modal.style.display === "block";

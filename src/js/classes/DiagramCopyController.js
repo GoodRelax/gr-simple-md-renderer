@@ -80,7 +80,7 @@ export default class DiagramCopyController {
   /**
    * @param {SVGSVGElement} svg
    * @returns {SVGSVGElement}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   inlineSvgStyles(svg) {
     const clone = svg.cloneNode(true);
@@ -165,7 +165,7 @@ export default class DiagramCopyController {
   /**
    * @param {SVGSVGElement} svg
    * @returns {SVGSVGElement}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   prepareSvg(svg) {
     const clone = this.inlineSvgStyles(svg);

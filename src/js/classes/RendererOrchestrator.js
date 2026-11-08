@@ -11,7 +11,7 @@ const COMMIT_MARK = "grsmd-commit-start";
 const COMMIT_MEASURE = "grsmd-commit";
 
 /**
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @returns {boolean} the User Timing API is there
  */
 function canMeasure() {
@@ -113,7 +113,7 @@ export default class RendererOrchestrator {
    * guard isShownWithout), from the marks the renderers made themselves.
    * @param {string} name
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   isShownWithout(name) {
     switch (name) {
@@ -320,7 +320,7 @@ export default class RendererOrchestrator {
 
   /**
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   isPreRenderState() {
     return this._viewState === "initial";
@@ -328,7 +328,7 @@ export default class RendererOrchestrator {
 
   /**
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   isCodeViewActive() {
     return this._viewState === "code";
@@ -336,7 +336,7 @@ export default class RendererOrchestrator {
 
   /**
    * @returns {MarkdownBlockModel|null} the current model (an immutable value)
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   getModel() {
     return this._currentModel;
@@ -344,7 +344,7 @@ export default class RendererOrchestrator {
 
   /**
    * @returns {string} the current body ("" without a document)
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   getBody() {
     return this._currentModel ? this._currentModel.toBody() : "";
@@ -352,7 +352,7 @@ export default class RendererOrchestrator {
 
   /**
    * @returns {boolean} true when the last change can be undone (INV-48)
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   canUndo() {
     return this._undoModels.length > 0;
@@ -360,7 +360,7 @@ export default class RendererOrchestrator {
 
   /**
    * @returns {boolean} true when the last undo can be redone (INV-48)
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   canRedo() {
     return this._redoModels.length > 0;
@@ -442,7 +442,7 @@ export default class RendererOrchestrator {
    * file or a Markdown document opened while it read or waited (INV-81 (3),
    * M1) makes it stale.
    * @returns {Function} () => boolean
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _codeViewIsCurrent() {
     const generation = this._generation;
@@ -638,7 +638,7 @@ export default class RendererOrchestrator {
    * @param {number} firstId
    * @param {number} lastId
    * @returns {string|null}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   readBlocksSource(firstId, lastId) {
     return this._currentModel ? this._currentModel.rangeSource(firstId, lastId) : null;
@@ -650,7 +650,7 @@ export default class RendererOrchestrator {
    * commit plans on the cell commit's model). keptId: the table keeps its
    * id. Nothing is applied (11-c guard canKeepTableId); replaceTableBlock()
    * applies it unchanged. null without a model.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} blockId
    * @param {string} newRaw
    * @param {MarkdownBlockModel} [base]
@@ -711,7 +711,7 @@ export default class RendererOrchestrator {
    * The lexers the block editor's text edits use (INV-67, INV-71): blocks
    * only (as the model), inline tokens with the document's reference
    * definitions, blocks and inline tokens, and marked.walkTokens.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{lexBlocks: Function, lexInline: Function, lexFull: Function, walkTokens: Function}}
    */
   textLexers() {
@@ -727,7 +727,7 @@ export default class RendererOrchestrator {
   /**
    * The edited text of a table block with its tables aligned (INV-61). The
    * text is lexed alone, with the same lexer as the model.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {string} text
    * @returns {string}
    */
@@ -1082,7 +1082,7 @@ export default class RendererOrchestrator {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   _onlyAnchorChanged(before, target, replaced) {

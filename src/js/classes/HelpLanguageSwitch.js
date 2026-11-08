@@ -42,7 +42,7 @@ export default class HelpLanguageSwitch {
 
   /**
    * @returns {"en"|"ja"}
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   get language() {
     return this._language;

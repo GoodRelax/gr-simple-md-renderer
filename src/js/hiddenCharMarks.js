@@ -13,7 +13,7 @@ const MARKS = new WeakSet();
 
 /**
  * Whether node is a mark made here.
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {Node|null} node
  * @returns {boolean}
  */
@@ -23,7 +23,7 @@ export function isHiddenMark(node) {
 
 /**
  * The first text node under root, or null.
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {Node} root
  * @returns {Text|null}
  */
@@ -48,13 +48,13 @@ function createMark(label) {
 /**
  * The text nodes under root that may hold a hidden character, outside the
  * elements skip names and outside the marks.
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {Node} root
  * @param {string|null} skip - a selector
  * @returns {Text[]}
  */
 function candidateTexts(root, skip) {
-  /** @purity semi-pure-b */
+  /** @purity semi-pure-mutable */
   const accept = (node) => {
     if (node.nodeType === Node.TEXT_NODE) return mayHoldHiddenChars(node.data) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
     if (MARKS.has(node) || (skip && node.matches(skip))) return NodeFilter.FILTER_REJECT;

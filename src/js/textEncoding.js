@@ -295,7 +295,7 @@ function encodeUtf16(text, littleEndian, bom) {
  * bytes is empty: the caller does not save.
  * The reverse table of Shift_JIS / EUC-JP is built once and kept in the
  * module; the result depends on the arguments only.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {string} text
  * @param {string} encoding - one of TEXT_ENCODINGS
  * @param {boolean} bom

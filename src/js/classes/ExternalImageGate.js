@@ -77,7 +77,7 @@ function hasRemoteCssRef(value) {
 /**
  * @param {string} url
  * @returns {string} host name for display, or the raw value if unparsable
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  */
 function hostOf(url) {
   try {
@@ -130,7 +130,7 @@ export default class ExternalImageGate {
 
   /**
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   isGranted() {
     return this._granted;
@@ -304,7 +304,7 @@ export default class ExternalImageGate {
   /**
    * @param {EventTarget|null} target
    * @returns {HTMLElement|null}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _placeholderFrom(target) {
     if (!(target instanceof Element)) return null;

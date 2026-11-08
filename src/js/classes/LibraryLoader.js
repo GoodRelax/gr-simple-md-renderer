@@ -82,7 +82,7 @@ export const pageStartupStateMachine = Object.freeze({
  * The first state of a library (spec 11-g (1), tried in order): the page
  * provides it (the dev server) -> ready; its arrival note came before the
  * loader was made -> arrived; else notArrived.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {{provided: Map<string, object>, arrived: Set<string>}} boot
  * @param {string} name
  * @returns {string}
@@ -170,7 +170,7 @@ export default class LibraryLoader {
 
   /**
    * @returns {string} receiving | loading | answering | settled (spec 11-g (2))
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   get pageStartupState() {
     return this._pageStartupState;
@@ -179,7 +179,7 @@ export default class LibraryLoader {
   /**
    * @returns {boolean} the page is settled: the four libraries are ready or
    *   failed, and the held PlantUML boxes have been dealt with
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   isSettled() {
     return this._pageStartupState === SETTLED;
@@ -188,7 +188,7 @@ export default class LibraryLoader {
   /**
    * @param {string} name
    * @returns {string} notArrived | arrived | ready | failed (spec 11-g (1))
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   libraryState(name) {
     return this._libraryStates.get(name);
@@ -198,7 +198,7 @@ export default class LibraryLoader {
    * The library, when it is ready (no waiting, nothing run).
    * @param {string} name
    * @returns {object|null}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   peek(name) {
     return this._libraryStates.get(name) === READY ? (this.boot.provided.get(name) ?? null) : null;
@@ -208,7 +208,7 @@ export default class LibraryLoader {
    * Whether all of the library's data is in the page (arrived or ready).
    * @param {string} name
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   isArrived(name) {
     const state = this._libraryStates.get(name);
@@ -219,7 +219,7 @@ export default class LibraryLoader {
    * Whether the library could not run: it never will in this page.
    * @param {string} name
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   hasFailed(name) {
     return this._libraryStates.get(name) === FAILED;
@@ -311,7 +311,7 @@ export default class LibraryLoader {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isLibraryGuardTrue(guard, name) {
     if (guard === "isShownWithout") return Boolean(this._host?.isShownWithout(name));
@@ -319,7 +319,7 @@ export default class LibraryLoader {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isPageGuardTrue(guard, input) {
     if (guard === "areLibrariesSettled") return this._areLibrariesSettled();
@@ -328,7 +328,7 @@ export default class LibraryLoader {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   _areLibrariesSettled() {

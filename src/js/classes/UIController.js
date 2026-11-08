@@ -29,7 +29,7 @@ function noAction() {}
 /**
  * A text entry other than the block editor (INV-59 (a)): an input, a
  * textarea, a select or a contenteditable element.
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {Element|null} el
  * @returns {boolean}
  */
@@ -301,7 +301,7 @@ export default class UIController {
    * shows them too.
    * @param {CodeViewMeta & {encoding?: string, bom?: boolean, lineEndingMode?: string}} metadata
    * @returns {string}
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   _formatFileInfo(metadata) {
     if (!metadata) return "";
@@ -437,7 +437,7 @@ export default class UIController {
 
   /**
    * The path [Save] puts on the clipboard, or null (INV-105).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string|null}
    */
   _savePathToOffer() {
@@ -448,7 +448,7 @@ export default class UIController {
 
   /**
    * The tooltip of [Save] (INV-105).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string}
    */
   _saveButtonTitle() {
@@ -925,7 +925,7 @@ export default class UIController {
   /**
    * What a primary-modifier shortcut does here, or null when it is left to
    * the browser (INV-58 to INV-60).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {string|null} letter
    * @param {KeyboardEvent} e
    * @returns {(() => void)|null}
@@ -1242,7 +1242,7 @@ export default class UIController {
    * The double click came from the mouse: the last press on the preview was
    * the mouse's, or there was none (a dblclick without Pointer Events counts
    * as the mouse's). Touch, a pen (AQ13) and an empty pointer type do not.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   _isMouseDoubleClick() {
@@ -1283,7 +1283,7 @@ export default class UIController {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   _canStartEmptyDocument() {
@@ -1409,7 +1409,7 @@ export default class UIController {
   /**
    * The text #editor stands for: the body while a large commit has not been
    * written into it yet (INV-47), else what it shows.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string}
    */
   _editorText() {
@@ -1484,7 +1484,7 @@ export default class UIController {
 
   /**
    * Unsaved (glossary, 11-e): a derived value, never stored.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {boolean} [isCodeTyping] - the mark of a key typed in the code editor
    * @returns {boolean}
    */
@@ -1565,7 +1565,7 @@ export default class UIController {
   /**
    * The 5.15.5 table (the keys of EditPalette.setButtonStates). Also the
    * condition of INV-60 for primary + B / I.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {object}
    */
   _paletteStates() {
@@ -1997,7 +1997,7 @@ export default class UIController {
   /**
    * The code view shows a code document (SC-27).
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isCodeDocumentShown() {
     return this.orchestrator.isCodeViewActive() && this.codeEdit !== null;

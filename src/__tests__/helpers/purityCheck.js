@@ -11,7 +11,7 @@ import { parseAst } from "vite";
 // (export, const x =, key:, a call like el.on("x", ...) on the same statement),
 // so no ";", "{" or "}" may be in between.
 
-export const PURITY_VALUES = ["pure", "semi-pure-a", "semi-pure-b", "non-pure"];
+export const PURITY_VALUES = ["pure", "semi-pure-immutable", "semi-pure-mutable", "non-pure"];
 
 function walk(node, parent, visit) {
   if (!node || typeof node.type !== "string") return;

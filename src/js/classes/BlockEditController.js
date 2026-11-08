@@ -395,7 +395,7 @@ export default class BlockEditController {
    * An insert's block is not drawn yet: its cell or source opens after the
    * render (INV-52). The page's one-key shortcuts wait meanwhile (owner
    * ruling D5).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isInsertPending() {
@@ -404,7 +404,7 @@ export default class BlockEditController {
 
   /**
    * An 11-c crossing is running (its actions have not all been done).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isInTransition() {
@@ -417,7 +417,7 @@ export default class BlockEditController {
    * happens); {kind: "empty"} when the document has no block;
    * {kind: "block", id}; {kind: "cell", id, row, col, caret}; or
    * {kind: "none"} (a margin, also a table's: edit mode only).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {MouseEvent} e - the dblclick (of the mouse, 5.14.6; owner ruling AQ13)
    * @returns {{kind: string, id?: number}|null}
    */
@@ -436,7 +436,7 @@ export default class BlockEditController {
 
   /**
    * The node is the open block editor's textarea (INV-59 (b), by reference).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node|null} node
    * @returns {boolean}
    */
@@ -446,7 +446,7 @@ export default class BlockEditController {
 
   /**
    * The node is in the open cell (INV-59 (c), by reference).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node|null} node
    * @returns {boolean}
    */
@@ -458,7 +458,7 @@ export default class BlockEditController {
    * The block range the selection makes in edit mode (INV-74), read now:
    * {kind: "blockRange", firstId, lastId}, or null (none, not editModeIdle,
    * or the focus in a text entry). Shows nothing.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{kind: "blockRange", firstId: number, lastId: number}|null}
    */
   readBlockRange() {
@@ -467,7 +467,7 @@ export default class BlockEditController {
 
   /**
    * A block editor or a cell is open.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isEditing() {
@@ -478,7 +478,7 @@ export default class BlockEditController {
 
   /**
    * A cell is open (editingCell).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isEditingCell() {
@@ -487,7 +487,7 @@ export default class BlockEditController {
 
   /**
    * Where the open cell is (5.15.5: row and column buttons, alignment), or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{row: number, col: number, columns: number, alignment: string, kind: string}|null}
    */
   cellState() {
@@ -496,7 +496,7 @@ export default class BlockEditController {
 
   /**
    * The open block is a table (Insert row / column, 5.15.5).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isEditingTable() {
@@ -505,7 +505,7 @@ export default class BlockEditController {
 
   /**
    * The last block an editor was opened on (INV-52: insert after it), or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {number|null}
    */
   getLastOpenedBlockId() {
@@ -514,7 +514,7 @@ export default class BlockEditController {
 
   /**
    * The open editor differs from the raw it was opened with (INV-21 b).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   hasUncommittedChange() {
@@ -523,7 +523,7 @@ export default class BlockEditController {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{text: string, selStart: number, selEnd: number}|null}
    */
   getSelectionRange() {
@@ -535,7 +535,7 @@ export default class BlockEditController {
   /**
    * The selection is in one inline range of the open editor (5.15.5: Bold /
    * Italic / colors; INV-67 (6)).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canFormatSelection() {
@@ -569,7 +569,7 @@ export default class BlockEditController {
    * clipboard): the open editor (its block id) or cell (TableCellEditor),
    * the selection and the edit generation; null when none is open. The
    * button compares it by value when the clipboard has been read.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {object|null}
    */
   linkTarget() {
@@ -582,7 +582,7 @@ export default class BlockEditController {
   /**
    * 5.15.5 Paste link: editing, with a selection in one inline range
    * (INV-67 (6)), or a caret where a link can go in (owner ruling F-R1).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canPasteLink() {
@@ -596,7 +596,7 @@ export default class BlockEditController {
 
   /**
    * 5.15.5 Remove link: the caret or the selection is on a link.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canRemoveLink() {
@@ -655,7 +655,7 @@ export default class BlockEditController {
    * 2026-10-25) whose caret (the selection end) is where inline math can go
    * (only the place is checked, one inline lexing: INV-51). Off in a huge
    * block (not lexed, as INV-71).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canInsertInlineMath() {
@@ -703,7 +703,7 @@ export default class BlockEditController {
    * characters (owner ruling 2026-10-23, as INV-70): its whole text is not
    * lexed on each key or frame. Enter is the browser's newline, and the
    * format and link buttons are on for a selection and check when pressed.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   _isHugeBlock() {
@@ -714,7 +714,7 @@ export default class BlockEditController {
    * The open block editor is a huge block (_isHugeBlock): its format buttons
    * are on without checking, so a format that cannot go in is told (owner
    * ruling Q-f).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isHugeBlock() {
@@ -760,7 +760,7 @@ export default class BlockEditController {
 
   /**
    * The 11-c guards.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isGuardTrue(guard, target) {
     switch (guard) {
@@ -986,7 +986,7 @@ export default class BlockEditController {
   /**
    * The source of a block range target, or null (no range, or its ids are
    * no longer in the model).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{kind: string, firstId: number, lastId: number}|null} target
    * @returns {string|null}
    */
@@ -1131,7 +1131,7 @@ export default class BlockEditController {
    * the tap changed the layout: taken at pointerdown (a mouse press outside
    * commits there, INV-30), or else before the actions of the cell run. null
    * when the cell opens no block.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{wrapper: Element, anchor: object}|null}
    */
   _tappedPlace(next, target) {
@@ -1157,7 +1157,7 @@ export default class BlockEditController {
 
   /**
    * A block's element and where its top is on screen now.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{wrapper: Element, anchor: object}|null}
    */
   _placeOf(blockId) {
@@ -1167,7 +1167,7 @@ export default class BlockEditController {
 
   /**
    * The tapped block, if it is still in the current model (INV-30).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _resolve(target) {
     if (target?.kind === "gap") return this._resolveGap(target);
@@ -1182,7 +1182,7 @@ export default class BlockEditController {
    * when it is gone (INV-73). The start and the end of the document always
    * stay; another gap follows its upper block, or else its lower one (a
    * commit before it may have changed either).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{afterBlockId: number|null, beforeBlockId: number|null}} target
    * @returns {{kind: "gap", afterBlockId: number|null, beforeBlockId: number|null}|null}
    */
@@ -1190,7 +1190,7 @@ export default class BlockEditController {
     const model = this.orchestrator.getModel();
     const blocks = model ? model.getBlocks() : [];
     if (blocks.length === 0) return null;
-    /** @purity semi-pure-b */
+    /** @purity semi-pure-mutable */
     const gap = (index) => ({ kind: "gap", afterBlockId: index < 0 ? null : blocks[index].id, beforeBlockId: blocks[index + 1]?.id ?? null });
     if (target.afterBlockId === null) return gap(-1);
     const after = model.findIndexById(target.afterBlockId);
@@ -1204,7 +1204,7 @@ export default class BlockEditController {
    * Where a press on a cell was, and the top of that cell then: the cell can
    * move before it opens (the palette's edit-mode layout, a commit above
    * or in the same table), and the caret point follows it (INV-57, INV-62).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{id: number, row: number, col: number}} target
    * @param {MouseEvent|PointerEvent} e
    * @returns {{x: number, y: number, top: number|null}}
@@ -1218,7 +1218,7 @@ export default class BlockEditController {
    * Where a press on a block's text was (INV-84), taken at the press: the
    * block can move before it opens, and its text is matched to the source
    * when it opens. null off its text.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{id: number}} target
    * @param {MouseEvent|PointerEvent} e
    * @returns {{count: number, afterSpace: boolean, lineOffset: number, index: number, text: string}|null}
@@ -1234,7 +1234,7 @@ export default class BlockEditController {
    * height, margins; a code block's padding). A new block (an empty
    * document, a gap) takes the body text's. null: the editor keeps its
    * monospace (style.css).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Element} wrapper
    * @param {string|null} blockType
    * @param {boolean} isNew
@@ -1286,7 +1286,7 @@ export default class BlockEditController {
 
   /**
    * A cell of the session's table as a target, or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{row: number, col: number}|null} at
    */
   _cellTarget(at) {
@@ -1520,7 +1520,7 @@ export default class BlockEditController {
    * The text a changed block is committed with: a table is aligned
    * (INV-61); in a paragraph, list or quote the line ends of spaces that
    * make no line break go (INV-71 (6)).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{blockType: string|null, text: string}} closed
    * @returns {string}
    */
@@ -1622,7 +1622,7 @@ export default class BlockEditController {
    * The 11-c event of a tap on target. whileEditing: a touch tap outside
    * the open editor or cell (it commits there, INV-30). The *WithUnrenderedEditor
    * events come from editModeIdle only (#editor focus ends editing).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string|null}
    */
   _tapEvent(target, whileEditing) {
@@ -1648,7 +1648,7 @@ export default class BlockEditController {
 
   /**
    * The block a tap on node would open, or null (exclusions of INV-29).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{kind: string, id?: number}|null}
    */
   _targetAt(node) {
@@ -1668,7 +1668,7 @@ export default class BlockEditController {
 
   /**
    * Inside the open editor (by reference; its wrapper counts as the editor).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isInEditor(node) {
     const openEditor = this._editor;
@@ -1678,14 +1678,14 @@ export default class BlockEditController {
   /**
    * A press on the scroll bar of the preview (or of the page): not "outside",
    * and not a double click on the preview (ScrollMemento owns the check).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isScrollbarPress(e) {
     return this.scrollMemento.isScrollbarPress(e);
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isSelectionEmpty() {
     const selection = window.getSelection();

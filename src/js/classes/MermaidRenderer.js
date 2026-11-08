@@ -42,7 +42,7 @@ export default class MermaidRenderer extends DiagramRenderer {
    * Whether the preview shows a loading box made here (spec 11-g
    * isShownWithout). A user-written .mermaid-loading does not count.
    * @returns {boolean}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   hasLoadingBoxes() {
     return [...this.preview.querySelectorAll(".mermaid-loading")].some((box) => this._loading.has(box));

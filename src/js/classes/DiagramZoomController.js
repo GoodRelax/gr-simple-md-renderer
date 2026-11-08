@@ -39,7 +39,7 @@ export default class DiagramZoomController {
   /**
    * @param {EventTarget} target
    * @returns {SVGSVGElement|HTMLImageElement|HTMLElement|null}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   findDiagramAt(target) {
     const mermaidContainer = target.closest(".mermaid");

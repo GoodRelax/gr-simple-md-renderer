@@ -45,7 +45,7 @@ export function lazyMath(markedKatex, options, katex = null) {
     },
     /**
      * @returns {boolean}
-     * @purity semi-pure-b
+     * @purity semi-pure-mutable
      */
     isReady() {
       return current !== null;
@@ -54,7 +54,7 @@ export function lazyMath(markedKatex, options, katex = null) {
      * How many formulas have been drawn pending so far (it only grows): a
      * caller compares it before and after making HTML.
      * @returns {number}
-     * @purity semi-pure-b
+     * @purity semi-pure-mutable
      */
     pendingCount() {
       return pending;

@@ -48,7 +48,7 @@ export default class SaveTrace {
   /**
    * What a trace reads from the page: the clock, the console, the browser
    * and the build date (the help's version date, spec 1.7).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{now: () => number, log: (line: string) => void, userAgent: string, buildDate: string}}
    */
   static environment() {
@@ -136,7 +136,7 @@ export function browserOf(userAgent) {
 /**
  * The build date (YYYY-MM-DD) from the help's version slot (spec 1.7), or
  * "unknown" (the dev server before the slot is stamped, the tests).
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {Document|undefined} doc
  * @returns {string}
  */

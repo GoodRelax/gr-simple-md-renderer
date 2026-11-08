@@ -368,7 +368,7 @@ export default class GitHubController {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {GitHubLink|null} null in the code view
    */
   _link() {
@@ -376,7 +376,7 @@ export default class GitHubController {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {GitHubLink} link
    * @returns {boolean}
    */

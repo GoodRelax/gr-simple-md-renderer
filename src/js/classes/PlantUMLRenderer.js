@@ -119,7 +119,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * The diagrams the held boxes and the [Render] boxes in the preview keep
    * for [Render]: read before a KaTeX redraw replaces their blocks.
    * @returns {Map<string, Set<string>>} theme -> sources
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   heldForRender() {
     const kept = new Map();
@@ -189,7 +189,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * The held boxes in the preview (user-written .plantuml-loading elements
    * are not among them).
    * @returns {HTMLElement[]}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _waitingBoxes() {
     return [...this.preview.querySelectorAll(".plantuml-loading")].filter((box) => this._waiting.has(box));
@@ -311,7 +311,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
    * @param {string} code
    * @param {string} theme
    * @returns {string}
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   applyTheme(code, theme) {
     if (theme === "dark" && !code.includes("!theme")) {
@@ -390,7 +390,7 @@ export default class PlantUMLRenderer extends DiagramRenderer {
   /**
    * @param {string} message
    * @returns {HTMLDivElement}
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   createErrorElement(message) {
     const div = document.createElement("div");

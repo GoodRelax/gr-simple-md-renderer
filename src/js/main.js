@@ -168,7 +168,7 @@ const gitHubPasswordStore =
     ? { store: (id, password) => navigator.credentials.store(new window.PasswordCredential({ id, password })) }
     : null;
 // relative images and links of a GitHub document resolve as GitHub shows them
-/** @purity semi-pure-b */
+/** @purity semi-pure-mutable */
 markdownRenderer.setRelativeUrlResolver((value, kind) => {
   const link = documents.gitHub;
   return link ? resolveRelativeUrl(link.ref, value, kind, CONFIG.github) : null;

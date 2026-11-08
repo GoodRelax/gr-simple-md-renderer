@@ -87,7 +87,7 @@ export default class DocumentLifecycle {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {DocumentSession|null}
    */
   get session() {
@@ -95,7 +95,7 @@ export default class DocumentLifecycle {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {DocumentLocation|null}
    */
   get location() {
@@ -107,7 +107,7 @@ export default class DocumentLifecycle {
    * for a file the launcher opened, until it is saved to a file (that makes
    * a new location, with a file handle and no full path). A download keeps
    * the location, so the path stays. Null otherwise.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string|null}
    */
   get pathToOffer() {
@@ -117,7 +117,7 @@ export default class DocumentLifecycle {
   /**
    * Saving is a download (no API to write a chosen file: Firefox), for the
    * Markdown and the code documents alike (INV-26, INV-105 (3)).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   get savesByDownload() {
@@ -125,7 +125,7 @@ export default class DocumentLifecycle {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {GitHubLink|null}
    */
   get gitHub() {
@@ -133,7 +133,7 @@ export default class DocumentLifecycle {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {"idle"|"writingFile"|"pushing"}
    */
   get saveOperationState() {
@@ -141,7 +141,7 @@ export default class DocumentLifecycle {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   hasSession() {
@@ -150,7 +150,7 @@ export default class DocumentLifecycle {
 
   /**
    * The body differs from the baseline (last load or save); false without a session.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {string} bodyText
    * @returns {boolean}
    */
@@ -160,7 +160,7 @@ export default class DocumentLifecycle {
 
   /**
    * The name the palette status shows.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string}
    */
   fileName() {
@@ -169,7 +169,7 @@ export default class DocumentLifecycle {
 
   /**
    * INV-54: a document is not rebuilt while a save or a push is running.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isSaving() {
@@ -225,7 +225,7 @@ export default class DocumentLifecycle {
 
   /**
    * The file a push sends: the body with the session's wrapper, line ending and BOM.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {string} bodyText
    * @returns {string|null} null without a session
    */
@@ -269,7 +269,7 @@ export default class DocumentLifecycle {
    * What Reload reads (INV-21 Reload order: read first): the save target and
    * the current document id, noted before the read; null when there is no
    * file handle.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{location: DocumentLocation, documentId: number|undefined}|null}
    */
   reloadTarget() {
@@ -296,7 +296,7 @@ export default class DocumentLifecycle {
    * drop, Reload, paste, Clear or a Save as finished while the file was
    * read). Call it synchronously right after the read settles, in the same
    * step as the replace (INV-21).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{location: DocumentLocation, documentId: number|undefined}} target
    * @returns {boolean}
    */

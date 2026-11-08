@@ -122,7 +122,7 @@ export default class CodeEditController {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {CodeDocument|null}
    */
   get document() {
@@ -130,7 +130,7 @@ export default class CodeEditController {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   hasDocument() {
@@ -139,7 +139,7 @@ export default class CodeEditController {
 
   /**
    * The name the palette status shows.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string}
    */
   fileName() {
@@ -148,7 +148,7 @@ export default class CodeEditController {
 
   /**
    * The text that Save writes: the document's (the editor's while editing).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string}
    */
   currentText() {
@@ -173,7 +173,7 @@ export default class CodeEditController {
    * Asked for the mark while typing (once a key), a text not compared yet
    * counts as unsaved; it is compared when typing stops or when asked
    * otherwise (INV-21).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {boolean} [isTyping] - asked for the mark while typing
    * @returns {boolean}
    */
@@ -198,7 +198,7 @@ export default class CodeEditController {
 
   /**
    * INV-54: a save of the code document runs.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isSaving() {
@@ -207,7 +207,7 @@ export default class CodeEditController {
 
   /**
    * What the file info line shows besides the file (INV-89), or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{encoding: string, bom: boolean, lineEndingMode: string}|null}
    */
   fileInfo() {
@@ -218,7 +218,7 @@ export default class CodeEditController {
   /**
    * The highlight.js language of the document's file (EXT_TO_HLJS), or
    * "plaintext".
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string}
    */
   language() {
@@ -227,7 +227,7 @@ export default class CodeEditController {
 
   /**
    * The JSON fold applies (INV-92).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isJson() {
@@ -236,7 +236,7 @@ export default class CodeEditController {
 
   /**
    * The code view is in edit mode (INV-85).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isEditing() {
@@ -245,7 +245,7 @@ export default class CodeEditController {
 
   /**
    * The editor while editing, else null (Search edits through it, INV-80).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {CodeEditor|null}
    */
   get editor() {
@@ -255,7 +255,7 @@ export default class CodeEditController {
   /**
    * The text shown now: the editor's while editing, else the view's (with
    * its folds). The Index lists it (INV-91).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string}
    */
   shownText() {
@@ -307,7 +307,7 @@ export default class CodeEditController {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {string} guard
    * @returns {boolean}
    */
@@ -366,7 +366,7 @@ export default class CodeEditController {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canUndo() {
@@ -374,7 +374,7 @@ export default class CodeEditController {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canRedo() {
@@ -527,7 +527,7 @@ export default class CodeEditController {
    * The full path that [Save] puts on the clipboard (INV-105): only while a
    * save would ask where (no file handle yet; a download gives none, so the
    * path stays). Null otherwise.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string|null}
    */
   get pathToOffer() {
@@ -745,7 +745,7 @@ export default class CodeEditController {
    * The bytes to write under a name, in the chosen encoding; a name ending
    * in .md is always UTF-8 (NE-30; the BOM as CodeDocument.toBytes keeps
    * it). Characters the encoding cannot hold: their lines instead of bytes.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {CodeDocument} doc
    * @param {string} text - LF text
    * @param {string} chosen - the encoding chosen (or known)
@@ -799,7 +799,7 @@ export default class CodeEditController {
    * The name the save dialog offers (NE-8): the file's name with the
    * extension it was opened with (after a Save as to another extension,
    * the opened one again). A name without one stays as it is.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {string} name - the file's name now
    * @returns {string}
    */
@@ -832,7 +832,7 @@ export default class CodeEditController {
   /**
    * The save dialog's file type: the file's own extension, so the name
    * keeps it; "all files" stays offered, so it can be changed (NE-8).
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {string} name
    * @returns {object[]}
    */
@@ -846,7 +846,7 @@ export default class CodeEditController {
   /**
    * The lines of characters an encoding cannot write, listed: at most
    * CONFIG.codeEdit.maxListedLines, then ", ...".
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {number[]} lines - 1-based
    * @returns {string}
    */
@@ -857,7 +857,7 @@ export default class CodeEditController {
 
   /**
    * Toast text for a failure (INV-25), as SaveDocumentAs.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {Error} error
    * @returns {string}
    */
