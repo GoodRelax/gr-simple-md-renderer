@@ -49,7 +49,7 @@ const MARK_CLASS = "grsmd-invisible";
  * opened (by reference), a span's style, and the text. Nothing else of the
  * attributes is read. Marks (INV-70) are "mark" nodes; filler line breaks
  * are left out.
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {Node} root
  * @param {{links: Map<Element, number>, marks: WeakSet<Element>, fillers: WeakSet<Element>}} refs
  * @returns {object[]} InlineRuns.fromNodes() nodes
@@ -103,7 +103,7 @@ export function snapshotNodes(root, refs) {
 /**
  * INV-63 for a raw cell: an unescaped pipe is escaped, a newline is <br>;
  * nothing else changes (ruling L2). Reads CONFIG.edit.tableLineBreak.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {string} text
  * @returns {string}
  */
@@ -162,7 +162,7 @@ export default class TableCellEditor {
   // ---- queries ----
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {number|null} the table block of the session
    */
   sessionBlockId() {
@@ -171,7 +171,7 @@ export default class TableCellEditor {
 
   /**
    * The open cell's element (to scroll it into view, INV-52), or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {HTMLElement|null}
    */
   openCellElement() {
@@ -179,7 +179,7 @@ export default class TableCellEditor {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isOpen() {
@@ -187,7 +187,7 @@ export default class TableCellEditor {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isComposing() {
@@ -196,7 +196,7 @@ export default class TableCellEditor {
 
   /**
    * The node is inside the open cell (by reference).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node|null} node
    * @returns {boolean}
    */
@@ -206,7 +206,7 @@ export default class TableCellEditor {
 
   /**
    * The node is inside the table element of the session (INV-30).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node|null} node
    * @returns {boolean}
    */
@@ -219,7 +219,7 @@ export default class TableCellEditor {
   /**
    * INV-62 (1), the guard isCellEditableTable: the rendered table has as
    * many rows, and each row as many cells, as the table's text.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} blockId
    * @returns {boolean}
    */
@@ -235,7 +235,7 @@ export default class TableCellEditor {
 
   /**
    * The open cell's text differs from what it was opened with (INV-62).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   hasUncommittedChange() {
@@ -244,7 +244,7 @@ export default class TableCellEditor {
 
   /**
    * Where the open cell is, and its table: for the palette (5.15.5).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{row: number, col: number, columns: number, alignment: string, kind: string}|null}
    */
   cellState() {
@@ -256,7 +256,7 @@ export default class TableCellEditor {
 
   /**
    * The cell an INV-64 move goes to, or null (first and last cell).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {"next"|"previous"|"below"} direction
    * @returns {{row: number, col: number}|null}
    */
@@ -274,7 +274,7 @@ export default class TableCellEditor {
 
   /**
    * INV-65 limits (D2): the header row and the only column stay.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{kind: string}} op
    * @returns {boolean}
    */
@@ -547,7 +547,7 @@ export default class TableCellEditor {
    * INV-29 (a): the (row, col) of the cell of table that holds node, by
    * reference to table.rows[r].cells[c] (a cell of a table nested inside
    * is not one; closest("td") is not used), or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {HTMLTableElement} table
    * @param {Node} node
    * @returns {{row: number, col: number}|null}
@@ -588,7 +588,7 @@ export default class TableCellEditor {
   /**
    * The selection is in the open cell and not empty (5.15.5); in a raw
    * cell it is also in one inline range (INV-67 (6)).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canFormatSelection() {
@@ -620,7 +620,7 @@ export default class TableCellEditor {
    * What the palette's Paste link acts on: the table, the open cell, the
    * selection in it (null when it is not in the cell) and the edit
    * generation; null when no cell is open.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {object|null}
    */
   linkTarget() {
@@ -641,7 +641,7 @@ export default class TableCellEditor {
    * 5.15.5 Paste link: a selection that can take a format, or a caret
    * where a link can go in (owner ruling F-R1: not inside a link, a code
    * span or another piece kept whole).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canPasteLink() {
@@ -660,7 +660,7 @@ export default class TableCellEditor {
    * as marked reads "https://a.example/[L](u)" as one bare URL. The word and
    * a stand-in link are written as insertLinkAt writes them (a "!" before
    * it as \!).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   _linkStaysAfter(runs, i) {
@@ -676,7 +676,7 @@ export default class TableCellEditor {
 
   /**
    * 5.15.5 Remove link: the caret or the selection is on a link of the cell.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canRemoveLink() {
@@ -809,7 +809,7 @@ export default class TableCellEditor {
   /**
    * Every element under root has no attribute but the ones FORMAT_ATTRIBUTES
    * allows for its tag (a link's href and title, a color span's style).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node} root
    * @returns {boolean}
    */
@@ -824,7 +824,7 @@ export default class TableCellEditor {
   /**
    * Every node of a snapshot is text, a line break, a mark, strong, em, a
    * link known by its index, or a span whose style is a palette color.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {object[]} tree
    * @param {object[]} linkInfo
    * @returns {boolean}
@@ -845,7 +845,7 @@ export default class TableCellEditor {
 
   /**
    * HTML as the DOM writes it back, from an inert template (never in the page).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _normalized(html) {
     const template = document.createElement("template");
@@ -922,7 +922,7 @@ export default class TableCellEditor {
   /**
    * The open cell as Markdown: a WYSIWYG cell's format runs written in the
    * normal form (INV-67, INV-72), a raw cell's text with INV-63's fixes.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string}
    */
   _readCell() {
@@ -935,7 +935,7 @@ export default class TableCellEditor {
   /**
    * The format runs of the open WYSIWYG cell; a newline in a text node is a
    * line break (a cell has no line of its own).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _runs() {
     const { element, links, linkInfo } = this._cell;
@@ -948,12 +948,12 @@ export default class TableCellEditor {
 
   /**
    * A raw cell's text: line breaks are newlines.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string}
    */
   _rawText() {
     let text = "";
-    /** @purity semi-pure-b */
+    /** @purity semi-pure-mutable */
     const walk = (node) => {
       for (const child of node.childNodes) {
         if (child.nodeType === Node.TEXT_NODE) text += child.data;
@@ -1013,7 +1013,7 @@ export default class TableCellEditor {
 
   /**
    * The change of the open cell's commit, or null when it did not change.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _planCommit() {
     if (!this._cell || !this._session) return null;
@@ -1027,7 +1027,7 @@ export default class TableCellEditor {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _operatedTable(table, op) {
     const at = this._cell ?? this._lastPosition;
@@ -1079,7 +1079,7 @@ export default class TableCellEditor {
 
   /**
    * Primary + Shift + Z, or Ctrl+Y outside Apple platforms.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isRedo(e) {
     const letter = shortcutLetter(e, this.isApple);
@@ -1116,7 +1116,7 @@ export default class TableCellEditor {
    * The run index of the caret in the open WYSIWYG cell (a line break
    * counts 1, so a caret at a line start is after its break); -1 inside a
    * code span or another piece kept whole.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {number}
    */
   _caretRunIndex() {
@@ -1253,7 +1253,7 @@ export default class TableCellEditor {
 
   /**
    * A mark holds other text, or invisible characters stand unmarked.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _needsRemark(root) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -1271,7 +1271,7 @@ export default class TableCellEditor {
    * The selection in the open cell as text offsets (a line break counts
    * brWidth: 0 for the format runs, 1 for a raw cell and the caret), or
    * null when it is not inside the cell.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} [brWidth]
    * @returns {{start: number, end: number}|null}
    */
@@ -1289,12 +1289,12 @@ export default class TableCellEditor {
   /**
    * The text offset of a DOM position in the open cell (filler breaks
    * count 0).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _offsetOf(container, offset, brWidth) {
     let n = 0;
     let done = false;
-    /** @purity semi-pure-b */
+    /** @purity semi-pure-mutable */
     const walk = (node) => {
       for (let i = 0; i < node.childNodes.length && !done; i++) {
         if (node === container && i === offset) {
@@ -1339,14 +1339,14 @@ export default class TableCellEditor {
 
   /**
    * The DOM position of a text offset in the open cell.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{node: Node, offset: number}}
    */
   _pointAt(target, brWidth) {
     const root = this._cell.element;
     let left = target;
     let found = null;
-    /** @purity semi-pure-b */
+    /** @purity semi-pure-mutable */
     const walk = (node) => {
       for (let i = 0; i < node.childNodes.length && !found; i++) {
         const child = node.childNodes[i];
@@ -1488,7 +1488,7 @@ export default class TableCellEditor {
   // ---- internals: data ----
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _colors() {
     return { colors: Object.values(CONFIG.edit.textColors).map((c) => c.light) };
@@ -1496,7 +1496,7 @@ export default class TableCellEditor {
 
   /**
    * The context of MarkdownTextOps on a raw cell's text.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _rawContext() {
     const { lexBlocks, lexInline } = this.orchestrator.textLexers();
@@ -1507,14 +1507,14 @@ export default class TableCellEditor {
    * INV-72 (a), (d): table cell escapes; a changed URL text keeps the form
    * of an autolink or a bare URL only when it reads back as one; the URL
    * texts taken off a link in this cell stay text (INV-69).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _serializeOptions() {
     const { lexInline } = this.orchestrator.textLexers();
     return {
       inTableCell: true,
       literalUrls: this._cell?.literals ?? [],
-      /** @purity semi-pure-b */
+      /** @purity semi-pure-mutable */
       isLinkableUrl: (text) => {
         // isLinkableUrl takes no white space, control or invisible character
         // inside (INV-69); the text is written as it is, so none around it either
@@ -1527,7 +1527,7 @@ export default class TableCellEditor {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _block(blockId) {
     const model = this.orchestrator.getModel();
@@ -1537,7 +1537,7 @@ export default class TableCellEditor {
 
   /**
    * The session's table as data (from the current model), or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _sessionTable() {
     const block = this._session ? this._block(this._session.blockId) : null;

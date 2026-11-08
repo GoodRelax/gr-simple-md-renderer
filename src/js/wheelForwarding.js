@@ -31,7 +31,7 @@ export function wheelScrollDelta(wheel, page) {
 /**
  * The element is a scroll container (overflow auto or scroll) with more
  * content than it shows.
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {HTMLElement} el
  * @returns {boolean}
  */

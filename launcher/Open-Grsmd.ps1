@@ -157,7 +157,7 @@ function New-LaunchBlock([string]$Name, [string]$FullPath, [byte[]]$Bytes) {
 <#
 .SYNOPSIS
 The full path of a browser registered under App Paths, or $null.
-@purity semi-pure-b
+@purity semi-pure-mutable
 #>
 function Get-BrowserPath([string]$ExeName) {
     foreach ($root in 'HKCU:', 'HKLM:') {

@@ -94,7 +94,7 @@ export default class GitHubContentsClient {
   }
 
   /**
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {GitHubFileRef} ref
    * @returns {string}
    */
@@ -176,7 +176,7 @@ function commitSummary(sha, commit, url) {
 /**
  * The toast for a failed response (5.8 of the study). GitHub's own message
  * is added as data (shown with textContent), cut to a length.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {Response} response
  * @param {any} body
  * @param {object} m - CONFIG.github.messages

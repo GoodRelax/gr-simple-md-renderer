@@ -160,7 +160,7 @@ export default class MarkdownRenderer {
    * link definitions (INV-41); each block's HTML comes from a full lexing of
    * that block (blockHtml), so the inline pass here was wasted work (about
    * two thirds of the lexing of a commit on a 1 MB document).
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {string} src
    * @returns {object[]} tokens, with tokens.links
    */
@@ -173,7 +173,7 @@ export default class MarkdownRenderer {
   /**
    * Inline tokens of one inline range (INV-67 (7)), with the reference
    * definitions of the document (links).
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {string} src
    * @param {object} [links] - MarkdownBlockModel.links
    * @returns {object[]}
@@ -186,7 +186,7 @@ export default class MarkdownRenderer {
 
   /**
    * Block and inline tokens of one block's text (INV-71 (6)).
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {string} src
    * @returns {object[]}
    */
@@ -196,7 +196,7 @@ export default class MarkdownRenderer {
 
   /**
    * marked.walkTokens over tokens (INV-71 (6)).
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {object[]} tokens
    * @param {(token: object) => void} fn
    */
@@ -209,7 +209,7 @@ export default class MarkdownRenderer {
    * A parse error becomes an escaped error message (the caller logs it).
    * Generation only: it writes nothing to the page (F-A1). The DOMPurify hook
    * changes only the nodes of the fragment being sanitized.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {string} markdownText
    * @returns {{html: string, error: Error|null}}
    */
@@ -224,7 +224,7 @@ export default class MarkdownRenderer {
   /**
    * Sanitized HTML of one block. Reference links resolve against the whole
    * document's definitions (links), as in a whole-document parse.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {string} raw
    * @param {object} links - MarkdownBlockModel.links
    * @returns {{html: string, error: Error|null}}
@@ -248,7 +248,7 @@ export default class MarkdownRenderer {
    * the same marked setup (KaTeX included) and the document's reference
    * definitions, and the same private DOMPurify with its hook. Generation
    * only: the caller writes it and then runs the image gate on it.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {string} cellRaw
    * @param {object} [links] - MarkdownBlockModel.links
    * @returns {string}
@@ -268,7 +268,7 @@ export default class MarkdownRenderer {
   }
 
   /**
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {Error} error
    * @returns {string}
    */
@@ -396,7 +396,7 @@ export default class MarkdownRenderer {
   /**
    * Id of the block whose renderer-created wrapper (a direct child of the
    * preview) holds the node, or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node|null} node
    * @returns {number|null}
    */
@@ -409,7 +409,7 @@ export default class MarkdownRenderer {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} blockId
    * @returns {HTMLElement|null} the wrapper on screen for that block
    */
@@ -422,7 +422,7 @@ export default class MarkdownRenderer {
    * them, INV-73). The empty block and an open gap editor are not blocks.
    * The list is kept until the order changes (a render; or the preview was
    * written by another view): the mouse asks for it on every frame (INV-51).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {ReadonlyArray<HTMLElement>}
    */
   getBlockElements() {
@@ -466,7 +466,7 @@ export default class MarkdownRenderer {
    * The empty block shown for an empty document (INV-49), or null. Only the
    * element this renderer created counts (a user-written .md-block-empty
    * does not).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {HTMLElement|null}
    */
   getEmptyBlockElement() {
@@ -476,7 +476,7 @@ export default class MarkdownRenderer {
   /**
    * The table element this renderer made for a table block (a direct child
    * of its wrapper; INV-29, INV-62), or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} blockId
    * @returns {HTMLTableElement|null}
    */
@@ -490,7 +490,7 @@ export default class MarkdownRenderer {
   /**
    * The node is (inside) a table tab this renderer made, by reference: a
    * user-written class="grsmd-table-tab" is not one (INV-29 (b)).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node|null} node
    * @returns {boolean}
    */
@@ -566,7 +566,7 @@ export default class MarkdownRenderer {
 
   /**
    * A kept block whose wrapper shows older HTML (Q-d1).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} blockId
    * @returns {boolean}
    */
@@ -619,7 +619,7 @@ export default class MarkdownRenderer {
   /**
    * Whether HTML that shows a formula waiting for KaTeX is kept (the
    * preview, the cache or a block written in place): spec 11-g isShownWithout.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   hasPendingMath() {
@@ -629,7 +629,7 @@ export default class MarkdownRenderer {
   /**
    * Whether the preview shows code drawn before highlight.js had run
    * (spec 11-g isShownWithout).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   hasPendingHighlight() {
@@ -860,7 +860,7 @@ export default class MarkdownRenderer {
    * lang-* (the same pattern as its languageDetectRe, so "language--" of a
    * fence whose info string is "-" is no language), or a class that names
    * a language.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {HTMLElement} block
    * @returns {boolean}
    */

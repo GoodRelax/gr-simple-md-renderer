@@ -135,7 +135,7 @@ export default class CodeFileDialog {
 
   /**
    * The display name of an encoding (CONFIG), or the label itself.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {string} encoding
    * @returns {string}
    */

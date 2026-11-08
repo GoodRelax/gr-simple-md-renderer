@@ -178,6 +178,13 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 - Tables: a short cell's text now starts at the top of its row, level with
   the first line of a long cell beside it (it was centred up and down).
   The side alignment still follows the table's delimiter row.
+- Review standard: the two middle purity values of `@purity` tags are now
+  `semi-pure-immutable` (reads only immutable state) and
+  `semi-pure-mutable` (reads mutable state), as in gr-sw-maker's review
+  standard at commit `0db4e95`. The classification itself is unchanged, so
+  each old value maps to one new value. The code, the launcher, the spec
+  and the purity checker use the new names, and a new test fails when a
+  tracked text file still holds an old value. The app does not change.
 
 ### Added
 

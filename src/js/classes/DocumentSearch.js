@@ -31,7 +31,7 @@ const REVEAL_MIN_PX = 8;
  * Ranges over the rendered text of element where it reads text, at least
  * atLeast of them when there are. The rendered text may differ from the
  * source (markup), then there is none.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {HTMLElement} element
  * @param {string} text
  * @param {boolean} matchCase
@@ -152,7 +152,7 @@ export default class DocumentSearch {
     });
   }
 
-  /** @purity semi-pure-a */
+  /** @purity semi-pure-immutable */
   isShown() {
     return !this.el.panel.hidden;
   }
@@ -251,14 +251,14 @@ export default class DocumentSearch {
 
   // ---- internals ----
 
-  /** @purity semi-pure-a */
+  /** @purity semi-pure-immutable */
   _isOn(toggle) {
     return toggle.getAttribute("aria-pressed") === "true";
   }
 
   /**
    * The conditions of a search as the panel reads now.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @returns {{query: string, isRegex: boolean, matchCase: boolean}}
    */
   _conditions() {
@@ -277,7 +277,7 @@ export default class DocumentSearch {
 
   /**
    * The matches are of the conditions as they are now.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   _isSearched() {
     return this._searched !== null && DocumentSearch._same(this._searched, this._conditions());
@@ -285,7 +285,7 @@ export default class DocumentSearch {
 
   /**
    * The text searched: the Markdown source, or the code view's lines.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   _documentText() {
     if (this._codeEditor) return this._codeEditor.text();
@@ -293,7 +293,7 @@ export default class DocumentSearch {
     return Array.from(this._codeLines(), (line) => line.textContent).join("\n");
   }
 
-  /** @purity semi-pure-a */
+  /** @purity semi-pure-immutable */
   _codeLines() {
     return this.el.preview.querySelector("#codeViewBody")?.children ?? [];
   }
@@ -464,7 +464,7 @@ export default class DocumentSearch {
 
   /**
    * The block of a match in the Markdown view, and where it starts.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @returns {{element: HTMLElement, start: number}|null}
    */
   _blockPlace(match) {
@@ -476,7 +476,7 @@ export default class DocumentSearch {
 
   /**
    * The line of a match in the code view, and where it starts.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @returns {{element: HTMLElement, start: number}|null}
    */
   _codePlace(match) {
@@ -493,7 +493,7 @@ export default class DocumentSearch {
   /**
    * The row of a table block for a source line: the header for the first
    * two lines (the header and the delimiter row), then one row a line.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {HTMLElement} element
    * @param {string} before - the block's source up to the match
    * @returns {HTMLTableRowElement|null}

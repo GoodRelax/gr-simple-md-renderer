@@ -11,7 +11,7 @@ export const FILE_SYSTEM_HANDLE_SUPPORTED =
 
 /**
  * A text field other than the top editor: a paste there is its own.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {EventTarget|null} target
  * @param {HTMLElement|null} editor - the top editor
  * @returns {boolean}
@@ -56,7 +56,7 @@ export const LAUNCH_BLOCK_ID = `${APP_ID_PREFIX}launch-file`;
 /**
  * Whether an element is the launch block: a <script type="text/plain"> with
  * the launch id, right under <head> (a document never stands in, INV-104 (4)).
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {Element|null} element
  * @param {HTMLHeadElement|null} head
  * @returns {boolean}
@@ -70,7 +70,7 @@ export function isLaunchBlock(element, head) {
  * (data-path, for [Save], INV-105) and its bytes (the text), all Base64;
  * null when one cannot be decoded or the name is empty. A block without
  * data-path (an older launcher) gives the path null.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {Element} block
  * @returns {{name: string, path: string|null, bytes: Uint8Array}|null}
  */

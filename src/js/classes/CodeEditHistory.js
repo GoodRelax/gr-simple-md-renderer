@@ -100,7 +100,7 @@ export default class CodeEditHistory {
   /**
    * True when the next typing record begins a new step (none open, or the
    * pause passed): its selection before is wanted then.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   startsStep() {
@@ -207,7 +207,7 @@ export default class CodeEditHistory {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean} true when there is a step to undo (exact after settle())
    */
   canUndo() {
@@ -215,7 +215,7 @@ export default class CodeEditHistory {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean} true when there is a step to redo
    */
   canRedo() {

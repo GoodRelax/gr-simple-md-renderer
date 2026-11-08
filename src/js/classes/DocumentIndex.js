@@ -26,7 +26,7 @@ const JUMP_MARGIN_PX = 8;
  * The text of a heading for the index: math as its TeX source (KaTeX keeps
  * it in the annotation; a formula still waiting for KaTeX keeps the same in
  * data-tex, INV-81 (3)), everything else as plain text.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {HTMLElement} heading
  * @returns {string}
  */
@@ -43,7 +43,7 @@ function headingText(heading) {
 
 /**
  * A top-level block of the preview: the renderer's wrapper.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {Node} node
  * @returns {boolean}
  */
@@ -53,7 +53,7 @@ function isBlock(node) {
 
 /**
  * Order of sort for siblings: the later one first.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {Node} a
  * @param {Node} b
  * @returns {number}
@@ -103,7 +103,7 @@ export default class DocumentIndex {
     this.panel.addEventListener("click", (e) => this._onEntryClick(e));
   }
 
-  /** @purity semi-pure-a */
+  /** @purity semi-pure-immutable */
   isShown() {
     return !this.panel.hidden;
   }
@@ -319,7 +319,7 @@ export default class DocumentIndex {
   /**
    * @param {HTMLElement[]} nodes
    * @returns {DocumentFragment}
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   _fragment(nodes) {
     const fragment = document.createDocumentFragment();
@@ -331,7 +331,7 @@ export default class DocumentIndex {
    * The first entry of the blocks after block, or null: none (at the end).
    * @param {HTMLElement} block
    * @returns {HTMLButtonElement|null}
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    */
   _firstEntryAfter(block) {
     for (let next = block.nextElementSibling; next; next = next.nextElementSibling) {

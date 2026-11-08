@@ -120,7 +120,7 @@ const POPOVERS = {
  * Palette layout (5.15.1): 7 columns x 2 rows, no separators. mod is the
  * primary modifier shown in the tooltips ("Ctrl", or "Cmd" on Apple platforms).
  * The labels come from CONFIG.messages.palette.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {string} mod
  * @returns {Array<Array<object|string>>}
  */
@@ -152,7 +152,7 @@ function paletteRows(mod) {
  * grip tap of the same pointer type (PD1, PD2): the time between the two
  * presses is at most CONFIG.edit.paletteDoubleTapMs. A mouse is left to the
  * browser's dblclick (the OS double-click time).
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {{pointerType: string, time: number}|null} lastTap
  * @param {{pointerType: string, time: number}} press
  * @param {object} [limits] - CONFIG.edit
@@ -264,7 +264,7 @@ function clamp(value, min, max) {
  * The button is disabled (aria-disabled, not the disabled attribute: a
  * disabled palette button still gets the pointer events that move the
  * palette, INV-35).
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {HTMLElement} button
  * @returns {boolean}
  */
@@ -408,7 +408,7 @@ export default class EditPalette {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isShown() {
@@ -417,7 +417,7 @@ export default class EditPalette {
 
   /**
    * The open popover (format / mermaid / table), or null (11-f).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string|null}
    */
   openPopoverKey() {
@@ -519,7 +519,7 @@ export default class EditPalette {
 
   /**
    * The palette shows the grip only (11-f minimized).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   isMinimized() {
@@ -528,7 +528,7 @@ export default class EditPalette {
 
   /**
    * The node is inside the palette or one of its popovers (by reference; INV-36).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node|null} node
    * @returns {boolean}
    */
@@ -577,7 +577,7 @@ export default class EditPalette {
   // ---- internals: 11-d actions and guards ----
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isGestureGuardTrue(guard, input) {
     switch (guard) {
@@ -736,7 +736,7 @@ export default class EditPalette {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string|null} the popover key of a display state
    */
   _popoverKeyOf(state) {
@@ -744,7 +744,7 @@ export default class EditPalette {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _openPopoverKey() {
     return this._popoverKeyOf(this._paletteDisplayState);
@@ -846,7 +846,7 @@ export default class EditPalette {
 
   /**
    * One of this palette's buttons (by reference) holding the node, or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _buttonAt(node) {
     const button = node instanceof Element ? node.closest("button") : null;
@@ -854,7 +854,7 @@ export default class EditPalette {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isInside(el, e) {
     const rect = el.getBoundingClientRect();
@@ -864,14 +864,14 @@ export default class EditPalette {
   // ---- internals: layout (INV-32, INV-37) ----
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _containers() {
     return [this._root, ...Object.values(this._popovers)];
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _position() {
     const rect = this._root.getBoundingClientRect();

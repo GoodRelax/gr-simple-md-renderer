@@ -240,7 +240,7 @@ graph LR
 | --- | --- | --- |
 | Launch block rules (in the script) | Turn a file name and bytes into the launch block text; find the launch slot in the bytes of a build | pure |
 | Launcher main flow | Check the inputs, write the copy, start the browser, wait and delete | non-pure |
-| `readLaunchBlock` (`earlyInput.js`) | Turn a launch block element into `{name, path, bytes}` or `null` | semi-pure-a (reads the element) |
+| `readLaunchBlock` (`earlyInput.js`) | Turn a launch block element into `{name, path, bytes}` or `null` | semi-pure-immutable (reads the element) |
 | Receiver (`boot.js`) | Take the block at start, remove it, keep the file (and its full path) as the early drop | non-pure |
 | [Save] (`UIController.saveFromButton`) | Put the full path of a launched document on the clipboard before its first save, then save as Ctrl+S does (main spec INV-105) | non-pure |
 | `launchSlotError` (`vite.config.js`) | Say what is wrong with the slot in a built HTML text, or null | pure |

@@ -29,7 +29,7 @@ const ENTRY_SELECTOR = "textarea, input, select, .md-block-editing, .md-block-ga
 /**
  * The node holds something a reader sees: text that is not only white
  * space, or an element (not a table's tab, which is a control).
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {Node} node
  * @param {(node: Node) => boolean} isTab
  * @returns {boolean}
@@ -43,7 +43,7 @@ function hasContent(node, isTab) {
  * Nothing a reader sees lies between the start of wrapper and the point
  * (container, offset) (or, with after true, between the point and the end
  * of wrapper): the point is at the very start (end) of the block.
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {Element} wrapper
  * @param {Node} container
  * @param {number} offset
@@ -172,12 +172,12 @@ export default class BlockRangeSelection {
     this._onBarWheel = (e) => forwardWheel(e, this.preview); // the bar is on the body: the turn goes to the preview
   }
 
-  // ---- Queries (semi-pure-b: they read the selection and the layout, and change nothing) ----
+  // ---- Queries (semi-pure-mutable: they read the selection and the layout, and change nothing) ----
 
   /**
    * The range the selection makes now, read again, or null (none, edit
    * mode off or busy, or the focus in a text entry). Shows nothing.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{kind: "blockRange", firstId: number, lastId: number}|null}
    */
   readRange() {
@@ -187,7 +187,7 @@ export default class BlockRangeSelection {
 
   /**
    * A range is shown (as update() last read it; once per frame).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   hasRange() {
@@ -196,7 +196,7 @@ export default class BlockRangeSelection {
 
   /**
    * The node is the bar (or inside it).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node|null} node
    * @returns {boolean}
    */
@@ -208,7 +208,7 @@ export default class BlockRangeSelection {
    * The ends of the selection when it is not empty and touches the preview,
    * or null. The one test of "some text is selected in the preview" (the
    * range and the release of a drag use it).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{start: {node: Node, offset: number}, end: {node: Node, offset: number}}|null}
    */
   _previewSelection() {
@@ -239,7 +239,7 @@ export default class BlockRangeSelection {
 
   /**
    * The selection as block indices, or null when it makes no range.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{wrappers: HTMLElement[], first: number, last: number, end: {node: Node, offset: number}|null}|null}
    */
   _findRange() {
@@ -265,7 +265,7 @@ export default class BlockRangeSelection {
 
   /**
    * The ids of a found range.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{wrappers: HTMLElement[], first: number, last: number}} found
    * @returns {{kind: "blockRange", firstId: number, lastId: number}}
    */
@@ -280,7 +280,7 @@ export default class BlockRangeSelection {
   /**
    * An end of the selection in an editor, a cell, a gap editor, the bar or
    * the palette (U5).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node} node
    * @returns {boolean}
    */
@@ -295,7 +295,7 @@ export default class BlockRangeSelection {
    * The block index one end of the selection stands for. The start goes
    * forward and the end backward when it is not in a block, or at the very
    * end (start) of a block (U2: inward); rounded tells that it moved.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {HTMLElement[]} wrappers
    * @param {{node: Node, offset: number}} point
    * @param {boolean} isStart
@@ -320,7 +320,7 @@ export default class BlockRangeSelection {
    * The first wrapper at or after a child of the preview (forward), or the
    * last at or before it (backward), by a binary search over the wrappers
    * in their order. null child: the end (forward: none) or nothing before.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {HTMLElement[]} wrappers
    * @param {Node|null} child
    * @param {boolean} forward
@@ -345,14 +345,14 @@ export default class BlockRangeSelection {
    * The part of first..last that gets the frame: the wrappers within one
    * screen above and below the viewport (by a binary search over their
    * boxes, in order). Without layout (every box at 0), all of them.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{wrappers: HTMLElement[], first: number, last: number}} found
    * @returns {{first: number, last: number}}
    */
   _findFramedPart(found) {
     const { wrappers } = found;
     const reach = window.innerHeight;
-    /** @purity semi-pure-b */
+    /** @purity semi-pure-mutable */
     const findFirstWhere = (test) => {
       let lo = found.first;
       let hi = found.last + 1;
@@ -372,7 +372,7 @@ export default class BlockRangeSelection {
    * The line the selection ends on: the box of its end point, or, when the
    * end was moved to a block edge (or has no box), the bottom of the last
    * block in the range.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{node: Node, offset: number}|null} end
    * @param {HTMLElement} lastWrapper
    * @returns {{x: number, top: number, bottom: number}}
@@ -386,7 +386,7 @@ export default class BlockRangeSelection {
 
   /**
    * The box of the line at a selection point, or null (no layout, or no box).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{node: Node, offset: number}} point
    * @returns {DOMRect|null}
    */
@@ -408,7 +408,7 @@ export default class BlockRangeSelection {
 
   /**
    * The bar's button holding node, as its kind, or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {EventTarget|null} node
    * @returns {string|null}
    */

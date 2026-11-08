@@ -42,7 +42,7 @@ export default class ClipboardLink {
 
   /**
    * The URL condition's settings (CONFIG.edit.linkSchemes / maxPastedUrlLength).
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @returns {{schemes: string[], maxLength: number}}
    */
   static urlOptions() {
@@ -68,7 +68,7 @@ export default class ClipboardLink {
   /**
    * The paste's URL (INV-69, Ctrl+V / Cmd+V): its text/plain only, read
    * synchronously (no permission); null when that is not a URL.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {ClipboardEvent|null} event
    * @param {{schemes: string[], maxLength: number}} options
    * @returns {string|null} the URL without the spaces around it
@@ -120,7 +120,7 @@ export default class ClipboardLink {
    * The text of the one a element of html whose href is url (newlines as
    * spaces, without the spaces around it), or null (none, more than one,
    * or an empty text).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {string} html
    * @param {string} url
    * @param {(html: string) => Document} [parseHtml]
@@ -186,7 +186,7 @@ export default class ClipboardLink {
 
   /**
    * An inert document: DOMParser runs no script and loads no image.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   static _parseHtml(html) {
     return new DOMParser().parseFromString(html, "text/html");

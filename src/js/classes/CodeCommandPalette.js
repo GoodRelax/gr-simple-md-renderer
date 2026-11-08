@@ -54,7 +54,7 @@ export default class CodeCommandPalette {
     this.box.addEventListener("keydown", (e) => this._handleKeyDown(e));
   }
 
-  /** @purity semi-pure-a */
+  /** @purity semi-pure-immutable */
   isShown() {
     return !this.box.hidden;
   }

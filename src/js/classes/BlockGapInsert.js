@@ -98,7 +98,7 @@ export default class BlockGapInsert {
 
   /**
    * The node is the line (or inside it).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Node|null} node
    * @returns {boolean}
    */
@@ -114,7 +114,7 @@ export default class BlockGapInsert {
    * editor is the insert). Not over a table's tab, a link, a button or
    * another control of the preview, nor where something else is over the
    * preview (the top bar of a touch layout), nor while blocks are selected.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} x
    * @param {number} y
    * @returns {{kind: "gap", afterBlockId: number|null, beforeBlockId: number|null, top: number, bottom: number, line: number, left: number, width: number}|null}
@@ -180,7 +180,7 @@ export default class BlockGapInsert {
 
   /**
    * The gap the line shows, or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {object|null}
    */
   shownGap() {
@@ -192,7 +192,7 @@ export default class BlockGapInsert {
   /**
    * The block wrappers in order, with an open gap editor among them (its id
    * is null: the gaps next to it are not offered).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {HTMLElement[]}
    */
   _solidElements() {
@@ -207,7 +207,7 @@ export default class BlockGapInsert {
 
   /**
    * The zone of the gap k (above element k; k = length: after the last).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _zone(elements, k, area) {
     const hit = CONFIG.edit.gapHitPx;
@@ -238,7 +238,7 @@ export default class BlockGapInsert {
 
   /**
    * A block wrapper (not the open gap editor).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   _isBlock(el) {
     return this.blockLocator.findBlockIdAt(el) !== null;
@@ -248,7 +248,7 @@ export default class BlockGapInsert {
    * The topmost element at the point under the line is a control of the
    * preview (CONTROL_SELECTOR, or a table's tab), or is not in the preview
    * at all (the top bar over the preview in a touch layout, the palette).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} x
    * @param {number} y
    * @returns {boolean}
@@ -267,7 +267,7 @@ export default class BlockGapInsert {
   /**
    * The "Markdown" tab the renderer put on a table block's wrapper, or null
    * (known by reference: a document's own class is not one).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {HTMLElement} wrapper
    * @returns {HTMLElement|null}
    */

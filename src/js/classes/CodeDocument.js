@@ -179,7 +179,7 @@ export default class CodeDocument {
    * text encoded. The BOM is kept when written in the document's own
    * encoding; UTF-8 chosen for another encoding is written without one.
    * unencodableLines (1-based) not empty: bytes is empty and nothing is saved.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {string} text - LF text
    * @param {string} encoding - the encoding to write
    * @returns {{bytes: Uint8Array, unencodableLines: number[]}}

@@ -30,7 +30,7 @@ import { DATA_ID_PREFIX } from "./libraryNames.js";
  * Whether an element is the data block of the library: a parser-made
  * <script type="text/plain"> with the library's id. The note that calls
  * arrive() comes right after it in the file.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {Element|null} data
  * @param {string} name
  * @returns {boolean}
@@ -45,7 +45,7 @@ function isDataBlock(data, name) {
  * put an element at the end of <body> while the file was still arriving
  * (mermaid's tooltip, when a document with a diagram opened early), between
  * a data block and its note. Those are skipped (INV-81 (2)).
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {Element|null} element
  * @returns {Element|null}
  */

@@ -23,7 +23,7 @@ export function escapeHtml(str) {
  * Format a timestamp (milliseconds since epoch) as 'YYYY-MM-DD HH:MM:SS'.
  * @param {number} ms
  * @returns {string}
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  */
 export function formatDateTime(ms) {
   const d = new Date(ms);
@@ -38,7 +38,7 @@ export function formatDateTime(ms) {
  * Format a Date object as 'HH:MM:SS'.
  * @param {Date} date
  * @returns {string}
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  */
 export function formatTime(date) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -100,7 +100,7 @@ export function showActionToast(msg, actionLabel, onAction, durationMs) {
  * a press outside an open block editor or a block range (INV-108 (4)).
  * @param {Node|null} node
  * @returns {boolean}
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  */
 export function isInActionToast(node) {
   const el = node?.nodeType === 1 ? node : node?.parentElement;
@@ -123,7 +123,7 @@ export function applyTheme(theme) {
 /**
  * Read OS/browser color-scheme preference and apply it.
  * @returns {'light'|'dark'}
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  */
 export function systemTheme() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -192,7 +192,7 @@ export async function waitForDOMStability(
  * @param {ParentNode|ParentNode[]} roots
  * @param {string} selector
  * @returns {Element[]}
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  */
 export function queryAllIn(roots, selector) {
   const list = Array.isArray(roots) ? roots : [roots];
@@ -267,7 +267,7 @@ export function nextFrame(cb) {
  * a contenteditable element or a role="toolbar" (the edit palette) is not a
  * document shortcut. The role is checked as written (ruling T2). The same
  * focus keeps a block range (INV-74 (1)) from being made.
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {Element|null} el - the focused element
  * @returns {boolean}
  */

@@ -13,7 +13,7 @@ import FileRefusal from "./classes/FileRefusal.js";
  * the file type (FILE_TYPES, spec 5.4) of its extension (lower case), then
  * of its whole name, says "markdown" or "code"; a file of no listed type is
  * "notAllowed". Its content is checked after decoding (U+0000, AQ11).
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {string} fileName
  * @param {number} fileSize
  * @returns {"tooLarge"|"markdown"|"code"|"notAllowed"}
@@ -30,7 +30,7 @@ export function classifyDroppedFile(fileName, fileSize) {
 /**
  * The open checks before a file is read (INV-11, INV-18 (1)-(4)): its size
  * and its type by name.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {{name: string, size: number}} file
  * @returns {"markdown"|"code"} how it opens
  * @throws {FileRefusal} too large, or of no listed type

@@ -1,7 +1,7 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.45
-**日付:** 2026-11-07 (v2.0: 2026-03-07)
+**バージョン:** 2.46
+**日付:** 2026-11-08 (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
 **自動テスト:** `npm test` (vitest) と `npm run test:e2e` (Playwright) の全件。件数は実施のときに記入する: vitest \_\_\_\_ 件 (スキップ \_\_\_\_ 件)、e2e \_\_\_\_ 件 (スキップ \_\_\_\_ 件)。ID の一覧は「自動テスト (AT) の一覧」の章
@@ -99,6 +99,8 @@
 > v2.44 の変更 (2026-11-01〜02、コードの編集欄で打つたびに字が白くなるちらつきを止める。裁定 BI-26 (オーナーの R11、2026-11-01)): 仕様の INV-86 の改め (色の層を見せたまま、変わった行だけを色付けし直し、その行を持つ 64 行の塊だけを書く。字の類でない `span` の中の行はその言語で色付けする。2,048 字を超える行の編集は、改行も含めて、highlight.js を呼ばずに色付きの文字に書き込む。IME の変換中の字は CSS Custom Highlight の下線。1 打鍵で色なしの上限を超えたとき・層が文字を持たないときだけ層を隠す) と 5.19.5・5.19.12 に合わせて、PRT-AJ04 の手順 1 と 6 の期待結果を改め、PRT-AJ19 (新。Given / When / Then。ダークとライト、ブロックコメントの中、IME、`.html` の `<script>`・`<style>`、1 行の JSON、Safari) を足した。AT に AT-CED-38〜54 を足し、AT-CED-01〜03・05・07・09・35 (層は塊で持つ。35 は色なしの文字にした) と AT-CEC-43 を改めた。e2e の codeEditor.e2e.js の INV-86 (M1) の試験を INV-86 (BI-26) の試験に書き直し (どの打鍵の後も層が見え、textarea の字が透明で、層の文字が編集欄の文字と同じ。ダークとライト。層の高さ)、IME の試験 (Chromium)、`.html`・`.vue`・`.svelte` の試験、1 行の JSON の試験を足した。レビュー 1 回目 (指摘 1〜14) の直しを含む。追加・改訂したケースの判定は空欄 (未実施)。
 
 > v2.45 の変更 (2026-11-07、参照リンク定義の署名を `links` オブジェクトごとの番号にする。オーナーの裁定 JGQA3 の問 18 の案 a): 仕様の 5.14.3 の手順 6 と `_htmlCache` のキーの改めに合わせて、AT の目録に AT-MR-24〜30 を足す (24: 定義が同じならキャッシュが当たる、25: 定義の中身が変わるとキャッシュが外れて古い HTML を出さない、26: キーの長さが定義の長さに比例しない、27: 定義を消すと別のオブジェクトになり、キャッシュが外れる、28: その場で書いたブロックのキーも定義を見分ける、29: `links` の無い呼び出しは定義が無いものとして描く、30: 表の 2 つの経路が `links` のオブジェクトを保つ)。PRT は変えていない。
+
+> v2.46 の変更 (2026-11-08、純粋性の 2 つの中間の値の改名。上流の gr-sw-maker のレビュー基準 `0db4e95`): 仕様の CON-15 と 5.16.2 の改めに合わせて、AT の目録の AT-PUR を 01〜04 にする。AT-PUR-03 は表を作り直す (`semi-pure-immutable`・`semi-pure-mutable` は通り、改名前の 2 つの値・`semi-pure-ab`・`semi-pure-`・`semi-pure-immutable-x` は落ちる)。AT-PUR-04 (新) は、git が追跡するテキストのファイルに改名前の値が 0 件であることを確かめる (除外: `spec/upstream_review_standards_ja.md` と AT-PUR-03 の表)。PRT は変えていない。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -5904,7 +5906,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-TC | 文字色の span の安全 | INV-66 | security.textColor.test.js | 01〜02 |
 | AT-THM | 配色 (Primer) と印刷の色、highlight.js のテーマの CSS を読まないこと。01・02 に上部バーのボタン (R6。フォーカスの輪を含む) と編集中の [Edit] (R1) の色、21: 上部バーのボタンの形 (角の丸み 6px、`appearance: none`。[?] は今のまま。R6)、22: 表のセルは縦の上寄せで、横の寄せは決めない (TVA1) | 5.8.1、5.15.2、5.1 | themeColors.test.js、hljsThemePlugin.test.js | 01〜22 |
 | AT-STA | `src/js` と `src/css` の静的な検査 (01: ストレージの API を使わない。03 (b): `src/index.html` の日本語のヘルプの外は ASCII。コードの編集の新しいファイルも対象で、`CodeDocument`・`textEncoding.js`・`indentText.js`・`jsonFold.js`・`codeOutline.js`・`CodeEditHistory` は Entity の検査 (05) の対象。20: 試験のファイル (`src/__tests__` と `e2e` の `.js`) も ASCII だけ (G5。レビュー 1 回目の L9、調整役の裁定 Q6)。21: `CONFIG.github.offered` が偽で、`main.js` の `gitHubEnabled` を止める (D40)) | CON-06、CON-13、CON-14、CON-15、INV-04 (01)、INV-20、INV-53、INV-55、INV-62、INV-70、OS-13、G5、INV-100・D40 (21) | staticChecks.test.js、MarkdownRenderer.purifyConfig.test.js (13) | 01〜21 |
-| AT-PUR | `@purity` の検査 | CON-15、5.16.2 | purityTags.test.js | 01〜03 |
+| AT-PUR | `@purity` の検査 (01: `src/js` の全関数の付与率 100%、02: 検査の自己試験、03: 値を語として丸ごと比べる。`semi-pure-immutable`・`semi-pure-mutable` は通り、改名前の 2 つの値・`semi-pure-ab`・`semi-pure-`・`semi-pure-immutable-x` は落ちる、04: git が追跡するテキストのファイルに改名前の値が 0 件 (除外: `spec/upstream_review_standards_ja.md` と AT-PUR-03 の表。自己試験: 表の後の旧値を本当の行の番号で報告する)) | CON-15、5.16.2 | purityTags.test.js | 01〜04 |
 | AT-PERF | 性能と計算量の上限 (11: 1 MB の文書の 30 件の Undo の記録のメモリ、12: 1 MB の範囲の削除の時間、13: 範囲の削除の Undo の記録のメモリ、14: 目次を出したままの確定・Undo の後の作り直しの時間。jsdom に大きな文書が残ると遅くなるので別のファイル) | INV-42、INV-48、INV-51、INV-74、INV-77 | performance.inplaceEdit.test.js、performance.index.test.js | 01〜14 |
 | AT-HLP | ヘルプ: 言語のトグル (`HelpLanguageSwitch`)、ヘルプの HTML (節の並びと数、ダウンロードのリンク、版の置き場所、閉じるボタン、新しい名前)、モーダルを開いている間のキーと Esc、本物の × (AT-HLP-09)、開くときと閉じるときのフォーカス (AT-HLP-10)、Tab / Shift+Tab をモーダルの中で回す (AT-HLP-11)、閉じ方によらず `onHide` を呼ぶ (AT-HLP-13。INV-89 のダイアログ) (`ModalController`)、「Details」/「詳細」の [Edit] の行の次の編集の始め方の行と初期画面の 4 行目 (AT-HLP-12。e2e の help.e2e.js。オーナーの裁定 AQ4)、「Details」/「詳細」のコードビューの行の 200 KB 以上のファイルの 1 文 (AT-HLP-14。英日。NE-32・NE-33)、「Details」/「詳細」の [Save] の行 (英日。Ctrl+V があり、起動役の名が無い。AT-HLP-20。PL-23)。2026-10-31 (HT-1〜HT-4) から、12・14・20 の細かい行は詳しい使い方の窓 (`guideModal`) の中で確かめる。15〜19 (GitHub の編集のヘルプの層) は D40 で外した (番号は使い回さない)。短いヘルプ: 基本的な使い方の 4 行、ボタンとキーの 11 行と最後の入口のボタン、プライバシーの 5 行と送り先の名、ライセンスだけが閉じた `<details>` で見出しが `<summary>` (AT-HLP-21)、窓の題名の行・英日の本文・3 つの節 (英日で同じ数の行)・前の細かい文・リンクと画像と図が無いこと (AT-HLP-22)、窓がヘルプの上に開いている間は窓だけがキーを受け、Esc の 1 回目で窓 (フォーカスは入口)、2 回目でヘルプ (フォーカスは [?]) が閉じる (AT-HLP-23。`ModalController`)、入口で窓がヘルプの言語で先頭から開き、Esc の 2 段、タッチの端末でも入口が出て開く (AT-HLP-24。e2e)、ライセンスの見出しのクリックと Enter で開き、ヘルプは開いたまま (AT-HLP-25。e2e)、GitHub の編集のヘルプの層・入口・図が無く、ヘルプと窓の英日の本文に GitHub 連携の文が無く、meta の description が GitHub への送信を書かない (AT-HLP-26。D40。e2e の gitHub.e2e.js でも PC で見る) | SC-16、FS-10、CON-03、CON-12、INV-89 (13)、INV-85・NE-32 (14)、5.1、5.11、INV-57 (12)、INV-29 (12)、INV-105 (20)、INV-75 (21・25)、HT-1・HT-3・HT-4 (21〜25)、INV-103・D40 (26) | HelpLanguageSwitch.test.js、ModalController.test.js、`e2e/help.e2e.js` (12・24・25)、`e2e/gitHub.e2e.js` (26) | 01〜14、20〜26 |
 | AT-VER | 版の規則 (仕様 1.7): 版を持つもののそろい、ビルドの書き込み (M1)、形の変換、規則の置き場所、`build:release` | 1.7 | versions.test.js | 01〜05 |

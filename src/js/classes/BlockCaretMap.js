@@ -40,7 +40,7 @@ const MIRROR_PROPS = [
 export default class BlockCaretMap {
   /**
    * The text of a rendered block, as the caret walks it.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Element} element
    * @returns {string}
    */
@@ -53,7 +53,7 @@ export default class BlockCaretMap {
   /**
    * The caret at a point of the page (caretPositionFromPoint, or WebKit's
    * caretRangeFromPoint), or null.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} x
    * @param {number} y
    * @returns {{node: Node, offset: number}|null}
@@ -75,7 +75,7 @@ export default class BlockCaretMap {
    * whitespace are before the caret there, whether whitespace is right
    * before it, and the top of its line from the block's top. null when the
    * point is not on the block's text.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Element} element
    * @param {number} x
    * @param {number} y
@@ -116,7 +116,7 @@ export default class BlockCaretMap {
    * The top of the line of a rendered place, from the block's top: the
    * character the caret is after (afterSpace false), else the one it is
    * before (the last one at the end). null when there is none.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Element} element
    * @param {number} count
    * @param {boolean} afterSpace
@@ -189,7 +189,7 @@ export default class BlockCaretMap {
    * The rendered place of a caret line of a commit (INV-84) in the block
    * rendered after it: line.sourceOffset is the caret in the source. null
    * when the caret is past the source (the block was cut).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{offset: number, sourceOffset: number}} line
    * @param {Element} element
    * @param {string} source - the block's source (as the editor showed it)
@@ -208,7 +208,7 @@ export default class BlockCaretMap {
    * the editor, ...}; place: placeOfLine of that line in element. Without a
    * line or a place, or when the place has no character, the block's top
    * stays where it was (INV-46).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {{offsetTop: number, line?: {offset: number}}|null} anchor
    * @param {Element|null} element
    * @param {{count: number, afterSpace: boolean}|null} place
@@ -284,7 +284,7 @@ export default class BlockCaretMap {
 
   /**
    * The text nodes of a rendered block, in order, without those of SKIP_SELECTOR.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {Element} element
    * @returns {Text[]}
    */
@@ -293,7 +293,7 @@ export default class BlockCaretMap {
     // elements are visited too, so that a skipped one skips its whole
     // subtree (one check per element, not one per text node)
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-      /** @purity semi-pure-b */
+      /** @purity semi-pure-mutable */
       acceptNode: (node) => {
         if (node.nodeType === Node.TEXT_NODE) return NodeFilter.FILTER_ACCEPT;
         return node.matches(SKIP_SELECTOR) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
@@ -304,7 +304,7 @@ export default class BlockCaretMap {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {number|null} the top of one character, from the block's top
    */
   static _charTop(element, node, index) {

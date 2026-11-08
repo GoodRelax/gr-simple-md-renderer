@@ -94,7 +94,7 @@ export default class SaveDocumentAs {
 
   /**
    * Toast text for a failure (INV-25).
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {Error} error
    * @returns {string}
    */

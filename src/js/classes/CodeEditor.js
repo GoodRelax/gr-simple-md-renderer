@@ -70,7 +70,7 @@ function lineOfOffset(text, offset) {
  * line alone (INV-86 (b)): how many there are, whether the innermost is a
  * scope of text (a comment, a string: CONFIG.codeEdit.textScopeClasses),
  * and the innermost sub-language (a highlight.js "language-<id>" span), if any.
- * @purity semi-pure-a
+ * @purity semi-pure-immutable
  * @param {string} carried
  * @returns {{depth: number, isText: boolean, language: string|null}}
  */
@@ -88,7 +88,7 @@ function carriedScope(carried) {
 /**
  * A DOM range over an element's text from start to end (offsets in its
  * text), or null when the text is shorter.
- * @purity semi-pure-b
+ * @purity semi-pure-mutable
  * @param {Element} root
  * @param {number} start
  * @param {number} end
@@ -230,7 +230,7 @@ export default class CodeEditor {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean} true while editing
    */
   isActive() {
@@ -239,7 +239,7 @@ export default class CodeEditor {
 
   /**
    * The indent unit inferred from the text when editing started (INV-87).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string}
    */
   get indentUnit() {
@@ -310,7 +310,7 @@ export default class CodeEditor {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {string} the text being edited ("" when not editing)
    */
   text() {
@@ -318,7 +318,7 @@ export default class CodeEditor {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {HTMLTextAreaElement|null}
    */
   get input() {
@@ -326,7 +326,7 @@ export default class CodeEditor {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canUndo() {
@@ -334,7 +334,7 @@ export default class CodeEditor {
   }
 
   /**
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {boolean}
    */
   canRedo() {
@@ -414,7 +414,7 @@ export default class CodeEditor {
   /**
    * Where a line is: the textarea, and how far below its top the line's
    * top is (for ScrollMemento.scrollTargetTo).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} line - 0-based
    * @returns {{element: HTMLElement, offset: number}|null}
    */
@@ -426,7 +426,7 @@ export default class CodeEditor {
 
   /**
    * Where the line holding an offset is (linePlace).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} offset
    * @returns {{element: HTMLElement, offset: number}|null}
    */
@@ -440,7 +440,7 @@ export default class CodeEditor {
    * marked on it), or null: the layer does not hold the text now (plain),
    * or the Search's offsets wait for the pause (edited since the layer was
    * written whole).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} start
    * @param {number} end
    * @returns {Range|null}
@@ -521,7 +521,7 @@ export default class CodeEditor {
    * The text an input inserted, from the event (not from the whole text):
    * its data, a line break, or the piece between the selection before it
    * and the caret after it (a paste or a drop without data). "" when not known.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {InputEvent|{data: string}|undefined} e
    * @param {string} text - the text after the input
    * @param {number[]|null} before - the selection before the input
@@ -555,7 +555,7 @@ export default class CodeEditor {
    * Whether the layer can follow an edit that leaves this text: it holds
    * the colored text (not plain, not hidden) and the text is not over the
    * plain limit (the comparison stays within it).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {string} text
    * @returns {boolean}
    */
@@ -719,7 +719,7 @@ export default class CodeEditor {
    * the first and the last, the line the first starts with, and their
    * lines in all; null when the layer does not hold those lines (a block
    * missing, or taken off the layer).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} first
    * @param {number} count
    * @returns {{from: number, to: number, start: number, count: number}|null}
@@ -771,7 +771,7 @@ export default class CodeEditor {
    * (carried): inside a scope of text (a comment, a string) in that
    * scope's color; else colored by highlight.js in the innermost
    * sub-language open (or the file's language) and wrapped in those tags.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {string} line
    * @param {string} carried - the tags open at the line's start
    * @param {{depth: number, isText: boolean, language: string|null}} scope - carriedScope(carried)
@@ -842,7 +842,7 @@ export default class CodeEditor {
    * A DOM range over the layer's text from start to end, within one line
    * (found in its block, not by walking the whole layer); null when the
    * layer does not hold that text.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @param {number} start
    * @param {number} end
    * @returns {Range|null}
@@ -922,7 +922,7 @@ export default class CodeEditor {
   /**
    * The fold key pressed, by its place (event.code, NE-27): Ctrl+Shift+[ / ]
    * (Mac: Cmd+Option+[ / ], without Shift); null for any other key.
-   * @purity semi-pure-a
+   * @purity semi-pure-immutable
    * @param {KeyboardEvent} e
    * @returns {"fold"|"unfold"|null}
    */
@@ -1168,7 +1168,7 @@ export default class CodeEditor {
 
   /**
    * The textarea's top padding and line height in px (0 when unknown).
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {{top: number, lineHeight: number}}
    */
   _metrics() {
@@ -1181,7 +1181,7 @@ export default class CodeEditor {
   /**
    * The first line shown at the top of the preview: the caret goes there
    * when editing starts, so the view does not move.
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    * @returns {number}
    */
   _firstShownLine() {

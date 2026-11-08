@@ -92,7 +92,7 @@ export default class DiagramPanController {
   /**
    * @param {EventTarget} target
    * @returns {HTMLElement|null}
-   * @purity semi-pure-b
+   * @purity semi-pure-mutable
    */
   findScrollContainerAt(target) {
     return (
