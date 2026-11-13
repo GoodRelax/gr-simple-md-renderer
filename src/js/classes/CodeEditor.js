@@ -3,6 +3,9 @@ import { escapeHtml, shortcutLetter } from "../utils.js";
 import { inferIndentUnit, indentChange, leadingIndentAt } from "../indentText.js";
 import { textChange } from "./CodeEditHistory.js";
 import { SEARCH_HIGHLIGHTS } from "./DocumentSearch.js";
+import LongLineColors from "./LongLineColors.js";
+import { lineFeedsIn } from "../caretMatching.js";
+import { blockCounts, charSpacingPx, hasLineOver, isChunkedLine } from "../longLineTokens.js";
 import { releaseCodeView, splitHighlightedLines } from "./SourceFileRenderer.js";
 
 // Keys that move the caret without typing: the next typing starts a new
@@ -22,18 +25,16 @@ const COMPOSING_HIGHLIGHT = "grsmd-code-composing";
 const LANGUAGE_PREFIX = "language-";
 // room added past the text when the textarea had to scroll itself (px)
 const GROW_PX = 64;
-
-/**
- * The number of line feeds in a text.
- * @purity pure
- * @param {string} text
- * @returns {number}
- */
-function lineFeedsIn(text) {
-  let count = 0;
-  for (let at = text.indexOf("\n"); at >= 0; at = text.indexOf("\n", at + 1)) count++;
-  return count;
-}
+// Why: a long sample shows a text box's sum error (WebKit 0.0004 px a character at 4,096 characters, Chromium none)
+// Why: the width comes from a short sample, exact in 32-bit floats at a zoom of 3 too
+const CHAR_SAMPLE_CLASS = "code-edit-char-sample";
+const CHAR_SAMPLE_EXACT_CHARS = 256;
+const CHAR_SAMPLE_SHORT_CHARS = 1024;
+const CHAR_SAMPLE_LONG_CHARS = 4096;
+// Why: over this, a long sample differs from a short one by more than rounding (1/64 px over 1,024 characters); under a zoom of 0.3 rounding passes it, and the spacing goes on in Chromium too, at no harm but its time
+const CHAR_WIDTH_ERROR_PX = 5e-5;
+// Why: under the step by this much, a rounding up stays on the step; 30,000 characters add 0.3 px
+const CHAR_WIDTH_MARGIN_PX = 1e-5;
 
 /**
  * The offset where a line starts (0-based line; past the end: the text's end).
@@ -123,16 +124,17 @@ function blockInnerHtml(lines) {
 }
 
 /**
- * Blocks of the layer for these lines, each of at most size lines.
  * @purity pure
  * @param {string[]} lines - the lines' HTML
- * @param {number} size
+ * @param {number[]} counts - blockCounts
  * @returns {string}
  */
-function blocksHtml(lines, size) {
+function blocksHtml(lines, counts) {
   let html = "";
-  for (let at = 0; at < lines.length; at += size) {
-    html += `<span class="${BLOCK_CLASS}">${blockInnerHtml(lines.slice(at, at + size))}</span>`;
+  let at = 0;
+  for (const count of counts) {
+    html += `<span class="${BLOCK_CLASS}">${blockInnerHtml(lines.slice(at, at + count))}</span>`;
+    at += count;
   }
   return html;
 }
@@ -224,9 +226,11 @@ export default class CodeEditor {
     this._composing = null; // {start, end}: the IME composition's text, marked on the layer
     this._extraLines = 0; // lines added since the layer was written
     this._before = null; // the selection at the last beforeinput: where a typing step begins
+    this._colors = null; // Spec: INV-86 (e). null: not editing, or the browser has no CSS highlights
+    this._hasWidthError = null; // Spec: INV-86 (e). null: not read yet
     this._settleTimer = 0;
     this._onBeforePrint = () => this._fillLayerForPrint();
-    this._onAfterPrint = () => this._emptyPlainLayer();
+    this._onAfterPrint = () => this._restoreLayerAfterPrint();
   }
 
   /**
@@ -258,6 +262,7 @@ export default class CodeEditor {
     this._history = history;
     this._unit = inferIndentUnit(text, CONFIG.codeEdit.defaultIndent);
     this._build();
+    this._colors = LongLineColors.isSupported() ? new LongLineColors(this._code) : null;
     const input = this._input;
     input.value = text;
     this._lineCount = 0;
@@ -287,6 +292,9 @@ export default class CodeEditor {
     this._settleTimer = 0;
     this._composing = null;
     this._markComposition();
+    this._colors?.stop();
+    this._colors = null;
+    this._hasWidthError = null;
     this._history.noteCaretMove(); // the typing step ends with the selection now
     this._history.readSelectionWith(null);
     this._history.settle();
@@ -594,8 +602,9 @@ export default class CodeEditor {
       const lines = text.slice(start, end).split("\n");
       this._lines.splice(first, replaced, ...lines.map((line) => this._lineHtml(line, carried, scope)));
       this._carried.splice(first, replaced, ...lines.map(() => carried));
-      this._writeBlocks(span, span.count - replaced + lines.length);
+      this._writeBlocks(span, span.count - replaced + lines.length, { first: first - span.start, replaced, added: lines.length });
     }
+    this._colors?.colorNearScreenSoon(); // Why: an edit can bring chunks onto the screen with no scroll
     this._shown = text;
     this._typing = true;
     this._markComposition();
@@ -611,11 +620,11 @@ export default class CodeEditor {
    * line's start goes into the text node after the line feed before it.
    * @purity non-pure
    * @param {{from: number, to: number, start: number}} span - _blockSpan of the lines
-   * @param {number} line - the first line (0-based)
+   * @param {number} firstLine - the first line (0-based)
    * @param {{at: number, removed: string, inserted: string}} change - from the layer's text
    * @returns {boolean} false when the layer does not hold the place (nothing usable written)
    */
-  _writeInText(span, line, { at, removed, inserted }) {
+  _writeInText(span, firstLine, { at, removed, inserted }) {
     const offset = at - lineStartOffset(this._shown, span.start);
     const block = this._joinBlocks(span);
     const walker = document.createTreeWalker(block.el, NodeFilter.SHOW_TEXT);
@@ -635,19 +644,22 @@ export default class CodeEditor {
     const here = Math.min(removed.length, node.data.length - local);
     const touched = [node];
     let rest = removed.length - here;
-    node.data = node.data.slice(0, local) + inserted + node.data.slice(local + here);
+    // Why: writing the node may cut its chunk at the inserted line feeds, and the walker would go into those parts
     for (let piece = walker.nextNode(); rest > 0 && piece; piece = walker.nextNode()) {
       const taken = Math.min(rest, piece.data.length);
       piece.data = piece.data.slice(taken);
+      this._colors?.noteEdit(piece, 0, taken, 0);
       rest -= taken;
       touched.push(piece);
     }
+    node.data = node.data.slice(0, local) + inserted + node.data.slice(local + here);
+    this._colors?.noteEdit(node, local, here, inserted.length);
     this._dropSearchMarks((node) => touched.includes(node));
     if (rest > 0) return false;
     const lines = lineFeedsIn(inserted) + 1;
     const old = lineFeedsIn(removed) + 1;
-    this._lines.splice(line, old, ...Array(lines).fill(null));
-    this._carried.splice(line, old, ...Array(lines).fill(this._carried[line] ?? ""));
+    this._lines.splice(firstLine, old, ...Array(lines).fill(null));
+    this._carried.splice(firstLine, old, ...Array(lines).fill(this._carried[firstLine] ?? ""));
     block.count += lines - old;
     return true;
   }
@@ -667,7 +679,9 @@ export default class CodeEditor {
     const moved = blocks.slice(span.from + 1, span.to + 1).map(({ el }) => el);
     if (moved.length > 0) this._dropSearchMarks((node) => moved.some((el) => el.contains(node)));
     for (let b = span.from + 1; b <= span.to; b++) {
-      block.el.append(...blocks[b].el.childNodes);
+      // Why: one node a call: a paste into a long line can leave more children in a block than a call takes as arguments
+      const source = blocks[b].el;
+      for (let node = source.firstChild; node; node = source.firstChild) block.el.append(node);
       blocks[b].el.remove();
       block.count += blocks[b].count;
     }
@@ -741,29 +755,34 @@ export default class CodeEditor {
   }
 
   /**
-   * Write the blocks of a span again with its lines now (count of them,
-   * from the span's start): one block in place while they fit in it, else
-   * new blocks of CONFIG.codeEdit.layerBlockLines lines in their place.
+   * Spec: INV-86 (e).
    * @purity non-pure
    * @param {{from: number, to: number, start: number}} span - _blockSpan
    * @param {number} count
+   * @param {{first: number, replaced: number, added: number}} edit - the lines the edit replaced and those it made, from the span's start (LongLineColors.putChunks)
    */
-  _writeBlocks(span, count) {
+  _writeBlocks(span, count, edit) {
     const blocks = this._blocks;
     const size = CONFIG.codeEdit.layerBlockLines;
     const lines = this._lines.slice(span.start, span.start + count);
     const block = blocks[span.from];
-    if (span.from === span.to && count <= size) {
+    const oldElements = blocks.slice(span.from, span.to + 1).map(({ el }) => el);
+    const coloredPlaces = this._colors?.readColoredPlaces(oldElements);
+    this._colors?.releaseChunks(oldElements);
+    if (span.from === span.to && count <= size && (count === 1 || !lines.some(isChunkedLine))) {
       block.el.innerHTML = blockInnerHtml(lines); // highlight.js output and escaped text only (INV-19)
       block.count = count;
+      this._colors?.putChunks([block.el], coloredPlaces, edit);
       return;
     }
+    const counts = blockCounts(lines, size);
     const fresh = document.createElement("template");
-    fresh.innerHTML = blocksHtml(lines, size);
+    fresh.innerHTML = blocksHtml(lines, counts);
     const written = [...fresh.content.children];
     block.el.before(fresh.content);
     for (let b = span.from; b <= span.to; b++) blocks[b].el.remove();
-    blocks.splice(span.from, span.to - span.from + 1, ...written.map((el, i) => ({ el, count: Math.min(size, count - i * size) })));
+    blocks.splice(span.from, span.to - span.from + 1, ...written.map((el, i) => ({ el, count: counts[i] })));
+    this._colors?.putChunks(written, coloredPlaces, edit);
   }
 
   /**
@@ -780,9 +799,19 @@ export default class CodeEditor {
   _lineHtml(line, carried, scope) {
     if (line === "") return "";
     const close = "</span>".repeat(scope.depth);
-    if (scope.isText) return carried + escapeHtml(line) + close;
+    if (scope.isText) return this._makeLayerLine(carried + escapeHtml(line) + close);
     const html = scope.language ? this._host.highlight(line, scope.language) : this._host.highlight(line);
-    return carried + (html ?? escapeHtml(line)) + close;
+    return this._makeLayerLine(carried + (html ?? escapeHtml(line)) + close);
+  }
+
+  /**
+   * Spec: INV-86 (e).
+   * @purity semi-pure-mutable
+   * @param {string} html
+   * @returns {string}
+   */
+  _makeLayerLine(html) {
+    return this._colors ? this._colors.makeLayerLine(html) : html;
   }
 
   /**
@@ -1118,6 +1147,8 @@ export default class CodeEditor {
     style.minHeight = "";
     this._extraLines = 0;
     if (plain) {
+      this._root.style.removeProperty("--code-edit-spacing");
+      this._colors?.clear();
       this._code.textContent = "";
       this._shown = "";
       this._lines = [];
@@ -1126,12 +1157,18 @@ export default class CodeEditor {
       if (style.minWidth === "") style.minWidth = `${this._input.scrollWidth}px`;
     } else {
       const size = CONFIG.codeEdit.layerBlockLines;
-      const { lines, carried } = splitHighlightedLines(this._host.highlight(text) ?? escapeHtml(text));
-      this._code.innerHTML = blocksHtml(lines, size); // highlight.js output and escaped text only (INV-19)
+      const html = this._host.highlight(text);
+      if (html !== null) this._keepLongLineInPlace(text);
+      const { lines: colored, carried } = splitHighlightedLines(html ?? escapeHtml(text));
+      const lines = colored.map((line) => this._makeLayerLine(line));
+      const counts = blockCounts(lines, size);
+      this._colors?.clear();
+      this._code.innerHTML = blocksHtml(lines, counts); // Why: highlight.js output and escaped text only, so no script (INV-19)
+      this._colors?.colorNearScreen();
       this._shown = text;
       this._lines = lines;
       this._carried = carried;
-      this._blocks = [...this._code.children].map((el, i) => ({ el, count: Math.min(size, lines.length - i * size) }));
+      this._blocks = [...this._code.children].map((el, i) => ({ el, count: counts[i] }));
       style.minWidth = "";
     }
     this._typing = false;
@@ -1140,6 +1177,39 @@ export default class CodeEditor {
       this._root.classList.remove(TYPING_CLASS);
     }
     this._markComposition();
+  }
+
+  /**
+   * Spec: INV-86 (e).
+   * Why: the width stays on once set, so that no line jumps at the length; it is read at the pause because a zoom may have changed
+   * @purity non-pure
+   * @param {string} text
+   */
+  _keepLongLineInPlace(text) {
+    if (this._hasWidthError === false || !hasLineOver(text, CONFIG.codeEdit.snapLineChars)) return;
+    if (this._hasWidthError === null) {
+      const shortWidthPx = this._readCharWidthPx(CHAR_SAMPLE_SHORT_CHARS);
+      if (!(shortWidthPx > 0)) return;
+      this._hasWidthError = Math.abs(this._readCharWidthPx(CHAR_SAMPLE_LONG_CHARS) - shortWidthPx) > CHAR_WIDTH_ERROR_PX;
+      if (!this._hasWidthError) return;
+    }
+    const spacingPx = charSpacingPx(this._readCharWidthPx(CHAR_SAMPLE_EXACT_CHARS), CONFIG.codeEdit.charWidthStepPx, CHAR_WIDTH_MARGIN_PX);
+    this._root.style.setProperty("--code-edit-spacing", `${spacingPx}px`);
+  }
+
+  /**
+   * @purity non-pure
+   * @param {number} length - the sample's characters
+   * @returns {number} the width in px, 0 when unknown
+   */
+  _readCharWidthPx(length) {
+    const sample = document.createElement("span");
+    sample.className = CHAR_SAMPLE_CLASS;
+    sample.textContent = "0".repeat(length);
+    this._stack.append(sample);
+    const width = sample.getBoundingClientRect().width / length;
+    sample.remove();
+    return width;
   }
 
   /**
@@ -1156,14 +1226,16 @@ export default class CodeEditor {
       this._host.onTextSettled();
     }
     if (this._plain) this._code.textContent = this._input.value + "\n";
+    this._colors?.colorAll();
   }
 
   /**
-   * After print: the layer of a plain text is empty again.
    * @purity non-pure
    */
-  _emptyPlainLayer() {
-    if (this._root && this._plain) this._code.textContent = "";
+  _restoreLayerAfterPrint() {
+    if (!this._root) return;
+    if (this._plain) this._code.textContent = "";
+    this._colors?.colorNearScreen();
   }
 
   /**

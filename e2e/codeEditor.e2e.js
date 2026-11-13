@@ -444,7 +444,7 @@ for (const [name, text] of [
   });
 }
 
-test("INV-86 (b) (BI-26): a one-line JSON of 20 KB (over typedColorMaxChars): each key writes its characters, Enter and Backspace over a line feed too, into the line's colored text in its own handler (colored on the screen at once, never plain), each key after a pause; the pause colors it again", async ({ page }) => {
+test("INV-86 (b)(e) (BI-26): a one-line JSON of 20 KB (over typedColorMaxChars): each key writes its characters, Enter and Backspace over a line feed too, into the line's text in its own handler, every token kept and the place's colors on (colored on the screen at once, never plain), each key after a pause; the pause colors it again", async ({ page }) => {
   await page.goto("/");
   const items = Array.from({ length: 1000 }, (_, i) => `{"id":${i},"name":"item${i}"}`);
   await drop(page, "min.json", `[${items.join(",")}]`);
@@ -456,13 +456,20 @@ test("INV-86 (b) (BI-26): a one-line JSON of 20 KB (over typedColorMaxChars): ea
     const at = ta.value.indexOf('"item500"') + 5;
     ta.setSelectionRange(at, at);
     window.__colored = [];
-    // right after the key's own handler: the names still colored, the typed letters among them
+    const tokens = (layer) => [...layer.querySelectorAll(".code-edit-chunk")].reduce((sum, chunk) => sum + JSON.parse(chunk.getAttribute("data-tokens")).length, 0);
+    const texts = (ranges) => [...(ranges ?? [])].map((range) => range.startContainer.data.slice(range.startOffset, range.endOffset));
+    window.__colorsAtCaret = () => texts(CSS.highlights.get("grsmd-code-string"));
+    // Spec: INV-86 (e).
     window.addEventListener("input", () => {
       const layer = document.querySelector("#codeEditBody .code-edit-layer");
-      window.__colored.push(layer.querySelectorAll(".hljs-string").length >= 1000);
+      window.__colored.push(tokens(layer) >= 4000 && window.__colorsAtCaret().length > 0);
     });
   });
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(() => page.evaluate(() => window.__colorsAtCaret())).toContain('"item500"');
   await page.keyboard.type("abc", { delay: 300 });
+  expect(await page.evaluate(() => window.__colorsAtCaret())).toContain('"itemabc500"');
   await page.keyboard.press("Enter");
   await page.waitForTimeout(300);
   await page.keyboard.press("Backspace");
@@ -471,7 +478,8 @@ test("INV-86 (b) (BI-26): a one-line JSON of 20 KB (over typedColorMaxChars): ea
   expect(await page.evaluate(() => window.__colored)).toEqual(Array(5).fill(true));
   const keys = await page.evaluate(() => window.__keys);
   expect(keys).toHaveLength(5);
-  for (const key of keys) expect(key).toEqual({ layerShown: true, textTransparent: true, layerHoldsText: true, gutterWrites: 0, placesWritten: 1 });
+  // Why: the Backspace joins the two lines' blocks (a long line has a block of its own), so two places
+  keys.forEach((key, index) => expect(key).toEqual({ layerShown: true, textTransparent: true, layerHoldsText: true, gutterWrites: 0, placesWritten: index === 4 ? 2 : 1 }));
   // after the pause: the typed name colored as one string
-  await expect.poll(() => page.evaluate(() => [...document.querySelectorAll("#codeEditBody .hljs-string")].some((el) => el.textContent === '"itemabc500"'))).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.__colorsAtCaret())).toContain('"itemabc500"');
 });

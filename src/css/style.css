@@ -173,6 +173,7 @@ body.edit-mode #controls #editBtn {
    classes grouped as in its github.css, colored with Primer 11.10.0
    prettylights-syntax-*. No highlight.js theme CSS is bundled. Not limited
    to #preview, so the code view (#codeViewBody) gets the same colors. */
+/* Spec: 5.8.1 (owner ruling JGQA M8: no bold and no italic in code). */
 .hljs {
   color: #1f2328;
 }
@@ -246,7 +247,6 @@ body.edit-mode #controls #editBtn {
 /* prettylights-syntax-markup-heading */
 .hljs-section {
   color: #0550ae;
-  font-weight: bold;
 }
 
 /* prettylights-syntax-markup-list */
@@ -257,13 +257,11 @@ body.edit-mode #controls #editBtn {
 /* prettylights-syntax-markup-italic */
 .hljs-emphasis {
   color: #1f2328;
-  font-style: italic;
 }
 
 /* prettylights-syntax-markup-bold */
 .hljs-strong {
   color: #1f2328;
-  font-weight: bold;
 }
 
 /* prettylights-syntax-markup-inserted */
@@ -1306,7 +1304,7 @@ body.dark #keyHint {
   border-radius: 0;
   font: inherit;
   line-height: inherit;
-  letter-spacing: normal;
+  letter-spacing: var(--code-edit-spacing, normal); /* Spec: INV-86 (e). */
   tab-size: inherit;
   white-space: pre;
   overflow-wrap: normal;
@@ -1316,6 +1314,14 @@ body.dark #keyHint {
   overflow: visible;
   background: transparent;
   color: inherit;
+}
+
+/* Spec: INV-86 (e). */
+.code-edit-char-sample {
+  position: absolute;
+  visibility: hidden;
+  letter-spacing: normal;
+  white-space: pre;
 }
 
 /* A block of lines (INV-86 (a)): a block box, so WebKit lays out only the
@@ -1346,6 +1352,125 @@ body.dark #keyHint {
    textarea's own mark is transparent with its text (INV-86 (c)) */
 ::highlight(grsmd-code-composing) {
   text-decoration: underline;
+}
+
+/* Spec: INV-86 (e). */
+.code-edit-chunk::highlight(grsmd-code-keyword) {
+  color: #cf222e;
+}
+
+.code-edit-chunk::highlight(grsmd-code-title) {
+  color: #6639ba;
+}
+
+.code-edit-chunk::highlight(grsmd-code-attr) {
+  color: #0550ae;
+}
+
+.code-edit-chunk::highlight(grsmd-code-string) {
+  color: #0a3069;
+}
+
+.code-edit-chunk::highlight(grsmd-code-built-in) {
+  color: #953800;
+}
+
+.code-edit-chunk::highlight(grsmd-code-comment) {
+  color: #59636e;
+}
+
+.code-edit-chunk::highlight(grsmd-code-name) {
+  color: #0550ae;
+}
+
+.code-edit-chunk::highlight(grsmd-code-subst) {
+  color: #1f2328;
+}
+
+.code-edit-chunk::highlight(grsmd-code-section) {
+  color: #0550ae;
+}
+
+.code-edit-chunk::highlight(grsmd-code-bullet) {
+  color: #3b2300;
+}
+
+.code-edit-chunk::highlight(grsmd-code-emphasis) {
+  color: #1f2328;
+}
+
+.code-edit-chunk::highlight(grsmd-code-strong) {
+  color: #1f2328;
+}
+
+.code-edit-chunk::highlight(grsmd-code-addition) {
+  color: #116329;
+  background-color: #dafbe1;
+}
+
+.code-edit-chunk::highlight(grsmd-code-deletion) {
+  color: #82071e;
+  background-color: #ffebe9;
+}
+
+@media screen {
+  body.dark .code-edit-chunk::highlight(grsmd-code-keyword) {
+    color: #ff7b72;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-title) {
+    color: #d2a8ff;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-attr) {
+    color: #79c0ff;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-string) {
+    color: #a5d6ff;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-built-in) {
+    color: #ffa657;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-comment) {
+    color: #9198a1;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-name) {
+    color: #7ee787;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-subst) {
+    color: #f0f6fc;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-section) {
+    color: #1f6feb;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-bullet) {
+    color: #f2cc60;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-emphasis) {
+    color: #f0f6fc;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-strong) {
+    color: #f0f6fc;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-addition) {
+    color: #aff5b4;
+    background-color: #033a16;
+  }
+
+  body.dark .code-edit-chunk::highlight(grsmd-code-deletion) {
+    color: #ffdcd7;
+    background-color: #67060c;
+  }
 }
 
 /* Plain, or the layer could not follow an edit (INV-86): the textarea's

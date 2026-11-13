@@ -163,6 +163,15 @@ export function countLines(text, end) {
 
 /**
  * @purity pure
+ * @param {string} text
+ * @returns {number} the line feeds in the text
+ */
+export function lineFeedsIn(text) {
+  return countLines(text, text.length) - 1;
+}
+
+/**
+ * @purity pure
  * @param {string} source
  * @returns {Uint8Array} 1 where a character is in a link destination or a tag
  */

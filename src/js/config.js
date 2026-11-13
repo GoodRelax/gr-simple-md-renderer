@@ -404,6 +404,15 @@ export const CONFIG = {
     // colored in the key's own handler; in longer lines the characters, line feeds too, go into
     // their colored text (no highlight.js; the pause colors them) (spec 5.19.12)
     typedColorMaxChars: 2 * 1024,
+    // Spec: INV-86 (e).
+    longLineChars: 256,
+    lineChunkChars: 512, // Why: about 60 boxes in 30 KB; a text node of 30 KB takes WebKit 885 ms a frame
+    chunkMarginXPx: 1500, // Why: a scroll finds chunks this near the screen already colored
+    chunkMarginYPx: 200, // Why: a screen of 300-character lines then holds 924 ranges (measured); more slows WebKit
+    // Spec: INV-86 (e).
+    // Why: charWidthStepPx is exact in 32-bit floats up to 1,048,576 px, so the sum loses nothing
+    snapLineChars: 3000,
+    charWidthStepPx: 1 / 16,
     // INV-86 (a): lines a block of the layer holds. WebKit takes time growing with the
     // siblings to change one element (about 9 ms among 16,000), so the layer holds blocks,
     // not one element a line (spec 5.19.12)

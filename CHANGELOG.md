@@ -15,8 +15,33 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 
 ## [Unreleased]
 
+### Fixed
+
+- Code editor: in a very long line (a one-line JSON, for example) the
+  colored text stayed off the caret by up to 69 px in Chromium browsers
+  and by about 30 px in WebKit. Long lines of half-width text now stay
+  within 1 px of the caret at a zoom of 100 %, up to the 48 KB limit of
+  colored text; they keep their colors while you type, and typing in
+  them is faster in Chromium browsers.
+- Code editor, known limits of long lines (spec 5.19.12):
+  - WebKit (Safari): far along a long line with full-width
+    characters (Japanese, for example), the colored text stands off the
+    characters: 8 px at character 29,000 when a tenth of the line is
+    full-width, 78.5 px when most of it is. What you type and save is
+    right. To avoid it, break the long line.
+  - WebKit (Safari): at a zoom other than 100 %, the
+    colored text stands off the characters far along a long line (25 to
+    72 px at character 29,000). To avoid it, zoom back to 100 % or break
+    the long line.
+  - WebKit (Safari): in a file whose screen is full of
+    lines over 256 characters, a key takes about 110 ms to show (about
+    50 ms before); Chromium browsers show it faster than before (about
+    34 ms before, 7 ms now).
+
 ### Changed
 
+- Code colors: highlighted code (code blocks, the Code View and the code
+  editor) shows no bold and no italic; the colors stay the same.
 - Top bar: the **Render Light** and **Render Dark** buttons are now
   **Light** and **Dark**, on one line, so the two buttons are narrower.
   The keys (`L` / `D`) and what the buttons do stay the same. The help
