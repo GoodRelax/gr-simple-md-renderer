@@ -1,0 +1,38 @@
+# Copy to .github/workflows/pr-source-branch.yml in the repository.
+# Rule (owner rulings HR-62, HR-75): a pull request into main must come
+# from develop, or from a hotfix/* or beta/* branch that the owner named
+# in an OK.
+# The job name "source-branch" is the required status check that
+# apply-source-branch-check.sh adds to the main ruleset.
+name: pr-source-branch
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+permissions: {}
+
+jobs:
+  source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Allow only develop, hotfix/* or beta/* into main
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+            echo "Refused: the pull request comes from another repository ($HEAD_REPO)."
+            exit 1
+          fi
+          case "$HEAD_REF" in
+            develop|hotfix/*|beta/*)
+              echo "Allowed: $HEAD_REF -> main"
+              ;;
+            *)
+              echo "Refused: $HEAD_REF -> main. Only develop, hotfix/* or beta/* may enter main (HR-62, HR-75)."
+              exit 1
+              ;;
+          esac

@@ -111,6 +111,10 @@ Keep GRSMD on your PC: save the release `index.html` as `GRSMD.html` next to [`l
 
 opens the file in GRSMD as if you had dropped it. The script writes a temporary copy of `GRSMD.html` that carries the file into `%TEMP%\grsmd-launcher` (your temporary folder, outside folders that OneDrive or another cloud service syncs), opens the copy in your browser and deletes it after 30 seconds (Ctrl+C deletes it at once; if you close the window first, the copy stays there until a later run deletes it). To find that folder, the script keeps its full path in `grsmd-launcher-personal-help.md` next to itself. The script sends nothing over the network. GRSMD has no handle to the file, so the first save asks where to save: press [Save] in GRSMD, which puts the file's full path on the clipboard, and paste it as the file name with Ctrl+V. Later saves write to the file. `Get-Help .\Open-Grsmd.ps1 -Full` shows every option (browser, wait time, a desktop shortcut you can drop files on).
 
+### Known limitations
+
+- Code editor in Safari (WebKit): far along a very long line with full-width characters (Japanese, for example), the colored text stands off the characters: 8 px at character 29,000 when a tenth of the line is full-width, 78.5 px when most of it is. What you type and save is right. To avoid it, break the long line.
+
 ---
 
 ## Privacy & Security
@@ -305,6 +309,10 @@ GRSMD を PC に置きます。リリースの `index.html` を `GRSMD.html` と
 ```
 
 で、そのファイルをドロップしたときと同じに GRSMD で開きます。スクリプトは、ファイルを入れた `GRSMD.html` の一時的な写しを `%TEMP%\grsmd-launcher`（一時フォルダ。OneDrive などが同期するフォルダの外）に書き、ブラウザで開き、30 秒後に消します (Ctrl+C ですぐ消えます。先に窓を閉じると、写しは後の実行が消すまでそこに残ります)。そのフォルダを見つけられるよう、スクリプトはフルパスを横の `grsmd-launcher-personal-help.md` に書きます。スクリプトはネットワークに何も送りません。GRSMD はファイルのハンドルを持たないので、最初の保存では保存先を聞かれます。GRSMD の [Save] を押すと、ファイルのフルパスがクリップボードに入るので、ファイル名の欄に Ctrl+V で貼ってください。次からはそのファイルに保存します。`Get-Help .\Open-Grsmd.ps1 -Full` ですべての使い方 (ブラウザ、待つ時間、ファイルをドロップできるデスクトップのショートカット) を見られます。
+
+### 既知の制限
+
+- Safari (WebKit) のコードの編集: 全角の字（日本語など）を含むとても長い行の先のほうで、色の付いた字が字からずれます。字の位置 29,000 で、全角が 1 割の行は 8 px、ほとんど全角の行は 78.5 px です。打った字と保存する文字は正しいです。避けるには、長い行を改行で分けてください。
 
 ---
 

@@ -30,6 +30,8 @@ const CUT_LEAVES = new Set(["paragraph", "text"]);
 const INLINE_TAG = /^<(\/?)([A-Za-z][A-Za-z0-9-]*)\b[^>]*?(\/?)>$/;
 // The blocks that may be cut in two by an insert (INV-52).
 const CUT_BLOCKS = new Set(["paragraph", "list", "blockquote"]);
+// Spec: INV-71, INV-70.
+const HARD_BREAK_TYPES = new Set(["paragraph", "list", "blockquote"]);
 // INV-71 (6) lexes a block at most this many times (INV-51: about 300 ms
 // on a 1,000-line block); the candidates not decided by then stay as they
 // are (what is shown does not change).
@@ -854,6 +856,7 @@ export default class MarkdownTextOps {
     const inLeaf = (leaf) => ne === n || info[ne]?.leaf === leaf;
     if (!/^[ \t]*(?:>[ \t]*)*$/.test(before)) {
       if (!isParagraph(n)) return null;
+      if (MarkdownTextOps._opensMath(table, n)) return null;
       // in or right after the list marks of the line: not paragraph text
       if (s <= lineStart + info[n].prefix || !inLeaf(info[n].leaf)) return null;
       if (MarkdownTextOps._cutsInlineSyntax(text, table, n, [s, e], lexers.lexInline)) return null;
@@ -865,6 +868,7 @@ export default class MarkdownTextOps {
     const here = info[n];
     if (!(isParagraph(n) || (!here?.leaf && isParagraph(n - 1)))) return null;
     if (!inLeaf(isParagraph(n) ? here.leaf : info[n - 1].leaf)) return null;
+    if (MarkdownTextOps._opensMath(table, isParagraph(n) ? n : n - 1)) return null;
     // At the start of a paragraph line: the line break of the line before
     // may be inside a code span or an attribute value (INV-71 (1) (i)-(xi)).
     if (isParagraph(n) && MarkdownTextOps._cutsInlineSyntax(text, table, n, [s, e], lexers.lexInline)) return null;
@@ -891,32 +895,51 @@ export default class MarkdownTextOps {
    * @param {string} raw
    * @param {(src: string) => object[]} lexFull - blocks and inline tokens
    * @param {(tokens: object[], fn: Function) => void} walkTokens - marked.walkTokens
+   * @param {((src: string) => object[])|null} [lexBlocks] - blocks only; given, a text of many blocks is decided block by block
    * @returns {string}
    */
-  static stripMeaninglessHardBreaks(raw, lexFull, walkTokens) {
+  static stripMeaninglessHardBreaks(raw, lexFull, walkTokens, lexBlocks = null) {
     const candidates = [];
+    // Why: the spaces after a "$" or "$$" line decide whether it opens or closes a math block, with the other end anywhere in the document (review N1, L1); they stay, but still count as line breaks below (review N3)
+    const fenced = [];
     const lines = raw.split("\n");
-    for (let n = 0; n < lines.length; n++) if (MarkdownTextOps.lineBreakSpaceCount(lines[n]) > 0) candidates.push(n);
+    for (let n = 0; n < lines.length; n++) {
+      if (MarkdownTextOps.lineBreakSpaceCount(lines[n]) > 0) (MarkdownTextOps._isMathFenceLine(lines[n]) ? fenced : candidates).push(n);
+    }
     if (candidates.length === 0) return raw;
+    const blocks = lexBlocks ? lexBlocks(raw) : [];
+    if (blocks.filter((block) => block.type !== "space").length > 1 && rawOf(blocks) === raw) {
+      // Why: a lexing of the whole text costs more than its length (a gap editor's paste of 400 kB: 8 lexings, over 2 s in jsdom); one block at a time costs its length (review G10)
+      const joined = MarkdownTextOps._linesByBlock(blocks)
+        .map((block) => (SPACE_CONTENT_BLOCKS.has(block.type) ? block.raw : MarkdownTextOps.stripMeaninglessHardBreaks(block.raw, lexFull, walkTokens)))
+        .join("");
+      // Why: a block alone does not show what joins it to another block; when the blocks change, the whole text decides (review N1)
+      const after = lexBlocks(joined);
+      if (after.length === blocks.length && after.every((block, k) => block.type === blocks[k].type)) return joined;
+    }
     const tokens = lexFull(raw);
     const state = { text: raw, shape: MarkdownTextOps._tokenShape(tokens, walkTokens), lexes: 1 };
-    // Every candidate makes a line break: none can go.
-    if (state.shape.spaceBreaks === candidates.length) return raw;
     // A line of paragraph text that is not the last line of its paragraph
     // is expected to make a line break; the others are expected not to.
     // Each group is tried at once and halved only when that fails, so a
     // usual block is lexed two or three times (INV-51).
     const info = MarkdownTextOps._leafLines(raw, () => tokens);
+    /** @purity pure */
+    const breaksAt = (n) => PARAGRAPH_LEAVES.has(info?.[n]?.leaf?.type) && info[n].index < info[n].count - 1;
+    // Why: the kept $ / $$ lines are counted as develop counts them: all of them in the first check (each line of end spaces makes a break), the ones expected to break in the second; a guess of which kept line breaks failed in a setext heading and without the per-line table (review N3, N7)
+    const keptBreaks = fenced.filter(breaksAt).length;
+    // Every candidate makes a line break: none can go.
+    if (state.shape.spaceBreaks === candidates.length + fenced.length) return raw;
     const breaking = [];
     const others = [];
     for (const n of candidates) {
       const at = info?.[n];
       if (at && !(at.leaf && STRIPPABLE_LEAVES.has(at.leaf.type))) continue; // code, HTML, math, unknown
-      if (PARAGRAPH_LEAVES.has(at?.leaf?.type) && at.index < at.count - 1) breaking.push(n);
+      if (breaksAt(n)) breaking.push(n);
       else others.push(n);
     }
     MarkdownTextOps._stripGroup(state, others, lexFull, walkTokens);
-    if (state.shape.spaceBreaks !== breaking.length) MarkdownTextOps._stripGroup(state, breaking, lexFull, walkTokens);
+    if (state.shape.spaceBreaks !== breaking.length + keptBreaks) MarkdownTextOps._stripGroup(state, breaking, lexFull, walkTokens);
     return state.text;
   }
 
@@ -950,6 +973,60 @@ export default class MarkdownTextOps {
   }
 
   // ---- helpers (pure) ----
+
+  /**
+   * Spec: INV-71 (1).
+   * Summary: whether the paragraph that holds line k starts with a line of only "$" or "$$" (a math block typed but not closed yet).
+   * Why: marked-katex-extension makes a math block only of a "$" or "$$" line that ends there, so two spaces would keep it a paragraph
+   * @purity pure
+   * @param {{info: Array<object|null>, lines: string[]}} table - from _leafTable
+   * @param {number} k - a line of paragraph text
+   * @returns {boolean}
+   */
+  static _opensMath(table, k) {
+    const at = table.info[k];
+    const first = k - at.index;
+    const head = table.info[first];
+    return head?.leaf === at.leaf && MarkdownTextOps._isMathFenceLine(table.lines[first].slice(head.prefix));
+  }
+
+  /**
+   * Spec: INV-71 (6).
+   * Summary: the top-level blocks as pieces that hold their own lines whole: when the block before a space token ends inside its last line, the spaces and tabs at the head of the space token, before its first newline, go back to the end of that block.
+   * Why: marked moves the end spaces of a list's last line into the space token after it; alone, that token would lose them past the kinds of line that keep them ($ / $$, code, HTML) (review N6)
+   * @purity pure
+   * @param {{type: string, raw: string}[]} blocks - top-level block tokens whose raw adds up to the text
+   * @returns {{type: string, raw: string}[]}
+   */
+  static _linesByBlock(blocks) {
+    const pieces = [];
+    for (const block of blocks) {
+      if (block.type !== "space" || pieces.length === 0 || pieces[pieces.length - 1].raw.endsWith("\n")) {
+        pieces.push({ type: block.type, raw: block.raw });
+        continue;
+      }
+      const cut = block.raw.indexOf("\n");
+      const head = cut < 0 ? block.raw : block.raw.slice(0, cut);
+      pieces[pieces.length - 1].raw += head;
+      if (head.length < block.raw.length) pieces.push({ type: "space", raw: block.raw.slice(head.length) });
+    }
+    return pieces;
+  }
+
+  /**
+   * Spec: INV-71 (1), INV-71 (6).
+   * Summary: whether a line is only "$" or "$$" after its list and quote marks, nested ones too ("- > $$", "1. - $$"); spaces around it may be there.
+   * Why: one rule for the Enter of a math block being typed and for the spaces the clean-up keeps (review N5)
+   * @purity pure
+   * @param {string} line
+   * @returns {boolean}
+   */
+  static _isMathFenceLine(line) {
+    const markAtStart = /^[ \t]*(?:>|[-*+](?=[ \t])|\d{1,9}[.)](?=[ \t]))/;
+    let rest = line;
+    for (let mark = markAtStart.exec(rest); mark; mark = markAtStart.exec(rest)) rest = rest.slice(mark[0].length);
+    return /^[ \t]*\${1,2}[ \t]*$/.test(rest);
+  }
 
   /**
    * @purity pure
@@ -1713,5 +1790,19 @@ export default class MarkdownTextOps {
       entries.push(entry);
     });
     return { breaks, spaceBreaks, signature: JSON.stringify(entries) };
+  }
+
+  // Section: semi-pure-immutable
+
+  /**
+   * Spec: INV-71, INV-70, INV-73 (5).
+   * Summary: whether a block editor of this type takes the line break mark on Enter, its line end marks and the clean-up on commit; null is an editor with no type (a gap editor, the empty block of an empty document), whose type the typed text decides.
+   * Why: insertHardBreak lexes the text itself, so code, HTML and math lines keep the browser's newline and their spaces
+   * @purity semi-pure-immutable
+   * @param {string|null} blockType
+   * @returns {boolean}
+   */
+  static usesHardBreaks(blockType) {
+    return blockType === null || HARD_BREAK_TYPES.has(blockType);
   }
 }

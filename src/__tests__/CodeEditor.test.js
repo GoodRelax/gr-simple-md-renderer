@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import CodeEditor from "../js/classes/CodeEditor.js";
+import { charSpacingPx } from "../js/longLineTokens.js";
 import CodeEditHistory from "../js/classes/CodeEditHistory.js";
 import { SEARCH_HIGHLIGHTS } from "../js/classes/DocumentSearch.js";
 import { CONFIG } from "../js/config.js";
@@ -625,6 +626,7 @@ describe("CodeEditor: the layer follows each edit at once (INV-86, BI-26)", () =
 
   /** jsdom has no CSS Custom Highlight API: a stub that keeps the ranges. */
   function stubHighlights() {
+    vi.stubGlobal("StaticRange", undefined); // Why: the spans of a long line are the path without chunks
     vi.stubGlobal(
       "Highlight",
       class {
@@ -971,5 +973,362 @@ describe("CodeEditor: the layer follows each edit at once (INV-86, BI-26)", () =
     CSS.highlights.set(all, new Highlight(kept));
     type(`ab\n${long}cd\nef`, long.length + 4); // Backspace at the second block's start: the blocks join
     expect([lineNodes().length, CSS.highlights.has(current), CSS.highlights.has(all)]).toEqual([1, false, true]);
+  });
+
+  describe("AT-CED-55 (INV-86 (e), PRT-AJ19) a very long line where a text box's sum of widths is off: a character's width goes on the step", () => {
+    const WIDTH = 7.1474609375;
+    const spacing = () => body().style.getPropertyValue("--code-edit-spacing");
+    const long = "y".repeat(CONFIG.codeEdit.snapLineChars + 1);
+    let sampled;
+    let error;
+
+    beforeEach(() => {
+      sampled = [];
+      error = 4e-4;
+      vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
+        if (!this.classList.contains("code-edit-char-sample")) return { top: 0, left: 0, width: 0, height: 0 };
+        const length = this.textContent.length;
+        sampled.push(length);
+        return { top: 0, left: 0, width: length * (WIDTH + (length > 2000 ? error : 0)), height: 20 };
+      });
+    });
+
+    it("(a) a line over CONFIG.codeEdit.snapLineChars: both samples read and gone; the width just under the step", () => {
+      start(`ab\n${long}\ncd`);
+      expect(sampled).toEqual([1024, 4096, 256]);
+      expect(preview.querySelector(".code-edit-char-sample")).toBeNull();
+      expect(WIDTH + parseFloat(spacing())).toBeCloseTo(7.1875 - 1e-5, 8);
+    });
+
+    it("(b) lines up to CONFIG.codeEdit.snapLineChars: no read, no spacing (the text stays as the view shows it)", () => {
+      start(`ab\n${long.slice(1)}\ncd`);
+      expect([sampled, spacing()]).toEqual([[], ""]);
+    });
+
+    it("(c) a browser that shows no error (Chromium): read once, no spacing, not read again", () => {
+      vi.useFakeTimers();
+      error = 0;
+      start(long);
+      expect([sampled, spacing()]).toEqual([[1024, 4096], ""]);
+      type(`${long}c`);
+      vi.advanceTimersByTime(CONFIG.codeEdit.highlightPauseMs);
+      expect(sampled).toEqual([1024, 4096]);
+    });
+
+    it("(d) no key reads; the pause does, for a zoom; a line grown long gets the spacing, and a line cut short keeps it (no line jumps at the length)", () => {
+      vi.useFakeTimers();
+      start("ab");
+      type(`ab${long}`);
+      expect([sampled, spacing()]).toEqual([[], ""]);
+      vi.advanceTimersByTime(CONFIG.codeEdit.highlightPauseMs);
+      expect(sampled).toEqual([1024, 4096, 256]);
+      const kept = spacing();
+      expect(kept).not.toBe("");
+      type(`ab${long}c`);
+      vi.advanceTimersByTime(CONFIG.codeEdit.highlightPauseMs);
+      expect(sampled).toEqual([1024, 4096, 256, 256]);
+      type("ab");
+      vi.advanceTimersByTime(CONFIG.codeEdit.highlightPauseMs);
+      expect(spacing()).toBe(kept);
+    });
+
+    it("(e) a plain text (over highlightMaxChars) has no layer: no spacing", () => {
+      vi.useFakeTimers();
+      start(long);
+      expect(spacing()).not.toBe("");
+      type("y".repeat(CONFIG.codeEdit.highlightMaxChars + 1));
+      vi.advanceTimersByTime(CONFIG.codeEdit.highlightPauseMs);
+      expect(spacing()).toBe("");
+    });
+
+    it("(f) a text with no colors has no layer to keep in place: no read", () => {
+      host.highlight.mockReturnValue(null);
+      start(long);
+      expect([sampled, spacing()]).toEqual([[], ""]);
+    });
+
+    it("(g) a width not known (no layout): no spacing, and the next pause reads again (not a browser without the error)", () => {
+      vi.useFakeTimers();
+      const rect = vi.mocked(HTMLElement.prototype.getBoundingClientRect);
+      const real = rect.getMockImplementation();
+      rect.mockReturnValue({ top: 0, left: 0, width: 0, height: 0 });
+      start(long);
+      expect(spacing()).toBe("");
+      rect.mockReset();
+      rect.mockImplementation(real);
+      type(`${long}c`);
+      vi.advanceTimersByTime(CONFIG.codeEdit.highlightPauseMs);
+      expect(spacing()).not.toBe("");
+    });
+
+    it("(i) charSpacingPx: up to the next step, the margin under it; a width on the step stays, the margin under it (a small negative spacing)", () => {
+      expect(7.1474609375 + charSpacingPx(7.1474609375, 1 / 16, 1e-5)).toBeCloseTo(7.1875 - 1e-5, 9);
+      expect(charSpacingPx(7.5, 1 / 16, 1e-5)).toBeCloseTo(-1e-5, 9);
+    });
+
+    it("(h) the same editor started again reads again (a browser's answer is kept for one edit only)", () => {
+      error = 0;
+      start(long);
+      expect(sampled).toEqual([1024, 4096]);
+      editor.stop();
+      history.reset(long, 0, 0);
+      editor.start(long, history);
+      expect(sampled).toEqual([1024, 4096, 1024, 4096]);
+      error = 4e-4;
+      editor.stop();
+      editor.start(long, history);
+      expect(sampled.slice(4)).toEqual([1024, 4096, 256]);
+    });
+  });
+
+  describe("AT-CED-56 (INV-86 (e)) a long colored line, with CSS highlights: chunks in the layer", () => {
+    const long = "y".repeat(CONFIG.codeEdit.longLineChars + 1);
+    const chunks = () => [...preview.querySelectorAll(".code-edit-chunk")];
+    const blockLines = CONFIG.codeEdit.layerBlockLines;
+    let registry;
+
+    afterEach(() => {
+      CONFIG.codeEdit.layerBlockLines = blockLines;
+    });
+
+    class FakeHighlight extends Set {}
+    class FakeRange {
+      constructor(init) {
+        Object.assign(this, init);
+      }
+    }
+
+    beforeEach(() => {
+      registry = new Map();
+      vi.stubGlobal("CSS", { highlights: registry });
+      vi.stubGlobal("Highlight", FakeHighlight);
+      vi.stubGlobal("StaticRange", FakeRange);
+      host.highlight.mockImplementation((t) => t.split("\n").map(colored).join("\n"));
+      if (typeof requestAnimationFrame !== "function") {
+        vi.stubGlobal("requestAnimationFrame", () => 1);
+        vi.stubGlobal("cancelAnimationFrame", () => {});
+      }
+    });
+
+    it("(a) start: the long line is chunks with no token span, the layer holds the text, the other lines keep their spans", () => {
+      start(`ab\n${long}`);
+      expect(chunks()).toHaveLength(1);
+      expect(chunks()[0].querySelector("span")).toBeNull();
+      expect(layer().textContent).toBe(`ab\n${long}\n`);
+      expect(layer().querySelectorAll(".hljs-string")).toHaveLength(1);
+    });
+
+    it("(b) a key in a line over typedColorMaxChars writes into its chunk and its tokens follow, no highlight.js; the chunk stays colored", () => {
+      const longer = "y".repeat(CONFIG.codeEdit.typedColorMaxChars + 10);
+      start(longer);
+      const first = chunks()[0];
+      const end = () => [...registry.get("grsmd-code-string")].find((range) => range.startContainer === first.firstChild).endOffset;
+      const before = end();
+      host.highlight.mockClear();
+      type(`yz${longer.slice(1)}`, 2);
+      expect(host.highlight).not.toHaveBeenCalled();
+      expect(chunks()[0]).toBe(first);
+      expect(end()).toBe(before + 1);
+    });
+
+    it("(c) a key in a line up to typedColorMaxChars: the line is colored again, as chunks, colored at once", () => {
+      start(long);
+      type(`${long}y`);
+      expect(chunks()).toHaveLength(1);
+      expect(registry.get("grsmd-code-string").size).toBe(1);
+      expect([...registry.get("grsmd-code-string")][0].startContainer).toBe(chunks()[0].firstChild);
+    });
+
+    it("(d) a key in a short line beside a long line: the long line has a block of its own, so its chunk is not written again and stays colored", () => {
+      CONFIG.codeEdit.layerBlockLines = 64;
+      start(`ab\n${long}`);
+      const chunk = chunks()[0];
+      type(`abc\n${long}`, 3);
+      expect(chunks()[0]).toBe(chunk); // Why: a block of its own, so a key elsewhere does not write it
+      expect(lineNodes()).toHaveLength(2);
+      expect([...registry.get("grsmd-code-string")][0].startContainer).toBe(chunk.firstChild);
+    });
+
+    it("(e) the pause writes the layer again: the chunks colored before stay so", () => {
+      vi.useFakeTimers();
+      start(long);
+      type(`${long}y`);
+      vi.advanceTimersByTime(CONFIG.codeEdit.highlightPauseMs);
+      expect([...registry.get("grsmd-code-string")][0].startContainer).toBe(chunks()[0].firstChild);
+    });
+
+    it("(f) print colors every chunk, and after it the chunks far from the screen lose their ranges", () => {
+      start(`${long}\n${long}`);
+      const [, far] = chunks();
+      vi.spyOn(far, "getBoundingClientRect").mockReturnValue({ left: 90000, right: 90100, top: 0, bottom: 20 });
+      window.dispatchEvent(new Event("resize"));
+      expect(registry.get("grsmd-code-string").size).toBe(1);
+      window.dispatchEvent(new Event("beforeprint"));
+      expect(registry.get("grsmd-code-string").size).toBe(2);
+      window.dispatchEvent(new Event("afterprint"));
+      expect(registry.get("grsmd-code-string").size).toBe(1);
+    });
+
+    it("(g) stop: no highlight stays", () => {
+      start(long);
+      expect(registry.size).toBe(1);
+      editor.stop();
+      expect(registry.size).toBe(0);
+    });
+
+    it("(j) a long line has a block of its own, whatever the lines around it", () => {
+      CONFIG.codeEdit.layerBlockLines = 64;
+      start(`a\nb\n${long}\nc`);
+      expect(lineNodes().filter((block) => block.textContent.includes(long)).map((block) => block.textContent)).toEqual([`${long}\n`]);
+    });
+
+    it("(k) a text turning plain leaves no highlight and no chunk", () => {
+      vi.useFakeTimers();
+      start(long);
+      type("y".repeat(CONFIG.codeEdit.highlightMaxChars + 1));
+      vi.advanceTimersByTime(CONFIG.codeEdit.highlightPauseMs);
+      expect([registry.size, chunks().length]).toEqual([0, 0]);
+    });
+
+    it("(i) Enter in a long line, then a key before the pause: the layer holds the textarea's text, no tag among it, the chunks stay one line each with their tokens", () => {
+      const head = "y".repeat(CONFIG.codeEdit.typedColorMaxChars + 300);
+      const tail = "x".repeat(400);
+      start(head + tail);
+      type(`${head}\n${tail}`, head.length + 1);
+      expect(layer().textContent).toBe(`${head}\n${tail}\n`);
+      type(`${head}\nZ${tail}`, head.length + 2);
+      expect(layer().textContent).toBe(`${head}\nZ${tail}\n`);
+      expect(layer().textContent).not.toContain("code-edit-chunk");
+      for (const chunk of chunks()) {
+        expect(chunk.textContent).not.toContain("\n");
+        const tokens = JSON.parse(chunk.getAttribute("data-tokens"));
+        for (const [, from, to] of tokens) expect(to).toBeLessThanOrEqual(chunk.textContent.length + 1), expect(from).toBeLessThan(to);
+      }
+    });
+
+    describe("(l) a key that makes chunks, or more of them, colors them in its own handler (they stayed white until the pause)", () => {
+      const rangedNodes = () => new Set([...(registry.get("grsmd-code-string") ?? [])].map((range) => range.startContainer));
+      const uncolored = () => {
+        const ranged = rangedNodes();
+        return chunks().filter((chunk) => chunk.firstChild && !ranged.has(chunk.firstChild)).length;
+      };
+      const y = (n) => "y".repeat(n);
+
+      it.each([
+        ["a line typed from 255 to 257 characters", () => start(y(255)), () => type(y(257))],
+        ["one more key after it", () => (start(y(257)), type(y(257))), () => type(y(258))],
+        ["a line of 512 characters typed to 513 (a second chunk)", () => start(y(512)), () => type(y(513))],
+        ["a line of 1,000 characters pasted", () => start("ab"), () => paste(y(1000), 2)],
+        ["two lines of 200 joined by Backspace", () => start(`${y(200)}\n${y(200)}`), () => type(y(400), 200)],
+        ["Enter at 700 in a line of 1,500 characters (four chunks)", () => start(y(1500)), () => type(`${y(700)}\n${y(800)}`, 701)],
+      ])("%s: every chunk colored right after the key", (_name, before, key) => {
+        before();
+        key();
+        expect(chunks().length).toBeGreaterThan(0);
+        expect(uncolored()).toBe(0);
+      });
+
+      it("a key in one line of a block keeps the ranges of the other line's chunks in its own handler", () => {
+        // Spec: INV-86 (e)
+        CONFIG.codeEdit.layerBlockLines = 64;
+        start(y(3000));
+        paste(String.fromCharCode(10), 1500);
+        expect(lineNodes()).toHaveLength(1);
+        expect(uncolored()).toBe(0);
+        type(`${y(1500)}z${String.fromCharCode(10)}${y(1500)}`, 1501);
+        expect(uncolored()).toBe(0);
+      });
+
+      it("a chunk far from the screen before the key stays so in a line the key did not touch; the frame after the key sets it right", () => {
+        const frames = [];
+        vi.stubGlobal("requestAnimationFrame", (callback) => frames.push(callback));
+        vi.stubGlobal("cancelAnimationFrame", () => {});
+        CONFIG.codeEdit.layerBlockLines = 64;
+        let far = true;
+        vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
+          const isFar = far && this.classList.contains("code-edit-chunk");
+          return isFar ? { left: 0, right: 100, top: 90000, bottom: 90020, width: 100, height: 20 } : { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 };
+        });
+        const lines = Array.from({ length: 100 }, (_, i) => `line ${i}`);
+        start(`${lines.join("\n")}\n${y(600)}`);
+        expect(uncolored()).toBe(chunks().length);
+        type(`${lines.slice(95).join("\n")}\n${y(600)}`, 0);
+        expect(uncolored()).toBe(chunks().length);
+        expect(frames).toHaveLength(1);
+        far = false;
+        frames.shift()();
+        expect(uncolored()).toBe(0);
+      });
+
+      it("a long removal in a line over typedColorMaxChars asks the frame too (the text after it comes onto the screen with no scroll)", () => {
+        const frames = [];
+        vi.stubGlobal("requestAnimationFrame", (callback) => frames.push(callback));
+        vi.stubGlobal("cancelAnimationFrame", () => {});
+        start(y(6000));
+        frames.length = 0;
+        type(y(1000), 1000);
+        expect(layer().textContent).toBe(`${y(1000)}\n`);
+        expect(frames).toHaveLength(1);
+      });
+    });
+
+    it("(m) a paste with a line feed over the cut between two chunks of a line over typedColorMaxChars: the layer holds the textarea's text and its lines", () => {
+      const long = "y".repeat(3000);
+      start(long);
+      const ta = input();
+      ta.dispatchEvent(new InputEvent("beforeinput", { inputType: "insertFromPaste", bubbles: true, cancelable: true }));
+      ta.setRangeText("X\nY", 500, 530, "end");
+      ta.dispatchEvent(new InputEvent("input", { inputType: "insertFromPaste", bubbles: true }));
+      expect(layer().textContent).toBe(`${ta.value}\n`);
+      expect(layer().textContent.split("\n")).toHaveLength(3);
+      for (const chunk of chunks()) expect(chunk.textContent).not.toContain("\n");
+    });
+
+    it("(n) a paste of 2,000 lines into a line over typedColorMaxChars: the layer follows in the key's handler, and the pause comes", () => {
+      vi.useFakeTimers();
+      // Why: 2,000 keeps this under the time limit on a loaded machine; the e2e takes the limit of line feeds, AT-LLC-05 (s) checks the one argument
+      CONFIG.codeEdit.layerBlockLines = blockLines;
+      const long = "y".repeat(3000);
+      start(long);
+      const pasted = "1\n".repeat(2000);
+      paste(pasted, 1500);
+      expect(layer().textContent).toBe(`${input().value}\n`);
+      expect(host.onTextChanged).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(CONFIG.codeEdit.highlightPauseMs);
+      expect(host.onTextSettled).toHaveBeenCalledTimes(1);
+    });
+
+    it("(o) a key that takes a line of a 10-line block over longLineChars: that line goes into a block of its own at once", () => {
+      // Spec: INV-86 (e)
+      CONFIG.codeEdit.layerBlockLines = 64;
+      const around = (line) => ["a", "b", "c", "d", "e", line, "g", "h", "i", "j"].join("\n");
+      const line = "y".repeat(CONFIG.codeEdit.longLineChars);
+      start(around(line));
+      expect(lineNodes()).toHaveLength(1);
+      type(around(`${line}y`), 10 + line.length + 1);
+      expect(lineNodes().map((block) => block.textContent.split("\n").length - 1)).toEqual([5, 1, 4]);
+      expect(lineNodes()[1].querySelector(".code-edit-chunk")).not.toBeNull();
+      expect(layer().textContent).toBe(`${input().value}\n`);
+    });
+
+    it("(p) Backspace that joins a long line to the block before it: the nodes move one per call", () => {
+      // Spec: INV-86 (b-1)
+      // Why: after a paste of 46,000 lines a block has 92,000 children, and a call with that many arguments overflows jsdom's stack
+      CONFIG.codeEdit.layerBlockLines = 64;
+      const long = "y".repeat(3000);
+      start(`ab\n${long}`);
+      const append = vi.spyOn(Element.prototype, "append");
+      type(`ab${long}`, 2);
+      expect(append.mock.calls.length).toBeGreaterThan(0);
+      expect(append.mock.calls.map((args) => args.length).filter((count) => count !== 1)).toEqual([]);
+      expect(layer().textContent).toBe(`${input().value}\n`);
+    });
+
+    it("(h) without CSS highlights the long line keeps its spans", () => {
+      vi.stubGlobal("Highlight", undefined);
+      start(long);
+      expect(chunks()).toHaveLength(0);
+      expect(layer().querySelectorAll(".hljs-string")).toHaveLength(1);
+    });
   });
 });

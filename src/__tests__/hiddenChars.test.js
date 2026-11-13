@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { findHiddenRuns, countHiddenRuns, hiddenRunLabel, mayHoldHiddenChars, HIDDEN_CHAR_NAMES } from "../js/hiddenChars.js";
+import { findHiddenRuns, countHiddenRuns, hiddenRunLabel, isLowSurrogate, mayHoldHiddenChars, HIDDEN_CHAR_NAMES } from "../js/hiddenChars.js";
 
 // INV-101 (1)(2), spec 5.21.1 / 5.21.2 (owner rulings AQ6 (5), AQ10, AQ14;
 // the emoji exceptions follow owner ruling AQ16).
@@ -188,5 +188,12 @@ describe("AT-HID-12 5.21.4: the mark's style (style.css)", () => {
 
   it("printed: no print rule names it", () => {
     expect(printCss).not.toContain("grsmd-hidden-mark");
+  });
+});
+
+describe("AT-HID-16 INV-86 (e): isLowSurrogate takes the low surrogates and no neighbour", () => {
+  it.each([[0xdbff, false], [0xdc00, true], [0xdfff, true], [0xe000, false]])("%#: code unit %i is %s", (code, expected) => {
+    // Spec: INV-86 (e)
+    expect(isLowSurrogate(code)).toBe(expected);
   });
 });

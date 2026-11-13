@@ -436,10 +436,19 @@ describe("code highlighting colors (spec 5.8.1, owner ruling 2026-10-22: Primer 
     expect(declarations(`body.dark ${sel}`)).toMatchObject({ color: dc, "background-color": db });
   });
 
-  it("AT-THM-14 the non-color declarations of github.css are kept (italic, bold)", () => {
-    expect(value(".hljs-emphasis", "font-style")).toBe("italic");
-    expect(value(".hljs-strong", "font-weight")).toBe("bold");
-    expect(value(".hljs-section", "font-weight")).toBe("bold");
+  it("AT-THM-14 the non-color declarations of github.css are left out: no italic, no bold (owner ruling JGQA M8)", () => {
+    // Spec: 5.8.1
+    expect(value(".hljs-emphasis", "font-style")).toBeUndefined();
+    expect(value(".hljs-strong", "font-weight")).toBeUndefined();
+    expect(value(".hljs-section", "font-weight")).toBeUndefined();
+  });
+
+  it("AT-THM-23 the rules of code colors set no bold and no italic, in every line and theme (owner ruling JGQA M8)", () => {
+    // Spec: 5.8.1
+    const codeRules = [...rawCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(([, selector]) => selector.includes(".hljs") || selector.includes("::highlight(grsmd-code-"));
+    expect(codeRules.length).toBeGreaterThan(30);
+    const styled = codeRules.filter(([, , body]) => /font-weight:\s*(bold|[6-9]00)|font-style:\s*(italic|oblique)/.test(body)).map(([, selector]) => selector.trim());
+    expect(styled).toEqual([]);
   });
 
   const pairs = [

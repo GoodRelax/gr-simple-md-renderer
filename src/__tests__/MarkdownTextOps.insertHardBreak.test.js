@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { Marked } from "marked";
 import markedKatex from "marked-katex-extension";
 import MarkdownTextOps from "../js/classes/MarkdownTextOps.js";
+import DevelopStrip from "./helpers/developStrip.js";
 
 // INV-71: Enter / Shift+Enter in a paragraph, list or quote block inserts
 // a hard line break (two spaces + newline); (6) on commit, the trailing
@@ -422,5 +423,236 @@ describe("AT-HB lineBreakSpaceCount (one rule for the line break mark, INV-71 an
     expect(MarkdownTextOps.lineBreakSpaceCount(`a${S}\t`)).toBe(0);
     expect(MarkdownTextOps.lineBreakSpaceCount("a\t  ")).toBe(2);
     expect(MarkdownTextOps.lineBreakSpaceCount(S)).toBe(2);
+  });
+});
+
+// Spec: INV-71 (1).
+describe("AT-HB-65 a paragraph that starts with a line of only $ or $$ (a math block being typed): a normal newline", () => {
+  it.each([
+    ["$$ alone", "$$", 2],
+    ["$ alone", "$", 1],
+    ["the line after $$", "$$\nx", 4],
+    ["$$ with spaces around", " $$ \nx", 6],
+    ["$$ in a list item", "- $$\n  x", 8],
+    ["$$ in a quote", "> $$\n> x", 8],
+    ["the empty line after the math lines", "$$\nx\n", 5],
+  ])("%s", (_name, text, at) => {
+    expect(breakAt(text, at)).toBeNull();
+  });
+
+  it("other paragraphs with $ still take the mark: inline math, a price, $$ on a later line", () => {
+    expect(breakAt("$$x$$ y", 7)).toEqual({ text: `$$x$$ y${S}\n`, selStart: 10, selEnd: 10 });
+    expect(breakAt("$5", 2)).toEqual({ text: `$5${S}\n`, selStart: 5, selEnd: 5 });
+    expect(breakAt("abc\n$$", 6)).toEqual({ text: `abc\n$$${S}\n`, selStart: 9, selEnd: 9 });
+  });
+
+  it("the math lines typed with normal newlines lex as a math block", () => {
+    expect(lexBlocks("$$\nx\n$$").map((t) => t.type)).toEqual(["blockKatex"]);
+  });
+});
+
+// Spec: INV-71 (6), INV-51.
+describe("AT-HB-66 the clean-up with the block lexer: a text of many blocks is decided block by block (review G10)", () => {
+  const lines = (n, line) => Array.from({ length: n }, (_, i) => line(i)).join("\n");
+  const stripByBlock = (raw) => MarkdownTextOps.stripMeaninglessHardBreaks(raw, lexFull, walkTokens, lexBlocks);
+
+  it("each kind of block as on its own: code spans, headings, lists, quotes, code, blank lines and the last line", () => {
+    const raw = `\`a${S}\nb\`\n\n# h${S}\n${S}\n- x${S}\n- y${S}\n\n> q${S}\n> r${S}\n\n\`\`\`\nc${S}\n\`\`\`\n\nlast${S}`;
+    const expected = `\`a${S}\nb\`\n\n# h\n\n- x\n- y\n\n> q${S}\n> r\n\n\`\`\`\nc${S}\n\`\`\`\n\nlast`;
+    expect(stripByBlock(raw)).toBe(expected);
+    expect(strip(raw)).toBe(expected);
+  });
+
+  // Spec: INV-71 (6).
+  it.each([
+    ["an opening $$ before other blocks (the review's example)", `$$${S}\n\nSee the list:\n\n- a\n- b\n\n\`\`\`js\nconst x = 1;\n\`\`\`\n\n$$\n\nEnd.`],
+    ["a closing $$ after other blocks", `$$\n\nSee the list:\n\n- a\n\n$$${S}\n\nEnd.`],
+    ["$ alone and $$ after list and quote marks", `$${S}\n\nx\n\n- $$${S}\n\n> $$${S}\n\ny`],
+    ["one block of $$ with three spaces (an open paragraph of a document, review L1)", `$$${S} `],
+  ])("N1: the spaces of a line of only $ or $$ stay: %s", (_name, raw) => {
+    expect(stripByBlock(raw)).toBe(raw);
+    expect(strip(raw)).toBe(raw);
+    expect(lexBlocks(stripByBlock(raw)).map((t) => t.type)).toEqual(lexBlocks(raw).map((t) => t.type));
+  });
+
+  it("N1: when the joined blocks lex otherwise, the whole text decides", () => {
+    const raw = `a${S}\n\n# h${S}\n\nb${S}\nc`;
+    let joinedSeen = false;
+    // Why: no real text changes its blocks after the $ lines are kept, so the block lexer reports a change for the joined text
+    const lexChanged = (src) => {
+      if (src === raw || !src.includes("\n\n")) return lexBlocks(src);
+      joinedSeen = true;
+      return [...lexBlocks(src), { type: "paragraph", raw: "" }];
+    };
+    let wholeLexes = 0;
+    const out = MarkdownTextOps.stripMeaninglessHardBreaks(raw, (src) => ((wholeLexes += src === raw ? 1 : 0), lexFull(src)), walkTokens, lexChanged);
+    expect(joinedSeen).toBe(true);
+    expect(wholeLexes).toBe(1);
+    expect(out).toBe(strip(raw));
+    expect(out).toBe(`a\n\n# h\n\nb${S}\nc`);
+  });
+
+  it("N4: when the joined blocks keep their number but change a type, the whole text decides", () => {
+    const raw = `a${S}\n\n# h${S}\n\nb${S}\nc`;
+    let joinedSeen = false;
+    // Why: as above, the block lexer reports the change: the same number of blocks, the first paragraph now a math block
+    const lexRetyped = (src) => {
+      const blocks = lexBlocks(src);
+      if (src === raw || !src.includes("\n\n")) return blocks;
+      joinedSeen = true;
+      return [{ ...blocks[0], type: "blockKatex" }, ...blocks.slice(1)];
+    };
+    let wholeLexes = 0;
+    const out = MarkdownTextOps.stripMeaninglessHardBreaks(raw, (src) => ((wholeLexes += src === raw ? 1 : 0), lexFull(src)), walkTokens, lexRetyped);
+    expect(joinedSeen).toBe(true);
+    expect(wholeLexes).toBe(1);
+    expect(out).toBe(strip(raw));
+  });
+
+  // Spec: INV-71 (6).
+  it.each([
+    ["a paragraph", `a\n$$${S}\nb${S}`, `a\n$$${S}\nb`],
+    ["a list item", `- a\n  $$${S}\n  b${S}`, `- a\n  $$${S}\n  b`],
+    ["a quote", `> a\n> $$${S}\n> b${S}`, `> a\n> $$${S}\n> b`],
+  ])("N3: a kept $$ line inside %s still counts as its line break; the other end spaces that make none go, as before", (_name, raw, expected) => {
+    const { out, lexes } = counted(raw);
+    expect(out).toBe(expected);
+    expect(lexes).toBeLessThanOrEqual(3);
+    expect(stripByBlock(raw)).toBe(expected);
+  });
+
+  // Spec: INV-71 (6), INV-51.
+  it("N3: with a kept $$ line, a line break that stays is not tried again (two lexings)", () => {
+    const { out, lexes } = counted(`x${S}\n$$${S}\ny${S}`);
+    expect(out).toBe(`x${S}\n$$${S}\ny`);
+    expect(lexes).toBe(2);
+  });
+
+  // Spec: INV-71 (1), INV-71 (6).
+  it.each([
+    ["a quote in a list", "- > $$"],
+    ["a list in a list", "1. - $$"],
+  ])("N5: $$ after nested marks (%s): the Enter is a normal newline and the clean-up keeps the spaces", (_name, line) => {
+    expect(breakAt(line, line.length)).toBeNull();
+    expect(strip(`${line}${S}`)).toBe(`${line}${S}`);
+    expect(strip(`x\n\n${line}${S}`)).toBe(`x\n\n${line}${S}`);
+  });
+
+  it("one block: the block lexer changes nothing (the whole text, as before)", () => {
+    const raw = `a${S}\nb${S}`;
+    expect(stripByBlock(raw)).toBe(`a${S}\nb`);
+  });
+
+  it("400 blocks where a group cannot go at once: each lexing is one block, under 3 times the text in all (the whole text was lexed over 5 times)", () => {
+    const raw = lines(400, (i) => (i % 2 ? `c${i}${S}\n` : `\`a${i}${S}\nb${i}\`\n`));
+    let chars = 0;
+    let longest = 0;
+    const lex = (src) => {
+      chars += src.length;
+      longest = Math.max(longest, src.length);
+      return lexFull(src);
+    };
+    const out = MarkdownTextOps.stripMeaninglessHardBreaks(raw, lex, walkTokens, lexBlocks);
+    expect(out).toBe(lines(400, (i) => (i % 2 ? `c${i}\n` : `\`a${i}${S}\nb${i}\`\n`)));
+    expect(chars).toBeLessThan(3 * raw.length);
+    expect(longest).toBeLessThan(20);
+    let wholeChars = 0;
+    MarkdownTextOps.stripMeaninglessHardBreaks(raw, (src) => ((wholeChars += src.length), lexFull(src)), walkTokens);
+    expect(wholeChars).toBeGreaterThan(5 * raw.length);
+  });
+});
+
+// Spec: INV-71 (6).
+describe("AT-HB-67 the clean-up gives develop's text letter by letter, but for the $ / $$ lines kept by the ruling (review N6, N7)", () => {
+  const stripByBlock = (raw) => MarkdownTextOps.stripMeaninglessHardBreaks(raw, lexFull, walkTokens, lexBlocks);
+  // Why: an expectation of its own for the kept lines, not this branch's _isMathFenceLine
+  const isFence = (line) => /^(?:[ \t]*(?:>|[-*+](?=[ \t])|\d{1,9}[.)](?=[ \t])))*[ \t]*\${1,2}[ \t]*$/.test(line);
+  const kept = (line) => isFence(line) && MarkdownTextOps.lineBreakSpaceCount(line) > 0;
+  // Why: develop's output, but each line of only $ or $$ that had end spaces stays as it was (the ruling of review N1); capped: develop used all its 8 lexings
+  const developOf = (raw) => {
+    let lexes = 0;
+    const before = raw.split("\n");
+    const text = DevelopStrip.stripMeaninglessHardBreaks(raw, (src) => ((lexes += 1), lexFull(src)), walkTokens)
+      .split("\n")
+      .map((line, n) => (kept(before[n]) ? before[n] : line))
+      .join("\n");
+    return { text, capped: lexes >= STRIP_MAX_LEXES };
+  };
+  const expected = (raw) => developOf(raw).text;
+  // Why: develop tries the $ / $$ lines too, and when they fail it may reach its 8 lexings before other lines are decided; then this branch decides more lines, so each line is develop's or the original without its end spaces, and the breaks and tokens stay
+  const checkAgainstDevelop = (raw, outs) => {
+    const develop = developOf(raw);
+    const before = raw.split("\n");
+    const wantLines = develop.text.split("\n");
+    const shape = (md) => DevelopStrip._tokenShape(lexFull(md), walkTokens);
+    for (const out of outs) {
+      if (!develop.capped) {
+        expect(out, JSON.stringify(raw)).toBe(develop.text);
+        continue;
+      }
+      out.split("\n").forEach((line, n) => {
+        const allowed = kept(before[n]) ? [before[n]] : [wantLines[n], before[n].replace(/ +$/, "")];
+        expect(allowed, JSON.stringify(raw)).toContain(line);
+      });
+      expect(shape(out), JSON.stringify(raw)).toEqual(shape(raw));
+    }
+  };
+
+  it.each([
+    ["$$ at a list's end", `- $$${S}\n\nx${S}`],
+    ["indented code in a list item, at its end", `- a\n\n      code${S}\n\nx${S}`],
+    ["an unclosed fence in a list item", `- a\n  \`\`\`\n  c${S}\n\nx${S}`],
+    ["an HTML block in a list item", `- a\n\n  <div>${S}\n\nx${S}`],
+    ["indented code in an ordered list item", `1. a\n\n       code${S}\n\nz${S}`],
+    ["$ lines in a list item", `- $\n  x${S}\n  $${S}\n\ny${S}`],
+    ["the gap paste of the review", `- step\n\n      line one${S}\n\nAfter.`],
+    ["a duplicate link definition and a $$ line in a paragraph", `[r]: http://x\n\n[r]: http://x\n\na\n$$${S}\nb${S}`],
+    ["a line of only spaces after a math block (a line of its own, not the block's end)", `$$\nx\n$$\n${S}\n\npara${S}`],
+    ["a line of only spaces after a fenced code block", `\`\`\`\nc\n\`\`\`\n${S}\n\npara${S}`],
+    ["a $$ line in a setext heading", `$$${S} \nend\n$$\nalpha${S} \n===\n\`\`\`js${S} \nconst x = 1;\n\`\`\``],
+  ])("the review's forms: %s", (_name, raw) => {
+    expect(stripByBlock(raw)).toBe(expected(raw));
+    expect(strip(raw)).toBe(expected(raw));
+  });
+
+  it("600 random documents (seed 20261113): both ways give the same text as develop", () => {
+    let seed = 20261113;
+    // Why: mulberry32, a small seeded generator, so a failure comes back the same
+    const random = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const pick = (items) => items[Math.floor(random() * items.length)];
+    const words = () => Array.from({ length: 1 + Math.floor(random() * 3) }, () => pick(["alpha", "beta", "*em*", "`code`", "$x$", "[r]", "end."])).join(" ");
+    const blocks = [
+      () => Array.from({ length: 1 + Math.floor(random() * 3) }, words).join("\n"),
+      () => `- ${words()}\n- ${words()}\n  - ${words()}`,
+      () => `1. ${words()}\n2. ${words()}`,
+      () => `> ${words()}\n> ${words()}`,
+      () => "```js\nconst x = 1;\n```",
+      () => "```\nopen fence",
+      () => "    indented code",
+      () => "<div>\nhtml line\n</div>",
+      () => `# ${words()}`,
+      () => `${words()}\n===`,
+      () => "| a | b |\n| --- | --- |\n| x | y |",
+      () => pick(["$$", "$", "- $$", "> $$", "1. - $$"]),
+      () => `$$\n${words()}\n$$`,
+      () => "[r]: http://x",
+      () => `- ${words()}\n\n      code in item`,
+      () => `\`a\n${words()}\``,
+    ];
+    const ends = ["", "", S, `${S} `];
+    for (let doc = 0; doc < 600; doc++) {
+      const parts = Array.from({ length: 2 + Math.floor(random() * 5) }, () => pick(blocks)());
+      const raw = parts
+        .join(random() < 0.8 ? "\n\n" : "\n")
+        .split("\n")
+        .map((line) => `${line}${pick(ends)}`)
+        .join("\n");
+      checkAgainstDevelop(raw, [stripByBlock(raw), strip(raw)]);
+    }
   });
 });
