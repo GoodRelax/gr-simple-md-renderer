@@ -532,7 +532,7 @@ export default class UIController {
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
     this.blockEdit.dispatch("documentReplaced");
     this.documents.reload(loaded);
-    await this._showOpenedSessionBody(theme); // INV-101 (3): told as at open
+    await this._showOpenedSessionBody(theme, null, { isReload: true }); // Spec: INV-101 (3), INV-110 (1).
   }
 
   /**
@@ -1333,11 +1333,12 @@ export default class UIController {
    * @param {'light'|'dark'} theme
    * @param {string|null} [openedMessage] - a toast shown first, above the
    *   hidden characters toast (the GitHub Opened / Reloaded toast)
+   * @param {{isReload?: boolean}} [options] - Spec: INV-110 (1). isReload: [Reload] read the text again
    * @purity non-pure
    */
-  async _showOpenedSessionBody(theme, openedMessage = null) {
+  async _showOpenedSessionBody(theme, openedMessage = null, { isReload = false } = {}) {
     const session = this.documents.session;
-    await this._showSessionBody(theme);
+    await this._showSessionBody(theme, { isReload });
     if (openedMessage) this._toast(openedMessage);
     if (this.documents.session === session) this._announceHiddenChars(session.getBodyText());
   }
@@ -1448,13 +1449,14 @@ export default class UIController {
    * Show the new session's body in #editor and queue its full render.
    * Everything up to the render runs synchronously (INV-21, INV-47).
    * @param {'light'|'dark'} theme
+   * @param {{isReload?: boolean}} [options] - Spec: INV-110 (1). isReload: [Reload] read the text again
    * @purity non-pure
    */
-  async _showSessionBody(theme) {
+  async _showSessionBody(theme, { isReload = false } = {}) {
     const body = this.documents.session.getBodyText();
     this._setEditorText(body);
     this._editorChangedSinceRender = false;
-    const rendering = this.orchestrator.loadMarkdown(body, theme);
+    const rendering = this.orchestrator.loadMarkdown(body, theme, { isReload });
     this._refreshDirtyMark();
     this.setViewMode("markdown");
     this.showKeyHint("markdown");
@@ -1703,7 +1705,7 @@ export default class UIController {
     if (this._rejectWhileSaving() || !this._confirmDiscardIfDirty()) return;
     this.blockEdit.dispatch("documentReplaced");
     this.documents.reloadGitHub(result.text, result.hasBom, result.link);
-    await this._showOpenedSessionBody(this.state.currentTheme, CONFIG.github.messages.reloaded);
+    await this._showOpenedSessionBody(this.state.currentTheme, CONFIG.github.messages.reloaded, { isReload: true }); // Spec: INV-110 (1).
   }
 
   /**

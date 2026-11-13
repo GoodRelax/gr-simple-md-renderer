@@ -140,7 +140,7 @@ describe("AT-RLD-01 UIController.handleReload (FS-04, FS-20)", () => {
 
     // with the open checks by name and size before the read (INV-18 on Reload)
     expect(services.fileAccess.readFile).toHaveBeenCalledWith(handle, expect.any(Function));
-    expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# Hello", "light");
+    expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# Hello", "light", { isReload: true });
     expect(mockElements.editor.value).toBe("# Hello");
   });
 

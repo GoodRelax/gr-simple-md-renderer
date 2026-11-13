@@ -101,6 +101,7 @@ export default class RendererOrchestrator {
     this._nextBlockId = 1; // app-wide block id counter, never goes back
     this._modelChangedListener = null;
     this._heldBlockId = null; // block with an open editor: its wrapper is kept (Q-d1)
+    this._lastImageReloadMark = 0; // Spec: INV-110 (2).
     this._lexer = (src) => this.markdownRenderer.lex(src);
     this.libraries = libraries;
   }
@@ -380,14 +381,27 @@ export default class RendererOrchestrator {
    * Load and render a markdown text string.
    * @param {string} text - markdown body
    * @param {string} theme - 'light' | 'dark'
+   * @param {{isReload?: boolean}} [options] - Spec: INV-110 (1)(5). isReload: [Reload] read the text again
    * @purity non-pure
    */
-  async loadMarkdown(text, theme) {
+  async loadMarkdown(text, theme, { isReload = false } = {}) {
+    this.markdownRenderer.setImageReloadMark(isReload ? this._nextImageReloadMark() : null);
     this._viewState = "markdown";
     this.state.setMarkdownText(text);
     this.state.setTheme(theme);
     applyTheme(theme);
     await this.renderAll();
+  }
+
+  /**
+   * Spec: INV-110 (2). The time in milliseconds, and later than the mark before it.
+   * Why: Two reloads in the same millisecond would share one mark, and the second one would show the cached image
+   * @purity non-pure
+   * @returns {string}
+   */
+  _nextImageReloadMark() {
+    this._lastImageReloadMark = Math.max(Date.now(), this._lastImageReloadMark + 1);
+    return String(this._lastImageReloadMark);
   }
 
   /**
@@ -405,6 +419,7 @@ export default class RendererOrchestrator {
    * @purity non-pure
    */
   startEmptyDocument() {
+    this.markdownRenderer.setImageReloadMark(null); // Spec: INV-110 (5).
     this._viewState = "markdown";
     this.state.setMarkdownText("");
     return this.renderAll();
@@ -484,6 +499,7 @@ export default class RendererOrchestrator {
     this.clearDocument();
     this._viewState = "initial";
     this.markdownRenderer.resetExternalImageConsent();
+    this.markdownRenderer.setImageReloadMark(null); // Spec: INV-110 (5).
     this.sourceFileRenderer.destroy();
   }
 
