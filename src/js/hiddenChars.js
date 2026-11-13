@@ -8,7 +8,7 @@ const TAG_FIRST = 0xe0000;
 const TAG_LAST = 0xe007f;
 const TAG_CANCEL = 0xe007f;
 const BLACK_FLAG = 0x1f3f4;
-const ZWJ = 0x200d;
+export const ZWJ = 0x200d;
 const BOM = 0xfeff;
 const VS16 = 0xfe0f;
 const SKIN_FIRST = 0x1f3fb;
@@ -79,6 +79,15 @@ function isTag(cp) {
 }
 
 /**
+ * @purity pure
+ * @param {number} code - a UTF-16 code unit
+ * @returns {boolean}
+ */
+export function isLowSurrogate(code) {
+  return code >= 0xdc00 && code <= 0xdfff;
+}
+
+/**
  * The code point that ends at index end (a surrogate pair read whole), or -1.
  * @purity pure
  * @param {string} text
@@ -88,7 +97,7 @@ function isTag(cp) {
 function codePointBefore(text, end) {
   if (end <= 0) return -1;
   const low = text.charCodeAt(end - 1);
-  if (low >= 0xdc00 && low <= 0xdfff && end >= 2) {
+  if (isLowSurrogate(low) && end >= 2) {
     const high = text.charCodeAt(end - 2);
     if (high >= 0xd800 && high <= 0xdbff) return text.codePointAt(end - 2);
   }
