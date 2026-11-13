@@ -75,6 +75,12 @@ A test that checks a guard itself opts out with
 `guard check` describe and asserts on the lists on its own. `guards.e2e.js` holds the
 self-tests that prove each guard records what it should.
 
+The route of `externalRequests` turns the browser's HTTP cache off (Playwright does this while a
+route is set). `imageReload.e2e.js` needs that cache (INV-110), so its two tests open their own context with
+no route: there, every host other than its loopback server goes to a proxy on a closed loopback
+port (nothing leaves the machine), and at the end the test checks the same two lists (requests to
+other hosts; console errors, uncaught errors and CSP violations) for that context.
+
 ## What these tests can cover
 
 - File drop (`DataTransfer` + `File` on a synthetic `drop` event), .md and other files.

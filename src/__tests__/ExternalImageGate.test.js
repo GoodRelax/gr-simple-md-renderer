@@ -5,6 +5,7 @@ import hljs from "highlight.js/lib/common";
 import DOMPurify from "dompurify";
 import MarkdownRenderer from "../js/classes/MarkdownRenderer.js";
 import { CONFIG } from "../js/config.js";
+import { srcsetCandidates } from "../js/srcset.js";
 
 const PNG_DATA =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
@@ -240,6 +241,163 @@ describe("AT-EIG External images (CON-12, INV-19, INV-01)", () => {
       );
       expect(confirm).toHaveBeenCalledOnce();
       expect(liveImages().length).toBe(1);
+    });
+  });
+
+  describe("AT-EIG-03 the reload mark (INV-110)", () => {
+    const MARK = "1763000000000";
+
+    // Spec: INV-110 (1)(2).
+    it("(a) an image loaded while consent is active carries the mark; the document's URL is kept apart", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      await renderer.render("![a](https://example.com/a.png)");
+      placeholders()[0].click();
+      renderer.setImageReloadMark(MARK);
+      await renderer.render("![a](https://example.com/a.png?w=1)");
+      const img = liveImages()[0];
+      expect(img.getAttribute("src")).toBe(`https://example.com/a.png?w=1&grsmd=${MARK}`);
+      expect(img.hasAttribute("data-external-src")).toBe(false);
+    });
+
+    // Spec: INV-110 (1).
+    it("(b) an image loaded by the consent click carries the mark", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      renderer.setImageReloadMark(MARK);
+      await renderer.render("![a](https://example.com/a.png)");
+      expect(liveImages().length).toBe(0);
+      placeholders()[0].click();
+      expect(liveImages()[0].getAttribute("src")).toBe(`https://example.com/a.png?grsmd=${MARK}`);
+    });
+
+    // Spec: INV-110 (3)(4).
+    it("(c) srcset candidates carry the mark; a signed URL and a data: image stay as written", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      renderer.setImageReloadMark(MARK);
+      await renderer.render(
+        `<img src="https://example.com/a.png?sig=x" srcset="https://example.com/a@2x.png 2x">\n\n![d](${PNG_DATA})`,
+      );
+      placeholders()[0].click();
+      const [signed, data] = liveImages();
+      expect(signed.getAttribute("src")).toBe("https://example.com/a.png?sig=x");
+      expect(signed.getAttribute("srcset")).toBe(`https://example.com/a@2x.png?grsmd=${MARK} 2x`);
+      expect(data.getAttribute("src")).toBe(PNG_DATA);
+    });
+
+    // Spec: INV-19, INV-110 (4).
+    it("(e) a srcset URL with a comma is held whole before consent and carries the mark after it", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      renderer.setImageReloadMark(MARK);
+      await renderer.render('<img alt="c" srcset="https://example.com/a,b.png 1x">');
+      expect(liveImages().length).toBe(0);
+      expect(placeholders()[0].textContent).toBe(CONFIG.messages.externalImage.placeholder("c", "example.com"));
+      placeholders()[0].click();
+      expect(liveImages()[0].getAttribute("srcset")).toBe(`https://example.com/a,b.png?grsmd=${MARK} 1x`);
+    });
+
+    // Spec: INV-19, INV-110 (2)(7).
+    it("(f) a srcset URL that starts with U+00A0 still goes to the host the placeholder names after the mark", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      renderer.setImageReloadMark(MARK);
+      await renderer.render('<img alt="m" srcset=", \u00a0https://h.example/a.png 1x">');
+      const host = new URL(document.baseURI).host;
+      expect(placeholders()[0].textContent).toBe(CONFIG.messages.externalImage.placeholder("m", host));
+      placeholders()[0].click();
+      const [candidate] = srcsetCandidates(liveImages()[0].getAttribute("srcset"));
+      expect(candidate.url.endsWith(`grsmd=${MARK}`)).toBe(true);
+      expect(new URL(candidate.url, document.baseURI).host).toBe(host);
+    });
+
+    // Spec: INV-110 (5).
+    it("(d) without a mark (null), images load as written", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      renderer.setImageReloadMark(MARK);
+      renderer.setImageReloadMark(null);
+      await renderer.render("![a](https://example.com/a.png)");
+      placeholders()[0].click();
+      expect(liveImages()[0].getAttribute("src")).toBe("https://example.com/a.png");
+    });
+  });
+
+  describe("AT-EIG-04 crafted srcset values are held before consent (INV-19)", () => {
+    const CRAFTED = [
+      ["the first ) closes the parentheses (data:)", ", data:image/png;base64,AAAA ((), https://evil.example/b.png 1x"],
+      ["the first ) closes the parentheses (blob:)", ", blob:https://goodrelax.github.io/0f1e ((), https://evil.example/b.png 1x"],
+      ["U+00A0 and ( stay in the URL", ", data:image/png;base64,AAAA\u00a0(, https://evil.example/b.png 1x"],
+    ];
+    const placeholderFor = (alt) => CONFIG.messages.externalImage.placeholder(alt, "evil.example");
+
+    // Spec: INV-19, INV-110 (4).
+    it.each(CRAFTED)("(a) <img srcset>: %s", async (_, srcset) => {
+      vi.spyOn(window, "confirm").mockReturnValue(false);
+      await renderer.render(`<img alt="c" src="${PNG_DATA}" srcset="${srcset}">`);
+      expect(preview.querySelectorAll("img[srcset]").length).toBe(0);
+      expect(placeholders().length).toBe(1);
+      expect(placeholders()[0].textContent).toBe(placeholderFor("c"));
+    });
+
+    // Spec: INV-19.
+    it.each(CRAFTED)("(b) <picture><source srcset>: %s", async (_, srcset) => {
+      vi.spyOn(window, "confirm").mockReturnValue(false);
+      await renderer.render(`<picture><source srcset="${srcset}"><img alt="p" src="${PNG_DATA}"></picture>`);
+      const source = preview.querySelector("source");
+      expect(source).not.toBeNull();
+      expect(source.hasAttribute("srcset")).toBe(false);
+    });
+
+    // Spec: INV-19.
+    it("(c) a srcset that only the comma split reads as external is still held (the second reading)", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(false);
+      await renderer.render(`<img alt="d" src="${PNG_DATA}" srcset=", data:image/png;base64,AAAA,https://evil.example/b.png 1x">`);
+      expect(preview.querySelectorAll("img[srcset]").length).toBe(0);
+      expect(placeholders()[0].textContent).toContain("evil.example");
+    });
+
+    const LEADING_SPACES = [
+      ["U+00A0 before data:", ", \u00a0data:x 1x"],
+      ["U+3000 before blob:", ", \u3000blob:x 1x"],
+      ["U+FEFF before data:", ", \ufeffdata:x 1x"],
+    ];
+
+    // Spec: INV-19.
+    it.each(LEADING_SPACES)("(d) <img srcset>: %s is a relative URL, held before consent", async (_, srcset) => {
+      vi.spyOn(window, "confirm").mockReturnValue(false);
+      await renderer.render(`<img alt="u" srcset="${srcset}">`);
+      expect(preview.querySelectorAll("img[srcset]").length).toBe(0);
+      expect(placeholders()[0].textContent).toBe(CONFIG.messages.externalImage.placeholder("u", new URL(document.baseURI).host));
+    });
+
+    // Spec: INV-19.
+    it.each(LEADING_SPACES)("(d) <picture><source srcset>: %s is a relative URL, removed", async (_, srcset) => {
+      vi.spyOn(window, "confirm").mockReturnValue(false);
+      await renderer.render(`<picture><source srcset="${srcset}"><img alt="p" src="${PNG_DATA}"></picture>`);
+      expect(preview.querySelector("source").hasAttribute("srcset")).toBe(false);
+    });
+
+    // Spec: INV-19.
+    it("(d) a C0 control before data: is stripped by URL parsing, so the candidate stays local", async () => {
+      await renderer.render(`<img alt="v" srcset=",\u000bdata:x 1x">`);
+      expect(placeholders().length).toBe(0);
+      expect(preview.querySelector("img").getAttribute("srcset")).toBe(",\u000bdata:x 1x");
+    });
+  });
+
+  describe("AT-EIG-05 CSS url() with a leading Unicode space is a relative URL (INV-19)", () => {
+    // Spec: INV-19.
+    it.each([
+      ["url( U+00A0 data:)", "background-image:url(\u00a0data:x)"],
+      ["url(\" U+00A0 data:\")", 'background-image:url(&quot;\u00a0data:x&quot;)'],
+      ["url( U+3000 blob:)", "background-image:url(\u3000blob:x)"],
+    ])("(a) %s is removed before consent", async (_, css) => {
+      await renderer.render(`<span style="${css}">a</span>`);
+      const span = preview.querySelector("span");
+      expect(span).not.toBeNull();
+      expect(span.hasAttribute("style")).toBe(false);
+    });
+
+    // Spec: INV-19.
+    it("(b) CSS whitespace before data: is skipped, so the value stays local", async () => {
+      await renderer.render('<span style="background-image:url(\tdata:x)">a</span>');
+      expect(preview.querySelector("span").getAttribute("style")).toContain("data:x");
     });
   });
 });

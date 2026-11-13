@@ -44,6 +44,7 @@ function setup() {
     }),
     getBlockElement: vi.fn((id) => elements.get(id) ?? null),
     resetExternalImageConsent: vi.fn(),
+    setImageReloadMark: vi.fn(),
   };
   const mermaidRenderer = {
     render: vi.fn(async () => {

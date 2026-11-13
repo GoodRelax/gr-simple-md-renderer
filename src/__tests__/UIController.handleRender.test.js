@@ -142,7 +142,7 @@ describe("UIController.handleRender", () => {
     const ctrl = createController();
     await ctrl.handleRender("light");
 
-    expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# Hello", "light");
+    expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# Hello", "light", { isReload: false });
     expect(mockOrchestrator.reRender).not.toHaveBeenCalled();
   });
 
@@ -182,7 +182,7 @@ describe("UIController.handleRender", () => {
     const ctrl = createController();
     await ctrl.handleRender("light");
 
-    expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# Hello", "light");
+    expect(mockOrchestrator.loadMarkdown).toHaveBeenCalledWith("# Hello", "light", { isReload: false });
     expect(mockElements.editor.value).toBe("# Hello");
   });
 });

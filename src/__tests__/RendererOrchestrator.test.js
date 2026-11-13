@@ -22,6 +22,7 @@ function createOrchestrator() {
     replaceBlocks: vi.fn().mockReturnValue([]),
     getBlockElement: vi.fn().mockReturnValue(null),
     resetExternalImageConsent: vi.fn(),
+    setImageReloadMark: vi.fn(),
   };
   const mermaidRenderer = { render: vi.fn().mockResolvedValue(undefined) };
   const plantumlRenderer = { render: vi.fn().mockResolvedValue(undefined) };
@@ -101,6 +102,57 @@ describe("RendererOrchestrator", () => {
       const { orchestrator, markdownRenderer } = createOrchestrator();
       orchestrator.clear();
       expect(markdownRenderer.resetExternalImageConsent).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe("AT-ORC-31 the image reload mark (INV-110)", () => {
+    const lastMark = (renderer) => renderer.setImageReloadMark.mock.calls.at(-1)[0];
+
+    // Spec: INV-110 (1)(2).
+    it("(a) loadMarkdown with isReload sets a new mark of digits before the render", async () => {
+      const { orchestrator, markdownRenderer } = createOrchestrator();
+      markdownRenderer.renderBlocks.mockImplementation(() => {
+        expect(markdownRenderer.setImageReloadMark).toHaveBeenCalledOnce();
+      });
+      await orchestrator.loadMarkdown("# a", "light", { isReload: true });
+      expect(lastMark(markdownRenderer)).toMatch(/^\d+$/);
+      expect(markdownRenderer.renderBlocks).toHaveBeenCalledOnce();
+    });
+
+    // Spec: INV-110 (2).
+    it("(b) each reload gets a later mark, even in the same millisecond", async () => {
+      const { orchestrator, markdownRenderer } = createOrchestrator();
+      vi.spyOn(Date, "now").mockReturnValue(1763000000000);
+      await orchestrator.loadMarkdown("# a", "light", { isReload: true });
+      const first = lastMark(markdownRenderer);
+      await orchestrator.loadMarkdown("# a", "light", { isReload: true });
+      const second = lastMark(markdownRenderer);
+      vi.restoreAllMocks();
+      expect(first).toBe("1763000000000");
+      expect(Number(second)).toBeGreaterThan(Number(first));
+    });
+
+    // Spec: INV-110 (5).
+    it("(c) loadMarkdown without isReload, startEmptyDocument and clear drop the mark (null)", async () => {
+      const { orchestrator, markdownRenderer } = createOrchestrator();
+      await orchestrator.loadMarkdown("# a", "light", { isReload: true });
+      await orchestrator.loadMarkdown("# b", "light");
+      expect(lastMark(markdownRenderer)).toBeNull();
+      await orchestrator.loadMarkdown("# a", "light", { isReload: true });
+      await orchestrator.startEmptyDocument();
+      expect(lastMark(markdownRenderer)).toBeNull();
+      await orchestrator.loadMarkdown("# a", "light", { isReload: true });
+      orchestrator.clear();
+      expect(lastMark(markdownRenderer)).toBeNull();
+    });
+
+    // Spec: INV-110 (1)(5).
+    it("(d) a theme switch keeps the mark of the document", async () => {
+      const { orchestrator, markdownRenderer } = createOrchestrator();
+      await orchestrator.loadMarkdown("# a", "light", { isReload: true });
+      const calls = markdownRenderer.setImageReloadMark.mock.calls.length;
+      await orchestrator.reRender("dark");
+      expect(markdownRenderer.setImageReloadMark.mock.calls.length).toBe(calls);
     });
   });
 

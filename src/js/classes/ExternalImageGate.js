@@ -1,4 +1,7 @@
 import { CONFIG } from "../config.js";
+import { markSrcsetForReload, markUrlForReload } from "../imageReloadMark.js";
+import { srcsetCandidates } from "../srcset.js";
+import { stripUrlEnds } from "../urlEnds.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -6,7 +9,9 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 // is external: http(s), protocol-relative "//host", and relative paths (the
 // document is pasted or dropped, so a relative path would resolve against the
 // host serving this app, which is a request the author of the .md controls).
-const LOCAL_URL = /^\s*(?:data|blob):/i;
+// Spec: INV-19. A local URL starts with data: or blob: after stripUrlEnds (the characters URL parsing strips).
+// Why: URL parsing strips only C0 controls and SPACE; a candidate that starts with U+00A0 or U+3000 is a relative URL
+const LOCAL_URL = /^(?:data|blob):/i;
 
 const PENDING_SRC = "data-external-src";
 const PENDING_SRCSET = "data-external-srcset";
@@ -34,7 +39,8 @@ const CSS_ATTRS = [
   "marker-end",
   "cursor",
 ];
-const CSS_URL = /url\(\s*(['"]?)\s*([^'")\s]*)/gi;
+// Spec: INV-19. Inside url(...), only CSS whitespace (SPACE, TAB, LF, CR, FF) is skipped; U+00A0 and the like stay in the URL.
+const CSS_URL = /url\([\t\n\f\r ]*(['"]?)[\t\n\f\r ]*([^'")\t\n\f\r ]*)/gi;
 // CSS escapes (u\72l) and string-taking image functions are too easy to
 // smuggle a URL through; any declaration that uses them is dropped.
 const CSS_SUSPICIOUS = /\\|image-set\(|\bimage\(|cross-fade\(|\bsrc\(|@import/i;
@@ -44,21 +50,41 @@ const CSS_SUSPICIOUS = /\\|image-set\(|\bimage\(|cross-fade\(|\bsrc\(|@import/i;
  * @purity pure
  */
 function isLocalUrl(value) {
-  return LOCAL_URL.test(value);
+  return LOCAL_URL.test(stripUrlEnds(value));
 }
 
 /**
- * Candidate URLs of a srcset value. Approximate (a comma inside a data: URL
- * splits it), which only errs toward treating the value as external.
+ * Spec: INV-19, INV-110 (4). Candidate URLs of a srcset value, split by the steps of the HTML srcset parser.
  * @param {string} srcset
  * @returns {string[]}
  * @purity pure
  */
 function srcsetUrls(srcset) {
+  return srcsetCandidates(srcset).map((candidate) => candidate.url);
+}
+
+/**
+ * Spec: INV-19. Candidate URLs of a srcset value, split at each comma and its spaces (not the HTML steps).
+ * Why: A second reading keeps an external URL held even where srcsetUrls and the browser's parser disagree
+ * @param {string} srcset
+ * @returns {string[]}
+ * @purity pure
+ */
+function approximateSrcsetUrls(srcset) {
   return srcset
     .split(/,\s*/)
     .map((candidate) => candidate.trim().split(/\s+/)[0])
     .filter(Boolean);
+}
+
+/**
+ * Spec: INV-19, INV-110 (4). True only when both readings of the srcset value find local URLs alone.
+ * @param {string} srcset
+ * @returns {boolean}
+ * @purity pure
+ */
+function isLocalSrcset(srcset) {
+  return srcsetUrls(srcset).every(isLocalUrl) && approximateSrcsetUrls(srcset).every(isLocalUrl);
 }
 
 /**
@@ -107,6 +133,8 @@ export default class ExternalImageGate {
   constructor(preview) {
     this.preview = preview;
     this._granted = false;
+    /** Spec: INV-110. The reload mark of the shown document, or null. */
+    this._reloadMark = null;
     /** @type {WeakMap<HTMLElement, {img: HTMLImageElement}>} */
     this._held = new WeakMap();
 
@@ -160,8 +188,8 @@ export default class ExternalImageGate {
       for (const name of FETCHING_ATTRS) {
         const value = node.getAttribute(name);
         if (value === null) continue;
-        const urls = name === "srcset" ? srcsetUrls(value) : [value];
-        if (!urls.every(isLocalUrl)) node.removeAttribute(name);
+        const isLocal = name === "srcset" ? isLocalSrcset(value) : isLocalUrl(value);
+        if (!isLocal) node.removeAttribute(name);
       }
     }
 
@@ -237,6 +265,15 @@ export default class ExternalImageGate {
     this._granted = false;
   }
 
+  /**
+   * Spec: INV-110 (1)(5). Images loaded from now on carry this mark; null loads them as written.
+   * @purity non-pure
+   * @param {string|null} mark
+   */
+  setReloadMark(mark) {
+    this._reloadMark = mark;
+  }
+
   // ---- Internals ----
 
   /**
@@ -248,8 +285,8 @@ export default class ExternalImageGate {
   _holdAttribute(img, name, pendingName) {
     const value = img.getAttribute(name);
     if (value === null) return;
-    const urls = name === "srcset" ? srcsetUrls(value) : [value];
-    if (urls.every(isLocalUrl)) return;
+    const isLocal = name === "srcset" ? isLocalSrcset(value) : isLocalUrl(value);
+    if (isLocal) return;
     img.setAttribute(pendingName, value);
     img.removeAttribute(name);
   }
@@ -261,12 +298,12 @@ export default class ExternalImageGate {
   _restoreImage(img) {
     const srcset = img.getAttribute(PENDING_SRCSET);
     if (srcset !== null) {
-      img.setAttribute("srcset", srcset);
+      img.setAttribute("srcset", markSrcsetForReload(srcset, this._reloadMark, document.baseURI));
       img.removeAttribute(PENDING_SRCSET);
     }
     const src = img.getAttribute(PENDING_SRC);
     if (src !== null) {
-      img.setAttribute("src", src);
+      img.setAttribute("src", markUrlForReload(src, this._reloadMark, document.baseURI));
       img.removeAttribute(PENDING_SRC);
     }
   }
@@ -281,7 +318,10 @@ export default class ExternalImageGate {
     const src = img.getAttribute(PENDING_SRC);
     if (src !== null) urls.push(src);
     const srcset = img.getAttribute(PENDING_SRCSET);
-    if (srcset !== null) urls.push(...srcsetUrls(srcset));
+    if (srcset !== null) {
+      const external = srcsetUrls(srcset).filter((u) => !isLocalUrl(u));
+      urls.push(...(external.length > 0 ? external : approximateSrcsetUrls(srcset)));
+    }
     const hosts = [...new Set(urls.filter((u) => !isLocalUrl(u)).map(hostOf))];
 
     // A span, not a <button>: badges are often wrapped in <a>, and a button

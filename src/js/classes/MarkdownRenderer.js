@@ -152,6 +152,15 @@ export default class MarkdownRenderer {
     this.imageGate.revoke();
   }
 
+  /**
+   * Spec: INV-110 (1)(5).
+   * @purity non-pure
+   * @param {string|null} mark - the reload mark of the document, or null
+   */
+  setImageReloadMark(mark) {
+    this.imageGate.setReloadMark(mark);
+  }
+
   // ---- HTML generation (no DOM writes) ----
 
   /**
