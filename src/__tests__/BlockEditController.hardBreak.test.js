@@ -160,6 +160,208 @@ describe("AT-HBK-16 a block above invisibleMarkMaxChars is not lexed per key (ow
   });
 });
 
+// Spec: INV-71, INV-73 (5), INV-49.
+describe("AT-HBK-17 Enter in an editor with no type: a gap editor and the empty block (owner ruling JGQA E1 = a)", () => {
+  // Spec: INV-73 (5), INV-71 (1).
+  const PLAIN_NEWLINE_LINES = [
+    ["a heading", "# H"],
+    ["a fenced code block", "```js\ncode"],
+    ["a table", "| a | b |\n| --- | --- |\n| x | y |"],
+    ["an HTML block", "<details>"],
+    ["a math block being typed ($$)", "$$"],
+    ["a math block being typed (its next line)", "$$\nx"],
+  ];
+
+  function openGap() {
+    const [first, second] = s.orchestrator.getModel().getBlocks();
+    s.bec.dispatch("gapInsertRequested", { kind: "gap", afterBlockId: first.id, beforeBlockId: second.id });
+    return s.editor();
+  }
+
+  async function openEmpty() {
+    s = await setupEdit("", { editMode: true });
+    await flush();
+    tap(s.preview.querySelector(".md-block-empty"));
+    return s.editor();
+  }
+
+  function enterAtEnd(ta, text) {
+    typeText(ta, text);
+    caretAtEnd(ta);
+    return keydown(ta, "Enter");
+  }
+
+  it("(a) a gap editor: Enter after paragraph text inserts the line break mark", async () => {
+    s = await setupEdit(DOC);
+    const ta = openGap();
+    expect(enterAtEnd(ta, "abc").defaultPrevented).toBe(true);
+    expect(ta.value).toBe(`abc${S}\n`);
+    expect(ta.selectionStart).toBe(ta.value.length);
+  });
+
+  it("(b) a gap editor: Enter on the empty line after it is a paragraph break; on a blank editor the browser's newline", async () => {
+    s = await setupEdit(DOC);
+    const ta = openGap();
+    expect(enterAtEnd(ta, `abc${S}\n`).defaultPrevented).toBe(true);
+    expect(ta.value).toBe("abc\n\n");
+    expect(enterAtEnd(ta, "").defaultPrevented).toBe(false);
+    expect(ta.value).toBe("");
+  });
+
+  it.each(PLAIN_NEWLINE_LINES)("(c) a gap editor: Enter at the end of %s is the browser's newline", async (_name, text) => {
+    s = await setupEdit(DOC);
+    const ta = openGap();
+    expect(enterAtEnd(ta, text).defaultPrevented).toBe(false);
+    expect(ta.value).toBe(text);
+  });
+
+  it("(d) a gap editor: the committed text keeps the mark, and the new paragraph shows the line break", async () => {
+    s = await setupEdit(DOC);
+    const ta = openGap();
+    enterAtEnd(ta, "abc");
+    typeText(ta, `${ta.value}def`);
+    keydown(ta, "Escape");
+    expect(s.orchestrator.getBody()).toContain(`# Head\n\nabc${S}\ndef\n\nHello word`);
+    await flush();
+    expect(s.block(byStart("abc")).el.querySelector("br")).not.toBeNull();
+  });
+
+  it.each([
+    ["a list item", "- a", `- a${S}\n`],
+    ["a quote", "> q", `> q${S}\n> `],
+  ])("(d2) a gap editor: Enter after the text of %s inserts the line break mark, as in such a block", async (_name, text, expected) => {
+    s = await setupEdit(DOC);
+    const ta = openGap();
+    expect(enterAtEnd(ta, text).defaultPrevented).toBe(true);
+    expect(ta.value).toBe(expected);
+  });
+
+  // Spec: INV-71 (1).
+  it("(d3) a gap editor and an open paragraph: $$, x and $$ typed with Enter go in as a math block", async () => {
+    s = await setupEdit(DOC);
+    // Why: Enter is left to the browser on these lines, so the test types the newline itself
+    const typeMath = (ta, x) => {
+      for (const line of ["$$", x]) {
+        typeText(ta, `${ta.value}${line}`);
+        caretAtEnd(ta);
+        expect(keydown(ta, "Enter").defaultPrevented).toBe(false);
+        typeText(ta, `${ta.value}\n`);
+      }
+      typeText(ta, `${ta.value}$$`);
+    };
+    const gap = openGap();
+    typeMath(gap, "x");
+    keydown(gap, "Escape");
+    expect(s.orchestrator.getBody()).toContain("# Head\n\n$$\nx\n$$\n\nHello word");
+    expect(s.block(byStart("$$\nx")).block.type).toBe("blockKatex");
+    const para = open(byStart("Hello"));
+    typeText(para, "");
+    typeMath(para, "y");
+    commit();
+    expect(s.block(byStart("$$\ny")).block.type).toBe("blockKatex");
+  });
+
+  // Spec: INV-71 (6).
+  it("(d4) a gap editor: a paste of $$ with spaces, other blocks and a closing $$ stays as it is, with its blocks (review N1)", async () => {
+    s = await setupEdit(DOC);
+    const ta = openGap();
+    const pasted = `$$${S}\n\nSee the list:\n\n- a\n- b\n\n\`\`\`js\nconst x = 1;\n\`\`\`\n\n$$\n\nEnd.`;
+    typeText(ta, pasted);
+    keydown(ta, "Escape");
+    expect(s.orchestrator.getBody()).toContain(`# Head\n\n${pasted}\n\nHello word`);
+    const types = s.orchestrator.getModel().getBlocks().map((b) => b.type);
+    expect(types).not.toContain("blockKatex");
+    expect(types.slice(0, 7)).toEqual(["heading", "paragraph", "paragraph", "list", "code", "paragraph", "paragraph"]);
+  });
+
+  // Spec: INV-71 (6).
+  it("(d7) a gap editor: a paste whose list ends in indented code keeps the code's end spaces (review N6)", async () => {
+    s = await setupEdit(DOC);
+    const ta = openGap();
+    typeText(ta, `- step\n\n      line one${S}\n\nAfter.`);
+    keydown(ta, "Escape");
+    expect(s.orchestrator.getBody()).toContain(`# Head\n\n- step\n\n      line one${S}\n\nAfter.\n\nHello word`);
+  });
+
+  it("(d5) after a commit the editor's kept lexing is gone, as when it closed (review N2)", async () => {
+    s = await setupEdit(DOC);
+    const ta = openGap();
+    typeText(ta, `abc${S}\n\ndef${S}\n# H`);
+    keydown(ta, "Escape");
+    expect(s.orchestrator.getBody()).toContain("abc\n\ndef\n# H");
+    expect(s.bec._lexers).toBeNull();
+    const para = open(byStart("Hello"));
+    typeText(para, `Hello${S}\n# H2`);
+    commit();
+    expect(s.bec._lexers).toBeNull();
+  });
+
+  // Spec: INV-71 (6).
+  it.each([
+    ["paragraph", "Hello", `a\n$$${S}\nb${S}`, `a\n$$${S}\nb`],
+    ["list", "- a", `- a\n  $$${S}\n  b${S}`, `- a\n  $$${S}\n  b`],
+    ["quote", "> q", `> a\n> $$${S}\n> b${S}`, `> a\n> $$${S}\n> b`],
+  ])("(d6) an open %s block with a $$ line inside: its end spaces that make no line break go on commit, as on develop (review N3)", async (_name, start, typed, committed) => {
+    s = await setupEdit(DOC);
+    const ta = open(byStart(start));
+    typeText(ta, typed);
+    commit();
+    expect(s.orchestrator.getBody()).toContain(`${committed}\n`);
+    expect(s.orchestrator.getBody()).not.toContain(typed);
+  });
+
+  it("(e) the empty block of an empty document: Enter after paragraph text inserts the line break mark", async () => {
+    const ta = await openEmpty();
+    expect(enterAtEnd(ta, "abc").defaultPrevented).toBe(true);
+    expect(ta.value).toBe(`abc${S}\n`);
+  });
+
+  it.each(PLAIN_NEWLINE_LINES)("(f) the empty block: Enter at the end of %s is the browser's newline", async (_name, text) => {
+    const ta = await openEmpty();
+    expect(enterAtEnd(ta, text).defaultPrevented).toBe(false);
+    expect(ta.value).toBe(text);
+  });
+
+  // Spec: INV-71 (6).
+  it("(g) a gap editor: Enter, then a heading typed by hand; the spaces before it go on commit", async () => {
+    s = await setupEdit(DOC);
+    const ta = openGap();
+    enterAtEnd(ta, "abc");
+    typeText(ta, `${ta.value}# H`);
+    keydown(ta, "Escape");
+    expect(s.orchestrator.getBody()).toContain("# Head\n\nabc\n# H\n\nHello word");
+  });
+
+  // Spec: INV-71 (6).
+  it("(h) the empty block: Enter, then a heading typed by hand; the spaces before it go, a mark that makes a line break stays", async () => {
+    const ta = await openEmpty();
+    enterAtEnd(ta, "abc");
+    typeText(ta, `${ta.value}def${S}\n# H`);
+    commit();
+    expect(s.orchestrator.getBody()).toContain(`abc${S}\ndef\n# H`);
+  });
+
+  // Spec: INV-70.
+  it("(i) a gap editor and the empty block: line end marks on paragraph lines; none on a code line", async () => {
+    const frame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    const marks = () => [...s.preview.querySelectorAll(".md-block-editing > .md-invisible-overlay .grsmd-invisible")].map((m) => m.textContent);
+    s = await setupEdit(DOC);
+    const gap = openGap();
+    enterAtEnd(gap, "abc");
+    await frame();
+    expect(marks()).toEqual([S]);
+    typeText(gap, `\`\`\`\nc${S}`);
+    await frame();
+    expect(marks()).toEqual([]);
+    commit();
+    s.teardown();
+    const empty = await openEmpty();
+    enterAtEnd(empty, "abc");
+    await frame();
+    expect(marks()).toEqual([S]);
+  });
+});
+
 describe("AT-HBK the trailing spaces on commit (INV-71 (6))", () => {
   it("AT-HBK-07 a list: Enter, then a new item typed by hand; the spaces before it go", async () => {
     s = await setupEdit(DOC);

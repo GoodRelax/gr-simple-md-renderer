@@ -48,9 +48,6 @@ const OPEN_EXCLUDED_SELECTOR = [
   ".diagram-copy-btn",
 ].join(", ");
 
-// Block types whose Enter inserts a line break mark (INV-71).
-const HARD_BREAK_TYPES = new Set(["paragraph", "list", "blockquote"]);
-
 // INV-83: the rendered element a block editor takes its text style from
 // (the first selector that matches), the element whose margins it takes,
 // and whether it takes its padding too (a code block's). Other types (a
@@ -1457,10 +1454,10 @@ export default class BlockEditController {
     if (text === closed.original) return keepLine();
     if (closed.blockId === null) {
       // The empty first block of an empty document (INV-31, INV-49).
-      if (closed.text.trim() === "") return kept;
-      void this.orchestrator.insertAfter(null, closed.text);
+      if (text.trim() === "") return kept;
+      void this.orchestrator.insertAfter(null, text);
       // it went in at the end of the (blank) body
-      return { ...kept, start: this.orchestrator.getBody().length - closed.text.length, text: closed.text };
+      return { ...kept, start: this.orchestrator.getBody().length - text.length, text };
     }
     void this.orchestrator.commitBlock(closed.blockId, text, line ? { ...anchor, line } : anchor);
     return { ...kept, text };
@@ -1494,7 +1491,7 @@ export default class BlockEditController {
   _commitGap(closed, model, anchor) {
     const offset = model ? model.gapOffset(closed.gap.afterBlockId) : 0;
     const kept = { start: offset, text: "", anchor };
-    const { text } = BlockEditController._gapText(closed.text);
+    const text = this._committedText({ blockType: null, text: BlockEditController._gapText(closed.text).text });
     if (!model || text === "") return kept;
     const { blockId } = this.orchestrator.insertBlock(text, { offset, scroll: anchor });
     if (blockId === null) return kept;
@@ -1517,18 +1514,18 @@ export default class BlockEditController {
   }
 
   /**
-   * The text a changed block is committed with: a table is aligned
-   * (INV-61); in a paragraph, list or quote the line ends of spaces that
-   * make no line break go (INV-71 (6)).
+   * Summary: the text a changed block is committed with: a table is aligned; in a paragraph, list or quote, or in an editor with no type (a gap editor, the empty block), the line ends of spaces that make no line break go.
+   * Spec: INV-61, INV-71 (6), INV-73 (5).
    * @purity semi-pure-mutable
    * @param {{blockType: string|null, text: string}} closed
    * @returns {string}
    */
   _committedText(closed) {
     if (closed.blockType === "table") return this.orchestrator.formatTableText(closed.text);
-    if (!HARD_BREAK_TYPES.has(closed.blockType)) return closed.text;
-    const { lexFull, walkTokens } = this._textLexers();
-    return MarkdownTextOps.stripMeaninglessHardBreaks(closed.text, lexFull, walkTokens);
+    if (!MarkdownTextOps.usesHardBreaks(closed.blockType)) return closed.text;
+    // Why: the editor is closed by now, so its kept lexing (_textLexers) would hold the committed text until the next one closes (review N2)
+    const { lexFull, walkTokens, lexBlocks } = this.orchestrator.textLexers();
+    return MarkdownTextOps.stripMeaninglessHardBreaks(closed.text, lexFull, walkTokens, lexBlocks);
   }
 
   /**
@@ -1542,7 +1539,7 @@ export default class BlockEditController {
     const overlay = this.createOverlay(textarea, {
       maxChars: CONFIG.edit.invisibleMarkMaxChars,
       maxMarks: CONFIG.edit.invisibleMarkMaxMarks,
-      lineEndMarks: HARD_BREAK_TYPES.has(blockType) ? lineEndMarks : null,
+      lineEndMarks: MarkdownTextOps.usesHardBreaks(blockType) ? lineEndMarks : null,
     });
     this._editor.overlay = overlay;
     overlay.attach();
@@ -1695,12 +1692,8 @@ export default class BlockEditController {
   // ---- internals: editor keys and size ----
 
   /**
-   * Esc applies and closes (INV-28), Shift+Enter in a table inserts the line
-   * break text and Enter is the browser's newline there (INV-27, owner
-   * ruling B2), Enter / Shift+Enter in a paragraph, list or quote the line
-   * break mark (INV-71); with Ctrl / Alt / Meta, Enter is the browser's in
-   * both. Tab is left to the browser (INV-53). Nothing is done during IME
-   * composition (INV-27, INV-28).
+   * Summary: Esc applies and closes; Shift+Enter in a table inserts the line break text and Enter is the browser's newline there (owner ruling B2); Enter / Shift+Enter in a paragraph, list or quote, or in an editor with no type (a gap editor, the empty block), the line break mark; with Ctrl / Alt / Meta, Enter is the browser's in all of them. Tab is left to the browser. Nothing is done during IME composition.
+   * Spec: INV-28, INV-27, INV-71, INV-73 (5), INV-53.
    * @purity non-pure
    */
   _handleKeyDown(e) {
@@ -1714,7 +1707,7 @@ export default class BlockEditController {
         if (!e.shiftKey) return; // the browser's newline (owner ruling B2)
         e.preventDefault();
         this._insertTableLineBreak();
-      } else if (HARD_BREAK_TYPES.has(this._editor.blockType)) {
+      } else if (MarkdownTextOps.usesHardBreaks(this._editor.blockType)) {
         this._insertHardBreak(e);
       }
     }
