@@ -446,6 +446,14 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
 - A long HTML block with many `<` and no `>` after them no longer makes
   opening or editing the document slow (600 KB took 16 s). The tags are
   now looked for only up to the last `>`, with the same result.
+- Block editing: in the editor of a gap between blocks and of an empty
+  document, Enter after text now inserts a line break (two trailing
+  spaces), as in a paragraph, so the new paragraph shows the break.
+  Headings, code, tables, HTML and math keep a plain new line; the line
+  end spaces get their marks, and the ones that make no line break go on
+  commit. In any block, Enter in a paragraph that starts with a line of
+  only `$` or `$$` (a math block you are typing) now inserts a plain new
+  line, so the closed block shows as math.
 
 ### Known issues
 

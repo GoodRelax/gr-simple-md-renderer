@@ -1,7 +1,7 @@
 # GRSMD Gen2 プレリリース総合テスト仕様書
 
-**バージョン:** 2.46
-**日付:** 2026-11-08 (v2.0: 2026-03-07)
+**バージョン:** 2.48
+**日付:** 2026-11-13 (v2.0: 2026-03-07)
 **対象:** `docs/index.html` (Vite ビルド出力, GitHub Pages HTTPS)
 **目的:** 全機能の正常動作を確認し、公開品質であることを保証する
 **自動テスト:** `npm test` (vitest) と `npm run test:e2e` (Playwright) の全件。件数は実施のときに記入する: vitest \_\_\_\_ 件 (スキップ \_\_\_\_ 件)、e2e \_\_\_\_ 件 (スキップ \_\_\_\_ 件)。ID の一覧は「自動テスト (AT) の一覧」の章
@@ -101,6 +101,8 @@
 > v2.45 の変更 (2026-11-07、参照リンク定義の署名を `links` オブジェクトごとの番号にする。オーナーの裁定 JGQA3 の問 18 の案 a): 仕様の 5.14.3 の手順 6 と `_htmlCache` のキーの改めに合わせて、AT の目録に AT-MR-24〜30 を足す (24: 定義が同じならキャッシュが当たる、25: 定義の中身が変わるとキャッシュが外れて古い HTML を出さない、26: キーの長さが定義の長さに比例しない、27: 定義を消すと別のオブジェクトになり、キャッシュが外れる、28: その場で書いたブロックのキーも定義を見分ける、29: `links` の無い呼び出しは定義が無いものとして描く、30: 表の 2 つの経路が `links` のオブジェクトを保つ)。PRT は変えていない。
 
 > v2.46 の変更 (2026-11-08、純粋性の 2 つの中間の値の改名。上流の gr-sw-maker のレビュー基準 `0db4e95`): 仕様の CON-15 と 5.16.2 の改めに合わせて、AT の目録の AT-PUR を 01〜04 にする。AT-PUR-03 は表を作り直す (`semi-pure-immutable`・`semi-pure-mutable` は通り、改名前の 2 つの値・`semi-pure-ab`・`semi-pure-`・`semi-pure-immutable-x` は落ちる)。AT-PUR-04 (新) は、git が追跡するテキストのファイルに改名前の値が 0 件であることを確かめる (除外: `spec/upstream_review_standards_ja.md` と AT-PUR-03 の表)。PRT は変えていない。
+
+> v2.48 の変更 (2026-11-13、種類の無い編集欄の Enter。オーナーの裁定 JGQA 問 E1 = a): 仕様の INV-70・INV-71・INV-73 (5)・5.11・5.14.5・5.14.6 の改めに合わせて、PRT-Y10 (新) を足し、AT の目録の AT-HBK を 01〜17 にする (17: すき間の編集欄と空の文書の空のブロックで、段落の行の Enter は改行の印を入れ、空の行は段落の区切り、見出し・コード・表・HTML・打ちかけの数式の行はブラウザの改行。段落の後に見出しを打って確定すると、改行を生まない行末の空白は消える。編集欄の行末の空白に印が付く)。レビュー 1 回目の直しで、AT-HB を 01〜66 にする (65: `$` / `$$` だけの行で始まる段落はふつうの改行。66: 多くのブロックの本文の後始末をブロックごとに決める)。レビュー 2 回目の直しで、AT-HB-66 に `$` / `$$` の行とつないだ後の確かめを、AT-HBK-17 に (d4) (d5) を足す。レビュー 3 回目の直しで、AT-HB-66 に N3〜N5 の場合を、AT-HBK-17 に (d6) を足す。レビュー 4 回目の直しで、AT-HB を 01〜67 にし (67: develop と文字で比べる)、AT-HBK-17 に (d7) を足す。v2.47 は PRT-AJ19 の枝が使う (統合はそちらが先)。PRT-Y10 の判定は空欄 (未実施)。ほかの PRT は変えていない。
 
 > **v2.2 の実施上の注意:** 全体描画が、文書を 1 つの HTML として描く方式から、ブロックごとの外枠 (`.md-block`) に分けて描く方式 (`renderBlocks`) に変わった。これは編集機能を使わない表示にも影響する。そのため、このリリースの総合テストでは、新しいセクション U / V / W だけでなく、既存のセクション A〜T もすべてやり直す (改訂していないケースの前回の判定は引き継がない)。
 
@@ -3775,6 +3777,37 @@
 
 ---
 
+### PRT-Y10: すき間と空の文書の編集欄の Enter
+
+| 項目 | 詳細 |
+| --- | --- |
+| **前提条件** | PC (Chrome / Edge と Safari)。段落が 2 つ以上ある文書と、空の文書。パレットを表示 |
+| **手順** | 1. 段落と段落の間のすき間の点線を押し、`abc` と打って Enter を押す。`def` と打って Esc を押す |
+|  | 2. 別のすき間の点線を押し、`abc` と打って Enter を 2 回押し、`def` と打って Esc を押す |
+|  | 3. 別のすき間の点線を押し、`abc` と打って Enter を押し、`# 見出し` と打って Esc を押す |
+|  | 4. 別のすき間の点線を押し、`# 見出し` と打って Enter を押す。続けて、`` ```js `` と打って Enter を押し、`code` と打って Enter を押す。Esc を押す |
+|  | 5. 別のすき間の点線を押し、何も打たずに Enter を押してから `abc` と打ち、Esc を押す |
+|  | 6. Save で保存し、保存したファイルを GitHub などほかのビューアで開く |
+|  | 7. 空の文書で空のブロックを押し、`abc` と打って Enter を押し、`def` と打って外側をクリックする |
+|  | 8. 段落と段落の間のすき間の点線を押し、`$$` と打って Enter を押し、`x^2` と打って Enter を押し、`$$` と打って Esc を押す |
+|  | 9. 既存の段落を押して開き、文字を全部消して `$$` と打って Enter を押し、`y^2` と打って Enter を押し、`$$` と打って外側をクリックする |
+| **期待結果** | - 1 で、Enter の後、編集欄の `abc` の行末の空白 2 つに印が付く (PRT-X19)。原文は `abc␣␣` と `def` の 2 行になり (␣ は空白)、描画では `abc` の後で改行される |
+|  | - 2 で、`abc` と `def` は別の段落になり、`abc` の行末に空白は残らない |
+|  | - 3 で、原文は `abc` と `# 見出し` の 2 行になり、`abc` の行末に空白は残らない (INV-71 (6)) |
+|  | - 4 で、見出しの行とコードの行の Enter は改行だけを入れ、行末に空白は入らない |
+|  | - 5 で、先頭の改行は入るが、確定した段落は `abc` だけになる (先頭の空の行はすき間に含まれる) |
+|  | - 6 で、ほかのビューアでも 1 の段落は `abc` の後で改行される |
+|  | - 7 で、Enter の後に行末の空白 2 つに印が付き、原文は `abc␣␣` と `def` の 2 行になり、描画では `abc` の後で改行される |
+|  | - 8 で、どの Enter も改行だけを入れる。原文は `$$`、`x^2`、`$$` の 3 行で、描画は数式のブロック (x²) になる |
+|  | - 9 で、8 と同じく改行だけが入り、描画は数式のブロック (y²) になる |
+
+| 結果 | Pass / Fail / N/A |
+| --- | --- |
+| 判定 | |
+| 備考 | 要求: INV-70、INV-71 (1)・(6)、INV-73 (5)、INV-49 (オーナーの裁定 JGQA 問 E1 = a、2026-11-13。8・9 はレビュー F1)。自動では AT-HBK-17、AT-HB-65 |
+
+---
+
 ## セクション Z: 複数ブロックの削除・カット・コピー (2026-10-24)
 
 ### PRT-Z01: ドラッグで選んで消す (マウス)
@@ -5859,7 +5892,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-MATH | パレットの数式: `MarkdownTextOps.insertInlineMath` / `canInsertInlineMath` (01: カーソルの位置と、要るときだけ足す前後の空白。リスト・見出し・引用・2 行目の行頭・表の原文のセル・太字の中、選択の終わり。02: F-R1 と同じ断る所。03: 位置は良いが読み直しで合わないときは何も変えない (ボタンは有効のまま)。04: 空白だけの行では段落として入れる) と、テンプレ (05: 行内のテンプレが行内の数式 1 つ、数式ボックスが名前の段落と `$$` の 6 ブロック、KaTeX の `throwOnError: true` で、行内の式は行内の形 (`displayMode: false`)、3 つの式は表示の形でエラー無く描け、`MarkdownRenderer` で `.katex-error` が無い。06: 強調の記号のすぐ内側では、その側に空白を足さない (レビューの L1)) | INV-52、5.15.5 (オーナーの裁定 2026-10-25) | MarkdownTextOps.math.test.js | 01〜06 |
 | AT-INS | `MarkdownTextOps.planBlockInsert` / `insertOffset` / `cutLineEndBreak` (雛形の挿入の位置と、断る場所、行内の書式をまたぐ境目、大きな段落、割った行の行末の空白と `\`。20 / 21: 行の中の長い空白の並び・長い改行の並びで線形) | INV-52 | MarkdownTextOps.planBlockInsert.test.js | 01〜21 |
 | AT-FR | `MarkdownTextOps.formatRange` (書式、リンク。65〜67: 段落・見出し・表のセルの行の中の長い空白の並びで、`canFormatRange` が線形) | INV-66、INV-67、INV-69 | MarkdownTextOps.formatRange.test.js、MarkdownTextOps.link.test.js | 01〜67 |
-| AT-HB | `MarkdownTextOps.insertHardBreak` と確定の後始末 (62 / 63: 行の中の長い空白の並びで、`hardBreakLines` と後始末が線形。64: `lineBreakSpaceCount`) | INV-71 | MarkdownTextOps.insertHardBreak.test.js | 01〜64 |
+| AT-HB | `MarkdownTextOps.insertHardBreak` と確定の後始末 (62 / 63: 行の中の長い空白の並びで、`hardBreakLines` と後始末が線形。64: `lineBreakSpaceCount`。65: `$` / `$$` だけの行で始まる段落はふつうの改行 (レビュー F1、2026-11-13)。66: `lexBlocks` を渡すと、多くのブロックの本文をブロックごとに決め、字句解析は 1 回 1 ブロック、全部で本文の 3 倍未満 (レビュー G10)。`$` / `$$` だけの行の空白は残り (入れ子の印の後ろも)、ブロックの種類と数は変わらない。つないだブロックの数か種類が変われば全体の本文で決める。残した `$$` の行の改行も数え、同じ段落の改行を生まない空白は develop と同じに消える。リストの最後の行の行末の空白は、行の種類どおりに決まる (レビュー N1、N3〜N6、2026-11-13)。67: develop の後始末の写し (`src/__tests__/helpers/developStrip.js`、`3cac384`) と文字で比べる。レビューの例と、種を固定した無作為の 600 件で、2 つの道の出力が、残す `$` / `$$` の行と develop が上限に達して決めなかった行を除いて同じ (レビュー N6・N7、BOSS の決定、2026-11-13)) | INV-71 | MarkdownTextOps.insertHardBreak.test.js | 01〜67 |
 | AT-IR | `InlineRuns` (並び、正規形、表記の保持。23: 以前の 3 色はそのままの片) | INV-67、INV-69、INV-72、5.14.14 | InlineRuns.test.js | 01〜53 |
 | AT-MT | `MarkdownTable` (解析、整形、行・列の操作) | INV-61、INV-65 | MarkdownTable.test.js | (番号なし) |
 | AT-TW | `textWidth.displayWidth` | INV-61、5.14.13 | textWidth.test.js | (番号なし) |
@@ -5875,7 +5908,7 @@ SC-29、INV-104 (仕様)。起動役の仕様 `spec/grsmd_launcher_spec_en.md` �
 | AT-BSM | 11-c ブロック編集の状態機械 (表のすべての交点と、図と表の一致。30〜32: ブロックの範囲、33: 検索の置換 (`searchReplaceRequested`)) | 11-c | BlockEditController.stateMachine.test.js、BlockEditController.gap.test.js (29)、UIController.editMode.test.js、UIController.save.test.js | 01〜33 |
 | AT-GAP | `BlockGapInsert` (すき間の当たり判定、表のつまみ・リンクなどを避けること、点線の表示と押下、マウスの移動を 1 フレームに 1 回にまとめること、押下と消去で残りの移動を捨てること、click にならない押下の後も追うこと。03: 点線の上のホイールでプレビューがスクロールする (裁定 AQ8)。04: 点線の上の Ctrl+ホイールを点線が取らない (既定を止めず、プレビューも動かない)。編集モードでも図の上の Ctrl+ホイールは図のズーム (e2e だけ)) | INV-73、FS-09 (04) | BlockGapInsert.test.js、e2e の uiFixes.e2e.js (03・04。AT.1 の e2e の行) | 01〜04 |
 | AT-RNG | ブロックの範囲: `MarkdownBlockModel.removeRange` / `rangeSource` (01〜08)、`RendererOrchestrator.deleteBlocks` / `readBlocksSource` (09〜13)、`BlockRangeSelection` (選択の解決、帯、押して離す、Esc、INV-45、14〜30、40、41。読むだけで表示を変えないこと 45、帯の押下で読み直すこと 46、ビューポートの近くだけの枠 47)、UIController のキーとクリップボード (31〜38)、すき間を出さないこと (39)、書き込みの失敗のトースト (25、42〜44)、ブラウザの `copy` の事象 (48、49)、Shift+Delete (50)、帯の位置の純粋な関数 `placementNearLine` (51)、選択を残したドラッグの `mouseup` の既定を止めること (52。Edge のミニメニュー)、帯の上のホイールでプレビューがスクロールし、帯と枠は残ってスクロールに付いていくこと (画素・行・ページ・Shift。Ctrl+ホイールとタッチの配置はブラウザのまま。53。AQ8 と同じ直し)、ホイールを渡す関数 `wheelScrollDelta` (純粋。ページ単位は横が要素の幅、縦が高さ) と `forwardWheel` (自分でスクロールする要素にだけ。横だけスクロールする要素も。Ctrl では渡さない) (54) | INV-74、INV-14、INV-45、INV-46、INV-48、INV-49 (03)、INV-73 (39・54)、INV-74 (2) (53・54) | MarkdownBlockModel.removeRange.test.js、RendererOrchestrator.edit.test.js、BlockRangeSelection.test.js、UIController.blockRange.test.js、BlockGapInsert.test.js (39)、floatingPlacement.test.js (51)、wheelForwarding.test.js (54)、e2e の blockRange.e2e.js (53。AT.1 の e2e の行) | 01〜54 |
-| AT-HBK | ブロック編集欄の Enter (INV-71 の結線) | INV-71 | BlockEditController.hardBreak.test.js | 01〜16 |
+| AT-HBK | ブロック編集欄の Enter (INV-71 の結線。17: 種類の無い編集欄 (すき間、空の文書の空のブロック) の段落の行 (リスト・引用を含む) は改行の印、見出し・コード・表・HTML・打ちかけの数式の行はブラウザの改行、確定のときの後始末と行末の印も同じに働く。既存の段落のブロックの打ちかけの数式もブラウザの改行。すき間に貼った `$$␣␣` と後ろのブロックの `$$` は数式に組まない。確定の後に編集欄の字句解析のキャッシュが残らない。既存の段落・リスト・引用で、`$$` の行を含むブロックの改行を生まない空白は develop と同じに消える。すき間に貼ったリストの最後のコードの行末の空白は残る。JGQA 問 E1 = a、2026-11-13) | INV-71、INV-70、INV-73 (5) | BlockEditController.hardBreak.test.js | 01〜17 |
 | AT-TF | 表の確定の整形 (結線) | INV-61 | BlockEditController.tableFormat.test.js | 01〜06 |
 | AT-TCE | `TableCellEditor` (セルの編集) | INV-62〜65、INV-69、INV-70、INV-72、用語集「未保存」の (b') | TableCellEditor.test.js、BlockEditController.link.test.js | 01〜36 |
 | AT-ICO | `InvisibleCharOverlay` (20: 行の中の長い空白の並びで、行末の空白の判定が線形。21: 編集欄が写した字と余白を写す。22: タグ文字と向きを変える文字に印を付け、INV-101 (2) (b) の旗のタグ文字には付けない (2026-10-30)) | INV-70、INV-83 | InvisibleCharOverlay.test.js | 01〜22 |
@@ -6187,6 +6220,7 @@ WebKit のプロジェクトだけ、失敗した試験を 1 回だけやり直�
 | PRT-Y07      | UI の直し | 表の原文の Enter と Shift+Enter |      |
 | PRT-Y08      | UI の直し | 文字色 (GitHub の 3 色) |      |
 | PRT-Y09      | UI の直し | 1 MB の文書の 30 回の Undo のメモリと時間 |      |
+| PRT-Y10      | UI の直し | すき間と空の文書の編集欄の Enter |      |
 | PRT-Z01      | 複数ブロック | ドラッグで選んで消す (マウス) |      |
 | PRT-Z02      | 複数ブロック | キーとクリップボード (Delete / Backspace / カット / コピー) |      |
 | PRT-Z03      | 複数ブロック | いろいろなブロックと全部の選択 |      |
