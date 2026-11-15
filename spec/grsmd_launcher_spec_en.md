@@ -4,7 +4,7 @@
 **Date:** 2026-10-31
 **Status:** Draft for review (branch `feature/ps1-launcher`, from `develop` 30c3ccc)
 **Template:** ANMS v0.34, `process-rules/spec-template-en.md` of `GoodRelax/gr-sw-maker`, commit `b723439` (the `main` of 2026-10-24, read from a local checkout)
-**Review standards:** `process-rules/review-standards-en.md` of the same commit, applied through [grsmd_review_standards_ja.md](grsmd_review_standards_ja.md) (it pins the Japanese text at `63e6fdc` in [upstream_review_standards_ja.md](upstream_review_standards_ja.md) and the English row names at `b723439`, the same version read here)
+**Review standards:** `process-rules/review-standards-en.md` of the same commit, applied through [grsmd_review_standards_ja.md](grsmd_review_standards_ja.md) (when this spec was reviewed, it pinned the Japanese text at `63e6fdc` in [upstream_review_standards_ja.md](upstream_review_standards_ja.md) and the English row names at `b723439`, the same version read here; since 2026-11-15 it pins both at `7015aa4`)
 **Owner rulings:** PL-1 to PL-13 (2026-10-30, Q&A sheet of this branch), PL-14 to PL-18 (2026-10-30, the review's Q&A sheet), PL-19 to PL-23 (2026-10-30, the save-path Q&A sheet). PL-14 replaces the place of PL-6; PL-22 replaces the clipboard of PL-5
 **Main spec:** [grsmd_gen2_spec_ja.md](grsmd_gen2_spec_ja.md) (the GRSMD side of this feature is INV-104 and INV-105 there)
 

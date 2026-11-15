@@ -210,6 +210,17 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   each old value maps to one new value. The code, the launcher, the spec
   and the purity checker use the new names, and a new test fails when a
   tracked text file still holds an old value. The app does not change.
+- Review standard: GRSMD now follows gr-sw-maker's review standard at
+  commit `7015aa4` (version `20261108T161004Z`). The upstream copy
+  `spec/upstream_review_standards_ja.md` is replaced, and the purity test
+  now checks it too. The checklist grows from 70 to 90 rows: it adds 21
+  rows for naming (NDD), design patterns, comments and state machines,
+  and nine of them (the state machine rows) replace the old single state
+  machine row. Requirements notation (EARS) is now a MUST
+  row. The spec, the test spec and the review standard now use the
+  upstream's Japanese word for "state machine", and spec
+  11-b names the spec's state transition table as the source of truth for
+  each diagram. The app does not change.
 
 ### Added
 

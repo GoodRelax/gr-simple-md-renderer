@@ -26,8 +26,6 @@ const AT_PUR_03_CASES = [
 
 // AT-PUR-04: an old value is "semi-pure-" + "a" or "b" as a whole token.
 const OLD_VALUE = /semi-pure-[ab](?![a-z-])/;
-// Stage A keeps the upstream standard copy as is; stage B replaces it and drops this entry.
-const AT_PUR_04_EXCLUDED = ["spec/upstream_review_standards_ja.md"];
 
 /**
  * List the paths git tracks, relative to the repository root, with "/" separators.
@@ -141,7 +139,6 @@ describe("@purity tags (CON-15, R7 `@purity` Tag, spec 5.16.2)", () => {
   it("AT-PUR-04 no tracked text file holds an old purity value", () => {
     const hits = [];
     for (const rel of listTracked()) {
-      if (AT_PUR_04_EXCLUDED.includes(rel)) continue;
       const bytes = readFileSync(join(repoRoot, rel));
       if (bytes.includes(0)) continue;
       for (const line of oldValueLines(bytes.toString("latin1"), rel === selfRel)) hits.push(`${rel}:${line}`);
