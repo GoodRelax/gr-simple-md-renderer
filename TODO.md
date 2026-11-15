@@ -29,6 +29,20 @@
 - [ ] テーマの切り替えなど全体の描画の途中、ビューが一時ずれる: ブロックを描き替えた直後から約 1 s、読んでいた所から約 1,900 px ずれて見え、図を描き終えた所で一瞬（約 60〜70 ms）約 4,800 px ずれ、終わりに戻る（Chromium・WebKit）。そのずれの間に利用者がスクロールすると、INV-78 のとおり、ずれた所（利用者が見ていた所）に留まる。描き替えの前に読んでいる位置を覚え、描き替えの直後に戻せば、ずれ自体が無くなる
 - [ ] 前からの揺れ: WebKit の `editModeScroll.e2e.js:165`（編集モードの出入りで読んでいる位置を保つ）が、負荷の高いときに再試行で通ることがある。単体の AT-MR-17（`MarkdownRenderer.highlightLimit.test.js`、長いコードブロックの色付けの上限）が、負荷の高いときに落ちることがある
 
+### 全件の実行の中の時間の揺れ（画像の再読み込みと改行の直しのレビュー、2026-11-13。どれも差分の前からある試験）
+- [ ] 時間の上限を見る単体の試験が、全件の実行の中で上限を超えることがある（R6 独立性）: AT-PERF-12（ブロックの範囲の削除。全部のブロックの中央値が 303.6 ms と 328.1 ms で、上限 300 ms を超えた。同じ枠の develop も 394.5 ms で落ちた）と、AT-HB-26〜28（確定の後始末の最悪の場合の時間の上限 300 ms。全件の中で AT-HB-27 が 415.1 ms と 536.5 ms で落ちた。同じ入力を単独で測ると、develop 74 ms、枝 73 ms）。vitest が並べて流すほかの重い試験との取り合いで延びると判じた。時間の試験を別に流すか、測り方を改めるかを決める
+- [ ] WebKit の e2e のうち、時間の窓に頼る試験が、負荷の高い全件の実行の中で落ちる（R6 独立性）: `paletteDoubleClick.e2e.js:158`（タッチ。grip のダブルタップの後、プレビューへの 1 回のタップでブロックが開かず、2 回とも落ちた。単独の `--repeat-each=3 --retries=0` では通った）と、`codeEditor.e2e.js:324`（INV-86、40 KB のファイルへの打鍵。2 回とも 30 秒の時間切れ。develop `3cac384` の写しでも 2 回とも落ちた）。待ち方か時間の窓の作りを直す
+
+### 差分の外の気づき（画像の再読み込みと改行の直しのレビューの台帳、2026-11-13）
+- [ ] 画像の台帳 L3（R2 DRY（1 か所））: `ExternalImageGate.js` の SVG の `href` の判定 `value.trim().startsWith("#")` は、Unicode の `trim()` を使う。DOMPurify が値の両端を先に除くので、今は当たらない。`stripUrlEnds`（`src/js/urlEnds.js`）にそろえると、URL の両端の規則が 1 か所になる
+- [ ] 画像の台帳 L4（R2 DRY（1 か所））: `gitHubUrl.js` の `resolveRelativeUrl` は、`String(value ?? "").trim()`（Unicode）で相対かを判じる。書き直した URL も外部画像のゲートを通り、GitHub の文書は D40 で出さない道である。`stripUrlEnds` にそろえるか、GitHub のコードを除く作業で一緒に消えるかを確かめる
+- [ ] 改行の台帳 L2（R7 純粋性の分類）: `MarkdownTextOps.insertHardBreak`・`stripMeaninglessHardBreaks`・`hardBreakLines` と、`BlockEditController.js` の `moveCells` は、`@purity pure` の札で、モジュールの定数（`PARAGRAPH_LEAVES`、`STRIPPABLE_LEAVES`、`SPACE_CONTENT_BLOCKS`、`QUOTE_MARKS`、状態の名）を読む。不変値の読取なので `semi-pure-immutable` に改めるか、定数を引数で渡す
+- [ ] 改行の台帳 L3（R3 資源の生存期間）: `BlockEditController._insertBlock` は、確定の後の Insert で `this._textLexers()` を呼ぶ。そのため、キャッシュ付きの `lexBlocks` が、確定した文字とそのトークンを次に編集欄を閉じるまで持つ。`_committedText` と同じく、キャッシュの無い `orchestrator.textLexers()` を使う
+- [ ] 改行の台帳 L4（R3 防御的プログラミング）: `> ` を 5 万回並べた 1 行を字句解析すると、marked の入れ子の引用の再帰で `RangeError: Maximum call stack size exceeded` になる（`MarkdownRenderer.lexFull` など。描画も同じ字句解析を通る）。深さの上限か、例外を捕えて利用者に知らせる形を決める
+
+### 用語のそろえ（新しいレビュー基準の段階 B、2026-11-15。BOSS の決定で段階 F に回す）
+- [ ] 語「版」を「バージョン」にそろえる（NDD 用語集）: 上流の基準 `7015aa4` は「版」を「バージョン」に改め、GRSMD の基準 `spec/grsmd_review_standards_ja.md` もそろえた。仕様 `spec/grsmd_gen2_spec_ja.md`（163 か所、97 行）と試験仕様 `spec/gen2_prerelease_test_spec_ja.md`（82 か所）は「版」のまま。「日本語版」「英語版」「開発版」など意味の違う「版」を分けてから、段階 F（NDD と用語 JSON）でそろえる。今は仕様の用語集の後の既知の制限に書いてある。README の「版の規則」の行（`README.md`。`tools/release.mjs` が検査する）と、ヘルプのバージョンの行の「版」と「開発版」（`src/index.html`）は画面に出る語なので、変えるにはオーナーの裁定が要る
+
 ### `@purity` の検査の範囲（同梱 OSS の表記のレビューの参考 R-4、2026-10-25）
 - [ ] AT-PUR-01 は `src/js` だけを見る。ビルドの道具には、タグの無い関数が残っている: `vite.config.js` の 9 つ（`katexWoff2Only` の Declaration、`noHljsThemeCss` の Once、`noExternalImports` の generateBundle、`buildVersionOf`、`buildVersion` とその configResolved・transformIndexHtml、`buildCsp`、`contentSecurityPolicy` の generateBundle）、`tools/version.mjs` 105 行と `tools/release.mjs` 85 行の無名の関数
 - [ ] タグを付けたうえで、AT-PUR の範囲を `tools/` と `vite.config.js` に広げるか決める（`tools/notices.mjs` と `thirdPartyNotices` は AT-OSS-06 で確かめている）
