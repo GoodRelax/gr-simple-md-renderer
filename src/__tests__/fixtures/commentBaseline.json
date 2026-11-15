@@ -1,0 +1,768 @@
+{
+  "e2e/beta.e2e.js": {
+    "kind": 3
+  },
+  "e2e/blockRange.e2e.js": {
+    "kind": 37
+  },
+  "e2e/codeEdit.e2e.js": {
+    "kind": 6
+  },
+  "e2e/codeEditor.e2e.js": {
+    "kind": 34
+  },
+  "e2e/crossUnit.e2e.js": {
+    "kind": 13
+  },
+  "e2e/editModeScroll.e2e.js": {
+    "kind": 22
+  },
+  "e2e/editScrollFont.e2e.js": {
+    "kind": 14
+  },
+  "e2e/externalConsent.e2e.js": {
+    "kind": 7
+  },
+  "e2e/fastStartup.e2e.js": {
+    "kind": 21
+  },
+  "e2e/fileDrop.e2e.js": {
+    "kind": 6
+  },
+  "e2e/fixtures.js": {
+    "kind": 6
+  },
+  "e2e/gitHub.e2e.js": {
+    "kind": 15
+  },
+  "e2e/guards.e2e.js": {
+    "kind": 2
+  },
+  "e2e/help.e2e.js": {
+    "kind": 20
+  },
+  "e2e/hiddenChars.e2e.js": {
+    "kind": 7
+  },
+  "e2e/index.e2e.js": {
+    "kind": 18
+  },
+  "e2e/insertBlock.e2e.js": {
+    "kind": 10
+  },
+  "e2e/launcher.e2e.js": {
+    "kind": 6
+  },
+  "e2e/link.e2e.js": {
+    "kind": 6
+  },
+  "e2e/load.e2e.js": {
+    "kind": 1
+  },
+  "e2e/math.e2e.js": {
+    "kind": 7
+  },
+  "e2e/notices.e2e.js": {
+    "kind": 9
+  },
+  "e2e/paletteDoubleClick.e2e.js": {
+    "kind": 12
+  },
+  "e2e/pausedServer.js": {
+    "kind": 2
+  },
+  "e2e/save.e2e.js": {
+    "kind": 7
+  },
+  "e2e/search.e2e.js": {
+    "kind": 6
+  },
+  "e2e/tableCell.e2e.js": {
+    "kind": 11
+  },
+  "e2e/theme.e2e.js": {
+    "kind": 18
+  },
+  "e2e/toast.e2e.js": {
+    "kind": 4
+  },
+  "e2e/topBarButtons.e2e.js": {
+    "kind": 7
+  },
+  "e2e/touchTopBar.e2e.js": {
+    "kind": 4
+  },
+  "e2e/typingView.e2e.js": {
+    "kind": 16
+  },
+  "e2e/uiFixes.e2e.js": {
+    "kind": 22
+  },
+  "src/__tests__/BlockCaretMap.test.js": {
+    "kind": 8
+  },
+  "src/__tests__/BlockDiff.test.js": {
+    "kind": 3
+  },
+  "src/__tests__/BlockEditController.gap.test.js": {
+    "kind": 9
+  },
+  "src/__tests__/BlockEditController.hardBreak.test.js": {
+    "kind": 4
+  },
+  "src/__tests__/BlockEditController.keys.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/BlockEditController.link.test.js": {
+    "kind": 14
+  },
+  "src/__tests__/BlockEditController.stateMachine.test.js": {
+    "kind": 36
+  },
+  "src/__tests__/BlockEditController.tableFormat.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/BlockEditController.test.js": {
+    "kind": 24
+  },
+  "src/__tests__/BlockEditController.textStyle.test.js": {
+    "kind": 20
+  },
+  "src/__tests__/BlockGapInsert.test.js": {
+    "kind": 18
+  },
+  "src/__tests__/BlockRangeSelection.test.js": {
+    "kind": 33
+  },
+  "src/__tests__/ClipboardLink.test.js": {
+    "kind": 8
+  },
+  "src/__tests__/CodeCommandPalette.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/CodeDocument.test.js": {
+    "kind": 9
+  },
+  "src/__tests__/CodeEditController.stateMachine.test.js": {
+    "kind": 7
+  },
+  "src/__tests__/CodeEditController.test.js": {
+    "kind": 29
+  },
+  "src/__tests__/CodeEditHistory.test.js": {
+    "kind": 17
+  },
+  "src/__tests__/CodeEditor.test.js": {
+    "kind": 69
+  },
+  "src/__tests__/CodeFileDialog.test.js": {
+    "kind": 3
+  },
+  "src/__tests__/DiagramCopyController.observer.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/DiagramPanController.test.js": {
+    "kind": 4
+  },
+  "src/__tests__/DocumentIndex.test.js": {
+    "kind": 12
+  },
+  "src/__tests__/DocumentLifecycle.test.js": {
+    "kind": 5
+  },
+  "src/__tests__/DocumentSearch.test.js": {
+    "kind": 23
+  },
+  "src/__tests__/EditPalette.displayStateMachine.test.js": {
+    "kind": 3
+  },
+  "src/__tests__/EditPalette.noKeyboard.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/EditPalette.stateMachine.test.js": {
+    "kind": 16
+  },
+  "src/__tests__/EditPalette.test.js": {
+    "kind": 30
+  },
+  "src/__tests__/ExternalImageGate.test.js": {
+    "kind": 3
+  },
+  "src/__tests__/GitHubController.test.js": {
+    "kind": 10
+  },
+  "src/__tests__/HelpLanguageSwitch.test.js": {
+    "kind": 18
+  },
+  "src/__tests__/InlineRuns.test.js": {
+    "kind": 17
+  },
+  "src/__tests__/InvisibleCharOverlay.test.js": {
+    "kind": 9
+  },
+  "src/__tests__/LibraryLoader.stateMachine.test.js": {
+    "kind": 29
+  },
+  "src/__tests__/LibraryLoader.test.js": {
+    "kind": 25
+  },
+  "src/__tests__/MarkdownBlockModel.duplicateDefs.test.js": {
+    "kind": 4
+  },
+  "src/__tests__/MarkdownBlockModel.planTableReplace.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/MarkdownBlockModel.removeRange.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/MarkdownBlockModel.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/MarkdownFileAccess.test.js": {
+    "kind": 21
+  },
+  "src/__tests__/MarkdownRenderer.blockLex.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/MarkdownRenderer.blocks.test.js": {
+    "kind": 12
+  },
+  "src/__tests__/MarkdownRenderer.highlightLimit.test.js": {
+    "kind": 6
+  },
+  "src/__tests__/MarkdownRenderer.purifyConfig.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/MarkdownRenderer.test.js": {
+    "kind": 5
+  },
+  "src/__tests__/MarkdownTable.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/MarkdownTextOps.formatRange.test.js": {
+    "kind": 5
+  },
+  "src/__tests__/MarkdownTextOps.insertHardBreak.test.js": {
+    "kind": 7
+  },
+  "src/__tests__/MarkdownTextOps.link.test.js": {
+    "kind": 10
+  },
+  "src/__tests__/MarkdownTextOps.math.test.js": {
+    "kind": 10
+  },
+  "src/__tests__/MarkdownTextOps.planBlockInsert.test.js": {
+    "kind": 22
+  },
+  "src/__tests__/MarkdownTextOps.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/MermaidRenderer.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/ModalController.test.js": {
+    "kind": 15
+  },
+  "src/__tests__/RendererOrchestrator.edit.test.js": {
+    "kind": 18
+  },
+  "src/__tests__/RendererOrchestrator.replace.test.js": {
+    "kind": 6
+  },
+  "src/__tests__/RendererOrchestrator.test.js": {
+    "kind": 7
+  },
+  "src/__tests__/SaveDocument.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/SaveTrace.test.js": {
+    "kind": 3
+  },
+  "src/__tests__/ScrollMemento.anchor.test.js": {
+    "kind": 40
+  },
+  "src/__tests__/SmoothScrollEngine.test.js": {
+    "kind": 19
+  },
+  "src/__tests__/SourceFileRenderer.test.js": {
+    "kind": 12
+  },
+  "src/__tests__/TableCellEditor.test.js": {
+    "kind": 36
+  },
+  "src/__tests__/UIController.blockRange.test.js": {
+    "kind": 9
+  },
+  "src/__tests__/UIController.codeEdit.test.js": {
+    "kind": 3
+  },
+  "src/__tests__/UIController.codeEditor.test.js": {
+    "kind": 7
+  },
+  "src/__tests__/UIController.crossUnit.test.js": {
+    "kind": 20
+  },
+  "src/__tests__/UIController.document.test.js": {
+    "kind": 11
+  },
+  "src/__tests__/UIController.doubleClick.test.js": {
+    "kind": 7
+  },
+  "src/__tests__/UIController.earlyInput.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/UIController.editMode.test.js": {
+    "kind": 8
+  },
+  "src/__tests__/UIController.editorDeferredSync.test.js": {
+    "kind": 3
+  },
+  "src/__tests__/UIController.emptyEditorConfirm.test.js": {
+    "kind": 6
+  },
+  "src/__tests__/UIController.gitHub.test.js": {
+    "kind": 6
+  },
+  "src/__tests__/UIController.handleReload.test.js": {
+    "kind": 3
+  },
+  "src/__tests__/UIController.handleRender.test.js": {
+    "kind": 4
+  },
+  "src/__tests__/UIController.hiddenChars.test.js": {
+    "kind": 12
+  },
+  "src/__tests__/UIController.index.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/UIController.keyboard.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/UIController.link.test.js": {
+    "kind": 11
+  },
+  "src/__tests__/UIController.math.test.js": {
+    "kind": 16
+  },
+  "src/__tests__/UIController.palette.test.js": {
+    "kind": 22
+  },
+  "src/__tests__/UIController.reloadChecks.test.js": {
+    "kind": 14
+  },
+  "src/__tests__/UIController.save.test.js": {
+    "kind": 13
+  },
+  "src/__tests__/UIController.saveButton.test.js": {
+    "kind": 8
+  },
+  "src/__tests__/UIController.search.test.js": {
+    "kind": 3
+  },
+  "src/__tests__/UIController.setupFileDrop.test.js": {
+    "kind": 11
+  },
+  "src/__tests__/UIController.shortcuts.test.js": {
+    "kind": 17
+  },
+  "src/__tests__/UIController.showKeyHint.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/betaBuild.test.js": {
+    "kind": 7
+  },
+  "src/__tests__/codeOutline.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/config.edit.test.js": {
+    "kind": 7
+  },
+  "src/__tests__/config.test.js": {
+    "kind": 5
+  },
+  "src/__tests__/cspPlugin.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/fastStartup.build.test.js": {
+    "kind": 6
+  },
+  "src/__tests__/fastStartup.render.test.js": {
+    "kind": 28
+  },
+  "src/__tests__/fileTypes.test.js": {
+    "kind": 4
+  },
+  "src/__tests__/floatingPlacement.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/gitHub.test.js": {
+    "kind": 9
+  },
+  "src/__tests__/helpers/appStack.js": {
+    "kind": 7
+  },
+  "src/__tests__/helpers/contrast.js": {
+    "kind": 2
+  },
+  "src/__tests__/helpers/editDom.js": {
+    "kind": 5
+  },
+  "src/__tests__/helpers/editStack.js": {
+    "kind": 10
+  },
+  "src/__tests__/helpers/fakeBoot.js": {
+    "kind": 2
+  },
+  "src/__tests__/helpers/fakeFs.js": {
+    "kind": 7
+  },
+  "src/__tests__/helpers/paletteLayout.js": {
+    "kind": 6
+  },
+  "src/__tests__/helpers/purityCheck.js": {
+    "kind": 1
+  },
+  "src/__tests__/helpers/samples.js": {
+    "kind": 8
+  },
+  "src/__tests__/helpers/specDiagram.js": {
+    "kind": 3
+  },
+  "src/__tests__/helpers/uiMocks.js": {
+    "kind": 7
+  },
+  "src/__tests__/helpers/wholeText.js": {
+    "kind": 3
+  },
+  "src/__tests__/hiddenChars.render.test.js": {
+    "kind": 5
+  },
+  "src/__tests__/hiddenChars.test.js": {
+    "kind": 4
+  },
+  "src/__tests__/hljsThemePlugin.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/indentText.test.js": {
+    "kind": 5
+  },
+  "src/__tests__/jsonFold.test.js": {
+    "kind": 6
+  },
+  "src/__tests__/launchBlock.test.js": {
+    "kind": 12
+  },
+  "src/__tests__/launcher.test.js": {
+    "kind": 28
+  },
+  "src/__tests__/notices.test.js": {
+    "kind": 10
+  },
+  "src/__tests__/performance.index.test.js": {
+    "kind": 6
+  },
+  "src/__tests__/performance.inplaceEdit.test.js": {
+    "kind": 19
+  },
+  "src/__tests__/preprocessInput.test.js": {
+    "kind": 4
+  },
+  "src/__tests__/purityTags.test.js": {
+    "kind": 5
+  },
+  "src/__tests__/roundTrip.samples.test.js": {
+    "kind": 2
+  },
+  "src/__tests__/security.textColor.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/splitMarkdownWrapper.test.js": {
+    "kind": 3
+  },
+  "src/__tests__/stateTable.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/staticChecks.test.js": {
+    "kind": 41
+  },
+  "src/__tests__/textEncoding.test.js": {
+    "kind": 18
+  },
+  "src/__tests__/textSearch.test.js": {
+    "kind": 4
+  },
+  "src/__tests__/textWidth.test.js": {
+    "kind": 28
+  },
+  "src/__tests__/themeColors.test.js": {
+    "kind": 24
+  },
+  "src/__tests__/trailingRun.test.js": {
+    "kind": 1
+  },
+  "src/__tests__/utils.test.js": {
+    "kind": 16
+  },
+  "src/__tests__/versions.test.js": {
+    "kind": 8
+  },
+  "src/__tests__/wheelForwarding.test.js": {
+    "kind": 5
+  },
+  "src/js/base64Text.js": {
+    "kind": 5
+  },
+  "src/js/boot.js": {
+    "kind": 8
+  },
+  "src/js/bootScript.js": {
+    "kind": 1
+  },
+  "src/js/caretMatching.js": {
+    "kind": 10
+  },
+  "src/js/classes/BlockCaretMap.js": {
+    "kind": 22
+  },
+  "src/js/classes/BlockDiff.js": {
+    "kind": 4
+  },
+  "src/js/classes/BlockEditController.js": {
+    "kind": 159,
+    "summary": 1
+  },
+  "src/js/classes/BlockGapInsert.js": {
+    "kind": 32
+  },
+  "src/js/classes/BlockRangeSelection.js": {
+    "kind": 56
+  },
+  "src/js/classes/ClipboardLink.js": {
+    "kind": 12
+  },
+  "src/js/classes/CodeCommandPalette.js": {
+    "kind": 11
+  },
+  "src/js/classes/CodeDocument.js": {
+    "kind": 10
+  },
+  "src/js/classes/CodeEditController.js": {
+    "kind": 73
+  },
+  "src/js/classes/CodeEditHistory.js": {
+    "kind": 25
+  },
+  "src/js/classes/CodeEditor.js": {
+    "kind": 79
+  },
+  "src/js/classes/CodeFileDialog.js": {
+    "kind": 13
+  },
+  "src/js/classes/DiagramCopyController.js": {
+    "kind": 3
+  },
+  "src/js/classes/DiagramPanController.js": {
+    "kind": 4
+  },
+  "src/js/classes/DocumentIndex.js": {
+    "kind": 27
+  },
+  "src/js/classes/DocumentLifecycle.js": {
+    "kind": 29
+  },
+  "src/js/classes/DocumentLocation.js": {
+    "kind": 1
+  },
+  "src/js/classes/DocumentSearch.js": {
+    "kind": 49
+  },
+  "src/js/classes/DocumentSession.js": {
+    "kind": 6
+  },
+  "src/js/classes/EditPalette.js": {
+    "kind": 60
+  },
+  "src/js/classes/ExternalImageGate.js": {
+    "kind": 17
+  },
+  "src/js/classes/FileRefusal.js": {
+    "kind": 1
+  },
+  "src/js/classes/GitHubContentsClient.js": {
+    "kind": 10
+  },
+  "src/js/classes/GitHubController.js": {
+    "kind": 30
+  },
+  "src/js/classes/GitHubFileRef.js": {
+    "kind": 3
+  },
+  "src/js/classes/GitHubLink.js": {
+    "kind": 3
+  },
+  "src/js/classes/HelpLanguageSwitch.js": {
+    "kind": 3
+  },
+  "src/js/classes/InlineRuns.js": {
+    "kind": 65
+  },
+  "src/js/classes/InvisibleCharOverlay.js": {
+    "kind": 13
+  },
+  "src/js/classes/LibraryLoader.js": {
+    "kind": 31
+  },
+  "src/js/classes/MarkdownBlockModel.js": {
+    "kind": 43
+  },
+  "src/js/classes/MarkdownFileAccess.js": {
+    "kind": 13
+  },
+  "src/js/classes/MarkdownRenderer.js": {
+    "kind": 84
+  },
+  "src/js/classes/MarkdownTable.js": {
+    "kind": 15
+  },
+  "src/js/classes/MarkdownTextOps.js": {
+    "kind": 100
+  },
+  "src/js/classes/MermaidRenderer.js": {
+    "kind": 10
+  },
+  "src/js/classes/ModalController.js": {
+    "kind": 9
+  },
+  "src/js/classes/PlantUMLRenderer.js": {
+    "kind": 15
+  },
+  "src/js/classes/RendererOrchestrator.js": {
+    "kind": 77
+  },
+  "src/js/classes/SaveDocument.js": {
+    "kind": 1
+  },
+  "src/js/classes/SaveDocumentAs.js": {
+    "kind": 5
+  },
+  "src/js/classes/SaveTrace.js": {
+    "kind": 13
+  },
+  "src/js/classes/ScrollMemento.js": {
+    "kind": 35
+  },
+  "src/js/classes/SmoothScrollEngine.js": {
+    "kind": 8
+  },
+  "src/js/classes/SourceFileRenderer.js": {
+    "kind": 32
+  },
+  "src/js/classes/TableCellEditor.js": {
+    "kind": 112
+  },
+  "src/js/classes/UIController.js": {
+    "kind": 218
+  },
+  "src/js/codeOutline.js": {
+    "kind": 40
+  },
+  "src/js/config.js": {
+    "kind": 118
+  },
+  "src/js/earlyInput.js": {
+    "kind": 10
+  },
+  "src/js/editorTextStyle.js": {
+    "kind": 3
+  },
+  "src/js/fileOpenChecks.js": {
+    "kind": 4
+  },
+  "src/js/floatingPlacement.js": {
+    "kind": 2
+  },
+  "src/js/gitHubUrl.js": {
+    "kind": 8
+  },
+  "src/js/hiddenCharMarks.js": {
+    "kind": 7
+  },
+  "src/js/hiddenChars.js": {
+    "kind": 15
+  },
+  "src/js/indentText.js": {
+    "kind": 13
+  },
+  "src/js/jsonFold.js": {
+    "kind": 11
+  },
+  "src/js/lazy/dev.js": {
+    "kind": 1
+  },
+  "src/js/lazy/hljs.js": {
+    "kind": 1
+  },
+  "src/js/lazy/katex.js": {
+    "kind": 1
+  },
+  "src/js/lazy/mermaid.js": {
+    "kind": 1
+  },
+  "src/js/lazy/plantuml.js": {
+    "kind": 1
+  },
+  "src/js/lazyMath.js": {
+    "kind": 5
+  },
+  "src/js/libraryNames.js": {
+    "kind": 4
+  },
+  "src/js/main.js": {
+    "kind": 20
+  },
+  "src/js/sidePanels.js": {
+    "kind": 3
+  },
+  "src/js/stateTable.js": {
+    "kind": 5
+  },
+  "src/js/textEncoding.js": {
+    "kind": 25
+  },
+  "src/js/textSearch.js": {
+    "kind": 7
+  },
+  "src/js/textTransforms.js": {
+    "kind": 12
+  },
+  "src/js/textWidth.js": {
+    "kind": 5
+  },
+  "src/js/utils.js": {
+    "kind": 20
+  },
+  "src/js/wheelForwarding.js": {
+    "kind": 5
+  },
+  "tools/buildBeta.mjs": {
+    "kind": 5
+  },
+  "tools/fastStartup.mjs": {
+    "kind": 11
+  },
+  "tools/fileTypes.mjs": {
+    "kind": 17
+  },
+  "tools/notices.mjs": {
+    "kind": 43
+  },
+  "tools/release.mjs": {
+    "kind": 10
+  },
+  "tools/third-party-extras.mjs": {
+    "kind": 30
+  },
+  "tools/version.mjs": {
+    "kind": 9
+  }
+}
