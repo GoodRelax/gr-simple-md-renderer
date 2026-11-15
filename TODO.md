@@ -43,6 +43,12 @@
 ### 用語のそろえ（新しいレビュー基準の段階 B、2026-11-15。BOSS の決定で段階 F に回す）
 - [ ] 語「版」を「バージョン」にそろえる（NDD 用語集）: 上流の基準 `7015aa4` は「版」を「バージョン」に改め、GRSMD の基準 `spec/grsmd_review_standards_ja.md` もそろえた。仕様 `spec/grsmd_gen2_spec_ja.md`（163 か所、97 行）と試験仕様 `spec/gen2_prerelease_test_spec_ja.md`（82 か所）は「版」のまま。「日本語版」「英語版」「開発版」など意味の違う「版」を分けてから、段階 F（NDD と用語 JSON）でそろえる。今は仕様の用語集の後の既知の制限に書いてある。README の「版の規則」の行（`README.md`。`tools/release.mjs` が検査する）と、ヘルプのバージョンの行の「版」と「開発版」（`src/index.html`）は画面に出る語なので、変えるにはオーナーの裁定が要る
 
+### コメントの lint の範囲（新しいレビュー基準の段階 C、2026-11-15。BOSS の決定で今は広げない）
+- [ ] コメントの lint（`src/__tests__/commentKinds.test.js`、AT-CMT。仕様 5.16.3）は `src/`・`tools/`・`e2e/` の `.js` と `.mjs` だけを見る。ルートの設定（`vite.config.js`・`playwright.config.js`・`playwright.firefox.config.js`）、`src/css`、`src/index.html`、`launcher` の PowerShell に広げるか決める（CSS・HTML・PowerShell はコメントの書き方が違うので、取り出しを別に作る）
+
+### コメントの一括の直し D1（新しいレビュー基準の段階 D、オーナーの裁定 JGQA 問 N1 = b）
+- [ ] GitHub のコードを外した後に、製品と tools のコメントを 1 回で R3 コメントの形に直す（計画の段階 D1）。コメントの lint（仕様 5.16.3）の ratchet の数（`src/__tests__/fixtures/commentBaseline.json`、develop `126a2aa` の時点）は kind 3,921 件（`src/js` 2,012、`src/__tests__` 1,405、`e2e` 379、`tools` 125）と summary 1 件（`src/js/classes/BlockEditController.js:1694`。3 文で `Temporary` が無い）。D1 が直すのは製品と tools の分（kind 2,137 件と summary 1 件）。試験のコード（`src/__tests__`・`e2e`）の kind 1,784 件は、差分が触れる時に直す（問 N1 = b、問 N2。一括で直す時期は決まっていない）。直した差分は、同じ差分の中で `GRSMD_COMMENT_BASELINE=update` を付けて試験を動かし、ratchet の数を下げる
+
 ### `@purity` の検査の範囲（同梱 OSS の表記のレビューの参考 R-4、2026-10-25）
 - [ ] AT-PUR-01 は `src/js` だけを見る。ビルドの道具には、タグの無い関数が残っている: `vite.config.js` の 9 つ（`katexWoff2Only` の Declaration、`noHljsThemeCss` の Once、`noExternalImports` の generateBundle、`buildVersionOf`、`buildVersion` とその configResolved・transformIndexHtml、`buildCsp`、`contentSecurityPolicy` の generateBundle）、`tools/version.mjs` 105 行と `tools/release.mjs` 85 行の無名の関数
 - [ ] タグを付けたうえで、AT-PUR の範囲を `tools/` と `vite.config.js` に広げるか決める（`tools/notices.mjs` と `thirdPartyNotices` は AT-OSS-06 で確かめている）

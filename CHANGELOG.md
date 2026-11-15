@@ -221,6 +221,15 @@ Versions and their headings follow the version rule in spec/grsmd_gen2_spec_ja.m
   upstream's Japanese word for "state machine", and spec
   11-b names the spec's state transition table as the source of truth for
   each diagram. The app does not change.
+- Review standard: a new test (`commentKinds.test.js`, spec 5.16.3) checks
+  the comments in `src/`, `tools/` and `e2e/` against the R3 comment
+  rules: each comment starts with a kind (`Why:`, `Spec:`, `Summary:`,
+  `Temporary:` and the others), is ASCII, cites only spec IDs that exist,
+  keeps a `Summary` short, and gives each `Temporary` an `Until:`. Older
+  comments are fixed when a change touches them, so the test keeps a
+  per-file count of today's misses: it fails when a count grows, and
+  when a count drops until the change that fixed the comments lowers the
+  count too. The app does not change.
 
 ### Added
 
